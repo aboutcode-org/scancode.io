@@ -1,0 +1,31 @@
+os: linux
+dist: bionic
+language: python
+python: "3.6"
+
+addons:
+  postgresql: "10"
+  apt:
+    update: true
+    packages:
+      # ScanPipe "graph" management command dependency
+      - graphviz
+      # ScanCode-toolkit dependencies
+      - xz-utils
+      - zlib1g
+      - libxml2-dev
+      - libxslt1-dev
+      - bzip2
+
+env:
+  - SCANCODEIO_DB_USER=postgres
+
+install:
+  - make dev
+  - make envfile
+  - make check
+
+before_script:
+  - createdb --encoding=utf-8 scancodeio
+
+script: ./manage.py test --settings=scancodeio.settings.ci --verbosity=2 --noinput
