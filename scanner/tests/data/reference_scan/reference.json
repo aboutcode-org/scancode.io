@@ -1,0 +1,1869 @@
+{
+  "headers": [
+    {
+      "tool_name": "scancode-toolkit",
+      "tool_version": "3.2.0",
+      "options": {
+        "input": [
+          "scanner/tests/data/reference_scan/code"
+        ],
+        "--classify": true,
+        "--consolidate": true,
+        "--copyright": true,
+        "--email": true,
+        "--info": true,
+        "--is-license-text": true,
+        "--json-pp": "scanner/tests/data/reference_scan/reference.json",
+        "--license": true,
+        "--license-clarity-score": true,
+        "--license-text": true,
+        "--max-in-memory": "100000",
+        "--package": true,
+        "--processes": "3",
+        "--summary": true,
+        "--summary-key-files": true,
+        "--url": true
+      },
+      "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
+      "start_timestamp": "2020-08-13T133748.158328",
+      "end_timestamp": "2020-08-13T133755.183554",
+      "duration": 7.025245189666748,
+      "message": null,
+      "errors": [],
+      "extra_data": {
+        "files_count": 10
+      }
+    }
+  ],
+  "consolidated_components": [],
+  "consolidated_packages": [
+    {
+      "type": "bower",
+      "namespace": null,
+      "name": "blue-leaf",
+      "version": null,
+      "qualifiers": {},
+      "subpath": null,
+      "primary_language": null,
+      "description": "Physics-like animations for pretty particles",
+      "release_date": null,
+      "parties": [
+        {
+          "type": null,
+          "role": "author",
+          "name": "Betty Beta <bbeta@example.com>",
+          "email": null,
+          "url": null
+        }
+      ],
+      "keywords": [
+        "motion",
+        "physics",
+        "particles"
+      ],
+      "homepage_url": null,
+      "download_url": null,
+      "size": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "sha512": null,
+      "bug_tracking_url": null,
+      "code_view_url": null,
+      "vcs_url": null,
+      "copyright": null,
+      "license_expression": "mit",
+      "declared_license": [
+        "MIT"
+      ],
+      "notice_text": null,
+      "root_path": "code",
+      "dependencies": [
+        {
+          "purl": "pkg:bower/get-size",
+          "requirement": "~1.2.2",
+          "scope": "dependencies",
+          "is_runtime": true,
+          "is_optional": false,
+          "is_resolved": false
+        },
+        {
+          "purl": "pkg:bower/eventEmitter",
+          "requirement": "~4.2.11",
+          "scope": "dependencies",
+          "is_runtime": true,
+          "is_optional": false,
+          "is_resolved": false
+        },
+        {
+          "purl": "pkg:bower/qunit",
+          "requirement": "~1.16.0",
+          "scope": "devDependencies",
+          "is_runtime": false,
+          "is_optional": true,
+          "is_resolved": false
+        }
+      ],
+      "contains_source_code": null,
+      "source_packages": [],
+      "purl": "pkg:bower/blue-leaf",
+      "repository_homepage_url": null,
+      "repository_download_url": null,
+      "api_data_url": null,
+      "identifier": "pkg_bower_blue_leaf_1",
+      "consolidated_license_expression": "apache-2.0 AND artistic-2.0 AND bsd-new AND bsd-simplified AND mit AND public-domain AND zlib",
+      "consolidated_holders": [
+        "Mark Adler"
+      ],
+      "consolidated_copyright": "Copyright (c) Mark Adler",
+      "core_license_expression": "mit",
+      "core_holders": [],
+      "other_license_expression": "apache-2.0 AND artistic-2.0 AND bsd-new AND bsd-simplified AND mit AND public-domain AND zlib",
+      "other_holders": [
+        "Mark Adler"
+      ],
+      "files_count": 10
+    },
+    {
+      "type": "maven",
+      "namespace": "aopalliance",
+      "name": "aopalliance",
+      "version": "1.0",
+      "qualifiers": {},
+      "subpath": null,
+      "primary_language": "Java",
+      "description": "AOP alliance\nAOP Alliance",
+      "release_date": null,
+      "parties": [],
+      "keywords": [],
+      "homepage_url": "http://aopalliance.sourceforge.net",
+      "download_url": null,
+      "size": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "sha512": null,
+      "bug_tracking_url": null,
+      "code_view_url": null,
+      "vcs_url": null,
+      "copyright": null,
+      "license_expression": "public-domain",
+      "declared_license": [
+        {
+          "name": "Public Domain",
+          "url": null,
+          "comments": null,
+          "distribution": null
+        }
+      ],
+      "notice_text": null,
+      "root_path": "code/subpackage",
+      "dependencies": [],
+      "contains_source_code": null,
+      "source_packages": [
+        "pkg:maven/aopalliance/aopalliance@1.0?classifier=sources"
+      ],
+      "purl": "pkg:maven/aopalliance/aopalliance@1.0",
+      "repository_homepage_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/",
+      "repository_download_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.jar",
+      "api_data_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.pom",
+      "identifier": "pkg_maven_aopalliance_aopalliance_1_0_1",
+      "consolidated_license_expression": "bsd-new AND public-domain",
+      "consolidated_holders": [],
+      "consolidated_copyright": "Copyright (c) ",
+      "core_license_expression": "public-domain",
+      "core_holders": [],
+      "other_license_expression": "bsd-new AND public-domain",
+      "other_holders": [],
+      "files_count": 2
+    },
+    {
+      "type": "pypi",
+      "namespace": null,
+      "name": "arpy",
+      "version": "0.1.1",
+      "qualifiers": {},
+      "subpath": null,
+      "primary_language": "Python",
+      "description": "Library for accessing \"ar\" files",
+      "release_date": null,
+      "parties": [
+        {
+          "type": "person",
+          "role": "author",
+          "name": "Stanis\u0142aw Pitucha",
+          "email": "viraptor@gmail.com",
+          "url": "http://bitbucket.org/viraptor/arpy"
+        }
+      ],
+      "keywords": [],
+      "homepage_url": "http://bitbucket.org/viraptor/arpy",
+      "download_url": null,
+      "size": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "sha512": null,
+      "bug_tracking_url": null,
+      "code_view_url": null,
+      "vcs_url": null,
+      "copyright": null,
+      "license_expression": "bsd-simplified",
+      "declared_license": {
+        "license": "Simplified BSD",
+        "classifiers": []
+      },
+      "notice_text": null,
+      "root_path": "code/subpackage2/setup.py",
+      "dependencies": [],
+      "contains_source_code": null,
+      "source_packages": [],
+      "purl": "pkg:pypi/arpy@0.1.1",
+      "repository_homepage_url": "https://pypi.org/project/arpy",
+      "repository_download_url": "https://pypi.io/packages/source/a/arpy/arpy-0.1.1.tar.gz",
+      "api_data_url": "http://pypi.python.org/pypi/arpy/0.1.1/json",
+      "identifier": "pkg_pypi_arpy_0_1_1_1",
+      "consolidated_license_expression": "bsd-simplified",
+      "consolidated_holders": [],
+      "consolidated_copyright": "Copyright (c) ",
+      "core_license_expression": "bsd-simplified",
+      "core_holders": [],
+      "other_license_expression": "bsd-simplified",
+      "other_holders": [],
+      "files_count": 1
+    }
+  ],
+  "summary": {
+    "license_expressions": [
+      {
+        "value": "zlib",
+        "count": 3
+      },
+      {
+        "value": "bsd-simplified",
+        "count": 2
+      },
+      {
+        "value": "apache-2.0",
+        "count": 1
+      },
+      {
+        "value": "artistic-2.0",
+        "count": 1
+      },
+      {
+        "value": "bsd-new",
+        "count": 1
+      },
+      {
+        "value": "mit",
+        "count": 1
+      },
+      {
+        "value": "public-domain",
+        "count": 1
+      }
+    ],
+    "copyrights": [
+      {
+        "value": null,
+        "count": 7
+      },
+      {
+        "value": "Copyright (c) Mark Adler",
+        "count": 3
+      }
+    ],
+    "holders": [
+      {
+        "value": null,
+        "count": 7
+      },
+      {
+        "value": "Mark Adler",
+        "count": 3
+      }
+    ],
+    "authors": [
+      {
+        "value": null,
+        "count": 8
+      },
+      {
+        "value": "authors' Betty Beta <bbeta@example.com>",
+        "count": 1
+      },
+      {
+        "value": "name' Isaac Z.",
+        "count": 1
+      }
+    ],
+    "programming_language": [
+      {
+        "value": null,
+        "count": 5
+      },
+      {
+        "value": "C++",
+        "count": 3
+      },
+      {
+        "value": "Java",
+        "count": 1
+      },
+      {
+        "value": "Python",
+        "count": 1
+      }
+    ],
+    "packages": [
+      {
+        "type": "bower",
+        "namespace": null,
+        "name": "blue-leaf",
+        "version": null,
+        "qualifiers": {},
+        "subpath": null,
+        "primary_language": null,
+        "description": "Physics-like animations for pretty particles",
+        "release_date": null,
+        "parties": [
+          {
+            "type": null,
+            "role": "author",
+            "name": "Betty Beta <bbeta@example.com>",
+            "email": null,
+            "url": null
+          }
+        ],
+        "keywords": [
+          "motion",
+          "physics",
+          "particles"
+        ],
+        "homepage_url": null,
+        "download_url": null,
+        "size": null,
+        "sha1": null,
+        "md5": null,
+        "sha256": null,
+        "sha512": null,
+        "bug_tracking_url": null,
+        "code_view_url": null,
+        "vcs_url": null,
+        "copyright": null,
+        "license_expression": "mit",
+        "declared_license": [
+          "MIT"
+        ],
+        "notice_text": null,
+        "root_path": "code",
+        "dependencies": [
+          {
+            "purl": "pkg:bower/get-size",
+            "requirement": "~1.2.2",
+            "scope": "dependencies",
+            "is_runtime": true,
+            "is_optional": false,
+            "is_resolved": false
+          },
+          {
+            "purl": "pkg:bower/eventEmitter",
+            "requirement": "~4.2.11",
+            "scope": "dependencies",
+            "is_runtime": true,
+            "is_optional": false,
+            "is_resolved": false
+          },
+          {
+            "purl": "pkg:bower/qunit",
+            "requirement": "~1.16.0",
+            "scope": "devDependencies",
+            "is_runtime": false,
+            "is_optional": true,
+            "is_resolved": false
+          }
+        ],
+        "contains_source_code": null,
+        "source_packages": [],
+        "purl": "pkg:bower/blue-leaf",
+        "repository_homepage_url": null,
+        "repository_download_url": null,
+        "api_data_url": null,
+        "files": [
+          {
+            "path": "code/bower.json",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "type": "maven",
+        "namespace": "aopalliance",
+        "name": "aopalliance",
+        "version": "1.0",
+        "qualifiers": {},
+        "subpath": null,
+        "primary_language": "Java",
+        "description": "AOP alliance\nAOP Alliance",
+        "release_date": null,
+        "parties": [],
+        "keywords": [],
+        "homepage_url": "http://aopalliance.sourceforge.net",
+        "download_url": null,
+        "size": null,
+        "sha1": null,
+        "md5": null,
+        "sha256": null,
+        "sha512": null,
+        "bug_tracking_url": null,
+        "code_view_url": null,
+        "vcs_url": null,
+        "copyright": null,
+        "license_expression": "public-domain",
+        "declared_license": [
+          {
+            "name": "Public Domain",
+            "url": null,
+            "comments": null,
+            "distribution": null
+          }
+        ],
+        "notice_text": null,
+        "root_path": "code/subpackage",
+        "dependencies": [],
+        "contains_source_code": null,
+        "source_packages": [
+          "pkg:maven/aopalliance/aopalliance@1.0?classifier=sources"
+        ],
+        "purl": "pkg:maven/aopalliance/aopalliance@1.0",
+        "repository_homepage_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/",
+        "repository_download_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.jar",
+        "api_data_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.pom",
+        "files": [
+          {
+            "path": "code/subpackage/pom.xml",
+            "type": "file"
+          }
+        ]
+      },
+      {
+        "type": "pypi",
+        "namespace": null,
+        "name": "arpy",
+        "version": "0.1.1",
+        "qualifiers": {},
+        "subpath": null,
+        "primary_language": "Python",
+        "description": "Library for accessing \"ar\" files",
+        "release_date": null,
+        "parties": [
+          {
+            "type": "person",
+            "role": "author",
+            "name": "Stanis\u0142aw Pitucha",
+            "email": "viraptor@gmail.com",
+            "url": "http://bitbucket.org/viraptor/arpy"
+          }
+        ],
+        "keywords": [],
+        "homepage_url": "http://bitbucket.org/viraptor/arpy",
+        "download_url": null,
+        "size": null,
+        "sha1": null,
+        "md5": null,
+        "sha256": null,
+        "sha512": null,
+        "bug_tracking_url": null,
+        "code_view_url": null,
+        "vcs_url": null,
+        "copyright": null,
+        "license_expression": "bsd-simplified",
+        "declared_license": {
+          "license": "Simplified BSD",
+          "classifiers": []
+        },
+        "notice_text": null,
+        "root_path": "code/subpackage2/setup.py",
+        "dependencies": [],
+        "contains_source_code": null,
+        "source_packages": [],
+        "purl": "pkg:pypi/arpy@0.1.1",
+        "repository_homepage_url": "https://pypi.org/project/arpy",
+        "repository_download_url": "https://pypi.io/packages/source/a/arpy/arpy-0.1.1.tar.gz",
+        "api_data_url": "http://pypi.python.org/pypi/arpy/0.1.1/json",
+        "files": [
+          {
+            "path": "code/subpackage2/setup.py",
+            "type": "file"
+          }
+        ]
+      }
+    ]
+  },
+  "license_clarity_score": {
+    "score": 42,
+    "declared": true,
+    "discovered": 0.5,
+    "consistency": false,
+    "spdx": false,
+    "license_texts": false
+  },
+  "summary_of_key_files": {
+    "license_expressions": [
+      {
+        "value": "apache-2.0",
+        "count": 1
+      },
+      {
+        "value": "artistic-2.0",
+        "count": 1
+      },
+      {
+        "value": "bsd-simplified",
+        "count": 1
+      },
+      {
+        "value": "mit",
+        "count": 1
+      }
+    ],
+    "copyrights": [
+      {
+        "value": null,
+        "count": 4
+      }
+    ],
+    "holders": [
+      {
+        "value": null,
+        "count": 4
+      }
+    ],
+    "authors": [
+      {
+        "value": null,
+        "count": 2
+      },
+      {
+        "value": "authors' Betty Beta <bbeta@example.com>",
+        "count": 1
+      },
+      {
+        "value": "name' Isaac Z.",
+        "count": 1
+      }
+    ],
+    "programming_language": [
+      {
+        "value": null,
+        "count": 4
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "code",
+      "type": "directory",
+      "name": "code",
+      "base_name": "code",
+      "extension": "",
+      "size": 0,
+      "date": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "mime_type": null,
+      "file_type": null,
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [],
+      "license_expressions": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 10,
+      "dirs_count": 4,
+      "size_count": 7869,
+      "scan_errors": []
+    },
+    {
+      "path": "code/bower.json",
+      "type": "file",
+      "name": "bower.json",
+      "base_name": "bower",
+      "extension": ".json",
+      "size": 605,
+      "date": "2020-06-11",
+      "sha1": "6d9c943d9c60d3ee5aa967167131f47b51e4eceb",
+      "md5": "7407926e2b34b7258d01d974b20d94cb",
+      "sha256": "38e1e96319958e476d5c83c24a4c7aa04336fe1b7c3906a41010b86faee2078f",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "mit",
+          "score": 100.0,
+          "name": "MIT License",
+          "short_name": "MIT License",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "MIT",
+          "homepage_url": "http://opensource.org/licenses/mit-license.php",
+          "text_url": "http://opensource.org/licenses/mit-license.php",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:mit",
+          "spdx_license_key": "MIT",
+          "spdx_url": "https://spdx.org/licenses/MIT",
+          "start_line": 28,
+          "end_line": 28,
+          "matched_rule": {
+            "identifier": "mit_30.RULE",
+            "license_expression": "mit",
+            "licenses": [
+              "mit"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": false,
+            "is_license_tag": true,
+            "matcher": "2-aho",
+            "rule_length": 2,
+            "matched_length": 2,
+            "match_coverage": 100.0,
+            "rule_relevance": 100.0
+          },
+          "matched_text": "  \"license\": \"MIT\","
+        }
+      ],
+      "license_expressions": [
+        "mit"
+      ],
+      "percentage_of_license_text": 3.51,
+      "copyrights": [],
+      "holders": [],
+      "authors": [
+        {
+          "value": "authors' Betty Beta <bbeta@example.com>",
+          "start_line": 25,
+          "end_line": 26
+        }
+      ],
+      "packages": [
+        {
+          "type": "bower",
+          "namespace": null,
+          "name": "blue-leaf",
+          "version": null,
+          "qualifiers": {},
+          "subpath": null,
+          "primary_language": null,
+          "description": "Physics-like animations for pretty particles",
+          "release_date": null,
+          "parties": [
+            {
+              "type": null,
+              "role": "author",
+              "name": "Betty Beta <bbeta@example.com>",
+              "email": null,
+              "url": null
+            }
+          ],
+          "keywords": [
+            "motion",
+            "physics",
+            "particles"
+          ],
+          "homepage_url": null,
+          "download_url": null,
+          "size": null,
+          "sha1": null,
+          "md5": null,
+          "sha256": null,
+          "sha512": null,
+          "bug_tracking_url": null,
+          "code_view_url": null,
+          "vcs_url": null,
+          "copyright": null,
+          "license_expression": "mit",
+          "declared_license": [
+            "MIT"
+          ],
+          "notice_text": null,
+          "root_path": "code",
+          "dependencies": [
+            {
+              "purl": "pkg:bower/get-size",
+              "requirement": "~1.2.2",
+              "scope": "dependencies",
+              "is_runtime": true,
+              "is_optional": false,
+              "is_resolved": false
+            },
+            {
+              "purl": "pkg:bower/eventEmitter",
+              "requirement": "~4.2.11",
+              "scope": "dependencies",
+              "is_runtime": true,
+              "is_optional": false,
+              "is_resolved": false
+            },
+            {
+              "purl": "pkg:bower/qunit",
+              "requirement": "~1.16.0",
+              "scope": "devDependencies",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": false
+            }
+          ],
+          "contains_source_code": null,
+          "source_packages": [],
+          "purl": "pkg:bower/blue-leaf",
+          "repository_homepage_url": null,
+          "repository_download_url": null,
+          "api_data_url": null,
+          "files": [
+            {
+              "path": "code/bower.json",
+              "type": "file"
+            }
+          ]
+        }
+      ],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": true,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": true,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/COPYING",
+      "type": "file",
+      "name": "COPYING",
+      "base_name": "COPYING",
+      "extension": "",
+      "size": 40,
+      "date": "2020-06-11",
+      "sha1": "ea1065ae439af4357fd8bcf22a387b42de11245b",
+      "md5": "1b6dd65a6b2a745813ca6809457476ec",
+      "sha256": "c7fa954b4fbd6278d79bee044b24d1d1448eedcbe00f7fa4d78ef372e516adb2",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "apache-2.0",
+          "score": 100.0,
+          "name": "Apache License 2.0",
+          "short_name": "Apache 2.0",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "Apache Software Foundation",
+          "homepage_url": "http://www.apache.org/licenses/",
+          "text_url": "http://www.apache.org/licenses/LICENSE-2.0",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:apache-2.0",
+          "spdx_license_key": "Apache-2.0",
+          "spdx_url": "https://spdx.org/licenses/Apache-2.0",
+          "start_line": 1,
+          "end_line": 1,
+          "matched_rule": {
+            "identifier": "spdx-license-identifier: apache-2.0",
+            "license_expression": "apache-2.0",
+            "licenses": [
+              "apache-2.0"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": false,
+            "is_license_tag": true,
+            "matcher": "1-spdx-id",
+            "rule_length": 6,
+            "matched_length": 6,
+            "match_coverage": 100.0,
+            "rule_relevance": 100
+          },
+          "matched_text": " * SPDX-License-Identifier: Apache-2.0"
+        }
+      ],
+      "license_expressions": [
+        "apache-2.0"
+      ],
+      "percentage_of_license_text": 100.0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": true,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": true,
+      "is_license_text": true,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/package.json",
+      "type": "file",
+      "name": "package.json",
+      "base_name": "package",
+      "extension": ".json",
+      "size": 1057,
+      "date": "2020-06-11",
+      "sha1": "8fda21a2ccf367e622ba86351104709591c6885c",
+      "md5": "73511811fc96084ede12ddb3b26c792d",
+      "sha256": "38c728b1d43d074885d838e2bfe39ab9b1e08dd51e70553abb565e015da42a62",
+      "mime_type": "text/plain",
+      "file_type": "UTF-8 Unicode text",
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "artistic-2.0",
+          "score": 90.0,
+          "name": "Artistic License 2.0",
+          "short_name": "Artistic 2.0",
+          "category": "Copyleft Limited",
+          "is_exception": false,
+          "owner": "Perl Foundation",
+          "homepage_url": "http://www.perlfoundation.org/",
+          "text_url": "http://www.perlfoundation.org/artistic_license_2_0",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:artistic-2.0",
+          "spdx_license_key": "Artistic-2.0",
+          "spdx_url": "https://spdx.org/licenses/Artistic-2.0",
+          "start_line": 31,
+          "end_line": 31,
+          "matched_rule": {
+            "identifier": "artistic-2.0_28.RULE",
+            "license_expression": "artistic-2.0",
+            "licenses": [
+              "artistic-2.0"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": false,
+            "is_license_tag": true,
+            "matcher": "2-aho",
+            "rule_length": 3,
+            "matched_length": 3,
+            "match_coverage": 100.0,
+            "rule_relevance": 90.0
+          },
+          "matched_text": "  \"license\": \"Artistic-2.0\","
+        }
+      ],
+      "license_expressions": [
+        "artistic-2.0"
+      ],
+      "percentage_of_license_text": 2.75,
+      "copyrights": [],
+      "holders": [],
+      "authors": [
+        {
+          "value": "name' Isaac Z.",
+          "start_line": 9,
+          "end_line": 11
+        }
+      ],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [
+        {
+          "email": "i@izs.me",
+          "start_line": 11,
+          "end_line": 11
+        },
+        {
+          "email": "stephan@excellenteasy.com",
+          "start_line": 39,
+          "end_line": 39
+        },
+        {
+          "email": "isaacs@npmjs.com",
+          "start_line": 49,
+          "end_line": 49
+        }
+      ],
+      "urls": [
+        {
+          "url": "https://docs.npmjs.com/",
+          "start_line": 8,
+          "end_line": 8
+        },
+        {
+          "url": "http://blog.izs.me/",
+          "start_line": 12,
+          "end_line": 12
+        },
+        {
+          "url": "https://github.com/npm/npm.git",
+          "start_line": 16,
+          "end_line": 16
+        },
+        {
+          "url": "http://github.com/npm/npm/issues",
+          "start_line": 19,
+          "end_line": 19
+        },
+        {
+          "url": "http://registry.npmjs.org/npm/-/npm-2.13.5.tgz",
+          "start_line": 44,
+          "end_line": 44
+        }
+      ],
+      "is_legal": false,
+      "is_manifest": true,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": true,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/README",
+      "type": "file",
+      "name": "README",
+      "base_name": "README",
+      "extension": "",
+      "size": 41,
+      "date": "2020-06-11",
+      "sha1": "42fefa3928eddabca083259a0bdc3d29815059ea",
+      "md5": "16183c96ac7c52ae641002c128d3d018",
+      "sha256": "1bcfb7b2f2c0e365d5b770a151217f87ae0b5a65b1111d1ca2f007c426d2c982",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "bsd-simplified",
+          "score": 100.0,
+          "name": "BSD-2-Clause",
+          "short_name": "BSD-2-Clause",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "Regents of the University of California",
+          "homepage_url": "http://www.opensource.org/licenses/BSD-2-Clause",
+          "text_url": "http://opensource.org/licenses/bsd-license.php",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:bsd-simplified",
+          "spdx_license_key": "BSD-2-Clause",
+          "spdx_url": "https://spdx.org/licenses/BSD-2-Clause",
+          "start_line": 1,
+          "end_line": 1,
+          "matched_rule": {
+            "identifier": "spdx-license-identifier: bsd-simplified",
+            "license_expression": "bsd-simplified",
+            "licenses": [
+              "bsd-simplified"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": false,
+            "is_license_tag": true,
+            "matcher": "1-spdx-id",
+            "rule_length": 6,
+            "matched_length": 6,
+            "match_coverage": 100.0,
+            "rule_relevance": 100
+          },
+          "matched_text": " * SPDX-License-Identifier: BSD-2-Clause"
+        }
+      ],
+      "license_expressions": [
+        "bsd-simplified"
+      ],
+      "percentage_of_license_text": 100.0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": true,
+      "is_top_level": true,
+      "is_key_file": true,
+      "is_license_text": true,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/subpackage",
+      "type": "directory",
+      "name": "subpackage",
+      "base_name": "subpackage",
+      "extension": "",
+      "size": 0,
+      "date": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "mime_type": null,
+      "file_type": null,
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [],
+      "license_expressions": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1",
+        "pkg_maven_aopalliance_aopalliance_1_0_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 2,
+      "dirs_count": 1,
+      "size_count": 408,
+      "scan_errors": []
+    },
+    {
+      "path": "code/subpackage/pom.xml",
+      "type": "file",
+      "name": "pom.xml",
+      "base_name": "pom",
+      "extension": ".xml",
+      "size": 363,
+      "date": "2020-06-11",
+      "sha1": "5128a2b0efbba460a1178d07773618e0986ea152",
+      "md5": "9888dc04fe79d5afcf43e2697691fff9",
+      "sha256": "26e82330157d6b844b67a8064945e206581e772977183e3e31fec6058aa9a59b",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "public-domain",
+          "score": 70.0,
+          "name": "Public Domain",
+          "short_name": "Public Domain",
+          "category": "Public Domain",
+          "is_exception": false,
+          "owner": "Unspecified",
+          "homepage_url": "http://www.linfo.org/publicdomain.html",
+          "text_url": "",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:public-domain",
+          "spdx_license_key": null,
+          "spdx_url": "",
+          "start_line": 12,
+          "end_line": 12,
+          "matched_rule": {
+            "identifier": "public-domain_bare_words.RULE",
+            "license_expression": "public-domain",
+            "licenses": [
+              "public-domain"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": true,
+            "is_license_tag": false,
+            "matcher": "2-aho",
+            "rule_length": 2,
+            "matched_length": 2,
+            "match_coverage": 100.0,
+            "rule_relevance": 70.0
+          },
+          "matched_text": "      <name>Public Domain</name>"
+        }
+      ],
+      "license_expressions": [
+        "public-domain"
+      ],
+      "percentage_of_license_text": 5.13,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [
+        {
+          "type": "maven",
+          "namespace": "aopalliance",
+          "name": "aopalliance",
+          "version": "1.0",
+          "qualifiers": {},
+          "subpath": null,
+          "primary_language": "Java",
+          "description": "AOP alliance\nAOP Alliance",
+          "release_date": null,
+          "parties": [],
+          "keywords": [],
+          "homepage_url": "http://aopalliance.sourceforge.net",
+          "download_url": null,
+          "size": null,
+          "sha1": null,
+          "md5": null,
+          "sha256": null,
+          "sha512": null,
+          "bug_tracking_url": null,
+          "code_view_url": null,
+          "vcs_url": null,
+          "copyright": null,
+          "license_expression": "public-domain",
+          "declared_license": [
+            {
+              "name": "Public Domain",
+              "url": null,
+              "comments": null,
+              "distribution": null
+            }
+          ],
+          "notice_text": null,
+          "root_path": "code/subpackage",
+          "dependencies": [],
+          "contains_source_code": null,
+          "source_packages": [
+            "pkg:maven/aopalliance/aopalliance@1.0?classifier=sources"
+          ],
+          "purl": "pkg:maven/aopalliance/aopalliance@1.0",
+          "repository_homepage_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/",
+          "repository_download_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.jar",
+          "api_data_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.pom",
+          "files": [
+            {
+              "path": "code/subpackage/pom.xml",
+              "type": "file"
+            }
+          ]
+        }
+      ],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1",
+        "pkg_maven_aopalliance_aopalliance_1_0_1"
+      ],
+      "emails": [],
+      "urls": [
+        {
+          "url": "http://aopalliance.sourceforge.net/",
+          "start_line": 8,
+          "end_line": 8
+        }
+      ],
+      "is_legal": false,
+      "is_manifest": true,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/subpackage/src",
+      "type": "directory",
+      "name": "src",
+      "base_name": "src",
+      "extension": "",
+      "size": 0,
+      "date": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "mime_type": null,
+      "file_type": null,
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [],
+      "license_expressions": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1",
+        "pkg_maven_aopalliance_aopalliance_1_0_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 1,
+      "dirs_count": 0,
+      "size_count": 45,
+      "scan_errors": []
+    },
+    {
+      "path": "code/subpackage/src/Main.java",
+      "type": "file",
+      "name": "Main.java",
+      "base_name": "Main",
+      "extension": ".java",
+      "size": 45,
+      "date": "2020-06-11",
+      "sha1": "c44fb89656ee440871bb08fa0656f400102b32b1",
+      "md5": "b7e71489f3437dc78d9a08ff192f203e",
+      "sha256": "2a39fbd0efc5fc5983e805370cac412b9f490c33dced9233950e07d04b690c42",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": "Java",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": true,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "bsd-new",
+          "score": 100.0,
+          "name": "BSD-3-Clause",
+          "short_name": "BSD-3-Clause",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "Regents of the University of California",
+          "homepage_url": "http://www.opensource.org/licenses/BSD-3-Clause",
+          "text_url": "http://www.opensource.org/licenses/BSD-3-Clause",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:bsd-new",
+          "spdx_license_key": "BSD-3-Clause",
+          "spdx_url": "https://spdx.org/licenses/BSD-3-Clause",
+          "start_line": 1,
+          "end_line": 1,
+          "matched_rule": {
+            "identifier": "spdx-license-identifier: bsd-new",
+            "license_expression": "bsd-new",
+            "licenses": [
+              "bsd-new"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": false,
+            "is_license_tag": true,
+            "matcher": "1-spdx-id",
+            "rule_length": 6,
+            "matched_length": 6,
+            "match_coverage": 100.0,
+            "rule_relevance": 100
+          },
+          "matched_text": "/* SPDX-License-Identifier: BSD-3-Clause"
+        }
+      ],
+      "license_expressions": [
+        "bsd-new"
+      ],
+      "percentage_of_license_text": 100.0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1",
+        "pkg_maven_aopalliance_aopalliance_1_0_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/subpackage2",
+      "type": "directory",
+      "name": "subpackage2",
+      "base_name": "subpackage2",
+      "extension": "",
+      "size": 0,
+      "date": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "mime_type": null,
+      "file_type": null,
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [],
+      "license_expressions": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 1,
+      "dirs_count": 0,
+      "size_count": 338,
+      "scan_errors": []
+    },
+    {
+      "path": "code/subpackage2/setup.py",
+      "type": "file",
+      "name": "setup.py",
+      "base_name": "setup",
+      "extension": ".py",
+      "size": 338,
+      "date": "2020-06-11",
+      "sha1": "af84882ef814bf24f9234b74aa073390bf1cd562",
+      "md5": "11ba53e80ea3caf3ff435a5eb3667711",
+      "sha256": "615995878366d03ce785cfd7bf32a408dc9b2dec577b01480b38421927107991",
+      "mime_type": "text/plain",
+      "file_type": "a /usr/bin/env python script, UTF-8 Unicode text executable",
+      "programming_language": "Python",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": true,
+      "is_script": true,
+      "licenses": [
+        {
+          "key": "bsd-simplified",
+          "score": 100.0,
+          "name": "BSD-2-Clause",
+          "short_name": "BSD-2-Clause",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "Regents of the University of California",
+          "homepage_url": "http://www.opensource.org/licenses/BSD-2-Clause",
+          "text_url": "http://opensource.org/licenses/bsd-license.php",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:bsd-simplified",
+          "spdx_license_key": "BSD-2-Clause",
+          "spdx_url": "https://spdx.org/licenses/BSD-2-Clause",
+          "start_line": 13,
+          "end_line": 13,
+          "matched_rule": {
+            "identifier": "bsd-simplified_150.RULE",
+            "license_expression": "bsd-simplified",
+            "licenses": [
+              "bsd-simplified"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": true,
+            "is_license_tag": false,
+            "matcher": "2-aho",
+            "rule_length": 2,
+            "matched_length": 2,
+            "match_coverage": 100.0,
+            "rule_relevance": 100.0
+          },
+          "matched_text": "\t\tlicense=\"Simplified BSD\","
+        }
+      ],
+      "license_expressions": [
+        "bsd-simplified"
+      ],
+      "percentage_of_license_text": 4.35,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [
+        {
+          "type": "pypi",
+          "namespace": null,
+          "name": "arpy",
+          "version": "0.1.1",
+          "qualifiers": {},
+          "subpath": null,
+          "primary_language": "Python",
+          "description": "Library for accessing \"ar\" files",
+          "release_date": null,
+          "parties": [
+            {
+              "type": "person",
+              "role": "author",
+              "name": "Stanis\u0142aw Pitucha",
+              "email": "viraptor@gmail.com",
+              "url": "http://bitbucket.org/viraptor/arpy"
+            }
+          ],
+          "keywords": [],
+          "homepage_url": "http://bitbucket.org/viraptor/arpy",
+          "download_url": null,
+          "size": null,
+          "sha1": null,
+          "md5": null,
+          "sha256": null,
+          "sha512": null,
+          "bug_tracking_url": null,
+          "code_view_url": null,
+          "vcs_url": null,
+          "copyright": null,
+          "license_expression": "bsd-simplified",
+          "declared_license": {
+            "license": "Simplified BSD",
+            "classifiers": []
+          },
+          "notice_text": null,
+          "root_path": "code/subpackage2/setup.py",
+          "dependencies": [],
+          "contains_source_code": null,
+          "source_packages": [],
+          "purl": "pkg:pypi/arpy@0.1.1",
+          "repository_homepage_url": "https://pypi.org/project/arpy",
+          "repository_download_url": "https://pypi.io/packages/source/a/arpy/arpy-0.1.1.tar.gz",
+          "api_data_url": "http://pypi.python.org/pypi/arpy/0.1.1/json",
+          "files": [
+            {
+              "path": "code/subpackage2/setup.py",
+              "type": "file"
+            }
+          ]
+        }
+      ],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1",
+        "pkg_pypi_arpy_0_1_1_1"
+      ],
+      "emails": [
+        {
+          "email": "viraptor@gmail.com",
+          "start_line": 10,
+          "end_line": 10
+        }
+      ],
+      "urls": [
+        {
+          "url": "http://bitbucket.org/viraptor/arpy",
+          "start_line": 11,
+          "end_line": 11
+        }
+      ],
+      "is_legal": false,
+      "is_manifest": true,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/zlib",
+      "type": "directory",
+      "name": "zlib",
+      "base_name": "zlib",
+      "extension": "",
+      "size": 0,
+      "date": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "mime_type": null,
+      "file_type": null,
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [],
+      "license_expressions": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 3,
+      "dirs_count": 0,
+      "size_count": 5380,
+      "scan_errors": []
+    },
+    {
+      "path": "code/zlib/adler32.c",
+      "type": "file",
+      "name": "adler32.c",
+      "base_name": "adler32",
+      "extension": ".c",
+      "size": 4968,
+      "date": "2020-06-11",
+      "sha1": "0cff4808476ce0b5f6f0ebbc69ee2ab2a0eebe43",
+      "md5": "ae3bbb54820e1d49fb90cbba222e973f",
+      "sha256": "341d49ae2703037d2d10c8486f1a1ca3b65e0f10cc9e5fead6bfbbc0b34564ba",
+      "mime_type": "text/x-c",
+      "file_type": "C source, ASCII text",
+      "programming_language": "C++",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": true,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "zlib",
+          "score": 100.0,
+          "name": "ZLIB License",
+          "short_name": "ZLIB License",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "zlib",
+          "homepage_url": "http://www.zlib.net/",
+          "text_url": "http://www.gzip.org/zlib/zlib_license.html",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:zlib",
+          "spdx_license_key": "Zlib",
+          "spdx_url": "https://spdx.org/licenses/Zlib",
+          "start_line": 3,
+          "end_line": 3,
+          "matched_rule": {
+            "identifier": "zlib_5.RULE",
+            "license_expression": "zlib",
+            "licenses": [
+              "zlib"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": true,
+            "is_license_tag": false,
+            "matcher": "2-aho",
+            "rule_length": 12,
+            "matched_length": 12,
+            "match_coverage": 100.0,
+            "rule_relevance": 100.0
+          },
+          "matched_text": " * For conditions of distribution and use, see copyright notice in zlib.h"
+        }
+      ],
+      "license_expressions": [
+        "zlib"
+      ],
+      "percentage_of_license_text": 2.07,
+      "copyrights": [
+        {
+          "value": "Copyright (c) 1995-2011 Mark Adler",
+          "start_line": 2,
+          "end_line": 3
+        }
+      ],
+      "holders": [
+        {
+          "value": "Mark Adler",
+          "start_line": 2,
+          "end_line": 3
+        }
+      ],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/zlib/zlib.h",
+      "type": "file",
+      "name": "zlib.h",
+      "base_name": "zlib",
+      "extension": ".h",
+      "size": 219,
+      "date": "2020-06-11",
+      "sha1": "060f68d172057d0f52be105dfd7fee35d5b16dc9",
+      "md5": "59ffca77f7e313e7149686a2d182bd5c",
+      "sha256": "0bb87fb2b354ef426ce27dfe5d22c109cbc431f5c654c8daab2e9117bee7962e",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": "C++",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": true,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "zlib",
+          "score": 100.0,
+          "name": "ZLIB License",
+          "short_name": "ZLIB License",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "zlib",
+          "homepage_url": "http://www.zlib.net/",
+          "text_url": "http://www.gzip.org/zlib/zlib_license.html",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:zlib",
+          "spdx_license_key": "Zlib",
+          "spdx_url": "https://spdx.org/licenses/Zlib",
+          "start_line": 4,
+          "end_line": 4,
+          "matched_rule": {
+            "identifier": "zlib_5.RULE",
+            "license_expression": "zlib",
+            "licenses": [
+              "zlib"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": true,
+            "is_license_tag": false,
+            "matcher": "2-aho",
+            "rule_length": 12,
+            "matched_length": 12,
+            "match_coverage": 100.0,
+            "rule_relevance": 100.0
+          },
+          "matched_text": " * For conditions of distribution and use, see copyright notice in zlib.h"
+        }
+      ],
+      "license_expressions": [
+        "zlib"
+      ],
+      "percentage_of_license_text": 34.29,
+      "copyrights": [
+        {
+          "value": "Copyright (c) 1995-2011 Mark Adler",
+          "start_line": 2,
+          "end_line": 4
+        }
+      ],
+      "holders": [
+        {
+          "value": "Mark Adler",
+          "start_line": 2,
+          "end_line": 4
+        }
+      ],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    },
+    {
+      "path": "code/zlib/zutil.h",
+      "type": "file",
+      "name": "zutil.h",
+      "base_name": "zutil",
+      "extension": ".h",
+      "size": 193,
+      "date": "2020-06-11",
+      "sha1": "05998c221c062ac6b752aedba27dd2beebd4d281",
+      "md5": "c04eca5dcd90ebde372d6967d18da127",
+      "sha256": "177b3e3024fb768b2965497107b5e1f7a5677817412e8ffc4902923d7b34b13c",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": "C++",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": true,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "zlib",
+          "score": 100.0,
+          "name": "ZLIB License",
+          "short_name": "ZLIB License",
+          "category": "Permissive",
+          "is_exception": false,
+          "owner": "zlib",
+          "homepage_url": "http://www.zlib.net/",
+          "text_url": "http://www.gzip.org/zlib/zlib_license.html",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:zlib",
+          "spdx_license_key": "Zlib",
+          "spdx_url": "https://spdx.org/licenses/Zlib",
+          "start_line": 3,
+          "end_line": 3,
+          "matched_rule": {
+            "identifier": "zlib_5.RULE",
+            "license_expression": "zlib",
+            "licenses": [
+              "zlib"
+            ],
+            "is_license_text": false,
+            "is_license_notice": false,
+            "is_license_reference": true,
+            "is_license_tag": false,
+            "matcher": "2-aho",
+            "rule_length": 12,
+            "matched_length": 12,
+            "match_coverage": 100.0,
+            "rule_relevance": 100.0
+          },
+          "matched_text": " * For conditions of distribution and use, see copyright notice in zlib.h"
+        }
+      ],
+      "license_expressions": [
+        "zlib"
+      ],
+      "percentage_of_license_text": 42.86,
+      "copyrights": [
+        {
+          "value": "Copyright (c) 1995-2011 Mark Adler",
+          "start_line": 2,
+          "end_line": 3
+        }
+      ],
+      "holders": [
+        {
+          "value": "Mark Adler",
+          "start_line": 2,
+          "end_line": 3
+        }
+      ],
+      "authors": [],
+      "packages": [],
+      "consolidated_to": [
+        "pkg_bower_blue_leaf_1"
+      ],
+      "emails": [],
+      "urls": [],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "is_license_text": false,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "version": "2.13.5",
+  "name": "npm",
+  "description": "a package manager for JavaScript",
+  "keywords": [
+    "package manager"
+  ],
+  "homepage": "https://docs.npmjs.com/",
+  "author": {
+    "name": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/npm/npm.git"
+  },
+  "bugs": {
+    "url": "http://github.com/npm/npm/issues"
+  },
+  "dependencies": {
+    "abbrev": "~1.0.7"
+  },
+  "bundleDependencies": [
+    "ansi"
+  ],
+  "devDependencies": {
+    "deep-equal": "~1.0.0",
+    "tap": "~1.3.1"
+  },
+  "license": "Artistic-2.0",
+  "contributors": [
+    {
+      "name": "Isaac Z. Schlueter",
+      "email": "i@izs.me"
+    },
+    {
+      "name": "Stephan Bönnemann",
+      "email": "stephan@excellenteasy.com"
+    }
+  ],
+  "dist": {
+    "shasum": "a124386bce4a90506f28ad4b1d1a804a17baaf32",
+    "tarball": "http://registry.npmjs.org/npm/-/npm-2.13.5.tgz"
+  },
+  "maintainers": [
+    {
+      "name": "isaacs",
+      "email": "isaacs@npmjs.com"
+    }
+}

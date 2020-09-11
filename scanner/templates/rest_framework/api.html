@@ -1,0 +1,18 @@
+{% extends "rest_framework/base.html" %}
+
+{% block style %}
+    {{ block.super }}
+    <style>
+        body {background: none;}
+        .navbar {background: #5a7db4; border-top: 3px solid #f7bf3c;}
+        .navbar-inverse .navbar-brand {color: white;}
+    </style>
+{% endblock %}
+
+{% block title %}
+    ScanCode.io API
+{% endblock %}
+
+{% block branding %}
+    <span class="navbar-brand">ScanCode.io API</span>
+{% endblock %}

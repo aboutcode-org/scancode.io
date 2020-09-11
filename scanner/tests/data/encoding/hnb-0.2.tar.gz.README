@@ -1,0 +1,59 @@
+         hiarchical notebook README file
+
+    homepage - http://hnb.sourceforge.net/
+    author   - Øyvind Kolås <pippin@users.sourceforge.net>
+
+WHAT IS hierarchical notebook?
+	
+	hierarchical notebook (hnb) is program to organize, many kinds
+	of data in one place,  for example  adresses, todo lists, ideas,
+	book "reviews". 
+	
+HOW TO GET hnb?
+	
+	new releases of hnb will appear on the sourceforge
+	project page
+	
+	http://sourceforge.net/projects/hnb
+	
+INSTALLING hnb
+	
+	if you've got a source release you must first compile
+	hnb,.. see further down in this file for instructions.
+	
+	Windows
+		the windows binary distribution, is a .zip file
+		containing the executable, this readme file, 
+		an sample database, and the licence for hnb's use.
+		
+		the binary is standalone, so you can just
+		copy it wherever you'd like it to reside.
+		
+	Linux
+		the linux binary distribution is a .tar.gz file
+		containing the executable, this readme file, a
+		an sample database, and the licence for hnb's use.
+		
+		the binary is dynamically linked against ncurses
+		just place it anywere in your path.. like
+		/usr/bin, /usr/local/bin or /home/user/bin
+		
+COMPILING hnb
+	
+	I've only tried to compile hnb using Slackware 7.1,
+	but I think it should compile on any unix by
+	just typing make.
+	
+	I cross compile the win32 binary using mingw32, and
+	pdcurses,.. to do this might call for some modifications
+	of the makefile.
+	
+USAGE DOCUMENTATION
+	
+	instructions for the usage of hnb is contained in
+	the sample.hnb database file, invoke hnb like this
+	in the distribution directory to get further documentation
+	
+	hnb sample.hnb
+	
+pippin@users.sourceforge.net

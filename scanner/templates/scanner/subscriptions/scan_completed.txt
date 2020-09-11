@@ -1,0 +1,3 @@
+The scan for {{ scan.uri }} is completed.
+
+This email is a service from ScanCode.io

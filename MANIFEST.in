@@ -1,0 +1,26 @@
+include apache-2.0.LICENSE
+include NOTICE
+include manage.py
+include MANIFEST.in
+include Makefile
+include *.rst
+include setup.py
+include setup.cfg
+
+graft scancodeio
+graft scanpipe
+graft scanner
+graft docs
+graft etc
+graft thirdparty
+
+prune scancodeio.egg-info
+prune bin
+prune tmp
+prune lib
+prune lib64
+prune local
+prune var
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

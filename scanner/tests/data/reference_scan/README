@@ -1,0 +1,14 @@
+The reference.json scan was created with:
+$ scancode \
+    --info \
+    --classify \
+    --copyright \
+    --email \
+    --url \
+    --is-license-text --license \
+    --license-clarity-score --license-text \
+    --package \
+    --summary --summary-key-files \
+    --consolidate \
+    --json-pp scanner/tests/data/reference_scan/reference.json \
+    scanner/tests/data/reference_scan/code/

@@ -1,0 +1,227 @@
+{
+  "license_expressions": [
+    {
+      "value": null,
+      "count": 29
+    },
+    {
+      "value": "bsd-new",
+      "count": 5
+    },
+    {
+      "value": "free-unknown",
+      "count": 4
+    },
+    {
+      "value": "unknown",
+      "count": 3
+    }
+  ],
+  "copyrights": [
+    {
+      "value": null,
+      "count": 35
+    },
+    {
+      "value": "Copyright (c) Alex Gaynor and individual contributors",
+      "count": 1
+    }
+  ],
+  "holders": [
+    {
+      "value": null,
+      "count": 38
+    },
+    {
+      "value": "Alex Gaynor and individual contributors",
+      "count": 1
+    }
+  ],
+  "authors": [
+    {
+      "value": null,
+      "count": 38
+    },
+    {
+      "value": "Carlton Gibson Author-email carlton.gibson@noumenal.es",
+      "count": 1
+    }
+  ],
+  "programming_language": [
+    {
+      "value": null,
+      "count": 20
+    },
+    {
+      "value": "Python",
+      "count": 16
+    },
+    {
+      "value": "HTML",
+      "count": 3
+    }
+  ],
+  "packages": [],
+  "license_clarity_score": {
+    "score": 0,
+    "declared": false,
+    "discovered": 0.03,
+    "consistency": false,
+    "spdx": false,
+    "license_texts": false
+  },
+  "license_matches": {
+    "bsd-new": [
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filter-1.1.0.dist-info/LICENSE.txt",
+        "matched_text": "Redistribution and use in source and binary forms, with or without \nmodification, are permitted provided that the following conditions are met:\n\n * Redistributions of source code must retain the above copyright notice, this \n   list of conditions and the following disclaimer.\n * Redistributions in binary form must reproduce the above copyright notice, \n   this list of conditions and the following disclaimer in the documentation \n   and/or other materials provided with the distribution.\n * The names of its contributors may not be used to endorse or promote products \n   derived from this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND \nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED \nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE \nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR \nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES \n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; \nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON \nANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT \n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS \nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filter-1.1.0.dist-info/METADATA",
+        "matched_text": "License: BSD"
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filter-1.1.0.dist-info/METADATA",
+        "matched_text": "Classifier: License :: OSI Approved :: BSD License"
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filter-1.1.0.dist-info/metadata.json",
+        "matched_text": "license\": \"BSD\", \""
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filter-1.1.0.dist-info/metadata.json",
+        "matched_text": "License :: OSI Approved :: BSD License\", \""
+      }
+    ],
+    "free-unknown": [
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filters/locale/de/LC_MESSAGES/django.po",
+        "matched_text": "# This file is distributed under the same license as the PACKAGE package."
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filters/locale/pl/LC_MESSAGES/django.po",
+        "matched_text": "# This file is distributed under the same license as the PACKAGE package."
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filters/locale/ru/LC_MESSAGES/django.po",
+        "matched_text": "# This file is distributed under the same license as the PACKAGE package."
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filters/locale/zh_CN/LC_MESSAGES/django.po",
+        "matched_text": "# This file is distributed under the same license as the PACKAGE package."
+      }
+    ],
+    "unknown": [
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filters/locale/es_AR/LC_MESSAGES/django.po",
+        "matched_text": "# This file is distributed under the same license as the django_filter package."
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filters/locale/es_ES/LC_MESSAGES/django.po",
+        "matched_text": "# This file is distributed under the same license as the django_filter package."
+      },
+      {
+        "path": "django_filter-1.1.0-py2.py3-none-any.whl-extract/django_filters/locale/fr/LC_MESSAGES/django.po",
+        "matched_text": "# This file is distributed under the same license as the django_filter package."
+      }
+    ]
+  },
+  "key_files": [
+    {
+      "path": "ethtool-3.16.tar.xz-extract/ethtool-3.16/COPYING",
+      "type": "file",
+      "name": "COPYING",
+      "base_name": "COPYING",
+      "extension": "",
+      "size": 18092,
+      "date": "2014-01-28",
+      "sha1": "4cc77b90af91e615a64ae04893fdffa7939db84c",
+      "md5": "b234ee4d69f5fce4486a80fdaf4a4263",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "is_script": false,
+      "licenses": [
+        {
+          "key": "gpl-2.0",
+          "score": 100.0,
+          "name": "GNU General Public License 2.0",
+          "short_name": "GPL 2.0",
+          "category": "Copyleft",
+          "is_exception": false,
+          "owner": "Free Software Foundation (FSF)",
+          "homepage_url": "http://www.gnu.org/licenses/gpl-2.0.html",
+          "text_url": "http://www.gnu.org/licenses/gpl-2.0.txt",
+          "reference_url": "https://enterprise.dejacode.com/urn/urn:dje:license:gpl-2.0",
+          "spdx_license_key": "GPL-2.0-only",
+          "spdx_url": "https://spdx.org/licenses/GPL-2.0-only",
+          "start_line": 1,
+          "end_line": 339,
+          "matched_rule": {
+            "identifier": "gpl-2.0.LICENSE",
+            "license_expression": "gpl-2.0",
+            "licenses": [
+              "gpl-2.0"
+            ],
+            "is_license_text": true,
+            "is_license_notice": false,
+            "is_license_reference": false,
+            "is_license_tag": false,
+            "matcher": "1-hash",
+            "rule_length": 2989,
+            "matched_length": 2989,
+            "match_coverage": 100.0,
+            "rule_relevance": 100
+          },
+          "matched_text": "GNU GENERAL PUBLIC LICENSE"
+        }
+      ],
+      "license_expressions": [
+        "gpl-2.0"
+      ],
+      "holders": [
+        {
+          "value": "Free Software Foundation, Inc.",
+          "start_line": 4,
+          "end_line": 6
+        },
+        {
+          "value": "the Free Software Foundation",
+          "start_line": 251,
+          "end_line": 256
+        }
+      ],
+      "copyrights": [
+        {
+          "value": "Copyright (c) 1989, 1991 Free Software Foundation, Inc.",
+          "start_line": 4,
+          "end_line": 6
+        },
+        {
+          "value": "copyrighted by the Free Software Foundation",
+          "start_line": 251,
+          "end_line": 256
+        }
+      ],
+      "authors": [],
+      "packages": [],
+      "is_legal": true,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": true,
+      "is_license_text": true,
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": [],
+      "content": "ethtool is available under the terms of the GNU Public License version 2."
+    }
+  ],
+  "key_files_packages": []
+}

@@ -1,0 +1,11 @@
+-r base.txt
+
+# Deployment
+ansible==2.9.10
+
+# Code validation
+pycodestyle==2.6.0
+black==20.8b1
+
+# Release
+bump2version==1.0.0
