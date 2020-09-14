@@ -301,6 +301,7 @@ class ScanCodeOutputDataTest(TestCase):
             "--json-pp",
             "file_type",
             "mime_type",
+            "tool_version",
         ]
         reference_data = self.without_keys(reference_data, exclude_keys)
         output_data = self.without_keys(output_data, exclude_keys)
