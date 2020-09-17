@@ -43,28 +43,28 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("DockerPipeline.png", out_value)
         self.assertTrue(Path(f"/{temp_dir}/DockerPipeline.png").exists())
 
-    def test_scanpipe_management_command_createproject_base(self):
+    def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()
 
         expected = "Error: the following arguments are required: name"
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("createproject")
+            call_command("create-project")
 
-        call_command("createproject", "my_project", stdout=out)
+        call_command("create-project", "my_project", stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         self.assertTrue(Project.objects.get(name="my_project"))
 
         expected = "Project with this Name already exists."
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("createproject", "my_project")
+            call_command("create-project", "my_project")
 
-    def test_scanpipe_management_command_createproject_pipelines(self):
+    def test_scanpipe_management_command_create_project_pipelines(self):
         out = StringIO()
 
         options = ["--pipeline", "non-existing.py"]
         expected = "non-existing.py is not a valid pipeline"
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("createproject", "my_project", *options)
+            call_command("create-project", "my_project", *options)
 
         options = [
             "--pipeline",
@@ -72,7 +72,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "--pipeline",
             "scanpipe/pipelines/root_filesystems.py",
         ]
-        call_command("createproject", "my_project", *options, stdout=out)
+        call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
         expected = [
@@ -81,13 +81,13 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
         self.assertEqual(expected, [run.pipeline for run in project.runs.all()])
 
-    def test_scanpipe_management_command_createproject_inputs(self):
+    def test_scanpipe_management_command_create_project_inputs(self):
         out = StringIO()
 
         options = ["--input", "non-existing.py"]
         expected = "non-existing.py not found or not a file"
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("createproject", "my_project", *options)
+            call_command("create-project", "my_project", *options)
 
         parent_path = Path(__file__).parent
         options = [
@@ -96,7 +96,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "--input",
             str(parent_path / "test_models.py"),
         ]
-        call_command("createproject", "my_project", *options, stdout=out)
+        call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
         expected = ["test_commands.py", "test_models.py"]

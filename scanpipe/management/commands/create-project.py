@@ -20,17 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import shutil
-from pathlib import Path
-
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
+from scanpipe.management.commands import copy_inputs
+from scanpipe.management.commands import validate_inputs
+from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
-
-scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 class Command(BaseCommand):
@@ -67,14 +64,9 @@ class Command(BaseCommand):
         except ValidationError as e:
             raise CommandError("\n".join(e.messages))
 
-        for pipeline_location in pipelines:
-            if not scanpipe_app_config.is_valid(pipeline_location):
-                raise CommandError(f"{pipeline_location} is not a valid pipeline")
-
-        for input_location in inputs:
-            input_path = Path(input_location)
-            if not input_path.is_file():
-                raise CommandError(f"{input_location} not found or not a file")
+        # Run validation before creating the project in the database
+        validate_pipelines(pipelines)
+        validate_inputs(inputs)
 
         project.save()
         msg = f"Project {name} created with work directory {project.work_directory}"
@@ -83,6 +75,4 @@ class Command(BaseCommand):
         for pipeline_location in pipelines:
             project.add_pipeline(pipeline_location)
 
-        for input_location in inputs:
-            destination = project.input_path / Path(input_location).name
-            shutil.copyfile(input_location, destination)
+        copy_inputs(inputs, project.input_path)
