@@ -43,14 +43,41 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("DockerPipeline.png", out_value)
         self.assertTrue(Path(f"/{temp_dir}/DockerPipeline.png").exists())
 
-    def test_scanpipe_management_command_createproject(self):
+    def test_scanpipe_management_command_createproject_base(self):
         out = StringIO()
 
-        with self.assertRaises(CommandError) as error:
-            call_command("createproject", stderr=out)
         expected = "Error: the following arguments are required: name"
-        self.assertEqual(expected, str(error.exception))
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("createproject", stdout=out)
 
         call_command("createproject", "my_project", stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         self.assertTrue(Project.objects.get(name="my_project"))
+
+        with self.assertRaises(SystemExit):
+            call_command("createproject", "my_project", stderr=out)
+        expected = "Project with this Name already exists."
+        self.assertIn(expected, out.getvalue())
+
+    def test_scanpipe_management_command_createproject_with_pipelines(self):
+        out = StringIO()
+
+        options = ["--pipeline", "non-existing.py"]
+        with self.assertRaises(SystemExit):
+            call_command("createproject", "my_project", *options, stderr=out)
+        self.assertIn("non-existing.py is not a valid pipeline", out.getvalue())
+
+        options = [
+            "--pipeline",
+            "scanpipe/pipelines/docker.py",
+            "--pipeline",
+            "scanpipe/pipelines/root_filesystems.py",
+        ]
+        call_command("createproject", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        project = Project.objects.get(name="my_project")
+        expected = [
+            "scanpipe/pipelines/docker.py",
+            "scanpipe/pipelines/root_filesystems.py",
+        ]
+        self.assertEqual(expected, [run.pipeline for run in project.runs.all()])

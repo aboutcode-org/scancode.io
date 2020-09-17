@@ -21,8 +21,8 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from django.conf import settings
 
@@ -61,5 +61,3 @@ def command_line():
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
     execute_from_command_line(sys.argv)
-
-
