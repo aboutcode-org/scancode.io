@@ -88,8 +88,12 @@ class PipelineGraph(FlowGraph):
         return output
 
 
-def is_pipeline_class(obj):
-    return inspect.isclass(obj) and issubclass(obj, Pipeline)
+def is_pipeline_subclass(obj):
+    """
+    Return True if the `obj` is a subclass of `Pipeline` except for the
+    `Pipeline` class itself.
+    """
+    return inspect.isclass(obj) and issubclass(obj, Pipeline) and obj is not Pipeline
 
 
 def get_pipeline_class(pipeline_location):
@@ -98,7 +102,7 @@ def get_pipeline_class(pipeline_location):
     """
     module_name = pipeline_location.replace(".py", "").replace("/", ".")
     module = importlib.import_module(module_name)
-    module_classes = inspect.getmembers(module, is_pipeline_class)
+    module_classes = inspect.getmembers(module, is_pipeline_subclass)
     _, pipeline_class = [cls for cls in module_classes][0]
 
     return pipeline_class
