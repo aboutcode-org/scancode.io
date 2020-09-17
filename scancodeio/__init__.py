@@ -22,6 +22,7 @@
 
 import os
 from pathlib import Path
+import sys
 
 from django.conf import settings
 
@@ -50,3 +51,15 @@ def get_workspace_location():
 
 
 WORKSPACE_LOCATION = get_workspace_location()
+
+
+def command_line():
+    """
+    Command line entry point.
+    """
+    from django.core.management import execute_from_command_line
+
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
+    execute_from_command_line(sys.argv)
+
+
