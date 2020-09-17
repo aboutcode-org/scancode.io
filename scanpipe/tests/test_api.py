@@ -22,7 +22,6 @@
 
 import io
 import json
-from pathlib import Path
 from unittest import mock
 
 from django.contrib.auth.models import User

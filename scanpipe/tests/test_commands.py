@@ -48,24 +48,23 @@ class ScanPipeManagementCommandTest(TestCase):
 
         expected = "Error: the following arguments are required: name"
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("createproject", stdout=out)
+            call_command("createproject")
 
         call_command("createproject", "my_project", stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         self.assertTrue(Project.objects.get(name="my_project"))
 
-        with self.assertRaises(SystemExit):
-            call_command("createproject", "my_project", stderr=out)
         expected = "Project with this Name already exists."
-        self.assertIn(expected, out.getvalue())
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("createproject", "my_project")
 
-    def test_scanpipe_management_command_createproject_with_pipelines(self):
+    def test_scanpipe_management_command_createproject_pipelines(self):
         out = StringIO()
 
         options = ["--pipeline", "non-existing.py"]
-        with self.assertRaises(SystemExit):
-            call_command("createproject", "my_project", *options, stderr=out)
-        self.assertIn("non-existing.py is not a valid pipeline", out.getvalue())
+        expected = "non-existing.py is not a valid pipeline"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("createproject", "my_project", *options)
 
         options = [
             "--pipeline",
@@ -81,3 +80,24 @@ class ScanPipeManagementCommandTest(TestCase):
             "scanpipe/pipelines/root_filesystems.py",
         ]
         self.assertEqual(expected, [run.pipeline for run in project.runs.all()])
+
+    def test_scanpipe_management_command_createproject_inputs(self):
+        out = StringIO()
+
+        options = ["--input", "non-existing.py"]
+        expected = "non-existing.py not found or not a file"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("createproject", "my_project", *options)
+
+        parent_path = Path(__file__).parent
+        options = [
+            "--input",
+            str(parent_path / "test_commands.py"),
+            "--input",
+            str(parent_path / "test_models.py"),
+        ]
+        call_command("createproject", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        project = Project.objects.get(name="my_project")
+        expected = ["test_commands.py", "test_models.py"]
+        self.assertEqual(expected, project.input_files)

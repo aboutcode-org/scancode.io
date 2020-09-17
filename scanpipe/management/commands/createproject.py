@@ -21,11 +21,11 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import shutil
-import sys
 from pathlib import Path
 
 from django.apps import apps
 from django.core.exceptions import ValidationError
+from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
 from scanpipe.models import Project
@@ -65,19 +65,16 @@ class Command(BaseCommand):
         try:
             project.full_clean()
         except ValidationError as e:
-            self.stderr.write(str(e))
-            sys.exit(1)
+            raise CommandError("\n".join(e.messages))
 
         for pipeline_location in pipelines:
             if not scanpipe_app_config.is_valid(pipeline_location):
-                self.stderr.write(f"{pipeline_location} is not a valid pipeline")
-                sys.exit(1)
+                raise CommandError(f"{pipeline_location} is not a valid pipeline")
 
         for input_location in inputs:
             input_path = Path(input_location)
             if not input_path.is_file():
-                self.stderr.write(f"{input_location} not found or not a file.")
-                sys.exit(1)
+                raise CommandError(f"{input_location} not found or not a file")
 
         project.save()
         msg = f"Project {name} created with work directory {project.work_directory}"
@@ -87,4 +84,5 @@ class Command(BaseCommand):
             project.add_pipeline(pipeline_location)
 
         for input_location in inputs:
-            shutil.copyfile(input_location, project.input_path)
+            destination = project.input_path / Path(input_location).name
+            shutil.copyfile(input_location, destination)
