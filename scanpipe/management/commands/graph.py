@@ -47,12 +47,15 @@ class Command(BaseCommand):
             self.stderr.write("Graphiz is not installed.")
             sys.exit(exitcode)
 
+        outputs = []
         for pipeline_location in pipelines:
             pipeline_class = get_pipeline_class(pipeline_location)
             pipeline_graph = PipelineGraph(pipeline_class)
-            self.generate_graph(pipeline_graph, options.get("output"))
+            outputs.append(self.generate_graph(pipeline_graph, options.get("output")))
 
-        self.stdout.write(self.style.SUCCESS(f"Graph(s) generated."))
+        separator = "\n - "
+        msg = f"Graph(s) generated:{separator}" + separator.join(outputs)
+        self.stdout.write(self.style.SUCCESS(msg))
 
     @staticmethod
     def generate_graph(pipeline_graph, output_directory):
@@ -62,3 +65,4 @@ class Command(BaseCommand):
             output_location = f"{output_directory}/{output_location}"
         dot_cmd = f'echo "{output_dot}" | dot -Tpng -o {output_location}'
         subprocess.getoutput(dot_cmd)
+        return output_location
