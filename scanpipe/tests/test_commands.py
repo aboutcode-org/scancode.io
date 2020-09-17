@@ -24,8 +24,11 @@ import tempfile
 from io import StringIO
 from pathlib import Path
 
+from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
+
+from scanpipe.models import Project
 
 
 class ScanPipeManagementCommandTest(TestCase):
@@ -35,5 +38,19 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         temp_dir = tempfile.mkdtemp()
         call_command("graph", self.pipeline_location, "--output", temp_dir, stdout=out)
-        self.assertIn("Graph(s) generated.", out.getvalue())
+        out_value = out.getvalue()
+        self.assertIn("Graph(s) generated:", out_value)
+        self.assertIn("DockerPipeline.png", out_value)
         self.assertTrue(Path(f"/{temp_dir}/DockerPipeline.png").exists())
+
+    def test_scanpipe_management_command_createproject(self):
+        out = StringIO()
+
+        with self.assertRaises(CommandError) as error:
+            call_command("createproject", stderr=out)
+        expected = "Error: the following arguments are required: name"
+        self.assertEqual(expected, str(error.exception))
+
+        call_command("createproject", "my_project", stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        self.assertTrue(Project.objects.get(name="my_project"))
