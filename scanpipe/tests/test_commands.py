@@ -101,3 +101,54 @@ class ScanPipeManagementCommandTest(TestCase):
         project = Project.objects.get(name="my_project")
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
+
+    def test_scanpipe_management_command_add_input(self):
+        out = StringIO()
+
+        project = Project.objects.create(name="my_project")
+        parent_path = Path(__file__).parent
+        options = [
+            str(parent_path / "test_commands.py"),
+            str(parent_path / "test_models.py"),
+        ]
+
+        expected = "the following arguments are required: --project"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-input", *options, stdout=out)
+
+        options.extend(["--project", project.name])
+        call_command("add-input", *options, stdout=out)
+        self.assertIn("File(s) copied to the project inputs directory", out.getvalue())
+        expected = sorted(["test_commands.py", "test_models.py"])
+        self.assertEqual(expected, sorted(project.input_files))
+
+        options = ["--project", project.name, "non-existing.py"]
+        expected = "non-existing.py not found or not a file"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-input", *options, stdout=out)
+
+    def test_scanpipe_management_command_add_pipeline(self):
+        out = StringIO()
+
+        project = Project.objects.create(name="my_project")
+
+        pipelines = [
+            "scanpipe/pipelines/docker.py",
+            "scanpipe/pipelines/root_filesystems.py",
+        ]
+
+        options = pipelines[:]
+        expected = "the following arguments are required: --project"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-pipeline", *options, stdout=out)
+
+        options.extend(["--project", project.name])
+        call_command("add-pipeline", *options, stdout=out)
+        self.assertIn("Pipeline(s) added to the project", out.getvalue())
+        expected = sorted(["test_commands.py", "test_models.py"])
+        self.assertEqual(pipelines, [run.pipeline for run in project.runs.all()])
+
+        options = ["--project", project.name, "non-existing.py"]
+        expected = "non-existing.py is not a valid pipeline"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-pipeline", *options, stdout=out)
