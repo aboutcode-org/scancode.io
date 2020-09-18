@@ -49,7 +49,8 @@ ScanPipe provides a unified framework to the infrastructure that is
 required to execute and organize these software composition analysis projects.
 
 
-## Should I Use ScanPipe?
+Should I Use ScanPipe?
+----------------------
 
 If you are working on a software composition analysis project, or you
 are planning to start a new one, consider the following questions:
@@ -62,7 +63,7 @@ If you answered "yes" to any of the above, keep reading - ScanPipe can help you.
 If the answer is "no" to all of the above, which is a valid scenario e.g. when you
 are doing small-scale analysis, ScanPipe may provide only limited benefit for you.
 
-The first set of available pipelines help automate the analysis of Docker
+The first set of available pipelines helps automate the analysis of Docker
 "container" images and virtual machine (VM) disk images that often harbor
 comprehensive software stacks from an operating system with its kernel through
 system and application packages to original and custom applications.
