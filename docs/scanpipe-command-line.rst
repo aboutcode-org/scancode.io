@@ -91,8 +91,8 @@ add the docker pipeline to your project::
 Run all the pipelines of the project named <PROJECT>.
 
 
-`$ scanpipe run --project PROJECT --show`
------------------------------------------
+`$ scanpipe show-pipeline --project PROJECT`
+--------------------------------------------
 
 List all the pipelines added of the project named <PROJECT>.
 

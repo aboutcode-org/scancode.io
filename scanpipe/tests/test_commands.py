@@ -145,10 +145,29 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
         self.assertIn("Pipeline(s) added to the project", out.getvalue())
-        expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(pipelines, [run.pipeline for run in project.runs.all()])
 
         options = ["--project", project.name, "non-existing.py"]
         expected = "non-existing.py is not a valid pipeline"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-pipeline", *options, stdout=out)
+
+    def test_scanpipe_management_command_show_pipeline(self):
+        out = StringIO()
+
+        pipelines = [
+            "scanpipe/pipelines/docker.py",
+            "scanpipe/pipelines/root_filesystems.py",
+        ]
+
+        project = Project.objects.create(name="my_project")
+        for pipeline_location in pipelines:
+            project.add_pipeline(pipeline_location)
+
+        options = ["--project", project.name]
+        call_command("show-pipeline", *options, stdout=out)
+        expected = (
+            " [ ] scanpipe/pipelines/docker.py\n"
+            " [ ] scanpipe/pipelines/root_filesystems.py\n"
+        )
+        self.assertEqual(expected, out.getvalue())

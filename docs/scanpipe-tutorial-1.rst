@@ -44,24 +44,24 @@ You can also copy more files manually to this `input/` directory including entir
 
 - Check that the docker pipeline as added to your project::
 
-    scanpipe run --project p1 --show
+    scanpipe show-pipeline --project p1
 
-Notes: Using this `scanpipe run --show` option lists all the pipeline added and their planned runs.
+Notes: Using this `scanpipe show-pipeline` command lists all the pipelines added and their planned runs.
 You can use this to get a quick overview of the pipelines that have been running already 
 (with their success "V" or fail status "f") and those that will be running next when you invoke the run command.
 
 For example::
 
-    $ scanpipe run --project p1 --show
+    $ scanpipe show-pipeline --project p1
     > "[ ] scanpipe/pipelines/docker.py"
 
 - Run the docker pipeline proper on this project::
 
     $ scanpipe run --project p1
 
-Executing the --show option again will confirm the success of the pipeline run::
+Executing the show-pipeline command again will confirm the success of the pipeline run::
 
-    $ scanpipe run --project p1 --show
+    $ scanpipe show-pipeline --project p1
     > "[V] scanpipe/pipelines/docker.py"
 
 As a shortcut, the inputs and pipelines can be provided directly at once when
