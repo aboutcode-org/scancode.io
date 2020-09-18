@@ -4,7 +4,7 @@ Why ScanCode.io
 Modern software is built from many open source packages assembled with new code.
 Knowing which free and open source code package is in use matters because:
 
-- knowning the license of third-party code is required before using it, and
+- knowing the license of third-party code is required before using it, and
 - you want to avoid using buggy, outdated or vulnerable components.
 
 Because it is so easy to include and reuse new code downloaded from the internet,

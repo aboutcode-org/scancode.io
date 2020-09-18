@@ -75,14 +75,14 @@ copy `~/docker/alpine-base.tar` to the foo project input directory::
 `$ scanpipe add-pipeline --project PROJECT <pipeline ...>`
 ----------------------------------------------------------
 
-Add the <pipeline> foudn at this location to the project named <PROJECT>.
+Add the <pipeline> found at this location to the project named <PROJECT>.
 You can use more than one <pipeline> to add multiple pipelines at once.
 The pipelines are added and will be running in the order of the provided options.
 
 For example, assuming you have created beforehand a project named foo, this will
 add the docker pipeline to your project::
 
-    $ scanpipe add-pipeline --project foo scanpipe/piplines/docker.py
+    $ scanpipe add-pipeline --project foo scanpipe/pipelines/docker.py
 
 
 `$ scanpipe run --project PROJECT`
@@ -97,12 +97,10 @@ Run all the pipelines of the project named <PROJECT>.
 List all the pipelines added of the project named <PROJECT>.
 
 
-
 `$ scanpipe output --project PROJECT <output_file>`
 ---------------------------------------------------
 
 Output the results of the project named <PROJECT> to the <output_file> as JSON.
-
 
 
 `$ scanpipe graph <pipeline ...>`
@@ -121,6 +119,3 @@ Next step
 ---------
 
 - Explore ScanPipe Concepts `scanpipe-concepts.rst`.
-
-
-

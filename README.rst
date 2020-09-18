@@ -19,13 +19,6 @@ Clone the git ScanCode.io repo, install dependencies, and prepare the database::
    make envfile
    make cleandb
 
-Start the ScanCode.io Webserver with::
-
-   make run
-
-.. note:: In local development mode, the task manager worker is not required
-since the tasks are executed locally instead of being sent to the queue.
-
 Tests
 -----
 
@@ -33,15 +26,10 @@ Run the tests suite with::
 
    make test
 
-ScanPipe
---------
+Documentation
+------------
 
-Refer to docs/scanpipe.rst
-
-Scanner
---------
-
-Refer to docs/scanner.rst
+Start with `docs/introduction.rst`.
 
 Workspace
 ---------
@@ -54,6 +42,16 @@ You can configure the workspace to your preferred location using the
 `SCANCODEIO_WORKSPACE_LOCATION` environment variable::
 
    export SCANCODEIO_WORKSPACE_LOCATION=/path/to/scancodeio/workspace/
+
+Webserver
+---------
+
+Start the ScanCode.io Webserver with::
+
+   make run
+
+.. note:: In local development mode, the task manager worker is not required
+since the tasks are executed locally instead of being sent to the queue.
 
 Code update
 -----------

@@ -26,11 +26,6 @@ Finally set the workspace location in your local environment::
     export SCANCODEIO_WORKSPACE_LOCATION=/path/to/scancodeio/workspace/
     mkdir -p $SCANCODEIO_WORKSPACE_LOCATION
 
-Use as a development environment with::
-
-    SCANCODEIO_WORKSPACE_LOCATION=/path/to/scancodeio/workspace/ make run
-
-
 Offline upgrade
 ---------------
 

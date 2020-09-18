@@ -5,7 +5,7 @@ Requirements
 ------------
 
 - ScanCode.io is installed
-- you have shell access on the machne where ScanCode.io is installed
+- Shell access on the machine where ScanCode.io is installed
 
 
 Before you start
@@ -50,7 +50,7 @@ Notes: Using this `scanpipe run --show` option lists all the pipeline added and 
 You can use this to get a quick overview of the pipelines that have been running already 
 (with their success "V" or fail status "f") and those that will be running next when you invoke the run command.
 
-For exmaple::
+For example::
 
     $ scanpipe run --project p1 --show
     > "[ ] scanpipe/pipelines/docker.py"
@@ -59,14 +59,13 @@ For exmaple::
 
     $ scanpipe run --project p1
 
-
 Executing the --show option again will confirm the success of the pipeline run::
 
     $ scanpipe run --project p1 --show
     > "[V] scanpipe/pipelines/docker.py"
 
 As a shortcut, the inputs and pipelines can be provided directly at once when
-calling the `create-project` command. For exmaple, this command will create a
+calling the `create-project` command. For example, this command will create a
 project named `p2` copy our test docker image to the project's inputs and add
 the docker pipeline in one operation::
 

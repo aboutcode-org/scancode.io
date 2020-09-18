@@ -3,6 +3,9 @@
 
 ### v1.0.2 (unreleased)
 
+- **ScanPipe** -- Add documentation and tutorial.
+  For https://github.com/nexB/scancode.io/issues/8
+
 - **ScanPipe** -- Add a create-project, add-input, add-pipeline, run, output
   management commands to expose ScanPipe features through the command line.
   Fix for https://github.com/nexB/scancode.io/issues/13
