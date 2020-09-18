@@ -20,44 +20,21 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
-import sys
-from pathlib import Path
+from django.core.management import CommandError
 
-from django.conf import settings
-
-# This will make sure the app is always imported when
-# Django starts so that shared_task will use this app.
-from scancodeio.celery import app as celery_app
-
-__version__ = "1.0.1"
-
-ROOT_DIR = Path(__file__).parent.parent.absolute()
-SCAN_NOTICE = (ROOT_DIR / "scan.NOTICE").read_text()
+from scanpipe.management.commands import ProjectCommand
 
 
-def get_workspace_location():
-    """
-    Return the workspace directory location
-    from the `SCANCODEIO_WORKSPACE_LOCATION` settings/env.
-    Default to a local `var/` directory if not set.
-    """
-    workspace_location = (
-        getattr(settings, "SCANCODEIO_WORKSPACE_LOCATION", None)
-        or os.environ.get("SCANCODEIO_WORKSPACE_LOCATION", None)
-        or "var"
-    )
-    return str(Path(workspace_location).resolve().absolute())
+class Command(ProjectCommand):
+    help = "Run pipelines of a project."
 
+    def handle(self, *args, **options):
+        super().handle(*args, **options)
 
-WORKSPACE_LOCATION = get_workspace_location()
+        run = self.project.get_next_run()
+        if not run:
+            raise CommandError(f"No pipelines to run on Project {self.project}")
 
-
-def command_line():
-    """
-    Command line entry point.
-    """
-    from django.core.management import execute_from_command_line
-
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
-    execute_from_command_line(sys.argv)
+        msg = f"Pipeline {run.pipeline} run in progress..."
+        self.stdout.write(self.style.SUCCESS(msg))
+        run.run_pipeline_task_async()

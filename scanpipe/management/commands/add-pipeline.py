@@ -20,49 +20,28 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import subprocess
-import sys
-
-from django.core.management.base import BaseCommand
-
-from scanpipe.pipelines import PipelineGraph
-from scanpipe.pipelines import get_pipeline_class
+from scanpipe.management.commands import ProjectCommand
+from scanpipe.management.commands import validate_pipelines
 
 
-class Command(BaseCommand):
-    help = "Generate Pipeline graph with Graphviz."
+class Command(ProjectCommand):
+    help = "Add pipelines to a project."
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument(
             "args",
-            metavar="pipelines",
+            metavar="pipeline",
             nargs="+",
             help="One or more pipeline locations.",
         )
-        parser.add_argument("--output", help="Output directory location.")
 
     def handle(self, *pipelines, **options):
-        exitcode, _ = subprocess.getstatusoutput("which dot")
-        if exitcode > 0:
-            self.stderr.write("Graphiz is not installed.")
-            sys.exit(exitcode)
+        super().handle(*pipelines, **options)
 
-        outputs = []
+        validate_pipelines(pipelines)
         for pipeline_location in pipelines:
-            pipeline_class = get_pipeline_class(pipeline_location)
-            pipeline_graph = PipelineGraph(pipeline_class)
-            outputs.append(self.generate_graph(pipeline_graph, options.get("output")))
+            self.project.add_pipeline(pipeline_location)
 
-        separator = "\n - "
-        msg = f"Graph(s) generated:{separator}" + separator.join(outputs)
+        msg = "Pipeline(s) added to the project"
         self.stdout.write(self.style.SUCCESS(msg))
-
-    @staticmethod
-    def generate_graph(pipeline_graph, output_directory):
-        output_dot = pipeline_graph.output_dot(simplify=True)
-        output_location = f"{pipeline_graph.name}.png"
-        if output_directory:
-            output_location = f"{output_directory}/{output_location}"
-        dot_cmd = f'echo "{output_dot}" | dot -Tpng -o {output_location}'
-        subprocess.getoutput(dot_cmd)
-        return output_location

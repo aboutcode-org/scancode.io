@@ -20,44 +20,30 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
-import sys
-from pathlib import Path
-
-from django.conf import settings
-
-# This will make sure the app is always imported when
-# Django starts so that shared_task will use this app.
-from scancodeio.celery import app as celery_app
-
-__version__ = "1.0.1"
-
-ROOT_DIR = Path(__file__).parent.parent.absolute()
-SCAN_NOTICE = (ROOT_DIR / "scan.NOTICE").read_text()
+from scanpipe.management.commands import ProjectCommand
+from scanpipe.management.commands import copy_inputs
+from scanpipe.management.commands import validate_inputs
 
 
-def get_workspace_location():
-    """
-    Return the workspace directory location
-    from the `SCANCODEIO_WORKSPACE_LOCATION` settings/env.
-    Default to a local `var/` directory if not set.
-    """
-    workspace_location = (
-        getattr(settings, "SCANCODEIO_WORKSPACE_LOCATION", None)
-        or os.environ.get("SCANCODEIO_WORKSPACE_LOCATION", None)
-        or "var"
-    )
-    return str(Path(workspace_location).resolve().absolute())
+class Command(ProjectCommand):
+    help = "Add input files in a project work directory."
 
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "args",
+            metavar="input",
+            nargs="+",
+            help="One or more input file locations.",
+        )
 
-WORKSPACE_LOCATION = get_workspace_location()
+    def handle(self, *inputs, **options):
+        super().handle(*inputs, **options)
 
+        validate_inputs(inputs)
+        copy_inputs(inputs, self.project.input_path)
 
-def command_line():
-    """
-    Command line entry point.
-    """
-    from django.core.management import execute_from_command_line
-
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
-    execute_from_command_line(sys.argv)
+        msg = (
+            f"File(s) copied to the project inputs directory: {self.project.input_path}"
+        )
+        self.stdout.write(self.style.SUCCESS(msg))

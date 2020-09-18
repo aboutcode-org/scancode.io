@@ -1,57 +1,32 @@
-Offline packaging and installation
-==================================
+Installation
+============
 
-Create the installable archive::
+Pre-requisite
+-------------
 
-   make package
+ * Debian-like distro or macOS
+ * Latest version of Python 3.6: https://www.python.org/downloads/
+ * PostgreSQL 10: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
+ * Recent version of git: https://git-scm.com/
 
-Grab the installable archive in dist/scancodeio-1.0.1.tar.gz
-and move that to you offline install server.
+Development setup
+-----------------
 
-On the offline install server:
+Clone the git ScanCode.io repo, install dependencies, and prepare the database::
 
- 1. extract the ScanCode.io code,
- 2. install dependencies
- 3. prepare the database
-::
-
-   tar -xf scancodeio-1.0.1.tar.gz && cd scancode.io
-   make install
+   git clone git@github.com:nexB/scancode.io.git && cd scancode.io
+   make dev
    make envfile
    make cleandb
 
-Finally set the workspace location in your local environment::
+Tests
+-----
 
-    export SCANCODEIO_WORKSPACE_LOCATION=/path/to/scancodeio/workspace/
-    mkdir -p $SCANCODEIO_WORKSPACE_LOCATION
+Run the tests suite with::
 
-Use as a development environment with::
+   make test
 
-    SCANCODEIO_WORKSPACE_LOCATION=/path/to/scancodeio/workspace/ make run
+Next Step
+---------
 
-Offline upgrade
----------------
-
-Upgrade your local checkout of the ScanCode.io repo::
-
-    cd scancode.io && git checkout develop && git pull
-
-Create the latest installable archive::
-
-   make package
-
-Grab the installable archive in dist/scancodeio-1.0.1.tar.gz
-and move that to you offline install server.
-
-On the offline install server:
-
- 1. backup the previous ScanCode.io code
- 2. extract the new ScanCode.io code
- 3. install dependencies
- 4. migrate the database
-::
-
-    mv scancode.io scancode.io-$(date +"%Y-%m-%d_%H%M")
-    tar -xf scancodeio-1.0.1.tar.gz && cd scancode.io
-    make install
-    make migrate
+- Getting started with Docker image analysis from the command line `scanpipe-tutorial-1.rst`.
