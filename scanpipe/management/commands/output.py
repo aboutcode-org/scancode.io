@@ -30,16 +30,18 @@ class Command(ProjectCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "-o", "--output", help="Specifies file to which the output is written."
+            "output_file",
+            nargs="?",
+            help="Specifies file to which the output is written.",
         )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
         results_generator = ResultsGenerator(self.project)
+        output_file = options["output_file"]
 
-        output = options["output"]
-        stream = open(output, "w") if output else self.stdout
+        stream = open(output_file, "w") if output_file else self.stdout
         try:
             for chunk in results_generator:
                 stream.write(chunk)
