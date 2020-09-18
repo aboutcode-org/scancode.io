@@ -20,10 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import json
-
 from django.apps import apps
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import transaction
 from django.http import FileResponse
 from django.http import StreamingHttpResponse
@@ -35,8 +32,6 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from scancodeio import SCAN_NOTICE
-from scancodeio import __version__ as scancodeio_version
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import ProjectErrorSerializer
@@ -47,6 +42,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.outputs import ResultsGenerator
 from scanpipe.pipelines import get_pipeline_description
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
@@ -57,80 +53,6 @@ class PassThroughRenderer(renderers.BaseRenderer):
 
     def render(self, data, **kwargs):
         return data
-
-
-class ResultsGenerator:
-    """
-    Return `project` results as a generator.
-    This allow to stream those results from the database to the client browser
-    without having to load everything in memory first.
-
-    Note that the Django Serializer class can output to a stream but cannot be
-    sent directly to a StreamingHttpResponse.
-    The results would have to be streamed to a file first, then iterated by the
-    StreamingHttpResponse, which do not work great in a HTTP request context as
-    the request can timeout while the file is generated.
-    """
-
-    def __init__(self, project):
-        self.project = project
-
-    def __iter__(self):
-        yield "{\n"
-        yield from self.serialize(label="headers", generator=self.get_headers)
-        yield from self.serialize(label="packages", generator=self.get_packages)
-        yield from self.serialize(label="files", generator=self.get_files, latest=True)
-        yield "}"
-
-    def serialize(self, label, generator, latest=False):
-        yield f'"{label}": [\n'
-
-        prefix = ",\n"
-        first = True
-
-        for entry in generator(self.project):
-            if first:
-                first = False
-            else:
-                entry = prefix + entry
-            yield entry
-
-        yield "]\n" if latest else "],\n"
-
-    @staticmethod
-    def encode(data):
-        return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
-
-    def get_headers(self, project):
-        runs = RunSerializer(
-            project.runs.all(), many=True, exclude_fields=("url", "project")
-        )
-
-        headers = {
-            "tool_name": "scanpipe",
-            "tool_version": scancodeio_version,
-            "notice": SCAN_NOTICE,
-            "uuid": project.uuid,
-            "created_date": project.created_date,
-            "input_files": project.input_files,
-            "runs": runs.data,
-            "extra_data": project.extra_data,
-        }
-        yield self.encode(headers)
-
-    def get_packages(self, project):
-        discovered_packages = project.discoveredpackages.all()
-
-        for obj in discovered_packages.iterator():
-            yield self.encode(DiscoveredPackageSerializer(obj).data)
-
-    def get_files(self, project):
-        codebase_resources = project.codebaseresources.exclude(
-            type=CodebaseResource.Type.SYMLINK
-        ).prefetch_related("discovered_packages")
-
-        for obj in codebase_resources.iterator():
-            yield self.encode(CodebaseResourceSerializer(obj).data)
 
 
 class ProjectViewSet(
