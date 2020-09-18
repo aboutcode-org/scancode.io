@@ -99,5 +99,5 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
-        expected = ["test_commands.py", "test_models.py"]
-        self.assertEqual(expected, project.input_files)
+        expected = sorted(["test_commands.py", "test_models.py"])
+        self.assertEqual(expected, sorted(project.input_files))
