@@ -1,7 +1,9 @@
 // Release notes
 // -------------
 
-### v1.0.2 (unreleased)
+### v1.0.3 (unreleased)
+
+### v1.0.2 (2020-09-18)
 
 - **ScanPipe** -- Add documentation and tutorial.
   For https://github.com/nexB/scancode.io/issues/8
