@@ -171,3 +171,20 @@ class ScanPipeManagementCommandTest(TestCase):
             " [ ] scanpipe/pipelines/root_filesystems.py\n"
         )
         self.assertEqual(expected, out.getvalue())
+
+    def test_scanpipe_management_command_run(self):
+        out = StringIO()
+
+        project = Project.objects.create(name="my_project")
+        options = ["--project", project.name]
+
+        expected = "No pipelines to run on Project my_project"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run", *options, stdout=out)
+
+        pipeline = "scanpipe/pipelines/docker.py"
+        project.add_pipeline(pipeline)
+        call_command("run", *options, stdout=out)
+
+        expected = "Pipeline scanpipe/pipelines/docker.py run in progress..."
+        self.assertIn(expected, out.getvalue())
