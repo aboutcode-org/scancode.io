@@ -13,6 +13,7 @@ On the offline install server:
  1. extract the ScanCode.io code,
  2. install dependencies
  3. prepare the database
+
 ::
 
    tar -xf scancodeio-1.0.1.tar.gz && cd scancode.io
@@ -28,6 +29,7 @@ Finally set the workspace location in your local environment::
 Use as a development environment with::
 
     SCANCODEIO_WORKSPACE_LOCATION=/path/to/scancodeio/workspace/ make run
+
 
 Offline upgrade
 ---------------
@@ -49,9 +51,15 @@ On the offline install server:
  2. extract the new ScanCode.io code
  3. install dependencies
  4. migrate the database
+
 ::
 
     mv scancode.io scancode.io-$(date +"%Y-%m-%d_%H%M")
     tar -xf scancodeio-1.0.1.tar.gz && cd scancode.io
     make install
     make migrate
+
+Next Step
+---------
+
+- Getting started with Docker image analysis from the command line `scanpipe-tutorial-1.rst`.
