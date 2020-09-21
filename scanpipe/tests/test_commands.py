@@ -28,6 +28,7 @@ from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
 
+from scanpipe.management.commands.graph import graphviz_installed
 from scanpipe.models import Project
 
 
@@ -37,6 +38,13 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_graph(self):
         out = StringIO()
         temp_dir = tempfile.mkdtemp()
+
+        if not graphviz_installed():
+            expected = "Graphviz is not installed."
+            with self.assertRaisesMessage(CommandError, expected):
+                call_command("graph", self.pipeline_location)
+            return
+
         call_command("graph", self.pipeline_location, "--output", temp_dir, stdout=out)
         out_value = out.getvalue()
         self.assertIn("Graph(s) generated:", out_value)

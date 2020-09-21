@@ -21,12 +21,19 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import subprocess
-import sys
 
+from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
 from scanpipe.pipelines import PipelineGraph
 from scanpipe.pipelines import get_pipeline_class
+
+
+def graphviz_installed():
+    exitcode, _ = subprocess.getstatusoutput("which dot")
+    if exitcode == 0:
+        return True
+    return False
 
 
 class Command(BaseCommand):
@@ -42,10 +49,8 @@ class Command(BaseCommand):
         parser.add_argument("--output", help="Output directory location.")
 
     def handle(self, *pipelines, **options):
-        exitcode, _ = subprocess.getstatusoutput("which dot")
-        if exitcode > 0:
-            self.stderr.write("Graphiz is not installed.")
-            sys.exit(exitcode)
+        if not graphviz_installed():
+            raise CommandError("Graphviz is not installed.")
 
         outputs = []
         for pipeline_location in pipelines:
