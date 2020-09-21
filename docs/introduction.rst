@@ -44,8 +44,12 @@ ScanPipe is a developer-friendly framework and application that helps software
 analysts and engineers build and manage real-life software composition analysis
 projects as scripted pipelines.
 
-ScanPipe was originally developed to help boost productivity of code analysts
-who work on a wide variety of software composition analysis projects.
+ScanPipe was originally developed using
+`Django <https://www.djangoproject.com/>`_,
+`ScanCode Toolkit <https://github.com/nexB/scancode-toolkit>`_,
+and `Metaflow <https://metaflow.org/>`_
+to help boost productivity of code analysts who work on a wide variety of
+software composition analysis projects.
 
 ScanPipe provides a unified framework to the infrastructure that is
 required to execute and organize these software composition analysis projects.
