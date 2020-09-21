@@ -1,5 +1,5 @@
-ScanPipe Tutorial: Docker image analysis from the command line
-==============================================================
+Docker image analysis from the command line
+===========================================
 
 Requirements
 ------------

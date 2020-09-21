@@ -1,17 +1,15 @@
-ScanPipe Commands help
+ScanPipe Commands Help
 ======================
 
-The main entry point is the `scanpipe` command which is available directly when
-you are in the activated virtualenv or directly at this path: `<scancode.io root dir/bin/scanpipe>` .
+The main entry point is the :guilabel:`scanpipe` command which is available directly when
+you are in the activated virtualenv or directly at this path: ``<scancode.io_root_dir>/bin/scanpipe``
 
 
 `$ scanpipe --help`
 -------------------
 
 List all the sub-commands available (including Django built-in commands).
-ScanPipe's own commands are listed under the `[scanpipe]` section. 
-
-For example::
+ScanPipe's own commands are listed under the ``[scanpipe]`` section::
 
     $ scanpipe --help
     ...
@@ -22,7 +20,7 @@ For example::
         graph
         output
         run
-    ...
+        show-pipeline
 
 
 `$ scanpipe <subcommand> --help`
@@ -33,13 +31,8 @@ Display help for the provided subcommand.
 For example::
 
     $ scanpipe create-project --help
-    usage: scanpipe create-project [-h] [--pipeline PIPELINES] [--input INPUTS]
-                                   [--version] [-v {0,1,2,3}]
-                                   [--settings SETTINGS] [--pythonpath PYTHONPATH]
-                                   [--traceback] [--no-color] [--force-color]
-                                   [--skip-checks]
-                                   name
-    
+    usage: scanpipe create-project [--pipeline PIPELINES] [--input INPUTS] name
+
     Create a ScanPipe project.
     
     positional arguments:
@@ -49,25 +42,26 @@ For example::
 `$ scanpipe create-project <name>`
 ----------------------------------
 
-Create a ScanPipe project using <name> as a Project name. The name must
+Create a ScanPipe project using ``<name>`` as a Project name. The name must
 be unique.
 
-optional arguments:
+Optional arguments:
 
-- `--pipeline PIPELINES`  Pipelines locations to add on the project. The
+- ``--pipeline PIPELINES``  Pipelines locations to add on the project. The
   pipelines are added and will be running in the order of the provided options.
 
-- `--input INPUTS`  Input file locations to copy in the input/ workspace directory.
+- ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace directory.
 
 
 `$ scanpipe add-input --project PROJECT <input ...>`
 ----------------------------------------------------
 
-Copy the file found at the <input> path to the project named <PROJECT> workspace 
-"input" directory. You can use more than one <input> to copy multiple files at once.
+Copy the file found at the ``<input>`` path to the project named ``PROJECT`` workspace
+:guilabel:`input/` directory.
+You can use more than one ``<input>`` to copy multiple files at once.
 
-For example, assuming you have created beforehand a project named foo, this will
-copy `~/docker/alpine-base.tar` to the foo project input directory::
+For example, assuming you have created beforehand a project named "foo", this will
+copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` directory::
 
     $ scanpipe add-input --project foo ~/docker/alpine-base.tar
 
@@ -75,11 +69,11 @@ copy `~/docker/alpine-base.tar` to the foo project input directory::
 `$ scanpipe add-pipeline --project PROJECT <pipeline ...>`
 ----------------------------------------------------------
 
-Add the <pipeline> found at this location to the project named <PROJECT>.
-You can use more than one <pipeline> to add multiple pipelines at once.
+Add the ``<pipeline>`` found at this location to the project named ``PROJECT``.
+You can use more than one ``<pipeline>`` to add multiple pipelines at once.
 The pipelines are added and will be running in the order of the provided options.
 
-For example, assuming you have created beforehand a project named foo, this will
+For example, assuming you have created beforehand a project named "foo", this will
 add the docker pipeline to your project::
 
     $ scanpipe add-pipeline --project foo scanpipe/pipelines/docker.py
@@ -88,31 +82,32 @@ add the docker pipeline to your project::
 `$ scanpipe run --project PROJECT`
 ----------------------------------
 
-Run all the pipelines of the project named <PROJECT>.
+Run all the pipelines of the project named ``PROJECT``.
 
 
 `$ scanpipe show-pipeline --project PROJECT`
 --------------------------------------------
 
-List all the pipelines added of the project named <PROJECT>.
+List all the pipelines added of the project named ``PROJECT``.
 
 
 `$ scanpipe output --project PROJECT <output_file>`
 ---------------------------------------------------
 
-Output the results of the project named <PROJECT> to the <output_file> as JSON.
+Output the results of the project named ``PROJECT`` to the ``<output_file>``
+as JSON.
 
 
 `$ scanpipe graph <pipeline ...>`
 ---------------------------------
 
-Generate a pipeline graph image as PNG (using Graphviz). The graphic will name
-after the pipeline name with a .png extension.
+Generate a pipeline graph image as PNG (using `Graphviz <https://graphviz.org/>`_).
+The graphic file will be named after the pipeline name with a ``.png`` extension.
 
-optional arguments:
+Optional arguments:
 
-- `--output OUTPUT`  Alternative output directory location to use. The
-  default is to create the image in the scancode.io root directory. 
+- ``--output OUTPUT``  Alternative output directory location to use. The
+  default is to create the image in the current directory.
 
 
 Next step

@@ -49,8 +49,8 @@ ScanPipe provides a unified framework to the infrastructure that is
 required to execute and organize these software composition analysis projects.
 
 
-Should I Use ScanPipe?
-----------------------
+Should I use ScanPipe
+---------------------
 
 If you are working on a software composition analysis project, or you
 are planning to start a new one, consider the following questions:

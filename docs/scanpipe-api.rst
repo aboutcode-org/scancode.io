@@ -1,17 +1,16 @@
-ScanPipe JSON REST API
-======================
+ScanPipe REST API
+=================
 
 To get started locally with the API:
 
-1. Run the server with::
+1. **Run the webserver** with::
 
     make run
 
-2. Open your web browser at http://127.0.0.1:8001/
+2. Visit the **projects API endpoint** at http://127.0.0.1:8001/api/projects/
 
-3. Visit the projects API endpoint at http://127.0.0.1:8001/api/projects/
+From the bottom of this page you can **create a new project**, **upload an input
+file** and **add a pipeline** to this project at once.
 
-From the bottom of this page you can create a new project, add and upload an input
-file and add a pipeline to this project at once.
-
-If you add a pipeline, the pipeline starts immediately on project creation. 
+.. note::
+    If you add a pipeline, the pipeline starts immediately on project creation.

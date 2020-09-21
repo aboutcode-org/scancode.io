@@ -14,18 +14,19 @@ and it enables you to automate ScanCode analysis with ScanPipe pipelines and
     installation
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     :caption: Tutorial
 
     scanpipe-tutorial-1
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     :caption: Reference Documentation
 
     scanpipe-concepts
     scanpipe-command-line
     scanpipe-api
+    offline-installation
 
 Indices and tables
 ==================

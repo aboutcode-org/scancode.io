@@ -15,7 +15,6 @@ Multiple analysis pipelines can be run on a single project.
 
 In the database, a project is identified by its unique name.
 
-
 Project workspace
 -----------------
 
@@ -23,10 +22,10 @@ A project workspace is the root directory where all the project files are stored
 
 The following directories exists under this directory:
 
-- `input/` contains all the original uploaded and input files used of the project. For instance, it could be a codebase archive.
-- `codebase/` contains the files and directories (aka. resources) tracked as CodebaseResource records in the database.
-- `output/` contains all output files created by the pipelines: reports, scan results, etc.
-- `tmp/` is a scratch pad for temporary files generated during the pipelines runs.
+- :guilabel:`input/` contains all the original uploaded and input files used of the project. For instance, it could be a codebase archive.
+- :guilabel:`codebase/` contains the files and directories (aka. resources) tracked as CodebaseResource records in the database.
+- :guilabel:`output/` contains all output files created by the pipelines: reports, scan results, etc.
+- :guilabel:`tmp/` is a scratch pad for temporary files generated during the pipelines runs.
 
 
 Pipelines
@@ -64,7 +63,8 @@ Some of the CodebaseResource interesting attributes are:
 - a type (such as file, directory or symlink)
 - various attributes to track detected copyrights, license expressions, copyright holders, related packages.
 
-In general the attributes and their names are the same that are used in ScanCode-Toolkit for files.
+In general the attributes and their names are the same that are used in
+`ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_ for files.
 
 
 Discovered Packages
@@ -74,7 +74,8 @@ A project Discovered Packages are records of the system and application packages
 discovered in its code.
 DiscoveredPackage is a database model and each record is identified by its Package URL.
 Package URL is a grassroot efforts to create informative identifiers for software
-packages such as Debian, RPM, npm, Maven PyPI packages. See https://github.com/package-url for details.
+packages such as Debian, RPM, npm, Maven PyPI packages.
+See https://github.com/package-url for details.
 
 
 Some of the DiscoveredPackage interesting attributes are:
@@ -85,4 +86,5 @@ Some of the DiscoveredPackage interesting attributes are:
 - copyright, license_expression, declared_license
 
 
-In general the attributes and their names are the same that are used in ScanCode-Toolkit for packages.
+In general the attributes and their names are the same that are used in
+`ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_ for packages.
