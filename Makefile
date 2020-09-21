@@ -24,7 +24,7 @@ PYTHON_EXE=python3.6
 MANAGE=bin/python manage.py
 ACTIVATE=. bin/activate;
 ANSIBLE_PLAYBOOK=cd etc/ansible/ && ansible-playbook --inventory-file=hosts --verbose --ask-become-pass --user=${USER}
-BLACK_ARGS=--exclude="migrations|data" .
+BLACK_ARGS=--exclude="migrations|data|docs" .
 GET_SECRET_KEY=`${PYTHON_EXE} -c "from django.core.management import utils; print(utils.get_random_secret_key())"`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
 ENV_FILE=.env
