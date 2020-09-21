@@ -65,11 +65,11 @@ WSGI_APPLICATION = "scancodeio.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "HOST": os.getenv("SCANCODEIO_DB_HOST", "localhost"),
         "NAME": os.getenv("SCANCODEIO_DB_NAME", "scancodeio"),
         "USER": os.getenv("SCANCODEIO_DB_USER", "scancodeio"),
         "PASSWORD": os.getenv("SCANCODEIO_DB_PASSWORD", "scancodeio"),
+        "PORT": "5432",
         "ATOMIC_REQUESTS": True,
     }
 }
