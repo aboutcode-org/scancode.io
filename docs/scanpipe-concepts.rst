@@ -1,3 +1,5 @@
+.. _scanpipe_concepts:
+
 ScanPipe Concepts
 =================
 
@@ -91,3 +93,8 @@ Some of the ``DiscoveredPackage`` interesting attributes are:
 .. note::
     In general the attributes and their names are the same that are used in
     `ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_ for packages.
+
+Next step
+---------
+
+Explore :ref:`scanpipe_command_line`.

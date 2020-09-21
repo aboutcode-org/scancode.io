@@ -1,3 +1,5 @@
+.. _offline_installation:
+
 Offline packaging and installation
 ==================================
 

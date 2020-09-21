@@ -1,3 +1,5 @@
+.. _installation:
+
 Installation
 ============
 
@@ -30,4 +32,4 @@ Validate the installation by running the tests suite::
 Next Step
 ---------
 
-- Getting started with Docker image analysis from the command line `scanpipe-tutorial-1.rst`.
+You are now ready to move onto the tutorial: :ref:`scanpipe_tutorial_1`.

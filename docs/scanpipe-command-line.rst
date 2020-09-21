@@ -1,3 +1,5 @@
+.. _scanpipe_command_line:
+
 ScanPipe Commands Help
 ======================
 
@@ -113,9 +115,3 @@ Optional arguments:
 
 .. note::
     By default, the image output file is created in the current working directory.
-
-
-Next step
----------
-
-- Explore ScanPipe Concepts `scanpipe-concepts.rst`.

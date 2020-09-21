@@ -1,3 +1,5 @@
+.. _introduction:
+
 Why ScanCode.io
 ===============
 
@@ -72,7 +74,7 @@ system and application packages to original and custom applications.
 Next step
 ---------
 
-- Install ScanCode.io `installation.rst`.
+Install ScanCode.io :ref:`installation`.
 
 .. Some of this documentation is borrowed from the metaflow documentation and is also under Apache-2.0
 .. Copyright (c) Netflix

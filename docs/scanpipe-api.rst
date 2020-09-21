@@ -1,3 +1,5 @@
+.. _scanpipe_api:
+
 ScanPipe REST API
 =================
 
