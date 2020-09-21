@@ -3,8 +3,9 @@
 ScanPipe Commands Help
 ======================
 
-The main entry point is the :guilabel:`scanpipe` command which is available directly when
-you are in the activated virtualenv or directly at this path: ``<scancode.io_root_dir>/bin/scanpipe``
+The main entry point is the :guilabel:`scanpipe` command which is available
+directly when you are in the activated virtualenv or at this path:
+``<scancode.io_root_dir>/bin/scanpipe``
 
 
 `$ scanpipe --help`

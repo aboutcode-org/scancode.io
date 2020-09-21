@@ -36,23 +36,24 @@ Pipelines
 ---------
 
 A pipeline is a Python script that contains a series of steps from start to end
-to run in order **perform a code analysis**.
+to run in order to **perform a code analysis**.
 
 It usually starts from the uploaded input files, and may extract these then
 generates ``CodebaseResource`` records in the database accordingly.
 
 Those resources can then be **analyzed, scanned, and matched** as needed.
-Analysis results and reports are eventually posted at the end of pipeline run
+Analysis results and reports are eventually posted at the end of a pipeline run.
 
 All pipelines are located in the ``scanpipe.pipelines`` module.
 Each pipeline consist of a Python script including one subclass of the ``Pipeline`` class.
-Each step is a method of the ``Pipeline`` class decorated with ``@step`` decorator.
+Each step is a method of the ``Pipeline`` class decorated with a ``@step`` decorator.
 At its end, a step states which is the next step to execute.
 
 .. note::
     One or more pipelines can be assigned to a project as a sequence.
-    If the one pipeline of a sequence completes successfully, the next pipeline in
-    queue for this project is run automatically until all pipelines are executed.
+    If one pipeline of a sequence completes successfully, the next pipeline in
+    the queue for this project is launched automatically and this until all
+    the scheduled pipelines have executed.
 
 
 Codebase Resources
@@ -80,7 +81,7 @@ A project ``Discovered Packages`` are records of the **system and application pa
 discovered in its code.
 ``DiscoveredPackage`` is a database model and each record is identified by its ``Package URL``.
 ``Package URL`` is a grassroot efforts to create informative identifiers for software
-packages such as Debian, RPM, npm, Maven PyPI packages.
+packages such as Debian, RPM, npm, Maven, or PyPI packages.
 See https://github.com/package-url for details.
 
 Some of the ``DiscoveredPackage`` interesting attributes are:

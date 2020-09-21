@@ -25,7 +25,7 @@ and merge their results with a consistent workflow.
 
 And when reusing thousands of open source packages is becoming commonplace,
 code scans pipelines need to be scripted as code and running on servers backed
-a database, not on a laptop.
+by a shared database, not on a laptop.
 
 For instance when you analyze Docker container images, there could be hundreds
 to thousands of system packages (such as Debian, RPM, Alpine) and application
