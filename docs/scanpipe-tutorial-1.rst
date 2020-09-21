@@ -1,5 +1,5 @@
-Docker image analysis from the command line
-===========================================
+Docker Image Analysis (command line)
+====================================
 
 Requirements
 ------------

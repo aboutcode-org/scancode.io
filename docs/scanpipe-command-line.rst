@@ -47,11 +47,12 @@ be unique.
 
 Optional arguments:
 
-- ``--pipeline PIPELINES``  Pipelines locations to add on the project. The
-  pipelines are added and will be running in the order of the provided options.
+- ``--pipeline PIPELINES``  Pipelines locations to add on the project.
 
 - ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace directory.
 
+.. warning::
+    The pipelines are added and will be running in the order of the provided options.
 
 `$ scanpipe add-input --project PROJECT <input ...>`
 ----------------------------------------------------
@@ -71,7 +72,9 @@ copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` director
 
 Add the ``<pipeline>`` found at this location to the project named ``PROJECT``.
 You can use more than one ``<pipeline>`` to add multiple pipelines at once.
-The pipelines are added and will be running in the order of the provided options.
+
+.. warning::
+    The pipelines are added and will be running in the order of the provided options.
 
 For example, assuming you have created beforehand a project named "foo", this will
 add the docker pipeline to your project::
@@ -106,8 +109,10 @@ The graphic file will be named after the pipeline name with a ``.png`` extension
 
 Optional arguments:
 
-- ``--output OUTPUT``  Alternative output directory location to use. The
-  default is to create the image in the current directory.
+- ``--output OUTPUT`` Specifies directory to which the output is written.
+
+.. note::
+    By default, the image output file is created in the current working directory.
 
 
 Next step

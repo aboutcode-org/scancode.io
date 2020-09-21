@@ -1,10 +1,9 @@
 ScanCode.io documentation
 =========================
 
-ScanCode.io is a server that manages and performs
-`ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_ scans,
-and it enables you to automate ScanCode analysis with ScanPipe pipelines and
-`container analysis <https://github.com/nexB/container-inspector>`_.
+ScanCode.io is a server to script and automate software composition analysis
+with ScanPipe pipelines.
+First application is for Docker container and VM composition analysis.
 
 .. toctree::
     :maxdepth: 2
