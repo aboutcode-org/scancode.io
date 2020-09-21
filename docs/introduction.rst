@@ -1,3 +1,5 @@
+.. _introduction:
+
 Why ScanCode.io
 ===============
 
@@ -23,7 +25,7 @@ and merge their results with a consistent workflow.
 
 And when reusing thousands of open source packages is becoming commonplace,
 code scans pipelines need to be scripted as code and running on servers backed
-a database, not on a laptop.
+by a shared database, not on a laptop.
 
 For instance when you analyze Docker container images, there could be hundreds
 to thousands of system packages (such as Debian, RPM, Alpine) and application
@@ -42,14 +44,19 @@ ScanPipe is a developer-friendly framework and application that helps software
 analysts and engineers build and manage real-life software composition analysis
 projects as scripted pipelines.
 
-ScanPipe was originally developed to help boost productivity of code analysts
-who work on a wide variety of software composition analysis projects.
+ScanPipe was originally developed using
+`Django <https://www.djangoproject.com/>`_,
+`ScanCode Toolkit <https://github.com/nexB/scancode-toolkit>`_,
+and `Metaflow <https://metaflow.org/>`_
+to help boost productivity of code analysts who work on a wide variety of
+software composition analysis projects.
 
 ScanPipe provides a unified framework to the infrastructure that is
 required to execute and organize these software composition analysis projects.
 
 
-## Should I Use ScanPipe?
+Should I use ScanPipe
+---------------------
 
 If you are working on a software composition analysis project, or you
 are planning to start a new one, consider the following questions:
@@ -62,16 +69,10 @@ If you answered "yes" to any of the above, keep reading - ScanPipe can help you.
 If the answer is "no" to all of the above, which is a valid scenario e.g. when you
 are doing small-scale analysis, ScanPipe may provide only limited benefit for you.
 
-The first set of available pipelines help automate the analysis of Docker
+The first set of available pipelines helps automate the analysis of Docker
 "container" images and virtual machine (VM) disk images that often harbor
 comprehensive software stacks from an operating system with its kernel through
 system and application packages to original and custom applications.
-
-
-Next step
----------
-
-- Install ScanCode.io `installation.rst`.
 
 .. Some of this documentation is borrowed from the metaflow documentation and is also under Apache-2.0
 .. Copyright (c) Netflix
