@@ -11,8 +11,8 @@ Pre-requisite
  * **PostgreSQL** 10 or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
  * Recent version of **git**: https://git-scm.com/
 
-Development setup
------------------
+Local installation
+------------------
 
 Clone the git `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
 install dependencies, and prepare the database::
@@ -29,7 +29,17 @@ Validate the installation by running the tests suite::
 
     make test
 
-Next Step
+----
+
+You are now ready to move onto the **Tutorials**: :ref:`scanpipe_tutorial_1`.
+
+Upgrading
 ---------
 
-You are now ready to move onto the tutorial: :ref:`scanpipe_tutorial_1`.
+If you have already a clone of the ScanCode.io repo, you can upgrade to the
+latest version with::
+
+    cd scancode.io
+    git pull
+    make dev
+    make migrate

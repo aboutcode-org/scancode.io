@@ -70,11 +70,5 @@ The first set of available pipelines helps automate the analysis of Docker
 comprehensive software stacks from an operating system with its kernel through
 system and application packages to original and custom applications.
 
-
-Next step
----------
-
-Install ScanCode.io :ref:`installation`.
-
 .. Some of this documentation is borrowed from the metaflow documentation and is also under Apache-2.0
 .. Copyright (c) Netflix
