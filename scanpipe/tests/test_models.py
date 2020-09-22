@@ -122,18 +122,34 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual(None, self.project1.get_next_run())
 
-    def test_scanpipe_run_model_methods(self):
+    def test_scanpipe_run_model_task_methods(self):
         run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
-
         self.assertFalse(run1.task_succeeded)
+
         run1.task_exitcode = 0
         run1.save()
         self.assertTrue(run1.task_succeeded)
 
+        run1.task_exitcode = 1
+        run1.save()
+        self.assertFalse(run1.task_succeeded)
+
+    def test_scanpipe_run_model_get_run_id_method(self):
+        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+
         self.assertIsNone(run1.get_run_id())
+
+        run1.task_output = "Missing run-id"
+        run1.save()
+        self.assertIsNone(run1.get_run_id())
+
         run1.task_output = "Workflow starting (run-id 1593181041039832):"
         run1.save()
         self.assertEqual("1593181041039832", run1.get_run_id())
+
+        run1.task_output = "(run-id 123) + (run-id 456)"
+        run1.save()
+        self.assertEqual("123", run1.get_run_id())
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(

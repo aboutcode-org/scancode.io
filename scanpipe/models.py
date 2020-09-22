@@ -304,10 +304,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Return the run id from the task output.
         """
         if self.task_output:
-            run_id_re = re.compile(r"run-id [0-9]+")
-            run_id_string = run_id_re.search(self.task_output).group()
-            if run_id_string:
-                return run_id_string.split()[-1]
+            run_id_pattern = re.compile(r"run-id (?P<run_id>[0-9]+)")
+            match = run_id_pattern.search(self.task_output)
+            if match:
+                return match.group("run_id")
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):

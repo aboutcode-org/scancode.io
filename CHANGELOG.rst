@@ -3,6 +3,9 @@
 
 ### v1.0.3 (unreleased)
 
+- **ScanPipe** -- Add support for "failed" task_output in Run.get_run_id method
+    Fix for https://github.com/nexB/scancode.io/issues/17
+
 ### v1.0.2 (2020-09-18)
 
 - **ScanPipe** -- Add documentation and tutorial.
