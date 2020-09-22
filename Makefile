@@ -43,7 +43,7 @@ conf:
 	@echo "-> Configure the Python venv and install dependencies"
 	${PYTHON_EXE} -m venv .
 	@${ACTIVATE} pip install -r etc/requirements/base.txt
-	@${ACTIVATE} pip install -e .
+	@${ACTIVATE} pip install --editable .
 
 dev: conf
 	@echo "-> Configure and install development dependencies"

@@ -32,7 +32,7 @@ with Path(__file__).resolve().parent.joinpath("base.py").open() as parent_config
 DEBUG = True
 TEMPLATES[0]["OPTIONS"]["debug"] = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "::1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "::1", "0.0.0.0"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
