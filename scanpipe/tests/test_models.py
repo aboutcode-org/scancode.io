@@ -177,6 +177,37 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(scan_results["name"], resource.name)
         self.assertEqual(scan_results["extension"], resource.extension)
 
+    def test_scanpipe_codebase_resource_queryset_type_methods(self):
+        file = CodebaseResource.objects.create(
+            project=self.project1, type=CodebaseResource.Type.FILE, path="file"
+        )
+        directory = CodebaseResource.objects.create(
+            project=self.project1,
+            type=CodebaseResource.Type.DIRECTORY,
+            path="directory",
+        )
+        symlink = CodebaseResource.objects.create(
+            project=self.project1, type=CodebaseResource.Type.SYMLINK, path="symlink"
+        )
+
+        qs = CodebaseResource.objects.files()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+
+        qs = CodebaseResource.objects.directories()
+        self.assertEqual(1, len(qs))
+        self.assertIn(directory, qs)
+
+        qs = CodebaseResource.objects.symlinks()
+        self.assertEqual(1, len(qs))
+        self.assertIn(symlink, qs)
+
+        qs = CodebaseResource.objects.without_symlinks()
+        self.assertEqual(2, len(qs))
+        self.assertIn(file, qs)
+        self.assertIn(directory, qs)
+        self.assertNotIn(symlink, qs)
+
     def test_scanpipe_discovered_package_model_create_from_data(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertEqual(self.project1, package.project)
