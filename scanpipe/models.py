@@ -320,6 +320,18 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def no_status(self):
         return self.filter(status="")
 
+    def files(self):
+        return self.filter(type=self.model.Type.FILE)
+
+    def directories(self):
+        return self.filter(type=self.model.Type.DIRECTORY)
+
+    def symlinks(self):
+        return self.filter(type=self.model.Type.SYMLINK)
+
+    def without_symlinks(self):
+        return self.exclude(type=self.model.Type.SYMLINK)
+
 
 class ScanFieldsModelMixin(models.Model):
     """

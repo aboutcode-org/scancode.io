@@ -29,7 +29,6 @@ from scancodeio import __version__ as scancodeio_version
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import RunSerializer
-from scanpipe.models import CodebaseResource
 
 
 class ResultsGenerator:
@@ -75,9 +74,8 @@ class ResultsGenerator:
         return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
 
     def get_headers(self, project):
-        runs = RunSerializer(
-            project.runs.all(), many=True, exclude_fields=("url", "project")
-        )
+        runs = project.runs.all()
+        runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
 
         headers = {
             "tool_name": "scanpipe",
@@ -92,15 +90,14 @@ class ResultsGenerator:
         yield self.encode(headers)
 
     def get_packages(self, project):
-        discovered_packages = project.discoveredpackages.all()
+        packages = project.discoveredpackages.all()
 
-        for obj in discovered_packages.iterator():
+        for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)
 
     def get_files(self, project):
-        codebase_resources = project.codebaseresources.exclude(
-            type=CodebaseResource.Type.SYMLINK
-        ).prefetch_related("discovered_packages")
+        resources = project.codebaseresources.without_symlinks()
+        resources = resources.prefetch_related("discovered_packages")
 
-        for obj in codebase_resources.iterator():
+        for obj in resources.iterator():
             yield self.encode(CodebaseResourceSerializer(obj).data)
