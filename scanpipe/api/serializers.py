@@ -27,7 +27,7 @@ from django.db import transaction
 
 from rest_framework import serializers
 
-from scanner.api.serializers import ExcludeFromListViewMixin
+from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project

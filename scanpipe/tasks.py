@@ -20,14 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import subprocess
 import sys
 
 from django.apps import apps
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-
-from scanner.tasks import run_command
 
 tasks_logger = get_task_logger(__name__)
 python = sys.executable
@@ -64,7 +63,7 @@ def run_pipeline_task(self, run_pk):
 
     info(f'Run pipeline: "{run.pipeline}" on project: "{run.project.name}"', run_pk)
     cmd = f"{python} {run.pipeline} run --project {run.project.name}"
-    exitcode, output = run_command(cmd)
+    exitcode, output = subprocess.getstatusoutput(cmd)
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
     run.set_task_ended(exitcode, output, refresh_first=True)
@@ -87,7 +86,7 @@ def resume_pipeline_task(self, run_pk):
 
     info(f'Resume pipeline: "{run.pipeline}" on project: "{run.project.name}"', run_pk)
     cmd = f"{python} {run.pipeline} resume --origin-run-id {run_id}"
-    exitcode, output = run_command(cmd)
+    exitcode, output = subprocess.getstatusoutput(cmd)
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
     run.set_task_ended(exitcode, output, refresh_first=True)
