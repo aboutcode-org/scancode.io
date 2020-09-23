@@ -36,15 +36,14 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.template.defaultfilters import filesizeformat
 from django.template.loader import render_to_string
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 import requests
-from celery.result import AsyncResult
 
 from scancodeio import WORKSPACE_LOCATION
 from scanner.tasks import DOWNLOAD_SIZE_THRESHOLD
 from scanner.tasks import download_and_scan
+from scanpipe.models import AbstractTaskFieldsModel
 
 generic_uri_validator = validators.RegexValidator(
     re.compile(r"^[\w+-_]+://[\S]+$"),
@@ -100,95 +99,6 @@ class ScanQuerySet(models.QuerySet):
 
     def download_failed(self):
         return self.filter(task_exitcode=404)
-
-
-class AbstractTaskFieldsModel(models.Model):
-    task_id = models.UUIDField(
-        blank=True,
-        null=True,
-        editable=False,
-    )
-    task_start_date = models.DateTimeField(
-        blank=True,
-        null=True,
-        editable=False,
-    )
-    task_end_date = models.DateTimeField(
-        blank=True,
-        null=True,
-        editable=False,
-    )
-    task_exitcode = models.IntegerField(
-        null=True,
-        blank=True,
-        editable=False,
-    )
-    task_output = models.TextField(
-        blank=True,
-        editable=False,
-    )
-
-    class Meta:
-        abstract = True
-
-    def task_state(self):
-        """
-        Possible values includes:
-        - PENDING
-            The task is waiting for execution.
-        - STARTED
-            The task has been started.
-        - RETRY
-            The task is to be retried, possibly because of failure.
-        - FAILURE
-            The task raised an exception, or has exceeded the retry limit.
-            The result attribute then contains the exception raised by the task.
-        - SUCCESS
-            The task executed successfully. The result attribute then contains
-            the tasks return value.
-        """
-        return AsyncResult(str(self.task_id)).state
-
-    @property
-    def execution_time(self):
-        if self.task_end_date and self.task_start_date:
-            total_seconds = (self.task_end_date - self.task_start_date).total_seconds()
-            return int(total_seconds)
-
-    def reset_task_values(self):
-        """
-        Reset all task related fields to their initial null value.
-        """
-        self.task_id = None
-        self.task_start_date = None
-        self.task_end_date = None
-        self.task_exitcode = None
-        self.task_output = ""
-
-    def set_task_started(self, task_id):
-        """
-        Set the `task_id` and `task_start_date` before the task execution.
-        """
-        self.task_id = task_id
-        self.task_start_date = timezone.now()
-        self.save()
-
-    def set_task_ended(self, exitcode, output, refresh_first=True):
-        """
-        Set the task related fields after the task execution.
-
-        An optional `refresh_first`, enabled by default, force the refresh of
-        the instance with the latest data from the database before saving.
-        This prevent loosing values saved on the instance during the task
-        execution.
-        """
-        if refresh_first:
-            self.refresh_from_db()
-
-        self.task_exitcode = exitcode
-        self.task_output = output
-        self.task_end_date = timezone.now()
-        self.save()
 
 
 class Scan(AbstractTaskFieldsModel, models.Model):

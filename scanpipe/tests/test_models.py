@@ -20,10 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
+from datetime import datetime
+
 from django.apps import apps
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test import TransactionTestCase
+from django.utils import timezone
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -133,6 +137,58 @@ class ScanPipeModelsTest(TestCase):
         run1.task_exitcode = 1
         run1.save()
         self.assertFalse(run1.task_succeeded)
+
+    def test_scanpipe_run_model_task_execution_time_property(self):
+        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+
+        self.assertIsNone(run1.execution_time)
+
+        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=timezone.utc)
+        run1.save()
+        self.assertIsNone(run1.execution_time)
+
+        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
+        run1.save()
+        self.assertEqual(25.0, run1.execution_time)
+
+    def test_scanpipe_run_model_reset_task_values_method(self):
+        run1 = Run.objects.create(
+            project=self.project1,
+            pipeline="pipeline",
+            task_id=uuid.uuid4(),
+            task_start_date=timezone.now(),
+            task_end_date=timezone.now(),
+            task_exitcode=0,
+            task_output="Output",
+        )
+
+        run1.reset_task_values()
+        self.assertIsNone(run1.task_id)
+        self.assertIsNone(run1.task_start_date)
+        self.assertIsNone(run1.task_end_date)
+        self.assertIsNone(run1.task_exitcode)
+        self.assertEqual("", run1.task_output)
+
+    def test_scanpipe_run_model_set_task_started_method(self):
+        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+
+        task_id = uuid.uuid4()
+        run1.set_task_started(task_id)
+
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual(task_id, run1.task_id)
+        self.assertTrue(run1.task_start_date)
+        self.assertFalse(run1.task_end_date)
+
+    def test_scanpipe_run_model_set_task_ended_method(self):
+        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+
+        run1.set_task_ended(exitcode=0, output="output")
+
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual(0, run1.task_exitcode)
+        self.assertEqual("output", run1.task_output)
+        self.assertTrue(run1.task_end_date)
 
     def test_scanpipe_run_model_get_run_id_method(self):
         run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
