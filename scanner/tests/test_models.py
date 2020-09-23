@@ -24,7 +24,6 @@ import json
 import shutil
 import tempfile
 import uuid
-from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
@@ -32,8 +31,6 @@ from django.core import mail
 from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-
-import pytz
 
 from scanner.models import EmailSubscription
 from scanner.models import Scan
@@ -118,17 +115,6 @@ class ScannerModelsTest(TestCase):
         large = Scan.objects.create(uri="large", size=DOWNLOAD_SIZE_THRESHOLD + 1)
         self.assertEqual([small], list(Scan.objects.small()))
         self.assertEqual([large], list(Scan.objects.large()))
-
-    def test_scanner_model_execution_time_property(self):
-        self.assertIsNone(self.scan1.execution_time)
-
-        self.scan1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=pytz.UTC)
-        self.scan1.save()
-        self.assertIsNone(self.scan1.execution_time)
-
-        self.scan1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=pytz.UTC)
-        self.scan1.save()
-        self.assertEqual(25.0, self.scan1.execution_time)
 
     def test_scanner_model_reset_values_method(self):
         scan = Scan.objects.create(

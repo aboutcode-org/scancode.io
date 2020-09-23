@@ -19,6 +19,7 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
+
 from django.db import transaction
 
 from rest_framework import serializers
@@ -27,24 +28,7 @@ from scanner.models import EmailSubscription
 from scanner.models import Scan
 from scanner.models import WebhookSubscription
 from scanner.tasks import download_and_scan
-
-
-class ExcludeFromListViewMixin:
-    def get_fields(self):
-        """
-        Exclude the `task_output` field from the list view, only available in
-        the detail view.
-        """
-        fields = super().get_fields()
-
-        exclude_from_list_view = getattr(self.Meta, "exclude_from_list_view", None)
-        if exclude_from_list_view:
-            view = self.context.get("view", None)
-            if view and not view.detail:
-                for exclude_field in exclude_from_list_view:
-                    fields.pop(exclude_field, None)
-
-        return fields
+from scanpipe.api import ExcludeFromListViewMixin
 
 
 class ScanSerializer(
