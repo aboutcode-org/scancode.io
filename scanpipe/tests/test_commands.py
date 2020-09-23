@@ -161,8 +161,6 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("add-pipeline", *options, stdout=out)
 
     def test_scanpipe_management_command_show_pipeline(self):
-        out = StringIO()
-
         pipelines = [
             "scanpipe/pipelines/docker.py",
             "scanpipe/pipelines/root_filesystems.py",
@@ -172,11 +170,23 @@ class ScanPipeManagementCommandTest(TestCase):
         for pipeline_location in pipelines:
             project.add_pipeline(pipeline_location)
 
-        options = ["--project", project.name]
+        options = ["--project", project.name, "--no-color"]
+        out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
         expected = (
             " [ ] scanpipe/pipelines/docker.py\n"
             " [ ] scanpipe/pipelines/root_filesystems.py\n"
+        )
+        self.assertEqual(expected, out.getvalue())
+
+        project.runs.filter(pipeline=pipelines[0]).update(task_exitcode=0)
+        project.runs.filter(pipeline=pipelines[1]).update(task_exitcode=1)
+
+        out = StringIO()
+        call_command("show-pipeline", *options, stdout=out)
+        expected = (
+            " [S] scanpipe/pipelines/docker.py\n"
+            " [F] scanpipe/pipelines/root_filesystems.py\n"
         )
         self.assertEqual(expected, out.getvalue())
 
