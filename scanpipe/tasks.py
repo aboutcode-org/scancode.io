@@ -86,8 +86,8 @@ def run_pipeline_task(self, run_pk):
     run = get_run_instance(run_pk)
     start_run(run, task_id)
 
-    info(f'Run pipeline: "{run.pipeline}" on project: "{run.project_id}"', run_pk)
-    cmd = f"{python} {run.pipeline} run --project {run.project_id}"
+    info(f'Run pipeline: "{run.pipeline}" on project: "{run.project.name}"', run_pk)
+    cmd = f"{python} {run.pipeline} run --project {run.project.name}"
     exitcode, output = run_command(cmd)
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
@@ -109,7 +109,7 @@ def resume_pipeline_task(self, run_pk):
     start_run(run, task_id)
     run_id = run.get_run_id()
 
-    info(f'Resume pipeline: "{run.pipeline}" on project: "{run.project_id}"', run_pk)
+    info(f'Resume pipeline: "{run.pipeline}" on project: "{run.project.name}"', run_pk)
     cmd = f"{python} {run.pipeline} resume --origin-run-id {run_id}"
     exitcode, output = run_command(cmd)
 

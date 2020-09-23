@@ -39,9 +39,9 @@ class ScanPipeModelsTest(TestCase):
     rootfs_pipeline_location = "scanpipe/pipelines/root_filesystems.py"
     scan_pipeline_location = "scanpipe/pipelines/scan_inventory.py"
 
-    def test_scanpipe_pipeline_class_get_project_instance(self):
+    def test_scanpipe_pipeline_class_get_project(self):
         project1 = Project.objects.create(name="Analysis")
-        project_instance = Pipeline.get_project_instance(project_pk=project1.pk)
+        project_instance = Pipeline.get_project(project1.name)
         self.assertEqual(project1, project_instance)
 
     def test_scanpipe_pipelines_is_pipeline_subclass(self):

@@ -45,7 +45,7 @@ class DockerPipeline(Pipeline):
         """
         Load the Project instance.
         """
-        self.project = self.get_project_instance(self.project_pk)
+        self.project = self.get_project(self.project_name)
         self.next(self.extract_images)
 
     @step
