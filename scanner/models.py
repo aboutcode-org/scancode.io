@@ -36,6 +36,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.template.defaultfilters import filesizeformat
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 import requests
@@ -155,11 +156,39 @@ class AbstractTaskFieldsModel(models.Model):
             return int(total_seconds)
 
     def reset_task_values(self):
+        """
+        Reset all task related fields to their initial null value.
+        """
         self.task_id = None
         self.task_start_date = None
         self.task_end_date = None
         self.task_exitcode = None
         self.task_output = ""
+
+    def set_task_started(self, task_id):
+        """
+        Set the `task_id` and `task_start_date` before the task execution.
+        """
+        self.task_id = task_id
+        self.task_start_date = timezone.now()
+        self.save()
+
+    def set_task_ended(self, exitcode, output, refresh_first=True):
+        """
+        Set the task related fields after the task execution.
+
+        An optional `refresh_first`, enabled by default, force the refresh of
+        the instance with the latest data from the database before saving.
+        This prevent loosing values saved on the instance during the task
+        execution.
+        """
+        if refresh_first:
+            self.refresh_from_db()
+
+        self.task_exitcode = exitcode
+        self.task_output = output
+        self.task_end_date = timezone.now()
+        self.save()
 
 
 class Scan(AbstractTaskFieldsModel, models.Model):
