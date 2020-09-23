@@ -3,6 +3,9 @@
 
 ### v1.0.3 (unreleased)
 
+- **ScanPipe** -- Use project name as argument to run a pipeline
+    Fix for https://github.com/nexB/scancode.io/issues/18
+
 - **ScanPipe** -- Add support for "failed" task_output in Run.get_run_id method
     Fix for https://github.com/nexB/scancode.io/issues/17
 
