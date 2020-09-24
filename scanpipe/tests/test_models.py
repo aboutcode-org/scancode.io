@@ -43,6 +43,9 @@ class ScanPipeModelsTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
+    def create_run(self, **kwargs):
+        return Run.objects.create(project=self.project1, pipeline="pipeline", **kwargs)
+
     def test_scanpipe_project_model_extra_data(self):
         self.assertEqual({}, self.project1.extra_data)
         project1_from_db = Project.objects.get(name=self.project1.name)
@@ -113,21 +116,47 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())
 
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline1")
-        run2 = Run.objects.create(project=self.project1, pipeline="pipeline2")
-
+        run1 = self.create_run()
+        run2 = self.create_run()
         self.assertEqual(run1, self.project1.get_next_run())
-        run1.task_id = 1
+
+        run1.task_start_date = timezone.now()
         run1.save()
-
         self.assertEqual(run2, self.project1.get_next_run())
-        run2.task_id = 2
-        run2.save()
 
+        run2.task_start_date = timezone.now()
+        run2.save()
         self.assertEqual(None, self.project1.get_next_run())
 
+    def test_scanpipe_project_model_get_latest_failed_run(self):
+        self.assertEqual(None, self.project1.get_latest_failed_run())
+
+        run1 = self.create_run()
+        run2 = self.create_run()
+        self.assertEqual(None, self.project1.get_latest_failed_run())
+
+        run1.task_exitcode = 0
+        run1.save()
+        self.assertEqual(None, self.project1.get_latest_failed_run())
+
+        run1.task_exitcode = 1
+        run1.save()
+        self.assertEqual(run1, self.project1.get_latest_failed_run())
+
+        run2.task_exitcode = 0
+        run2.save()
+        self.assertEqual(run1, self.project1.get_latest_failed_run())
+
+        run2.task_exitcode = 1
+        run2.save()
+        self.assertEqual(run2, self.project1.get_latest_failed_run())
+
+        run1.task_exitcode = None
+        run1.save()
+        self.assertEqual(run2, self.project1.get_latest_failed_run())
+
     def test_scanpipe_run_model_task_methods(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+        run1 = self.create_run()
         self.assertFalse(run1.task_succeeded)
 
         run1.task_exitcode = 0
@@ -139,7 +168,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(run1.task_succeeded)
 
     def test_scanpipe_run_model_task_execution_time_property(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+        run1 = self.create_run()
 
         self.assertIsNone(run1.execution_time)
 
@@ -152,9 +181,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(25.0, run1.execution_time)
 
     def test_scanpipe_run_model_reset_task_values_method(self):
-        run1 = Run.objects.create(
-            project=self.project1,
-            pipeline="pipeline",
+        run1 = self.create_run(
             task_id=uuid.uuid4(),
             task_start_date=timezone.now(),
             task_end_date=timezone.now(),
@@ -170,7 +197,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("", run1.task_output)
 
     def test_scanpipe_run_model_set_task_started_method(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+        run1 = self.create_run()
 
         task_id = uuid.uuid4()
         run1.set_task_started(task_id)
@@ -181,7 +208,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(run1.task_end_date)
 
     def test_scanpipe_run_model_set_task_ended_method(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+        run1 = self.create_run()
 
         run1.set_task_ended(exitcode=0, output="output")
 
@@ -191,7 +218,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(run1.task_end_date)
 
     def test_scanpipe_run_model_get_run_id_method(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+        run1 = self.create_run()
 
         self.assertIsNone(run1.get_run_id())
 
@@ -206,6 +233,34 @@ class ScanPipeModelsTest(TestCase):
         run1.task_output = "(run-id 123) + (run-id 456)"
         run1.save()
         self.assertEqual("123", run1.get_run_id())
+
+    def test_scanpipe_run_model_queryset_methods(self):
+        now = timezone.now()
+
+        started = self.create_run(task_start_date=now)
+        not_started = self.create_run()
+        executed = self.create_run(task_start_date=now, task_end_date=now)
+        succeed = self.create_run(task_start_date=now, task_exitcode=0)
+        failed = self.create_run(task_start_date=now, task_exitcode=1)
+
+        qs = Run.objects.started()
+        self.assertEqual(4, len(qs))
+        self.assertIn(started, qs)
+        self.assertIn(executed, qs)
+        self.assertIn(succeed, qs)
+        self.assertIn(failed, qs)
+
+        qs = Run.objects.not_started()
+        self.assertEqual([not_started], list(qs))
+
+        qs = Run.objects.executed()
+        self.assertEqual([executed], list(qs))
+
+        qs = Run.objects.succeed()
+        self.assertEqual([succeed], list(qs))
+
+        qs = Run.objects.failed()
+        self.assertEqual([failed], list(qs))
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(

@@ -90,6 +90,10 @@ add the docker pipeline to your project::
 
 Run all the pipelines of the project named ``PROJECT``.
 
+Optional arguments:
+
+- ``--resume`` Resume the latest failed pipeline execution.
+
 
 `$ scanpipe show-pipeline --project PROJECT`
 --------------------------------------------

@@ -192,6 +192,9 @@ class Project(UUIDPKModel, models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        """
+        Setup the workspace directories on project creation.
+        """
         if not self.work_directory:
             self.work_directory = get_project_work_directory(self)
             self.setup_work_directory()
@@ -265,6 +268,9 @@ class Project(UUIDPKModel, models.Model):
         ]
 
     def add_input_file(self, file_object):
+        """
+        Write the provided `file_object` to this project input/ directory.
+        """
         filename = file_object.name
         file_path = Path(self.input_path / filename)
 
@@ -273,14 +279,27 @@ class Project(UUIDPKModel, models.Model):
                 f.write(chunk)
 
     def add_pipeline(self, pipeline):
+        """
+        Create a new Run instance with the provided `pipeline` on this project.
+        """
         description = get_pipeline_doc(pipeline)
         return Run.objects.create(
             project=self, pipeline=pipeline, description=description
         )
 
     def get_next_run(self):
+        """
+        Return the next non-executed Run instance assigned to this project.
+        """
         with suppress(ObjectDoesNotExist):
-            return self.runs.filter(task_id__isnull=True).earliest("created_date")
+            return self.runs.not_started().earliest("created_date")
+
+    def get_latest_failed_run(self):
+        """
+        Return the latest failed Run instance of this project.
+        """
+        with suppress(ObjectDoesNotExist):
+            return self.runs.failed().latest("created_date")
 
 
 class ProjectRelatedQuerySet(models.QuerySet):
@@ -297,7 +316,7 @@ class ProjectRelatedModel(models.Model):
         Project, related_name="%(class)ss", on_delete=models.CASCADE, editable=False
     )
 
-    objects = models.Manager.from_queryset(ProjectRelatedQuerySet)()
+    objects = ProjectRelatedQuerySet.as_manager()
 
     class Meta:
         abstract = True
@@ -352,7 +371,7 @@ class SaveProjectErrorMixin:
     @classmethod
     def _check_project_field(cls, **kwargs):
         """
-        Check if `project` field is defined.
+        Check if `project` field is declared on the model.
         """
 
         fields = [f.name for f in cls._meta.local_fields]
@@ -368,10 +387,29 @@ class SaveProjectErrorMixin:
         return []
 
 
+class RunQuerySet(models.QuerySet):
+    def started(self):
+        return self.filter(task_start_date__isnull=False)
+
+    def not_started(self):
+        return self.filter(task_start_date__isnull=True)
+
+    def executed(self):
+        return self.filter(task_end_date__isnull=False)
+
+    def succeed(self):
+        return self.filter(task_exitcode=0)
+
+    def failed(self):
+        return self.filter(task_exitcode__gt=0)
+
+
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
+
+    objects = RunQuerySet.as_manager()
 
     class Meta:
         ordering = ["created_date"]
@@ -383,10 +421,13 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
 
     def resume_pipeline_task_async(self):
-        tasks.resume_pipeline_task.apply_async(args=[self.pk], queue="default")
+        tasks.run_pipeline_task.apply_async(args=[self.pk, True], queue="default")
 
     @property
     def task_succeeded(self):
+        """
+        Return True if the pipeline task was successfully executed.
+        """
         return self.task_exitcode == 0
 
     def get_run_id(self):
@@ -538,7 +579,7 @@ class CodebaseResource(
         help_text=_("Descriptive file type for this resource."),
     )
 
-    objects = models.Manager.from_queryset(CodebaseResourceQuerySet)()
+    objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
         unique_together = (("project", "path"),)

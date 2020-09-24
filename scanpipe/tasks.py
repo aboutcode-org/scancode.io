@@ -54,38 +54,24 @@ def start_next_run_task(run):
 
 
 @shared_task(bind=True)
-def run_pipeline_task(self, run_pk):
+def run_pipeline_task(self, run_pk, resume=False):
     task_id = self.request.id
     info(f"Enter `{self.name}` Task.id={task_id}", run_pk)
 
     run = get_run_instance(run_pk)
-    run.set_task_started(task_id)
+    project = run.project
 
-    info(f'Run pipeline: "{run.pipeline}" on project: "{run.project.name}"', run_pk)
-    cmd = f"{python} {run.pipeline} run --project {run.project.name}"
-    exitcode, output = subprocess.getstatusoutput(cmd)
+    if resume:
+        run_id = run.get_run_id()
+        cmd_options = f"resume --origin-run-id {run_id}"
+    else:
+        cmd_options = f"run --project {project.name}"
 
-    info("Update Run instance with exitcode, output, and end_date", run_pk)
-    run.set_task_ended(exitcode, output, refresh_first=True)
-
-    if run.task_succeeded:
-        # We keep the temporary files available for resume in case of error
-        run.project.clear_tmp_directory()
-        start_next_run_task(run)
-
-
-@shared_task(bind=True)
-def resume_pipeline_task(self, run_pk):
-    task_id = self.request.id
-    info(f"Enter `{self.name}` Task.id={task_id}", run_pk)
-
-    run = get_run_instance(run_pk)
     run.reset_task_values()
     run.set_task_started(task_id)
-    run_id = run.get_run_id()
 
-    info(f'Resume pipeline: "{run.pipeline}" on project: "{run.project.name}"', run_pk)
-    cmd = f"{python} {run.pipeline} resume --origin-run-id {run_id}"
+    info(f'Run pipeline: "{run.pipeline}" on project: "{project.name}"', run_pk)
+    cmd = f"{python} {run.pipeline} {cmd_options}"
     exitcode, output = subprocess.getstatusoutput(cmd)
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
@@ -93,5 +79,5 @@ def resume_pipeline_task(self, run_pk):
 
     if run.task_succeeded:
         # We keep the temporary files available for resume in case of error
-        run.project.clear_tmp_directory()
+        project.clear_tmp_directory()
         start_next_run_task(run)
