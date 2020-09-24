@@ -77,7 +77,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options = [
             "--pipeline",
-            "scanpipe/pipelines/docker.py",
+            self.pipeline_location,
             "--pipeline",
             "scanpipe/pipelines/root_filesystems.py",
         ]
@@ -85,7 +85,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
         expected = [
-            "scanpipe/pipelines/docker.py",
+            self.pipeline_location,
             "scanpipe/pipelines/root_filesystems.py",
         ]
         self.assertEqual(expected, [run.pipeline for run in project.runs.all()])
@@ -142,7 +142,7 @@ class ScanPipeManagementCommandTest(TestCase):
         project = Project.objects.create(name="my_project")
 
         pipelines = [
-            "scanpipe/pipelines/docker.py",
+            self.pipeline_location,
             "scanpipe/pipelines/root_filesystems.py",
         ]
 
@@ -163,7 +163,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
     def test_scanpipe_management_command_show_pipeline(self):
         pipelines = [
-            "scanpipe/pipelines/docker.py",
+            self.pipeline_location,
             "scanpipe/pipelines/root_filesystems.py",
         ]
 
@@ -200,8 +200,7 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("run", *options, stdout=out)
 
-        pipeline = "scanpipe/pipelines/docker.py"
-        project.add_pipeline(pipeline)
+        project.add_pipeline(self.pipeline_location)
 
         def task_success(run):
             run.task_exitcode = 0
@@ -221,10 +220,31 @@ class ScanPipeManagementCommandTest(TestCase):
             run.save()
 
         err = StringIO()
-        project.add_pipeline(pipeline)
+        project.add_pipeline(self.pipeline_location)
         with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_failure):
             with self.assertRaisesMessage(SystemExit, "1"):
                 call_command("run", *options, stdout=out, stderr=err)
         expected = "Error during scanpipe/pipelines/docker.py execution:"
         self.assertIn(expected, err.getvalue())
         self.assertIn("Error log", err.getvalue())
+
+    @mock.patch("scanpipe.models.Run.resume_pipeline_task_async")
+    def test_scanpipe_management_command_run_resume(self, mock_resume_pipeline_task):
+        project = Project.objects.create(name="my_project")
+        options = ["--project", project.name, "--resume"]
+
+        out = StringIO()
+        expected = "No pipelines to resume on project my_project"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("run", *options, stdout=out)
+
+        run = project.add_pipeline(self.pipeline_location)
+        run.task_exitcode = 1
+        run.save()
+
+        err = StringIO()
+        with self.assertRaisesMessage(SystemExit, "1"):
+            call_command("run", *options, stdout=out, stderr=err)
+        mock_resume_pipeline_task.assert_called_once()
+        expected = "Error during scanpipe/pipelines/docker.py execution:"
+        self.assertIn(expected, err.getvalue())

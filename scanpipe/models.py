@@ -421,10 +421,13 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
 
     def resume_pipeline_task_async(self):
-        tasks.resume_pipeline_task.apply_async(args=[self.pk], queue="default")
+        tasks.run_pipeline_task.apply_async(args=[self.pk, True], queue="default")
 
     @property
     def task_succeeded(self):
+        """
+        Return True if the pipeline task was successfully executed.
+        """
         return self.task_exitcode == 0
 
     def get_run_id(self):
