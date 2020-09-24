@@ -37,7 +37,7 @@ def graphviz_installed():
 
 
 class Command(BaseCommand):
-    help = "Generate Pipeline graph with Graphviz."
+    help = "Generate pipeline graph with Graphviz."
 
     def add_arguments(self, parser):
         parser.add_argument(

@@ -80,9 +80,11 @@ def resume_pipeline_task(self, run_pk):
     info(f"Enter `{self.name}` Task.id={task_id}", run_pk)
 
     run = get_run_instance(run_pk)
+    # Capture the run_id before resetting the task
+    run_id = run.get_run_id()
+
     run.reset_task_values()
     run.set_task_started(task_id)
-    run_id = run.get_run_id()
 
     info(f'Resume pipeline: "{run.pipeline}" on project: "{run.project.name}"', run_pk)
     cmd = f"{python} {run.pipeline} resume --origin-run-id {run_id}"

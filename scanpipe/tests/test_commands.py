@@ -23,6 +23,7 @@
 import tempfile
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 from django.core.management import CommandError
 from django.core.management import call_command
@@ -191,18 +192,39 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(expected, out.getvalue())
 
     def test_scanpipe_management_command_run(self):
-        out = StringIO()
-
         project = Project.objects.create(name="my_project")
         options = ["--project", project.name]
 
-        expected = "No pipelines to run on Project my_project"
+        out = StringIO()
+        expected = "No pipelines to run on project my_project"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("run", *options, stdout=out)
 
         pipeline = "scanpipe/pipelines/docker.py"
         project.add_pipeline(pipeline)
-        call_command("run", *options, stdout=out)
 
+        def task_success(run):
+            run.task_exitcode = 0
+            run.save()
+
+        out = StringIO()
+        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_success):
+            call_command("run", *options, stdout=out)
         expected = "Pipeline scanpipe/pipelines/docker.py run in progress..."
         self.assertIn(expected, out.getvalue())
+        expected = "successfully executed on project my_project"
+        self.assertIn(expected, out.getvalue())
+
+        def task_failure(run):
+            run.task_output = "Error log"
+            run.task_exitcode = 1
+            run.save()
+
+        err = StringIO()
+        project.add_pipeline(pipeline)
+        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_failure):
+            with self.assertRaisesMessage(SystemExit, "1"):
+                call_command("run", *options, stdout=out, stderr=err)
+        expected = "Error during scanpipe/pipelines/docker.py execution:"
+        self.assertIn(expected, err.getvalue())
+        self.assertIn("Error log", err.getvalue())
