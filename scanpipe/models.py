@@ -650,6 +650,10 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
     def __str__(self):
         return self.package_url or str(self.uuid)
 
+    @property
+    def purl(self):
+        return self.package_url
+
     @classmethod
     def create_from_data(cls, project, package_data):
         """
