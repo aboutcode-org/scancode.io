@@ -49,7 +49,7 @@ Step-by-step
     The ``scanpipe show-pipeline`` command lists all the pipelines added to the
     project and their planned runs.
     You can use this to get a quick overview of the pipelines that have been running already
-    (with their success "S" or fail status "F") and those that will be running next.
+    (with their "SUCCESS" or "FAILURE" status) and those that will be running next.
 
 - Run the docker pipeline on this project::
 
@@ -59,7 +59,7 @@ Step-by-step
   pipeline run::
 
     $ scanpipe show-pipeline --project staticbox
-    "[S] scanpipe/pipelines/docker.py"
+    "[SUCCESS] scanpipe/pipelines/docker.py"
 
 - Get the results of the pipeline run as a JSON file using the ``output`` command::
 

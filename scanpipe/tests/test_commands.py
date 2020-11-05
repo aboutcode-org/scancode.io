@@ -186,8 +186,8 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
         expected = (
-            " [S] scanpipe/pipelines/docker.py\n"
-            " [F] scanpipe/pipelines/root_filesystems.py\n"
+            " [SUCCESS] scanpipe/pipelines/docker.py\n"
+            " [FAILURE] scanpipe/pipelines/root_filesystems.py\n"
         )
         self.assertEqual(expected, out.getvalue())
 
