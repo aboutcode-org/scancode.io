@@ -33,18 +33,19 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
 
 
-def get_virtual_codebase(project):
+def get_virtual_codebase(project, input_file_location=None):
     """
-    Return a ScanCode virtual codebase object built from the JSON scan file
-    found in a `project` input/ directory.
+    Return a ScanCode virtual codebase object built from the JSON scan file.
+    By default, the JSON file is retrieved from the `project` input/ directory.
+    It can also be provided as `input_file_location`.
     """
-    inputs = list(project.inputs(pattern="*.json"))
-    if len(inputs) != 1:
-        raise Exception("Only 1 JSON input file supported")
+    if not input_file_location:
+        inputs = list(project.inputs(pattern="*.json"))
+        if len(inputs) != 1:
+            raise Exception("Only 1 JSON input file supported")
+        input_file_location = str(inputs[0].absolute())
 
-    input_file_location = str(inputs[0].absolute())
-
-    temp_path = project.work_path / "scancode-temp-resource-cache"
+    temp_path = project.tmp_path / "scancode-temp-resource-cache"
     temp_path.mkdir(parents=True, exist_ok=True)
 
     return VirtualCodebase(

@@ -28,7 +28,7 @@ django.setup()
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import step
-from scanpipe.pipes import scancode_utils
+from scanpipe.pipes import scancode
 
 
 class CollectInventoryFromScanCodeScan(Pipeline):
@@ -51,9 +51,9 @@ class CollectInventoryFromScanCodeScan(Pipeline):
         Process a JSON scan to populate resources and packages.
         """
         project = self.project
-        scanned_codebase = scancode_utils.get_virtual_codebase(project)
-        scancode_utils.create_codebase_resources(project, scanned_codebase)
-        scancode_utils.create_discovered_packages(project, scanned_codebase)
+        scanned_codebase = scancode.get_virtual_codebase(project)
+        scancode.create_codebase_resources(project, scanned_codebase)
+        scancode.create_discovered_packages(project, scanned_codebase)
         self.next(self.end)
 
     @step
