@@ -54,6 +54,8 @@ Optional arguments:
 
 - ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace directory.
 
+- ``--run``  Start running the pipelines right after project creation.
+
 .. warning::
     The pipelines are added and will be running in the order of the provided options.
 
