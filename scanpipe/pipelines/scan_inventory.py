@@ -43,6 +43,17 @@ class CollectInventoryFromScanCodeScan(Pipeline):
         Load the Project instance.
         """
         self.project = self.get_project(self.project_name)
+        self.next(self.get_scan_json_input)
+
+    @step
+    def get_scan_json_input(self):
+        """
+        Locate the JSON scan input from the project input/ directory.
+        """
+        inputs = list(self.project.inputs(pattern="*.json"))
+        if len(inputs) != 1:
+            raise Exception("Only 1 JSON input file supported")
+        self.input_location = str(inputs[0].absolute())
         self.next(self.build_inventory_from_scan)
 
     @step
@@ -51,7 +62,7 @@ class CollectInventoryFromScanCodeScan(Pipeline):
         Process a JSON scan to populate resources and packages.
         """
         project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project)
+        scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
         scancode.create_codebase_resources(project, scanned_codebase)
         scancode.create_discovered_packages(project, scanned_codebase)
         self.next(self.end)
