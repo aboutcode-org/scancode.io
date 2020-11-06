@@ -13,8 +13,8 @@ Requirements
 Before you start
 ----------------
 
-- Download the following package archive save this in your home directory:
-  `asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
+Download the following package archive save this in your home directory:
+`asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
 
 
 Step-by-step
@@ -28,7 +28,7 @@ Step-by-step
   add the archive as an input for the project,
   add the ``scan_codebase`` pipeline, and run its execution::
 
-    $ scanpipe create-project \
+    $ scanpipe create-project asgiref \
         --input asgiref-3.3.0-py3-none-any.whl \
         --pipeline scanpipe/pipelines/scan_codebase.py \
         --run

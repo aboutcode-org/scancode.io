@@ -13,8 +13,8 @@ Requirements
 Before you start
 ----------------
 
-- Download the following test Docker image and save this in your home directory:
-  https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
+Download the following test Docker image and save this in your home directory:
+`30-alpine-nickolashkraus-staticbox-latest.tar <https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
 
 
 Step-by-step
