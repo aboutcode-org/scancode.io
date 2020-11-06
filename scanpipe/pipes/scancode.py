@@ -24,6 +24,8 @@ import packagedcode
 from packageurl import PackageURL
 from scancode.resource import VirtualCodebase
 
+from scanner.tasks import get_bin_executable
+from scanner.tasks import run_command
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 
@@ -31,6 +33,33 @@ from scanpipe.models import CodebaseResource
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
+
+
+def run_extractcode(location, options):
+    """
+    Extract `location` content with extractcode.
+    """
+    extractcode_args = [
+        get_bin_executable("extractcode"),
+        location,
+        *options,
+    ]
+    exitcode, output = run_command(extractcode_args)
+    return exitcode, output
+
+
+def run_scancode(location, output_file, options):
+    """
+    Scan `location` content and write results into `output_file`.
+    """
+    scancode_args = [
+        get_bin_executable("scancode"),
+        location,
+        *options,
+        f"--json-pp {output_file}",
+    ]
+    exitcode, output = run_command(scancode_args)
+    return exitcode, output
 
 
 def get_virtual_codebase(project, input_location):

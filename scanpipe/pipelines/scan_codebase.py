@@ -28,8 +28,6 @@ django.setup()
 
 from scancode_config import __version__ as scancode_version
 
-from scanner.tasks import get_bin_executable
-from scanner.tasks import run_command
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import step
 from scanpipe.pipes import outputs
@@ -82,12 +80,10 @@ class ScanCodebase(Pipeline):
         """
         Extract with extractcode.
         """
-        extractcode_args = [
-            get_bin_executable("extractcode"),
-            str(self.project.codebase_path),
-            *self.extractcode_options,
-        ]
-        exitcode, output = run_command(extractcode_args)
+        scancode.run_extractcode(
+            location=str(self.project.codebase_path),
+            options=self.extractcode_options,
+        )
         self.next(self.run_scancode)
 
     @step
@@ -98,13 +94,11 @@ class ScanCodebase(Pipeline):
         self.scan_output_file = (
             self.project.output_path / f"scancode-{scancode_version}.json"
         )
-        scancode_args = [
-            get_bin_executable("scancode"),
-            str(self.project.codebase_path),
-            *self.scancode_options,
-            f"--json-pp {self.scan_output_file}",
-        ]
-        exitcode, output = run_command(scancode_args)
+        scancode.run_scancode(
+            location=str(self.project.codebase_path),
+            output_file=self.scan_output_file,
+            options=self.scancode_options,
+        )
         self.next(self.build_inventory_from_scan)
 
     @step
