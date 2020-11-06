@@ -55,6 +55,7 @@ class ScanCodebase(Pipeline):
         "--email",
         "--info",
         "--license",
+        "--license-text",
         "--package",
         "--url",
     ]
@@ -95,7 +96,7 @@ class ScanCodebase(Pipeline):
         Scan extracted codebase/ content.
         """
         self.scan_output_file = (
-            self.project.output_path / f"scan_{scancode_version}.json"
+            self.project.output_path / f"scancode-{scancode_version}.json"
         )
         scancode_args = [
             get_bin_executable("scancode"),
