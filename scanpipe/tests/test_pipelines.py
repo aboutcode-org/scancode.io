@@ -30,14 +30,14 @@ from scanpipe.pipelines import get_pipeline_description
 from scanpipe.pipelines import get_pipeline_doc
 from scanpipe.pipelines import is_pipeline_subclass
 from scanpipe.pipelines.docker import DockerPipeline
+from scanpipe.pipelines.load_inventory import LoadInventoryFromScanCodeScan
 from scanpipe.pipelines.root_filesystems import RootfsPipeline
-from scanpipe.pipelines.scan_inventory import CollectInventoryFromScanCodeScan
 
 
 class ScanPipeModelsTest(TestCase):
     docker_pipeline_location = "scanpipe/pipelines/docker.py"
     rootfs_pipeline_location = "scanpipe/pipelines/root_filesystems.py"
-    scan_pipeline_location = "scanpipe/pipelines/scan_inventory.py"
+    scan_pipeline_location = "scanpipe/pipelines/load_inventory.py"
 
     def test_scanpipe_pipeline_class_get_project(self):
         project1 = Project.objects.create(name="Analysis")
@@ -49,7 +49,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(is_pipeline_subclass(Pipeline))
         self.assertTrue(is_pipeline_subclass(DockerPipeline))
         self.assertTrue(is_pipeline_subclass(RootfsPipeline))
-        self.assertTrue(is_pipeline_subclass(CollectInventoryFromScanCodeScan))
+        self.assertTrue(is_pipeline_subclass(LoadInventoryFromScanCodeScan))
 
     def test_scanpipe_pipelines_get_pipeline_class(self):
         pipeline_class = get_pipeline_class(self.docker_pipeline_location)
@@ -57,7 +57,7 @@ class ScanPipeModelsTest(TestCase):
         pipeline_class = get_pipeline_class(self.rootfs_pipeline_location)
         self.assertEqual(RootfsPipeline, pipeline_class)
         pipeline_class = get_pipeline_class(self.scan_pipeline_location)
-        self.assertEqual(CollectInventoryFromScanCodeScan, pipeline_class)
+        self.assertEqual(LoadInventoryFromScanCodeScan, pipeline_class)
 
     def test_scanpipe_pipelines_get_pipeline_doc(self):
         doc = get_pipeline_doc(self.docker_pipeline_location)

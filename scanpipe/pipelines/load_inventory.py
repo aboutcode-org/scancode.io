@@ -31,9 +31,9 @@ from scanpipe.pipelines import step
 from scanpipe.pipes import scancode
 
 
-class CollectInventoryFromScanCodeScan(Pipeline):
+class LoadInventoryFromScanCodeScan(Pipeline):
     """
-    A pipeline to load a files and packages inventory from a ScanCode JSON scan
+    A pipeline to load a files and packages inventory from a ScanCode JSON scan.
     (assumed to contain file information and package scan data).
     """
 
@@ -75,4 +75,4 @@ class CollectInventoryFromScanCodeScan(Pipeline):
 
 
 if __name__ == "__main__":
-    CollectInventoryFromScanCodeScan()
+    LoadInventoryFromScanCodeScan()

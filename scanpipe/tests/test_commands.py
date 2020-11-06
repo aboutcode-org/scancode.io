@@ -130,7 +130,7 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
-        pipeline = "scanpipe/pipelines/scan_inventory.py"
+        pipeline = "scanpipe/pipelines/load_inventory.py"
         options = [
             "--pipeline",
             pipeline,
