@@ -83,6 +83,7 @@ class ScanCodebase(Pipeline):
         scancode.run_extractcode(
             location=str(self.project.codebase_path),
             options=self.extractcode_options,
+            raise_on_error=True,
         )
         self.next(self.run_scancode)
 
@@ -91,13 +92,12 @@ class ScanCodebase(Pipeline):
         """
         Scan extracted codebase/ content.
         """
-        self.scan_output_file = (
-            self.project.output_path / f"scancode-{scancode_version}.json"
-        )
+        self.scan_output_file = self.project.output_path / "scancode.json"
         scancode.run_scancode(
             location=str(self.project.codebase_path),
             output_file=self.scan_output_file,
             options=self.scancode_options,
+            raise_on_error=True,
         )
         self.next(self.build_inventory_from_scan)
 

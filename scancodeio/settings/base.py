@@ -202,4 +202,4 @@ SECRET_KEY = env.str("SECRET_KEY")
 
 # ScanCode.io custom settings
 
-SCANCODE_DEFAULT_OPTIONS = env.str("SCANCODE_DEFAULT_OPTIONS", [])
+SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])

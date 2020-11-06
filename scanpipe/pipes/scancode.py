@@ -24,6 +24,7 @@ from django.conf import settings
 
 import packagedcode
 from packageurl import PackageURL
+from scancode import ScancodeError
 from scancode.resource import VirtualCodebase
 
 from scanner.tasks import get_bin_executable
@@ -37,22 +38,32 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
 
 
-def run_extractcode(location, options):
+def run_extractcode(location, options, raise_on_error=False):
     """
     Extract `location` content with extractcode.
+    The `extractcode` executable will be run using the provided `options`.
+    If `raise_on_error` is enabled, a ScancodeError will be raised if the
+    exitcode greater than 0.
     """
     extractcode_args = [
         get_bin_executable("extractcode"),
         location,
         *options,
     ]
+
     exitcode, output = run_command(extractcode_args)
+    if exitcode > 0 and raise_on_error:
+        raise ScancodeError(output)
+
     return exitcode, output
 
 
-def run_scancode(location, output_file, options):
+def run_scancode(location, output_file, options, raise_on_error=False):
     """
     Scan `location` content and write results into `output_file`.
+    The `scancode` executable will be run using the provided `options`.
+    If `raise_on_error` is enabled, a ScancodeError will be raised if the
+    exitcode greater than 0.
     """
     default_options = getattr(settings, "SCANCODE_DEFAULT_OPTIONS", [])
 
@@ -63,7 +74,11 @@ def run_scancode(location, output_file, options):
         *options,
         f"--json-pp {output_file}",
     ]
+
     exitcode, output = run_command(scancode_args)
+    if exitcode > 0 and raise_on_error:
+        raise ScancodeError(output)
+
     return exitcode, output
 
 
