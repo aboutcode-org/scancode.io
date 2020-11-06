@@ -117,7 +117,7 @@ class ScanCodebase(Pipeline):
         """
         Generate csv outputs.
         """
-        outputs.as_csv(self.project)
+        outputs.to_csv(self.project)
         self.next(self.end)
 
     @step

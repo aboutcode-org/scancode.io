@@ -63,8 +63,8 @@ class ScanPipePipesTest(TestCase):
         with output_file.open() as f:
             self.assertEqual(expected, f.readlines())
 
-    def test_scanpipe_pipes_outputs_as_csv(self):
+    def test_scanpipe_pipes_outputs_to_csv(self):
         project1 = Project.objects.create(name="Analysis")
-        outputs.as_csv(project=project1)
+        outputs.to_csv(project=project1)
         expected = ["Analysis_codebaseresource.csv", "Analysis_discoveredpackage.csv"]
         self.assertEqual(sorted(expected), sorted(project1.output_root))

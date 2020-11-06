@@ -47,7 +47,7 @@ def queryset_to_csv(project, queryset, fieldnames):
     return output_file
 
 
-def as_csv(project):
+def to_csv(project):
     """
     Generate results output for the provided `project` as csv format.
     Since the csv format does not support multiple tabs, one file is created
