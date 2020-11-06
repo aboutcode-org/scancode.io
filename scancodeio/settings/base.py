@@ -151,7 +151,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = "/static/"
@@ -200,3 +199,7 @@ environ.Env.read_env(env_file)
 env = environ.Env()
 
 SECRET_KEY = env.str("SECRET_KEY")
+
+# ScanCode.io custom settings
+
+SCANCODE_DEFAULT_OPTIONS = env.str("SCANCODE_DEFAULT_OPTIONS", [])

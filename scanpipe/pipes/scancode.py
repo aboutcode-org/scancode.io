@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.conf import settings
+
 import packagedcode
 from packageurl import PackageURL
 from scancode.resource import VirtualCodebase
@@ -52,9 +54,12 @@ def run_scancode(location, output_file, options):
     """
     Scan `location` content and write results into `output_file`.
     """
+    default_options = getattr(settings, "SCANCODE_DEFAULT_OPTIONS", [])
+
     scancode_args = [
         get_bin_executable("scancode"),
         location,
+        *default_options,
         *options,
         f"--json-pp {output_file}",
     ]
