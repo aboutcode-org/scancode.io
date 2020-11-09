@@ -3,6 +3,9 @@
 
 ### v1.0.4 (unreleased)
 
+- Add new ScanCodebase pipeline for codebase scan
+  Fix for https://github.com/nexB/scancode.io/issues/37
+
 ### v1.0.3 (2020-09-24)
 
 - Add ability to resume a failed pipeline from the run management command
