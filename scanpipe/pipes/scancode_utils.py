@@ -21,8 +21,8 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import packagedcode
+from commoncode.resource import VirtualCodebase
 from packageurl import PackageURL
-from scancode.resource import VirtualCodebase
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource

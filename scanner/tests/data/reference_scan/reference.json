@@ -304,7 +304,7 @@
         "count": 5
       },
       {
-        "value": "C++",
+        "value": "C",
         "count": 3
       },
       {
@@ -1605,7 +1605,7 @@
       "sha256": "341d49ae2703037d2d10c8486f1a1ca3b65e0f10cc9e5fead6bfbbc0b34564ba",
       "mime_type": "text/x-c",
       "file_type": "C source, ASCII text",
-      "programming_language": "C++",
+      "programming_language": "C",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -1696,7 +1696,7 @@
       "sha256": "0bb87fb2b354ef426ce27dfe5d22c109cbc431f5c654c8daab2e9117bee7962e",
       "mime_type": "text/plain",
       "file_type": "ASCII text",
-      "programming_language": "C++",
+      "programming_language": "C",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -1787,7 +1787,7 @@
       "sha256": "177b3e3024fb768b2965497107b5e1f7a5677817412e8ffc4902923d7b34b13c",
       "mime_type": "text/plain",
       "file_type": "ASCII text",
-      "programming_language": "C++",
+      "programming_language": "C",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
