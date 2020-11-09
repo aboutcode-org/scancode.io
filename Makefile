@@ -116,4 +116,8 @@ bump:
 	@echo "-> Bump the version to next patch number: 'major.minor.patch'"
 	bin/bumpversion patch --allow-dirty
 
-.PHONY: conf dev envfile install check valid isort clean migrate cleandb run test package bump
+docs:
+	rm -rf docs/_build/
+	sphinx-build docs/ docs/_build/
+
+.PHONY: conf dev envfile install check valid isort clean migrate cleandb run test package bump docs

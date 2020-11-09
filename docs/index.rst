@@ -23,6 +23,8 @@ First application is for Docker container and VM composition analysis.
     :caption: Reference Documentation
 
     scanpipe-concepts
+    scanpipe-pipelines
+    scanpipe-pipes
     scanpipe-command-line
     scanpipe-api
     offline-installation

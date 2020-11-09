@@ -24,6 +24,9 @@ from packagedcode import alpine
 
 
 def package_getter(root_dir, **kwargs):
+    """
+    Yield installed package objects.
+    """
     packages = alpine.get_installed_packages(root_dir)
     for package in packages:
         yield package.purl, package

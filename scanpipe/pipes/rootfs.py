@@ -255,11 +255,11 @@ def match_not_analyzed(
     """
     Given a `project` Project :
     1. build an MD5 index of files assigned to a package that have a status of
-      `reference_status`
+    `reference_status`
     2. attempt to match resources with status `not_analyzed_status` to that
-       index
+    index
     3. relate each matched CodebaseResource to matching DiscoveredPackage and
-       set its status.
+    set its status.
     """
     known_resources = get_resource_with_md5(project=project, status=reference_status)
     known_resources_by_md5_size = {
