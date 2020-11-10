@@ -95,14 +95,19 @@ def get_virtual_codebase(project, input_location):
     )
 
 
-def create_codebase_resources(project, scanned_codebase):
+def create_codebase_resources(project, scanned_codebase, strip_root=False):
     """
     Save the resources of a ScanCode `scanned_codebase`
     scancode.resource.Codebase object to the DB as CodebaseResource of
     `project`.
+    If `strip_root` is True, strip the first segment of CodebaseResource
+    path.
     """
     for scanned_resource in scanned_codebase.walk():
         path = scanned_resource.path
+        if strip_root:
+            path = pipes.strip_root(path)
+
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
         file_infos = dict(
             type=CodebaseResource.Type[resource_type],
@@ -124,14 +129,19 @@ def create_codebase_resources(project, scanned_codebase):
         cbr.save()
 
 
-def create_discovered_packages(project, scanned_codebase):
+def create_discovered_packages(project, scanned_codebase, strip_root=False):
     """
     Save the packages of a ScanCode `scanned_codebase`
     scancode.resource.Codebase object to the DB as DiscoveredPackage of
     `project`. Relate package resources to CodebaseResource.
+    If `strip_root` is True, strip the first segment of CodebaseResource
+    path.
     """
     for scanned_resource in scanned_codebase.walk():
-        cbr = CodebaseResource.objects.get(project=project, path=scanned_resource.path)
+        path = scanned_resource.path
+        if strip_root:
+            path = pipes.strip_root(path)
+        cbr = CodebaseResource.objects.get(project=project, path=path)
 
         scanned_packages = getattr(scanned_resource, "packages", []) or []
 
@@ -151,9 +161,11 @@ def create_discovered_packages(project, scanned_codebase):
             )
 
             for scanned_package_res in scanned_package_resources:
-                package_cbr = CodebaseResource.objects.get(
-                    project=project, path=scanned_package_res.path
-                )
+                path = scanned_package_res.path
+                if strip_root:
+                    path = pipes.strip_root(path)
+
+                package_cbr = CodebaseResource.objects.get(project=project, path=path)
 
                 set_codebase_resource_for_package(
                     codebase_resource=package_cbr, discovered_package=discovered_package

@@ -20,16 +20,34 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from pathlib import Path
+
 from django.test import TestCase
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import outputs
+from scanpipe.pipes import strip_root
 from scanpipe.tests import package_data1
 
 
 class ScanPipePipesTest(TestCase):
+    def test_scanpipe_pipes_strip_root(self):
+        input_paths = [
+            "/root/dir/file",
+            "/root/dir/file/",
+            "//root/dir/file",
+            "//root/dir/file/",
+            "root/dir/file",
+            "root/dir/file/",
+        ]
+        expected = "dir/file"
+
+        for path in input_paths:
+            self.assertEqual(expected, strip_root(path))
+            self.assertEqual(expected, strip_root(Path(path)))
+
     def test_scanpipe_pipes_outputs_queryset_to_csv(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
