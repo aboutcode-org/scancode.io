@@ -23,9 +23,9 @@
 from django.conf import settings
 
 import packagedcode
+from commoncode.resource import VirtualCodebase
 from packageurl import PackageURL
 from scancode import ScancodeError
-from scancode.resource import VirtualCodebase
 
 from scanner.tasks import get_bin_executable
 from scanner.tasks import run_command
