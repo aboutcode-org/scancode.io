@@ -30,6 +30,52 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectError
 
 
+class ListDisplayField:
+    """
+    Base class for `list_display` fields customization.
+    """
+
+    def __init__(self, name, **kwargs):
+        self.name = name
+        self.__name__ = name
+        self.short_description = kwargs.get("short_description", name.replace("_", " "))
+        kwargs.setdefault("admin_order_field", name)
+        self.__dict__.update(kwargs)
+
+    def __call__(self, obj):
+        if obj:
+            field_value = getattr(obj, self.name)
+            if field_value:
+                return self.to_representation(obj, field_value)
+
+    def __repr__(self):
+        return self.name
+
+    def to_representation(self, obj, field_value):
+        return field_value
+
+
+class FilterLink(ListDisplayField):
+    """
+    Return the field as a link to filter by its value.
+    """
+
+    def __init__(self, name, filter_lookup=None, **kwargs):
+        self.filter_lookup = filter_lookup
+        super().__init__(name, **kwargs)
+
+    def to_representation(self, obj, field_value):
+        request = getattr(obj, "_request")
+        query_dict = request.GET.copy() if request else QueryDict()
+        query_dict[self.filter_lookup or self.name] = field_value
+
+        return format_html(
+            '<a href="?{query}">{field_value}</a>',
+            query=query_dict.urlencode(),
+            field_value=field_value,
+        )
+
+
 class InjectRequestChangeList(ChangeList):
     def get_results(self, request):
         """
@@ -65,55 +111,18 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
     project_filter.short_description = "Project"
     project_filter.admin_order_field = "project"
 
-    @staticmethod
-    def as_filter(obj, field_name):
-        field_value = getattr(obj, field_name, None)
-        if field_value is None:
-            return
-
-        request = getattr(obj, "_request")
-        if request:
-            query_dict = request.GET.copy()
-        else:
-            query_dict = QueryDict()
-        query_dict[field_name] = field_value
-
-        return format_html(
-            '<a href="?{query}">{field_value}</a>',
-            query=query_dict.urlencode(),
-            field_value=field_value,
-        )
-
-    def type_filter(self, obj):
-        return self.as_filter(obj, field_name="type")
-
-    type_filter.short_description = "Type"
-    type_filter.admin_order_field = "type"
-
-    def status_filter(self, obj):
-        return self.as_filter(obj, field_name="status")
-
-    status_filter.short_description = "Status"
-    status_filter.admin_order_field = "status"
-
-    def programming_language_filter(self, obj):
-        return self.as_filter(obj, field_name="programming_language")
-
-    programming_language_filter.short_description = "Programming language"
-    programming_language_filter.admin_order_field = "programming_language"
-
 
 @admin.register(CodebaseResource)
 class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
     list_display = (
         "project_filter",
         "path",
-        "status_filter",
-        "type_filter",
+        FilterLink("status"),
+        FilterLink("type", filter_lookup="type__exact"),
         "size",
         "name",
         "extension",
-        "programming_language_filter",
+        FilterLink("programming_language"),
         "mime_type",
         "file_type",
         "license_expressions",
@@ -136,7 +145,7 @@ class DiscoveredPackageAdmin(ProjectRelatedModelAdmin):
     list_display = (
         "project_filter",
         "package_url",
-        "type_filter",
+        FilterLink("type"),
         "namespace",
         "name",
         "version",
