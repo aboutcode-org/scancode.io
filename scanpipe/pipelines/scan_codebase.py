@@ -26,8 +26,6 @@ import django
 
 django.setup()
 
-from scancode_config import __version__ as scancode_version
-
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import step
 from scanpipe.pipes import outputs
