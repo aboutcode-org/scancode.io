@@ -253,16 +253,25 @@ def scan_for_files(project):
 
 
 def has_unknown_license(codebase_resource):
+    """
+    Return True if an "unknown" license in present in the license expression.
+    """
     return any(
         "unknown" in expression for expression in codebase_resource.license_expressions
     )
 
 
 def has_no_licenses(codebase_resource):
+    """
+    Return True if the `codebase_resource` has no license expression.
+    """
     return not codebase_resource.license_expressions
 
 
 def analyze_scanned_files(project):
+    """
+    Set the status for CodebaseResource with unknown or no licenses.
+    """
     queryset = CodebaseResource.objects.project(project).status("scanned")
 
     for codebase_resource in queryset:
@@ -275,6 +284,10 @@ def analyze_scanned_files(project):
 
 
 def tag_not_analyzed_codebase_resources(project):
+    """
+    Flag as "not-analyzed" the `CodebaseResource` without a status of the
+    provided `project`
+    """
     no_status = CodebaseResource.objects.project(project).no_status()
     no_status.update(status="not-analyzed")
 

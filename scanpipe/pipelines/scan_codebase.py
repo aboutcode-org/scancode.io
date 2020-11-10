@@ -39,7 +39,7 @@ class ScanCodebase(Pipeline):
 
     The input files are copied to the project codebase/ directory and extracted
     in place before running the scan.
-    Alternatively, the code can be manually copied in the project codebase/
+    Alternatively, the code can be manually copied to the project codebase/
     directory.
     """
 

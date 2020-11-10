@@ -3,6 +3,9 @@
 
 ### v1.0.4 (unreleased)
 
+- Add Pipelines and Pipes documentation using Sphinx autodoc
+  Fix for https://github.com/nexB/scancode.io/issues/38
+
 - Add new ScanCodebase pipeline for codebase scan
   Fix for https://github.com/nexB/scancode.io/issues/37
 
