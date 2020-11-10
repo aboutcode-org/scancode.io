@@ -36,7 +36,7 @@ class Command(ProjectCommand):
     def get_run_status_code(self, run):
         status = " "
         if run.task_succeeded:
-            status = self.style.SUCCESS("S")
+            status = self.style.SUCCESS("SUCCESS")
         elif run.task_exitcode and run.task_exitcode > 0:
-            status = self.style.ERROR("F")
+            status = self.style.ERROR("FAILURE")
         return status

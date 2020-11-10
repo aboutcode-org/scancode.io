@@ -257,15 +257,29 @@ class Project(UUIDPKModel, models.Model):
             if path.is_file()
         ]
 
+    @staticmethod
+    def get_root_content(directory):
+        """
+        Return the list of all files and directories of the `directory`.
+        Only the first level children are listed.
+        """
+        return [str(path.relative_to(directory)) for path in directory.glob("*")]
+
     @property
     def input_root(self):
         """
         Return the list of all files and directories of the input/ directory.
         Only the first level children are listed.
         """
-        return [
-            str(path.relative_to(self.input_path)) for path in self.input_path.glob("*")
-        ]
+        return self.get_root_content(self.input_path)
+
+    @property
+    def output_root(self):
+        """
+        Return the list of all files and directories of the output/ directory.
+        Only the first level children are listed.
+        """
+        return self.get_root_content(self.output_path)
 
     def add_input_file(self, file_object):
         """
@@ -635,6 +649,10 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
 
     def __str__(self):
         return self.package_url or str(self.uuid)
+
+    @property
+    def purl(self):
+        return self.package_url
 
     @classmethod
     def create_from_data(cls, project, package_data):
