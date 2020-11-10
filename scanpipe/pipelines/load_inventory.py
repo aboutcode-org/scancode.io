@@ -59,7 +59,7 @@ class LoadInventoryFromScanCodeScan(Pipeline):
     @step
     def build_inventory_from_scan(self):
         """
-        Process a JSON scan to populate resources and packages.
+        Process the JSON scan to populate resources and packages.
         """
         project = self.project
         scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)

@@ -31,7 +31,7 @@ RootFS
 
 ScanCode
 --------
-.. automodule:: scanpipe.pipes.scancode_utils
+.. automodule:: scanpipe.pipes.scancode
     :members:
 
 Utilities

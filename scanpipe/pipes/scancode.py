@@ -192,6 +192,10 @@ def create_discovered_packages(project, scanned_codebase, strip_root=False):
 
 
 def set_codebase_resource_for_package(codebase_resource, discovered_package):
+    """
+    Assign the `discovered_package` to the `codebase_resource` and set its
+    status to "application-package".
+    """
     codebase_resource.discovered_packages.add(discovered_package)
     codebase_resource.status = "application-package"
     codebase_resource.save()

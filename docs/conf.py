@@ -42,7 +42,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # Mock Django related modules to avoid complex configuration in the context of
 # autodoc.
-autodoc_mock_imports = ["django", "celery", "scanpipe.models"]
+autodoc_mock_imports = ["django", "celery", "scanpipe.models", "scanpipe.api"]
 
 # Keep the source code order for the autodoc content, as we want to keep
 # the processing order for the Pipelines doc.
