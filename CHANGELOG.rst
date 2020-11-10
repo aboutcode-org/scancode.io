@@ -6,6 +6,11 @@
 - Add Pipelines and Pipes documentation using Sphinx autodoc
   Fix for https://github.com/nexB/scancode.io/issues/38
 
+- Add new ScanCodebase pipeline for codebase scan
+  Fix for https://github.com/nexB/scancode.io/issues/37
+
+- Upgrade Django, Metaflow, and ScanCode-toolkit to latest versions
+
 ### v1.0.3 (2020-09-24)
 
 - Add ability to resume a failed pipeline from the run management command

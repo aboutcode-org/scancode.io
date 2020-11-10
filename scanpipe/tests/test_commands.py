@@ -33,6 +33,17 @@ from scanpipe.management.commands.graph import graphviz_installed
 from scanpipe.models import Project
 
 
+def task_success(run):
+    run.task_exitcode = 0
+    run.save()
+
+
+def task_failure(run):
+    run.task_output = "Error log"
+    run.task_exitcode = 1
+    run.save()
+
+
 class ScanPipeManagementCommandTest(TestCase):
     pipeline_location = "scanpipe/pipelines/docker.py"
 
@@ -111,6 +122,29 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
 
+    def test_scanpipe_management_command_create_project_run(self):
+        out = StringIO()
+
+        options = ["--run"]
+        expected = "The --run option requires one or more pipelines."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("create-project", "my_project", *options)
+
+        pipeline = "scanpipe/pipelines/load_inventory.py"
+        options = [
+            "--pipeline",
+            pipeline,
+            "--run",
+        ]
+
+        out = StringIO()
+        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_success):
+            call_command("create-project", "my_project", *options, stdout=out)
+
+        self.assertIn("Project my_project created", out.getvalue())
+        self.assertIn(f"Pipeline {pipeline} run in progress...", out.getvalue())
+        self.assertIn("successfully executed on project my_project", out.getvalue())
+
     def test_scanpipe_management_command_add_input(self):
         out = StringIO()
 
@@ -186,8 +220,8 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
         expected = (
-            " [S] scanpipe/pipelines/docker.py\n"
-            " [F] scanpipe/pipelines/root_filesystems.py\n"
+            " [SUCCESS] scanpipe/pipelines/docker.py\n"
+            " [FAILURE] scanpipe/pipelines/root_filesystems.py\n"
         )
         self.assertEqual(expected, out.getvalue())
 
@@ -202,10 +236,6 @@ class ScanPipeManagementCommandTest(TestCase):
 
         project.add_pipeline(self.pipeline_location)
 
-        def task_success(run):
-            run.task_exitcode = 0
-            run.save()
-
         out = StringIO()
         with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_success):
             call_command("run", *options, stdout=out)
@@ -213,11 +243,6 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
         self.assertIn(expected, out.getvalue())
-
-        def task_failure(run):
-            run.task_output = "Error log"
-            run.task_exitcode = 1
-            run.save()
 
         err = StringIO()
         project.add_pipeline(self.pipeline_location)

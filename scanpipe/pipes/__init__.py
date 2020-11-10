@@ -284,3 +284,10 @@ def normalize_path(path):
     Return a normalized path from a `path` string.
     """
     return "/" + path.strip("/")
+
+
+def strip_root(location):
+    """
+    Return the provided `location` without the root directory.
+    """
+    return "/".join(str(location).strip("/").split("/")[1:])

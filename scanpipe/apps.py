@@ -37,11 +37,12 @@ class ScanPipeConfig(AppConfig):
         """
         project_root = Path(__file__).parent.parent.absolute()
         pipelines_dir = project_root / "scanpipe" / "pipelines"
+        dot_py_suffix = ".py"
 
         for child in pipelines_dir.iterdir():
-            if child.name.endswith(".py") and not child.name.startswith("_"):
+            if child.name.endswith(dot_py_suffix) and not child.name.startswith("_"):
                 location = str(child.relative_to(project_root))
-                name = child.name.rstrip(".py")
+                name = child.name[: -len(dot_py_suffix)]
                 self.pipelines.append((location, name))
 
     def is_valid(self, pipeline):

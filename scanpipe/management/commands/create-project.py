@@ -22,6 +22,7 @@
 
 from django.core.exceptions import ValidationError
 from django.core.management import CommandError
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import copy_inputs
@@ -52,11 +53,17 @@ class Command(BaseCommand):
             default=list(),
             help="Input file locations to copy in the input/ work directory.",
         )
+        parser.add_argument(
+            "--run",
+            action="store_true",
+            help="Start running the pipelines right after project creation.",
+        )
 
     def handle(self, *args, **options):
         name = options["name"]
         pipelines = options["pipelines"]
         inputs = options["inputs"]
+        run = options["run"]
 
         project = Project(name=name)
         try:
@@ -68,6 +75,9 @@ class Command(BaseCommand):
         validate_pipelines(pipelines)
         validate_inputs(inputs)
 
+        if run and not pipelines:
+            raise CommandError("The --run option requires one or more pipelines.")
+
         project.save()
         msg = f"Project {name} created with work directory {project.work_directory}"
         self.stdout.write(self.style.SUCCESS(msg))
@@ -76,3 +86,6 @@ class Command(BaseCommand):
             project.add_pipeline(pipeline_location)
 
         copy_inputs(inputs, project.input_path)
+
+        if run:
+            call_command("run", project=project, stderr=self.stderr, stdout=self.stdout)

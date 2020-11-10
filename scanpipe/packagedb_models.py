@@ -25,7 +25,7 @@ import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from packageurl.contrib.django_models import PackageURLMixin
+from packageurl.contrib.django.models import PackageURLMixin
 
 
 class AbstractPackage(PackageURLMixin, models.Model):

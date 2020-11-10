@@ -17,6 +17,7 @@ First application is for Docker container and VM composition analysis.
     :caption: Tutorial
 
     scanpipe-tutorial-1
+    scanpipe-tutorial-2
 
 .. toctree::
     :maxdepth: 2
@@ -27,6 +28,7 @@ First application is for Docker container and VM composition analysis.
     scanpipe-pipes
     scanpipe-command-line
     scanpipe-api
+    scancodeio-settings
     offline-installation
 
 Indices and tables

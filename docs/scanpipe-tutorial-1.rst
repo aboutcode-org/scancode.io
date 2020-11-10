@@ -13,8 +13,8 @@ Requirements
 Before you start
 ----------------
 
-- Download the following test Docker image and save this in your home directory:
-  https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
+Download the following test Docker image and save this in your home directory:
+`30-alpine-nickolashkraus-staticbox-latest.tar <https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
 
 
 Step-by-step
@@ -49,7 +49,7 @@ Step-by-step
     The ``scanpipe show-pipeline`` command lists all the pipelines added to the
     project and their planned runs.
     You can use this to get a quick overview of the pipelines that have been running already
-    (with their success "S" or fail status "F") and those that will be running next.
+    (with their "SUCCESS" or "FAILURE" status) and those that will be running next.
 
 - Run the docker pipeline on this project::
 
@@ -59,7 +59,7 @@ Step-by-step
   pipeline run::
 
     $ scanpipe show-pipeline --project staticbox
-    "[S] scanpipe/pipelines/docker.py"
+    "[SUCCESS] scanpipe/pipelines/docker.py"
 
 - Get the results of the pipeline run as a JSON file using the ``output`` command::
 
@@ -72,8 +72,10 @@ Step-by-step
 .. note::
     The ``inputs`` and ``pipelines`` can be provided directly at once when
     calling the ``create-project`` command.
-    For example, this command will create a project named ``p2``, copy our test
-    docker image to the project's inputs, and add the docker pipeline in one
-    operation::
+    A ``run`` option is also available to start the pipeline execution right
+    after the project creation.
+    For example, the following command will create a project named ``p2``,
+    copy the test docker image to the project's inputs, add the docker pipeline,
+    and execute the pipeline run in one operation::
 
-    $ scanpipe create-project p2 --input ~/30-alpine-nickolashkraus-staticbox-latest.tar --pipeline scanpipe/pipelines/docker.py
+    $ scanpipe create-project p2 --input ~/30-alpine-nickolashkraus-staticbox-latest.tar --pipeline scanpipe/pipelines/docker.py --run

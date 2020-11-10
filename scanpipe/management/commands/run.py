@@ -53,9 +53,7 @@ class Command(ProjectCommand):
         if not run:
             raise CommandError(f"No pipelines to {action} on project {self.project}")
 
-        msg = f"Pipeline {run.pipeline} {action} in progress..."
-        self.stdout.write(msg)
-
+        self.stdout.write(f"Pipeline {run.pipeline} {action} in progress...")
         getattr(run, task_function)()
 
         run.refresh_from_db()
