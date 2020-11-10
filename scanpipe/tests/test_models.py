@@ -268,6 +268,9 @@ class ScanPipeModelsTest(TestCase):
         )
 
         self.assertEqual(
+            self.project1.codebase_path / resource.path, resource.location_path
+        )
+        self.assertEqual(
             f"{self.project1.codebase_path}/{resource.path}", resource.location
         )
 

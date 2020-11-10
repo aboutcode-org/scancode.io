@@ -603,10 +603,14 @@ class CodebaseResource(
         return self.path
 
     @property
-    def location(self):
+    def location_path(self):
         # strip the leading / to allow joining this with the codebase_path
         path = Path(str(self.path).strip("/"))
-        return str(self.project.codebase_path / path)
+        return self.project.codebase_path / path
+
+    @property
+    def location(self):
+        return str(self.location_path)
 
     @property
     def file_content(self):
