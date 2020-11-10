@@ -21,8 +21,13 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.contrib import admin
+from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
+from django.http import FileResponse
+from django.http import Http404
 from django.http import QueryDict
+from django.urls import path
+from django.urls import reverse
 from django.utils.html import format_html
 
 from scanpipe.models import CodebaseResource
@@ -128,10 +133,48 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
         "license_expressions",
         "copyrights",
         "for_packages",
+        "view_file",
     )
     list_display_links = ("path",)
     list_filter = ("project", "status", "type", "programming_language")
     search_fields = ("path", "mime_type", "file_type")
+
+    def get_urls(self):
+        opts = self.model._meta
+        urls = [
+            path(
+                "<path:object_id>/raw/",
+                self.admin_site.admin_view(self.raw),
+                name=f"{opts.app_label}_{opts.model_name}_raw",
+            ),
+        ]
+        return urls + super().get_urls()
+
+    def raw(self, request, object_id):
+        resource = self.get_object(request, unquote(object_id))
+        if resource is None:
+            raise Http404
+
+        resource_location_path = resource.location_path
+        if resource_location_path.is_file():
+            as_attachment = request.GET.get("as_attachment", False)
+            return FileResponse(
+                resource_location_path.open("rb"), as_attachment=as_attachment
+            )
+
+        raise Http404
+
+    def view_file(self, obj):
+        if obj.type != obj.Type.FILE:
+            return
+
+        opts = self.model._meta
+        url = reverse(f"admin:{opts.app_label}_{opts.model_name}_raw", args=[obj.pk])
+        return format_html(
+            f'<a href="{url}" target="_blank">View</a><br>'
+            f'<a href="{url}?as_attachment=1">Download</a>',
+            url=url,
+        )
 
 
 class CodebaseResourceInline(admin.TabularInline):
