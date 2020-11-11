@@ -82,6 +82,20 @@ class FilterLink(ListDisplayField):
         )
 
 
+class JoinList(ListDisplayField):
+    """
+    Return the field value as joined list by provided `sep`.
+    """
+
+    def __init__(self, name, sep="<br>", **kwargs):
+        self.sep = sep
+        kwargs["admin_order_field"] = None
+        super().__init__(name, **kwargs)
+
+    def to_representation(self, obj, field_value):
+        return mark_safe(self.sep.join(field_value))
+
+
 class InjectRequestChangeList(ChangeList):
     def get_results(self, request):
         """
@@ -171,8 +185,7 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
         FilterLink("programming_language"),
         "mime_type",
         "file_type",
-        "license_expressions",
-        "copyrights",
+        JoinList("license_expressions"),
         "packages",
         "view_file_links",
     )
