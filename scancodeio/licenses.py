@@ -20,26 +20,31 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.contrib import admin
-from django.urls import include
+from django.http import HttpResponse
 from django.urls import path
-from django.views.generic import RedirectView
 
-from rest_framework.routers import DefaultRouter
+import saneyaml
+from licensedcode.models import load_licenses
 
-from scancodeio import licenses
-from scanner.api.views import ScanViewSet
-from scanpipe.api.views import ProjectViewSet
-from scanpipe.api.views import RunViewSet
+licenses = load_licenses()
 
-api_router = DefaultRouter()
-api_router.register(r"scans", ScanViewSet)
-api_router.register(r"projects", ProjectViewSet)
-api_router.register(r"runs", RunViewSet)
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
-    path("", RedirectView.as_view(url="api/")),
+def license_list_view(request):
+    return HttpResponse(
+        "<br>".join([f'<a href="/license/{key}">{key}</a>' for key in licenses.keys()])
+    )
+
+
+def license_text_view(request, key):
+    try:
+        data = saneyaml.dump(licenses[key].to_dict())
+        text = licenses[key].text
+    except KeyError:
+        return HttpResponse(f"License {key} not found.")
+    return HttpResponse(f"<pre>{data}</pre>\n==============\n<pre>{text}</pre>")
+
+
+urls = [
+    path("", license_list_view, name="license_list"),
+    path("<path:key>/", license_text_view, name="license_text"),
 ]
