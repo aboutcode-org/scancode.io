@@ -157,7 +157,9 @@ def update_or_create_package(project, package_data):
 
     # FIXME: we should also consider the download URL as part of the key
     # Ensure a purl is treated like if this is the UNIQUE key to a package.
-    dp, created = DiscoveredPackage.objects.get_or_create(project=project, **purl_data)
+    dp, created = DiscoveredPackage.objects.get_or_create(
+        project=project, **purl_data, defaults=package_data
+    )
 
     if not created:
         # update/merge records since we have an existing record
