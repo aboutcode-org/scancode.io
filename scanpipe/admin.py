@@ -124,12 +124,19 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
     list_select_related = True
     actions_on_top = False
     actions_on_bottom = True
+    prefetch_related = None
 
     def has_add_permission(self, request):
         return False
 
     def get_changelist(self, request, **kwargs):
         return InjectRequestChangeList
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if self.prefetch_related:
+            queryset = queryset.prefetch_related(*self.prefetch_related)
+        return queryset
 
     def project_filter(self, obj):
         return format_html(
@@ -166,13 +173,14 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
         "file_type",
         "license_expressions",
         "copyrights",
-        "for_packages",
+        "packages",
         "view_file_links",
     )
     list_display_links = None
     list_filter = ("project", "status", "type", "programming_language", PathListFilter)
     search_fields = ("path", "mime_type", "file_type")
     ordering = ["path"]
+    prefetch_related = ["discovered_packages"]
 
     def path_filter(self, obj):
         """
@@ -196,6 +204,14 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
 
     path_filter.short_description = "Path"
     path_filter.admin_order_field = "path"
+
+    def packages(self, obj):
+        return mark_safe(
+            "<br>".join(
+                f'<a href="{get_admin_url(package)}">{package}</a>'
+                for package in obj.discovered_packages.all()
+            )
+        )
 
     def get_urls(self):
         opts = self.model._meta
@@ -250,12 +266,22 @@ class DiscoveredPackageAdmin(ProjectRelatedModelAdmin):
         "version",
         "license_expression",
         "copyright",
+        "resources",
     )
     list_display_links = ("package_url",)
     list_filter = ("project", "type")
     search_fields = ("name", "namespace", "description", "codebase_resources__path")
     exclude = ("codebase_resources",)
     inlines = (CodebaseResourceInline,)
+    prefetch_related = ["codebase_resources"]
+
+    def resources(self, obj):
+        return mark_safe(
+            "<br>".join(
+                f'<a href="{get_admin_url(resource)}">{resource.path}</a>'
+                for resource in obj.codebase_resources.all()
+            )
+        )
 
 
 @admin.register(ProjectError)

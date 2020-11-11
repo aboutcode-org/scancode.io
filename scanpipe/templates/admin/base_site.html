@@ -1,12 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% block extrahead %}
   <style>
-    body.model-codebaseresource.change-list th.column-path_filter {
-      min-width: 400px;
-    }
-    .path_separator {
-      margin-left:2px;
-      margin-right: 2px;
-    }
+    .vTextField, .vUUIDField, textarea, select {width: 48em;}
+    body.model-codebaseresource.change-list th.column-path_filter {min-width: 400px;}
+    .path_separator {margin-left:2px; margin-right: 2px;}
   </style>
 {% endblock %}
