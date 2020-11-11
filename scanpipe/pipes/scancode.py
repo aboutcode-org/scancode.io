@@ -100,33 +100,22 @@ def create_codebase_resources(project, scanned_codebase, strip_root=False):
     Save the resources of a ScanCode `scanned_codebase`
     scancode.resource.Codebase object to the DB as CodebaseResource of
     `project`.
-    If `strip_root` is True, strip the first segment of CodebaseResource
-    path.
+    If `strip_root` is True, strip the first segment of CodebaseResource path.
     """
     for scanned_resource in scanned_codebase.walk():
-        path = scanned_resource.path
+        file_infos = {}
+        for field in CodebaseResource._meta.fields:
+            value = getattr(scanned_resource, field.name, None)
+            if value is not None:
+                file_infos[field.name] = value
+
         if strip_root:
-            path = pipes.strip_root(path)
+            file_infos["path"] = pipes.strip_root(scanned_resource.path)
 
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
-        file_infos = dict(
-            type=CodebaseResource.Type[resource_type],
-            name=scanned_resource.name,
-            extension=scanned_resource.extension,
-            size=scanned_resource.size,
-            sha1=getattr(scanned_resource, "sha1", None),
-            md5=getattr(scanned_resource, "md5", None),
-            mime_type=getattr(scanned_resource, "mime_type", None),
-            file_type=getattr(scanned_resource, "file_type", None),
-            programming_language=getattr(
-                scanned_resource, "programming_language", None
-            ),
-        )
-        # Skips empty value to avoid null vs. '' conflicts
-        file_infos = {name: value for name, value in file_infos.items() if value}
+        file_infos["type"] = CodebaseResource.Type[resource_type]
 
-        cbr = CodebaseResource(project=project, path=path, **file_infos)
-        cbr.save()
+        CodebaseResource.objects.create(project=project, **file_infos)
 
 
 def create_discovered_packages(project, scanned_codebase, strip_root=False):
@@ -134,16 +123,17 @@ def create_discovered_packages(project, scanned_codebase, strip_root=False):
     Save the packages of a ScanCode `scanned_codebase`
     scancode.resource.Codebase object to the DB as DiscoveredPackage of
     `project`. Relate package resources to CodebaseResource.
-    If `strip_root` is True, strip the first segment of CodebaseResource
-    path.
+    If `strip_root` is True, strip the first segment of CodebaseResource path.
     """
     for scanned_resource in scanned_codebase.walk():
+        scanned_packages = getattr(scanned_resource, "packages", [])
+        if not scanned_packages:
+            continue
+
         path = scanned_resource.path
         if strip_root:
             path = pipes.strip_root(path)
         cbr = CodebaseResource.objects.get(project=project, path=path)
-
-        scanned_packages = getattr(scanned_resource, "packages", []) or []
 
         for scan_data in scanned_packages:
             discovered_package = pipes.update_or_create_package(project, scan_data)
