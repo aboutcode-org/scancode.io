@@ -29,6 +29,10 @@ import environ
 # Application definition
 
 INSTALLED_APPS = (
+    # Local apps
+    # Must come before Third-party apps for proper templates override
+    "scanner",
+    "scanpipe",
     # Django built-in
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -36,10 +40,6 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.admin",
-    # Local apps
-    # 'scanner' must come before Third-party apps for proper templates override
-    "scanner",
-    "scanpipe",
     # Third-party apps
     "crispy_forms",
     "django_filters",

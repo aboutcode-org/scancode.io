@@ -29,6 +29,7 @@ from django.http import QueryDict
 from django.urls import path
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -91,6 +92,30 @@ class InjectRequestChangeList(ChangeList):
             obj._request = request
 
 
+class PathListFilter(admin.SimpleListFilter):
+    """
+    Filter by `path` using the `startswith` lookup.
+    Only the provided value is displayed as a choice for visual clue on filter
+    activity.
+    """
+
+    title = "path"
+    parameter_name = "path"
+
+    def lookups(self, request, model_admin):
+        value = self.value()
+        if value:
+            return [(value, value)]
+        return []
+
+    def has_output(self):
+        return True
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(path__startswith=self.value())
+
+
 class ProjectRelatedModelAdmin(admin.ModelAdmin):
     """
     Regroup the common ModelAdmin values for Project related models.
@@ -117,11 +142,20 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
     project_filter.admin_order_field = "project"
 
 
+def get_admin_url(obj, view="change"):
+    """
+    Return an admin URL for the provided `obj`.
+    """
+    opts = obj._meta
+    viewname = f"admin:{opts.app_label}_{opts.model_name}_{view}"
+    return reverse(viewname, args=[obj.pk])
+
+
 @admin.register(CodebaseResource)
 class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
     list_display = (
         "project_filter",
-        "path",
+        "path_filter",
         FilterLink("status"),
         FilterLink("type", filter_lookup="type__exact"),
         "size",
@@ -133,11 +167,35 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
         "license_expressions",
         "copyrights",
         "for_packages",
-        "view_file",
+        "view_file_links",
     )
-    list_display_links = ("path",)
-    list_filter = ("project", "status", "type", "programming_language")
+    list_display_links = None
+    list_filter = ("project", "status", "type", "programming_language", PathListFilter)
     search_fields = ("path", "mime_type", "file_type")
+    ordering = ["path"]
+
+    def path_filter(self, obj):
+        """
+        Split the `obj.path` into clickable segments.
+        Each segments link to a filter by itself.
+        The last segment link target the object form view.
+        """
+        links = []
+        segments = obj.path.split("/")
+        segments_len = len(segments)
+
+        for index, segment in enumerate(segments, start=1):
+            current_path = "/".join(segments[:index])
+            last_segment = index == segments_len
+            if last_segment:
+                links.append(f'<b><a href="{get_admin_url(obj)}">{segment}</a></b>')
+            else:
+                links.append(f'<a href="?path={current_path}">{segment}</a>')
+
+        return mark_safe('<span class="path_separator">/</span>'.join(links))
+
+    path_filter.short_description = "Path"
+    path_filter.admin_order_field = "path"
 
     def get_urls(self):
         opts = self.model._meta
@@ -164,17 +222,15 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
 
         raise Http404
 
-    def view_file(self, obj):
-        if obj.type != obj.Type.FILE:
-            return
+    def view_file_links(self, obj):
+        if obj.type == obj.Type.FILE:
+            return format_html(
+                '<a href="{url}" target="_blank">View</a><br>'
+                '<a href="{url}?as_attachment=1">Download</a>',
+                url=get_admin_url(obj, view="raw"),
+            )
 
-        opts = self.model._meta
-        url = reverse(f"admin:{opts.app_label}_{opts.model_name}_raw", args=[obj.pk])
-        return format_html(
-            f'<a href="{url}" target="_blank">View</a><br>'
-            f'<a href="{url}?as_attachment=1">Download</a>',
-            url=url,
-        )
+    view_file_links.short_description = "File"
 
 
 class CodebaseResourceInline(admin.TabularInline):

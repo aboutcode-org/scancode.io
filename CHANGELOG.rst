@@ -3,6 +3,10 @@
 
 ### v1.0.4 (unreleased)
 
+- Improve Admin UI for efficient review:
+  display, navigation, filters, and ability to view file content
+  https://github.com/nexB/scancode.io/issues/36
+
 - Add Pipelines and Pipes documentation using Sphinx autodoc
   Fix for https://github.com/nexB/scancode.io/issues/38
 
