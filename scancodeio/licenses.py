@@ -20,22 +20,45 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from functools import lru_cache
+
 from django.http import HttpResponse
 from django.urls import path
+from django.urls import reverse
 
 import saneyaml
 from licensedcode.models import load_licenses
 
-licenses = load_licenses()
+
+@lru_cache(maxsize=None)
+def get_licenses():
+    """
+    Load the licenses from the ScanCode-toolkit `licensedcode` data and
+    return a mapping of `key` to `license` objects.
+    The result is cached in memory so the load_licenses() process is only
+    executed once on the first `get_licenses()` call.
+    """
+    return load_licenses()
 
 
 def license_list_view(request):
-    return HttpResponse(
-        "<br>".join([f'<a href="/license/{key}">{key}</a>' for key in licenses.keys()])
-    )
+    """
+    Display a list of all the licenses linked to their details.
+    """
+    licenses = get_licenses()
+    license_links = [
+        f'<a href="{reverse("license_details", args=[key])}">{key}</a>'
+        for key in licenses.keys()
+    ]
+    return HttpResponse("<br>".join(license_links))
 
 
-def license_text_view(request, key):
+def license_details_view(request, key):
+    """
+    Display all the information available about the provided license `key`
+    followed by the full license text.
+    """
+    licenses = get_licenses()
     try:
         data = saneyaml.dump(licenses[key].to_dict())
         text = licenses[key].text
@@ -46,5 +69,5 @@ def license_text_view(request, key):
 
 urls = [
     path("", license_list_view, name="license_list"),
-    path("<path:key>/", license_text_view, name="license_text"),
+    path("<path:key>/", license_details_view, name="license_details"),
 ]
