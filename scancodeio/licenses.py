@@ -64,7 +64,7 @@ def license_details_view(request, key):
         text = licenses[key].text
     except KeyError:
         return HttpResponse(f"License {key} not found.")
-    return HttpResponse(f"<pre>{data}</pre>\n==============\n<pre>{text}</pre>")
+    return HttpResponse(f"<pre>{data}</pre><hr><pre>{text}</pre>")
 
 
 urls = [
