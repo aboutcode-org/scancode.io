@@ -3,6 +3,9 @@
 
 ### v1.0.4 (unreleased)
 
+- Add a to_json output pipe returning ScanCode compatible content
+  https://github.com/nexB/scancode.io/issues/45
+
 - Improve Admin UI for efficient review:
   display, navigation, filters, and ability to view file content
   https://github.com/nexB/scancode.io/issues/36

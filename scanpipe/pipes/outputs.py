@@ -37,7 +37,7 @@ def queryset_to_csv(project, queryset, fieldnames):
     Create a csv file from the provided `queryset`.
     The fields to include as columns and their order are controlled by the
     `fieldnames` list.
-    The output file is created in the `project` output directory.
+    The output file is created in the `project` output/ directory.
     """
     model_name = queryset.model._meta.model_name
     filename = f"{project.name}_{model_name}.csv"
@@ -58,6 +58,7 @@ def to_csv(project):
     Generate results output for the provided `project` as csv format.
     Since the csv format does not support multiple tabs, one file is created
     per object type.
+    The output files are created in the `project` output directory.
     """
     data_sources = [
         (project.discoveredpackages.all(), DiscoveredPackageSerializer),
@@ -139,3 +140,18 @@ class JSONResultsGenerator:
 
         for obj in resources.iterator():
             yield self.encode(CodebaseResourceSerializer(obj).data)
+
+
+def to_json(project):
+    """
+    Generate results output for the provided `project` as JSON format.
+    The output file is created in the `project` output/ directory.
+    """
+    results_generator = JSONResultsGenerator(project)
+    output_file = project.output_path / "results.json"
+
+    with output_file.open("w") as file:
+        for chunk in results_generator:
+            file.write(chunk)
+
+    return output_file

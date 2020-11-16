@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 from pathlib import Path
 
 from django.test import TestCase
@@ -86,3 +87,27 @@ class ScanPipePipesTest(TestCase):
         outputs.to_csv(project=project1)
         expected = ["Analysis_codebaseresource.csv", "Analysis_discoveredpackage.csv"]
         self.assertEqual(sorted(expected), sorted(project1.output_root))
+
+    def test_scanpipe_pipes_outputs_to_json(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource = CodebaseResource.objects.create(
+            project=project1,
+            path="filename.ext",
+        )
+        DiscoveredPackage.create_for_resource(
+            package_data1,
+            codebase_resource,
+        )
+
+        output_file = outputs.to_json(project=project1)
+        self.assertEqual([output_file.name], project1.output_root)
+
+        with output_file.open() as f:
+            results = json.loads(f.read())
+
+        expected = ["files", "headers", "packages"]
+        self.assertEqual(expected, sorted(results.keys()))
+
+        self.assertEqual(1, len(results["headers"]))
+        self.assertEqual(1, len(results["files"]))
+        self.assertEqual(1, len(results["packages"]))
