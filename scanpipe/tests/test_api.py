@@ -34,11 +34,11 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
 
-from scanpipe.api.views import ResultsGenerator
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.pipes.outputs import JSONResultsGenerator
 from scanpipe.tests import package_data1
 
 
@@ -152,7 +152,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(["upload_file"], response.data["input_root"])
 
     def test_scanpipe_api_project_results_generator(self):
-        results_generator = ResultsGenerator(self.project1)
+        results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))
 
         expected = ["files", "headers", "packages"]
