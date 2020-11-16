@@ -23,6 +23,12 @@ Docker
 .. automodule:: scanpipe.pipes.docker
     :members:
 
+Outputs
+-------
+.. automodule:: scanpipe.pipes.outputs
+    :members:
+    :exclude-members: JSONResultsGenerator
+
 RootFS
 ------
 

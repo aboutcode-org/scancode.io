@@ -71,8 +71,8 @@ def to_csv(project):
 
 class JSONResultsGenerator:
     """
-    Return the `project` JSON results as a generator.
-    This allow to stream those results from the database to the client browser
+    Return the `project` JSON results as a Python generator.
+    Use this class to stream the results from the database to the client browser
     without having to load everything in memory first.
 
     Note that the Django Serializer class can output to a stream but cannot be
