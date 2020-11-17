@@ -90,8 +90,8 @@ class ScanPipePipesTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
         outputs.to_csv(project=project1)
         expected = [
-            "Analysis_codebaseresource-2010-10-10-10-10-10.csv",
-            "Analysis_discoveredpackage-2010-10-10-10-10-10.csv",
+            "codebaseresource-2010-10-10-10-10-10.csv",
+            "discoveredpackage-2010-10-10-10-10-10.csv",
         ]
         self.assertEqual(sorted(expected), sorted(project1.output_root))
 

@@ -40,7 +40,7 @@ def queryset_to_csv(project, queryset, fieldnames):
     The output file is created in the `project` output/ directory.
     """
     model_name = queryset.model._meta.model_name
-    output_file = project.get_output_file_path(f"{project.name}_{model_name}", "csv")
+    output_file = project.get_output_file_path(f"{model_name}", "csv")
 
     with open(output_file, "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames)
