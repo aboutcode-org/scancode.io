@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### v1.0.4 (unreleased)
+### v1.0.4 (2020-11-17)
 
 - Add a to_json output pipe returning ScanCode compatible content
   https://github.com/nexB/scancode.io/issues/45
