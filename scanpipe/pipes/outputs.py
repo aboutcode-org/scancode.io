@@ -136,7 +136,6 @@ class JSONResultsGenerator:
 
     def get_files(self, project):
         resources = project.codebaseresources.without_symlinks()
-        resources = resources.prefetch_related("discovered_packages")
 
         for obj in resources.iterator():
             yield self.encode(CodebaseResourceSerializer(obj).data)
