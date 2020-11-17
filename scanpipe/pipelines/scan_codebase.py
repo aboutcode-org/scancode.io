@@ -89,7 +89,7 @@ class ScanCodebase(Pipeline):
         """
         Scan extracted codebase/ content.
         """
-        self.scan_output_file = self.project.output_path / "scancode.json"
+        self.scan_output_file = self.project.get_output_file_path("scancode", "json")
         scancode.run_scancode(
             location=str(self.project.codebase_path),
             output_file=self.scan_output_file,

@@ -281,6 +281,17 @@ class Project(UUIDPKModel, models.Model):
         """
         return self.get_root_content(self.output_path)
 
+    def get_output_file_path(self, name, extension):
+        """
+        Return a crafted file path in the project output/ directory using
+        the provided `name` and `extension`.
+        The current date and time string is added to the filename.
+        """
+        from scanpipe.pipes import filename_now
+
+        filename = f"{name}-{filename_now()}.{extension}"
+        return self.output_path / filename
+
     def add_input_file(self, file_object):
         """
         Write the provided `file_object` to this project input/ directory.

@@ -22,14 +22,17 @@
 
 import json
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipes import filename_now
 from scanpipe.pipes import outputs
 from scanpipe.pipes import strip_root
+from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 
@@ -82,10 +85,14 @@ class ScanPipePipesTest(TestCase):
         with output_file.open() as f:
             self.assertEqual(expected, f.readlines())
 
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_outputs_to_csv(self):
         project1 = Project.objects.create(name="Analysis")
         outputs.to_csv(project=project1)
-        expected = ["Analysis_codebaseresource.csv", "Analysis_discoveredpackage.csv"]
+        expected = [
+            "Analysis_codebaseresource-2010-10-10-10-10-10.csv",
+            "Analysis_discoveredpackage-2010-10-10-10-10-10.csv",
+        ]
         self.assertEqual(sorted(expected), sorted(project1.output_root))
 
     def test_scanpipe_pipes_outputs_to_json(self):
@@ -111,3 +118,7 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(1, len(results["headers"]))
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
+
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_pipes_filename_now(self):
+        self.assertEqual("2010-10-10-10-10-10", filename_now())

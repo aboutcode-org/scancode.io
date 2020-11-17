@@ -40,8 +40,7 @@ def queryset_to_csv(project, queryset, fieldnames):
     The output file is created in the `project` output/ directory.
     """
     model_name = queryset.model._meta.model_name
-    filename = f"{project.name}_{model_name}.csv"
-    output_file = project.output_path / filename
+    output_file = project.get_output_file_path(f"{project.name}_{model_name}", "csv")
 
     with open(output_file, "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames)
@@ -147,7 +146,7 @@ def to_json(project):
     The output file is created in the `project` output/ directory.
     """
     results_generator = JSONResultsGenerator(project)
-    output_file = project.output_path / "results.json"
+    output_file = project.get_output_file_path("results", "json")
 
     with output_file.open("w") as file:
         for chunk in results_generator:

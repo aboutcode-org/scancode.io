@@ -22,6 +22,7 @@
 
 import uuid
 from datetime import datetime
+from unittest import mock
 
 from django.apps import apps
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -34,6 +35,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.pipelines import get_pipeline_doc
+from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
@@ -93,6 +95,11 @@ class ScanPipeModelsTest(TestCase):
 
         expected = ["dir1", "file.ext"]
         self.assertEqual(sorted(expected), sorted(self.project1.input_root))
+
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_project_model_get_output_file_path(self):
+        filename = self.project1.get_output_file_path("file", "ext")
+        self.assertTrue(str(filename).endswith("/output/file-2010-10-10-10-10-10.ext"))
 
     def test_scanpipe_project_model_add_input_file(self):
         self.assertEqual([], self.project1.input_files)

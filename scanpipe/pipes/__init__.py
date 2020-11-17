@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import traceback
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 
@@ -306,3 +307,11 @@ def strip_root(location):
     Return the provided `location` without the root directory.
     """
     return "/".join(str(location).strip("/").split("/")[1:])
+
+
+def filename_now(sep="-"):
+    """
+    Return the current date and time as iso format suitable for filename.
+    """
+    now = datetime.now().isoformat(sep=sep, timespec="seconds")
+    return now.replace(":", sep)
