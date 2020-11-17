@@ -80,8 +80,7 @@ valid: isort black
 
 clean:
 	@echo "-> Cleaning the Python env"
-	rm -rf bin/ lib/ lib64/ include/ build/ dist/ pip-selfcheck.json pyvenv.cfg scancodeio.egg-info
-	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
+	git clean -Xdf
 
 migrate:
 	@echo "-> Applying migrations"
