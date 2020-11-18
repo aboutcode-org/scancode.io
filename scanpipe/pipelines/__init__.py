@@ -24,6 +24,7 @@ import ast
 import importlib
 import inspect
 import subprocess
+import sys
 
 from metaflow import FlowSpec
 from metaflow import Parameter
@@ -119,6 +120,6 @@ def get_pipeline_description(pipeline_location):
     """
     Return the structure of the flow, as returned by the `show` command.
     """
-    cmd = f"bin/python {pipeline_location} show"
+    cmd = f"{sys.executable} {pipeline_location} show"
     description = subprocess.getoutput(cmd)
     return description
