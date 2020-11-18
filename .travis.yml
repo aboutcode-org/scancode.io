@@ -25,9 +25,7 @@ env:
   - SCANCODEIO_DB_USER=postgres
 
 install:
-  - pip install -r etc/requirements/base.txt
-  - pip uninstall --yes typing
-  - pip install -r etc/requirements/dev.txt
+  - make dev
   - make envfile
   - make check
 
