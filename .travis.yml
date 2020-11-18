@@ -22,9 +22,10 @@ addons:
       - bzip2
 
 env:
-  - SCANCODEIO_DB_USER=postgres
-  # Bypass the virtualenv in Makefile commands
-  - ACTIVATE=
+  global:
+    - SCANCODEIO_DB_USER=postgres
+    # Bypass the virtualenv in Makefile commands
+    - ACTIVATE=
 
 install:
   - make dev
