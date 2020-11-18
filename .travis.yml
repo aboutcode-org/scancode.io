@@ -24,7 +24,7 @@ addons:
 env:
   global:
     - SCANCODEIO_DB_USER=postgres
-    # Bypass the virtualenv in Makefile commands
+    # Bypass the virtualenv activation in Makefile commands
     - ACTIVATE=
 
 install:

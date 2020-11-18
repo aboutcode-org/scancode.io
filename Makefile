@@ -57,7 +57,6 @@ envfile:
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
 	mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@${ACTIVATE} echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
-	cat ${ENV_FILE}
 
 install:
 	@echo "-> Install and configure the Python env with base dependencies, offline"
