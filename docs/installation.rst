@@ -7,8 +7,8 @@ Pre-requisite
 -------------
 
  * **Debian-like** distro or **macOS**
- * Latest version of **Python 3.6**: https://www.python.org/downloads/
- * **PostgreSQL** 10 or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
+ * **Python 3.6 to 3.9**: https://www.python.org/downloads/
+ * **PostgreSQL 10** or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
  * Recent version of **git**: https://git-scm.com/
 
 Local installation
@@ -21,6 +21,12 @@ install dependencies, and prepare the database::
     make dev
     make envfile
     make cleandb
+
+.. note::
+    The Python version can be specified using the following command during the
+    ``make dev`` step::
+
+        make dev PYTHON_EXE=python3.8
 
 Tests
 -----
