@@ -32,4 +32,4 @@ install:
 before_script:
   - createdb --encoding=utf-8 scancodeio
 
-script: ./manage.py test --settings=scancodeio.settings.ci --verbosity=2 --noinput
+script: bin/python manage.py test --settings=scancodeio.settings.ci --verbosity=2 --noinput
