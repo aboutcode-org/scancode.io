@@ -25,11 +25,13 @@ env:
   - SCANCODEIO_DB_USER=postgres
 
 install:
-  - make dev
+  - pip install -r etc/requirements/base.txt
+  - pip uninstall --yes typing
+  - pip install -r etc/requirements/dev.txt
   - make envfile
   - make check
 
 before_script:
   - createdb --encoding=utf-8 scancodeio
 
-script: . bin/activate; ./manage.py test --settings=scancodeio.settings.ci --verbosity=2 --noinput
+script: ./manage.py test --settings=scancodeio.settings.ci --verbosity=2 --noinput
