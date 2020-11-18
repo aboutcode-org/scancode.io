@@ -1,6 +1,11 @@
 // Release notes
 // -------------
 
+### v1.0.5 (unreleased)
+
+- Add support for Python 3.7, 3.8, and 3.9
+  https://github.com/nexB/scancode.io/issues/54
+
 ### v1.0.4 (2020-11-17)
 
 - Add a to_json output pipe returning ScanCode compatible content

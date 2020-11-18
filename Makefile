@@ -20,9 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-PYTHON_EXE=python3.6
+# Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
+PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
-ACTIVATE=. bin/activate;
+ACTIVATE?=. bin/activate;
 ANSIBLE_PLAYBOOK=cd etc/ansible/ && ansible-playbook --inventory-file=hosts --verbose --ask-become-pass --user=${USER}
 BLACK_ARGS=--exclude="migrations|data|docs" .
 GET_SECRET_KEY=`${PYTHON_EXE} -c "from django.core.management import utils; print(utils.get_random_secret_key())"`
@@ -47,6 +48,8 @@ conf:
 
 dev: conf
 	@echo "-> Configure and install development dependencies"
+	# Workaround https://github.com/python/typing/issues/573#issuecomment-405986724
+	@${ACTIVATE} pip uninstall --yes typing
 	@${ACTIVATE} pip install -r etc/requirements/dev.txt
 
 envfile:

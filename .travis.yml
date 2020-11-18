@@ -1,7 +1,11 @@
 os: linux
 dist: bionic
 language: python
-python: "3.6"
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+  - "3.9"
 
 addons:
   postgresql: "10"
@@ -18,7 +22,10 @@ addons:
       - bzip2
 
 env:
-  - SCANCODEIO_DB_USER=postgres
+  global:
+    - SCANCODEIO_DB_USER=postgres
+    # Bypass the virtualenv activation in Makefile commands
+    - ACTIVATE=
 
 install:
   - make dev
