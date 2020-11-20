@@ -24,7 +24,7 @@ On the offline install server:
    tar -xf scancodeio-1.0.4.tar.gz && cd scancode.io
    make install
    make envfile
-   make cleandb
+   make postgres
 
 Offline Upgrade
 ---------------

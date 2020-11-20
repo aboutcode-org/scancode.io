@@ -15,18 +15,37 @@ Local installation
 ------------------
 
 Clone the git `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
-install dependencies, and prepare the database::
+install dependencies and create an environment file::
 
     git clone git@github.com:nexB/scancode.io.git && cd scancode.io
     make dev
     make envfile
-    make cleandb
 
 .. note::
     The Python version can be specified using the following command during the
     ``make dev`` step::
 
         make dev PYTHON_EXE=python3.8
+
+Database
+--------
+
+**PostgreSQL** is the preferred database backend and should always be used on
+production servers.
+
+Create the PostgreSQL user, database, and table with::
+
+    make postgres
+
+Alternatively, you can also decide to use a **SQLite** database for local
+development as a single user::
+
+    make sqlite
+
+.. warning::
+    Choosing SQLite over PostgreSQL has some caveats. See
+    https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes
+    for details.
 
 Tests
 -----
