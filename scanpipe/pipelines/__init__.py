@@ -24,6 +24,7 @@ import ast
 import importlib
 import inspect
 import subprocess
+import sys
 
 from metaflow import FlowSpec
 from metaflow import Parameter
@@ -37,18 +38,16 @@ class Pipeline(FlowSpec):
     Base class for all Pipelines.
     """
 
-    project_pk = Parameter(
-        "project", help="The project for running this Pipeline.", required=True
-    )
+    project_name = Parameter("project", help="Project name.", required=True)
 
     @staticmethod
-    def get_project_instance(project_pk):
+    def get_project(name):
         """
         Return the project instance from the database.
         """
         from scanpipe.models import Project
 
-        return Project.objects.get(pk=project_pk)
+        return Project.objects.get(name=name)
 
 
 class PipelineGraph(FlowGraph):
@@ -121,6 +120,6 @@ def get_pipeline_description(pipeline_location):
     """
     Return the structure of the flow, as returned by the `show` command.
     """
-    cmd = f"bin/python {pipeline_location} show"
+    cmd = f"{sys.executable} {pipeline_location} show"
     description = subprocess.getoutput(cmd)
     return description

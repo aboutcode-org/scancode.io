@@ -20,16 +20,22 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
+from datetime import datetime
+from unittest import mock
+
 from django.apps import apps
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test import TransactionTestCase
+from django.utils import timezone
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.pipelines import get_pipeline_doc
+from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
@@ -38,6 +44,9 @@ scanpipe_app_config = apps.get_app_config("scanpipe")
 class ScanPipeModelsTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+
+    def create_run(self, **kwargs):
+        return Run.objects.create(project=self.project1, pipeline="pipeline", **kwargs)
 
     def test_scanpipe_project_model_extra_data(self):
         self.assertEqual({}, self.project1.extra_data)
@@ -87,6 +96,11 @@ class ScanPipeModelsTest(TestCase):
         expected = ["dir1", "file.ext"]
         self.assertEqual(sorted(expected), sorted(self.project1.input_root))
 
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_project_model_get_output_file_path(self):
+        filename = self.project1.get_output_file_path("file", "ext")
+        self.assertTrue(str(filename).endswith("/output/file-2010-10-10-10-10-10.ext"))
+
     def test_scanpipe_project_model_add_input_file(self):
         self.assertEqual([], self.project1.input_files)
 
@@ -109,37 +123,160 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())
 
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline1")
-        run2 = Run.objects.create(project=self.project1, pipeline="pipeline2")
-
+        run1 = self.create_run()
+        run2 = self.create_run()
         self.assertEqual(run1, self.project1.get_next_run())
-        run1.task_id = 1
+
+        run1.task_start_date = timezone.now()
         run1.save()
-
         self.assertEqual(run2, self.project1.get_next_run())
-        run2.task_id = 2
-        run2.save()
 
+        run2.task_start_date = timezone.now()
+        run2.save()
         self.assertEqual(None, self.project1.get_next_run())
 
-    def test_scanpipe_run_model_methods(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="pipeline")
+    def test_scanpipe_project_model_get_latest_failed_run(self):
+        self.assertEqual(None, self.project1.get_latest_failed_run())
 
+        run1 = self.create_run()
+        run2 = self.create_run()
+        self.assertEqual(None, self.project1.get_latest_failed_run())
+
+        run1.task_exitcode = 0
+        run1.save()
+        self.assertEqual(None, self.project1.get_latest_failed_run())
+
+        run1.task_exitcode = 1
+        run1.save()
+        self.assertEqual(run1, self.project1.get_latest_failed_run())
+
+        run2.task_exitcode = 0
+        run2.save()
+        self.assertEqual(run1, self.project1.get_latest_failed_run())
+
+        run2.task_exitcode = 1
+        run2.save()
+        self.assertEqual(run2, self.project1.get_latest_failed_run())
+
+        run1.task_exitcode = None
+        run1.save()
+        self.assertEqual(run2, self.project1.get_latest_failed_run())
+
+    def test_scanpipe_run_model_task_methods(self):
+        run1 = self.create_run()
         self.assertFalse(run1.task_succeeded)
+
         run1.task_exitcode = 0
         run1.save()
         self.assertTrue(run1.task_succeeded)
 
+        run1.task_exitcode = 1
+        run1.save()
+        self.assertFalse(run1.task_succeeded)
+
+    def test_scanpipe_run_model_task_execution_time_property(self):
+        run1 = self.create_run()
+
+        self.assertIsNone(run1.execution_time)
+
+        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=timezone.utc)
+        run1.save()
+        self.assertIsNone(run1.execution_time)
+
+        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
+        run1.save()
+        self.assertEqual(25.0, run1.execution_time)
+
+    def test_scanpipe_run_model_reset_task_values_method(self):
+        run1 = self.create_run(
+            task_id=uuid.uuid4(),
+            task_start_date=timezone.now(),
+            task_end_date=timezone.now(),
+            task_exitcode=0,
+            task_output="Output",
+        )
+
+        run1.reset_task_values()
+        self.assertIsNone(run1.task_id)
+        self.assertIsNone(run1.task_start_date)
+        self.assertIsNone(run1.task_end_date)
+        self.assertIsNone(run1.task_exitcode)
+        self.assertEqual("", run1.task_output)
+
+    def test_scanpipe_run_model_set_task_started_method(self):
+        run1 = self.create_run()
+
+        task_id = uuid.uuid4()
+        run1.set_task_started(task_id)
+
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual(task_id, run1.task_id)
+        self.assertTrue(run1.task_start_date)
+        self.assertFalse(run1.task_end_date)
+
+    def test_scanpipe_run_model_set_task_ended_method(self):
+        run1 = self.create_run()
+
+        run1.set_task_ended(exitcode=0, output="output")
+
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual(0, run1.task_exitcode)
+        self.assertEqual("output", run1.task_output)
+        self.assertTrue(run1.task_end_date)
+
+    def test_scanpipe_run_model_get_run_id_method(self):
+        run1 = self.create_run()
+
         self.assertIsNone(run1.get_run_id())
+
+        run1.task_output = "Missing run-id"
+        run1.save()
+        self.assertIsNone(run1.get_run_id())
+
         run1.task_output = "Workflow starting (run-id 1593181041039832):"
         run1.save()
         self.assertEqual("1593181041039832", run1.get_run_id())
+
+        run1.task_output = "(run-id 123) + (run-id 456)"
+        run1.save()
+        self.assertEqual("123", run1.get_run_id())
+
+    def test_scanpipe_run_model_queryset_methods(self):
+        now = timezone.now()
+
+        started = self.create_run(task_start_date=now)
+        not_started = self.create_run()
+        executed = self.create_run(task_start_date=now, task_end_date=now)
+        succeed = self.create_run(task_start_date=now, task_exitcode=0)
+        failed = self.create_run(task_start_date=now, task_exitcode=1)
+
+        qs = Run.objects.started()
+        self.assertEqual(4, len(qs))
+        self.assertIn(started, qs)
+        self.assertIn(executed, qs)
+        self.assertIn(succeed, qs)
+        self.assertIn(failed, qs)
+
+        qs = Run.objects.not_started()
+        self.assertEqual([not_started], list(qs))
+
+        qs = Run.objects.executed()
+        self.assertEqual([executed], list(qs))
+
+        qs = Run.objects.succeed()
+        self.assertEqual([succeed], list(qs))
+
+        qs = Run.objects.failed()
+        self.assertEqual([failed], list(qs))
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(
             project=self.project1, path="filename.ext"
         )
 
+        self.assertEqual(
+            self.project1.codebase_path / resource.path, resource.location_path
+        )
         self.assertEqual(
             f"{self.project1.codebase_path}/{resource.path}", resource.location
         )
@@ -160,6 +297,37 @@ class ScanPipeModelsTest(TestCase):
         resource.set_scan_results(scan_results, save=True)
         self.assertEqual(scan_results["name"], resource.name)
         self.assertEqual(scan_results["extension"], resource.extension)
+
+    def test_scanpipe_codebase_resource_queryset_type_methods(self):
+        file = CodebaseResource.objects.create(
+            project=self.project1, type=CodebaseResource.Type.FILE, path="file"
+        )
+        directory = CodebaseResource.objects.create(
+            project=self.project1,
+            type=CodebaseResource.Type.DIRECTORY,
+            path="directory",
+        )
+        symlink = CodebaseResource.objects.create(
+            project=self.project1, type=CodebaseResource.Type.SYMLINK, path="symlink"
+        )
+
+        qs = CodebaseResource.objects.files()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+
+        qs = CodebaseResource.objects.directories()
+        self.assertEqual(1, len(qs))
+        self.assertIn(directory, qs)
+
+        qs = CodebaseResource.objects.symlinks()
+        self.assertEqual(1, len(qs))
+        self.assertIn(symlink, qs)
+
+        qs = CodebaseResource.objects.without_symlinks()
+        self.assertEqual(2, len(qs))
+        self.assertIn(file, qs)
+        self.assertIn(directory, qs)
+        self.assertNotIn(symlink, qs)
 
     def test_scanpipe_discovered_package_model_create_from_data(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)

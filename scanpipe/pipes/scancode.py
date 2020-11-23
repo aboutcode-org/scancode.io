@@ -20,10 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import packagedcode
-from packageurl import PackageURL
-from scancode.resource import VirtualCodebase
+from django.conf import settings
 
+import packagedcode
+from commoncode.resource import VirtualCodebase
+from packageurl import PackageURL
+from scancode import ScancodeError
+
+from scanner.tasks import get_bin_executable
+from scanner.tasks import run_command
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 
@@ -33,64 +38,102 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
 
 
-def get_virtual_codebase(project):
+def run_extractcode(location, options, raise_on_error=False):
     """
-    Return a ScanCode virtual codebase object built from the JSON scan file
-    found in a `project` input/ directory.
+    Extract `location` content with extractcode.
+    The `extractcode` executable will be run using the provided `options`.
+    If `raise_on_error` is enabled, a ScancodeError will be raised if the
+    exitcode greater than 0.
     """
-    inputs = list(project.inputs(pattern="*.json"))
-    if len(inputs) != 1:
-        raise Exception("Only 1 JSON input file supported")
+    extractcode_args = [
+        get_bin_executable("extractcode"),
+        location,
+        *options,
+    ]
 
-    input_file_location = str(inputs[0].absolute())
+    exitcode, output = run_command(extractcode_args)
+    if exitcode > 0 and raise_on_error:
+        raise ScancodeError(output)
 
-    temp_path = project.work_path / "scancode-temp-resource-cache"
+    return exitcode, output
+
+
+def run_scancode(location, output_file, options, raise_on_error=False):
+    """
+    Scan `location` content and write results into `output_file`.
+    The `scancode` executable will be run using the provided `options`.
+    If `raise_on_error` is enabled, a ScancodeError will be raised if the
+    exitcode greater than 0.
+    """
+    default_options = getattr(settings, "SCANCODE_DEFAULT_OPTIONS", [])
+
+    scancode_args = [
+        get_bin_executable("scancode"),
+        location,
+        *default_options,
+        *options,
+        f"--json-pp {output_file}",
+    ]
+
+    exitcode, output = run_command(scancode_args)
+    if exitcode > 0 and raise_on_error:
+        raise ScancodeError(output)
+
+    return exitcode, output
+
+
+def get_virtual_codebase(project, input_location):
+    """
+    Return a ScanCode virtual codebase built from the JSON scan file at
+    `input_location`.
+    """
+    temp_path = project.tmp_path / "scancode-temp-resource-cache"
     temp_path.mkdir(parents=True, exist_ok=True)
 
     return VirtualCodebase(
-        location=input_file_location, temp_dir=str(temp_path), max_in_memory=0
+        location=input_location, temp_dir=str(temp_path), max_in_memory=0
     )
 
 
-def create_codebase_resources(project, scanned_codebase):
+def create_codebase_resources(project, scanned_codebase, strip_root=False):
     """
     Save the resources of a ScanCode `scanned_codebase`
     scancode.resource.Codebase object to the DB as CodebaseResource of
     `project`.
+    If `strip_root` is True, strip the first segment of CodebaseResource path.
     """
     for scanned_resource in scanned_codebase.walk():
-        path = scanned_resource.path
+        file_infos = {}
+        for field in CodebaseResource._meta.fields:
+            value = getattr(scanned_resource, field.name, None)
+            if value is not None:
+                file_infos[field.name] = value
+
+        if strip_root:
+            file_infos["path"] = pipes.strip_root(scanned_resource.path)
+
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
-        file_infos = dict(
-            type=CodebaseResource.Type[resource_type],
-            name=scanned_resource.name,
-            extension=scanned_resource.extension,
-            size=scanned_resource.size,
-            sha1=getattr(scanned_resource, "sha1", None),
-            md5=getattr(scanned_resource, "md5", None),
-            mime_type=getattr(scanned_resource, "mime_type", None),
-            file_type=getattr(scanned_resource, "file_type", None),
-            programming_language=getattr(
-                scanned_resource, "programming_language", None
-            ),
-        )
-        # Skips empty value to avoid null vs. '' conflicts
-        file_infos = {name: value for name, value in file_infos.items() if value}
+        file_infos["type"] = CodebaseResource.Type[resource_type]
 
-        cbr = CodebaseResource(project=project, path=path, **file_infos)
-        cbr.save()
+        CodebaseResource.objects.create(project=project, **file_infos)
 
 
-def create_discovered_packages(project, scanned_codebase):
+def create_discovered_packages(project, scanned_codebase, strip_root=False):
     """
     Save the packages of a ScanCode `scanned_codebase`
     scancode.resource.Codebase object to the DB as DiscoveredPackage of
     `project`. Relate package resources to CodebaseResource.
+    If `strip_root` is True, strip the first segment of CodebaseResource path.
     """
     for scanned_resource in scanned_codebase.walk():
-        cbr = CodebaseResource.objects.get(project=project, path=scanned_resource.path)
+        scanned_packages = getattr(scanned_resource, "packages", [])
+        if not scanned_packages:
+            continue
 
-        scanned_packages = getattr(scanned_resource, "packages", []) or []
+        path = scanned_resource.path
+        if strip_root:
+            path = pipes.strip_root(path)
+        cbr = CodebaseResource.objects.get(project=project, path=path)
 
         for scan_data in scanned_packages:
             discovered_package = pipes.update_or_create_package(project, scan_data)
@@ -108,9 +151,11 @@ def create_discovered_packages(project, scanned_codebase):
             )
 
             for scanned_package_res in scanned_package_resources:
-                package_cbr = CodebaseResource.objects.get(
-                    project=project, path=scanned_package_res.path
-                )
+                path = scanned_package_res.path
+                if strip_root:
+                    path = pipes.strip_root(path)
+
+                package_cbr = CodebaseResource.objects.get(project=project, path=path)
 
                 set_codebase_resource_for_package(
                     codebase_resource=package_cbr, discovered_package=discovered_package
@@ -137,6 +182,10 @@ def create_discovered_packages(project, scanned_codebase):
 
 
 def set_codebase_resource_for_package(codebase_resource, discovered_package):
+    """
+    Assign the `discovered_package` to the `codebase_resource` and set its
+    status to "application-package".
+    """
     codebase_resource.discovered_packages.add(discovered_package)
     codebase_resource.status = "application-package"
     codebase_resource.save()

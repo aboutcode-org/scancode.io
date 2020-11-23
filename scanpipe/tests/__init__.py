@@ -20,6 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from datetime import datetime
+from unittest import mock
+
+mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
+
+
 package_data1 = {
     "type": "deb",
     "namespace": "debian",

@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.outputs import ResultsGenerator
+from scanpipe.pipes.outputs import JSONResultsGenerator
 
 
 class Command(ProjectCommand):
@@ -38,7 +38,7 @@ class Command(ProjectCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        results_generator = ResultsGenerator(self.project)
+        results_generator = JSONResultsGenerator(self.project)
         output_file = options["output_file"]
 
         stream = open(output_file, "w") if output_file else self.stdout

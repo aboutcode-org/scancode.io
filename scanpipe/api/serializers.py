@@ -27,7 +27,7 @@ from django.db import transaction
 
 from rest_framework import serializers
 
-from scanner.api.serializers import ExcludeFromListViewMixin
+from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -110,6 +110,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             "created_date",
             "pipeline",
             "input_root",
+            "output_root",
             "next_run",
             "runs",
             "extra_data",
@@ -118,6 +119,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
         )
         exclude_from_list_view = [
             "input_root",
+            "output_root",
             "extra_data",
             "codebase_resources_summary",
             "discovered_package_summary",

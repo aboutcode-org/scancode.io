@@ -31,23 +31,17 @@ from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.forms import model_to_dict
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from celery.result import AsyncResult
 from packageurl import normalize_qualifiers
 
 from scancodeio import WORKSPACE_LOCATION
-from scanner.models import AbstractTaskFieldsModel
 from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
 from scanpipe.pipelines import get_pipeline_doc
-
-
-def get_project_work_directory(project):
-    """
-    Return the work directory location for the provided `project`.
-    """
-    return f"{WORKSPACE_LOCATION}/projects/{project.name}-{project.short_uuid}"
 
 
 class UUIDPKModel(models.Model):
@@ -68,6 +62,102 @@ class UUIDPKModel(models.Model):
     @property
     def short_uuid(self):
         return str(self.uuid)[0:8]
+
+
+class AbstractTaskFieldsModel(models.Model):
+    task_id = models.UUIDField(
+        blank=True,
+        null=True,
+        editable=False,
+    )
+    task_start_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        editable=False,
+    )
+    task_end_date = models.DateTimeField(
+        blank=True,
+        null=True,
+        editable=False,
+    )
+    task_exitcode = models.IntegerField(
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    task_output = models.TextField(
+        blank=True,
+        editable=False,
+    )
+
+    class Meta:
+        abstract = True
+
+    def task_state(self):
+        """
+        Possible values includes:
+        - PENDING
+            The task is waiting for execution.
+        - STARTED
+            The task has been started.
+        - RETRY
+            The task is to be retried, possibly because of failure.
+        - FAILURE
+            The task raised an exception, or has exceeded the retry limit.
+            The result attribute then contains the exception raised by the task.
+        - SUCCESS
+            The task executed successfully. The result attribute then contains
+            the tasks return value.
+        """
+        return AsyncResult(str(self.task_id)).state
+
+    @property
+    def execution_time(self):
+        if self.task_end_date and self.task_start_date:
+            total_seconds = (self.task_end_date - self.task_start_date).total_seconds()
+            return int(total_seconds)
+
+    def reset_task_values(self):
+        """
+        Reset all task related fields to their initial null value.
+        """
+        self.task_id = None
+        self.task_start_date = None
+        self.task_end_date = None
+        self.task_exitcode = None
+        self.task_output = ""
+
+    def set_task_started(self, task_id):
+        """
+        Set the `task_id` and `task_start_date` before the task execution.
+        """
+        self.task_id = task_id
+        self.task_start_date = timezone.now()
+        self.save()
+
+    def set_task_ended(self, exitcode, output, refresh_first=True):
+        """
+        Set the task related fields after the task execution.
+
+        An optional `refresh_first`, enabled by default, force the refresh of
+        the instance with the latest data from the database before saving.
+        This prevent loosing values saved on the instance during the task
+        execution.
+        """
+        if refresh_first:
+            self.refresh_from_db()
+
+        self.task_exitcode = exitcode
+        self.task_output = output
+        self.task_end_date = timezone.now()
+        self.save()
+
+
+def get_project_work_directory(project):
+    """
+    Return the work directory location for the provided `project`.
+    """
+    return f"{WORKSPACE_LOCATION}/projects/{project.name}-{project.short_uuid}"
 
 
 class Project(UUIDPKModel, models.Model):
@@ -102,6 +192,9 @@ class Project(UUIDPKModel, models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        """
+        Setup the workspace directories on project creation.
+        """
         if not self.work_directory:
             self.work_directory = get_project_work_directory(self)
             self.setup_work_directory()
@@ -164,17 +257,45 @@ class Project(UUIDPKModel, models.Model):
             if path.is_file()
         ]
 
+    @staticmethod
+    def get_root_content(directory):
+        """
+        Return the list of all files and directories of the `directory`.
+        Only the first level children are listed.
+        """
+        return [str(path.relative_to(directory)) for path in directory.glob("*")]
+
     @property
     def input_root(self):
         """
         Return the list of all files and directories of the input/ directory.
         Only the first level children are listed.
         """
-        return [
-            str(path.relative_to(self.input_path)) for path in self.input_path.glob("*")
-        ]
+        return self.get_root_content(self.input_path)
+
+    @property
+    def output_root(self):
+        """
+        Return the list of all files and directories of the output/ directory.
+        Only the first level children are listed.
+        """
+        return self.get_root_content(self.output_path)
+
+    def get_output_file_path(self, name, extension):
+        """
+        Return a crafted file path in the project output/ directory using
+        the provided `name` and `extension`.
+        The current date and time string is added to the filename.
+        """
+        from scanpipe.pipes import filename_now
+
+        filename = f"{name}-{filename_now()}.{extension}"
+        return self.output_path / filename
 
     def add_input_file(self, file_object):
+        """
+        Write the provided `file_object` to this project input/ directory.
+        """
         filename = file_object.name
         file_path = Path(self.input_path / filename)
 
@@ -183,14 +304,27 @@ class Project(UUIDPKModel, models.Model):
                 f.write(chunk)
 
     def add_pipeline(self, pipeline):
+        """
+        Create a new Run instance with the provided `pipeline` on this project.
+        """
         description = get_pipeline_doc(pipeline)
         return Run.objects.create(
             project=self, pipeline=pipeline, description=description
         )
 
     def get_next_run(self):
+        """
+        Return the next non-executed Run instance assigned to this project.
+        """
         with suppress(ObjectDoesNotExist):
-            return self.runs.filter(task_id__isnull=True).earliest("created_date")
+            return self.runs.not_started().earliest("created_date")
+
+    def get_latest_failed_run(self):
+        """
+        Return the latest failed Run instance of this project.
+        """
+        with suppress(ObjectDoesNotExist):
+            return self.runs.failed().latest("created_date")
 
 
 class ProjectRelatedQuerySet(models.QuerySet):
@@ -207,7 +341,7 @@ class ProjectRelatedModel(models.Model):
         Project, related_name="%(class)ss", on_delete=models.CASCADE, editable=False
     )
 
-    objects = models.Manager.from_queryset(ProjectRelatedQuerySet)()
+    objects = ProjectRelatedQuerySet.as_manager()
 
     class Meta:
         abstract = True
@@ -262,7 +396,7 @@ class SaveProjectErrorMixin:
     @classmethod
     def _check_project_field(cls, **kwargs):
         """
-        Check if `project` field is defined.
+        Check if `project` field is declared on the model.
         """
 
         fields = [f.name for f in cls._meta.local_fields]
@@ -278,10 +412,29 @@ class SaveProjectErrorMixin:
         return []
 
 
+class RunQuerySet(models.QuerySet):
+    def started(self):
+        return self.filter(task_start_date__isnull=False)
+
+    def not_started(self):
+        return self.filter(task_start_date__isnull=True)
+
+    def executed(self):
+        return self.filter(task_end_date__isnull=False)
+
+    def succeed(self):
+        return self.filter(task_exitcode=0)
+
+    def failed(self):
+        return self.filter(task_exitcode__gt=0)
+
+
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
+
+    objects = RunQuerySet.as_manager()
 
     class Meta:
         ordering = ["created_date"]
@@ -293,10 +446,13 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
 
     def resume_pipeline_task_async(self):
-        tasks.resume_pipeline_task.apply_async(args=[self.pk], queue="default")
+        tasks.run_pipeline_task.apply_async(args=[self.pk, True], queue="default")
 
     @property
     def task_succeeded(self):
+        """
+        Return True if the pipeline task was successfully executed.
+        """
         return self.task_exitcode == 0
 
     def get_run_id(self):
@@ -304,10 +460,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Return the run id from the task output.
         """
         if self.task_output:
-            run_id_re = re.compile(r"run-id [0-9]+")
-            run_id_string = run_id_re.search(self.task_output).group()
-            if run_id_string:
-                return run_id_string.split()[-1]
+            run_id_pattern = re.compile(r"run-id (?P<run_id>[0-9]+)")
+            match = run_id_pattern.search(self.task_output)
+            if match:
+                return match.group("run_id")
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
@@ -319,6 +475,18 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def no_status(self):
         return self.filter(status="")
+
+    def files(self):
+        return self.filter(type=self.model.Type.FILE)
+
+    def directories(self):
+        return self.filter(type=self.model.Type.DIRECTORY)
+
+    def symlinks(self):
+        return self.filter(type=self.model.Type.SYMLINK)
+
+    def without_symlinks(self):
+        return self.exclude(type=self.model.Type.SYMLINK)
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -436,7 +604,7 @@ class CodebaseResource(
         help_text=_("Descriptive file type for this resource."),
     )
 
-    objects = models.Manager.from_queryset(CodebaseResourceQuerySet)()
+    objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
         unique_together = (("project", "path"),)
@@ -446,10 +614,14 @@ class CodebaseResource(
         return self.path
 
     @property
-    def location(self):
+    def location_path(self):
         # strip the leading / to allow joining this with the codebase_path
         path = Path(str(self.path).strip("/"))
-        return str(self.project.codebase_path / path)
+        return self.project.codebase_path / path
+
+    @property
+    def location(self):
+        return str(self.location_path)
 
     @property
     def file_content(self):
@@ -492,6 +664,10 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
 
     def __str__(self):
         return self.package_url or str(self.uuid)
+
+    @property
+    def purl(self):
+        return self.package_url
 
     @classmethod
     def create_from_data(cls, project, package_data):

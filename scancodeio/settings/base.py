@@ -20,15 +20,33 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
 import sys
 from pathlib import Path
 
 import environ
 
+# Environment
+
+env_file = "/etc/scancodeio/.env"
+if not Path(env_file).exists():
+    env_file = ".env"
+
+environ.Env.read_env(env_file)
+env = environ.Env()
+
+SECRET_KEY = env.str("SECRET_KEY")
+
+# ScanCode.io
+
+SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])
+
 # Application definition
 
 INSTALLED_APPS = (
+    # Local apps
+    # Must come before Third-party apps for proper templates override
+    "scanner",
+    "scanpipe",
     # Django built-in
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -36,10 +54,6 @@ INSTALLED_APPS = (
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.admin",
-    # Local apps
-    # 'scanner' must come before Third-party apps for proper templates override
-    "scanner",
-    "scanpipe",
     # Third-party apps
     "crispy_forms",
     "django_filters",
@@ -64,11 +78,11 @@ WSGI_APPLICATION = "scancodeio.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "HOST": os.getenv("SCANCODEIO_DB_HOST", "localhost"),
-        "NAME": os.getenv("SCANCODEIO_DB_NAME", "scancodeio"),
-        "USER": os.getenv("SCANCODEIO_DB_USER", "scancodeio"),
-        "PASSWORD": os.getenv("SCANCODEIO_DB_PASSWORD", "scancodeio"),
+        "ENGINE": env.str("SCANCODEIO_DB_ENGINE", "django.db.backends.postgresql"),
+        "HOST": env.str("SCANCODEIO_DB_HOST", "localhost"),
+        "NAME": env.str("SCANCODEIO_DB_NAME", "scancodeio"),
+        "USER": env.str("SCANCODEIO_DB_USER", "scancodeio"),
+        "PASSWORD": env.str("SCANCODEIO_DB_PASSWORD", "scancodeio"),
         "PORT": "5432",
         "ATOMIC_REQUESTS": True,
     }
@@ -127,7 +141,7 @@ LOGGING = {
     "loggers": {
         "scanner.tasks": {
             "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
         },
     },
 }
@@ -150,7 +164,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 
@@ -189,14 +202,3 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "UPLOADED_FILES_USE_URL": False,
 }
-
-# Environment and custom settings, keep last
-
-env_file = "/etc/scancodeio/.env"
-if not Path(env_file).exists():
-    env_file = ".env"
-
-environ.Env.read_env(env_file)
-env = environ.Env()
-
-SECRET_KEY = env.str("SECRET_KEY")

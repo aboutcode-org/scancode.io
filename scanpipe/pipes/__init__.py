@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import traceback
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 
@@ -157,7 +158,9 @@ def update_or_create_package(project, package_data):
 
     # FIXME: we should also consider the download URL as part of the key
     # Ensure a purl is treated like if this is the UNIQUE key to a package.
-    dp, created = DiscoveredPackage.objects.get_or_create(project=project, **purl_data)
+    dp, created = DiscoveredPackage.objects.get_or_create(
+        project=project, **purl_data, defaults=package_data
+    )
 
     if not created:
         # update/merge records since we have an existing record
@@ -253,16 +256,25 @@ def scan_for_files(project):
 
 
 def has_unknown_license(codebase_resource):
+    """
+    Return True if an "unknown" license in present in the license expression.
+    """
     return any(
         "unknown" in expression for expression in codebase_resource.license_expressions
     )
 
 
 def has_no_licenses(codebase_resource):
+    """
+    Return True if the `codebase_resource` has no license expression.
+    """
     return not codebase_resource.license_expressions
 
 
 def analyze_scanned_files(project):
+    """
+    Set the status for CodebaseResource with unknown or no licenses.
+    """
     queryset = CodebaseResource.objects.project(project).status("scanned")
 
     for codebase_resource in queryset:
@@ -275,6 +287,10 @@ def analyze_scanned_files(project):
 
 
 def tag_not_analyzed_codebase_resources(project):
+    """
+    Flag as "not-analyzed" the `CodebaseResource` without a status of the
+    provided `project`
+    """
     no_status = CodebaseResource.objects.project(project).no_status()
     no_status.update(status="not-analyzed")
 
@@ -284,3 +300,18 @@ def normalize_path(path):
     Return a normalized path from a `path` string.
     """
     return "/" + path.strip("/")
+
+
+def strip_root(location):
+    """
+    Return the provided `location` without the root directory.
+    """
+    return "/".join(str(location).strip("/").split("/")[1:])
+
+
+def filename_now(sep="-"):
+    """
+    Return the current date and time as iso format suitable for filename.
+    """
+    now = datetime.now().isoformat(sep=sep, timespec="seconds")
+    return now.replace(":", sep)

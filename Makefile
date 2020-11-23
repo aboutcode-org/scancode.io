@@ -20,15 +20,16 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-PYTHON_EXE=python3.6
+# Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
+PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
-ACTIVATE=. bin/activate;
+ACTIVATE?=. bin/activate;
 ANSIBLE_PLAYBOOK=cd etc/ansible/ && ansible-playbook --inventory-file=hosts --verbose --ask-become-pass --user=${USER}
 BLACK_ARGS=--exclude="migrations|data|docs" .
 GET_SECRET_KEY=`${PYTHON_EXE} -c "from django.core.management import utils; print(utils.get_random_secret_key())"`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
 ENV_FILE=.env
-# Customize with `$ make cleandb SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
+# Customize with `$ make postgres SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
 SCANCODEIO_DB_PASSWORD=scancodeio
 
 # Use sudo for postgres, but only on Linux
@@ -47,6 +48,8 @@ conf:
 
 dev: conf
 	@echo "-> Configure and install development dependencies"
+	# Workaround https://github.com/python/typing/issues/573#issuecomment-405986724
+	@${ACTIVATE} pip uninstall --yes typing
 	@${ACTIVATE} pip install -r etc/requirements/dev.txt
 
 envfile:
@@ -79,29 +82,36 @@ black:
 valid: isort black
 
 clean:
-	@echo "-> Cleaning the Python env"
+	@echo "-> Clean the Python env"
 	rm -rf bin/ lib/ lib64/ include/ build/ dist/ pip-selfcheck.json pyvenv.cfg scancodeio.egg-info
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
 
 migrate:
-	@echo "-> Applying migrations"
+	@echo "-> Apply database migrations"
 	${MANAGE} migrate
 
-cleandb:
+postgres:
+	@echo "-> Configure PostgreSQL database"
 	@echo "-> Create database user 'scancodeio'"
 	${SUDO_POSTGRES} createuser --no-createrole --no-superuser --login --inherit --createdb scancodeio || true
 	${SUDO_POSTGRES} psql -c "alter user scancodeio with encrypted password '${SCANCODEIO_DB_PASSWORD}';" || true
-	@echo "-> Dropping 'scancodeio' database"
+	@echo "-> Drop 'scancodeio' database"
 	${SUDO_POSTGRES} dropdb scancodeio || true
-	@echo "-> Creating 'scancodeio' database"
+	@echo "-> Create 'scancodeio' database"
 	${SUDO_POSTGRES} createdb --encoding=utf-8 --owner=scancodeio scancodeio
+	@$(MAKE) migrate
+
+sqlite:
+	@echo "-> Configure SQLite database"
+	@echo SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\" >> ${ENV_FILE}
+	@echo SCANCODEIO_DB_NAME=\"sqlite3.db\" >> ${ENV_FILE}
 	@$(MAKE) migrate
 
 run:
 	${MANAGE} runserver 8001
 
 test:
-	@echo "-> Running the test suite"
+	@echo "-> Run the test suite"
 	${MANAGE} test --noinput
 
 package: conf
@@ -116,4 +126,8 @@ bump:
 	@echo "-> Bump the version to next patch number: 'major.minor.patch'"
 	bin/bumpversion patch --allow-dirty
 
-.PHONY: conf dev envfile install check valid isort clean migrate cleandb run test package bump
+docs:
+	rm -rf docs/_build/
+	sphinx-build docs/ docs/_build/
+
+.PHONY: conf dev envfile install check valid isort clean migrate postgres sqlite run test package bump docs

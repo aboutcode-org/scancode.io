@@ -26,9 +26,6 @@ from scanpipe.management.commands import ProjectCommand
 class Command(ProjectCommand):
     help = "Show pipelines of a project."
 
-    def add_arguments(self, parser):
-        super().add_arguments(parser)
-
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
@@ -39,7 +36,7 @@ class Command(ProjectCommand):
     def get_run_status_code(self, run):
         status = " "
         if run.task_succeeded:
-            status = self.style.SUCCESS("V")
+            status = self.style.SUCCESS("SUCCESS")
         elif run.task_exitcode and run.task_exitcode > 0:
-            status = self.style.ERROR("E")
+            status = self.style.ERROR("FAILURE")
         return status

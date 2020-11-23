@@ -42,8 +42,8 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
-from scanpipe.outputs import ResultsGenerator
 from scanpipe.pipelines import get_pipeline_description
+from scanpipe.pipes.outputs import JSONResultsGenerator
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -75,10 +75,10 @@ class ProjectViewSet(
         """
         Return the results compatible with ScanCode data format.
         The content is returned as a stream of JSON content using the
-        ResultsGenerator.
+        JSONResultsGenerator class.
         """
         project = self.get_object()
-        results_generator = ResultsGenerator(project)
+        results_generator = JSONResultsGenerator(project)
         return StreamingHttpResponse(
             streaming_content=results_generator, content_type="application/json"
         )
@@ -89,10 +89,10 @@ class ProjectViewSet(
     def results_download(self, request, *args, **kwargs):
         """
         Return the results as an attachment.
-        The content is streamed using the ResultsGenerator.
+        The content is streamed using the JSONResultsGenerator.
         """
         project = self.get_object()
-        results_generator = ResultsGenerator(project)
+        results_generator = JSONResultsGenerator(project)
 
         response = FileResponse(
             streaming_content=results_generator,

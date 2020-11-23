@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import csv
 import json
 
 from django.core.serializers.json import DjangoJSONEncoder
@@ -29,13 +30,49 @@ from scancodeio import __version__ as scancodeio_version
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import RunSerializer
-from scanpipe.models import CodebaseResource
 
 
-class ResultsGenerator:
+def queryset_to_csv(project, queryset, fieldnames):
     """
-    Return `project` results as a generator.
-    This allow to stream those results from the database to the client browser
+    Create a csv file from the provided `queryset`.
+    The fields to include as columns and their order are controlled by the
+    `fieldnames` list.
+    The output file is created in the `project` output/ directory.
+    """
+    model_name = queryset.model._meta.model_name
+    output_file = project.get_output_file_path(f"{model_name}", "csv")
+
+    with open(output_file, "w") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames)
+        writer.writeheader()
+        for record in queryset.iterator():
+            record_dict = {field: getattr(record, field) for field in fieldnames}
+            writer.writerow(record_dict)
+
+    return output_file
+
+
+def to_csv(project):
+    """
+    Generate results output for the provided `project` as csv format.
+    Since the csv format does not support multiple tabs, one file is created
+    per object type.
+    The output files are created in the `project` output directory.
+    """
+    data_sources = [
+        (project.discoveredpackages.all(), DiscoveredPackageSerializer),
+        (project.codebaseresources.without_symlinks(), CodebaseResourceSerializer),
+    ]
+
+    for queryset, serializer in data_sources:
+        fieldnames = list(serializer().get_fields().keys())
+        queryset_to_csv(project, queryset, fieldnames)
+
+
+class JSONResultsGenerator:
+    """
+    Return the `project` JSON results as a Python generator.
+    Use this class to stream the results from the database to the client browser
     without having to load everything in memory first.
 
     Note that the Django Serializer class can output to a stream but cannot be
@@ -75,9 +112,8 @@ class ResultsGenerator:
         return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
 
     def get_headers(self, project):
-        runs = RunSerializer(
-            project.runs.all(), many=True, exclude_fields=("url", "project")
-        )
+        runs = project.runs.all()
+        runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
 
         headers = {
             "tool_name": "scanpipe",
@@ -92,15 +128,28 @@ class ResultsGenerator:
         yield self.encode(headers)
 
     def get_packages(self, project):
-        discovered_packages = project.discoveredpackages.all()
+        packages = project.discoveredpackages.all()
 
-        for obj in discovered_packages.iterator():
+        for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)
 
     def get_files(self, project):
-        codebase_resources = project.codebaseresources.exclude(
-            type=CodebaseResource.Type.SYMLINK
-        ).prefetch_related("discovered_packages")
+        resources = project.codebaseresources.without_symlinks()
 
-        for obj in codebase_resources.iterator():
+        for obj in resources.iterator():
             yield self.encode(CodebaseResourceSerializer(obj).data)
+
+
+def to_json(project):
+    """
+    Generate results output for the provided `project` as JSON format.
+    The output file is created in the `project` output/ directory.
+    """
+    results_generator = JSONResultsGenerator(project)
+    output_file = project.get_output_file_path("results", "json")
+
+    with output_file.open("w") as file:
+        for chunk in results_generator:
+            file.write(chunk)
+
+    return output_file

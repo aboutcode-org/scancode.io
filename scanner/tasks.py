@@ -220,10 +220,8 @@ def download_and_scan(self, scan_pk, run_subscriptions=True):
     scan_model = apps.get_model("scanner", "Scan")
     scan = scan_model.objects.get(pk=scan_pk)
     scan.reset_values()
-    scan.task_id = task_id
-    scan.task_start_date = timezone.now()
     scan.scancode_version = scancode_version
-    scan.save()
+    scan.set_task_started(task_id)
 
     log_info(f"Download {scan.uri}", scan_pk)
     try:
@@ -263,32 +261,31 @@ def scan_task(self, scan_pk, directory, run_subscriptions):
 
     scan_model = apps.get_model("scanner", "Scan")
     scan = scan_model.objects.get(pk=scan_pk)
+    scan.output_file = str(scan.work_path / f"scan_{scancode_version}.json")
+    # Update the task_id but keep the task_start_date from previous task
     scan.task_id = task_id
     scan.save()
 
-    scan.output_file = str(scan.work_path / f"scan_{scancode_version}.json")
     try:
-        scan.task_exitcode, scan.task_output = run_scancode(directory, scan.output_file)
+        exitcode, output = run_scancode(directory, scan.output_file)
         key_files_data = scan.get_key_files_data()
         dump_key_files_data(key_files_data, directory, scan.key_files_output_file)
         scan.summary = scan.get_summary_from_output()
     except SoftTimeLimitExceeded:
         log_info(f"SoftTimeLimitExceeded", scan_pk)
-        scan.task_exitcode = 4
-        scan.task_output = "SoftTimeLimitExceeded"
+        exitcode, output = 4, "SoftTimeLimitExceeded"
     except Exception as e:
         log_info(f"Scan error: {e}", scan_pk)
-        scan.task_exitcode = 3
-        scan.task_output = str(e)
+        exitcode, output = 3, str(e)
     finally:
         log_info("Remove temporary files", scan_pk)
         # Always cleanup the temporary files even if an exception if raised
         shutil.rmtree(directory, ignore_errors=True)
 
     log_info("Update Scan instance with exitcode, output, and end_date", scan_pk)
-    scan.task_end_date = timezone.now()
-    scan.save()
+    # Do not refresh the scan instance since `scan.summary` is not saved yet
+    scan.set_task_ended(exitcode, output, refresh_first=False)
 
-    if run_subscriptions and scan.task_exitcode < 3 and scan.has_subscriptions():
+    if run_subscriptions and exitcode < 3 and scan.has_subscriptions():
         log_info("Run subscriptions", scan_pk)
         scan.run_subscriptions()

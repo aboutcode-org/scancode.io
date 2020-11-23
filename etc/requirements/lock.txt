@@ -20,7 +20,7 @@ astroid==2.3.3 \
 attrs==19.3.0 \
     --hash=sha256:08a96c641c3a74e44eb59afb61a24f2cb9f4d7188748e76ba4bb5edfa3cb7d1c \
     --hash=sha256:f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72 \
-    # via container-inspector, debut, scancode-toolkit
+    # via commoncode, container-inspector, debut, scancode-toolkit, typecode
 banal==0.4.2 \
     --hash=sha256:1a9aaa9f3925f2e7a8aba8cd55dccba9163cbec89fa324d6326313bcc138c221 \
     --hash=sha256:491947e79c4c4b1e710a97f7e3885d4fd4e23b1f4fa1da022965fd63116beed7 \
@@ -29,7 +29,7 @@ beautifulsoup4==4.9.0 \
     --hash=sha256:594ca51a10d2b3443cbac41214e12dbb2a1cd57e1a7344659849e2e20ba6a8d8 \
     --hash=sha256:a4bbe77fd30670455c5296242967a123ec28c37e9702a8a81bd2f20a4baf0368 \
     --hash=sha256:d4e96ac9b0c3a6d3f0caae2e4124e6055c5dcafde8e2f831ff194c104f0775a0 \
-    # via scancode-toolkit
+    # via commoncode, scancode-toolkit
 billiard==3.6.3.0 \
     --hash=sha256:bff575450859a6e0fbc2f9877d9b715b0bbc07c3565bb7ed2280526a0cdf5ede \
     --hash=sha256:d91725ce6425f33a97dfa72fb6bfef0e47d4652acd98a032bd1a7fbf06d5fa6a \
@@ -37,7 +37,7 @@ billiard==3.6.3.0 \
 binaryornot==0.4.4 \
     --hash=sha256:359501dfc9d40632edc9fac890e19542db1a287bbcfa58175b66658392018061 \
     --hash=sha256:b8b71173c917bddcd2c16070412e369c3ed7f0528926f70cac18a6c97fd563e4 \
-    # via scancode-toolkit
+    # via typecode
 bitarray==0.9.3 \
     --hash=sha256:b2783d74247abb2669f581a001ecaa747e4b2ff9440762dbb499ed69b83e321e \
     # via scancode-toolkit
@@ -68,11 +68,15 @@ chardet==3.0.4 \
 click==7.1.2 \
     --hash=sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a \
     --hash=sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc \
-    # via container-inspector, metaflow, scancode-toolkit
+    # via commoncode, container-inspector, metaflow, plugincode, scancode-toolkit
 colorama==0.4.3 \
     --hash=sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff \
     --hash=sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1 \
     # via scancode-toolkit
+commoncode==20.10.20 \
+    --hash=sha256:57337f37f350e417fd9e55d3bb56a94d29ea5475df42172061232d1490d299a6 \
+    --hash=sha256:8190cf67a0f06579c00e5212d53499587da32f247629dc7a1fef7f329351321f \
+    # via extractcode, plugincode, scancode-toolkit, typecode
 container_inspector==3.1.2 \
     --hash=sha256:1ab778cf17867fc0d551a858ddb8ebe4c97e8dab46cdbfb49776c0d494d6a2a1 \
     --hash=sha256:54a6162d6f541a297a199857f8e445b1f2f5c9da81051644d800869bbae2e362 \
@@ -93,17 +97,16 @@ django-environ==0.4.5 \
     --hash=sha256:6c9d87660142608f63ec7d5ce5564c49b603ea8ff25da595fd6098f6dc82afde \
     --hash=sha256:c57b3c11ec1f319d9474e3e5a79134f40174b17c7cc024bbb2fad84646b120c4 \
     # via -r etc/requirements/base.txt
-django-filter==2.3.0 \
-    --hash=sha256:11e63dd759835d9ba7a763926ffb2662cf8a6dcb4c7971a95064de34dbc7e5af \
-    --hash=sha256:616848eab6fc50193a1b3730140c49b60c57a3eda1f7fc57fa8505ac156c6c75 \
+django-filter==2.4.0 \
+    --hash=sha256:84e9d5bb93f237e451db814ed422a3a625751cbc9968b484ecc74964a8696b06 \
+    --hash=sha256:e00d32cebdb3d54273c48f4f878f898dced8d5dfaad009438fe61ebdf535ace1 \
     # via -r etc/requirements/base.txt
-django==3.1.1 \
-    --hash=sha256:59c8125ca873ed3bdae9c12b146fbbd6ed8d0f743e4cf5f5817af50c51f1fc2f \
-    --hash=sha256:b5fbb818e751f660fa2d576d9f40c34a4c615c8b48dd383f5216e609f383371f \
+django==3.1.3 \
+    --hash=sha256:14a4b7cd77297fba516fc0d92444cc2e2e388aa9de32d7a68d4a83d58f5a4927 \
+    --hash=sha256:14b87775ffedab2ef6299b73343d1b4b41e5d4e2aa58c6581f114dbec01e3f8f \
     # via -r etc/requirements/base.txt, django-filter, djangorestframework
-djangorestframework==3.11.1 \
-    --hash=sha256:6dd02d5a4bd2516fb93f80360673bf540c3b6641fec8766b1da2870a5aa00b32 \
-    --hash=sha256:8b1ac62c581dbc5799b03e535854b92fc4053ecfe74bad3f9c05782063d4196b \
+djangorestframework==3.12.2 \
+    --hash=sha256:0209bafcb7b5010fdfec784034f059d512256424de2a0f084cb82b096d6dd6a7 \
     # via -r etc/requirements/base.txt
 dockerfile-parse==1.0.0 \
     --hash=sha256:9ed92ede29a646094b52b8b302e477f08e63465b6ee524f5750810280143712e \
@@ -118,17 +121,21 @@ dparse2==0.5.0.4 \
     --hash=sha256:7ba548299caab598f9d7b3cccc20086f6c5cee546b1c6e347bcef4ea83f13260 \
     --hash=sha256:8704ed31e2ca5f40cbeaea314affe52a4b2f0c18197dc7ea031b376fdab5a136 \
     # via scancode-toolkit
-extractcode-7z==9.38.4 \
-    --hash=sha256:7163653bcb3bab01ef9368635b10262abd8b53be52dd7c2a760d32c842f187f8 \
-    --hash=sha256:906a6c945b374a1ce7a053abd455eaaff337257bacf6a4b7fec24109a537529a \
-    --hash=sha256:9b13df69ca775a3bb25394ffa7fc912acf5f89984da7fa4f83f26975a0cfaf13 \
-    --hash=sha256:b550283e063c67696829424e3fba2a9be3890a94c3266c748d5a885bf3732a40 \
-    # via scancode-toolkit
-extractcode-libarchive==3.1.5 \
-    --hash=sha256:2e5915f3f5807b729661d6370b6e38228f60bdb823729c8b28e189872c68af45 \
-    --hash=sha256:49f40ca868733516e984c84d9055e66248310eaf0e97b1b3d92bd32849de109b \
-    --hash=sha256:723c417d2f6baec174b8f6c5edce70d3dae37e5db1d727c42b21b6116c36f88d \
-    --hash=sha256:c69f720f06b4dd31091b7e54f6ca812fe50c6b6261c163d8af1fad59f5c1ed2d \
+extractcode-7z==16.5 \
+    --hash=sha256:0af291c994e62a29b6aa257f5cd0a8e0a13b14d62081611887170dca1370d1e0 \
+    --hash=sha256:0d775b40f35ef29cb80292452e0b769bceb60342d5338b02be9da169f9b10fbc \
+    --hash=sha256:200aca5cddb511eb28c8b623e3d4f82ca32ec6e5e2bddfac4f1a25333cc4dfef \
+    --hash=sha256:d0e0e4b7f300f6c95a38fde4b75e3dd93745d9aaa6b08a3b7962a1525067d584 \
+    # via extractcode, scancode-toolkit
+extractcode-libarchive==3.4.3.1 \
+    --hash=sha256:08483c8b837016737d1670270d0efc12c8f23ff8b61f6fb95f542455de1d91b2 \
+    --hash=sha256:421db9d4ae45d3dec7c166812fa907858cb305d61cb76d073a66afac5feaab1b \
+    --hash=sha256:5d222173a2a4f176612ca54be1395080eb88eb9ef35da00aaf76c7e10345ea56 \
+    --hash=sha256:657d0c46b954aee0143b668be7f4ccaf8e62c0310a0dea84f8011c542d0d22ff \
+    # via extractcode, scancode-toolkit
+extractcode==20.10 \
+    --hash=sha256:6177b4d28442a4ef9871f56d57f1ea1d737aa5267dd7f1aa36b84db92c5f137b \
+    --hash=sha256:bae4fb4da2dc1d5c970aed5d3931ae41956617152714fe250d8e510ff023c91c \
     # via scancode-toolkit
 fingerprints==0.6.6 \
     --hash=sha256:315f334aa01528fdd576acaad54e0aad6e24e9384b21f29e8fe1e6b574ccdfb2 \
@@ -162,7 +169,7 @@ importlib-metadata==0.23 \
     # via kombu, pluggy
 intbitset==2.4.0 \
     --hash=sha256:d4ceba6c252223a2e60072b8e42b867004eb31972098e0d16924cf0d27aed387 \
-    # via scancode-toolkit
+    # via commoncode, scancode-toolkit
 isodate==0.6.0 \
     --hash=sha256:2e364a3d5759479cdb2d37cce6b9376ea504db2ff90252a2e5b7cc89cc9ff2d8 \
     --hash=sha256:aa4d33c06640f5352aca96e4b81afd8ab3b47337cc12089822d6f322ac772c81 \
@@ -286,9 +293,9 @@ mccabe==0.6.1 \
     --hash=sha256:ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42 \
     --hash=sha256:dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f \
     # via pylint
-metaflow==2.2.3 \
-    --hash=sha256:4086b8b89333c444e718f1342c4db5c4d0ab9d7eb8ea753357f190a0b86804f6 \
-    --hash=sha256:c458f91288a8fc9d519d7ef8966a4238da7d3d5d1c43447d602fb08883f0ba15 \
+metaflow==2.2.4 \
+    --hash=sha256:0cb148872ecc835e2e4735a377b5f1ef2fa1f0c07d62974fdd546c3e23c05c37 \
+    --hash=sha256:df4cf7f4220d0809c9401c69562c0d7afbe45e1600bfed12bc91032efaef5ecc \
     # via -r etc/requirements/base.txt
 more-itertools==7.2.0 \
     --hash=sha256:409cd48d4db7052af495b09dec721011634af3753ae1ef92d2b32f73a745f832 \
@@ -311,11 +318,11 @@ packaging==20.3 \
     # via dparse2
 patch==1.16 \
     --hash=sha256:c62073f356cff054c8ac24496f1a3d7cfa137835c31e9af39a9f5292fd75bd9f \
-    # via scancode-toolkit
+    # via extractcode
 pdfminer.six==20200402 \
     --hash=sha256:dd163540391ac8b50c74f0c40f21b7c0a350591d72d516714aa198d103f306a3 \
     --hash=sha256:f5ab6aae4999c1460aa569c716cde75c1585e3f4f2e3fcaf6c950696937d1741 \
-    # via scancode-toolkit
+    # via scancode-toolkit, typecode
 pefile==2019.4.18 \
     --hash=sha256:a5d6e8305c6b210849b47a6174ddf9c452b2888340b8177874b862ba6c207645 \
     # via scancode-toolkit
@@ -326,7 +333,11 @@ pkginfo==1.5.0.1 \
 pluggy==0.13.1 \
     --hash=sha256:15b2acde666561e1298d71b523007ed7364de07029219b604cf808bfa1c765b0 \
     --hash=sha256:966c145cd83c96502c3c3868f50408687b38434af77734af1e9ca461a4081d2d \
-    # via scancode-toolkit
+    # via plugincode, scancode-toolkit
+plugincode==20.9 \
+    --hash=sha256:4918439d0b7505f555825adb8b79d90095b724d499ebd172a80893c7b635db99 \
+    --hash=sha256:dd7ac8705687f79d94d8b3834a08f314b1601a3526300239f38ebd967c9db5c1 \
+    # via extractcode, scancode-toolkit, typecode
 ply==3.11 \
     --hash=sha256:00c7c1aaa88358b9c765b6d3000c6eec0ba42abca5351b095321aef446081da3 \
     --hash=sha256:096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce \
@@ -385,9 +396,9 @@ pycryptodome==3.9.7 \
     --hash=sha256:f1add21b6d179179b3c177c33d18a2186a09cc0d3af41ff5ed3f377360b869f2 \
     --hash=sha256:f655addaaaa9974108d4808f4150652589cada96074c87115c52e575bfcd87d5 \
     # via pdfminer.six, scancode-toolkit
-pygments==2.2.0 \
-    --hash=sha256:78f3f434bcc5d6ee09020f92ba487f95ba50f1e3ef83ae96b9d5ffa1bab25c5d \
-    --hash=sha256:dbae1046def0efb574852fab9e90209b23f556367b5a320c0bcb871c77c3e8cc \
+pygments==2.4.2 \
+    --hash=sha256:71e430bc85c88a430f000ac1d9b331d2407f681d6f6aec95e8bcfbc3df5b0127 \
+    --hash=sha256:881c4c157e45f30af185c1ffe8d549d48ac9127433f2c380c24b84572ad66297 \
     # via scancode-toolkit
 pylint==2.4.4 \
     --hash=sha256:3db5468ad013380e987410a8d6956226963aed94ecb5f9d3a28acca6d9ac36cd \
@@ -405,9 +416,9 @@ python-dateutil==2.8.1 \
     --hash=sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c \
     --hash=sha256:75bb3f31ea686f1197762692a9ee6a7550b59fc6ca3a1f4b5d7e32fb98e2da2a \
     # via botocore
-pytz==2020.1 \
-    --hash=sha256:a494d53b6d39c3c6e44c3bec237336e14305e4f29bbf800b599253057fbb79ed \
-    --hash=sha256:c35965d010ce31b23eeb663ed3cc8c906275d6be1a34393a1d73a41febf4a048 \
+pytz==2020.4 \
+    --hash=sha256:3e6b7dd2d1e0a59084bcee14a17af60c5c562cdc16d828e8eba2e683d3a7e268 \
+    --hash=sha256:5c55e189b682d420be27c6995ba6edce0c0a77dd67bfbe2ae6607134d5851ffd \
     # via -r etc/requirements/base.txt, celery, django, scancode-toolkit, tempora
 pyyaml==5.3.1 \
     --hash=sha256:06a0d7ba600ce0b2d2fe2e78453a470b5a6e000a985dd4a4e54e436cc36b0e97 \
@@ -433,7 +444,7 @@ redis==3.5.3 \
 requests==2.24.0 \
     --hash=sha256:b3559a131db72c33ee969480840fff4bb6dd111de7dd27c8ee1f820f4f00231b \
     --hash=sha256:fe75cc94a9443b9246fc7049224f75604b113c36acb93f87b80ed42c44cbb898 \
-    # via -r etc/requirements/base.txt, metaflow, pymaven-patch, scancode-toolkit
+    # via -r etc/requirements/base.txt, commoncode, metaflow, pymaven-patch, scancode-toolkit
 s3transfer==0.3.3 \
     --hash=sha256:2482b4259524933a022d59da830f51bd746db62f047d6eb213f2f8855dcb8a13 \
     --hash=sha256:921a37e2aefc64145e7b73d50c71bb4f26f46e4c9f414dc648c6245ff92cf7db \
@@ -441,9 +452,9 @@ s3transfer==0.3.3 \
 saneyaml==0.4 \
     --hash=sha256:9a1863a9d27586fd86c30b9736478a7d441bf1d118cdc71a2fec0d94cfc3cf5c \
     --hash=sha256:f0d5bdd51649f3253ca8c2d9e48c78540c39d9d035810a2cd4406dbeffd8da11 \
-    # via scancode-toolkit
-scancode-toolkit==3.2.0 \
-    --hash=sha256:807d70fd8da567097357af5a777c004fb780d4b396c023845d8d69c563e8445a \
+    # via commoncode, scancode-toolkit
+scancode-toolkit[full]==3.2.3 \
+    --hash=sha256:795adfc9990400dfb521160fecbcadc14cc3946faf1c018284a98ee3dcfbdabc \
     # via -r etc/requirements/base.txt
 simplejson==3.17.0 \
     --hash=sha256:0fe3994207485efb63d8f10a833ff31236ed27e3b23dadd0bf51c9900313f8f2 \
@@ -466,7 +477,7 @@ simplejson==3.17.0 \
 six==1.14.0 \
     --hash=sha256:236bdbdce46e6e6a3d61a337c0f8b763ca1e8717c03b369e87a7ec7ce1319c0a \
     --hash=sha256:8f3cd2e254d8f793e7f3d6d9df77b92252b52637291d0f0da013c76ea2724b6c \
-    # via astroid, banal, dockerfile-parse, dparse2, fingerprints, html5lib, intbitset, isodate, javaproperties, nltk, normality, packaging, pymaven-patch, python-dateutil, scancode-toolkit, spdx-tools
+    # via astroid, banal, dockerfile-parse, dparse2, fingerprints, html5lib, intbitset, isodate, javaproperties, nltk, normality, packaging, plugincode, pymaven-patch, python-dateutil, scancode-toolkit, spdx-tools, typecode
 sortedcontainers==2.1.0 \
     --hash=sha256:974e9a32f56b17c1bac2aebd9dcf197f3eb9cd30553c5852a3187ad162e1a03a \
     --hash=sha256:d9e96492dd51fae31e60837736b38fe42a187b5404c16606ff7ee7cd582d4c60 \
@@ -490,14 +501,21 @@ tempora==3.0.0 \
 text-unidecode==1.3 \
     --hash=sha256:1311f10e8b895935241623731c2ba64f4c455287888b18189350b67134a822e8 \
     --hash=sha256:bad6603bb14d279193107714b288be206cac565dfa49aa5b105294dd5c4aab93 \
-    # via normality, scancode-toolkit
+    # via commoncode, normality
 toml==0.10.0 \
     --hash=sha256:229f81c57791a41d65e399fc06bf0848bab550a9dfd5ed66df18ce5f05e73d5c \
     --hash=sha256:235682dd292d5899d361a811df37e04a8828a5b1da3115886b73cf81ebc9100e \
     # via dparse2, scancode-toolkit
-typecode-libmagic==5.23.4 \
-    --hash=sha256:0e993674655b6eb190d29da6888192afd3bb9df89e4ad20641064f7326fc5e39 \
-    # via scancode-toolkit
+typecode-libmagic==5.39.1.1 \
+    --hash=sha256:0538f7c9234799adc0223fcc98a626db4823f6391719b0cc1a6019f1c52e0869 \
+    --hash=sha256:3254d05bca3091b500888b23117c396b825534bb381a341746c2aaf8e8949386 \
+    --hash=sha256:da8e39d88826834f4d6c949aea7fcb4b8089d235a2f3b41121e9827a9510ef7f \
+    --hash=sha256:e6549bbecb57a4d33c8af6e56dfa73823e97397a7f33ae0e2344e9db04130831 \
+    # via extractcode, scancode-toolkit
+typecode==20.10.20 \
+    --hash=sha256:214d633804fc3e79b7cc8e2152baadfdcd62cfe02056ba797d2e5a388d4c9f95 \
+    --hash=sha256:a481e019e41d7c83ca55cd589ae92fc7cabb5587b1a8347c737c3c87038035e5 \
+    # via extractcode, scancode-toolkit
 typed-ast==1.4.1 \
     --hash=sha256:0666aa36131496aed8f7be0410ff974562ab7eeac11ef351def9ea6fa28f6355 \
     --hash=sha256:0c2c07682d61a629b68433afb159376e24e5b2fd4641d35424e462169c0a7919 \
@@ -525,7 +543,7 @@ typing==3.6.6 \
     --hash=sha256:4027c5f6127a6267a435201981ba156de91ad0d1d98e9ddc2aa173453453492d \
     --hash=sha256:57dcf675a99b74d64dacf6fba08fb17cf7e3d5fdff53d4a30ea2a5e7e52543d4 \
     --hash=sha256:a4c8473ce11a65999c8f59cb093e70686b6c84c98df58c1dae9b3b196089858a \
-    # via scancode-toolkit
+    # via commoncode, scancode-toolkit
 unicodecsv==0.14.1 \
     --hash=sha256:018c08037d48649a0412063ff4eda26eaa81eff1546dbffa51fa5293276ff7fc \
     # via container-inspector, scancode-toolkit

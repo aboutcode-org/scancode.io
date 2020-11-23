@@ -30,7 +30,7 @@ from django.conf import settings
 # Django starts so that shared_task will use this app.
 from scancodeio.celery import app as celery_app
 
-__version__ = "1.0.2"
+__version__ = "1.0.4"
 
 ROOT_DIR = Path(__file__).parent.parent.absolute()
 SCAN_NOTICE = (ROOT_DIR / "scan.NOTICE").read_text()
