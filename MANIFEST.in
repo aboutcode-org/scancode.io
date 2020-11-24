@@ -1,4 +1,4 @@
-include LICENSE
+include apache-2.0.LICENSE
 include NOTICE
 include manage.py
 include MANIFEST.in
