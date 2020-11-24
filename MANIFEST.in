@@ -4,7 +4,6 @@ include manage.py
 include MANIFEST.in
 include Makefile
 include *.rst
-include scan.NOTICE
 include setup.py
 include setup.cfg
 
