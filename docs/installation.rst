@@ -11,6 +11,10 @@ Pre-requisite
  * **PostgreSQL 10** or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
  * Recent version of **git**: https://git-scm.com/
 
+.. note::
+    ScanCode.io can also be run through a Docker image,
+    refer to the :ref:`docker_image` chapter for details.
+
 Local installation
 ------------------
 

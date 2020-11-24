@@ -11,6 +11,8 @@ services:
     build: .
     environment:
       - SCANCODEIO_DB_HOST=db
+      # Required by metaflow to prevent raising MetaflowUnknownUser
+      - USERNAME=scancodeio
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/code

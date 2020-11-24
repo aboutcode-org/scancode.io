@@ -3,6 +3,9 @@
 
 ### v1.0.5 (unreleased)
 
+- Add support for running ScanCode.io as a Docker image
+  https://github.com/nexB/scancode.io/issues/9
+
 - Add support for Python 3.7, 3.8, and 3.9
   https://github.com/nexB/scancode.io/issues/54
 
