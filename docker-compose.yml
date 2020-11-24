@@ -13,9 +13,10 @@ services:
       - SCANCODEIO_DB_HOST=db
       # Required by metaflow to prevent raising MetaflowUnknownUser
       - USERNAME=scancodeio
+      - ALLOWED_HOSTS=0.0.0.0
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - .:/code
+      - .:/opt/scancodeio
     ports:
       - "8000:8000"
     depends_on:
