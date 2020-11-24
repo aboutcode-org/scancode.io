@@ -104,8 +104,8 @@ class ScanCodebase(Pipeline):
         """
         project = self.project
         scanned_codebase = scancode.get_virtual_codebase(project, self.scan_output_file)
-        scancode.create_codebase_resources(project, scanned_codebase, strip_root=True)
-        scancode.create_discovered_packages(project, scanned_codebase, strip_root=True)
+        scancode.create_codebase_resources(project, scanned_codebase)
+        scancode.create_discovered_packages(project, scanned_codebase)
         self.next(self.csv_output)
 
     @step
