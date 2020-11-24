@@ -26,7 +26,8 @@ MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 ANSIBLE_PLAYBOOK=cd etc/ansible/ && ansible-playbook --inventory-file=hosts --verbose --ask-become-pass --user=${USER}
 BLACK_ARGS=--exclude="migrations|data|docs" .
-GET_SECRET_KEY=`${PYTHON_EXE} -c "from django.core.management import utils; print(utils.get_random_secret_key())"`
+# Do not depend on Python to generate the SECRET_KEY
+GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
 ENV_FILE=.env
 # Customize with `$ make postgres SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
@@ -56,7 +57,7 @@ envfile:
 	@echo "-> Create the .env file and generate a secret key"
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
 	mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
-	@${ACTIVATE} echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
+	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
 install:
 	@echo "-> Install and configure the Python env with base dependencies, offline"

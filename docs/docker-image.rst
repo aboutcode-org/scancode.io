@@ -16,9 +16,12 @@ Build the Image
 ScanCode.io is distributed with ``Dockerfile`` and ``docker-compose.yml`` files
 required for the creation of the Docker image.
 
-Build the image::
+Clone the git `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
+create an environment file, and build the Docker image::
 
-    $ docker-compose build
+    git clone git@github.com:nexB/scancode.io.git && cd scancode.io
+    make envfile
+    docker-compose build
 
 
 .. note::
@@ -30,7 +33,7 @@ Run the Image
 
 Run your image as a container::
 
-    $ docker-compose up
+    docker-compose up
 
 
 At this point, the ScanCode.io app should be running at port 8000 on your
@@ -40,7 +43,7 @@ Go to http://localhost:8000 on a web browser to access the web UI.
 You can also run a one-off ``scanpipe`` command through the Docker command line
 interface, for example::
 
-    $ docker-compose run web scanpipe create-project project_name
+    docker-compose run web scanpipe create-project project_name
 
 
 .. note::
@@ -49,6 +52,5 @@ interface, for example::
 Alternatively, you can connect to the Docker container ``bash`` and run commands
 from there::
 
-    $ docker-compose run web bash
-    $ scanpipe create-project project_name
-
+    docker-compose run web bash
+    scanpipe create-project project_name
