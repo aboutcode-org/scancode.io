@@ -624,6 +624,35 @@ class CodebaseResource(
         return str(self.location_path)
 
     @property
+    def is_file(self):
+        return self.type == self.Type.FILE
+
+    @property
+    def is_dir(self):
+        return self.type == self.Type.DIRECTORY
+
+    @property
+    def is_symlink(self):
+        return self.type == self.Type.SYMLINK
+
+    def descendants(self):
+        """
+        Return a QuerySet of descendant CodebaseResource objects using a
+        Database query on this CodebaseResource `path`.
+        The current CodebaseResource is not included.
+        """
+        return self.project.codebaseresources.filter(path__startswith=f"{self.path}/")
+
+    def children(self):
+        """
+        Return a QuerySet of direct children CodebaseResource objects using a
+        Database query on this CodebaseResource `path`.
+        """
+        exactly_one_sub_directory = "[^/]+$"
+        children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
+        return self.descendants().filter(path__regex=children_regex)
+
+    @property
     def file_content(self):
         """
         Return the content of this Resource file using TextCode utilities for
