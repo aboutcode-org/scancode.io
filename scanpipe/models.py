@@ -643,7 +643,7 @@ class CodebaseResource(
         """
         return self.project.codebaseresources.filter(path__startswith=f"{self.path}/")
 
-    def children(self, codebase):
+    def children(self, codebase=None):
         """
         Return a QuerySet of direct children CodebaseResource objects using a
         Database query on this CodebaseResource `path`.
