@@ -31,12 +31,15 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import outputs
+from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 
 class ScanPipePipesTest(TestCase):
+    data_location = Path(__file__).parent / "data"
+
     def test_scanpipe_pipes_strip_root(self):
         input_paths = [
             "/root/dir/file",
@@ -122,3 +125,15 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", filename_now())
+
+    def test_scanpipe_pipes_scancode_virtual_codebase(self):
+        project = Project.objects.create(name="asgiref")
+        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        codebase = scancode.get_virtual_codebase(project, input_location)
+        self.assertEqual(19, len(codebase.resources.keys()))
+
+        scancode.create_codebase_resources(project, codebase)
+        scancode.create_discovered_packages(project, codebase)
+
+        self.assertEqual(19, CodebaseResource.objects.count())
+        self.assertEqual(1, DiscoveredPackage.objects.count())
