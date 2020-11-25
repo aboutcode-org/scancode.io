@@ -367,7 +367,7 @@ class ScanPipeModelsTest(TestCase):
             "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
             "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
         ]
-        self.assertEqual(expected, [resource.path for resource in descendants])
+        self.assertEqual(expected, sorted([resource.path for resource in descendants]))
 
     def test_scanpipe_codebase_resource_children(self):
         resource = self.project_asgiref.codebaseresources.get(path="codebase")
