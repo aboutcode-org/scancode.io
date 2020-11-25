@@ -13,6 +13,11 @@ Alpine
 .. automodule:: scanpipe.pipes.alpine
     :members:
 
+Codebase
+--------
+.. automodule:: scanpipe.pipes.codebase
+    :members:
+
 Debian
 ------
 .. automodule:: scanpipe.pipes.debian

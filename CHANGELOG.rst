@@ -3,6 +3,12 @@
 
 ### v1.0.5 (unreleased)
 
+- Add ProjectCodebase to help walk and navigate Project CodebaseResource
+  loaded from the Database
+  Add also a get_tree function compatible with scanpipe.CodebaseResource and
+  commoncode.Resource
+  https://github.com/nexB/scancode.io/issues/52
+
 - Add support for running ScanCode.io as a Docker image
   https://github.com/nexB/scancode.io/issues/9
 

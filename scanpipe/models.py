@@ -643,10 +643,13 @@ class CodebaseResource(
         """
         return self.project.codebaseresources.filter(path__startswith=f"{self.path}/")
 
-    def children(self):
+    def children(self, codebase):
         """
         Return a QuerySet of direct children CodebaseResource objects using a
         Database query on this CodebaseResource `path`.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.VirtualCodebase class API.
         """
         exactly_one_sub_directory = "[^/]+$"
         children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
