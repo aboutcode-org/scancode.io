@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=scancodeio
+      - POSTGRES_USER=scancodeio
+      - POSTGRES_PASSWORD=scancodeio
+  web:
+    build: .
+    environment:
+      - SCANCODEIO_DB_HOST=db
+      # Required by metaflow to prevent raising MetaflowUnknownUser
+      - USERNAME=scancodeio
+      - ALLOWED_HOSTS=0.0.0.0
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/opt/scancodeio
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db

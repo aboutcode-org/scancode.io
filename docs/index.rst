@@ -11,6 +11,7 @@ First application is for Docker container and VM composition analysis.
 
     introduction
     installation
+    docker-image
 
 .. toctree::
     :maxdepth: 2
