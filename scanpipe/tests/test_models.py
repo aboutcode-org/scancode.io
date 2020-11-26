@@ -248,7 +248,6 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
-        Run.objects.all().delete()
 
         started = self.create_run(task_start_date=now)
         not_started = self.create_run()
@@ -256,23 +255,23 @@ class ScanPipeModelsTest(TestCase):
         succeed = self.create_run(task_start_date=now, task_exitcode=0)
         failed = self.create_run(task_start_date=now, task_exitcode=1)
 
-        qs = Run.objects.started()
+        qs = self.project1.runs.started()
         self.assertEqual(4, len(qs))
         self.assertIn(started, qs)
         self.assertIn(executed, qs)
         self.assertIn(succeed, qs)
         self.assertIn(failed, qs)
 
-        qs = Run.objects.not_started()
+        qs = self.project1.runs.not_started()
         self.assertEqual([not_started], list(qs))
 
-        qs = Run.objects.executed()
+        qs = self.project1.runs.executed()
         self.assertEqual([executed], list(qs))
 
-        qs = Run.objects.succeed()
+        qs = self.project1.runs.succeed()
         self.assertEqual([succeed], list(qs))
 
-        qs = Run.objects.failed()
+        qs = self.project1.runs.failed()
         self.assertEqual([failed], list(qs))
 
     def test_scanpipe_codebase_resource_model_methods(self):
