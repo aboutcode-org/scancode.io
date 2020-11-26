@@ -24,19 +24,24 @@ import json
 from pathlib import Path
 from unittest import mock
 
+from django.core.management import call_command
 from django.test import TestCase
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipes import codebase
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import outputs
+from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 
 class ScanPipePipesTest(TestCase):
+    data_location = Path(__file__).parent / "data"
+
     def test_scanpipe_pipes_strip_root(self):
         input_paths = [
             "/root/dir/file",
@@ -122,3 +127,73 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", filename_now())
+
+    def test_scanpipe_pipes_scancode_virtual_codebase(self):
+        project = Project.objects.create(name="asgiref")
+        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        codebase = scancode.get_virtual_codebase(project, input_location)
+        self.assertEqual(19, len(codebase.resources.keys()))
+
+        scancode.create_codebase_resources(project, codebase)
+        scancode.create_discovered_packages(project, codebase)
+
+        self.assertEqual(19, CodebaseResource.objects.count())
+        self.assertEqual(1, DiscoveredPackage.objects.count())
+
+    def test_scanpipe_pipes_codebase_get_tree(self):
+        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        scan_results = self.data_location / "asgiref-3.3.0_scan.json"
+        virtual_codebase = scancode.get_virtual_codebase(project, scan_results)
+        project_codebase = codebase.ProjectCodebase(project)
+
+        fields = ["name", "path"]
+        virtual_tree = codebase.get_tree(
+            virtual_codebase.root, fields, codebase=virtual_codebase
+        )
+        project_tree = codebase.get_tree(project_codebase.root, fields)
+
+        with open(self.data_location / "asgiref-3.3.0_tree.json") as f:
+            expected = json.loads(f.read())
+
+        self.assertEqual(expected, project_tree)
+        self.assertEqual(expected, virtual_tree)
+
+    def test_scanpipe_pipes_codebase_project_codebase_class_no_resources(self):
+        project = Project.objects.create(name="project")
+
+        project_codebase = codebase.ProjectCodebase(project)
+        with self.assertRaises(AttributeError):
+            project_codebase.root
+
+        self.assertEqual([], list(project_codebase.resources))
+        self.assertEqual([], list(project_codebase.walk()))
+        with self.assertRaises(AttributeError):
+            project_codebase.get_tree()
+
+    def test_scanpipe_pipes_codebase_project_codebase_class_with_resources(self):
+        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+
+        project = Project.objects.get(name="asgiref")
+        project_codebase = codebase.ProjectCodebase(project)
+
+        expected_root = project.codebaseresources.get(path="codebase")
+        self.assertTrue(isinstance(project_codebase.root, CodebaseResource))
+        self.assertEqual(expected_root, project_codebase.root)
+
+        self.assertEqual(19, len(project_codebase.resources))
+        self.assertEqual(expected_root, project_codebase.resources[0])
+
+        walk_gen = project_codebase.walk()
+        self.assertEqual(expected_root, next(walk_gen))
+        expected = "codebase/asgiref-3.3.0-py3-none-any.whl"
+        self.assertEqual(expected, next(walk_gen).path)
+
+        tree = project_codebase.get_tree()
+        with open(self.data_location / "asgiref-3.3.0_tree.json") as f:
+            expected = json.loads(f.read())
+
+        self.assertEqual(expected, tree)

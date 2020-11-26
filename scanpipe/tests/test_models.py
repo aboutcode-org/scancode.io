@@ -22,6 +22,7 @@
 
 import uuid
 from datetime import datetime
+from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
@@ -42,8 +43,12 @@ scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 class ScanPipeModelsTest(TestCase):
+    data_location = Path(__file__).parent / "data"
+    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
+
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+        self.project_asgiref = Project.objects.get(name="asgiref")
 
     def create_run(self, **kwargs):
         return Run.objects.create(project=self.project1, pipeline="pipeline", **kwargs)
@@ -250,23 +255,23 @@ class ScanPipeModelsTest(TestCase):
         succeed = self.create_run(task_start_date=now, task_exitcode=0)
         failed = self.create_run(task_start_date=now, task_exitcode=1)
 
-        qs = Run.objects.started()
+        qs = self.project1.runs.started()
         self.assertEqual(4, len(qs))
         self.assertIn(started, qs)
         self.assertIn(executed, qs)
         self.assertIn(succeed, qs)
         self.assertIn(failed, qs)
 
-        qs = Run.objects.not_started()
+        qs = self.project1.runs.not_started()
         self.assertEqual([not_started], list(qs))
 
-        qs = Run.objects.executed()
+        qs = self.project1.runs.executed()
         self.assertEqual([executed], list(qs))
 
-        qs = Run.objects.succeed()
+        qs = self.project1.runs.succeed()
         self.assertEqual([succeed], list(qs))
 
-        qs = Run.objects.failed()
+        qs = self.project1.runs.failed()
         self.assertEqual([failed], list(qs))
 
     def test_scanpipe_codebase_resource_model_methods(self):
@@ -298,7 +303,9 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(scan_results["name"], resource.name)
         self.assertEqual(scan_results["extension"], resource.extension)
 
-    def test_scanpipe_codebase_resource_queryset_type_methods(self):
+    def test_scanpipe_codebase_resource_type_methods(self):
+        CodebaseResource.objects.all().delete()
+
         file = CodebaseResource.objects.create(
             project=self.project1, type=CodebaseResource.Type.FILE, path="file"
         )
@@ -310,6 +317,18 @@ class ScanPipeModelsTest(TestCase):
         symlink = CodebaseResource.objects.create(
             project=self.project1, type=CodebaseResource.Type.SYMLINK, path="symlink"
         )
+
+        self.assertTrue(file.is_file)
+        self.assertFalse(file.is_dir)
+        self.assertFalse(file.is_symlink)
+
+        self.assertFalse(directory.is_file)
+        self.assertTrue(directory.is_dir)
+        self.assertFalse(directory.is_symlink)
+
+        self.assertFalse(symlink.is_file)
+        self.assertFalse(symlink.is_dir)
+        self.assertTrue(symlink.is_symlink)
 
         qs = CodebaseResource.objects.files()
         self.assertEqual(1, len(qs))
@@ -328,6 +347,48 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(file, qs)
         self.assertIn(directory, qs)
         self.assertNotIn(symlink, qs)
+
+    def test_scanpipe_codebase_resource_descendants(self):
+        path = "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
+        resource = self.project_asgiref.codebaseresources.get(path=path)
+        descendants = list(resource.descendants())
+        self.assertEqual(9, len(descendants))
+        self.assertNotIn(resource.path, descendants)
+        expected = [
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/"
+            "current_thread_executor.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+        ]
+        self.assertEqual(expected, sorted([resource.path for resource in descendants]))
+
+    def test_scanpipe_codebase_resource_children(self):
+        resource = self.project_asgiref.codebaseresources.get(path="codebase")
+        children = list(resource.children())
+        self.assertEqual(2, len(children))
+        self.assertNotIn(resource.path, children)
+        expected = [
+            "codebase/asgiref-3.3.0-py3-none-any.whl",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract",
+        ]
+        self.assertEqual(expected, [resource.path for resource in children])
+
+        path = "codebase/asgiref-3.3.0-py3-none-any.whl-extract"
+        resource = self.project_asgiref.codebaseresources.get(path=path)
+        children = list(resource.children())
+        self.assertEqual(2, len(children))
+        self.assertNotIn(resource.path, children)
+        expected = [
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+        ]
+        self.assertEqual(expected, [resource.path for resource in children])
 
     def test_scanpipe_discovered_package_model_create_from_data(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
