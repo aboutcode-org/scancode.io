@@ -26,14 +26,17 @@ from django.contrib.admin.views.main import ChangeList
 from django.http import FileResponse
 from django.http import Http404
 from django.http import QueryDict
+from django.http import StreamingHttpResponse
 from django.urls import path
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+from scanpipe.api.serializers import get_fields_from_serializer
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectError
+from scanpipe.pipes.outputs import queryset_to_csv_stream
 
 
 class ListDisplayField:
@@ -130,6 +133,18 @@ class PathListFilter(admin.SimpleListFilter):
             return queryset.filter(path__startswith=self.value())
 
 
+class Echo:
+    """
+    An object that implements just the write method of the file-like interface.
+    """
+
+    def write(self, value):
+        """
+        Write the value by returning it, instead of storing in a buffer.
+        """
+        return value
+
+
 class ProjectRelatedModelAdmin(admin.ModelAdmin):
     """
     Regroup the common ModelAdmin values for Project related models.
@@ -161,6 +176,19 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
 
     project_filter.short_description = "Project"
     project_filter.admin_order_field = "project"
+
+    def export_to_csv(self, request, queryset):
+        fieldnames = get_fields_from_serializer(queryset.model)
+
+        output_stream = Echo()
+        streaming_content = queryset_to_csv_stream(queryset, fieldnames, output_stream)
+
+        model_name = queryset.model._meta.model_name
+        response = StreamingHttpResponse(streaming_content, content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{model_name}.csv"'
+        return response
+
+    export_to_csv.short_description = "Export selected objects to CSV"
 
 
 def get_admin_url(obj, view="change"):
@@ -194,6 +222,7 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
     search_fields = ("path", "mime_type", "file_type")
     ordering = ["path"]
     prefetch_related = ["discovered_packages"]
+    actions = ["export_to_csv"]
 
     def path_filter(self, obj):
         """
@@ -287,6 +316,7 @@ class DiscoveredPackageAdmin(ProjectRelatedModelAdmin):
     exclude = ("codebase_resources",)
     inlines = (CodebaseResourceInline,)
     prefetch_related = ["codebase_resources"]
+    actions = ["export_to_csv"]
 
     def resources(self, obj):
         return mark_safe(

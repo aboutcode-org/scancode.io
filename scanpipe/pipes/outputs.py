@@ -30,26 +30,40 @@ from scancodeio import __version__ as scancodeio_version
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import RunSerializer
+from scanpipe.api.serializers import get_fields_from_serializer
 
 
-def queryset_to_csv(project, queryset, fieldnames):
+def queryset_to_csv_file(queryset, fieldnames, output_file):
     """
-    Create a csv file from the provided `queryset`.
+    Output csv content generated from the provided `queryset` objects to the
+    `output_file`.
     The fields to include as columns and their order are controlled by the
     `fieldnames` list.
-    The output file is created in the `project` output/ directory.
     """
-    model_name = queryset.model._meta.model_name
-    output_file = project.get_output_file_path(f"{model_name}", "csv")
+    writer = csv.DictWriter(output_file, fieldnames)
+    writer.writeheader()
 
-    with open(output_file, "w") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames)
-        writer.writeheader()
-        for record in queryset.iterator():
-            record_dict = {field: getattr(record, field) for field in fieldnames}
-            writer.writerow(record_dict)
+    for record in queryset.iterator():
+        row = {field: getattr(record, field) for field in fieldnames}
+        writer.writerow(row)
 
-    return output_file
+
+def queryset_to_csv_stream(queryset, fieldnames, output_stream):
+    """
+    Output csv content generated from the provided `queryset` objects to the
+    `output_stream`.
+    The fields to include as columns and their order are controlled by the
+    `fieldnames` list.
+    """
+    writer = csv.DictWriter(output_stream, fieldnames)
+    # Not using writer.writeheader() since this method do not "return" the
+    # value while writer.writerow() does.
+    header = dict(zip(fieldnames, fieldnames))
+    yield writer.writerow(header)
+
+    for record in queryset.iterator():
+        row = {field: getattr(record, field) for field in fieldnames}
+        yield writer.writerow(row)
 
 
 def to_csv(project):
@@ -57,16 +71,22 @@ def to_csv(project):
     Generate results output for the provided `project` as csv format.
     Since the csv format does not support multiple tabs, one file is created
     per object type.
-    The output files are created in the `project` output directory.
+    The output files are created in the `project` output/ directory.
     """
-    data_sources = [
-        (project.discoveredpackages.all(), DiscoveredPackageSerializer),
-        (project.codebaseresources.without_symlinks(), CodebaseResourceSerializer),
+    querysets = [
+        project.discoveredpackages.all(),
+        project.codebaseresources.without_symlinks(),
     ]
 
-    for queryset, serializer in data_sources:
-        fieldnames = list(serializer().get_fields().keys())
-        queryset_to_csv(project, queryset, fieldnames)
+    for queryset in querysets:
+        model_class = queryset.model
+        fieldnames = get_fields_from_serializer(model_class)
+
+        model_name = model_class._meta.model_name
+        output_filename = project.get_output_file_path(f"{model_name}", "csv")
+
+        with output_filename.open("w") as output_file:
+            queryset_to_csv_file(queryset, fieldnames, output_file)
 
 
 class JSONResultsGenerator:

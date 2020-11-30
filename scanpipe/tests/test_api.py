@@ -34,6 +34,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
 
+from scanpipe.api.serializers import get_fields_from_serializer
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -325,3 +326,9 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": f"Pipeline {run1.pipeline} resumed."}
         self.assertEqual(expected, response.data)
         mock_resume_pipeline_task.assert_called_once()
+
+    def test_scanpipe_api_serializer_get_fields_from_serializer(self):
+        self.assertEqual(28, len(get_fields_from_serializer(DiscoveredPackage)))
+        self.assertEqual(20, len(get_fields_from_serializer(CodebaseResource)))
+        with self.assertRaises(LookupError):
+            get_fields_from_serializer(None)
