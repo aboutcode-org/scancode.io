@@ -29,7 +29,7 @@ from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
 
-from scanpipe.management.commands.graph import graphviz_installed
+from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.models import Project
 
 
@@ -51,7 +51,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         temp_dir = tempfile.mkdtemp()
 
-        if not graphviz_installed():
+        if not is_graphviz_installed():
             expected = "Graphviz is not installed."
             with self.assertRaisesMessage(CommandError, expected):
                 call_command("graph", self.pipeline_location)

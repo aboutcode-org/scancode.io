@@ -3,6 +3,9 @@
 
 ### v1.0.5 (unreleased)
 
+- Add --list option to the graph management command.
+  Multiple graphs can now be generated at once.
+
 - Add ProjectCodebase to help walk and navigate Project CodebaseResource
   loaded from the Database
   Add also a get_tree function compatible with scanpipe.CodebaseResource and
