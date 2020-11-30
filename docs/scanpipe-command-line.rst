@@ -110,15 +110,19 @@ Output the results of the project named ``PROJECT`` to the ``<output_file>``
 as JSON.
 
 
-`$ scanpipe graph <pipeline ...>`
----------------------------------
+`$ scanpipe graph [pipelines ...]`
+----------------------------------
 
-Generate a pipeline graph image as PNG (using `Graphviz <https://graphviz.org/>`_).
-The graphic file will be named after the pipeline name with a ``.png`` extension.
+Generate one or more pipeline graph image as PNG
+(using `Graphviz <https://graphviz.org/>`_).
+The output files are named using the pipeline class name with a ``.png``
+extension.
 
 Optional arguments:
+
+- ``--list`` Display a list of all available pipelines.
 
 - ``--output OUTPUT`` Specifies directory to which the output is written.
 
 .. note::
-    By default, the image output file is created in the current working directory.
+    By default, the output files are created in the current working directory.
