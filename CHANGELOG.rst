@@ -4,7 +4,9 @@
 ### v1.0.5 (unreleased)
 
 - Add an admin action to export selected objects to CSV
+  The output content, such as included fields, can be configured
   https://github.com/nexB/scancode.io/issues/48
+  https://github.com/nexB/scancode.io/issues/49
 
 - Add --list option to the graph management command.
   Multiple graphs can now be generated at once.

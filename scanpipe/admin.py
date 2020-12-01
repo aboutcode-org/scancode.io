@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django import forms
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
@@ -27,10 +28,13 @@ from django.http import FileResponse
 from django.http import Http404
 from django.http import QueryDict
 from django.http import StreamingHttpResponse
+from django.shortcuts import redirect
 from django.urls import path
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
+from django.views.generic.edit import FormView
 
 from scanpipe.api.serializers import get_fields_from_serializer
 from scanpipe.models import CodebaseResource
@@ -145,13 +149,79 @@ class Echo:
         return value
 
 
+class ExportConfigurationForm(forms.Form):
+    """
+    Configuration form for exporting data including selected fields.
+    """
+
+    include_fields = forms.MultipleChoiceField(
+        label="", widget=forms.CheckboxSelectMultiple(attrs={"checked": "checked"})
+    )
+    pks = forms.CharField(
+        widget=forms.widgets.HiddenInput,
+    )
+
+    def __init__(self, model_class, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["include_fields"].choices = [
+            (field, field) for field in get_fields_from_serializer(model_class)
+        ]
+
+
+class AdminExportView(FormView):
+    """
+    A view to configure an export and download the data.
+    """
+
+    template_name = "admin/export.html"
+    form_class = ExportConfigurationForm
+    model_admin = None
+    model_class = None
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        self.model_class = self.model_admin.model
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["model_class"] = self.model_class
+        return kwargs
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial.update({"pks": self.request.GET.get("pks")})
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        extra_context = {
+            "title": "Export to CSV",
+            "opts": self.model_class._meta,
+            "has_view_permission": self.model_admin.has_view_permission(self.request),
+            "media": self.model_admin.media,
+        }
+        return {**context, **extra_context}
+
+    def form_valid(self, form):
+        model_name = self.model_class._meta.model_name
+        pks = form.cleaned_data["pks"].split(",")
+        queryset = self.model_class.objects.filter(pk__in=pks)
+        fieldnames = form.cleaned_data["include_fields"]
+        output_stream = Echo()
+
+        streaming_content = queryset_to_csv_stream(queryset, fieldnames, output_stream)
+        response = StreamingHttpResponse(streaming_content, content_type="text/csv")
+        response["Content-Disposition"] = f'attachment; filename="{model_name}.csv"'
+        return response
+
+
 class ProjectRelatedModelAdmin(admin.ModelAdmin):
     """
     Regroup the common ModelAdmin values for Project related models.
     """
 
     list_select_related = True
-    actions_on_top = False
+    actions_on_top = True
     actions_on_bottom = True
     prefetch_related = None
 
@@ -177,16 +247,28 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
     project_filter.short_description = "Project"
     project_filter.admin_order_field = "project"
 
+    def get_urls(self):
+        urls = []
+        actions = getattr(self, "actions", [])
+
+        if "export_to_csv" in actions:
+            opts = self.model._meta
+            export_view = AdminExportView.as_view(model_admin=self)
+            urls.append(
+                path(
+                    "export/",
+                    self.admin_site.admin_view(export_view),
+                    name=f"{opts.app_label}_{opts.model_name}_export",
+                ),
+            )
+        return urls + super().get_urls()
+
     def export_to_csv(self, request, queryset):
-        fieldnames = get_fields_from_serializer(queryset.model)
-
-        output_stream = Echo()
-        streaming_content = queryset_to_csv_stream(queryset, fieldnames, output_stream)
-
-        model_name = queryset.model._meta.model_name
-        response = StreamingHttpResponse(streaming_content, content_type="text/csv")
-        response["Content-Disposition"] = f'attachment; filename="{model_name}.csv"'
-        return response
+        opts = self.model._meta
+        view_url = reverse(f"admin:{opts.app_label}_{opts.model_name}_export")
+        selected = queryset.values_list("pk", flat=True)
+        params = urlencode({"pks": ",".join(str(pk) for pk in selected)})
+        return redirect(f"{view_url}?{params}")
 
     export_to_csv.short_description = "Export selected objects to CSV"
 

@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; {% if has_view_permission %}<a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %}
+  &rsaquo; {% trans "Export to CSV" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <form method="post" target="_blank">
+    {% csrf_token %}
+    <p>Select fields to be included in the output file:</p>
+    <p>
+      <a id="check-all" href="#">Check all</a> / <a id="uncheck-all" href="#">Uncheck all</a>
+    </p>
+    {{ form }}
+    <div>
+      <input type="submit" value="Export to CSV" class="default" style="float: none;">
+      <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">Back to list</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {{ media }}
+  <script>
+    (function($) {
+      $(document).ready(function () {
+        $("#check-all").on('click', function(e) {
+          e.preventDefault();
+          $('input:checkbox').prop('checked', true);
+        });
+        $("#uncheck-all").on('click', function(e) {
+          e.preventDefault();
+          $('input:checkbox').prop('checked', false);
+        });
+      });
+    })(django.jQuery);
+  </script>
+{% endblock %}
