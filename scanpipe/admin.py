@@ -338,7 +338,10 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
             if last_segment:
                 links.append(f'<b><a href="{get_admin_url(obj)}">{segment}</a></b>')
             else:
-                links.append(f'<a href="?path={current_path}">{segment}</a>')
+                request = getattr(obj, "_request")
+                query_dict = request.GET.copy() if request else QueryDict()
+                query_dict["path"] = current_path
+                links.append(f'<a href="?{query_dict.urlencode()}">{segment}</a>')
 
         return mark_safe('<span class="path_separator">/</span>'.join(links))
 
