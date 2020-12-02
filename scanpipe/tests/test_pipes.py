@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import collections
 import json
 from pathlib import Path
 from unittest import mock
@@ -57,7 +58,7 @@ class ScanPipePipesTest(TestCase):
             self.assertEqual(expected, strip_root(path))
             self.assertEqual(expected, strip_root(Path(path)))
 
-    def test_scanpipe_pipes_outputs_queryset_to_csv(self):
+    def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
             project=project1,
@@ -70,7 +71,51 @@ class ScanPipePipesTest(TestCase):
 
         queryset = project1.discoveredpackages.all()
         fieldnames = ["purl", "name", "version"]
-        output_file = outputs.queryset_to_csv(project1, queryset, fieldnames)
+
+        output_file_path = project1.get_output_file_path("packages", "csv")
+        with output_file_path.open("w") as output_file:
+            outputs.queryset_to_csv_file(queryset, fieldnames, output_file)
+
+        expected = [
+            "purl,name,version\n",
+            "pkg:deb/debian/adduser@3.118?arch=all,adduser,3.118\n",
+        ]
+        with output_file_path.open() as f:
+            self.assertEqual(expected, f.readlines())
+
+        queryset = project1.codebaseresources.all()
+        fieldnames = ["for_packages", "path"]
+        output_file_path = project1.get_output_file_path("resources", "csv")
+        with output_file_path.open("w") as output_file:
+            outputs.queryset_to_csv_file(queryset, fieldnames, output_file)
+
+        expected = [
+            "for_packages,path\n",
+            "['pkg:deb/debian/adduser@3.118?arch=all'],filename.ext\n",
+        ]
+        with output_file_path.open() as f:
+            self.assertEqual(expected, f.readlines())
+
+    def test_scanpipe_pipes_outputs_queryset_to_csv_stream(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource = CodebaseResource.objects.create(
+            project=project1,
+            path="filename.ext",
+        )
+        DiscoveredPackage.create_for_resource(
+            package_data1,
+            codebase_resource,
+        )
+
+        queryset = project1.discoveredpackages.all()
+        fieldnames = ["purl", "name", "version"]
+
+        output_file = project1.get_output_file_path("packages", "csv")
+        with output_file.open("w") as output_stream:
+            generator = outputs.queryset_to_csv_stream(
+                queryset, fieldnames, output_stream
+            )
+            collections.deque(generator, maxlen=0)  # Exhaust the generator
 
         expected = [
             "purl,name,version\n",
@@ -81,7 +126,14 @@ class ScanPipePipesTest(TestCase):
 
         queryset = project1.codebaseresources.all()
         fieldnames = ["for_packages", "path"]
-        output_file = outputs.queryset_to_csv(project1, queryset, fieldnames)
+        output_file = project1.get_output_file_path("resources", "csv")
+        with output_file.open("w") as output_stream:
+            generator = outputs.queryset_to_csv_stream(
+                queryset, fieldnames, output_stream
+            )
+            collections.deque(generator, maxlen=0)  # Exhaust the generator
+
+        outputs.queryset_to_csv_stream(queryset, fieldnames, output_file)
 
         expected = [
             "for_packages,path\n",

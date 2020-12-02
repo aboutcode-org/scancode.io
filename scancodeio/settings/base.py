@@ -25,6 +25,8 @@ from pathlib import Path
 
 import environ
 
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+
 # Environment
 
 env_file = "/etc/scancodeio/.env"
@@ -170,6 +172,10 @@ USE_TZ = True
 STATIC_URL = "/static/"
 
 STATIC_ROOT = "/var/www/scancodeio/static/"
+
+STATICFILES_DIRS = [
+    str(PROJECT_DIR.joinpath("static")),
+]
 
 # Third-party apps
 
