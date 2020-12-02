@@ -188,10 +188,9 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
         return project_error.traceback.split("\n")
 
 
-def get_fields_from_serializer(model_class):
+def get_model_serializer(model_class):
     """
-    Return the list of fields declared on the Serializer related to the
-    provided `model_class`.
+    Return the Serializer class related to the provided `model_class`.
     """
     serializer = {
         DiscoveredPackage: DiscoveredPackageSerializer,
@@ -201,5 +200,14 @@ def get_fields_from_serializer(model_class):
     if not serializer:
         raise LookupError(f"No Serializer found for {model_class}")
 
+    return serializer
+
+
+def get_serializer_fields(model_class):
+    """
+    Return the list of fields declared on the Serializer related to the
+    provided `model_class`.
+    """
+    serializer = get_model_serializer(model_class)
     fields = list(serializer().get_fields().keys())
     return fields

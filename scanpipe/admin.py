@@ -20,10 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
+
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import FileResponse
 from django.http import Http404
 from django.http import QueryDict
@@ -36,7 +39,8 @@ from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 from django.views.generic.edit import FormView
 
-from scanpipe.api.serializers import get_fields_from_serializer
+from scanpipe.api.serializers import get_model_serializer
+from scanpipe.api.serializers import get_serializer_fields
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectError
@@ -164,7 +168,7 @@ class ExportConfigurationForm(forms.Form):
     def __init__(self, model_class, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["include_fields"].choices = [
-            (field, field) for field in get_fields_from_serializer(model_class)
+            (field, field) for field in get_serializer_fields(model_class)
         ]
 
 
@@ -272,6 +276,18 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
 
     export_to_csv.short_description = "Export selected objects to CSV"
 
+    def export_to_json(self, request, queryset):
+        model_name = queryset.model._meta.model_name
+        serializer_class = get_model_serializer(queryset.model)
+        serializer = serializer_class(queryset, many=True)
+        json_data = json.dumps(serializer.data, indent=2, cls=DjangoJSONEncoder)
+
+        response = StreamingHttpResponse(json_data, content_type="application/json")
+        response["Content-Disposition"] = f'attachment; filename="{model_name}.json"'
+        return response
+
+    export_to_json.short_description = "Export selected objects to JSON"
+
 
 def get_admin_url(obj, view="change"):
     """
@@ -304,7 +320,7 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
     search_fields = ("path", "mime_type", "file_type")
     ordering = ["path"]
     prefetch_related = ["discovered_packages"]
-    actions = ["export_to_csv"]
+    actions = ["export_to_csv", "export_to_json"]
 
     def path_filter(self, obj):
         """
@@ -398,7 +414,7 @@ class DiscoveredPackageAdmin(ProjectRelatedModelAdmin):
     exclude = ("codebase_resources",)
     inlines = (CodebaseResourceInline,)
     prefetch_related = ["codebase_resources"]
-    actions = ["export_to_csv"]
+    actions = ["export_to_csv", "export_to_json"]
 
     def resources(self, obj):
         return mark_safe(

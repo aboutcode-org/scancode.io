@@ -30,7 +30,7 @@ from scancodeio import __version__ as scancodeio_version
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import RunSerializer
-from scanpipe.api.serializers import get_fields_from_serializer
+from scanpipe.api.serializers import get_serializer_fields
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -80,7 +80,7 @@ def to_csv(project):
 
     for queryset in querysets:
         model_class = queryset.model
-        fieldnames = get_fields_from_serializer(model_class)
+        fieldnames = get_serializer_fields(model_class)
 
         model_name = model_class._meta.model_name
         output_filename = project.get_output_file_path(f"{model_name}", "csv")

@@ -3,8 +3,8 @@
 
 ### v1.0.5 (unreleased)
 
-- Add an admin action to export selected objects to CSV
-  The output content, such as included fields, can be configured
+- Add admin actions to export selected objects to CSV and JSON
+  The output content, such as included fields, can be configured for CSV format
   https://github.com/nexB/scancode.io/issues/48
   https://github.com/nexB/scancode.io/issues/49
 
