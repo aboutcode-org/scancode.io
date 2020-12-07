@@ -183,12 +183,18 @@ class ScanPipePipesTest(TestCase):
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
         input_location = self.data_location / "asgiref-3.3.0_scan.json"
-        codebase = scancode.get_virtual_codebase(project, input_location)
-        self.assertEqual(19, len(codebase.resources.keys()))
+        virtual_codebase = scancode.get_virtual_codebase(project, input_location)
+        self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
-        scancode.create_codebase_resources(project, codebase)
-        scancode.create_discovered_packages(project, codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_packages(project, virtual_codebase)
 
+        self.assertEqual(19, CodebaseResource.objects.count())
+        self.assertEqual(1, DiscoveredPackage.objects.count())
+
+        # The functions can be called again and existing objects are skipped
+        scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_packages(project, virtual_codebase)
         self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
 

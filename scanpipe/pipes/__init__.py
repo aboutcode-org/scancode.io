@@ -124,8 +124,8 @@ def get_resource_info(location):
 
 def update_or_create_package(project, package_data):
     """
-    Get and update or create a DiscoveredPackage  then return it. Use the
-    `project` and `package_data` mapping to lookup and create the
+    Get and update or create a DiscoveredPackage then return it.
+    Use the `project` and `package_data` mapping to lookup and create the
     DiscoveredPackage using its Package URL as a unique key.
     """
     # make a copy
