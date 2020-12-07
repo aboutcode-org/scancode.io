@@ -28,6 +28,9 @@
 - Add a to_json output pipe returning ScanCode compatible content
   https://github.com/nexB/scancode.io/issues/45
 
+- Add minimal license list and text views
+  https://github.com/nexB/scancode.io/issues/32
+
 - Improve Admin UI for efficient review:
   display, navigation, filters, and ability to view file content
   https://github.com/nexB/scancode.io/issues/36

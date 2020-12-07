@@ -27,6 +27,7 @@ from django.views.generic import RedirectView
 
 from rest_framework.routers import DefaultRouter
 
+from scancodeio import licenses
 from scanner.api.views import ScanViewSet
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
@@ -39,5 +40,6 @@ api_router.register(r"runs", RunViewSet)
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(api_router.urls)),
+    path("license/", include(licenses.urls)),
     path("", RedirectView.as_view(url="api/")),
 ]
