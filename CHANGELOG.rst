@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### v1.0.5 (unreleased)
+### v1.0.5 (2020-12-07)
 
 - Add minimal license list and text views
   https://github.com/nexB/scancode.io/issues/32
