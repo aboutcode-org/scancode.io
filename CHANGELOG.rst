@@ -3,6 +3,9 @@
 
 ### v1.0.5 (unreleased)
 
+- Add minimal license list and text views
+  https://github.com/nexB/scancode.io/issues/32
+
 - Add admin actions to export selected objects to CSV and JSON
   The output content, such as included fields, can be configured for CSV format
   https://github.com/nexB/scancode.io/issues/48
@@ -27,9 +30,6 @@
 
 - Add a to_json output pipe returning ScanCode compatible content
   https://github.com/nexB/scancode.io/issues/45
-
-- Add minimal license list and text views
-  https://github.com/nexB/scancode.io/issues/32
 
 - Improve Admin UI for efficient review:
   display, navigation, filters, and ability to view file content
