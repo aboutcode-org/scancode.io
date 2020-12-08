@@ -29,7 +29,7 @@ Step-by-step
   add the ``scan_codebase`` pipeline, and run its execution::
 
     $ scanpipe create-project asgiref \
-        --input asgiref-3.3.0-py3-none-any.whl \
+        --input ~/asgiref-3.3.0-py3-none-any.whl \
         --pipeline scanpipe/pipelines/scan_codebase.py \
         --run
 

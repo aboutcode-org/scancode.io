@@ -57,7 +57,7 @@ dev: conf
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
-	mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
+	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
 install:

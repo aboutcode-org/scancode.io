@@ -8,8 +8,15 @@ Pre-requisite
 
  * **Debian-like** distro or **macOS**
  * **Python 3.6 to 3.9**: https://www.python.org/downloads/
- * **PostgreSQL 10** or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
  * Recent version of **git**: https://git-scm.com/
+
+Optional:
+ * **PostgreSQL 10** or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
+
+.. warning::
+    On Linux, several OS packages are required by ScanCode toolkit.
+    Make sure those are installed before attempting the ScanCode.io installation.
+    Refer to `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html#prerequisites>`_
 
 .. note::
     ScanCode.io can also be run through a Docker image,
@@ -21,7 +28,7 @@ Local installation
 Clone the git `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
 install dependencies and create an environment file::
 
-    git clone git@github.com:nexB/scancode.io.git && cd scancode.io
+    git clone https://github.com/nexB/scancode.io.git && cd scancode.io
     make dev
     make envfile
 
@@ -30,6 +37,8 @@ install dependencies and create an environment file::
     ``make dev`` step::
 
         make dev PYTHON_EXE=python3.8
+
+    When ``PYTHON_EXE`` is not specified, the default ``python3`` executable is used.
 
 Database
 --------

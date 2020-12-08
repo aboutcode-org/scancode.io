@@ -74,8 +74,11 @@ Step-by-step
     calling the ``create-project`` command.
     A ``run`` option is also available to start the pipeline execution right
     after the project creation.
-    For example, the following command will create a project named ``p2``,
+    For example, the following command will create a project named ``staticbox2``,
     copy the test docker image to the project's inputs, add the docker pipeline,
     and execute the pipeline run in one operation::
 
-    $ scanpipe create-project p2 --input ~/30-alpine-nickolashkraus-staticbox-latest.tar --pipeline scanpipe/pipelines/docker.py --run
+      $ scanpipe create-project staticbox2 \
+        --input ~/30-alpine-nickolashkraus-staticbox-latest.tar \
+        --pipeline scanpipe/pipelines/docker.py \
+        --run
