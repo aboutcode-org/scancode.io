@@ -36,7 +36,7 @@ install dependencies and create an environment file::
     The Python version can be specified using the following command during the
     ``make dev`` step::
 
-        make dev PYTHON_EXE=python3.8
+        make dev PYTHON_EXE=python3.6
 
     When ``PYTHON_EXE`` is not specified, the default ``python3`` executable is used.
 
