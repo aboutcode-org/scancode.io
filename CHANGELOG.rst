@@ -1,6 +1,17 @@
 // Release notes
 // -------------
 
+### v1.0.6 (unreleased)
+
+- Fix the env_file location to run commands from outside the root dir
+  https://github.com/nexB/scancode.io/issues/64
+
+- Add utilities to save project error in the database during Pipeline execution
+  https://github.com/nexB/scancode.io/issues/64
+
+- Install psycopg2-binary instead of psycopg2 on non-Linux platforms
+  https://github.com/nexB/scancode.io/issues/64
+
 ### v1.0.5 (2020-12-07)
 
 - Add minimal license list and text views
