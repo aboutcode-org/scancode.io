@@ -26,12 +26,13 @@ from pathlib import Path
 import environ
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = PROJECT_DIR.parent
 
 # Environment
 
 env_file = "/etc/scancodeio/.env"
 if not Path(env_file).exists():
-    env_file = ".env"
+    env_file = str(ROOT_DIR.joinpath(".env"))
 
 environ.Env.read_env(env_file)
 env = environ.Env()
