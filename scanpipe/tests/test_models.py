@@ -34,6 +34,7 @@ from django.utils import timezone
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipelines import get_pipeline_doc
 from scanpipe.tests import mocked_now
@@ -424,6 +425,15 @@ class ScanPipeErrorModelsTest(TransactionTestCase):
     TransactionTestCase to avoid any TransactionManagementError while running
     the tests.
     """
+
+    def test_scanpipe_project_model_add_error(self):
+        project1 = Project.objects.create(name="Analysis")
+        error = project1.add_error(Exception("Error message"), model="Package")
+        self.assertEqual(error, ProjectError.objects.get())
+        self.assertEqual("Package", error.model)
+        self.assertEqual({}, error.details)
+        self.assertEqual("Error message", error.message)
+        self.assertEqual("", error.traceback)
 
     def test_scanpipe_project_error_model_save_non_valid_related_object(self):
         project1 = Project.objects.create(name="Analysis")

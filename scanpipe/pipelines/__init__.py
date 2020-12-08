@@ -25,6 +25,8 @@ import importlib
 import inspect
 import subprocess
 import sys
+import traceback
+from contextlib import contextmanager
 
 from metaflow import FlowSpec
 from metaflow import Parameter
@@ -48,6 +50,21 @@ class Pipeline(FlowSpec):
         from scanpipe.models import Project
 
         return Project.objects.get(name=name)
+
+    @contextmanager
+    def save_errors(self, *exceptions):
+        """
+        Context manager to save specified exceptions as `ProjectError` in the database.
+
+        Example in a Pipeline step:
+
+        with self.save_errors(ScancodeError):
+            run_scancode()
+        """
+        try:
+            yield
+        except exceptions as error:
+            self.project.add_error(error, model=self.__class__.__name__)
 
 
 class PipelineGraph(FlowGraph):

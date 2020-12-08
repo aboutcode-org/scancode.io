@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from unittest import mock
+
 from django.test import TestCase
 
 from scanpipe.models import Project
@@ -43,6 +45,24 @@ class ScanPipeModelsTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
         project_instance = Pipeline.get_project(project1.name)
         self.assertEqual(project1, project_instance)
+
+    # This patch allows to instantiate a Pipeline subclass bypassing the __init__
+    @mock.patch("metaflow.flowspec.FlowSpec.__init__")
+    def test_scanpipe_pipeline_class_save_errors_context_manager(self, mock_flow_init):
+        mock_flow_init.return_value = None
+
+        project1 = Project.objects.create(name="Analysis")
+        pipeline = DockerPipeline(use_cli=False)
+        pipeline.project = Pipeline.get_project(project1.name)
+
+        with pipeline.save_errors(Exception):
+            raise Exception("Error message")
+
+        error = project1.projecterrors.get()
+        self.assertEqual("DockerPipeline", error.model)
+        self.assertEqual({}, error.details)
+        self.assertEqual("Error message", error.message)
+        self.assertIn('raise Exception("Error message")', error.traceback)
 
     def test_scanpipe_pipelines_is_pipeline_subclass(self):
         self.assertFalse(is_pipeline_subclass(None))

@@ -326,6 +326,19 @@ class Project(UUIDPKModel, models.Model):
         with suppress(ObjectDoesNotExist):
             return self.runs.failed().latest("created_date")
 
+    def add_error(self, error, model, details=None):
+        """
+        Create a ProjectError record from the provided `error` Exception for this
+        project.
+        """
+        return ProjectError.objects.create(
+            project=self,
+            model=model,
+            details=details or {},
+            message=str(error),
+            traceback="".join(traceback.format_tb(error.__traceback__)),
+        )
+
 
 class ProjectRelatedQuerySet(models.QuerySet):
     def project(self, project):
@@ -378,13 +391,9 @@ class SaveProjectErrorMixin:
     def save(self, *args, **kwargs):
         try:
             super().save(*args, **kwargs)
-        except Exception as e:
-            ProjectError.objects.create(
-                project=self.project,
-                model=self.__class__.__name__,
-                details=model_to_dict(self),
-                message=str(e),
-                traceback="".join(traceback.format_tb(e.__traceback__)),
+        except Exception as error:
+            self.project.add_error(
+                error, model=self.__class__.__name__, details=model_to_dict(self)
             )
 
     @classmethod
