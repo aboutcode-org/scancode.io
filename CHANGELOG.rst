@@ -3,6 +3,9 @@
 
 ### v1.0.6 (unreleased)
 
+- Add a "status" management command to display Project status information
+  https://github.com/nexB/scancode.io/issues/66
+
 - Fix the env_file location to run commands from outside the root dir
   https://github.com/nexB/scancode.io/issues/64
 

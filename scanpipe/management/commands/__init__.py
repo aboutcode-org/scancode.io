@@ -53,6 +53,18 @@ class ProjectCommand(BaseCommand):
             raise CommandError(f"Project {project_name} does not exit")
 
 
+class RunStatusCommandMixin:
+    def get_run_status_code(self, run):
+        status = " "
+        if run.task_succeeded:
+            status = self.style.SUCCESS("SUCCESS")
+        elif run.task_exitcode and run.task_exitcode > 0:
+            status = self.style.ERROR("FAILURE")
+        elif run.task_start_date:
+            status = "RUNNING"
+        return status
+
+
 def validate_inputs(inputs):
     """
     Raise an error if one of the provided `inputs` is not an existing file.

@@ -103,6 +103,12 @@ Optional arguments:
 List all the pipelines added of the project named ``PROJECT``.
 
 
+`$ scanpipe status --project PROJECT`
+--------------------------------------------
+
+Display status information about the provided ``PROJECT``.
+
+
 `$ scanpipe output --project PROJECT <output_file>`
 ---------------------------------------------------
 

@@ -22,14 +22,34 @@
 
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.management.commands import RunStatusCommandMixin
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
+from scanpipe.models import ProjectError
 
 
 class Command(ProjectCommand, RunStatusCommandMixin):
-    help = "Show pipelines of a project."
+    help = "Display status information about the provided project."
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        for run in self.project.runs.all():
-            status_code = self.get_run_status_code(run)
-            self.stdout.write(f" [{status_code}] {run.pipeline}")
+        status = [
+            f"Project: {self.project.name}",
+            f"Create date: {self.project.created_date.strftime('%b %d %Y %H:%M')}",
+            f"Work directory: {self.project.work_directory}",
+            "\nDatabase:",
+        ]
+
+        for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
+            object_count = model_class.objects.project(self.project).count()
+            status.append(f" - {model_class.__name__}: {object_count}")
+
+        runs = self.project.runs.all()
+        if runs:
+            status.append("\nPipelines:")
+            for run in runs:
+                status_code = self.get_run_status_code(run)
+                status.append(f" [{status_code}] {run.pipeline}")
+
+        for line in status:
+            self.stdout.write(line)

@@ -273,3 +273,18 @@ class ScanPipeManagementCommandTest(TestCase):
         mock_resume_pipeline_task.assert_called_once()
         expected = "Error during scanpipe/pipelines/docker.py execution:"
         self.assertIn(expected, err.getvalue())
+
+    def test_scanpipe_management_command_status(self):
+        project = Project.objects.create(name="my_project")
+        project.add_pipeline(self.pipeline_location)
+
+        options = ["--project", project.name, "--no-color"]
+        out = StringIO()
+        call_command("status", *options, stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("Project: my_project", output)
+        self.assertIn("- CodebaseResource: 0", output)
+        self.assertIn("- DiscoveredPackage: 0", output)
+        self.assertIn("- ProjectError: 0", output)
+        self.assertIn("[ ] scanpipe/pipelines/docker.py", output)
