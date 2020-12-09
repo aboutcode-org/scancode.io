@@ -92,15 +92,18 @@ class ScanCodebase(Pipeline):
         """
         Scan extracted codebase/ content.
         """
-        self.scan_output_file = self.project.get_output_file_path("scancode", "json")
+        self.scan_output = self.project.get_output_file_path("scancode", "json")
 
         with self.save_errors(scancode.ScancodeError):
             scancode.run_scancode(
                 location=str(self.project.codebase_path),
-                output_file=self.scan_output_file,
+                output_file=str(self.scan_output),
                 options=self.scancode_options,
                 raise_on_error=True,
             )
+
+        if not self.scan_output.exists():
+            raise FileNotFoundError("ScanCode output not available.")
 
         self.next(self.build_inventory_from_scan)
 
@@ -110,7 +113,7 @@ class ScanCodebase(Pipeline):
         Process the JSON scan results to populate resources and packages.
         """
         project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, self.scan_output_file)
+        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
         scancode.create_codebase_resources(project, scanned_codebase)
         scancode.create_discovered_packages(project, scanned_codebase)
         self.next(self.csv_output)
