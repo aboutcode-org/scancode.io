@@ -24,6 +24,8 @@ addons:
 env:
   global:
     - SCANCODEIO_DB_USER=postgres
+    # Run tasks in the current thread, no need to start workers in CI mode
+    - CELERY_TASK_ALWAYS_EAGER=True
     # Bypass the virtualenv activation in Makefile commands
     - ACTIVATE=
 
@@ -35,4 +37,4 @@ install:
 before_script:
   - createdb --encoding=utf-8 scancodeio
 
-script: ./manage.py test --settings=scancodeio.settings.ci --verbosity=2 --noinput
+script: ./manage.py test --settings=scancodeio.settings.base --verbosity=2 --noinput
