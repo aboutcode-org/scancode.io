@@ -23,17 +23,18 @@
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.pipes.outputs import to_csv
 from scanpipe.pipes.outputs import to_json
+from scanpipe.pipes.outputs import to_xlsx
 
 
 class Command(ProjectCommand):
-    help = "Output project results as JSON or CSV."
+    help = "Output project results as JSON, CSV, or XLSX."
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
             "--format",
             default="json",
-            choices=["json", "csv"],
+            choices=["json", "csv", "xlsx"],
             help="Specifies the output serialization format for the results.",
         )
 
@@ -43,6 +44,7 @@ class Command(ProjectCommand):
         output_function = {
             "json": to_json,
             "csv": to_csv,
+            "xlsx": to_xlsx,
         }.get(options["format"])
 
         output_file = output_function(self.project)

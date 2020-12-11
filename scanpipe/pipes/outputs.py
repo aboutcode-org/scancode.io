@@ -25,6 +25,8 @@ import json
 
 from django.core.serializers.json import DjangoJSONEncoder
 
+import xlsxwriter
+
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.api.serializers import CodebaseResourceSerializer
@@ -178,5 +180,50 @@ def to_json(project):
     with output_file.open("w") as file:
         for chunk in results_generator:
             file.write(chunk)
+
+    return output_file
+
+
+def _queryset_to_xlsx_worksheet(queryset, workbook):
+    multivalues_separator = "\n"
+    model_class = queryset.model
+    fieldnames = get_serializer_fields(model_class)
+    model_name = model_class._meta.model_name
+
+    worksheet = workbook.add_worksheet(model_name)
+    worksheet.write_row(row=0, col=0, data=fieldnames)
+
+    for row_index, record in enumerate(queryset.iterator(), start=1):
+        row_data = [getattr(record, field) for field in fieldnames]
+
+        for col_index, value in enumerate(row_data):
+            if isinstance(value, list):
+                value = [
+                    list(entry.values())[0] if isinstance(entry, dict) else str(entry)
+                    for entry in value
+                ]
+                value = multivalues_separator.join(value)
+            elif isinstance(value, dict):
+                value = json.dumps(value) if value else ""
+
+            worksheet.write(row_index, col_index, value)
+
+
+def to_xlsx(project):
+    """
+    Generate results output for the provided `project` as XLSX format.
+    The output file is created in the `project` output/ directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "xlsx")
+
+    querysets = [
+        project.discoveredpackages.all(),
+        project.codebaseresources.without_symlinks(),
+    ]
+
+    with xlsxwriter.Workbook(output_file) as workbook:
+        for queryset in querysets:
+            _queryset_to_xlsx_worksheet(queryset, workbook)
 
     return output_file
