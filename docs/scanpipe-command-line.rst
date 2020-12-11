@@ -52,7 +52,8 @@ Optional arguments:
 
 - ``--pipeline PIPELINES``  Pipelines locations to add on the project.
 
-- ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace directory.
+- ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace
+  directory.
 
 - ``--run``  Start running the pipelines right after project creation.
 
@@ -109,11 +110,11 @@ List all the pipelines added of the project named ``PROJECT``.
 Display status information about the provided ``PROJECT``.
 
 
-`$ scanpipe output --project PROJECT <output_file>`
----------------------------------------------------
+`$ scanpipe output --project PROJECT --format {json,csv}`
+---------------------------------------------------------
 
-Output the results of the project named ``PROJECT`` to the ``<output_file>``
-as JSON.
+Output the ``PROJECT`` results as JSON or CSV.
+The output files are created in the ``PROJECT`` :guilabel:`output/` directory.
 
 
 `$ scanpipe graph [pipelines ...]`

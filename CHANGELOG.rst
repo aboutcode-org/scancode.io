@@ -3,6 +3,9 @@
 
 ### v1.0.6 (unreleased)
 
+- Add CSV support for the `output` management command
+  https://github.com/nexB/scancode.io/issues/46
+
 - Add a "status" management command to display Project status information
   https://github.com/nexB/scancode.io/issues/66
 

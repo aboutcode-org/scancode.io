@@ -72,12 +72,14 @@ def to_csv(project):
     Since the csv format does not support multiple tabs, one file is created
     per object type.
     The output files are created in the `project` output/ directory.
+    Return the list of path of the generated output files.
     """
     querysets = [
         project.discoveredpackages.all(),
         project.codebaseresources.without_symlinks(),
     ]
 
+    output_files = []
     for queryset in querysets:
         model_class = queryset.model
         fieldnames = get_serializer_fields(model_class)
@@ -87,6 +89,10 @@ def to_csv(project):
 
         with output_filename.open("w") as output_file:
             queryset_to_csv_file(queryset, fieldnames, output_file)
+
+        output_files.append(output_filename)
+
+    return output_files
 
 
 class JSONResultsGenerator:
@@ -164,6 +170,7 @@ def to_json(project):
     """
     Generate results output for the provided `project` as JSON format.
     The output file is created in the `project` output/ directory.
+    Return the path of the generated output file.
     """
     results_generator = JSONResultsGenerator(project)
     output_file = project.get_output_file_path("results", "json")

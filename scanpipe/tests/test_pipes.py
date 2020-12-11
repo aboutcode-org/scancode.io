@@ -145,12 +145,13 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_outputs_to_csv(self):
         project1 = Project.objects.create(name="Analysis")
-        outputs.to_csv(project=project1)
+        output_files = outputs.to_csv(project=project1)
         expected = [
             "codebaseresource-2010-10-10-10-10-10.csv",
             "discoveredpackage-2010-10-10-10-10-10.csv",
         ]
         self.assertEqual(sorted(expected), sorted(project1.output_root))
+        self.assertEqual(sorted(expected), sorted([f.name for f in output_files]))
 
     def test_scanpipe_pipes_outputs_to_json(self):
         project1 = Project.objects.create(name="Analysis")
