@@ -206,7 +206,8 @@ def _queryset_to_xlsx_worksheet(queryset, workbook):
             elif isinstance(value, dict):
                 value = json.dumps(value) if value else ""
 
-            worksheet.write(row_index, col_index, value)
+            if value:
+                worksheet.write_string(row_index, col_index, str(value))
 
 
 def to_xlsx(project):
