@@ -26,6 +26,8 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 
 import xlsxwriter
+from license_expression import ordered_unique
+from packagedcode.utils import combine_expressions
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
@@ -184,30 +186,36 @@ def to_json(project):
     return output_file
 
 
-def _queryset_to_xlsx_worksheet(queryset, workbook):
+def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=None):
     multivalues_separator = "\n"
+
     model_class = queryset.model
-    fieldnames = get_serializer_fields(model_class)
     model_name = model_class._meta.model_name
+
+    fieldnames = get_serializer_fields(model_class)
+    exclude_fields = exclude_fields or []
+    fieldnames = [field for field in fieldnames if field not in exclude_fields]
 
     worksheet = workbook.add_worksheet(model_name)
     worksheet.write_row(row=0, col=0, data=fieldnames)
 
     for row_index, record in enumerate(queryset.iterator(), start=1):
-        row_data = [getattr(record, field) for field in fieldnames]
-
-        for col_index, value in enumerate(row_data):
-            if isinstance(value, list):
+        for col_index, field in enumerate(fieldnames):
+            value = getattr(record, field)
+            if not value:
+                continue
+            elif field == "license_expressions":
+                value = combine_expressions(value)
+            elif isinstance(value, list):
                 value = [
                     list(entry.values())[0] if isinstance(entry, dict) else str(entry)
                     for entry in value
                 ]
-                value = multivalues_separator.join(value)
+                value = multivalues_separator.join(ordered_unique(value))
             elif isinstance(value, dict):
                 value = json.dumps(value) if value else ""
 
-            if value:
-                worksheet.write_string(row_index, col_index, str(value))
+            worksheet.write_string(row_index, col_index, str(value))
 
 
 def to_xlsx(project):
@@ -217,6 +225,7 @@ def to_xlsx(project):
     Return the path of the generated output file.
     """
     output_file = project.get_output_file_path("results", "xlsx")
+    exclude_fields = ["licenses", "extra_data", "declared_license"]
 
     querysets = [
         project.discoveredpackages.all(),
@@ -225,6 +234,6 @@ def to_xlsx(project):
 
     with xlsxwriter.Workbook(output_file) as workbook:
         for queryset in querysets:
-            _queryset_to_xlsx_worksheet(queryset, workbook)
+            _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
     return output_file
