@@ -25,6 +25,7 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 
+from django.db.models import Count
 from django.forms import model_to_dict
 
 from commoncode import fileutils
@@ -315,3 +316,17 @@ def filename_now(sep="-"):
     """
     now = datetime.now().isoformat(sep=sep, timespec="seconds")
     return now.replace(":", sep)
+
+
+def count_group_by(queryset, field_name):
+    """
+    Return a summary of all existing values for the provided `field_name` on the
+    `queryset`, including the count of each entry, as a dict.
+    """
+    counts = (
+        queryset.values(field_name)
+        .annotate(count=Count(field_name))
+        .order_by(field_name)
+    )
+
+    return {entry.get(field_name): entry.get("count") for entry in counts}
