@@ -25,7 +25,6 @@ import importlib
 import inspect
 import subprocess
 import sys
-import traceback
 from contextlib import contextmanager
 
 from metaflow import FlowSpec

@@ -188,6 +188,9 @@ CELERY_BROKER_URL = "redis://"
 CELERY_RESULT_BACKEND = "redis://"
 CELERY_IGNORE_RESULT = False
 CELERY_TASK_DEFAULT_QUEUE = "default"
+# When True, tasks will be executed immediately in the local thread instead of being
+# sent to the queue for execution by a worker.
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 
 # Django restframework
 
