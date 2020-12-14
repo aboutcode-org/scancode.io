@@ -25,6 +25,7 @@ from scanpipe.management.commands import RunStatusCommandMixin
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectError
+from scanpipe.pipes import count_group_by
 
 
 class Command(ProjectCommand, RunStatusCommandMixin):
@@ -33,23 +34,30 @@ class Command(ProjectCommand, RunStatusCommandMixin):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        status = [
+        message = [
             f"Project: {self.project.name}",
             f"Create date: {self.project.created_date.strftime('%b %d %Y %H:%M')}",
             f"Work directory: {self.project.work_directory}",
-            "\nDatabase:",
+            "\n",
+            "Database:",
         ]
 
         for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
-            object_count = model_class.objects.project(self.project).count()
-            status.append(f" - {model_class.__name__}: {object_count}")
+            queryset = model_class.objects.project(self.project)
+            message.append(f" - {model_class.__name__}: {queryset.count()}")
+
+            if model_class == CodebaseResource:
+                status_summary = count_group_by(queryset, "status")
+                for status, count in status_summary.items():
+                    status = status or "(no status)"
+                    message.append(f"   - {status}: {count}")
 
         runs = self.project.runs.all()
         if runs:
-            status.append("\nPipelines:")
+            message.append("\nPipelines:")
             for run in runs:
                 status_code = self.get_run_status_code(run)
-                status.append(f" [{status_code}] {run.pipeline}")
+                message.append(f" [{status_code}] {run.pipeline}")
 
-        for line in status:
+        for line in message:
             self.stdout.write(line)

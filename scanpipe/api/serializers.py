@@ -33,6 +33,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.pipes import count_group_by
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -126,8 +127,8 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
         ]
 
     def get_codebase_resources_summary(self, project):
-        statuses = project.codebaseresources.values_list("status", flat=True)
-        return dict(Counter(statuses))
+        queryset = project.codebaseresources.all()
+        return count_group_by(queryset, "status")
 
     def get_discovered_package_summary(self, project):
         base_qs = project.discoveredpackages
