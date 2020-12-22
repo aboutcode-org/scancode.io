@@ -110,8 +110,8 @@ List all the pipelines added of the project named ``PROJECT``.
 Display status information about the provided ``PROJECT``.
 
 
-`$ scanpipe output --project PROJECT --format {json,csv}`
----------------------------------------------------------
+`$ scanpipe output --project PROJECT --format {json,csv,xlsx}`
+--------------------------------------------------------------
 
 Output the ``PROJECT`` results as JSON or CSV.
 The output files are created in the ``PROJECT`` :guilabel:`output/` directory.

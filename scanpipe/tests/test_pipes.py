@@ -159,10 +159,7 @@ class ScanPipePipesTest(TestCase):
             project=project1,
             path="filename.ext",
         )
-        DiscoveredPackage.create_for_resource(
-            package_data1,
-            codebase_resource,
-        )
+        DiscoveredPackage.create_for_resource(package_data1, codebase_resource)
 
         output_file = outputs.to_json(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
@@ -176,6 +173,17 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(1, len(results["headers"]))
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
+
+    def test_scanpipe_pipes_outputs_to_xlsx(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource = CodebaseResource.objects.create(
+            project=project1,
+            path="filename.ext",
+        )
+        DiscoveredPackage.create_for_resource(package_data1, codebase_resource)
+
+        output_file = outputs.to_xlsx(project=project1)
+        self.assertEqual([output_file.name], project1.output_root)
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
