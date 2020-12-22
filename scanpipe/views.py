@@ -20,27 +20,11 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.contrib import admin
-from django.urls import include
-from django.urls import path
-from django.views.generic import RedirectView
+from django.views.generic import ListView
 
-from rest_framework.routers import DefaultRouter
+from scanpipe.models import Project
 
-from scancodeio import licenses
-from scanner.api.views import ScanViewSet
-from scanpipe.api.views import ProjectViewSet
-from scanpipe.api.views import RunViewSet
 
-api_router = DefaultRouter()
-api_router.register(r"scans", ScanViewSet)
-api_router.register(r"projects", ProjectViewSet)
-api_router.register(r"runs", RunViewSet)
-
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
-    path("", include("scanpipe.urls")),
-    path("", RedirectView.as_view(url="project/")),
-]
+class ProjectListView(ListView):
+    model = Project
+    template_name = "scanpipe/project_list.html"
