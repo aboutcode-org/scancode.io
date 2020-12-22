@@ -3,7 +3,10 @@
 
 ### v1.0.6 (unreleased)
 
-- Add CSV support for the `output` management command
+- Add CSV and XLSX support for the `output` management command
+  https://github.com/nexB/scancode.io/issues/46
+
+- Add a to_xlsx output pipe returning XLSX compatible content
   https://github.com/nexB/scancode.io/issues/46
 
 - Add a "status" management command to display Project status information
