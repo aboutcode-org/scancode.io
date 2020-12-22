@@ -21,29 +21,34 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.pipes.outputs import JSONResultsGenerator
+from scanpipe.pipes.outputs import to_csv
+from scanpipe.pipes.outputs import to_json
+from scanpipe.pipes.outputs import to_xlsx
 
 
 class Command(ProjectCommand):
-    help = "Output project data as JSON."
+    help = "Output project results as JSON, CSV, or XLSX."
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "output_file",
-            nargs="?",
-            help="Specifies file to which the output is written.",
+            "--format",
+            default="json",
+            choices=["json", "csv", "xlsx"],
+            help="Specifies the output serialization format for the results.",
         )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        results_generator = JSONResultsGenerator(self.project)
-        output_file = options["output_file"]
+        output_function = {
+            "json": to_json,
+            "csv": to_csv,
+            "xlsx": to_xlsx,
+        }.get(options["format"])
 
-        stream = open(output_file, "w") if output_file else self.stdout
-        try:
-            for chunk in results_generator:
-                stream.write(chunk)
-        finally:
-            stream.close()
+        output_file = output_function(self.project)
+
+        if isinstance(output_file, list):
+            output_file = "\n".join([str(path) for path in output_file])
+        self.stdout.write(self.style.SUCCESS(str(output_file)))

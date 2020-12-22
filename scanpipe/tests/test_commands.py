@@ -288,3 +288,31 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- DiscoveredPackage: 0", output)
         self.assertIn("- ProjectError: 0", output)
         self.assertIn("[ ] scanpipe/pipelines/docker.py", output)
+
+    def test_scanpipe_management_command_output(self):
+        project = Project.objects.create(name="my_project")
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        self.assertTrue(out_value.endswith(".json"))
+        filename = out_value.split("/")[-1]
+        self.assertIn(filename, project.output_root)
+
+        out = StringIO()
+        options.extend(["--format", "csv"])
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        for output_file in out_value.split("\n"):
+            filename = out_value.split("/")[-1]
+            self.assertIn(filename, project.output_root)
+
+        out = StringIO()
+        options.extend(["--format", "WRONG"])
+        message = (
+            "Error: argument --format: invalid choice: 'WRONG' "
+            "(choose from 'json', 'csv', 'xlsx')"
+        )
+        with self.assertRaisesMessage(CommandError, message):
+            call_command("output", *options, stdout=out)

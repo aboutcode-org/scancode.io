@@ -25,6 +25,10 @@ import json
 
 from django.core.serializers.json import DjangoJSONEncoder
 
+import xlsxwriter
+from license_expression import ordered_unique
+from packagedcode.utils import combine_expressions
+
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.api.serializers import CodebaseResourceSerializer
@@ -72,12 +76,14 @@ def to_csv(project):
     Since the csv format does not support multiple tabs, one file is created
     per object type.
     The output files are created in the `project` output/ directory.
+    Return the list of path of the generated output files.
     """
     querysets = [
         project.discoveredpackages.all(),
         project.codebaseresources.without_symlinks(),
     ]
 
+    output_files = []
     for queryset in querysets:
         model_class = queryset.model
         fieldnames = get_serializer_fields(model_class)
@@ -87,6 +93,10 @@ def to_csv(project):
 
         with output_filename.open("w") as output_file:
             queryset_to_csv_file(queryset, fieldnames, output_file)
+
+        output_files.append(output_filename)
+
+    return output_files
 
 
 class JSONResultsGenerator:
@@ -164,6 +174,7 @@ def to_json(project):
     """
     Generate results output for the provided `project` as JSON format.
     The output file is created in the `project` output/ directory.
+    Return the path of the generated output file.
     """
     results_generator = JSONResultsGenerator(project)
     output_file = project.get_output_file_path("results", "json")
@@ -171,5 +182,58 @@ def to_json(project):
     with output_file.open("w") as file:
         for chunk in results_generator:
             file.write(chunk)
+
+    return output_file
+
+
+def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=None):
+    multivalues_separator = "\n"
+
+    model_class = queryset.model
+    model_name = model_class._meta.model_name
+
+    fieldnames = get_serializer_fields(model_class)
+    exclude_fields = exclude_fields or []
+    fieldnames = [field for field in fieldnames if field not in exclude_fields]
+
+    worksheet = workbook.add_worksheet(model_name)
+    worksheet.write_row(row=0, col=0, data=fieldnames)
+
+    for row_index, record in enumerate(queryset.iterator(), start=1):
+        for col_index, field in enumerate(fieldnames):
+            value = getattr(record, field)
+            if not value:
+                continue
+            elif field == "license_expressions":
+                value = combine_expressions(value)
+            elif isinstance(value, list):
+                value = [
+                    list(entry.values())[0] if isinstance(entry, dict) else str(entry)
+                    for entry in value
+                ]
+                value = multivalues_separator.join(ordered_unique(value))
+            elif isinstance(value, dict):
+                value = json.dumps(value) if value else ""
+
+            worksheet.write_string(row_index, col_index, str(value))
+
+
+def to_xlsx(project):
+    """
+    Generate results output for the provided `project` as XLSX format.
+    The output file is created in the `project` output/ directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "xlsx")
+    exclude_fields = ["licenses", "extra_data", "declared_license"]
+
+    querysets = [
+        project.discoveredpackages.all(),
+        project.codebaseresources.without_symlinks(),
+    ]
+
+    with xlsxwriter.Workbook(output_file) as workbook:
+        for queryset in querysets:
+            _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
     return output_file
