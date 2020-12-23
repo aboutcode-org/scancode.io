@@ -36,7 +36,7 @@
           {% if forloop.first %}<div class="tile is-ancestor">{% endif %}
           <div class="tile is-parent">
             <article class="tile is-child box">
-              <p class="subtitle mb-1"><a href="{# {% url 'project_tree' project.uuid %} #}">{{ project }}</a></p>
+              <p class="subtitle mb-1"><a href="{% url 'project_tree' project.uuid %}">{{ project }}</a></p>
               <p class="mb-1">
                 {% if project.runs.all %}
                   Pipeline(s):

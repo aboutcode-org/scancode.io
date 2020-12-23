@@ -21,9 +21,11 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.views.generic import CreateView
+from django.views.generic import DetailView
 from django.views.generic import ListView
 
 from scanpipe.models import Project
+from scanpipe.pipes import codebase
 
 
 class ProjectListView(ListView):
@@ -35,3 +37,19 @@ class ProjectCreateView(CreateView):
     model = Project
     fields = ["name"]
     template_name = "scanpipe/project_form.html"
+
+
+class ProjectTreeView(DetailView):
+    model = Project
+    slug_url_kwarg = "uuid"
+    slug_field = "uuid"
+    template_name = "scanpipe/project_tree.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        fields = ["name", "path"]
+        project_codebase = codebase.ProjectCodebase(self.object)
+        context["tree_data"] = [codebase.get_tree(project_codebase.root, fields)]
+
+        return context
