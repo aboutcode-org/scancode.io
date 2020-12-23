@@ -26,6 +26,11 @@ from scanpipe import views
 
 urlpatterns = [
     path(
+        "project/add/",
+        views.ProjectCreateView.as_view(),
+        name="project_add",
+    ),
+    path(
         "project/",
         views.ProjectListView.as_view(),
         name="project_list",

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ScanCode.io</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+  </head>
+  <body>
+    <div class="container is-max-desktop">
+      <section class="section">
+        <h1 class="title">
+          ScanCode.io
+        </h1>
+      </section>
+
+      <section class="section pt-0">
+        <h2 class="subtitle mb-0 pt-2 mb-5">
+          Create a <strong>Project</strong>
+        </h2>
+
+        <div class="field">
+          <label class="label">Project name</label>
+          <div class="control">
+            <input class="input" type="text" style="width: 420px;">
+            <p class="help">The unique name of your project.</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="label">Inputs</label>
+        </div>
+        <div class="field file is-boxed mt-2">
+          <label class="file-label">
+            <input class="file-input" type="file" name="resume" multiple>
+            <span class="file-cta" style="padding: 1em 7em;">
+              <span class="file-icon">
+                <i class="fas fa-upload"></i>
+              </span>
+              <span class="file-label">
+                Choose one or more files…
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label class="label">Pipeline</label>
+          <div class="control">
+            <span class="select">
+              <select style="width: 420px;">
+                <option>---</option>
+                <option>docker -> DockerPipeline</option>
+                <option>load_inventory -> LoadInventoryFromScanCodeScan</option>
+                <option>root_filesystems -> RootfsPipeline</option>
+                <option>scan_codebase -> ScanCodebase</option>
+              </select>
+            </span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="checkbox">
+            <input type="checkbox">
+            Run the selected pipeline
+          </label>
+        </div>
+
+        <div class="control">
+          <button class="button is-link mt-4">Create</button>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

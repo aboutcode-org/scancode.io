@@ -20,7 +20,7 @@
           <h2 class="subtitle mb-0 pt-2">
             <strong>Projects</strong>
           </h2>
-          <a href="{# {% url 'project_add' %} #}" class="button is-link">New Project</a>
+          <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
         </div>
 
         <div class="field">
@@ -32,11 +32,11 @@
           </p>
         </div>
 
-        {% for project in object_list1 %}
+        {% for project in object_list %}
           {% if forloop.first %}<div class="tile is-ancestor">{% endif %}
           <div class="tile is-parent">
             <article class="tile is-child box">
-              <p class="subtitle mb-1"><a href="{# {% url 'project_tree' project.uuid %}  #}">{{ project }}</a></p>
+              <p class="subtitle mb-1"><a href="{# {% url 'project_tree' project.uuid %} #}">{{ project }}</a></p>
               <p class="mb-1">
                 {% if project.runs.all %}
                   Pipeline(s):
@@ -62,7 +62,7 @@
           <div class="tile is-ancestor">
             <div class="tile is-parent">
               <article class="tile is-child box" style="text-align: center; border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);">
-                <a href="{# {% url 'project_add' %} #}">New Project</a>
+                <a href="{% url 'project_add' %}">New Project</a>
               </article>
             </div>
           </div>

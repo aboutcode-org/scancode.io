@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.views.generic import CreateView
 from django.views.generic import ListView
 
 from scanpipe.models import Project
@@ -28,3 +29,9 @@ from scanpipe.models import Project
 class ProjectListView(ListView):
     model = Project
     template_name = "scanpipe/project_list.html"
+
+
+class ProjectCreateView(CreateView):
+    model = Project
+    fields = ["name"]
+    template_name = "scanpipe/project_form.html"
