@@ -3,6 +3,9 @@
 
 ### v1.0.6 (unreleased)
 
+- Add a management command to delete a Project and its related work directories
+  https://github.com/nexB/scancode.io/issues/65
+
 - Add CSV and XLSX support for the `output` management command
   https://github.com/nexB/scancode.io/issues/46
 
