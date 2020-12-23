@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### v1.0.6 (unreleased)
+### v1.0.6 (2020-12-23)
 
 - Add a management command to delete a Project and its related work directories
   https://github.com/nexB/scancode.io/issues/65
