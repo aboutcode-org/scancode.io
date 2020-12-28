@@ -6,6 +6,10 @@
     <title>ScanCode.io</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
     <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+    <style>
+      .width-100, .select, .select select {width: 100%;}
+      .has-border-radius {border-radius: 6px;}
+    </style>
   </head>
   <body>
     <div class="container is-max-desktop">
@@ -20,55 +24,71 @@
           Create a <strong>Project</strong>
         </h2>
 
-        <div class="field">
-          <label class="label">Project name</label>
-          <div class="control">
-            <input class="input" type="text" style="width: 420px;">
-            <p class="help">The unique name of your project.</p>
+        {% if form.errors %}
+          <div class="notification is-danger">
+            {% for field_name, errors in form.errors.items %}
+              {{ errors }}
+            {% endfor %}
           </div>
-        </div>
+        {% endif %}
 
-        <div>
-          <label class="label">Inputs</label>
-        </div>
-        <div class="field file is-boxed mt-2">
-          <label class="file-label">
-            <input class="file-input" type="file" name="resume" multiple>
-            <span class="file-cta" style="padding: 1em 7em;">
-              <span class="file-icon">
-                <i class="fas fa-upload"></i>
-              </span>
-              <span class="file-label">
-                Choose one or more files…
-              </span>
-            </span>
-          </label>
-        </div>
+        <div class="columns">
+          <div class="column is-half pr-5">
+            <form method="post" enctype="multipart/form-data">{% csrf_token %}
+              <div class="field">
+                <label class="label" for="id_name">Project name</label>
+                <div class="control">
+                  <input class="input" type="text" name="name" maxlength="100" id="id_name" value="{{ form.name.value|default_if_none:'' }}" required>
+                  <p class="help">The unique name of your project.</p>
+                </div>
+              </div>
 
-        <div class="field">
-          <label class="label">Pipeline</label>
-          <div class="control">
-            <span class="select">
-              <select style="width: 420px;">
-                <option>---</option>
-                <option>docker -> DockerPipeline</option>
-                <option>load_inventory -> LoadInventoryFromScanCodeScan</option>
-                <option>root_filesystems -> RootfsPipeline</option>
-                <option>scan_codebase -> ScanCodebase</option>
-              </select>
-            </span>
+              <label class="label mt-5" for="id_inputs">Inputs</label>
+              <div class="field file is-boxed mt-2">
+                <label class="file-label width-100">
+                  <input class="file-input" type="file" name="inputs" id="id_inputs" multiple>
+                  <span class="file-cta">
+                    <span class="file-icon">
+                      <i class="fas fa-upload"></i>
+                    </span>
+                    <span class="file-label">
+                      Choose one or more files…
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="field mt-5">
+                <label class="label" for="id_pipeline">Pipeline</label>
+                <div class="control">
+                  <span class="select">
+                    {{ form.pipeline }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="checkbox" for="id_run_pipeline">
+                  {{ form.run_pipeline }}
+                  Run the selected pipeline
+                </label>
+              </div>
+
+              <div class="control mt-6">
+                <input type="submit" class="button is-fullwidth is-link" value="Create">
+              </div>
+            </form>
           </div>
-        </div>
 
-        <div class="field">
-          <label class="checkbox">
-            <input type="checkbox">
-            Run the selected pipeline
-          </label>
-        </div>
-
-        <div class="control">
-          <button class="button is-link mt-4">Create</button>
+          <div class="column has-background-light has-border-radius">
+            <h3 class="subtitle mb-3">Pipelines:</h3>
+            {% for pipeline in pipelines %}
+              <p class="mb-3">
+                <strong>{{ pipeline.name }}</strong><br>
+                {{ pipeline.description }}
+              </p>
+            {% endfor %}
+          </div>
         </div>
       </section>
     </div>

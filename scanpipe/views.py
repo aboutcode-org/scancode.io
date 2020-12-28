@@ -20,11 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.views.generic import DetailView
 from django.views.generic import ListView
 
+from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.forms import ProjectForm
 from scanpipe.models import Project
+from scanpipe.pipelines import get_pipeline_doc
 from scanpipe.pipes import codebase
 
 
@@ -35,8 +39,23 @@ class ProjectListView(ListView):
 
 class ProjectCreateView(CreateView):
     model = Project
-    fields = ["name"]
+    form_class = ProjectForm
+    success_url = reverse_lazy("project_list")
     template_name = "scanpipe/project_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["pipelines"] = [
+            {
+                "location": location,
+                "name": name,
+                "description": get_pipeline_doc(location),
+            }
+            for location, name in scanpipe_app_config.pipelines
+        ]
+
+        return context
 
 
 class ProjectTreeView(DetailView):
