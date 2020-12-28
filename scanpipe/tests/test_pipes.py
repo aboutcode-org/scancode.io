@@ -207,6 +207,22 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
 
+    def test_scanpipe_pipes_scancode_run_extractcode(self):
+        project = Project.objects.create(name="name with space")
+        exitcode, output = scancode.run_extractcode(str(project.codebase_path))
+        self.assertEqual(0, exitcode)
+        self.assertIn("Extracting done.", output)
+
+    def test_scanpipe_pipes_scancode_run_scancode(self):
+        project = Project.objects.create(name="name with space")
+        exitcode, output = scancode.run_scancode(
+            location=str(project.codebase_path),
+            output_file=str(project.get_output_file_path("scancode", "json")),
+            options=["--info"],
+        )
+        self.assertEqual(0, exitcode)
+        self.assertIn("Scanning done.", output)
+
     def test_scanpipe_pipes_codebase_get_tree(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})

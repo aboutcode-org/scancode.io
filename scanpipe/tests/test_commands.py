@@ -316,3 +316,19 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         with self.assertRaisesMessage(CommandError, message):
             call_command("output", *options, stdout=out)
+
+    def test_scanpipe_management_command_delete_project(self):
+        project = Project.objects.create(name="my_project")
+        work_path = project.work_path
+        self.assertTrue(work_path.exists())
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color", "--no-input"]
+        call_command("delete-project", *options, stdout=out)
+        out_value = out.getvalue().strip()
+
+        expected = "All the my_project project data have been removed."
+        self.assertEqual(expected, out_value)
+
+        self.assertFalse(Project.objects.filter(name="my_project").exists())
+        self.assertFalse(work_path.exists())

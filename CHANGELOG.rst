@@ -1,7 +1,14 @@
 // Release notes
 // -------------
 
-### v1.0.6 (unreleased)
+### v1.0.7 (unreleased)
+
+- Add support for scancode pipes and Project name with whitespaces
+
+### v1.0.6 (2020-12-23)
+
+- Add a management command to delete a Project and its related work directories
+  https://github.com/nexB/scancode.io/issues/65
 
 - Add CSV and XLSX support for the `output` management command
   https://github.com/nexB/scancode.io/issues/46

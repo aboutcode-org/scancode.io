@@ -133,3 +133,13 @@ Optional arguments:
 
 .. note::
     By default, the output files are created in the current working directory.
+
+
+`$ scanpipe delete-project --project PROJECT`
+---------------------------------------------
+
+Delete a project and its related work directory.
+
+Optional arguments:
+
+- ``--no-input`` Do not prompt the user for input of any kind.
