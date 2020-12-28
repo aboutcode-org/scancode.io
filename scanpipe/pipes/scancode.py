@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import shlex
+
 from django.conf import settings
 
 import packagedcode
@@ -38,18 +40,21 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
 
 
-def run_extractcode(location, options, raise_on_error=False):
+def run_extractcode(location, options=None, raise_on_error=False):
     """
-    Extract `location` content with extractcode.
-    The `extractcode` executable will be run using the provided `options`.
+    Extract content at `location` with extractcode.
+    Optional arguments for the `extractcode` executable can be provided with the
+     `options` list.
     If `raise_on_error` is enabled, a ScancodeError will be raised if the
     exitcode greater than 0.
     """
     extractcode_args = [
         get_bin_executable("extractcode"),
-        location,
-        *options,
+        shlex.quote(location),
     ]
+
+    if options:
+        extractcode_args.extend(options)
 
     exitcode, output = run_command(extractcode_args)
     if exitcode > 0 and raise_on_error:
@@ -69,10 +74,10 @@ def run_scancode(location, output_file, options, raise_on_error=False):
 
     scancode_args = [
         get_bin_executable("scancode"),
-        location,
+        shlex.quote(location),
         *default_options,
         *options,
-        f"--json-pp {output_file}",
+        f"--json-pp {shlex.quote(output_file)}",
     ]
 
     exitcode, output = run_command(scancode_args)
