@@ -139,3 +139,16 @@ def get_pipeline_description(pipeline_location):
     cmd = f"{sys.executable} {pipeline_location} show"
     description = subprocess.getoutput(cmd)
     return description
+
+
+def get_pipeline_steps(pipeline_location):
+    """
+    TODO: Return the provided `pipeline_location` documentation from the docstrings.
+    TODO: Test from scanpipe.pipelines import *; get_pipeline_steps("scanpipe/pipelines/docker.py")
+    """
+    pipeline_class = get_pipeline_class(pipeline_location)
+    pipeline_graph = PipelineGraph(pipeline_class)
+    nodes = [
+        {"name": node.name, "doc": node.doc} for node in pipeline_graph.nodes.values()
+    ]
+    return nodes

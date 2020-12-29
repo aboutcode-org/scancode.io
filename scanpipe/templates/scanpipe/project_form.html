@@ -9,6 +9,7 @@
     <style>
       .width-100, .select, .select select {width: 100%;}
       .has-border-radius {border-radius: 6px;}
+      .help-text {color: #333333; border-bottom: dotted 0.0625rem #cccccc;}
     </style>
   </head>
   <body>
@@ -74,8 +75,13 @@
                 </label>
               </div>
 
-              <div class="control mt-6">
-                <input type="submit" class="button is-fullwidth is-link" value="Create">
+              <div class="columns mt-6 is-variable is-1">
+                <div class="column is-one-third">
+                  <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
+                </div>
+                <div class="column">
+                  <input type="submit" class="button is-fullwidth is-link" value="Create">
+                </div>
               </div>
             </form>
           </div>
@@ -83,14 +89,91 @@
           <div class="column has-background-light has-border-radius">
             <h3 class="subtitle mb-3">Pipelines:</h3>
             {% for pipeline in pipelines %}
-              <p class="mb-3">
-                <strong>{{ pipeline.name }}</strong><br>
+              <div class="mb-3">
+                <div>
+                  <a class="help-text modal-button" data-target="{{ pipeline.name }}-modal" aria-haspopup="true">
+                    <strong>{{ pipeline.name }}</strong>
+                  </a>
+                  <div id="{{ pipeline.name }}-modal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-card">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title">
+                          <strong>{{ pipeline.name }}</strong>
+                        </p>
+                        <button class="delete" aria-label="close"></button>
+                      </header>
+                      <div class="notification is-info is-radiusless mb-0">
+                        {{ pipeline.description }}
+                      </div>
+                      <section class="modal-card-body has-text-centered" style="border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;">
+                        {% for step in pipeline.steps %}
+                        <span class="tag is-info">{{ step.name }}</span>
+                        <div>{{ step.doc }}</div>
+                        {% if not forloop.last %}<div>&darr;</div>{% endif %}
+                      {% endfor %}
+                      </section>
+                    </div>
+                  </div>
+                </div>
                 {{ pipeline.description }}
-              </p>
+              </div>
             {% endfor %}
           </div>
         </div>
       </section>
     </div>
+
+    <script>
+      // From https://bulma.io/lib/main.js?v=202012211605
+      document.addEventListener('DOMContentLoaded', function () {
+        // Modals
+
+        var rootEl = document.documentElement;
+        var $modals = getAll('.modal');
+        var $modalButtons = getAll('.modal-button');
+        var $modalCloses = getAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button');
+
+        if ($modalButtons.length > 0) {
+          $modalButtons.forEach(function ($el) {
+            $el.addEventListener('click', function () {
+              var target = $el.dataset.target;
+              var $target = document.getElementById(target);
+              rootEl.classList.add('is-clipped');
+              $target.classList.add('is-active');
+            });
+          });
+        }
+
+        if ($modalCloses.length > 0) {
+          $modalCloses.forEach(function ($el) {
+            $el.addEventListener('click', function () {
+              closeModals();
+            });
+          });
+        }
+
+        document.addEventListener('keydown', function (event) {
+          var e = event || window.event;
+          if (e.keyCode === 27) {
+            closeModals();
+          }
+        });
+
+        function closeModals() {
+          rootEl.classList.remove('is-clipped');
+          $modals.forEach(function ($el) {
+            $el.classList.remove('is-active');
+          });
+        }
+
+        // Functions
+
+        function getAll(selector) {
+          return Array.prototype.slice.call(document.querySelectorAll(selector), 0);
+        }
+
+      });
+    </script>
   </body>
 </html>

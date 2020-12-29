@@ -27,10 +27,10 @@ from django.views.generic import CreateView
 from django.views.generic import DetailView
 from django.views.generic import ListView
 
+from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.forms import ProjectForm
 from scanpipe.models import Project
-from scanpipe.pipelines import get_pipeline_doc
 from scanpipe.pipes import codebase
 from scanpipe.pipes import outputs
 
@@ -53,7 +53,8 @@ class ProjectCreateView(CreateView):
             {
                 "location": location,
                 "name": name,
-                "description": get_pipeline_doc(location),
+                "description": pipelines.get_pipeline_doc(location),
+                "steps": pipelines.get_pipeline_steps(location),
             }
             for location, name in scanpipe_app_config.pipelines
         ]
