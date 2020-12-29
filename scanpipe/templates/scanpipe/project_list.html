@@ -36,7 +36,18 @@
           {% if forloop.first %}<div class="tile is-ancestor">{% endif %}
           <div class="tile is-parent">
             <article class="tile is-child box">
-              <p class="subtitle mb-1"><a href="{% url 'project_tree' project.uuid %}">{{ project }}</a></p>
+              <div class="is-flex is-justify-content-space-between">
+                <h2 class="subtitle mb-1">
+                  <a href="{% url 'project_tree' project.uuid %}">{{ project }}</a>
+                </h2>
+                <div class="is-size-5">
+                  {% url "project_results" project.uuid "json" as project_results_json_url %}
+                  {% include "scanpipe/includes/link_tooltip.html" with href=project_results_json_url link_content='<i class="fas fa-file-download"></i>' dropdown_content="Download results as <strong>JSON</strong>" only %}
+                  {% url "project_results" project.uuid "xlsx" as project_results_xlsx_url %}
+                  {% include "scanpipe/includes/link_tooltip.html" with href=project_results_xlsx_url link_content='<i class="fas fa-file-excel"></i>' dropdown_content="Download results as <strong>XLSX</strong>" only %}
+                </div>
+              </div>
+
               <p class="mb-1">
                 {% if project.runs.all %}
                   Pipeline(s):
@@ -53,7 +64,9 @@
                 {% endif %}
               </p>
               <p class="mb-1">Work directory: {{ project.work_directory }}</p>
-              <p class="is-size-7 has-text-grey">{{ project.created_date }}</p>
+              <p class="is-size-7 has-text-grey">
+                {{ project.created_date }}
+              </p>
             </article>
           </div>
           {% if forloop.counter|divisibleby:2 %}</div><div class="tile is-ancestor">{% endif %}

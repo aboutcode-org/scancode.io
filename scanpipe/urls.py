@@ -31,6 +31,11 @@ urlpatterns = [
         name="project_tree",
     ),
     path(
+        "project/<uuid:uuid>/results/<path:format>/",
+        views.ProjectResultsView.as_view(),
+        name="project_results",
+    ),
+    path(
         "project/add/",
         views.ProjectCreateView.as_view(),
         name="project_add",

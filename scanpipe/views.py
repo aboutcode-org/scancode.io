@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.http import FileResponse
+from django.http import Http404
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 from django.views.generic import DetailView
@@ -30,6 +32,7 @@ from scanpipe.forms import ProjectForm
 from scanpipe.models import Project
 from scanpipe.pipelines import get_pipeline_doc
 from scanpipe.pipes import codebase
+from scanpipe.pipes import outputs
 
 
 class ProjectListView(ListView):
@@ -72,3 +75,43 @@ class ProjectTreeView(DetailView):
         context["tree_data"] = [codebase.get_tree(project_codebase.root, fields)]
 
         return context
+
+
+def project_results_json_response(project, as_attachment=False):
+    """
+    Return the results as JSON compatible with ScanCode data format.
+    The content is returned as a stream of JSON content using the JSONResultsGenerator
+    class.
+    If `as_attachment` is True, the response will force the download of the file.
+    """
+    results_generator = outputs.JSONResultsGenerator(project)
+    response = FileResponse(
+        streaming_content=results_generator,
+        content_type="application/json",
+    )
+
+    if as_attachment:
+        response["Content-Disposition"] = f'attachment; filename="{project.name}.json"'
+
+    return response
+
+
+class ProjectResultsView(DetailView):
+    model = Project
+    slug_url_kwarg = "uuid"
+    slug_field = "uuid"
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        project = self.object
+        format = self.kwargs["format"]
+
+        if format == "json":
+            return project_results_json_response(project, as_attachment=True)
+
+        elif format == "xlsx":
+            output_file = outputs.to_xlsx(project)
+            filename = f"{project.name}_{output_file.name}"
+            return FileResponse(output_file.open("rb"), filename=filename)
+
+        raise Http404("Format not supported.")

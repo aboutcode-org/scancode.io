@@ -22,8 +22,6 @@
 
 from django.apps import apps
 from django.db import transaction
-from django.http import FileResponse
-from django.http import StreamingHttpResponse
 
 from rest_framework import mixins
 from rest_framework import renderers
@@ -43,7 +41,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipelines import get_pipeline_description
-from scanpipe.pipes.outputs import JSONResultsGenerator
+from scanpipe.views import project_results_json_response
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -77,11 +75,7 @@ class ProjectViewSet(
         The content is returned as a stream of JSON content using the
         JSONResultsGenerator class.
         """
-        project = self.get_object()
-        results_generator = JSONResultsGenerator(project)
-        return StreamingHttpResponse(
-            streaming_content=results_generator, content_type="application/json"
-        )
+        return project_results_json_response(self.get_object())
 
     @action(
         detail=True, name="Results (download)", renderer_classes=[PassThroughRenderer]
@@ -89,17 +83,8 @@ class ProjectViewSet(
     def results_download(self, request, *args, **kwargs):
         """
         Return the results as an attachment.
-        The content is streamed using the JSONResultsGenerator.
         """
-        project = self.get_object()
-        results_generator = JSONResultsGenerator(project)
-
-        response = FileResponse(
-            streaming_content=results_generator,
-            content_type="application/json",
-        )
-        response["Content-Disposition"] = f'attachment; filename="{project.name}.json"'
-        return response
+        return project_results_json_response(self.get_object(), as_attachment=True)
 
     @action(detail=False)
     def pipelines(self, request, *args, **kwargs):
