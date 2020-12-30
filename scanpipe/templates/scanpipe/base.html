@@ -1,0 +1,20 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ScanCode.io</title>
+    <link rel="stylesheet" href="{% static 'bulma-0.9.1.min.css' %}">
+    <script defer src="{% static 'fontawesome-5.15.1.all.min.js' %}"></script>
+    <style>
+      .width-100, .select, .select select {width: 100%;}
+      .has-border-radius {border-radius: 6px;}
+      .help-text {color: #333333; border-bottom: dotted 0.0625rem #cccccc;}
+    </style>
+  </head>
+  <body>
+  {% block content %}{% endblock %}
+  {% block scripts %}{% endblock %}
+  </body>
+</html>

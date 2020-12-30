@@ -1,86 +1,78 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ScanCode.io</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
-    <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
-  </head>
-  <body>
-    <div class="container is-max-desktop">
-      <section class="section">
-        <h1 class="title">
-          ScanCode.io
-        </h1>
-      </section>
+{% extends "scanpipe/base.html" %}
 
-      <section class="section pt-0">
-        <div class="is-flex is-justify-content-space-between mb-2">
-          <h2 class="subtitle mb-0 pt-2">
-            <strong>Projects</strong>
-          </h2>
-          <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
-        </div>
+{% block content %}
+  <div class="container is-max-desktop">
+    <section class="section">
+      <h1 class="title">
+        ScanCode.io
+      </h1>
+    </section>
 
-        <div class="field">
-          <p class="control has-icons-left">
-            <input class="input" type="text" placeholder="Filter projects">
-            <span class="icon is-small is-left">
-              <i class="fas fa-search"></i>
-            </span>
-          </p>
-        </div>
+    <section class="section pt-0">
+      <div class="is-flex is-justify-content-space-between mb-2">
+        <h2 class="subtitle mb-0 pt-2">
+          <strong>Projects</strong>
+        </h2>
+        <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
+      </div>
 
-        {% for project in object_list %}
-          {% if forloop.first %}<div class="tile is-ancestor">{% endif %}
-          <div class="tile is-parent">
-            <article class="tile is-child box">
-              <div class="is-flex is-justify-content-space-between">
-                <h2 class="subtitle mb-1">
-                  <a href="{% url 'project_tree' project.uuid %}">{{ project }}</a>
-                </h2>
-                <div class="is-size-5">
-                  {% url "project_results" project.uuid "json" as project_results_json_url %}
-                  {% include "scanpipe/includes/link_tooltip.html" with href=project_results_json_url link_content='<i class="fas fa-file-download"></i>' dropdown_content="Download results as <strong>JSON</strong>" only %}
-                  {% url "project_results" project.uuid "xlsx" as project_results_xlsx_url %}
-                  {% include "scanpipe/includes/link_tooltip.html" with href=project_results_xlsx_url link_content='<i class="fas fa-file-excel"></i>' dropdown_content="Download results as <strong>XLSX</strong>" only %}
-                </div>
+      <div class="field">
+        <p class="control has-icons-left">
+          <input class="input" type="text" placeholder="Filter projects">
+          <span class="icon is-small is-left">
+            <i class="fas fa-search"></i>
+          </span>
+        </p>
+      </div>
+
+      {% for project in object_list %}
+        {% if forloop.first %}<div class="tile is-ancestor">{% endif %}
+        <div class="tile is-parent">
+          <article class="tile is-child box">
+            <div class="is-flex is-justify-content-space-between">
+              <h2 class="subtitle mb-1">
+                <a href="{% url 'project_tree' project.uuid %}">{{ project }}</a>
+              </h2>
+              <div class="is-size-5">
+                {% url "project_results" project.uuid "json" as project_results_json_url %}
+                {% include "scanpipe/includes/link_tooltip.html" with href=project_results_json_url link_content='<i class="fas fa-file-download"></i>' dropdown_content="Download results as <strong>JSON</strong>" only %}
+                {% url "project_results" project.uuid "xlsx" as project_results_xlsx_url %}
+                {% include "scanpipe/includes/link_tooltip.html" with href=project_results_xlsx_url link_content='<i class="fas fa-file-excel"></i>' dropdown_content="Download results as <strong>XLSX</strong>" only %}
               </div>
+            </div>
 
-              <p class="mb-1">
-                {% if project.runs.all %}
-                  Pipeline(s):
-                  {% for run in project.runs.all %}
-                    {{ run }}
-                    {% if run.task_succeeded %}
-                      <span class="icon has-text-success">
-                        <i class="fas fa-check-square"></i>
-                      </span>
-                    {% endif %}
-                  {% endfor %}
-                {% else %}
-                <i>No Pipelines</i>
-                {% endif %}
-              </p>
-              <p class="mb-1">Work directory: {{ project.work_directory }}</p>
-              <p class="is-size-7 has-text-grey">
-                {{ project.created_date }}
-              </p>
+            <p class="mb-1">
+              {% if project.runs.all %}
+                Pipeline(s):
+                {% for run in project.runs.all %}
+                  {{ run }}
+                  {% if run.task_succeeded %}
+                    <span class="icon has-text-success">
+                      <i class="fas fa-check-square"></i>
+                    </span>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+              <i>No Pipelines</i>
+              {% endif %}
+            </p>
+            <p class="mb-1">Work directory: {{ project.work_directory }}</p>
+            <p class="is-size-7 has-text-grey">
+              {{ project.created_date }}
+            </p>
+          </article>
+        </div>
+        {% if forloop.counter|divisibleby:2 %}</div><div class="tile is-ancestor">{% endif %}
+        {% if forloop.last %}</div>{% endif %}
+      {% empty %}
+        <div class="tile is-ancestor">
+          <div class="tile is-parent">
+            <article class="tile is-child box" style="text-align: center; border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);">
+              <a href="{% url 'project_add' %}">New Project</a>
             </article>
           </div>
-          {% if forloop.counter|divisibleby:2 %}</div><div class="tile is-ancestor">{% endif %}
-          {% if forloop.last %}</div>{% endif %}
-        {% empty %}
-          <div class="tile is-ancestor">
-            <div class="tile is-parent">
-              <article class="tile is-child box" style="text-align: center; border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);">
-                <a href="{% url 'project_add' %}">New Project</a>
-              </article>
-            </div>
-          </div>
-        {% endfor %}
-      </section>
-    </div>
-  </body>
-</html>
+        </div>
+      {% endfor %}
+    </section>
+  </div>
+{% endblock %}
