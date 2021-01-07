@@ -22,7 +22,7 @@
 
 from django.http import FileResponse
 from django.http import Http404
-from django.urls import reverse_lazy
+from django.urls import reverse
 from django.views.generic import CreateView
 from django.views.generic import DetailView
 from django.views.generic import ListView
@@ -43,12 +43,10 @@ class ProjectListView(ListView):
 class ProjectCreateView(CreateView):
     model = Project
     form_class = ProjectForm
-    success_url = reverse_lazy("project_list")
     template_name = "scanpipe/project_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context["pipelines"] = [
             {
                 "location": location,
@@ -58,8 +56,17 @@ class ProjectCreateView(CreateView):
             }
             for location, name in scanpipe_app_config.pipelines
         ]
-
         return context
+
+    def get_success_url(self):
+        return reverse("project_detail", kwargs={"uuid": self.object.pk})
+
+
+class ProjectDetailView(DetailView):
+    model = Project
+    slug_url_kwarg = "uuid"
+    slug_field = "uuid"
+    template_name = "scanpipe/project_detail.html"
 
 
 class ProjectTreeView(DetailView):

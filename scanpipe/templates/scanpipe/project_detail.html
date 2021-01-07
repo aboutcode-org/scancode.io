@@ -1,0 +1,152 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }}{% endblock %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    <section class="section">
+      <h1 class="title">
+        <a href="/" class="has-text-black">
+          ScanCode.io
+        </a>
+      </h1>
+    </section>
+
+    <section class="hero">
+      <div class="hero-body py-1">
+        <div class="container">
+          <h1 class="title">
+            {{ project.name }}
+          </h1>
+          <h2 class="subtitle">
+            {{ project.created_date }}
+          </h2>
+          <div class="field is-grouped is-grouped-multiline">
+            <div class="control">
+              <div class="tags has-addons">
+                <span class="tag is-dark">UUID</span>
+                <span class="tag is-info">{{ project.uuid }}</span>
+              </div>
+            </div>
+            <div class="control">
+              <div class="tags has-addons">
+                <span class="tag is-dark">Work directory</span>
+                <span class="tag is-info">{{ project.work_directory }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="mx-5">
+    <nav class="level">
+      <div class="level-item has-text-centered">
+        <div>
+          <p class="heading">Detected Packages</p>
+          <p class="title">{{ project.discoveredpackages.count }}</p>
+        </div>
+      </div>
+      <div class="level-item has-text-centered">
+        <div>
+          <p class="heading">Codebase Resources</p>
+          <p class="title">{{ project.codebaseresources.count }}</p>
+        </div>
+      </div>
+      <div class="level-item has-text-centered">
+        <div>
+          <p class="heading">Pipelines</p>
+          <p class="title">{{ project.runs.count }}</p>
+        </div>
+      </div>
+      <div class="level-item has-text-centered">
+        <div>
+          <p class="heading">Errors</p>
+          <p class="title">{{ project.projecterrors.count }}</p>
+        </div>
+      </div>
+    </nav>
+
+    <section class="section pt-0">
+      {% if project.runs.all %}
+        <article class="message is-success">
+          <div class="message-body">
+            Download results as:
+            <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.uuid 'json' %}">
+              JSON <i class="fas fa-download ml-1"></i>
+            </a>
+            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
+              XLSX <i class="fas fa-download ml-1"></i>
+            </a>
+            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'csv' %}">
+              CSV <i class="fas fa-download ml-1"></i>
+            </a>
+            or
+            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">
+              browse the codebase
+            </a>.
+          </div>
+        </article>
+      {% else %}
+        <article class="message is-warning">
+          <div class="message-body">
+            <p class="block">
+              Add <strong>Inputs</strong> and run a <strong>Pipeline</strong> to generate some results.
+            </p>
+          </div>
+        </article>
+      {% endif %}
+
+      <div class="columns">
+        <div class="column">
+          <nav class="panel is-info">
+            <p class="panel-heading py-2 is-size-6">
+              Inputs
+            </p>
+            {% for input in project.input_root %}
+              <a class="panel-block">
+                <span class="panel-icon">
+                  <i class="fas fa-file" aria-hidden="true"></i>
+                </span>
+                {{ input }}
+              </a>
+            {% endfor %}
+            <div class="panel-block">
+              <button class="button is-link is-outlined is-fullwidth">
+                Add input
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        <div class="column">
+          <nav class="panel is-info">
+            <p class="panel-heading py-2 is-size-6">
+              Pipelines
+            </p>
+            {% for run in project.runs.all %}
+              <a class="panel-block">
+                {% if run.task_exitcode == 0 %}
+                  <span class="tag is-success">Success</span>
+                {% elif run.task_exitcode > 0 %}
+                  <span class="tag is-danger">Failure</span>
+                {% elif run.task_start_date %}
+                  <span class="tag is-info">Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i></span>
+                {% else %}
+                  <span class="tag is-light">Not started</span>
+                {% endif %}
+                <span class="ml-2">{{ run.pipeline }}</span>
+              </a>
+            {% endfor %}
+            <div class="panel-block">
+              <button class="button is-link is-outlined is-fullwidth">
+                Add pipeline
+              </button>
+            </div>
+          </nav>
+        </div>
+
+      </div>
+    </section>
+  </div>
+{% endblock %}

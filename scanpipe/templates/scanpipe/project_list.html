@@ -31,7 +31,7 @@
           <article class="tile is-child box">
             <div class="is-flex is-justify-content-space-between">
               <h2 class="subtitle mb-1">
-                <a href="{% url 'project_tree' project.uuid %}">{{ project }}</a>
+                <a href="{% url 'project_detail' project.uuid %}">{{ project }}</a>
               </h2>
               <div class="is-size-5">
                 {% url "project_results" project.uuid "json" as project_results_json_url %}
