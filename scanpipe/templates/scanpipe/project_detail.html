@@ -82,9 +82,7 @@
               CSV <i class="fas fa-download ml-1"></i>
             </a>
             or
-            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">
-              browse the codebase
-            </a>.
+            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">browse the codebase</a>.
           </div>
         </article>
       {% else %}
@@ -104,12 +102,12 @@
               Inputs
             </p>
             {% for input in project.input_root %}
-              <a class="panel-block">
+              <span class="panel-block">
                 <span class="panel-icon">
                   <i class="fas fa-file" aria-hidden="true"></i>
                 </span>
                 {{ input }}
-              </a>
+              </span>
             {% endfor %}
             <div class="panel-block">
               <button class="button is-link is-outlined is-fullwidth">
@@ -125,18 +123,11 @@
               Pipelines
             </p>
             {% for run in project.runs.all %}
-              <a class="panel-block">
-                {% if run.task_exitcode == 0 %}
-                  <span class="tag is-success">Success</span>
-                {% elif run.task_exitcode > 0 %}
-                  <span class="tag is-danger">Failure</span>
-                {% elif run.task_start_date %}
-                  <span class="tag is-info">Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i></span>
-                {% else %}
-                  <span class="tag is-light">Not started</span>
-                {% endif %}
+              <a class="panel-block modal-button" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
+                {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
                 <span class="ml-2">{{ run.pipeline }}</span>
               </a>
+              {% include "scanpipe/includes/run_modal.html" with run=run only %}
             {% endfor %}
             <div class="panel-block">
               <button class="button is-link is-outlined is-fullwidth">
@@ -149,4 +140,8 @@
       </div>
     </section>
   </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "scanpipe/includes/modal.js.html" %}
 {% endblock %}

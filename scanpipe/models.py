@@ -474,6 +474,17 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             if match:
                 return match.group("run_id")
 
+    @property
+    def run_id(self):
+        return self.get_run_id()
+
+    @property
+    def output_log(self):
+        """
+        Return the `task_output` cleaned.
+        """
+        return "\n".join(self.task_output.split("\n")[1:]).strip()
+
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def status(self, status=None):

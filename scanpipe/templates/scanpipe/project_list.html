@@ -30,7 +30,7 @@
         <div class="tile is-parent">
           <article class="tile is-child box">
             <div class="is-flex is-justify-content-space-between">
-              <h2 class="subtitle mb-1">
+              <h2 class="subtitle mb-1 has-text-weight-semibold">
                 <a href="{% url 'project_detail' project.uuid %}">{{ project }}</a>
               </h2>
               <div class="is-size-5">
@@ -41,22 +41,24 @@
               </div>
             </div>
 
-            <p class="mb-1">
+            <section class="mt-2 mb-4">
               {% if project.runs.all %}
-                Pipeline(s):
-                {% for run in project.runs.all %}
-                  {{ run }}
-                  {% if run.task_succeeded %}
-                    <span class="icon has-text-success">
-                      <i class="fas fa-check-square"></i>
+                <nav class="panel">
+                  <p class="panel-heading py-2 is-size-6 has-text-weight-normal">
+                    Pipelines
+                  </p>
+                  {% for run in project.runs.all %}
+                    <span class="panel-block">
+                      {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+                      <span class="ml-2">{{ run.pipeline }}</span>
                     </span>
-                  {% endif %}
-                {% endfor %}
+                  {% endfor %}
+                </nav>
               {% else %}
-              <i>No Pipelines</i>
+                <i>No Pipelines</i>
               {% endif %}
-            </p>
-            <p class="mb-1">Work directory: {{ project.work_directory }}</p>
+            </section>
+
             <p class="is-size-7 has-text-grey">
               {{ project.created_date }}
             </p>

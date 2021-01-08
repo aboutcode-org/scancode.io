@@ -1,0 +1,66 @@
+<div id="{{ run.uuid }}-modal" class="modal is-desktop-size">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">{{ run.pipeline }}</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
+      {{ run.description }}
+    </div>
+    <section class="modal-card-body">
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Run</span>
+            {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Run ID</span>
+            <span class="tag is-info">{{ run.run_id }}</span>
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Exit code</span>
+            <span class="tag is-info">{{ run.task_exitcode }}</span>
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Execution time</span>
+            <span class="tag is-info">{{ run.execution_time }} seconds</span>
+          </div>
+        </div>
+      </div>
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Created date</span>
+            <span class="tag is-info">{{ run.created_date }}</span>
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Start date</span>
+            <span class="tag is-info">{{ run.task_start_date }}</span>
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">End date</span>
+            <span class="tag is-info">{{ run.task_end_date }}</span>
+          </div>
+        </div>
+      </div>
+      <figure class="highlight">
+        <pre style="white-space: pre-wrap;"><code>{{ run.output_log }}</code></pre>
+      </figure>
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button">Close</button>
+    </footer>
+  </div>
+</div>
