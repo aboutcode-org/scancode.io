@@ -20,6 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from collections import Counter
+
+from django.db.models import Q
 from django.http import FileResponse
 from django.http import Http404
 from django.urls import reverse
@@ -67,6 +70,82 @@ class ProjectDetailView(DetailView):
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
     template_name = "scanpipe/project_detail.html"
+
+    @staticmethod
+    def get_summary(values_list, limit=6):
+        most_common = dict(Counter(values_list).most_common(limit))
+
+        other = len(values_list) - sum(most_common.values())
+        if other > 0:
+            most_common["Other"] = other
+
+        # Set a label for empty string value and move to last entry in the dict
+        if "" in most_common:
+            most_common["(No value detected)"] = most_common.pop("")
+
+        return most_common
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        resources_qs_base = self.object.codebaseresources.all()
+        resources_qs = resources_qs_base.only(
+            "programming_language",
+            "mime_type",
+            "holders",
+            "copyrights",
+            "license_expressions",
+        )
+        package_orphans_qs = resources_qs_base.package_orphans()
+        packages_qs = self.object.discoveredpackages.all().only(
+            "type",
+            "license_expression",
+        )
+
+        programming_languages = resources_qs.values_list(
+            "programming_language", flat=True
+        )
+        mime_types = resources_qs.values_list("mime_type", flat=True)
+        holders = [
+            holder.get("value")
+            for holders in resources_qs.values_list("holders", flat=True)
+            for holder in holders
+        ]
+        licenses = [
+            license.get("key")
+            for licenses in resources_qs.values_list("licenses", flat=True)
+            for license in licenses
+        ]
+
+        package_orphans = {
+            "Licenses and Copyrights": package_orphans_qs.filter(
+                ~Q(license_expressions=[]), ~Q(copyrights=[])
+            ).count(),
+            "Licenses": package_orphans_qs.filter(
+                ~Q(license_expressions=[]), copyrights=[]
+            ).count(),
+            "Copyrights": package_orphans_qs.filter(
+                ~Q(copyrights=[]), license_expressions=[]
+            ).count(),
+            "(No value detected)": package_orphans_qs.filter(
+                license_expressions=[], copyrights=[]
+            ).count(),
+        }
+
+        package_licenses = packages_qs.values_list("license_expression", flat=True)
+        package_types = packages_qs.values_list("type", flat=True)
+
+        context.update(
+            {
+                "programming_languages": self.get_summary(programming_languages),
+                "mime_types": self.get_summary(mime_types),
+                "holders": self.get_summary(holders),
+                "licenses": self.get_summary(licenses),
+                "package_orphans": package_orphans,
+                "package_licenses": self.get_summary(package_licenses),
+                "package_types": self.get_summary(package_types),
+            }
+        )
+        return context
 
 
 class ProjectTreeView(DetailView):

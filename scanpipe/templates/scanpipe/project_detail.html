@@ -1,4 +1,5 @@
 {% extends "scanpipe/base.html" %}
+{% load humanize %}
 
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
@@ -44,13 +45,13 @@
       <div class="level-item has-text-centered">
         <div>
           <p class="heading">Detected Packages</p>
-          <p class="title">{{ project.discoveredpackages.count }}</p>
+          <p class="title">{{ project.discoveredpackages.count|intcomma }}</p>
         </div>
       </div>
       <div class="level-item has-text-centered">
         <div>
           <p class="heading">Codebase Resources</p>
-          <p class="title">{{ project.codebaseresources.count }}</p>
+          <p class="title">{{ project.codebaseresources.count|intcomma }}</p>
         </div>
       </div>
       <div class="level-item has-text-centered">
@@ -62,7 +63,7 @@
       <div class="level-item has-text-centered">
         <div>
           <p class="heading">Errors</p>
-          <p class="title">{{ project.projecterrors.count }}</p>
+          <p class="title">{{ project.projecterrors.count|intcomma }}</p>
         </div>
       </div>
     </nav>
@@ -139,9 +140,126 @@
 
       </div>
     </section>
+
+    {% if project.discoveredpackages.count %}
+      <hr class="mx-5">
+      <h3 class="title is-4 mx-5 has-text-centered">
+        Detected Packages: {{ project.discoveredpackages.count|intcomma }}
+      </h3>
+      <div class="columns">
+        <div class="column">
+          <p class="heading has-text-centered has-text-weight-semibold">Package Types</p>
+          <canvas id="packageTypeChart"></canvas>
+        </div>
+        <div class="column">
+          <p class="heading has-text-centered has-text-weight-semibold">Package Licenses</p>
+          <canvas id="packageLicenseChart"></canvas>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if project.codebaseresources.count %}
+      <hr class="mx-5">
+      <h3 class="title is-4 mx-5 has-text-centered">
+        Codebase Resources: {{ project.codebaseresources.count|intcomma }}
+      </h3>
+      <div class="columns">
+        <div class="column">
+          <p class="heading has-text-centered has-text-weight-semibold">Programming Languages</p>
+          <canvas id="programmingLanguageChart"></canvas>
+        </div>
+        <div class="column">
+          <p class="heading has-text-centered has-text-weight-semibold">Mime Types</p>
+          <canvas id="mimeTypeChart"></canvas>
+        </div>
+      </div>
+      <div class="columns">
+        <div class="column">
+          <p class="heading has-text-centered has-text-weight-semibold">Holders</p>
+          <canvas id="holderChart"></canvas>
+        </div>
+        <div class="column">
+          <p class="heading has-text-centered has-text-weight-semibold">License keys</p>
+          <canvas id="licenseChart"></canvas>
+        </div>
+      </div>
+      <div class="columns">
+        <div class="column is-half">
+          <p class="heading has-text-centered has-text-weight-semibold">Package orphans</p>
+          <canvas id="packageOrphanChart"></canvas>
+        </div>
+      </div>
+    {% endif %}
   </div>
 {% endblock %}
 
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
+  <script src="https://www.chartjs.org/dist/2.9.4/Chart.min.js"></script>
+  {{ programming_languages|json_script:"programming_languages" }}
+  {{ mime_types|json_script:"mime_types" }}
+  {{ holders|json_script:"holders" }}
+  {{ licenses|json_script:"licenses" }}
+  {{ package_orphans|json_script:"package_orphans" }}
+  {{ package_licenses|json_script:"package_licenses" }}
+  {{ package_types|json_script:"package_types" }}
+  <script>
+    let makeChart = function(data_source_id, element_id) {
+      let data = JSON.parse(document.getElementById(data_source_id).textContent);
+      if (Object.keys(data).length === 0) return false;
+
+      new Chart(document.getElementById(element_id).getContext('2d'), {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(data),
+          datasets: [{
+            data: Object.values(data),
+            defaultBackgroundColor: [
+              'rgba(102, 194, 165, 0.5)',
+              'rgba(252, 141, 98, 0.5)',
+              'rgba(141, 160, 203, 0.5)',
+              'rgba(231, 138, 195, 0.5)',
+              'rgba(166, 216, 84, 0.5)',
+              'rgba(255, 217, 47, 0.5)',
+              'rgba(229, 196, 148, 0.5)',
+              'rgba(179, 179, 179, 0.5)',
+            ],
+            defaultBorderColor: [
+              'rgba(102, 194, 165, 1)',
+              'rgba(252, 141, 98, 1)',
+              'rgba(141, 160, 203, 1)',
+              'rgba(231, 138, 195, 1)',
+              'rgba(166, 216, 84, 1)',
+              'rgba(255, 217, 47, 1)',
+              'rgba(229, 196, 148, 1)',
+              'rgba(179, 179, 179, 1)',
+            ],
+            // Used in getColor() to find the position of empty values
+            labels: Object.keys(data),
+            getColor: function(context, no_value_color) {
+              let index = context.dataIndex;
+              let label = context.dataset.labels[index];
+              let color = context.dataset.defaultBackgroundColor[index];
+              return label === "(No value detected)" ? no_value_color : color;
+            },
+            backgroundColor: function(context) {
+              return context.dataset.getColor(context, 'rgba(201, 203, 207, 0.5)');
+            },
+            borderColor: function(context) {
+              return context.dataset.getColor(context, 'white');
+            },
+            borderWidth: 1
+          }]
+        }
+      });
+    }
+
+    makeChart("programming_languages", "programmingLanguageChart");
+    makeChart("mime_types", "mimeTypeChart");
+    makeChart("holders", "holderChart");
+    makeChart("licenses", "licenseChart");
+    makeChart("package_orphans", "packageOrphanChart");
+    makeChart("package_types", "packageTypeChart");
+    makeChart("package_licenses", "packageLicenseChart");
+  </script>
 {% endblock %}

@@ -55,9 +55,11 @@
           </div>
         </div>
       </div>
-      <figure class="highlight">
-        <pre style="white-space: pre-wrap;"><code>{{ run.output_log }}</code></pre>
-      </figure>
+      {% if run.output_log %}
+        <figure class="highlight">
+          <pre class="log"><code>{{ run.output_log }}</code></pre>
+        </figure>
+      {% endif %}
     </section>
     <footer class="modal-card-foot">
       <button class="button">Close</button>

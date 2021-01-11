@@ -496,6 +496,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def no_status(self):
         return self.filter(status="")
 
+    def package_orphans(self):
+        return self.filter(discovered_packages=None)
+
     def files(self):
         return self.filter(type=self.model.Type.FILE)
 
