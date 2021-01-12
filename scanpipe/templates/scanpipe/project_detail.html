@@ -8,7 +8,7 @@
     <section class="section">
       <h1 class="title">
         <a href="/" class="has-text-black">
-          ScanCode.io
+          ScanCode<span class="nexb-orange">.</span>io
         </a>
       </h1>
     </section>
@@ -41,32 +41,7 @@
     </section>
 
     <hr class="mx-5">
-    <nav class="level">
-      <div class="level-item has-text-centered">
-        <div>
-          <p class="heading">Detected Packages</p>
-          <p class="title">{{ project.discoveredpackages.count|intcomma }}</p>
-        </div>
-      </div>
-      <div class="level-item has-text-centered">
-        <div>
-          <p class="heading">Codebase Resources</p>
-          <p class="title">{{ project.codebaseresources.count|intcomma }}</p>
-        </div>
-      </div>
-      <div class="level-item has-text-centered">
-        <div>
-          <p class="heading">Pipelines</p>
-          <p class="title">{{ project.runs.count }}</p>
-        </div>
-      </div>
-      <div class="level-item has-text-centered">
-        <div>
-          <p class="heading">Errors</p>
-          <p class="title">{{ project.projecterrors.count|intcomma }}</p>
-        </div>
-      </div>
-    </nav>
+    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
 
     <section class="section pt-0">
       {% if project.runs.all %}
@@ -144,7 +119,7 @@
     {% if project.discoveredpackages.count %}
       <hr class="mx-5">
       <h3 class="title is-4 mx-5 has-text-centered">
-        Detected Packages: {{ project.discoveredpackages.count|intcomma }}
+        Discovered Packages: {{ project.discoveredpackages.count|intcomma }}
       </h3>
       <div class="columns">
         <div class="column">
