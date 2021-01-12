@@ -35,6 +35,7 @@ from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import outputs
@@ -210,11 +211,7 @@ class ProjectResultsView(DetailView):
         raise Http404("Format not supported.")
 
 
-class CodebaseResourceListView(ListView):
-    model = CodebaseResource
-    template_name = "scanpipe/resource_list.html"
-    paginate_by = 500
-
+class ProjectRelatedViewMixin:
     def get_project(self):
         if not getattr(self, "project", None):
             project_uuid = self.kwargs["uuid"]
@@ -222,9 +219,21 @@ class CodebaseResourceListView(ListView):
         return self.project
 
     def get_queryset(self):
-        return super().get_queryset().filter(project=self.get_project())
+        return super().get_queryset().project(self.get_project())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.project
         return context
+
+
+class CodebaseResourceListView(ProjectRelatedViewMixin, ListView):
+    model = CodebaseResource
+    template_name = "scanpipe/resource_list.html"
+    paginate_by = 500
+
+
+class DiscoveredPackageListView(ProjectRelatedViewMixin, ListView):
+    model = DiscoveredPackage
+    template_name = "scanpipe/package_list.html"
+    paginate_by = 500
