@@ -44,7 +44,7 @@
     {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
 
     <section class="section pt-0">
-      {% if project.runs.all %}
+      {% if project.codebaseresources.count or project.discoveredpackages.count %}
         <article class="message is-success">
           <div class="message-body">
             Download results as:

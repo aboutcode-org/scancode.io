@@ -1,0 +1,57 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    <section class="section">
+      <h1 class="title">
+       <a href="/" class="has-text-black">
+          ScanCode<span class="nexb-orange">.</span>io
+        </a>
+      </h1>
+    </section>
+    <nav class="breadcrumb" aria-label="breadcrumbs">
+      <ul>
+        <li><a href="{% url 'project_list' %}">Projects</a></li>
+        <li><a href="{% url 'project_detail' project.uuid %}">{{ project.name }}</a></li>
+        <li class="is-active"><a href="#" aria-current="page">Codebase Resources</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="container is-fluid">
+    <div class="table-container">
+      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Name</th>
+            <th>Extension</th>
+            <th>Programming language</th>
+            <th>Mime type</th>
+            <th>License expressions</th>
+            <th>Packages</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for resource in object_list %}
+            <tr>
+              <td>{{ resource.path }}</td>
+              <td>{{ resource.status }}</td>
+              <td>{{ resource.type }}</td>
+              <td>{{ resource.size|default_if_none:"" }}</td>
+              <td>{{ resource.name }}</td>
+              <td>{{ resource.extension }}</td>
+              <td>{{ resource.programming_language }}</td>
+              <td>{{ resource.mime_type }}</td>
+              <td>{{ resource.license_expressions|join:"<br>" }}</td>
+              <td>{{ resource.for_packages|join:"<br>" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}

@@ -25,6 +25,7 @@ from collections import Counter
 from django.db.models import Q
 from django.http import FileResponse
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import CreateView
 from django.views.generic import DetailView
@@ -33,6 +34,7 @@ from django.views.generic import ListView
 from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.forms import ProjectForm
+from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import outputs
@@ -202,3 +204,23 @@ class ProjectResultsView(DetailView):
             return FileResponse(output_file.open("rb"), filename=filename)
 
         raise Http404("Format not supported.")
+
+
+class CodebaseResourceListView(ListView):
+    model = CodebaseResource
+    template_name = "scanpipe/resource_list.html"
+    paginate_by = 500
+
+    def get_project(self):
+        if not getattr(self, "project", None):
+            project_uuid = self.kwargs["uuid"]
+            self.project = get_object_or_404(Project, uuid=project_uuid)
+        return self.project
+
+    def get_queryset(self):
+        return super().get_queryset().filter(project=self.get_project())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.project
+        return context
