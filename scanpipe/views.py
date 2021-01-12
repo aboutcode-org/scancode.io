@@ -74,7 +74,7 @@ class ProjectDetailView(DetailView):
     template_name = "scanpipe/project_detail.html"
 
     @staticmethod
-    def get_summary(values_list, limit=6):
+    def get_summary(values_list, limit=7):
         most_common = dict(Counter(values_list).most_common(limit))
 
         other = len(values_list) - sum(most_common.values())

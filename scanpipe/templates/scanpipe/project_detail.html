@@ -146,10 +146,10 @@
       </div>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="holderChart"></div>
+          <div id="licenseChart"></div>
         </div>
         <div class="column">
-          <div id="licenseChart"></div>
+          <div id="holderChart"></div>
         </div>
       </div>
       <div class="columns is-gapless mb-6">
@@ -164,19 +164,24 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/billboard.pkgd.min.js" integrity="sha512-XRQsIslu9KAc6nLfPGDFp7O5H/DNHs1TtKNXJmPKvg5NORgJFN/lbiqcr4ZSLMNZ3nM9Yth4MJLtuMEE/IWdzQ==" crossOrigin="anonymous"></script>
-  {{ programming_languages|json_script:"programming_languages" }}
-  {{ mime_types|json_script:"mime_types" }}
-  {{ holders|json_script:"holders" }}
-  {{ licenses|json_script:"licenses" }}
-  {{ package_orphans|json_script:"package_orphans" }}
-  {{ package_licenses|json_script:"package_licenses" }}
-  {{ package_types|json_script:"package_types" }}
+  {% if project.codebaseresources.count %}
+    {{ programming_languages|json_script:"programming_languages" }}
+    {{ mime_types|json_script:"mime_types" }}
+    {{ holders|json_script:"holders" }}
+    {{ licenses|json_script:"licenses" }}
+    {{ package_orphans|json_script:"package_orphans" }}
+  {% endif %}
+  {% if project.discoveredpackages.count %}
+    {{ package_licenses|json_script:"package_licenses" }}
+    {{ package_types|json_script:"package_types" }}
+  {% endif %}
   <script>
     let makeChart = function(data_source_id, element_id, title) {
-      let data = JSON.parse(document.getElementById(data_source_id).textContent);
+      let data_source = document.getElementById(data_source_id);
+      if (!data_source) return false;
 
-      if (Object.keys(data).length === 0)
-        return false;
+      let data = JSON.parse(data_source.textContent);
+      if (Object.keys(data).length === 0) return false;
 
       bb.generate({
         data: {
@@ -184,6 +189,14 @@
           type: "donut",
           colors: {
             "(No value detected)": "rgba(201, 203, 207, 0.5)",
+          }
+        },
+        legend: {
+          position: 'inset',
+          inset: {
+            anchor: 'top-left',
+            x: 400,
+            y: 50
           }
         },
         donut: {
