@@ -3,6 +3,12 @@
 
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
+{% block extrahead %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/theme/datalab.min.css" integrity="sha512-G3049Pa7TYG/+vdsrzH0QA7mWGepHigw/9jO5K21Jz2/0h63kOVsckfLkYofHZANi5WdzT/W1s1xKVetcat6+w==" crossorigin="anonymous" />
+<!--  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/theme/graph.min.css" integrity="sha512-paN9cbAXmgFFwEQkjdhrW3BAPg4CsHkD+RSzWJnHMTUnBRdyBTq4iZrjYfajQxTh2jpDhSuu1rGMtFZ0dm0FDA==" crossorigin="anonymous" />-->
+<!--  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/theme/insight.min.css" integrity="sha512-tDzlyItqaaYeWYrsIXl3yUcWLhutwUaCUDvCox9LPq0a+ux6Wk28fHWt/t8k6QU51FqhTnVYiPgpe8w1GcGaUg==" crossorigin="anonymous" />-->
+{% endblock %}
+
 {% block content %}
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
@@ -118,11 +124,11 @@
       <div class="columns">
         <div class="column">
           <p class="heading has-text-centered has-text-weight-semibold">Package Types</p>
-          <canvas id="packageTypeChart"></canvas>
+          <div id="packageTypeChart"></div>
         </div>
         <div class="column">
           <p class="heading has-text-centered has-text-weight-semibold">Package Licenses</p>
-          <canvas id="packageLicenseChart"></canvas>
+          <div id="packageLicenseChart"></div>
         </div>
       </div>
     {% endif %}
@@ -135,27 +141,27 @@
       <div class="columns">
         <div class="column">
           <p class="heading has-text-centered has-text-weight-semibold">Programming Languages</p>
-          <canvas id="programmingLanguageChart"></canvas>
+          <div id="programmingLanguageChart"></div>
         </div>
         <div class="column">
           <p class="heading has-text-centered has-text-weight-semibold">Mime Types</p>
-          <canvas id="mimeTypeChart"></canvas>
+          <div id="mimeTypeChart"></div>
         </div>
       </div>
       <div class="columns">
         <div class="column">
           <p class="heading has-text-centered has-text-weight-semibold">Holders</p>
-          <canvas id="holderChart"></canvas>
+          <div id="holderChart"></div>
         </div>
         <div class="column">
           <p class="heading has-text-centered has-text-weight-semibold">License keys</p>
-          <canvas id="licenseChart"></canvas>
+          <div id="licenseChart"></div>
         </div>
       </div>
       <div class="columns">
         <div class="column is-half">
           <p class="heading has-text-centered has-text-weight-semibold">Package orphans</p>
-          <canvas id="packageOrphanChart"></canvas>
+          <div id="packageOrphanChart"></div>
         </div>
       </div>
     {% endif %}
@@ -164,7 +170,7 @@
 
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
-  <script src="https://www.chartjs.org/dist/2.9.4/Chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/billboard.pkgd.min.js" integrity="sha512-XRQsIslu9KAc6nLfPGDFp7O5H/DNHs1TtKNXJmPKvg5NORgJFN/lbiqcr4ZSLMNZ3nM9Yth4MJLtuMEE/IWdzQ==" crossOrigin="anonymous"></script>
   {{ programming_languages|json_script:"programming_languages" }}
   {{ mime_types|json_script:"mime_types" }}
   {{ holders|json_script:"holders" }}
@@ -175,60 +181,36 @@
   <script>
     let makeChart = function(data_source_id, element_id) {
       let data = JSON.parse(document.getElementById(data_source_id).textContent);
-      if (Object.keys(data).length === 0) return false;
 
-      new Chart(document.getElementById(element_id).getContext('2d'), {
-        type: "doughnut",
+      if (Object.keys(data).length === 0)
+        return false;
+
+      bb.generate({
         data: {
-          labels: Object.keys(data),
-          datasets: [{
-            data: Object.values(data),
-            defaultBackgroundColor: [
-              'rgba(102, 194, 165, 0.5)',
-              'rgba(252, 141, 98, 0.5)',
-              'rgba(141, 160, 203, 0.5)',
-              'rgba(231, 138, 195, 0.5)',
-              'rgba(166, 216, 84, 0.5)',
-              'rgba(255, 217, 47, 0.5)',
-              'rgba(229, 196, 148, 0.5)',
-              'rgba(179, 179, 179, 0.5)',
-            ],
-            defaultBorderColor: [
-              'rgba(102, 194, 165, 1)',
-              'rgba(252, 141, 98, 1)',
-              'rgba(141, 160, 203, 1)',
-              'rgba(231, 138, 195, 1)',
-              'rgba(166, 216, 84, 1)',
-              'rgba(255, 217, 47, 1)',
-              'rgba(229, 196, 148, 1)',
-              'rgba(179, 179, 179, 1)',
-            ],
-            // Used in getColor() to find the position of empty values
-            labels: Object.keys(data),
-            getColor: function(context, no_value_color) {
-              let index = context.dataIndex;
-              let label = context.dataset.labels[index];
-              let color = context.dataset.defaultBackgroundColor[index];
-              return label === "(No value detected)" ? no_value_color : color;
-            },
-            backgroundColor: function(context) {
-              return context.dataset.getColor(context, 'rgba(201, 203, 207, 0.5)');
-            },
-            borderColor: function(context) {
-              return context.dataset.getColor(context, 'white');
-            },
-            borderWidth: 1
-          }]
-        }
-      });
-    }
+          columns: Object.entries(data),
+          type: "donut",
+          colors: {
+            "(No value detected)": "rgba(201, 203, 207, 0.5)",
+          }
+        },
+        tooltip: {
+          format: {
+            value: function(value, ratio, id) {
+              let percent = (ratio * 100).toFixed(1);
+              return `${value} (${percent}%)`;
+            }
+          }
+        },
+        bindto: element_id
+     });
+    };
 
-    makeChart("programming_languages", "programmingLanguageChart");
-    makeChart("mime_types", "mimeTypeChart");
-    makeChart("holders", "holderChart");
-    makeChart("licenses", "licenseChart");
-    makeChart("package_orphans", "packageOrphanChart");
-    makeChart("package_types", "packageTypeChart");
-    makeChart("package_licenses", "packageLicenseChart");
+    makeChart("programming_languages", "#programmingLanguageChart");
+    makeChart("mime_types", "#mimeTypeChart");
+    makeChart("holders", "#holderChart");
+    makeChart("licenses", "#licenseChart");
+    makeChart("package_orphans", "#packageOrphanChart");
+    makeChart("package_types", "#packageTypeChart");
+    makeChart("package_licenses", "#packageLicenseChart");
   </script>
 {% endblock %}
