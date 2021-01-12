@@ -107,16 +107,20 @@ class ProjectDetailView(DetailView):
             "programming_language", flat=True
         )
         mime_types = resources_qs.values_list("mime_type", flat=True)
-        holders = [
-            holder.get("value")
-            for holders in resources_qs.values_list("holders", flat=True)
-            for holder in holders
-        ]
-        licenses = [
-            license.get("key")
-            for licenses in resources_qs.values_list("licenses", flat=True)
-            for license in licenses
-        ]
+
+        resource_holders = []
+        for holders in resources_qs.values_list("holders", flat=True):
+            if not holders:
+                resource_holders.append("")
+            else:
+                resource_holders.extend(holder.get("value") for holder in holders)
+
+        resource_licenses = []
+        for licenses in resources_qs.values_list("licenses", flat=True):
+            if not licenses:
+                resource_licenses.append("")
+            else:
+                resource_licenses.extend(license.get("key") for license in licenses)
 
         package_orphans = {
             "Licenses and Copyrights": package_orphans_qs.filter(
@@ -140,8 +144,8 @@ class ProjectDetailView(DetailView):
             {
                 "programming_languages": self.get_summary(programming_languages),
                 "mime_types": self.get_summary(mime_types),
-                "holders": self.get_summary(holders),
-                "licenses": self.get_summary(licenses),
+                "holders": self.get_summary(resource_holders),
+                "licenses": self.get_summary(resource_licenses),
                 "package_orphans": package_orphans,
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),

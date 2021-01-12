@@ -121,13 +121,11 @@
       <h3 class="title is-4 mx-5 has-text-centered">
         Discovered Packages: {{ project.discoveredpackages.count|intcomma }}
       </h3>
-      <div class="columns">
+      <div class="columns is-gapless">
         <div class="column">
-          <p class="heading has-text-centered has-text-weight-semibold">Package Types</p>
           <div id="packageTypeChart"></div>
         </div>
         <div class="column">
-          <p class="heading has-text-centered has-text-weight-semibold">Package Licenses</p>
           <div id="packageLicenseChart"></div>
         </div>
       </div>
@@ -138,29 +136,24 @@
       <h3 class="title is-4 mx-5 has-text-centered">
         Codebase Resources: {{ project.codebaseresources.count|intcomma }}
       </h3>
-      <div class="columns">
+      <div class="columns is-gapless">
         <div class="column">
-          <p class="heading has-text-centered has-text-weight-semibold">Programming Languages</p>
           <div id="programmingLanguageChart"></div>
         </div>
         <div class="column">
-          <p class="heading has-text-centered has-text-weight-semibold">Mime Types</p>
           <div id="mimeTypeChart"></div>
         </div>
       </div>
-      <div class="columns">
+      <div class="columns is-gapless">
         <div class="column">
-          <p class="heading has-text-centered has-text-weight-semibold">Holders</p>
           <div id="holderChart"></div>
         </div>
         <div class="column">
-          <p class="heading has-text-centered has-text-weight-semibold">License keys</p>
           <div id="licenseChart"></div>
         </div>
       </div>
-      <div class="columns">
+      <div class="columns is-gapless mb-6">
         <div class="column is-half">
-          <p class="heading has-text-centered has-text-weight-semibold">Package orphans</p>
           <div id="packageOrphanChart"></div>
         </div>
       </div>
@@ -179,7 +172,7 @@
   {{ package_licenses|json_script:"package_licenses" }}
   {{ package_types|json_script:"package_types" }}
   <script>
-    let makeChart = function(data_source_id, element_id) {
+    let makeChart = function(data_source_id, element_id, title) {
       let data = JSON.parse(document.getElementById(data_source_id).textContent);
 
       if (Object.keys(data).length === 0)
@@ -193,6 +186,9 @@
             "(No value detected)": "rgba(201, 203, 207, 0.5)",
           }
         },
+        donut: {
+          title: title,
+        },
         tooltip: {
           format: {
             value: function(value, ratio, id) {
@@ -205,12 +201,12 @@
      });
     };
 
-    makeChart("programming_languages", "#programmingLanguageChart");
-    makeChart("mime_types", "#mimeTypeChart");
-    makeChart("holders", "#holderChart");
-    makeChart("licenses", "#licenseChart");
-    makeChart("package_orphans", "#packageOrphanChart");
-    makeChart("package_types", "#packageTypeChart");
-    makeChart("package_licenses", "#packageLicenseChart");
+    makeChart("programming_languages", "#programmingLanguageChart", "Programming\nLanguage");
+    makeChart("mime_types", "#mimeTypeChart", "Mime\nType");
+    makeChart("holders", "#holderChart", "Holder");
+    makeChart("licenses", "#licenseChart", "License\nKey");
+    makeChart("package_orphans", "#packageOrphanChart", "Package\nOrphan");
+    makeChart("package_types", "#packageTypeChart", "Package\nType");
+    makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense");
   </script>
 {% endblock %}
