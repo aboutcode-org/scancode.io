@@ -44,19 +44,18 @@ from scanpipe.pipes import codebase
 from scanpipe.pipes import outputs
 
 
-class ProjectListView(FilterView):
+class PrefetchRelatedViewMixin:
+    prefetch_related = None
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(*self.prefetch_related)
+
+
+class ProjectListView(PrefetchRelatedViewMixin, FilterView):
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
-
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .prefetch_related(
-                "runs",
-            )
-        )
+    prefetch_related = ["runs"]
 
 
 class ProjectCreateView(CreateView):
@@ -248,13 +247,19 @@ class ProjectRelatedViewMixin:
         return context
 
 
-class CodebaseResourceListView(ProjectRelatedViewMixin, ListView):
+class CodebaseResourceListView(
+    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, ListView
+):
     model = CodebaseResource
     template_name = "scanpipe/resource_list.html"
     paginate_by = 500
+    prefetch_related = ["discovered_packages"]
 
 
-class DiscoveredPackageListView(ProjectRelatedViewMixin, ListView):
+class DiscoveredPackageListView(
+    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, ListView
+):
     model = DiscoveredPackage
     template_name = "scanpipe/package_list.html"
     paginate_by = 500
+    prefetch_related = ["codebase_resources"]
