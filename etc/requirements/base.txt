@@ -1,13 +1,13 @@
 # Configuration tools
-pip==20.3.1
-setuptools==51.0.0
-wheel==0.36.1
+pip==20.3.3
+setuptools==51.1.2
+wheel==0.36.2
 
 # Django related
-Django==3.1.4
+Django==3.1.5
 django-environ==0.4.5
 django-crispy-forms==1.10.0
-pytz==2020.4
+pytz==2020.5
 django-filter==2.4.0
 djangorestframework==3.12.2
 
@@ -16,7 +16,7 @@ psycopg2==2.8.6; sys_platform == "linux"
 psycopg2-binary==2.8.6; sys_platform != "linux"
 
 # HTTP
-requests==2.25.0
+requests==2.25.1
 
 # Task queue
 celery==4.4.7
