@@ -86,7 +86,7 @@
       {% empty %}
         <div class="tile is-ancestor">
           <div class="tile is-parent">
-            <article class="tile is-child box" style="text-align: center; border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);">
+            <article class="tile is-child box has-text-centered border-dashed">
               {% if filter.form.search.value %}
                 No Projects found. <a href="{% url 'project_list' %}">Clear the search</a>
               {% else %}

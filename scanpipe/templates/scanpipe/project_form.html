@@ -90,7 +90,7 @@
                     <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
                       {{ pipeline.description }}
                     </div>
-                    <section class="modal-card-body has-text-centered" style="border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;">
+                    <section class="modal-card-body has-text-centered border-bottom-radius">
                       {% for step in pipeline.steps %}
                       <span class="tag is-info">{{ step.name }}</span>
                       <div>{{ step.doc }}</div>
