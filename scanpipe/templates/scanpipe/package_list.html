@@ -1,18 +1,12 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-  <div class="container is-max-desktop">
+  <div class="container is-max-desktop mb-5">
     {% include 'scanpipe/includes/navbar_header.html' %}
-    <nav class="breadcrumb is-large" aria-label="breadcrumbs">
-      <ul>
-        <li><a href="{% url 'project_list' %}">Projects</a></li>
-        <li><a href="{% url 'project_detail' project.uuid %}">{{ project.name }}</a></li>
-        <li class="is-active"><a href="#" aria-current="page">Discovered Packages</a></li>
-      </ul>
-    </nav>
   </div>
 
   <div class="container is-fluid">
+    {% include 'scanpipe/includes/breadcrumb.html' with current="Discovered Packages" %}
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>

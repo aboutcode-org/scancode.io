@@ -13,32 +13,30 @@
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
 
-    <section class="hero">
-      <div class="hero-body py-1">
-        <div class="container">
-          <h1 class="title">
-            {{ project.name }}
-          </h1>
-          <h2 class="subtitle">
-            {{ project.created_date }}
-          </h2>
-          <div class="field is-grouped is-grouped-multiline">
-            <div class="control">
-              <div class="tags has-addons">
-                <span class="tag is-dark">UUID</span>
-                <span class="tag is-info">{{ project.uuid }}</span>
-              </div>
-            </div>
-            <div class="control">
-              <div class="tags has-addons">
-                <span class="tag is-dark">Work directory</span>
-                <span class="tag is-info">{{ project.work_directory }}</span>
-              </div>
-            </div>
+    <section class="mx-5 mb-3">
+      {% include 'scanpipe/includes/breadcrumb.html' %}
+      <div class="subtitle is-size-6">
+        {{ project.created_date }}
+      </div>
+    </section>
+
+    <div class="container mx-5 mb-5">
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">UUID</span>
+            <span class="tag is-info">{{ project.uuid }}</span>
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Work directory</span>
+            <span class="tag is-info">{{ project.work_directory }}</span>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+
 
     <hr class="mx-5">
     {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
