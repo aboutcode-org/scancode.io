@@ -5,11 +5,11 @@ pycodestyle==2.6.0
 black==20.8b1
 
 # Documentation
-Sphinx==3.3.1
-sphinx_rtd_theme==0.5.0
+Sphinx==3.4.3
+sphinx_rtd_theme==0.5.1
 
 # Release
 bump2version==1.0.1
 
 # Dependencies lock file
-pip_tools==5.4.0
+pip_tools==5.5.0
