@@ -54,9 +54,6 @@
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
               XLSX <i class="fas fa-download ml-1"></i>
             </a>
-            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'csv' %}">
-              CSV <i class="fas fa-download ml-1"></i>
-            </a>
             or
             <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">browse the codebase</a>.
           </div>
@@ -118,8 +115,9 @@
 
     {% if project.discoveredpackages.count %}
       <hr class="mx-5">
-      <h3 class="title is-4 mx-5 has-text-centered">
-        Discovered Packages: {{ project.discoveredpackages.count|intcomma }}
+      <h3 class="title is-4 has-text-centered">
+        Discovered Packages
+        <span class="tag is-medium is-dark">{{ project.discoveredpackages.count|intcomma }}</span>
       </h3>
       <div class="columns is-gapless">
         <div class="column">
@@ -133,8 +131,9 @@
 
     {% if project.codebaseresources.count %}
       <hr class="mx-5">
-      <h3 class="title is-4 mx-5 has-text-centered">
-        Codebase Resources: {{ project.codebaseresources.count|intcomma }}
+      <h3 class="title is-4 has-text-centered">
+        Codebase Resources
+        <span class="tag is-medium is-dark">{{ project.codebaseresources.count|intcomma }}</span>
       </h3>
       <div class="columns is-gapless">
         <div class="column">

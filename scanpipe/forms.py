@@ -23,6 +23,8 @@
 from django import forms
 from django.db import transaction
 
+import django_filters
+
 from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.models import Project
 
@@ -68,3 +70,11 @@ class ProjectForm(forms.ModelForm):
                 transaction.on_commit(lambda: run.run_pipeline_task_async())
 
         return project
+
+
+class ProjectFilterSet(django_filters.FilterSet):
+    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+
+    class Meta:
+        model = Project
+        fields = ["search"]

@@ -13,12 +13,14 @@
       </div>
 
       <div class="field">
-        <p class="control has-icons-left">
-          <input class="input" type="text" placeholder="Filter projects">
-          <span class="icon is-small is-left">
-            <i class="fas fa-search"></i>
-          </span>
-        </p>
+        <form method="get">
+          <p class="control has-icons-left">
+            <input class="input" type="text" placeholder="Filter projects" name="{{ filter.form.search.name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
+            <span class="icon is-small is-left">
+              <i class="fas fa-search"></i>
+            </span>
+          </p>
+        </form>
       </div>
 
       {% for project in object_list %}
@@ -87,7 +89,11 @@
         <div class="tile is-ancestor">
           <div class="tile is-parent">
             <article class="tile is-child box" style="text-align: center; border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);">
-              <a href="{% url 'project_add' %}">New Project</a>
+              {% if filter.form.search.value %}
+                No Projects found. <a href="{% url 'project_list' %}">Clear the search</a>
+              {% else %}
+                <a href="{% url 'project_add' %}">New Project</a>
+              {% endif %}
             </article>
           </div>
         </div>

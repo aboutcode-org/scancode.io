@@ -31,8 +31,11 @@ from django.views.generic import CreateView
 from django.views.generic import DetailView
 from django.views.generic import ListView
 
+from django_filters.views import FilterView
+
 from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.forms import ProjectFilterSet
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -41,8 +44,9 @@ from scanpipe.pipes import codebase
 from scanpipe.pipes import outputs
 
 
-class ProjectListView(ListView):
+class ProjectListView(FilterView):
     model = Project
+    filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
 
 
