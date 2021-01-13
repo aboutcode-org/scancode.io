@@ -94,7 +94,15 @@ class ProjectDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        resources_qs_base = self.object.codebaseresources.all()
+        project = self.object
+
+        input_path = project.input_path
+        context["inputs"] = [
+            (path.relative_to(input_path), path.is_file())
+            for path in input_path.glob("*")
+        ]
+
+        resources_qs_base = project.codebaseresources.all()
         resources_qs = resources_qs_base.only(
             "programming_language",
             "mime_type",
@@ -103,7 +111,7 @@ class ProjectDetailView(DetailView):
             "license_expressions",
         )
         package_orphans_qs = resources_qs_base.package_orphans()
-        packages_qs = self.object.discoveredpackages.all().only(
+        packages_qs = project.discoveredpackages.all().only(
             "type",
             "license_expression",
         )

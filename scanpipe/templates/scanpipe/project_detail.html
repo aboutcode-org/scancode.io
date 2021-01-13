@@ -74,12 +74,12 @@
             <p class="panel-heading py-2 is-size-6">
               Inputs
             </p>
-            {% for input in project.input_root %}
+            {% for input_path, input_is_file in inputs %}
               <span class="panel-block">
-                <span class="panel-icon">
-                  <i class="fas fa-file" aria-hidden="true"></i>
+                <span class="panel-icon pt-1">
+                  <i class="is-size-6 {% if input_is_file %}far fa-file-alt{% else %}fas fa-folder{% endif %}" aria-hidden="true"></i>
                 </span>
-                {{ input }}
+                {{ input_path.name }}
               </span>
             {% endfor %}
             <div class="panel-block">
