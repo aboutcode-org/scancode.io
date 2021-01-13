@@ -42,7 +42,7 @@
     {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
 
     <section class="section pt-0">
-      {% if project.codebaseresources.count or project.discoveredpackages.count %}
+      {% if project.resource_count or project.package_count %}
         <article class="message is-success">
           <div class="message-body">
             Download results as:
@@ -111,11 +111,11 @@
       </div>
     </section>
 
-    {% if project.discoveredpackages.count %}
+    {% if project.package_count %}
       <hr class="mx-5">
       <h3 class="title is-4 has-text-centered">
         Discovered Packages
-        <span class="tag is-medium is-dark">{{ project.discoveredpackages.count|intcomma }}</span>
+        <span class="tag is-medium is-dark">{{ project.package_count|intcomma }}</span>
       </h3>
       <div class="columns is-gapless">
         <div class="column">
@@ -127,11 +127,11 @@
       </div>
     {% endif %}
 
-    {% if project.codebaseresources.count %}
+    {% if project.resource_count %}
       <hr class="mx-5">
       <h3 class="title is-4 has-text-centered">
         Codebase Resources
-        <span class="tag is-medium is-dark">{{ project.codebaseresources.count|intcomma }}</span>
+        <span class="tag is-medium is-dark">{{ project.resource_count|intcomma }}</span>
       </h3>
       <div class="columns is-gapless">
         <div class="column">
@@ -161,14 +161,14 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/billboard.pkgd.min.js" integrity="sha512-XRQsIslu9KAc6nLfPGDFp7O5H/DNHs1TtKNXJmPKvg5NORgJFN/lbiqcr4ZSLMNZ3nM9Yth4MJLtuMEE/IWdzQ==" crossOrigin="anonymous"></script>
-  {% if project.codebaseresources.count %}
+  {% if project.resource_count %}
     {{ programming_languages|json_script:"programming_languages" }}
     {{ mime_types|json_script:"mime_types" }}
     {{ holders|json_script:"holders" }}
     {{ licenses|json_script:"licenses" }}
     {{ package_orphans|json_script:"package_orphans" }}
   {% endif %}
-  {% if project.discoveredpackages.count %}
+  {% if project.package_count %}
     {{ package_licenses|json_script:"package_licenses" }}
     {{ package_types|json_script:"package_types" }}
   {% endif %}

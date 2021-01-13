@@ -32,6 +32,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.forms import model_to_dict
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
@@ -338,6 +339,18 @@ class Project(UUIDPKModel, models.Model):
             message=str(error),
             traceback="".join(traceback.format_tb(error.__traceback__)),
         )
+
+    @cached_property
+    def resource_count(self):
+        return self.codebaseresources.count()
+
+    @cached_property
+    def package_count(self):
+        return self.discoveredpackages.count()
+
+    @cached_property
+    def error_count(self):
+        return self.projecterrors.count()
 
 
 class ProjectRelatedQuerySet(models.QuerySet):

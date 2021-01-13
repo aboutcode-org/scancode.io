@@ -4,13 +4,13 @@
     <div>
       <p class="heading">Packages</p>
       <p class="{{ title_class }}">
-        {% if project.discoveredpackages.count %}
+        {% if project.package_count %}
           <a href="{% url 'project_packages' project.uuid %}">
-            {{ project.discoveredpackages.count|intcomma }}
+            {{ project.package_count|intcomma }}
           </a>
         {% else %}
           <span>
-            {{ project.discoveredpackages.count|intcomma }}
+            {{ project.package_count|intcomma }}
           </span>
         {% endif %}
       </p>
@@ -20,13 +20,13 @@
     <div>
       <p class="heading">Resources</p>
       <p class="{{ title_class }}">
-        {% if project.codebaseresources.count %}
+        {% if project.resource_count %}
           <a href="{% url 'project_resources' project.uuid %}">
-            {{ project.codebaseresources.count|intcomma }}
+            {{ project.resource_count|intcomma }}
           </a>
         {% else %}
           <span>
-            {{ project.codebaseresources.count|intcomma }}
+            {{ project.resource_count|intcomma }}
           </span>
         {% endif %}
       </p>
@@ -35,7 +35,7 @@
   <div class="level-item has-text-centered">
     <div>
       <p class="heading">Errors</p>
-      <p class="{{ title_class }}">{{ project.projecterrors.count|intcomma }}</p>
+      <p class="{{ title_class }}">{{ project.error_count|intcomma }}</p>
     </div>
   </div>
   {% if include_pipelines %}

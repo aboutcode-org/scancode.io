@@ -49,6 +49,15 @@ class ProjectListView(FilterView):
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                "runs",
+            )
+        )
+
 
 class ProjectCreateView(CreateView):
     model = Project
