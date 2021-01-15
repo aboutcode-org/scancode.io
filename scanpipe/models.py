@@ -201,6 +201,13 @@ class Project(UUIDPKModel, models.Model):
             self.setup_work_directory()
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+        """
+        Delete the `work_directory` along all the project related data in the database.
+        """
+        shutil.rmtree(self.work_directory)
+        return super().delete(*args, **kwargs)
+
     def setup_work_directory(self):
         """
         Create all the work_directory structure, skip existing.

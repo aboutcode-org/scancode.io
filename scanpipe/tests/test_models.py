@@ -79,6 +79,29 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
 
+    def test_scanpipe_project_model_delete(self):
+        work_path = self.project1.work_path
+        self.assertTrue(work_path.exists())
+
+        self.project1.add_input_file(SimpleUploadedFile("file.ext", content=b"content"))
+        self.project1.add_pipeline(scanpipe_app_config.pipelines[0][0])
+        resource = CodebaseResource.objects.create(project=self.project1, path="path")
+        package = DiscoveredPackage.objects.create(project=self.project1)
+        resource.discovered_packages.add(package)
+
+        delete_log = self.project1.delete()
+        expected = {
+            "scanpipe.CodebaseResource": 1,
+            "scanpipe.DiscoveredPackage": 1,
+            "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.Project": 1,
+            "scanpipe.Run": 1,
+        }
+        self.assertEqual(expected, delete_log[1])
+
+        self.assertFalse(Project.objects.filter(name="my_project").exists())
+        self.assertFalse(work_path.exists())
+
     def test_scanpipe_project_model_inputs_and_input_files_and_input_root(self):
         self.assertEqual([], list(self.project1.inputs()))
         self.assertEqual([], self.project1.input_files)

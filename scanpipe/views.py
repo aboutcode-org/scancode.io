@@ -22,14 +22,13 @@
 
 from collections import Counter
 
+from django.contrib import messages
 from django.db.models import Q
 from django.http import FileResponse
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
-from django.views.generic import CreateView
-from django.views.generic import DetailView
-from django.views.generic import ListView
+from django.urls import reverse_lazy
+from django.views import generic
 
 from django_filters.views import FilterView
 
@@ -58,7 +57,7 @@ class ProjectListView(PrefetchRelatedViewMixin, FilterView):
     prefetch_related = ["runs"]
 
 
-class ProjectCreateView(CreateView):
+class ProjectCreateView(generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
@@ -77,10 +76,10 @@ class ProjectCreateView(CreateView):
         return context
 
     def get_success_url(self):
-        return reverse("project_detail", kwargs={"uuid": self.object.pk})
+        return reverse_lazy("project_detail", kwargs={"uuid": self.object.pk})
 
 
-class ProjectDetailView(DetailView):
+class ProjectDetailView(generic.DetailView):
     model = Project
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
@@ -175,7 +174,23 @@ class ProjectDetailView(DetailView):
         return context
 
 
-class ProjectTreeView(DetailView):
+class ProjectDeleteView(generic.DeleteView):
+    model = Project
+    slug_url_kwarg = "uuid"
+    slug_field = "uuid"
+    success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" and all its related data have been removed.'
+
+    def delete(self, request, *args, **kwargs):
+        response_redirect = super().delete(request, *args, **kwargs)
+        messages.success(self.request, self.success_message.format(self.object.name))
+        return response_redirect
+
+    def get(self, request, *args, **kwargs):
+        return self.delete(request, *args, **kwargs)
+
+
+class ProjectTreeView(generic.DetailView):
     model = Project
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
@@ -210,7 +225,7 @@ def project_results_json_response(project, as_attachment=False):
     return response
 
 
-class ProjectResultsView(DetailView):
+class ProjectResultsView(generic.DetailView):
     model = Project
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
@@ -248,7 +263,7 @@ class ProjectRelatedViewMixin:
 
 
 class CodebaseResourceListView(
-    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, ListView
+    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, generic.ListView
 ):
     model = CodebaseResource
     template_name = "scanpipe/resource_list.html"
@@ -257,7 +272,7 @@ class CodebaseResourceListView(
 
 
 class DiscoveredPackageListView(
-    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, ListView
+    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, generic.ListView
 ):
     model = DiscoveredPackage
     template_name = "scanpipe/package_list.html"
