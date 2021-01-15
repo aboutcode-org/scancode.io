@@ -1,0 +1,58 @@
+{% load humanize %}
+<table class="table is-bordered is-striped is-hoverable is-fullwidth">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Packages</th>
+      <th>Resources</th>
+      <th>Errors</th>
+      <th>Pipelines</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for project in projects %}
+    <tr>
+      <th>
+        <a href="{% url 'project_detail' project.uuid %}">{{ project }}</a>
+      </th>
+      <td>
+        {% if project.package_count %}
+          <a href="{% url 'project_packages' project.uuid %}">
+            {{ project.package_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.package_count|intcomma }}
+          </span>
+        {% endif %}
+      </td>
+      <td>
+        {% if project.resource_count %}
+          <a href="{% url 'project_resources' project.uuid %}">
+            {{ project.resource_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.resource_count|intcomma }}
+          </span>
+        {% endif %}
+      </td>
+      <td>
+        {{ project.error_count|intcomma }}
+      </td>
+      <td>
+        {% for run in project.runs.all %}
+          <div>
+            {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+            {{ run.pipeline_filename }}
+          </div>
+        {% endfor %}
+      </td>
+      <td>
+        {% include "scanpipe/includes/project_download_dropdown.html" with project=project only %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>

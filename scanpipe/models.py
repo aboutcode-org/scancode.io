@@ -499,6 +499,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return self.get_run_id()
 
     @property
+    def pipeline_filename(self):
+        return self.pipeline.split("/")[-1]
+
+    @property
     def output_log(self):
         """
         Return the `task_output` cleaned.
