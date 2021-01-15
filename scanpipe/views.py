@@ -55,7 +55,7 @@ class ProjectListView(PrefetchRelatedViewMixin, FilterView):
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
-    display_as_tile_limit = 100
+    display_as_tile_limit = 10
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

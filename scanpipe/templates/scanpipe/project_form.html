@@ -29,16 +29,19 @@
             </div>
 
             <label class="label mt-5" for="id_inputs">Inputs</label>
-            <div class="field file is-boxed mt-2">
-              <label class="file-label width-100">
+            <div class="file has-name is-boxed is-fullwidth">
+              <label class="file-label">
                 <input class="file-input" type="file" name="inputs" id="id_inputs" multiple>
                 <span class="file-cta">
                   <span class="file-icon">
                     <i class="fas fa-upload"></i>
                   </span>
-                  <span class="file-label">
+                  <span class="file-label has-text-centered">
                     Choose one or more files…
                   </span>
+                </span>
+                <span class="file-name" id="inputs-file-name" style="height: auto;">
+                  <i>No file selected</i>
                 </span>
               </label>
             </div>
@@ -111,4 +114,16 @@
 
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
+  <script>
+    const fileInput = document.querySelector('#id_inputs');
+    fileInput.onchange = () => {
+      if (fileInput.files.length > 0) {
+        const fileName = document.querySelector('#inputs-file-name');
+        fileName.innerHTML = "";
+        for (file of fileInput.files) {
+          fileName.innerHTML += `<span class="is-block">${file.name}</span>`
+        }
+      }
+    }
+  </script>
 {% endblock %}
