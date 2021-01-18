@@ -35,7 +35,17 @@
   <div class="level-item has-text-centered">
     <div>
       <p class="heading">Errors</p>
-      <p class="{{ title_class }}">{{ project.error_count|intcomma }}</p>
+      <p class="{{ title_class }}">
+        {% if project.error_count %}
+          <a href="{% url 'project_errors' project.uuid %}">
+            {{ project.error_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.error_count|intcomma }}
+          </span>
+        {% endif %}
+      </p>
     </div>
   </div>
   {% if include_pipelines %}

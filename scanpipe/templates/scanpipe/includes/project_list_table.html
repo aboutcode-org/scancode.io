@@ -39,7 +39,15 @@
         {% endif %}
       </td>
       <td>
-        {{ project.error_count|intcomma }}
+        {% if project.error_count %}
+          <a href="{% url 'project_errors' project.uuid %}">
+            {{ project.error_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.error_count|intcomma }}
+          </span>
+        {% endif %}
       </td>
       <td>
         {% for run in project.runs.all %}

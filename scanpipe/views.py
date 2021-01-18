@@ -39,6 +39,7 @@ from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectError
 from scanpipe.pipes import codebase
 from scanpipe.pipes import outputs
 
@@ -284,3 +285,9 @@ class DiscoveredPackageListView(
     template_name = "scanpipe/package_list.html"
     paginate_by = 500
     prefetch_related = ["codebase_resources"]
+
+
+class ProjectErrorListView(ProjectRelatedViewMixin, generic.ListView):
+    model = ProjectError
+    template_name = "scanpipe/error_list.html"
+    paginate_by = 50
