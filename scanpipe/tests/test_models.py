@@ -261,14 +261,29 @@ class ScanPipeModelsTest(TestCase):
         run1.task_output = "Missing run-id"
         run1.save()
         self.assertIsNone(run1.get_run_id())
+        self.assertIsNone(run1.run_id)
 
         run1.task_output = "Workflow starting (run-id 1593181041039832):"
         run1.save()
         self.assertEqual("1593181041039832", run1.get_run_id())
+        self.assertEqual("1593181041039832", run1.run_id)
 
         run1.task_output = "(run-id 123) + (run-id 456)"
         run1.save()
         self.assertEqual("123", run1.get_run_id())
+        self.assertEqual("123", run1.run_id)
+
+    def test_scanpipe_run_model_pipeline_basename_property(self):
+        run1 = self.create_run()
+        self.assertEqual("pipeline", run1.pipeline_basename)
+
+        run1.pipeline = "scanpipe/pipelines/docker.py"
+        run1.save()
+        self.assertEqual("docker", run1.pipeline_basename)
+
+        run1.pipeline = ""
+        run1.save()
+        self.assertEqual("", run1.pipeline_basename)
 
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()

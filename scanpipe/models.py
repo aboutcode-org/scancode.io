@@ -40,6 +40,7 @@ from packageurl import normalize_qualifiers
 
 from scancodeio import WORKSPACE_LOCATION
 from scanpipe import tasks
+from scanpipe.apps import remove_dot_py_suffix
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
 from scanpipe.pipelines import get_pipeline_doc
@@ -499,8 +500,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return self.get_run_id()
 
     @property
-    def pipeline_filename(self):
-        return self.pipeline.split("/")[-1]
+    def pipeline_basename(self):
+        return remove_dot_py_suffix(self.pipeline.split("/")[-1])
 
     @property
     def output_log(self):

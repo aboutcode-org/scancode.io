@@ -59,7 +59,7 @@
                   {% for run in project.runs.all %}
                     <span class="panel-block">
                       {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
-                      <span class="ml-2">{{ run.pipeline_filename }}</span>
+                      <span class="ml-2">{{ run.pipeline_basename }}</span>
                     </span>
                   {% empty %}
                     <span class="panel-block">
