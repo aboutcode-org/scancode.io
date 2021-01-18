@@ -17,8 +17,12 @@
       {% include 'scanpipe/includes/breadcrumb.html' %}
       <div class="subtitle is-size-6">
         {{ project.created_date }}
+        <button class="button is-small is-white modal-button p-1" style="height: auto;" data-target="modal-delete" aria-haspopup="true">
+          <i class="far fa-trash-alt"></i>
+        </button>
       </div>
     </section>
+    {% include "scanpipe/includes/project_delete_modal.html" %}
 
     <div class="container mx-5 mb-5">
       <div class="field is-grouped is-grouped-multiline">

@@ -51,6 +51,12 @@ class PrefetchRelatedViewMixin:
         return super().get_queryset().prefetch_related(*self.prefetch_related)
 
 
+class ProjectViewMixin:
+    model = Project
+    slug_url_kwarg = "uuid"
+    slug_field = "uuid"
+
+
 class ProjectListView(PrefetchRelatedViewMixin, FilterView):
     model = Project
     filterset_class = ProjectFilterSet
@@ -86,10 +92,7 @@ class ProjectCreateView(generic.CreateView):
         return reverse_lazy("project_detail", kwargs={"uuid": self.object.pk})
 
 
-class ProjectDetailView(generic.DetailView):
-    model = Project
-    slug_url_kwarg = "uuid"
-    slug_field = "uuid"
+class ProjectDetailView(ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_detail.html"
 
     @staticmethod
@@ -181,10 +184,7 @@ class ProjectDetailView(generic.DetailView):
         return context
 
 
-class ProjectDeleteView(generic.DeleteView):
-    model = Project
-    slug_url_kwarg = "uuid"
-    slug_field = "uuid"
+class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" and all its related data have been removed.'
 
@@ -193,14 +193,8 @@ class ProjectDeleteView(generic.DeleteView):
         messages.success(self.request, self.success_message.format(self.object.name))
         return response_redirect
 
-    def get(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)
 
-
-class ProjectTreeView(generic.DetailView):
-    model = Project
-    slug_url_kwarg = "uuid"
-    slug_field = "uuid"
+class ProjectTreeView(ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_tree.html"
 
     def get_context_data(self, **kwargs):
@@ -232,11 +226,7 @@ def project_results_json_response(project, as_attachment=False):
     return response
 
 
-class ProjectResultsView(generic.DetailView):
-    model = Project
-    slug_url_kwarg = "uuid"
-    slug_field = "uuid"
-
+class ProjectResultsView(ProjectViewMixin, generic.DetailView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         project = self.object
