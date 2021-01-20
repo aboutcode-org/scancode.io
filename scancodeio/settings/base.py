@@ -172,7 +172,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATIC_ROOT = "/var/www/scancodeio/static/"
+STATIC_ROOT = "/var/scancodeio/static/"
 
 STATICFILES_DIRS = [
     str(PROJECT_DIR.joinpath("static")),
@@ -184,8 +184,8 @@ CRISPY_TEMPLATE_PACK = "bootstrap3"
 
 # Celery
 
-CELERY_BROKER_URL = "redis://"
-CELERY_RESULT_BACKEND = "redis://"
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://")
+CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", default="redis://")
 CELERY_IGNORE_RESULT = False
 CELERY_TASK_DEFAULT_QUEUE = "default"
 # When True, tasks will be executed immediately in the local thread instead of being
