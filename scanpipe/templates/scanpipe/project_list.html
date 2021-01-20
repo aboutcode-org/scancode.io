@@ -26,7 +26,7 @@
       {% if object_list|length > display_as_tile_limit %}
         {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
       {% elif not object_list %}
-        <div class="tile is-ancestor">-->
+        <div class="tile is-ancestor">
           <div class="tile is-parent">
             <article class="tile is-child box has-text-centered border-dashed">
               {% if filter.form.search.value %}
