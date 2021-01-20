@@ -26,6 +26,8 @@ from django.db import transaction
 import django_filters
 
 from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 
 EMPTY_CHOICE = [("", "---------")]
@@ -78,3 +80,18 @@ class ProjectFilterSet(django_filters.FilterSet):
     class Meta:
         model = Project
         fields = ["search"]
+
+
+class ResourceFilterSet(django_filters.FilterSet):
+    class Meta:
+        model = CodebaseResource
+        fields = [
+            "programming_language",
+            "mime_type",
+        ]
+
+
+class PackageFilterSet(django_filters.FilterSet):
+    class Meta:
+        model = DiscoveredPackage
+        fields = ["type", "license_expression"]

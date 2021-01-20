@@ -5,8 +5,6 @@
 
 {% block extrahead %}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/theme/datalab.min.css" integrity="sha512-G3049Pa7TYG/+vdsrzH0QA7mWGepHigw/9jO5K21Jz2/0h63kOVsckfLkYofHZANi5WdzT/W1s1xKVetcat6+w==" crossorigin="anonymous" />
-<!--  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/theme/graph.min.css" integrity="sha512-paN9cbAXmgFFwEQkjdhrW3BAPg4CsHkD+RSzWJnHMTUnBRdyBTq4iZrjYfajQxTh2jpDhSuu1rGMtFZ0dm0FDA==" crossorigin="anonymous" />-->
-<!--  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/theme/insight.min.css" integrity="sha512-tDzlyItqaaYeWYrsIXl3yUcWLhutwUaCUDvCox9LPq0a+ux6Wk28fHWt/t8k6QU51FqhTnVYiPgpe8w1GcGaUg==" crossorigin="anonymous" />-->
 {% endblock %}
 
 {% block content %}
@@ -17,7 +15,7 @@
       {% include 'scanpipe/includes/breadcrumb.html' %}
       <div class="subtitle is-size-6">
         {{ project.created_date }}
-        <button class="button is-small is-white modal-button p-1" style="height: auto;" data-target="modal-delete" aria-haspopup="true">
+        <button class="button is-small is-white modal-button p-1 is-height-auto" data-target="modal-delete" aria-haspopup="true">
           <i class="far fa-trash-alt"></i>
         </button>
       </div>
@@ -123,10 +121,10 @@
       </h3>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="packageTypeChart"></div>
+          <div id="packageTypeChart" data-url="{% url 'project_packages' project.uuid %}" data-field="type"></div>
         </div>
         <div class="column">
-          <div id="packageLicenseChart"></div>
+          <div id="packageLicenseChart" data-url="{% url 'project_packages' project.uuid %}" data-field="license_expression"></div>
         </div>
       </div>
     {% endif %}
@@ -139,10 +137,10 @@
       </h3>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="programmingLanguageChart"></div>
+          <div id="programmingLanguageChart" data-url="{% url 'project_resources' project.uuid %}" data-field="programming_language"></div>
         </div>
         <div class="column">
-          <div id="mimeTypeChart"></div>
+          <div id="mimeTypeChart" data-url="{% url 'project_resources' project.uuid %}" data-field="mime_type"></div>
         </div>
       </div>
       <div class="columns is-gapless">
@@ -190,7 +188,14 @@
           type: "donut",
           colors: {
             "(No value detected)": "rgba(201, 203, 207, 0.5)",
-          }
+          },
+          onclick: function(data, element) {
+            // TODO: Find a better way
+            let base_chart_div = element.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
+            let url = base_chart_div.dataset.url;
+            let field = base_chart_div.dataset.field;
+            if (url && field) window.location.href = `${url}?${field}=${data.name}`;
+          },
         },
         legend: {
           position: 'inset',
@@ -219,7 +224,7 @@
     makeChart("mime_types", "#mimeTypeChart", "Mime\nType");
     makeChart("holders", "#holderChart", "Holder");
     makeChart("licenses", "#licenseChart", "License\nKey");
-    makeChart("package_orphans", "#packageOrphanChart", "Package\nOrphan");
+    makeChart("package_orphans", "#packageOrphanChart", "Resources\nnot in \na Package");
     makeChart("package_types", "#packageTypeChart", "Package\nType");
     makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense");
   </script>

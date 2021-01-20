@@ -34,8 +34,10 @@ from django_filters.views import FilterView
 
 from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.forms import PackageFilterSet
 from scanpipe.forms import ProjectFilterSet
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ResourceFilterSet
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -260,18 +262,20 @@ class ProjectRelatedViewMixin:
 
 
 class CodebaseResourceListView(
-    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, generic.ListView
+    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, FilterView
 ):
     model = CodebaseResource
+    filterset_class = ResourceFilterSet
     template_name = "scanpipe/resource_list.html"
     paginate_by = 500
     prefetch_related = ["discovered_packages"]
 
 
 class DiscoveredPackageListView(
-    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, generic.ListView
+    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, FilterView
 ):
     model = DiscoveredPackage
+    filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
     paginate_by = 500
     prefetch_related = ["codebase_resources"]
