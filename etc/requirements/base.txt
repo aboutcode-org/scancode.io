@@ -34,6 +34,8 @@ container_inspector==3.1.2
 
 # ScanCode-toolkit
 scancode-toolkit[full]==3.2.3
+# Remove the following once the new scancode-toolkit is available
+commoncode==v20.10.20
 
 # Utilities
 XlsxWriter==1.3.7

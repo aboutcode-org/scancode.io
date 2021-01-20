@@ -48,7 +48,6 @@ conf:
 	@${ACTIVATE} pip install --editable .
 	# Workaround https://github.com/python/typing/issues/573#issuecomment-405986724
 	@${ACTIVATE} pip uninstall --yes typing
-	@${ACTIVATE} pip install git+https://github.com/nexB/commoncode@6-encoding-keyword
 
 dev: conf
 	@echo "-> Configure and install development dependencies"
