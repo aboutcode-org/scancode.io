@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import tempfile
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -114,6 +115,26 @@ class ScanPipeModelsTest(TestCase):
         self.project1.add_input_file(uploaded_file)
 
         self.assertEqual(["file.ext"], self.project1.input_files)
+
+    def test_scanpipe_project_model_copy_input_from(self):
+        self.assertEqual([], self.project1.input_files)
+
+        _, input_location = tempfile.mkstemp()
+        input_filename = Path(input_location).name
+
+        self.project1.copy_input_from(input_location)
+        self.assertEqual([input_filename], self.project1.input_files)
+        self.assertTrue(Path(input_location).exists())
+
+    def test_scanpipe_project_model_move_input_from(self):
+        self.assertEqual([], self.project1.input_files)
+
+        _, input_location = tempfile.mkstemp()
+        input_filename = Path(input_location).name
+
+        self.project1.move_input_from(input_location)
+        self.assertEqual([input_filename], self.project1.input_files)
+        self.assertFalse(Path(input_location).exists())
 
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())

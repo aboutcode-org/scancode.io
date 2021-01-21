@@ -304,6 +304,22 @@ class Project(UUIDPKModel, models.Model):
             for chunk in file_object.chunks():
                 f.write(chunk)
 
+    def copy_input_from(self, input_location):
+        """
+        Copy the file at `input_location` to this project input/ directory.
+        """
+        from scanpipe.pipes.input import copy_inputs
+
+        copy_inputs([input_location], self.input_path)
+
+    def move_input_from(self, input_location):
+        """
+        Move the file at `input_location` to this project input/ directory.
+        """
+        from scanpipe.pipes.input import move_inputs
+
+        move_inputs([input_location], self.input_path)
+
     def add_pipeline(self, pipeline, start_run=False):
         """
         Create a new Run instance with the provided `pipeline` on this project.
