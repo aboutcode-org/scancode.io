@@ -20,30 +20,23 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.management.commands import ProjectCommand
-from scanpipe.management.commands import validate_inputs
+import shutil
+from pathlib import Path
 
 
-class Command(ProjectCommand):
-    help = "Add input files in a project work directory."
+def copy_inputs(inputs, dest_path):
+    """
+    Copy the provided `inputs` to the `dest_path`.
+    """
+    for input_location in inputs:
+        destination = dest_path / Path(input_location).name
+        shutil.copyfile(input_location, destination)
 
-    def add_arguments(self, parser):
-        super().add_arguments(parser)
-        parser.add_argument(
-            "args",
-            metavar="input",
-            nargs="+",
-            help="One or more input file locations.",
-        )
 
-    def handle(self, *inputs, **options):
-        super().handle(*inputs, **options)
-
-        validate_inputs(inputs)
-        for input_location in inputs:
-            self.project.copy_input_from(input_location)
-
-        msg = (
-            f"File(s) copied to the project inputs directory: {self.project.input_path}"
-        )
-        self.stdout.write(self.style.SUCCESS(msg))
+def move_inputs(inputs, dest_path):
+    """
+    Move the provided `inputs` to the `dest_path`.
+    """
+    for input_location in inputs:
+        destination = dest_path / Path(input_location).name
+        shutil.move(input_location, destination)

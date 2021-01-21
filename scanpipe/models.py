@@ -30,6 +30,7 @@ from pathlib import Path
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db import transaction
 from django.forms import model_to_dict
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -312,14 +313,37 @@ class Project(UUIDPKModel, models.Model):
             for chunk in file_object.chunks():
                 f.write(chunk)
 
-    def add_pipeline(self, pipeline):
+    def copy_input_from(self, input_location):
+        """
+        Copy the file at `input_location` to this project input/ directory.
+        """
+        from scanpipe.pipes.input import copy_inputs
+
+        copy_inputs([input_location], self.input_path)
+
+    def move_input_from(self, input_location):
+        """
+        Move the file at `input_location` to this project input/ directory.
+        """
+        from scanpipe.pipes.input import move_inputs
+
+        move_inputs([input_location], self.input_path)
+
+    def add_pipeline(self, pipeline, start_run=False):
         """
         Create a new Run instance with the provided `pipeline` on this project.
+
+        If `start_run` is True, the pipeline task is created.
+        The on_commit() is used to postpone the task creation after the transaction is
+        successfully committed.
+        If there isn’t an active transaction, the callback will be executed immediately.
         """
-        description = get_pipeline_doc(pipeline)
-        return Run.objects.create(
-            project=self, pipeline=pipeline, description=description
+        run = Run.objects.create(
+            project=self, pipeline=pipeline, description=get_pipeline_doc(pipeline)
         )
+        if start_run:
+            transaction.on_commit(run.run_pipeline_task_async)
+        return run
 
     def get_next_run(self):
         """

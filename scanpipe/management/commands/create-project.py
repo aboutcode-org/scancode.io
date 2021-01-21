@@ -25,7 +25,6 @@ from django.core.management import CommandError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import copy_inputs
 from scanpipe.management.commands import validate_inputs
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
@@ -85,7 +84,8 @@ class Command(BaseCommand):
         for pipeline_location in pipelines:
             project.add_pipeline(pipeline_location)
 
-        copy_inputs(inputs, project.input_path)
+        for input_location in inputs:
+            project.copy_input_from(input_location)
 
         if run:
             call_command("run", project=project, stderr=self.stderr, stdout=self.stdout)

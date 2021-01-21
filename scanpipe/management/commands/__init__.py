@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import shutil
 from pathlib import Path
 
 from django.apps import apps
@@ -73,15 +72,6 @@ def validate_inputs(inputs):
         input_path = Path(input_location)
         if not input_path.is_file():
             raise CommandError(f"{input_location} not found or not a file")
-
-
-def copy_inputs(inputs, dest_path):
-    """
-    Copy the provided `inputs` to the `dest_path`.
-    """
-    for input_location in inputs:
-        destination = dest_path / Path(input_location).name
-        shutil.copyfile(input_location, destination)
 
 
 def validate_pipelines(pipelines):
