@@ -30,6 +30,7 @@ from pathlib import Path
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db import transaction
 from django.forms import model_to_dict
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -303,14 +304,21 @@ class Project(UUIDPKModel, models.Model):
             for chunk in file_object.chunks():
                 f.write(chunk)
 
-    def add_pipeline(self, pipeline):
+    def add_pipeline(self, pipeline, start_run=False):
         """
         Create a new Run instance with the provided `pipeline` on this project.
+
+        If `start_run` is True, the pipeline task is created.
+        The on_commit() is used to postpone the task creation after the transaction is
+        successfully committed.
+        If there isn’t an active transaction, the callback will be executed immediately.
         """
-        description = get_pipeline_doc(pipeline)
-        return Run.objects.create(
-            project=self, pipeline=pipeline, description=description
+        run = Run.objects.create(
+            project=self, pipeline=pipeline, description=get_pipeline_doc(pipeline)
         )
+        if start_run:
+            transaction.on_commit(run.run_pipeline_task_async)
+        return run
 
     def get_next_run(self):
         """

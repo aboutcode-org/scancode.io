@@ -200,7 +200,7 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             message = {"status": "Pipeline already started."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        transaction.on_commit(lambda: run.run_pipeline_task_async())
+        transaction.on_commit(run.run_pipeline_task_async)
 
         return Response({"status": f"Pipeline {run.pipeline} started."})
 
@@ -215,6 +215,6 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             message = {"status": "Cannot resume never started pipeline run."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        transaction.on_commit(lambda: run.resume_pipeline_task_async())
+        transaction.on_commit(run.resume_pipeline_task_async)
 
         return Response({"status": f"Pipeline {run.pipeline} resumed."})

@@ -20,10 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from collections import Counter
-
 from django.apps import apps
-from django.db import transaction
 
 from rest_framework import serializers
 
@@ -139,6 +136,10 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        """
+        Create a new `project` with optionally provided `upload_file` and `pipeline`.
+        If both are provided, the pipeline run is automatically started.
+        """
         upload_file = validated_data.pop("upload_file", None)
         pipeline = validated_data.pop("pipeline", None)
 
@@ -148,9 +149,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             project.add_input_file(upload_file)
 
         if pipeline:
-            run = project.add_pipeline(pipeline)
-            if upload_file:
-                transaction.on_commit(lambda: run.run_pipeline_task_async())
+            project.add_pipeline(pipeline, start_run=bool(upload_file))
 
         return project
 

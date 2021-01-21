@@ -115,17 +115,6 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual(["file.ext"], self.project1.input_files)
 
-    def test_scanpipe_project_model_add_pipeline(self):
-        self.assertEqual(0, self.project1.runs.count())
-
-        pipeline, _name = scanpipe_app_config.pipelines[0]
-        self.project1.add_pipeline(pipeline)
-
-        self.assertEqual(1, self.project1.runs.count())
-        run = self.project1.runs.get()
-        self.assertEqual(pipeline, run.pipeline)
-        self.assertEqual(get_pipeline_doc(pipeline), run.description)
-
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())
 
@@ -419,12 +408,30 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package, codebase_resource.discovered_packages.get())
 
 
-class ScanPipeErrorModelsTest(TransactionTestCase):
+class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
     Since we are testing some Database errors, we need to use a
     TransactionTestCase to avoid any TransactionManagementError while running
     the tests.
     """
+
+    @mock.patch("scanpipe.models.Run.run_pipeline_task_async")
+    def test_scanpipe_project_model_add_pipeline(self, run_task):
+        project1 = Project.objects.create(name="Analysis")
+
+        self.assertEqual(0, project1.runs.count())
+
+        pipeline, _name = scanpipe_app_config.pipelines[0]
+        project1.add_pipeline(pipeline)
+
+        self.assertEqual(1, project1.runs.count())
+        run = project1.runs.get()
+        self.assertEqual(pipeline, run.pipeline)
+        self.assertEqual(get_pipeline_doc(pipeline), run.description)
+        run_task.assert_not_called()
+
+        project1.add_pipeline(pipeline, start_run=True)
+        run_task.assert_called_once()
 
     def test_scanpipe_project_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")
