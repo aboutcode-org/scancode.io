@@ -67,9 +67,7 @@ class ProjectForm(forms.ModelForm):
             project.add_input_file(upload_file)
 
         if pipeline:
-            run = project.add_pipeline(pipeline)
-            if run_pipeline:
-                transaction.on_commit(lambda: run.run_pipeline_task_async())
+            project.add_pipeline(pipeline, start_run=run_pipeline)
 
         return project
 
