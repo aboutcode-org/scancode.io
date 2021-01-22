@@ -5,6 +5,9 @@
 
 - Add support for scancode pipes and Project name with whitespaces
 
+- Add a profile() method on the Run model for profiling pipeline execution
+  https://github.com/nexB/scancode.io/issues/73
+
 ### v1.0.6 (2020-12-23)
 
 - Add a management command to delete a Project and its related work directories
