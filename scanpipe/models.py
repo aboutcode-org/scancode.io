@@ -25,6 +25,7 @@ import shutil
 import traceback
 import uuid
 from contextlib import suppress
+from datetime import datetime
 from pathlib import Path
 
 from django.core import checks
@@ -497,6 +498,44 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             match = run_id_pattern.search(self.task_output)
             if match:
                 return match.group("run_id")
+
+    def profile(self, print_results=False):
+        """
+        Return computed execution times for each steps of this Run.
+
+        If `print_results` is provided, the results are printed to stdout.
+        """
+        if not self.task_succeeded:
+            return
+
+        profiler = {}
+        for line in self.task_output.split("\n"):
+            if not line.endswith(("starting.", "successfully.")):
+                continue
+
+            segments = line.split()
+            line_date_str = " ".join(segments[0:2])
+            line_date = datetime.strptime(line_date_str, "%Y-%m-%d %H:%M:%S.%f")
+            step = segments[2].split("/")[1]
+
+            if line.endswith("starting."):
+                profiler[step] = line_date
+            elif line.endswith("successfully."):
+                start_date = profiler[step]
+                profiler[step] = (line_date - start_date).seconds
+
+        if not print_results:
+            return profiler
+
+        total_run_time = sum(profiler.values())
+        padding = max(len(name) for name in profiler.keys()) + 1
+        for step, step_execution_time in profiler.items():
+            percent = round(step_execution_time * 100 / total_run_time, 1)
+            output_str = f"{step:{padding}} {step_execution_time:>3} seconds {percent}%"
+            if percent > 50:
+                print("\033[41;37m" + output_str + "\033[m")
+            else:
+                print(output_str)
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
