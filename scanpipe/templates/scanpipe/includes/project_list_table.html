@@ -51,7 +51,7 @@
       </td>
       <td>
         {% for run in project.runs.all %}
-          <div class="is-flex is-justify-content-space-between">
+          <div class="is-flex is-justify-content-space-between {% if not forloop.first %}mt-1{% endif %}">
             {{ run.pipeline_basename }}
             {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
           </div>

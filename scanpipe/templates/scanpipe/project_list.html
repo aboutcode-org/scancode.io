@@ -23,9 +23,9 @@
         </form>
       </div>
 
-      {% if object_list|length > display_as_tile_limit %}
+      {% if object_list %}
         {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
-      {% elif not object_list %}
+      {% else %}
         <div class="tile is-ancestor">
           <div class="tile is-parent">
             <article class="tile is-child box has-text-centered border-dashed">
@@ -37,45 +37,6 @@
             </article>
           </div>
         </div>
-      {% else %}
-        {% for project in object_list %}
-          {% if forloop.first %}<div class="tile is-ancestor">{% endif %}
-          <div class="tile is-parent">
-            <article class="tile is-child box">
-              <div class="is-flex is-justify-content-space-between">
-                <h2 class="subtitle mb-1 has-text-weight-semibold">
-                  <a href="{% url 'project_detail' project.uuid %}">{{ project }}</a>
-                </h2>
-                {% include "scanpipe/includes/project_download_dropdown.html" with project=project only %}
-              </div>
-              <div class="my-3">
-                {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="subtitle" only %}
-              </div>
-              <section class="mt-2 mb-4">
-                <nav class="panel">
-                  <p class="panel-heading py-2 is-size-6 has-text-weight-normal">
-                    Pipelines
-                  </p>
-                  {% for run in project.runs.all %}
-                    <span class="panel-block">
-                      {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
-                      <span class="ml-2">{{ run.pipeline_basename }}</span>
-                    </span>
-                  {% empty %}
-                    <span class="panel-block">
-                      <i>No Pipelines</i>
-                    </span>
-                  {% endfor %}
-                </nav>
-              </section>
-              <p class="is-size-7 has-text-grey">
-                {{ project.created_date }}
-              </p>
-            </article>
-          </div>
-          {% if forloop.counter|divisibleby:2 %}</div><div class="tile is-ancestor">{% endif %}
-          {% if forloop.last %}</div>{% endif %}
-        {% endfor %}
       {% endif %}
     </section>
   </div>
