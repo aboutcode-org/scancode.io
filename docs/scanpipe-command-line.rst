@@ -113,7 +113,7 @@ Display status information about the provided ``PROJECT``.
 `$ scanpipe output --project PROJECT --format {json,csv,xlsx}`
 --------------------------------------------------------------
 
-Output the ``PROJECT`` results as JSON or CSV.
+Output the ``PROJECT`` results as JSON, CSV or XLSX.
 The output files are created in the ``PROJECT`` :guilabel:`output/` directory.
 
 
