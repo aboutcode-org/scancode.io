@@ -38,6 +38,10 @@
           </div>
         </div>
       {% endif %}
+
+      {% if is_paginated %}
+        {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj only %}
+      {% endif %}
     </section>
   </div>
 {% endblock %}

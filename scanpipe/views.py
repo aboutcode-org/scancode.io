@@ -64,6 +64,7 @@ class ProjectListView(PrefetchRelatedViewMixin, FilterView):
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
+    paginate_by = 15
 
 
 class ProjectCreateView(generic.CreateView):
