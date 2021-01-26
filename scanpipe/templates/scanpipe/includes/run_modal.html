@@ -16,24 +16,30 @@
             {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
           </div>
         </div>
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Run ID</span>
-            <span class="tag is-info">{{ run.run_id }}</span>
+        {% if run.run_id %}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Run ID</span>
+              <span class="tag is-info">{{ run.run_id }}</span>
+            </div>
           </div>
-        </div>
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Exit code</span>
-            <span class="tag is-info">{{ run.task_exitcode }}</span>
+        {% endif %}
+        {% if run.task_exitcode %}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Exit code</span>
+              <span class="tag is-info">{{ run.task_exitcode }}</span>
+            </div>
           </div>
-        </div>
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Execution time</span>
-            <span class="tag is-info">{{ run.execution_time }} seconds</span>
+        {% endif %}
+        {% if run.execution_time %}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Execution time</span>
+              <span class="tag is-info">{{ run.execution_time }} seconds</span>
+            </div>
           </div>
-        </div>
+        {% endif %}
       </div>
       <div class="field is-grouped is-grouped-multiline">
         <div class="control">
@@ -42,18 +48,22 @@
             <span class="tag is-info">{{ run.created_date }}</span>
           </div>
         </div>
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Start date</span>
-            <span class="tag is-info">{{ run.task_start_date }}</span>
+        {% if run.task_start_date %}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Start date</span>
+              <span class="tag is-info">{{ run.task_start_date }}</span>
+            </div>
           </div>
-        </div>
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">End date</span>
-            <span class="tag is-info">{{ run.task_end_date }}</span>
+        {% endif %}
+        {% if run.task_end_date %}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">End date</span>
+              <span class="tag is-info">{{ run.task_end_date }}</span>
+            </div>
           </div>
-        </div>
+        {% endif %}
       </div>
       {% if run.output_log %}
         <figure class="highlight">
