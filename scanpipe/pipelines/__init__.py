@@ -41,6 +41,12 @@ class Pipeline(FlowSpec):
 
     project_name = Parameter("project", help="Project name.", required=True)
 
+    def init_pipeline(self):
+        """
+        Load the Project instance.
+        """
+        self.project = self.get_project(self.project_name)
+
     @staticmethod
     def get_project(name):
         """

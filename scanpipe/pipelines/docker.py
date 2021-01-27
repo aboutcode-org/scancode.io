@@ -43,9 +43,9 @@ class DockerPipeline(Pipeline):
     @step
     def start(self):
         """
-        Load the Project instance.
+        Initialize the pipeline.
         """
-        self.project = self.get_project(self.project_name)
+        self.init_pipeline()
         self.next(self.extract_images)
 
     @step

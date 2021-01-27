@@ -59,9 +59,9 @@ class ScanCodebase(Pipeline):
     @step
     def start(self):
         """
-        Load the Project instance.
+        Initialize the pipeline.
         """
-        self.project = self.get_project(self.project_name)
+        self.init_pipeline()
         self.next(self.copy_inputs_to_codebase_directory)
 
     @step
