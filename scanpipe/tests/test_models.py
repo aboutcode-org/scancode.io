@@ -19,6 +19,7 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
+
 import io
 import tempfile
 import uuid
@@ -240,23 +241,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
-
-    def test_scanpipe_run_model_get_run_id_method(self):
-        run1 = self.create_run()
-
-        self.assertIsNone(run1.get_run_id())
-
-        run1.task_output = "Missing run-id"
-        run1.save()
-        self.assertIsNone(run1.get_run_id())
-
-        run1.task_output = "Workflow starting (run-id 1593181041039832):"
-        run1.save()
-        self.assertEqual("1593181041039832", run1.get_run_id())
-
-        run1.task_output = "(run-id 123) + (run-id 456)"
-        run1.save()
-        self.assertEqual("123", run1.get_run_id())
 
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()

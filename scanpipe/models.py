@@ -446,7 +446,7 @@ class SaveProjectErrorMixin:
         return []
 
 
-class RunQuerySet(models.QuerySet):
+class RunQuerySet(ProjectRelatedQuerySet):
     def started(self):
         return self.filter(task_start_date__isnull=False)
 
@@ -467,6 +467,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
+    run_id = models.CharField(max_length=16, blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
 
@@ -488,16 +489,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Return True if the pipeline task was successfully executed.
         """
         return self.task_exitcode == 0
-
-    def get_run_id(self):
-        """
-        Return the run id from the task output.
-        """
-        if self.task_output:
-            run_id_pattern = re.compile(r"run-id (?P<run_id>[0-9]+)")
-            match = run_id_pattern.search(self.task_output)
-            if match:
-                return match.group("run_id")
 
     def profile(self, print_results=False):
         """

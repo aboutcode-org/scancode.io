@@ -123,8 +123,6 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(expected, sorted(project.input_files))
 
     def test_scanpipe_management_command_create_project_run(self):
-        out = StringIO()
-
         options = ["--run"]
         expected = "The --run option requires one or more pipelines."
         with self.assertRaisesMessage(CommandError, expected):
