@@ -28,6 +28,7 @@ from unittest import mock
 from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
+from django.utils import timezone
 
 from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.models import Project
@@ -274,7 +275,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")
-        project.add_pipeline(self.pipeline_location)
+        run = project.add_pipeline(self.pipeline_location)
 
         options = ["--project", project.name, "--no-color"]
         out = StringIO()
@@ -286,6 +287,20 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- DiscoveredPackage: 0", output)
         self.assertIn("- ProjectError: 0", output)
         self.assertIn("[ ] scanpipe/pipelines/docker.py", output)
+
+        run.task_start_date = timezone.now()
+        run.log = (
+            "[1611839665826870/start/1 (pid 65890)] Task finished successfully.\n"
+            "[1611839665826870/extract_images/2 (pid 65914)] Task is starting.\n"
+        )
+        run.save()
+        out = StringIO()
+        call_command("status", *options, stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("[RUNNING] scanpipe/pipelines/docker.py", output)
+        for line in run.log.split("\n"):
+            self.assertIn(line, output)
 
     def test_scanpipe_management_command_output(self):
         project = Project.objects.create(name="my_project")

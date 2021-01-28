@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import re
 import shutil
 import traceback
 import uuid
@@ -468,6 +467,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
     run_id = models.CharField(max_length=16, blank=True, editable=False)
+    log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
 
@@ -489,6 +489,18 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Return True if the pipeline task was successfully executed.
         """
         return self.task_exitcode == 0
+
+    def append_to_log(self, message, save=False):
+        """
+        Append the `message` string to the `log` field of this Run instance.
+        """
+        message = message.strip()
+        if any(lf in message for lf in ("\n", "\r")):
+            raise ValueError("message cannot contain line returns (either CR or LF).")
+
+        self.log = self.log + message + "\n"
+        if save:
+            self.save()
 
     def profile(self, print_results=False):
         """

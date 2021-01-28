@@ -15,4 +15,9 @@ class Migration(migrations.Migration):
             name='run_id',
             field=models.CharField(blank=True, editable=False, max_length=16),
         ),
+        migrations.AddField(
+            model_name='run',
+            name='log',
+            field=models.TextField(blank=True, editable=False),
+        ),
     ]

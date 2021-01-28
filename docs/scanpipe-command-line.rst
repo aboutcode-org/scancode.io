@@ -109,6 +109,10 @@ List all the pipelines added of the project named ``PROJECT``.
 
 Display status information about the provided ``PROJECT``.
 
+.. note::
+    The full logs of each pipeline execution are displayed by default.
+    This can be disabled providing the ``--verbosity 0`` option.
+
 
 `$ scanpipe output --project PROJECT --format {json,csv,xlsx}`
 --------------------------------------------------------------
