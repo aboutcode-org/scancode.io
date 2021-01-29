@@ -1,12 +1,14 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-  <div class="container is-max-desktop mb-5">
+  <div class="container is-max-desktop mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      {% include 'scanpipe/includes/breadcrumb.html' with current="Codebase Resources" %}
+    </section>
   </div>
 
   <div class="container is-fluid">
-    {% include 'scanpipe/includes/breadcrumb.html' with current="Codebase Resources" %}
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
