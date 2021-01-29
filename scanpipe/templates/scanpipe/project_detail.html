@@ -1,10 +1,10 @@
 {% extends "scanpipe/base.html" %}
-{% load humanize %}
+{% load static humanize %}
 
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/theme/datalab.min.css" integrity="sha512-G3049Pa7TYG/+vdsrzH0QA7mWGepHigw/9jO5K21Jz2/0h63kOVsckfLkYofHZANi5WdzT/W1s1xKVetcat6+w==" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{% static 'billboard-2.2.0-datalab.min.css' %}" crossorigin="anonymous" />
 {% endblock %}
 
 {% block content %}
@@ -162,7 +162,7 @@
 
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/billboard.js/2.1.4/billboard.pkgd.min.js" integrity="sha512-XRQsIslu9KAc6nLfPGDFp7O5H/DNHs1TtKNXJmPKvg5NORgJFN/lbiqcr4ZSLMNZ3nM9Yth4MJLtuMEE/IWdzQ==" crossOrigin="anonymous"></script>
+  <script src="{% static 'billboard-2.2.0.pkgd.min.js' %}" crossorigin="anonymous"></script>
   {% if project.resource_count %}
     {{ programming_languages|json_script:"programming_languages" }}
     {{ mime_types|json_script:"mime_types" }}
