@@ -3,7 +3,13 @@
 
 ### v1.0.7 (unreleased)
 
+- Log messages from Pipeline execution on a new Run instance `log` field
+  https://github.com/nexB/scancode.io/issues/66
+
 - Add support for scancode pipes and Project name with whitespaces
+
+- Add a profile() method on the Run model for profiling pipeline execution
+  https://github.com/nexB/scancode.io/issues/73
 
 ### v1.0.6 (2020-12-23)
 

@@ -25,6 +25,9 @@ from pathlib import Path
 from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
+from scanpipe.logging import RunLogger
+from scanpipe.logging import extra_logging
+
 dot_py_suffix = ".py"
 
 
@@ -54,6 +57,12 @@ class ScanPipeConfig(AppConfig):
                 location = str(child.relative_to(project_root))
                 name = remove_dot_py_suffix(child.name)
                 self.pipelines.append((location, name))
+
+        # Decorates the default metaflow logger to capture log messages
+        # Warning: This import cannot be moved outside this method
+        from metaflow import cli
+
+        cli.logger = extra_logging(cli.logger, RunLogger())
 
     def is_valid(self, pipeline):
         """

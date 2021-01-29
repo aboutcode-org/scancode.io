@@ -20,8 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import tempfile
 import uuid
+from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from unittest import mock
@@ -263,26 +265,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
 
-    def test_scanpipe_run_model_get_run_id_method(self):
-        run1 = self.create_run()
-
-        self.assertIsNone(run1.get_run_id())
-
-        run1.task_output = "Missing run-id"
-        run1.save()
-        self.assertIsNone(run1.get_run_id())
-        self.assertIsNone(run1.run_id)
-
-        run1.task_output = "Workflow starting (run-id 1593181041039832):"
-        run1.save()
-        self.assertEqual("1593181041039832", run1.get_run_id())
-        self.assertEqual("1593181041039832", run1.run_id)
-
-        run1.task_output = "(run-id 123) + (run-id 456)"
-        run1.save()
-        self.assertEqual("123", run1.get_run_id())
-        self.assertEqual("123", run1.run_id)
-
     def test_scanpipe_run_model_pipeline_basename_property(self):
         run1 = self.create_run()
         self.assertEqual("pipeline", run1.pipeline_basename)
@@ -322,6 +304,73 @@ class ScanPipeModelsTest(TestCase):
 
         qs = self.project1.runs.failed()
         self.assertEqual([failed], list(qs))
+
+    def test_scanpipe_run_model_append_to_log(self):
+        run1 = self.create_run()
+
+        with self.assertRaises(ValueError):
+            run1.append_to_log("multiline\nmessage")
+
+        run1.append_to_log("line1")
+        run1.append_to_log("line2", save=True)
+
+        run1.refresh_from_db()
+        self.assertEqual("line1\nline2\n", run1.log)
+
+    def test_scanpipe_run_model_profile_method(self):
+        run1 = self.create_run()
+
+        self.assertIsNone(run1.profile())
+
+        run1.task_output = (
+            "Validating your flow...\n"
+            "    The graph looks good!\n"
+            "Running pylint...\n"
+            "    Pylint is happy!\n"
+            "2021-01-08 15:44:19.380 Workflow starting (run-id 1):\n"
+            "2021-01-08 15:44:19.385 [1/start/1 (pid 1)] Task is starting.\n"
+            "2021-01-08 15:44:20.720 [1/start/1 (pid 1)] Task finished successfully.\n"
+            "2021-01-08 15:44:20.727 [1/step1/2 (pid 1)] Task is starting.\n"
+            "2021-01-08 15:44:26.722 [1/step1/2 (pid 1)] Task finished successfully.\n"
+            "2021-01-08 15:44:26.729 [1/step2/3 (pid 1)] Task is starting.\n"
+            "2021-01-08 15:44:31.619 [1/step2/3 (pid 1)] Task finished successfully.\n"
+            "2021-01-08 15:44:31.626 [1/step3/4 (pid 1)] Task is starting.\n"
+            "2021-01-08 15:44:33.119 [1/step3/4 (pid 1)] Task finished successfully.\n"
+            "2021-01-08 15:44:38.481 [1/step4/5 (pid 1)] Task is starting.\n"
+            "2021-01-08 15:54:40.042 [1/step4/5 (pid 1)] Task finished successfully.\n"
+            "2021-01-08 15:55:04.345 [1/end/13 (pid 1)] Task is starting.\n"
+            "2021-01-08 15:55:05.651 [1/end/13 (pid 1)] Task finished successfully.\n"
+            "2021-01-08 15:55:05.652 Done!'"
+        )
+        run1.save()
+        self.assertIsNone(run1.profile())
+
+        run1.task_exitcode = 0
+        run1.save()
+
+        expected = {
+            "start": 1,
+            "step1": 5,
+            "step2": 4,
+            "step3": 1,
+            "step4": 601,
+            "end": 1,
+        }
+        self.assertEqual(expected, run1.profile())
+
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertIsNone(run1.profile(print_results=True))
+
+        expected = (
+            "start    1 seconds 0.2%\n"
+            "step1    5 seconds 0.8%\n"
+            "step2    4 seconds 0.7%\n"
+            "step3    1 seconds 0.2%\n"
+            "\x1b[41;37mstep4  601 seconds 98.0%\x1b[m\n"
+            "end      1 seconds 0.2%\n"
+        )
+        self.assertEqual(expected, output.getvalue())
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(

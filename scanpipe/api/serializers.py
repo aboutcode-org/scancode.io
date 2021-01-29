@@ -73,6 +73,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "task_end_date",
             "task_exitcode",
             "task_output",
+            "log",
             "execution_time",
         ]
 

@@ -52,12 +52,16 @@ class Command(ProjectCommand, RunStatusCommandMixin):
                     status = status or "(no status)"
                     message.append(f"   - {status}: {count}")
 
+        display_runs_log = options["verbosity"] > 0
         runs = self.project.runs.all()
         if runs:
             message.append("\nPipelines:")
             for run in runs:
                 status_code = self.get_run_status_code(run)
                 message.append(f" [{status_code}] {run.pipeline}")
+                if display_runs_log and run.log:
+                    for line in run.log.split("\n"):
+                        message.append(3 * " " + line)
 
         for line in message:
             self.stdout.write(line)

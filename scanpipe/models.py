@@ -20,11 +20,11 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import re
 import shutil
 import traceback
 import uuid
 from contextlib import suppress
+from datetime import datetime
 from pathlib import Path
 
 from django.core import checks
@@ -466,7 +466,7 @@ class SaveProjectErrorMixin:
         return []
 
 
-class RunQuerySet(models.QuerySet):
+class RunQuerySet(ProjectRelatedQuerySet):
     def started(self):
         return self.filter(task_start_date__isnull=False)
 
@@ -487,6 +487,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
+    run_id = models.CharField(max_length=16, blank=True, editable=False)
+    log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
 
@@ -509,19 +511,55 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         return self.task_exitcode == 0
 
-    def get_run_id(self):
+    def append_to_log(self, message, save=False):
         """
-        Return the run id from the task output.
+        Append the `message` string to the `log` field of this Run instance.
         """
-        if self.task_output:
-            run_id_pattern = re.compile(r"run-id (?P<run_id>[0-9]+)")
-            match = run_id_pattern.search(self.task_output)
-            if match:
-                return match.group("run_id")
+        message = message.strip()
+        if any(lf in message for lf in ("\n", "\r")):
+            raise ValueError("message cannot contain line returns (either CR or LF).")
 
-    @property
-    def run_id(self):
-        return self.get_run_id()
+        self.log = self.log + message + "\n"
+        if save:
+            self.save()
+
+    def profile(self, print_results=False):
+        """
+        Return computed execution times for each steps of this Run.
+
+        If `print_results` is provided, the results are printed to stdout.
+        """
+        if not self.task_succeeded:
+            return
+
+        profiler = {}
+        for line in self.task_output.split("\n"):
+            if not line.endswith(("starting.", "successfully.")):
+                continue
+
+            segments = line.split()
+            line_date_str = " ".join(segments[0:2])
+            line_date = datetime.strptime(line_date_str, "%Y-%m-%d %H:%M:%S.%f")
+            step = segments[2].split("/")[1]
+
+            if line.endswith("starting."):
+                profiler[step] = line_date
+            elif line.endswith("successfully."):
+                start_date = profiler[step]
+                profiler[step] = (line_date - start_date).seconds
+
+        if not print_results:
+            return profiler
+
+        total_run_time = sum(profiler.values())
+        padding = max(len(name) for name in profiler.keys()) + 1
+        for step, step_execution_time in profiler.items():
+            percent = round(step_execution_time * 100 / total_run_time, 1)
+            output_str = f"{step:{padding}} {step_execution_time:>3} seconds {percent}%"
+            if percent > 50:
+                print("\033[41;37m" + output_str + "\033[m")
+            else:
+                print(output_str)
 
     @property
     def pipeline_basename(self):

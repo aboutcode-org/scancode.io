@@ -20,9 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
 from unittest import mock
 
 from django.test import TestCase
+
+from metaflow.current import current
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
@@ -36,7 +39,7 @@ from scanpipe.pipelines.load_inventory import LoadInventoryFromScanCodeScan
 from scanpipe.pipelines.root_filesystems import RootfsPipeline
 
 
-class ScanPipeModelsTest(TestCase):
+class ScanPipePipelinesTest(TestCase):
     docker_pipeline_location = "scanpipe/pipelines/docker.py"
     rootfs_pipeline_location = "scanpipe/pipelines/root_filesystems.py"
     scan_pipeline_location = "scanpipe/pipelines/load_inventory.py"
@@ -45,6 +48,23 @@ class ScanPipeModelsTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
         project_instance = Pipeline.get_project(project1.name)
         self.assertEqual(project1, project_instance)
+
+    def test_scanpipe_pipeline_class_get_run(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline(self.docker_pipeline_location)
+        self.assertEqual(run, Pipeline.get_run(project1, run.uuid))
+        self.assertIsNone(Pipeline.get_run(project1, uuid.uuid4()))
+
+    def test_scanpipe_pipeline_class_set_run_id(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline(self.docker_pipeline_location)
+
+        run_id = "1234567890123456"
+        current._set_env(run_id=run_id)
+        Pipeline.set_run_id(run)
+
+        run.refresh_from_db()
+        self.assertEqual(run_id, run.run_id)
 
     # This patch allows to instantiate a Pipeline subclass bypassing the __init__
     @mock.patch("metaflow.flowspec.FlowSpec.__init__")

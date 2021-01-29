@@ -62,10 +62,9 @@ def run_pipeline_task(self, run_pk, resume=False):
     project = run.project
 
     if resume:
-        run_id = run.get_run_id()
-        cmd_options = f"resume --origin-run-id {run_id}"
+        cmd_options = f"resume --origin-run-id {run.run_id}"
     else:
-        cmd_options = f'run --project "{project.name}"'
+        cmd_options = f'run --project "{project.name}" --run-uuid "{run.uuid}"'
 
     run.reset_task_values()
     run.set_task_started(task_id)
