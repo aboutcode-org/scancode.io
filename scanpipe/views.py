@@ -262,7 +262,7 @@ class CodebaseResourceListView(
     model = CodebaseResource
     filterset_class = ResourceFilterSet
     template_name = "scanpipe/resource_list.html"
-    paginate_by = 500
+    paginate_by = 100
     prefetch_related = ["discovered_packages"]
 
 
@@ -272,7 +272,7 @@ class DiscoveredPackageListView(
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = 500
+    paginate_by = 100
     prefetch_related = ["codebase_resources"]
 
 

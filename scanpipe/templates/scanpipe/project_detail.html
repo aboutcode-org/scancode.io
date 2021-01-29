@@ -54,8 +54,8 @@
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
               XLSX <i class="fas fa-download ml-1"></i>
             </a>
-            or
-            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">browse the codebase</a>.
+<!--            or-->
+<!--            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">browse the codebase</a>.-->
           </div>
         </article>
       {% else %}
@@ -83,7 +83,7 @@
               </span>
             {% endfor %}
             <div class="panel-block">
-              <button class="button is-link is-outlined is-fullwidth">
+              <button class="button is-link is-outlined is-fullwidth" disabled>
                 Add input
               </button>
             </div>
@@ -103,7 +103,7 @@
               {% include "scanpipe/includes/run_modal.html" with run=run only %}
             {% endfor %}
             <div class="panel-block">
-              <button class="button is-link is-outlined is-fullwidth">
+              <button class="button is-link is-outlined is-fullwidth" disabled>
                 Add pipeline
               </button>
             </div>

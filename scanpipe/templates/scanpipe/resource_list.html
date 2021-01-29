@@ -8,7 +8,7 @@
     </section>
   </div>
 
-  <div class="container is-fluid">
+  <div class="container is-fluid mb-3">
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
@@ -43,5 +43,9 @@
         </tbody>
       </table>
     </div>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj only %}
+    {% endif %}
   </div>
 {% endblock %}
