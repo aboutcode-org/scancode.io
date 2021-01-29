@@ -67,7 +67,11 @@
       </div>
       {% if run.output_log %}
         <figure class="highlight">
-          <pre class="log"><code>{{ run.output_log }}</code></pre>
+          <pre class="log p-3"><code>{{ run.output_log }}</code></pre>
+        </figure>
+      {% elif run.log %}
+        <figure class="highlight">
+          <pre class="log p-3"><code>{{ run.log }}</code></pre>
         </figure>
       {% endif %}
     </section>
