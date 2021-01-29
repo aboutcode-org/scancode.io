@@ -40,9 +40,9 @@ class LoadInventoryFromScanCodeScan(Pipeline):
     @step
     def start(self):
         """
-        Load the Project instance.
+        Initialize the pipeline.
         """
-        self.project = self.get_project(self.project_name)
+        self.init_pipeline()
         self.next(self.get_scan_json_input)
 
     @step

@@ -26,12 +26,20 @@ import inspect
 import subprocess
 import sys
 from contextlib import contextmanager
+from contextlib import suppress
+
+from django.core.exceptions import ObjectDoesNotExist
 
 from metaflow import FlowSpec
 from metaflow import Parameter
+from metaflow import current
 from metaflow import step
 from metaflow.graph import FlowGraph
 from metaflow.graph import StepVisitor
+
+
+class DoesNotExist(object):
+    pass
 
 
 class Pipeline(FlowSpec):
@@ -40,6 +48,19 @@ class Pipeline(FlowSpec):
     """
 
     project_name = Parameter("project", help="Project name.", required=True)
+    run_uuid = Parameter("run-uuid", help="Pipeline run uuid.", required=False)
+
+    def init_pipeline(self):
+        """
+        Load the Project instance.
+        Set the `run_id` value on the related Run.
+        """
+        self.project = self.get_project(self.project_name)
+
+        if self.run_uuid:
+            run = self.get_run(self.project, self.run_uuid)
+            if run:
+                self.set_run_id(run)
 
     @staticmethod
     def get_project(name):
@@ -49,6 +70,24 @@ class Pipeline(FlowSpec):
         from scanpipe.models import Project
 
         return Project.objects.get(name=name)
+
+    @staticmethod
+    def get_run(project, uuid):
+        """
+        Return the current Pipeline Run instance from the database.
+        """
+        from scanpipe.models import Run
+
+        with suppress(ObjectDoesNotExist):
+            return Run.objects.project(project).get(uuid=uuid)
+
+    @staticmethod
+    def set_run_id(run):
+        """
+        Set the current metaflow `run_id` on the Pipeline Run instance.
+        """
+        run.run_id = current.run_id
+        run.save()
 
     @contextmanager
     def save_errors(self, *exceptions):

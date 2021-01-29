@@ -57,7 +57,6 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
         view_name="project-detail", read_only=True
     )
     task_output = serializers.SerializerMethodField()
-    run_id = serializers.CharField(source="get_run_id", read_only=True)
 
     class Meta:
         model = Run
@@ -74,6 +73,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "task_end_date",
             "task_exitcode",
             "task_output",
+            "log",
             "execution_time",
         ]
 

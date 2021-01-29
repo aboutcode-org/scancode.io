@@ -275,12 +275,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertIsNone(response.data["task_end_date"])
         self.assertEqual([], response.data["task_output"])
         self.assertIsNone(response.data["execution_time"])
-        self.assertIsNone(response.data["run_id"])
-
-        run1.task_output = "Workflow starting (run-id 1593181041039832):"
-        run1.save()
-        response = self.csrf_client.get(url)
-        self.assertEqual("1593181041039832", response.data["run_id"])
+        self.assertEqual("", response.data["run_id"])
 
     @mock.patch("scanpipe.models.Run.run_pipeline_task_async")
     def test_scanpipe_api_run_action_start_pipeline(self, mock_run_pipeline_task):

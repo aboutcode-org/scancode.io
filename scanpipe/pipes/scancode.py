@@ -44,7 +44,7 @@ def run_extractcode(location, options=None, raise_on_error=False):
     """
     Extract content at `location` with extractcode.
     Optional arguments for the `extractcode` executable can be provided with the
-     `options` list.
+    `options` list.
     If `raise_on_error` is enabled, a ScancodeError will be raised if the
     exitcode greater than 0.
     """

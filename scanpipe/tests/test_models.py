@@ -19,6 +19,7 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
+
 import io
 import tempfile
 import uuid
@@ -241,23 +242,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
 
-    def test_scanpipe_run_model_get_run_id_method(self):
-        run1 = self.create_run()
-
-        self.assertIsNone(run1.get_run_id())
-
-        run1.task_output = "Missing run-id"
-        run1.save()
-        self.assertIsNone(run1.get_run_id())
-
-        run1.task_output = "Workflow starting (run-id 1593181041039832):"
-        run1.save()
-        self.assertEqual("1593181041039832", run1.get_run_id())
-
-        run1.task_output = "(run-id 123) + (run-id 456)"
-        run1.save()
-        self.assertEqual("123", run1.get_run_id())
-
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
 
@@ -285,6 +269,18 @@ class ScanPipeModelsTest(TestCase):
 
         qs = self.project1.runs.failed()
         self.assertEqual([failed], list(qs))
+
+    def test_scanpipe_run_model_append_to_log(self):
+        run1 = self.create_run()
+
+        with self.assertRaises(ValueError):
+            run1.append_to_log("multiline\nmessage")
+
+        run1.append_to_log("line1")
+        run1.append_to_log("line2", save=True)
+
+        run1.refresh_from_db()
+        self.assertEqual("line1\nline2\n", run1.log)
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()

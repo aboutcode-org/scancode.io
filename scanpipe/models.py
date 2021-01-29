@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import re
 import shutil
 import traceback
 import uuid
@@ -446,7 +445,7 @@ class SaveProjectErrorMixin:
         return []
 
 
-class RunQuerySet(models.QuerySet):
+class RunQuerySet(ProjectRelatedQuerySet):
     def started(self):
         return self.filter(task_start_date__isnull=False)
 
@@ -467,6 +466,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
+    run_id = models.CharField(max_length=16, blank=True, editable=False)
+    log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
 
@@ -489,15 +490,17 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         return self.task_exitcode == 0
 
-    def get_run_id(self):
+    def append_to_log(self, message, save=False):
         """
-        Return the run id from the task output.
+        Append the `message` string to the `log` field of this Run instance.
         """
-        if self.task_output:
-            run_id_pattern = re.compile(r"run-id (?P<run_id>[0-9]+)")
-            match = run_id_pattern.search(self.task_output)
-            if match:
-                return match.group("run_id")
+        message = message.strip()
+        if any(lf in message for lf in ("\n", "\r")):
+            raise ValueError("message cannot contain line returns (either CR or LF).")
+
+        self.log = self.log + message + "\n"
+        if save:
+            self.save()
 
     def profile(self, print_results=False):
         """
