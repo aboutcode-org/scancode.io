@@ -182,8 +182,7 @@ def get_pipeline_description(pipeline_location):
 
 def get_pipeline_steps(pipeline_location):
     """
-    TODO: Return the provided `pipeline_location` documentation from the docstrings.
-    TODO: Test from scanpipe.pipelines import *; get_pipeline_steps("scanpipe/pipelines/docker.py")
+    Return the graph of steps for the provided `pipeline_location`.
     """
     pipeline_class = get_pipeline_class(pipeline_location)
     pipeline_graph = PipelineGraph(pipeline_class)

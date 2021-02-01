@@ -67,9 +67,19 @@ Validate the installation by running the tests suite::
 
     make test
 
-----
+Web Application
+---------------
 
-You are now ready to move onto the **Tutorials**: :ref:`scanpipe_tutorial_1`.
+A web application is available to create and manage your projects from a browser.
+To start the local webserver and access the app::
+
+    make run
+    open http://127.0.0.1:8001/
+
+------------------
+
+.. note::
+    You are now ready to move onto the **Tutorials**: :ref:`scanpipe_tutorial_1`.
 
 Upgrading
 ---------

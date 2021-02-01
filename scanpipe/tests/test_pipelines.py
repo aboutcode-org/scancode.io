@@ -33,6 +33,7 @@ from scanpipe.pipelines import PipelineGraph
 from scanpipe.pipelines import get_pipeline_class
 from scanpipe.pipelines import get_pipeline_description
 from scanpipe.pipelines import get_pipeline_doc
+from scanpipe.pipelines import get_pipeline_steps
 from scanpipe.pipelines import is_pipeline_subclass
 from scanpipe.pipelines.docker import DockerPipeline
 from scanpipe.pipelines.load_inventory import LoadInventoryFromScanCodeScan
@@ -111,6 +112,14 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Step start", description)
         self.assertIn("Step end", description)
         self.assertIn("Analysis completed.", description)
+
+    def test_scanpipe_pipelines_get_pipeline_steps(self):
+        steps = get_pipeline_steps(self.docker_pipeline_location)
+        expected = [
+            {"name": "start", "doc": "Initialize the pipeline."},
+            {"name": "extract_images", "doc": "Extract the images from tarballs."},
+        ]
+        self.assertEqual(expected, steps[0:2])
 
     def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
         pipeline_class = get_pipeline_class(self.docker_pipeline_location)
