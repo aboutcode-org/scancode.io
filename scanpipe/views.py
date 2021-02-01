@@ -106,6 +106,16 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
 
         return most_common
 
+    @staticmethod
+    def data_from_model_field(queryset, model_field, data_field):
+        results = []
+        for model_values in queryset.values_list(model_field, flat=True):
+            if not model_values:
+                results.append("")
+            else:
+                results.extend(entry.get(data_field) for entry in model_values)
+        return results
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
@@ -116,64 +126,38 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             for path in input_path.glob("*")
         ]
 
-        resources_qs_base = project.codebaseresources.all()
-        resources_qs = resources_qs_base.only(
+        files = project.codebaseresources.files().only(
             "programming_language",
             "mime_type",
             "holders",
             "copyrights",
             "license_expressions",
         )
-        package_orphans_qs = resources_qs_base.package_orphans()
-        packages_qs = project.discoveredpackages.all().only(
+        packages = project.discoveredpackages.all().only(
             "type",
             "license_expression",
         )
 
-        programming_languages = resources_qs.values_list(
-            "programming_language", flat=True
+        file_languages = files.values_list("programming_language", flat=True)
+        file_mime_types = files.values_list("mime_type", flat=True)
+        file_holders = self.data_from_model_field(files, "holders", "value")
+        file_copyrights = self.data_from_model_field(files, "copyrights", "value")
+        file_license_keys = self.data_from_model_field(files, "licenses", "key")
+        file_license_categories = self.data_from_model_field(
+            files, "licenses", "category"
         )
-        mime_types = resources_qs.values_list("mime_type", flat=True)
 
-        resource_holders = []
-        for holders in resources_qs.values_list("holders", flat=True):
-            if not holders:
-                resource_holders.append("")
-            else:
-                resource_holders.extend(holder.get("value") for holder in holders)
-
-        resource_licenses = []
-        for licenses in resources_qs.values_list("licenses", flat=True):
-            if not licenses:
-                resource_licenses.append("")
-            else:
-                resource_licenses.extend(license.get("key") for license in licenses)
-
-        package_orphans = {
-            "Licenses and Copyrights": package_orphans_qs.filter(
-                ~Q(license_expressions=[]), ~Q(copyrights=[])
-            ).count(),
-            "Licenses": package_orphans_qs.filter(
-                ~Q(license_expressions=[]), copyrights=[]
-            ).count(),
-            "Copyrights": package_orphans_qs.filter(
-                ~Q(copyrights=[]), license_expressions=[]
-            ).count(),
-            "(No value detected)": package_orphans_qs.filter(
-                license_expressions=[], copyrights=[]
-            ).count(),
-        }
-
-        package_licenses = packages_qs.values_list("license_expression", flat=True)
-        package_types = packages_qs.values_list("type", flat=True)
+        package_licenses = packages.values_list("license_expression", flat=True)
+        package_types = packages.values_list("type", flat=True)
 
         context.update(
             {
-                "programming_languages": self.get_summary(programming_languages),
-                "mime_types": self.get_summary(mime_types),
-                "holders": self.get_summary(resource_holders),
-                "licenses": self.get_summary(resource_licenses),
-                "package_orphans": package_orphans,
+                "programming_languages": self.get_summary(file_languages),
+                "mime_types": self.get_summary(file_mime_types),
+                "holders": self.get_summary(file_holders),
+                "copyrights": self.get_summary(file_copyrights),
+                "file_license_keys": self.get_summary(file_license_keys),
+                "file_license_categories": self.get_summary(file_license_categories),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
             }

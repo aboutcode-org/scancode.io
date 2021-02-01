@@ -132,8 +132,8 @@
     {% if project.resource_count %}
       <hr class="mx-5">
       <h3 class="title is-4 has-text-centered">
-        Codebase Resources
-        <span class="tag is-medium is-dark">{{ project.resource_count|intcomma }}</span>
+        Codebase Resources: Files
+        <span class="tag is-medium is-dark">{{ project.file_count|intcomma }}</span>
       </h3>
       <div class="columns is-gapless">
         <div class="column">
@@ -145,15 +145,18 @@
       </div>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="licenseChart"></div>
-        </div>
-        <div class="column">
           <div id="holderChart"></div>
         </div>
+        <div class="column">
+          <div id="copyrightChart"></div>
+        </div>
       </div>
-      <div class="columns is-gapless mb-6">
-        <div class="column is-half">
-          <div id="packageOrphanChart"></div>
+     <div class="columns is-gapless">
+        <div class="column">
+          <div id="licenseKeyChart"></div>
+        </div>
+        <div class="column">
+          <div id="licenseCategoryChart"></div>
         </div>
       </div>
     {% endif %}
@@ -163,12 +166,13 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script src="{% static 'billboard-2.2.0.pkgd.min.js' %}" crossorigin="anonymous"></script>
-  {% if project.resource_count %}
+  {% if project.file_count %}
     {{ programming_languages|json_script:"programming_languages" }}
     {{ mime_types|json_script:"mime_types" }}
     {{ holders|json_script:"holders" }}
-    {{ licenses|json_script:"licenses" }}
-    {{ package_orphans|json_script:"package_orphans" }}
+    {{ copyrights|json_script:"copyrights" }}
+    {{ file_license_keys|json_script:"file_license_keys" }}
+    {{ file_license_categories|json_script:"file_license_categories" }}
   {% endif %}
   {% if project.package_count %}
     {{ package_licenses|json_script:"package_licenses" }}
@@ -190,8 +194,7 @@
             "(No value detected)": "rgba(201, 203, 207, 0.5)",
           },
           onclick: function(data, element) {
-            // TODO: Find a better way
-            let base_chart_div = element.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement;
+            let base_chart_div = element.closest(".bb");
             let url = base_chart_div.dataset.url;
             let field = base_chart_div.dataset.field;
             if (url && field) window.location.href = `${url}?${field}=${data.name}`;
@@ -223,9 +226,10 @@
     makeChart("programming_languages", "#programmingLanguageChart", "Programming\nLanguage");
     makeChart("mime_types", "#mimeTypeChart", "Mime\nType");
     makeChart("holders", "#holderChart", "Holder");
-    makeChart("licenses", "#licenseChart", "License\nKey");
-    makeChart("package_orphans", "#packageOrphanChart", "Resources\nnot in \na Package");
+    makeChart("copyrights", "#copyrightChart", "Copyright");
+    makeChart("file_license_keys", "#licenseKeyChart", "License\nKey");
+    makeChart("file_license_categories", "#licenseCategoryChart", "License\nCategory");
     makeChart("package_types", "#packageTypeChart", "Package\nType");
-    makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense");
+    makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense\nExpression");
   </script>
 {% endblock %}
