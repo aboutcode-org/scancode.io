@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### v1.0.7 (unreleased)
+### v1.0.7 (2021-02-01)
 
 - Add user interface to manage Projects from a web browser
   All the command-line features are available
