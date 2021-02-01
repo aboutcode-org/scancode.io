@@ -20,27 +20,54 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.contrib import admin
-from django.urls import include
 from django.urls import path
-from django.views.generic import RedirectView
 
-from rest_framework.routers import DefaultRouter
-
-from scancodeio import licenses
-from scanner.api.views import ScanViewSet
-from scanpipe.api.views import ProjectViewSet
-from scanpipe.api.views import RunViewSet
-
-api_router = DefaultRouter()
-api_router.register(r"scans", ScanViewSet)
-api_router.register(r"projects", ProjectViewSet)
-api_router.register(r"runs", RunViewSet)
+from scanpipe import views
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
-    path("", include("scanpipe.urls")),
-    path("", RedirectView.as_view(url="project/")),
+    path(
+        "project/<uuid:uuid>/resources/",
+        views.CodebaseResourceListView.as_view(),
+        name="project_resources",
+    ),
+    path(
+        "project/<uuid:uuid>/packages/",
+        views.DiscoveredPackageListView.as_view(),
+        name="project_packages",
+    ),
+    path(
+        "project/<uuid:uuid>/errors/",
+        views.ProjectErrorListView.as_view(),
+        name="project_errors",
+    ),
+    path(
+        "project/<uuid:uuid>/tree/",
+        views.ProjectTreeView.as_view(),
+        name="project_tree",
+    ),
+    path(
+        "project/<uuid:uuid>/delete/",
+        views.ProjectDeleteView.as_view(),
+        name="project_delete",
+    ),
+    path(
+        "project/<uuid:uuid>/results/<path:format>/",
+        views.ProjectResultsView.as_view(),
+        name="project_results",
+    ),
+    path(
+        "project/add/",
+        views.ProjectCreateView.as_view(),
+        name="project_add",
+    ),
+    path(
+        "project/<uuid:uuid>/",
+        views.ProjectDetailView.as_view(),
+        name="project_detail",
+    ),
+    path(
+        "project/",
+        views.ProjectListView.as_view(),
+        name="project_list",
+    ),
 ]

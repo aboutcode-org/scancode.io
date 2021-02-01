@@ -1,0 +1,43 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  <div class="container is-max-desktop mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      {% include 'scanpipe/includes/breadcrumb.html' with current="Errors" %}
+    </section>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <div class="table-container">
+      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Message</th>
+            <th>Details</th>
+            <th>Traceback</th>
+            <th>Created date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for error in object_list %}
+            <tr>
+              <td>{{ error.model }}</td>
+              <td>{{ error.message }}</td>
+              <td style="word-break: break-word;">{{ error.details }}</td>
+              <td>
+                <pre class="log p-0"><code>{{ error.traceback }}</code></pre>
+              </td>
+              <td>{{ error.created_date }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj only %}
+    {% endif %}
+  </div>
+{% endblock %}

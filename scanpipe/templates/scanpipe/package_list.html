@@ -1,0 +1,39 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  <div class="container is-max-desktop mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      {% include 'scanpipe/includes/breadcrumb.html' with current="Discovered Packages" %}
+    </section>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <div class="table-container">
+      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Package URL</th>
+            <th>License expression</th>
+            <th>Copyright</th>
+            <th>Resources</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for package in object_list %}
+            <tr>
+              <td>{{ package.package_url }}</td>
+              <td>{{ package.license_expression }}</td>
+              <td>{{ package.copyright }}</td>
+              <td>{{ package.codebase_resources.all|join:"<br>" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj only %}
+    {% endif %}
+  </div>
+{% endblock %}

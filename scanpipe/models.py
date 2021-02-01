@@ -33,6 +33,7 @@ from django.db import models
 from django.db import transaction
 from django.forms import model_to_dict
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
@@ -40,6 +41,7 @@ from packageurl import normalize_qualifiers
 
 from scancodeio import WORKSPACE_LOCATION
 from scanpipe import tasks
+from scanpipe.apps import remove_dot_py_suffix
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
 from scanpipe.pipelines import get_pipeline_doc
@@ -200,6 +202,13 @@ class Project(UUIDPKModel, models.Model):
             self.work_directory = get_project_work_directory(self)
             self.setup_work_directory()
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """
+        Delete the `work_directory` along all the project related data in the database.
+        """
+        shutil.rmtree(self.work_directory)
+        return super().delete(*args, **kwargs)
 
     def setup_work_directory(self):
         """
@@ -362,6 +371,30 @@ class Project(UUIDPKModel, models.Model):
             message=str(error),
             traceback="".join(traceback.format_tb(error.__traceback__)),
         )
+
+    @cached_property
+    def resource_count(self):
+        return self.codebaseresources.count()
+
+    @cached_property
+    def file_count(self):
+        return self.codebaseresources.files().count()
+
+    @cached_property
+    def file_in_package_count(self):
+        return self.codebaseresources.files().in_package().count()
+
+    @cached_property
+    def file_not_in_package_count(self):
+        return self.codebaseresources.files().not_in_package().count()
+
+    @cached_property
+    def package_count(self):
+        return self.discoveredpackages.count()
+
+    @cached_property
+    def error_count(self):
+        return self.projecterrors.count()
 
 
 class ProjectRelatedQuerySet(models.QuerySet):
@@ -540,6 +573,17 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             else:
                 print(output_str)
 
+    @property
+    def pipeline_basename(self):
+        return remove_dot_py_suffix(self.pipeline.split("/")[-1])
+
+    @property
+    def output_log(self):
+        """
+        Return the `task_output` cleaned.
+        """
+        return "\n".join(self.task_output.split("\n")[1:]).strip()
+
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def status(self, status=None):
@@ -550,6 +594,12 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def no_status(self):
         return self.filter(status="")
+
+    def in_package(self):
+        return self.filter(discovered_packages__isnull=False)
+
+    def not_in_package(self):
+        return self.filter(discovered_packages__isnull=True)
 
     def files(self):
         return self.filter(type=self.model.Type.FILE)

@@ -3,6 +3,10 @@
 
 ### v1.0.7 (unreleased)
 
+- Add user interface to manage Projects from a web browser
+  All the command-line features are available
+  https://github.com/nexB/scancode.io/issues/24
+
 - Log messages from Pipeline execution on a new Run instance `log` field
   https://github.com/nexB/scancode.io/issues/66
 

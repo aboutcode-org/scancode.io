@@ -1,0 +1,235 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }}{% endblock %}
+
+{% block extrahead %}
+  <link rel="stylesheet" href="{% static 'billboard-2.2.0-datalab.min.css' %}" crossorigin="anonymous" />
+{% endblock %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+
+    <section class="mx-5 mb-3">
+      {% include 'scanpipe/includes/breadcrumb.html' %}
+      <div class="subtitle is-size-6">
+        {{ project.created_date }}
+        <button class="button is-small is-white modal-button p-1 is-height-auto" data-target="modal-delete" aria-haspopup="true">
+          <i class="far fa-trash-alt"></i>
+        </button>
+      </div>
+    </section>
+    {% include "scanpipe/includes/project_delete_modal.html" %}
+
+    <div class="container mx-5 mb-5">
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">UUID</span>
+            <span class="tag is-info">{{ project.uuid }}</span>
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Work directory</span>
+            <span class="tag is-info">{{ project.work_directory }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <hr class="mx-5">
+    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
+
+    <section class="section pt-0">
+      {% if project.resource_count or project.package_count %}
+        <article class="message is-success">
+          <div class="message-body">
+            Download results as:
+            <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.uuid 'json' %}">
+              JSON <i class="fas fa-download ml-1"></i>
+            </a>
+            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
+              XLSX <i class="fas fa-download ml-1"></i>
+            </a>
+<!--            or-->
+<!--            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">browse the codebase</a>.-->
+          </div>
+        </article>
+      {% else %}
+        <article class="message is-warning">
+          <div class="message-body">
+            <p class="block">
+              Add <strong>Inputs</strong> and run a <strong>Pipeline</strong> to generate some results.
+            </p>
+          </div>
+        </article>
+      {% endif %}
+
+      <div class="columns">
+        <div class="column">
+          <nav class="panel is-info">
+            <p class="panel-heading py-2 is-size-6">
+              Inputs
+            </p>
+            {% for input_path, input_is_file in inputs %}
+              <span class="panel-block">
+                <span class="panel-icon pt-1">
+                  <i class="is-size-6 {% if input_is_file %}far fa-file-alt{% else %}fas fa-folder{% endif %}" aria-hidden="true"></i>
+                </span>
+                {{ input_path.name }}
+              </span>
+            {% endfor %}
+            <div class="panel-block">
+              <button class="button is-link is-outlined is-fullwidth" disabled>
+                Add input
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        <div class="column">
+          <nav class="panel is-info">
+            <p class="panel-heading py-2 is-size-6">
+              Pipelines
+            </p>
+            {% for run in project.runs.all %}
+              <a class="panel-block modal-button" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
+                {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+                <span class="ml-2">{{ run.pipeline_basename }}</span>
+              </a>
+              {% include "scanpipe/includes/run_modal.html" with run=run only %}
+            {% endfor %}
+            <div class="panel-block">
+              <button class="button is-link is-outlined is-fullwidth" disabled>
+                Add pipeline
+              </button>
+            </div>
+          </nav>
+        </div>
+
+      </div>
+    </section>
+
+    {% if project.package_count %}
+      <hr class="mx-5">
+      <h3 class="title is-4 has-text-centered">
+        Discovered Packages
+        <span class="tag is-link is-light is-rounded ml-1">{{ project.package_count|intcomma }}</span>
+      </h3>
+      <div class="columns is-gapless">
+        <div class="column">
+          <div id="packageTypeChart" data-url="{% url 'project_packages' project.uuid %}" data-field="type"></div>
+        </div>
+        <div class="column">
+          <div id="packageLicenseChart" data-url="{% url 'project_packages' project.uuid %}" data-field="license_expression"></div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if project.resource_count %}
+      <hr class="mx-5">
+      <h3 id="resource-charts" class="title is-4 has-text-centered mb-3">
+        Codebase Resources
+      </h3>
+      {% include "scanpipe/includes/file_filter.html" with project=project file_filter=file_filter only %}
+      <div class="columns is-gapless">
+        <div class="column">
+          <div id="programmingLanguageChart" data-url="{% url 'project_resources' project.uuid %}" data-field="programming_language"></div>
+        </div>
+        <div class="column">
+          <div id="mimeTypeChart" data-url="{% url 'project_resources' project.uuid %}" data-field="mime_type"></div>
+        </div>
+      </div>
+      <div class="columns is-gapless">
+        <div class="column">
+          <div id="holderChart"></div>
+        </div>
+        <div class="column">
+          <div id="copyrightChart"></div>
+        </div>
+      </div>
+     <div class="columns is-gapless">
+        <div class="column">
+          <div id="licenseKeyChart"></div>
+        </div>
+        <div class="column">
+          <div id="licenseCategoryChart"></div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% include "scanpipe/includes/modal.js.html" %}
+  <script src="{% static 'billboard-2.2.0.pkgd.min.js' %}" crossorigin="anonymous"></script>
+  {% if project.file_count %}
+    {{ programming_languages|json_script:"programming_languages" }}
+    {{ mime_types|json_script:"mime_types" }}
+    {{ holders|json_script:"holders" }}
+    {{ copyrights|json_script:"copyrights" }}
+    {{ file_license_keys|json_script:"file_license_keys" }}
+    {{ file_license_categories|json_script:"file_license_categories" }}
+  {% endif %}
+  {% if project.package_count %}
+    {{ package_licenses|json_script:"package_licenses" }}
+    {{ package_types|json_script:"package_types" }}
+  {% endif %}
+  <script>
+    let makeChart = function(data_source_id, element_id, title) {
+      let data_source = document.getElementById(data_source_id);
+      if (!data_source) return false;
+
+      let data = JSON.parse(data_source.textContent);
+      if (Object.keys(data).length === 0) return false;
+
+      bb.generate({
+        data: {
+          columns: Object.entries(data),
+          type: "donut",
+          colors: {
+            "(No value detected)": "rgba(201, 203, 207, 0.5)",
+          },
+          onclick: function(data, element) {
+            let base_chart_div = element.closest(".bb");
+            let url = base_chart_div.dataset.url;
+            let field = base_chart_div.dataset.field;
+            if (url && field) window.location.href = `${url}?${field}=${data.name}`;
+          },
+        },
+        legend: {
+          position: 'inset',
+          inset: {
+            anchor: 'top-left',
+            x: 400,
+            y: 50
+          }
+        },
+        donut: {
+          title: title,
+        },
+        tooltip: {
+          format: {
+            value: function(value, ratio, id) {
+              let percent = (ratio * 100).toFixed(1);
+              return `${value} (${percent}%)`;
+            }
+          }
+        },
+        bindto: element_id
+     });
+    };
+
+    makeChart("programming_languages", "#programmingLanguageChart", "Programming\nLanguage");
+    makeChart("mime_types", "#mimeTypeChart", "Mime\nType");
+    makeChart("holders", "#holderChart", "Holder");
+    makeChart("copyrights", "#copyrightChart", "Copyright");
+    makeChart("file_license_keys", "#licenseKeyChart", "License\nKey");
+    makeChart("file_license_categories", "#licenseCategoryChart", "License\nCategory");
+    makeChart("package_types", "#packageTypeChart", "Package\nType");
+    makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense\nExpression");
+  </script>
+{% endblock %}

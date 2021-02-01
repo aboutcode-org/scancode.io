@@ -28,6 +28,17 @@ from django.utils.translation import gettext_lazy as _
 from scanpipe.logging import RunLogger
 from scanpipe.logging import extra_logging
 
+dot_py_suffix = ".py"
+
+
+def remove_dot_py_suffix(filename):
+    """
+    Return the `filename` without the trailing ".py" suffix if any.
+    """
+    if filename.endswith(dot_py_suffix):
+        return filename[: -len(dot_py_suffix)]
+    return filename
+
 
 class ScanPipeConfig(AppConfig):
     name = "scanpipe"
@@ -40,12 +51,11 @@ class ScanPipeConfig(AppConfig):
         """
         project_root = Path(__file__).parent.parent.absolute()
         pipelines_dir = project_root / "scanpipe" / "pipelines"
-        dot_py_suffix = ".py"
 
         for child in pipelines_dir.iterdir():
             if child.name.endswith(dot_py_suffix) and not child.name.startswith("_"):
                 location = str(child.relative_to(project_root))
-                name = child.name[: -len(dot_py_suffix)]
+                name = remove_dot_py_suffix(child.name)
                 self.pipelines.append((location, name))
 
         # Decorates the default metaflow logger to capture log messages

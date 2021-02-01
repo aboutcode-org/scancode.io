@@ -77,8 +77,8 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "execution_time",
         ]
 
-    def get_task_output(self, project):
-        return project.task_output.split("\n")[1:]
+    def get_task_output(self, run):
+        return run.task_output.split("\n")[1:]
 
 
 class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):

@@ -178,3 +178,15 @@ def get_pipeline_description(pipeline_location):
     cmd = f"{sys.executable} {pipeline_location} show"
     description = subprocess.getoutput(cmd)
     return description
+
+
+def get_pipeline_steps(pipeline_location):
+    """
+    Return the graph of steps for the provided `pipeline_location`.
+    """
+    pipeline_class = get_pipeline_class(pipeline_location)
+    pipeline_graph = PipelineGraph(pipeline_class)
+    nodes = [
+        {"name": node.name, "doc": node.doc} for node in pipeline_graph.nodes.values()
+    ]
+    return nodes

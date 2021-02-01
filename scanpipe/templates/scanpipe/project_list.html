@@ -1,0 +1,47 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    <section class="section pt-0">
+      <div class="is-flex is-justify-content-space-between mb-2">
+        {% include 'scanpipe/includes/breadcrumb.html' %}
+        <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
+      </div>
+
+      <div class="field">
+        <form method="get">
+          <p class="control has-icons-left">
+            <input class="input" type="text" placeholder="Filter projects" name="{{ filter.form.search.name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
+            <span class="icon is-small is-left">
+              <i class="fas fa-search"></i>
+            </span>
+          </p>
+        </form>
+      </div>
+
+      {% if object_list %}
+        {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
+      {% else %}
+        <div class="tile is-ancestor">
+          <div class="tile is-parent">
+            <article class="tile is-child box has-text-centered border-dashed">
+              {% if filter.form.search.value %}
+                No Projects found. <a href="{% url 'project_list' %}">Clear the search</a>
+              {% else %}
+                <a href="{% url 'project_add' %}">New Project</a>
+              {% endif %}
+            </article>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if is_paginated %}
+        {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj only %}
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

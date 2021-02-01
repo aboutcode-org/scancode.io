@@ -82,6 +82,29 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
 
+    def test_scanpipe_project_model_delete(self):
+        work_path = self.project1.work_path
+        self.assertTrue(work_path.exists())
+
+        self.project1.add_input_file(SimpleUploadedFile("file.ext", content=b"content"))
+        self.project1.add_pipeline(scanpipe_app_config.pipelines[0][0])
+        resource = CodebaseResource.objects.create(project=self.project1, path="path")
+        package = DiscoveredPackage.objects.create(project=self.project1)
+        resource.discovered_packages.add(package)
+
+        delete_log = self.project1.delete()
+        expected = {
+            "scanpipe.CodebaseResource": 1,
+            "scanpipe.DiscoveredPackage": 1,
+            "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.Project": 1,
+            "scanpipe.Run": 1,
+        }
+        self.assertEqual(expected, delete_log[1])
+
+        self.assertFalse(Project.objects.filter(name="my_project").exists())
+        self.assertFalse(work_path.exists())
+
     def test_scanpipe_project_model_inputs_and_input_files_and_input_root(self):
         self.assertEqual([], list(self.project1.inputs()))
         self.assertEqual([], self.project1.input_files)
@@ -241,6 +264,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
+
+    def test_scanpipe_run_model_pipeline_basename_property(self):
+        run1 = self.create_run()
+        self.assertEqual("pipeline", run1.pipeline_basename)
+
+        run1.pipeline = "scanpipe/pipelines/docker.py"
+        run1.save()
+        self.assertEqual("docker", run1.pipeline_basename)
+
+        run1.pipeline = ""
+        run1.save()
+        self.assertEqual("", run1.pipeline_basename)
 
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
@@ -410,6 +445,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(file, qs)
         self.assertIn(directory, qs)
         self.assertNotIn(symlink, qs)
+
+        self.assertEqual(0, CodebaseResource.objects.in_package().count())
+        self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
+
+        DiscoveredPackage.create_for_resource(package_data1, file)
+        self.assertEqual(1, CodebaseResource.objects.in_package().count())
+        self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
     def test_scanpipe_codebase_resource_descendants(self):
         path = "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref"

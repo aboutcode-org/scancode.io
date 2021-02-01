@@ -1,0 +1,7 @@
+{% for message in messages %}
+  <article class="message is-{{ message.level_tag }}">
+    <div class="message-body">
+      {{ message|linebreaksbr }}
+    </div>
+  </article>
+{% endfor %}

@@ -52,7 +52,6 @@ class Command(ProjectCommand):
                 self.stdout.write("Flush cancelled.")
                 sys.exit(0)
 
-        shutil.rmtree(self.project.work_directory)
         self.project.delete()
 
         msg = f"All the {self.project} project data have been removed."

@@ -1,0 +1,59 @@
+{% load humanize %}
+<nav class="level is-mobile">
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Packages</p>
+      <p class="{{ title_class }}">
+        {% if project.package_count %}
+          <a href="{% url 'project_packages' project.uuid %}">
+            {{ project.package_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.package_count|intcomma }}
+          </span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Resources</p>
+      <p class="{{ title_class }}">
+        {% if project.resource_count %}
+          <a href="{% url 'project_resources' project.uuid %}">
+            {{ project.resource_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.resource_count|intcomma }}
+          </span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Errors</p>
+      <p class="{{ title_class }}">
+        {% if project.error_count %}
+          <a href="{% url 'project_errors' project.uuid %}">
+            {{ project.error_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.error_count|intcomma }}
+          </span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  {% if include_pipelines %}
+    <div class="level-item has-text-centered">
+      <div>
+        <p class="heading">Pipelines</p>
+        <p class="{{ title_class }}">{{ project.runs.count }}</p>
+      </div>
+    </div>
+  {% endif %}
+</nav>

@@ -1,0 +1,33 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ScanCode.io{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'bulma-0.9.1.min.css' %}">
+    <script defer src="{% static 'fontawesome-5.15.1.all.min.js' %}"></script>
+    <style>
+      .width-100, .select, .select select {width: 100%;}
+      .has-border-radius {border-radius: 6px;}
+      .help-text {color: #333333; border-bottom: dotted 0.0625rem #cccccc;}
+      .modal.is-desktop-size .modal-card {width: 960px;}
+      .panel-block {align-items: initial;}
+      .breadcrumb {user-select: text!important;}
+      .breadcrumb .is-active {font-weight: 600!important;}
+      .border-bottom-radius {border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;}
+      .border-dashed {border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);}
+      .is-height-auto {height: auto;}
+      pre.log {color: #f1f1f1; background-color: #222; font-family: monospace;}
+      .nexb-orange {color:#f7bf3c;}
+      .bb-legend-item-hidden {text-decoration: line-through; opacity: 0.7!important;}
+      .bb-chart .bb-chart-arcs .bb-chart-arcs-title {font-size: 15px !important; fill: #4a4a4a !important; text-transform: uppercase;}
+      svg {overflow: visible !important;}
+    </style>
+    {% block extrahead %}{% endblock %}
+  </head>
+  <body>
+  {% block content %}{% endblock %}
+  {% block scripts %}{% endblock %}
+  </body>
+</html>
