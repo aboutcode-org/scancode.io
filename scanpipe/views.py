@@ -126,7 +126,15 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             for path in input_path.glob("*")
         ]
 
-        files = project.codebaseresources.files().only(
+        files_qs = project.codebaseresources.files()
+
+        file_filter = self.request.GET.get("file-filter", "all")
+        if file_filter == "in-a-package":
+            files_qs = files_qs.in_package()
+        elif file_filter == "not-in-a-package":
+            files_qs = files_qs.not_in_package()
+
+        files = files_qs.only(
             "programming_language",
             "mime_type",
             "holders",
@@ -160,6 +168,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "file_license_categories": self.get_summary(file_license_categories),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
+                "file_filter": file_filter,
             }
         )
         return context

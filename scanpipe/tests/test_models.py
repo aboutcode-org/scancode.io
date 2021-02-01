@@ -446,6 +446,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(directory, qs)
         self.assertNotIn(symlink, qs)
 
+        self.assertEqual(0, CodebaseResource.objects.in_package().count())
+        self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
+
+        DiscoveredPackage.create_for_resource(package_data1, file)
+        self.assertEqual(1, CodebaseResource.objects.in_package().count())
+        self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
+
     def test_scanpipe_codebase_resource_descendants(self):
         path = "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
         resource = self.project_asgiref.codebaseresources.get(path=path)

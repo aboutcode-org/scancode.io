@@ -381,6 +381,14 @@ class Project(UUIDPKModel, models.Model):
         return self.codebaseresources.files().count()
 
     @cached_property
+    def file_in_package_count(self):
+        return self.codebaseresources.files().in_package().count()
+
+    @cached_property
+    def file_not_in_package_count(self):
+        return self.codebaseresources.files().not_in_package().count()
+
+    @cached_property
     def package_count(self):
         return self.discoveredpackages.count()
 
@@ -587,8 +595,11 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def no_status(self):
         return self.filter(status="")
 
+    def in_package(self):
+        return self.filter(discovered_packages__isnull=False)
+
     def not_in_package(self):
-        return self.filter(discovered_packages=None)
+        return self.filter(discovered_packages__isnull=True)
 
     def files(self):
         return self.filter(type=self.model.Type.FILE)

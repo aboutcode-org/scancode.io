@@ -117,7 +117,7 @@
       <hr class="mx-5">
       <h3 class="title is-4 has-text-centered">
         Discovered Packages
-        <span class="tag is-medium is-dark">{{ project.package_count|intcomma }}</span>
+        <span class="tag is-link is-light is-rounded ml-1">{{ project.package_count|intcomma }}</span>
       </h3>
       <div class="columns is-gapless">
         <div class="column">
@@ -131,10 +131,10 @@
 
     {% if project.resource_count %}
       <hr class="mx-5">
-      <h3 class="title is-4 has-text-centered">
-        Codebase Resources: Files
-        <span class="tag is-medium is-dark">{{ project.file_count|intcomma }}</span>
+      <h3 id="resource-charts" class="title is-4 has-text-centered mb-3">
+        Codebase Resources
       </h3>
+      {% include "scanpipe/includes/file_filter.html" with project=project file_filter=file_filter only %}
       <div class="columns is-gapless">
         <div class="column">
           <div id="programmingLanguageChart" data-url="{% url 'project_resources' project.uuid %}" data-field="programming_language"></div>
