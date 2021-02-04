@@ -32,12 +32,9 @@ an image (VM or container image).
 
 Usage example within a Pipeline:
 
-@step
 def analyze_licenses_and_sources(self):
     utilities.tag_compliance_files(self.project)
     utilities.analyze_compliance_licenses(self.project)
-    utilities.analyze_compliance_sourcemirror_for_packages(self.project)
-    self.next(self.tag_uninteresting_codebase_resources)
 """
 
 
@@ -65,17 +62,3 @@ def analyze_compliance_licenses(project):
     for codebase_resource in qs:
         scan_results = scan_file(codebase_resource.location)
         codebase_resource.set_scan_results(scan_results, save=True)
-
-
-def analyze_compliance_sourcemirror_for_packages(project):
-    qs = CodebaseResource.objects.project(project).status("compliance-sourcemirror")
-
-    for codebase_resource in qs:
-        # TODO:
-        # 1. Extract all archive recursively in the sourcemirror dir
-        # -> extractcode not shallow (default)
-        # 2. Update inventory
-        # -> make_codebase_resource
-        # 3. Scan for everything in that:
-        # -> scan for package, then set aside (status), then scan_file
-        pass

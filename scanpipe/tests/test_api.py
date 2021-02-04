@@ -273,9 +273,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertIsNone(response.data["task_id"])
         self.assertIsNone(response.data["task_start_date"])
         self.assertIsNone(response.data["task_end_date"])
-        self.assertEqual([], response.data["task_output"])
+        self.assertEqual("", response.data["task_output"])
         self.assertIsNone(response.data["execution_time"])
-        self.assertEqual("", response.data["run_id"])
 
     @mock.patch("scanpipe.models.Run.run_pipeline_task_async")
     def test_scanpipe_api_run_action_start_pipeline(self, mock_run_pipeline_task):
@@ -299,31 +298,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Pipeline already executed."}
         self.assertEqual(expected, response.data)
-
-    @mock.patch("scanpipe.models.Run.resume_pipeline_task_async")
-    def test_scanpipe_api_run_action_resume_pipeline(self, mock_resume_pipeline_task):
-        run1 = self.project1.add_pipeline("scanpipe/pipelines/docker.py")
-        url = reverse("run-resume-pipeline", args=[run1.uuid])
-        response = self.csrf_client.get(url)
-        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        expected = {"status": "Cannot resume never started pipeline run."}
-        self.assertEqual(expected, response.data)
-
-        run1.task_exitcode = 0
-        run1.save()
-        response = self.csrf_client.get(url)
-        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        expected = {"status": "Cannot resume a successful pipeline run."}
-        self.assertEqual(expected, response.data)
-
-        run1.task_exitcode = None
-        run1.task_start_date = timezone.now()
-        run1.save()
-        response = self.csrf_client.get(url)
-        self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {"status": f"Pipeline {run1.pipeline} resumed."}
-        self.assertEqual(expected, response.data)
-        mock_resume_pipeline_task.assert_called_once()
 
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(

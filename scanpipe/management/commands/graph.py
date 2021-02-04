@@ -26,17 +26,44 @@ import sys
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
+from scanpipe.management.commands import indent
 from scanpipe.management.commands import scanpipe_app_config
-from scanpipe.pipelines import PipelineGraph
 from scanpipe.pipelines import get_pipeline_class
 from scanpipe.pipelines import get_pipeline_doc
 
 
 def is_graphviz_installed():
-    exitcode, _ = subprocess.getstatusoutput("which dot")
+    exitcode = subprocess.getstatusoutput("which dot")[0]
     if exitcode == 0:
         return True
     return False
+
+
+def pipeline_graph_dot(pipeline_class, fontname="Helvetica", shape="record"):
+    """
+    Return the pipeline graph as DOT format compatible with Graphviz.
+    """
+    dot_output = [f"digraph {pipeline_class.__name__} {{", "rankdir=TB;"]
+
+    edges = []
+    nodes = []
+    steps = pipeline_class.steps
+    step_count = len(steps)
+
+    for index, step in enumerate(steps, start=1):
+        step_name = step.__name__
+        edges.append(
+            f'"{step_name}"'
+            f'[label=<<b>{step_name}</b>> fontname="{fontname}" shape="{shape}"];'
+        )
+        if index < step_count:
+            next_step = steps[index]
+            nodes.append(f"{step_name} -> {next_step.__name__};")
+
+    dot_output.extend(edges)
+    dot_output.extend(nodes)
+    dot_output.append("}")
+    return "\n".join(dot_output)
 
 
 class Command(BaseCommand):
@@ -60,7 +87,8 @@ class Command(BaseCommand):
         if options["list"]:
             for location, _ in scanpipe_app_config.pipelines:
                 self.stdout.write("- " + self.style.SUCCESS(location))
-                self.stdout.write(get_pipeline_doc(location), ending="\n\n")
+                pipeline_doc = get_pipeline_doc(location)
+                self.stdout.write(indent(pipeline_doc, by=2), ending="\n\n")
             sys.exit(0)
 
         if not is_graphviz_installed():
@@ -79,17 +107,18 @@ class Command(BaseCommand):
                     self.style.ERROR(f"{pipeline_location} is not valid.")
                 )
                 sys.exit(1)
-            pipeline_graph = PipelineGraph(pipeline_class)
-            outputs.append(self.generate_graph(pipeline_graph, options.get("output")))
+
+            output_directory = options.get("output")
+            outputs.append(self.generate_graph_png(pipeline_class, output_directory))
 
         separator = "\n - "
         msg = f"Graph(s) generated:{separator}" + separator.join(outputs)
         self.stdout.write(self.style.SUCCESS(msg))
 
     @staticmethod
-    def generate_graph(pipeline_graph, output_directory):
-        output_dot = pipeline_graph.output_dot(simplify=True)
-        output_location = f"{pipeline_graph.name}.png"
+    def generate_graph_png(pipeline_class, output_directory):
+        output_dot = pipeline_graph_dot(pipeline_class)
+        output_location = f"{pipeline_class.__name__}.png"
         if output_directory:
             output_location = f"{output_directory}/{output_location}"
         dot_cmd = f'echo "{output_dot}" | dot -Tpng -o {output_location}'

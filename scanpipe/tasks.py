@@ -20,16 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import subprocess
-import sys
-
 from django.apps import apps
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
+from scanpipe.pipelines import get_pipeline_class
+
 tasks_logger = get_task_logger(__name__)
-python = sys.executable
 
 
 def info(message, pk):
@@ -54,29 +52,25 @@ def start_next_run_task(run):
 
 
 @shared_task(bind=True)
-def run_pipeline_task(self, run_pk, resume=False):
+def run_pipeline_task(self, run_pk):
     task_id = self.request.id
     info(f"Enter `{self.name}` Task.id={task_id}", run_pk)
 
     run = get_run_instance(run_pk)
     project = run.project
 
-    if resume:
-        cmd_options = f"resume --origin-run-id {run.run_id}"
-    else:
-        cmd_options = f'run --project "{project.name}" --run-uuid "{run.uuid}"'
-
     run.reset_task_values()
     run.set_task_started(task_id)
 
     info(f'Run pipeline: "{run.pipeline}" on project: "{project.name}"', run_pk)
-    cmd = f"{python} {run.pipeline} {cmd_options}"
-    exitcode, output = subprocess.getstatusoutput(cmd)
+    pipeline_class = get_pipeline_class(run.pipeline)
+    pipeline = pipeline_class(project.name)
+    exitcode, output = pipeline.execute()
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
     run.set_task_ended(exitcode, output, refresh_first=True)
 
     if run.task_succeeded:
-        # We keep the temporary files available for resume in case of error
+        # We keep the temporary files available for debugging in case of error
         project.clear_tmp_directory()
         start_next_run_task(run)

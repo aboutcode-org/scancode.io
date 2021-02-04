@@ -20,47 +20,38 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import ast
 import importlib
 import inspect
-import subprocess
-import sys
 from contextlib import contextmanager
-from contextlib import suppress
-
-from django.core.exceptions import ObjectDoesNotExist
-
-from metaflow import FlowSpec
-from metaflow import Parameter
-from metaflow import current
-from metaflow import step
-from metaflow.graph import FlowGraph
-from metaflow.graph import StepVisitor
+from pydoc import getdoc
 
 
-class DoesNotExist(object):
-    pass
-
-
-class Pipeline(FlowSpec):
+class Pipeline:
     """
     Base class for all Pipelines.
     """
 
-    project_name = Parameter("project", help="Project name.", required=True)
-    run_uuid = Parameter("run-uuid", help="Pipeline run uuid.", required=False)
+    steps = ()
 
-    def init_pipeline(self):
+    def __init__(self, project_name):
         """
         Load the Project instance.
-        Set the `run_id` value on the related Run.
         """
-        self.project = self.get_project(self.project_name)
+        self.project = self.get_project(project_name)
+        assert self.steps
 
-        if self.run_uuid:
-            run = self.get_run(self.project, self.run_uuid)
-            if run:
-                self.set_run_id(run)
+    @classmethod
+    def get_doc(cls):
+        return getdoc(cls)
+
+    def execute(self):
+        for step in self.steps:
+            step_name = step.__name__
+            print(f"Start {step_name}")
+            step(self)
+            print(f"End {step_name}")
+
+        return 0, "Completed"
 
     @staticmethod
     def get_project(name):
@@ -70,24 +61,6 @@ class Pipeline(FlowSpec):
         from scanpipe.models import Project
 
         return Project.objects.get(name=name)
-
-    @staticmethod
-    def get_run(project, uuid):
-        """
-        Return the current Pipeline Run instance from the database.
-        """
-        from scanpipe.models import Run
-
-        with suppress(ObjectDoesNotExist):
-            return Run.objects.project(project).get(uuid=uuid)
-
-    @staticmethod
-    def set_run_id(run):
-        """
-        Set the current metaflow `run_id` on the Pipeline Run instance.
-        """
-        run.run_id = current.run_id
-        run.save()
 
     @contextmanager
     def save_errors(self, *exceptions):
@@ -103,43 +76,6 @@ class Pipeline(FlowSpec):
             yield
         except exceptions as error:
             self.project.add_error(error, model=self.__class__.__name__)
-
-
-class PipelineGraph(FlowGraph):
-    """
-    Add ability to load a Graph directly from the Pipeline class without the
-    `__main__` wrapping.
-    """
-
-    def _create_nodes(self, pipeline):
-        """
-        Using `importlib.import_module` in place of `__import__` to get the
-        proper module.
-        """
-        module = importlib.import_module(pipeline.__module__)
-        tree = ast.parse(inspect.getsource(module)).body
-        class_defs = [
-            n for n in tree if isinstance(n, ast.ClassDef) and n.name == self.name
-        ]
-        root = class_defs[0]
-        nodes = {}
-        StepVisitor(nodes, pipeline).visit(root)
-        return nodes
-
-    def output_dot(self, direction="TB", simplify=False):
-        """
-        Add the ability to customize the dot output.
-        """
-        output = super().output_dot()
-
-        if direction:
-            output = output.replace("rankdir=LR;", f"rankdir={direction};")
-
-        if simplify:
-            output = output.replace(' | <font point-size="10">linear</font>', "")
-            output = output.replace(' | <font point-size="10">end</font>', "")
-
-        return output
 
 
 def is_pipeline_subclass(obj):
@@ -158,35 +94,21 @@ def get_pipeline_class(pipeline_location):
     module = importlib.import_module(module_name)
     module_classes = inspect.getmembers(module, is_pipeline_subclass)
     _, pipeline_class = [cls for cls in module_classes][0]
-
     return pipeline_class
 
 
 def get_pipeline_doc(pipeline_location):
     """
-    Return the provided `pipeline_location` documentation from the docstrings.
+    Return the provided `pipeline_location` documentation from the docstring.
     """
-    pipeline_class = get_pipeline_class(pipeline_location)
-    pipeline_graph = PipelineGraph(pipeline_class)
-    return pipeline_graph.doc
+    return get_pipeline_class(pipeline_location).get_doc()
 
 
-def get_pipeline_description(pipeline_location):
-    """
-    Return the structure of the flow, as returned by the `show` command.
-    """
-    cmd = f"{sys.executable} {pipeline_location} show"
-    description = subprocess.getoutput(cmd)
-    return description
-
-
-def get_pipeline_steps(pipeline_location):
+def get_pipeline_graph(pipeline_location):
     """
     Return the graph of steps for the provided `pipeline_location`.
     """
     pipeline_class = get_pipeline_class(pipeline_location)
-    pipeline_graph = PipelineGraph(pipeline_class)
-    nodes = [
-        {"name": node.name, "doc": node.doc} for node in pipeline_graph.nodes.values()
+    return [
+        {"name": step.__name__, "doc": getdoc(step)} for step in pipeline_class.steps
     ]
-    return nodes

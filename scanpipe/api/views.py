@@ -40,7 +40,8 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
-from scanpipe.pipelines import get_pipeline_description
+from scanpipe.pipelines import get_pipeline_class
+from scanpipe.pipelines import get_pipeline_graph
 from scanpipe.views import project_results_json_response
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
@@ -92,7 +93,8 @@ class ProjectViewSet(
         for location, name in scanpipe_app_config.pipelines:
             data[name] = {
                 "location": location,
-                "description": get_pipeline_description(location).split("\n"),
+                "description": get_pipeline_class(location).get_doc(),
+                "steps": get_pipeline_graph(location),
             }
         return Response(data)
 
@@ -188,18 +190,3 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         transaction.on_commit(run.run_pipeline_task_async)
 
         return Response({"status": f"Pipeline {run.pipeline} started."})
-
-    @action(detail=True, methods=["get"])
-    def resume_pipeline(self, request, *args, **kwargs):
-        run = self.get_object()
-
-        if run.task_succeeded:
-            message = {"status": "Cannot resume a successful pipeline run."}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-        elif not run.task_start_date:
-            message = {"status": "Cannot resume never started pipeline run."}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-
-        transaction.on_commit(run.resume_pipeline_task_async)
-
-        return Response({"status": f"Pipeline {run.pipeline} resumed."})

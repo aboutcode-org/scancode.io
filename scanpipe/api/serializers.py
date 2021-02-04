@@ -56,7 +56,6 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
     project = serializers.HyperlinkedRelatedField(
         view_name="project-detail", read_only=True
     )
-    task_output = serializers.SerializerMethodField()
 
     class Meta:
         model = Run
@@ -66,7 +65,6 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "description",
             "project",
             "uuid",
-            "run_id",
             "created_date",
             "task_id",
             "task_start_date",
@@ -76,9 +74,6 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "log",
             "execution_time",
         ]
-
-    def get_task_output(self, run):
-        return run.task_output.split("\n")[1:]
 
 
 class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):

@@ -499,7 +499,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
-    run_id = models.CharField(max_length=16, blank=True, editable=False)
     log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
@@ -512,9 +511,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def run_pipeline_task_async(self):
         tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
-
-    def resume_pipeline_task_async(self):
-        tasks.run_pipeline_task.apply_async(args=[self.pk, True], queue="default")
 
     @property
     def task_succeeded(self):

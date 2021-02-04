@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import functools
 import re
 from contextlib import suppress
 from datetime import datetime
@@ -32,22 +31,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.functional import cached_property
 
 from scancodeio import WORKSPACE_LOCATION
-
-
-def extra_logging(func, extra_logger):
-    """
-    Decorator to add logging customization the default Metaflow logger.
-    This is used as a workaround since Metaflow does not provide any API to customize
-    the logging of Flow/Pipeline execution.
-    """
-
-    @functools.wraps(func)
-    def wrapper_decorator(*args, **kwargs):
-        value = func(*args, **kwargs)
-        extra_logger.log(*args, **kwargs)
-        return value
-
-    return wrapper_decorator
 
 
 class RunLogger:

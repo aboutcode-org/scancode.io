@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django import forms
-from django.db import transaction
 
 import django_filters
 

@@ -20,17 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-# isort:skip_file
-
-import django
-
-django.setup()
-
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import step
 from scanpipe.pipes import outputs
-from scanpipe.pipes.input import copy_inputs
 from scanpipe.pipes import scancode
+from scanpipe.pipes.input import copy_inputs
 
 
 class ScanCodebase(Pipeline):
@@ -56,24 +49,13 @@ class ScanCodebase(Pipeline):
         "--url",
     ]
 
-    @step
-    def start(self):
-        """
-        Initialize the pipeline.
-        """
-        self.init_pipeline()
-        self.next(self.copy_inputs_to_codebase_directory)
-
-    @step
     def copy_inputs_to_codebase_directory(self):
         """
         Copy input files to the project codebase/ directory.
         The code can also be copied there prior to running the Pipeline.
         """
         copy_inputs(self.project.inputs(), self.project.codebase_path)
-        self.next(self.run_extractcode)
 
-    @step
     def run_extractcode(self):
         """
         Extract with extractcode.
@@ -85,9 +67,6 @@ class ScanCodebase(Pipeline):
                 raise_on_error=True,
             )
 
-        self.next(self.run_scancode)
-
-    @step
     def run_scancode(self):
         """
         Scan extracted codebase/ content.
@@ -105,9 +84,6 @@ class ScanCodebase(Pipeline):
         if not self.scan_output.exists():
             raise FileNotFoundError("ScanCode output not available.")
 
-        self.next(self.build_inventory_from_scan)
-
-    @step
     def build_inventory_from_scan(self):
         """
         Process the JSON scan results to populate resources and packages.
@@ -116,22 +92,17 @@ class ScanCodebase(Pipeline):
         scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
         scancode.create_codebase_resources(project, scanned_codebase)
         scancode.create_discovered_packages(project, scanned_codebase)
-        self.next(self.csv_output)
 
-    @step
     def csv_output(self):
         """
         Generate csv outputs.
         """
         outputs.to_csv(self.project)
-        self.next(self.end)
 
-    @step
-    def end(self):
-        """
-        Scan completed.
-        """
-
-
-if __name__ == "__main__":
-    ScanCodebase()
+    steps = (
+        copy_inputs_to_codebase_directory,
+        run_extractcode,
+        run_scancode,
+        build_inventory_from_scan,
+        csv_output,
+    )

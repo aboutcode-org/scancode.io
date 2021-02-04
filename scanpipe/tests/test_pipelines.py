@@ -20,20 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import uuid
-from unittest import mock
-
 from django.test import TestCase
-
-from metaflow.current import current
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import PipelineGraph
 from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_description
 from scanpipe.pipelines import get_pipeline_doc
-from scanpipe.pipelines import get_pipeline_steps
+from scanpipe.pipelines import get_pipeline_graph
 from scanpipe.pipelines import is_pipeline_subclass
 from scanpipe.pipelines.docker import DockerPipeline
 from scanpipe.pipelines.load_inventory import LoadInventoryFromScanCodeScan
@@ -50,31 +43,10 @@ class ScanPipePipelinesTest(TestCase):
         project_instance = Pipeline.get_project(project1.name)
         self.assertEqual(project1, project_instance)
 
-    def test_scanpipe_pipeline_class_get_run(self):
+    def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline(self.docker_pipeline_location)
-        self.assertEqual(run, Pipeline.get_run(project1, run.uuid))
-        self.assertIsNone(Pipeline.get_run(project1, uuid.uuid4()))
-
-    def test_scanpipe_pipeline_class_set_run_id(self):
-        project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline(self.docker_pipeline_location)
-
-        run_id = "1234567890123456"
-        current._set_env(run_id=run_id)
-        Pipeline.set_run_id(run)
-
-        run.refresh_from_db()
-        self.assertEqual(run_id, run.run_id)
-
-    # This patch allows to instantiate a Pipeline subclass bypassing the __init__
-    @mock.patch("metaflow.flowspec.FlowSpec.__init__")
-    def test_scanpipe_pipeline_class_save_errors_context_manager(self, mock_flow_init):
-        mock_flow_init.return_value = None
-
-        project1 = Project.objects.create(name="Analysis")
-        pipeline = DockerPipeline(use_cli=False)
-        pipeline.project = Pipeline.get_project(project1.name)
+        pipeline = DockerPipeline(project_name=project1.name)
+        self.assertEqual(project1, pipeline.project)
 
         with pipeline.save_errors(Exception):
             raise Exception("Error message")
@@ -104,27 +76,10 @@ class ScanPipePipelinesTest(TestCase):
         doc = get_pipeline_doc(self.docker_pipeline_location)
         self.assertEqual("A pipeline to analyze a Docker image.", doc)
 
-    def test_scanpipe_pipelines_get_pipeline_description(self):
-        description = get_pipeline_description(self.docker_pipeline_location)
-        self.assertIn("executing DockerPipeline for user:", description)
-        self.assertIn("A pipeline to analyze a Docker image.", description)
-        self.assertIn("Step start", description)
-        self.assertIn("Step start", description)
-        self.assertIn("Step end", description)
-        self.assertIn("Analysis completed.", description)
-
-    def test_scanpipe_pipelines_get_pipeline_steps(self):
-        steps = get_pipeline_steps(self.docker_pipeline_location)
+    def test_scanpipe_pipelines_get_pipeline_graph(self):
+        graph = get_pipeline_graph(self.docker_pipeline_location)
         expected = [
-            {"name": "start", "doc": "Initialize the pipeline."},
             {"name": "extract_images", "doc": "Extract the images from tarballs."},
+            {"name": "extract_layers", "doc": "Extract layers from images."},
         ]
-        self.assertEqual(expected, steps[0:2])
-
-    def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
-        pipeline_class = get_pipeline_class(self.docker_pipeline_location)
-        pipeline_graph = PipelineGraph(pipeline_class)
-        output_dot = pipeline_graph.output_dot()
-        self.assertIn("rankdir=TB;", output_dot)
-        self.assertIn("start -> extract_images;", output_dot)
-        self.assertIn("tag_not_analyzed_codebase_resources -> end;", output_dot)
+        self.assertEqual(expected, graph[0:2])

@@ -30,33 +30,18 @@ from scanpipe.management.commands import ProjectCommand
 class Command(ProjectCommand):
     help = "Run pipelines of a project."
 
-    def add_arguments(self, parser):
-        super().add_arguments(parser)
-        parser.add_argument(
-            "--resume",
-            action="store_true",
-            help="Resume the latest failed pipeline execution.",
-        )
-
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        if options["resume"]:
-            action = "resume"
-            run = self.project.get_latest_failed_run()
-            task_function = "resume_pipeline_task_async"
-        else:
-            action = "run"
-            run = self.project.get_next_run()
-            task_function = "run_pipeline_task_async"
+        run = self.project.get_next_run()
 
         if not run:
-            raise CommandError(f"No pipelines to {action} on project {self.project}")
+            raise CommandError(f"No pipelines to run on project {self.project}")
 
-        self.stdout.write(f"Pipeline {run.pipeline} {action} in progress...")
-        getattr(run, task_function)()
-
+        self.stdout.write(f"Pipeline {run.pipeline} run in progress...")
+        run.run_pipeline_task_async()
         run.refresh_from_db()
+
         if run.task_succeeded:
             msg = f"{run.pipeline} successfully executed on project {self.project}"
             self.stdout.write(self.style.SUCCESS(msg))

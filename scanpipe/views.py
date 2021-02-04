@@ -23,7 +23,6 @@
 from collections import Counter
 
 from django.contrib import messages
-from django.db.models import Q
 from django.http import FileResponse
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -79,7 +78,7 @@ class ProjectCreateView(generic.CreateView):
                 "location": location,
                 "name": name,
                 "description": pipelines.get_pipeline_doc(location),
-                "steps": pipelines.get_pipeline_steps(location),
+                "steps": pipelines.get_pipeline_graph(location),
             }
             for location, name in scanpipe_app_config.pipelines
         ]
