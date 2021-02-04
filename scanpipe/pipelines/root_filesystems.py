@@ -27,7 +27,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import rootfs
 
 
-class RootfsPipeline(Pipeline):
+class RootFS(Pipeline):
     """
     A pipeline to analyze a Linux root filesystem aka. rootfs.
     """

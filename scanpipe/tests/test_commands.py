@@ -63,8 +63,8 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("graph", self.pipeline_location, "--output", temp_dir, stdout=out)
         out_value = out.getvalue()
         self.assertIn("Graph(s) generated:", out_value)
-        self.assertIn("DockerPipeline.png", out_value)
-        self.assertTrue(Path(f"/{temp_dir}/DockerPipeline.png").exists())
+        self.assertIn("Docker.png", out_value)
+        self.assertTrue(Path(f"/{temp_dir}/Docker.png").exists())
 
     def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
         pipeline_class = get_pipeline_class(self.pipeline_location)

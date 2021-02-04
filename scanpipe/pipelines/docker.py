@@ -28,7 +28,7 @@ from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
 
 
-class DockerPipeline(Pipeline):
+class Docker(Pipeline):
     """
     A pipeline to analyze a Docker image.
     """

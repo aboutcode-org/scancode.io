@@ -24,7 +24,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import scancode
 
 
-class LoadInventoryFromScanCodeScan(Pipeline):
+class LoadInventory(Pipeline):
     """
     A pipeline to load a files and packages inventory from a ScanCode JSON scan.
     (assumed to contain file information and package scan data).

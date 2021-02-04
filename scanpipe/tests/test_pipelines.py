@@ -28,9 +28,9 @@ from scanpipe.pipelines import get_pipeline_class
 from scanpipe.pipelines import get_pipeline_doc
 from scanpipe.pipelines import get_pipeline_graph
 from scanpipe.pipelines import is_pipeline_subclass
-from scanpipe.pipelines.docker import DockerPipeline
-from scanpipe.pipelines.load_inventory import LoadInventoryFromScanCodeScan
-from scanpipe.pipelines.root_filesystems import RootfsPipeline
+from scanpipe.pipelines.docker import Docker
+from scanpipe.pipelines.load_inventory import LoadInventory
+from scanpipe.pipelines.root_filesystems import RootFS
 
 
 class ScanPipePipelinesTest(TestCase):
@@ -45,14 +45,14 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
-        pipeline = DockerPipeline(project_name=project1.name)
+        pipeline = Docker(project_name=project1.name)
         self.assertEqual(project1, pipeline.project)
 
         with pipeline.save_errors(Exception):
             raise Exception("Error message")
 
         error = project1.projecterrors.get()
-        self.assertEqual("DockerPipeline", error.model)
+        self.assertEqual("Docker", error.model)
         self.assertEqual({}, error.details)
         self.assertEqual("Error message", error.message)
         self.assertIn('raise Exception("Error message")', error.traceback)
@@ -60,17 +60,17 @@ class ScanPipePipelinesTest(TestCase):
     def test_scanpipe_pipelines_is_pipeline_subclass(self):
         self.assertFalse(is_pipeline_subclass(None))
         self.assertFalse(is_pipeline_subclass(Pipeline))
-        self.assertTrue(is_pipeline_subclass(DockerPipeline))
-        self.assertTrue(is_pipeline_subclass(RootfsPipeline))
-        self.assertTrue(is_pipeline_subclass(LoadInventoryFromScanCodeScan))
+        self.assertTrue(is_pipeline_subclass(Docker))
+        self.assertTrue(is_pipeline_subclass(RootFS))
+        self.assertTrue(is_pipeline_subclass(LoadInventory))
 
     def test_scanpipe_pipelines_get_pipeline_class(self):
         pipeline_class = get_pipeline_class(self.docker_pipeline_location)
-        self.assertEqual(DockerPipeline, pipeline_class)
+        self.assertEqual(Docker, pipeline_class)
         pipeline_class = get_pipeline_class(self.rootfs_pipeline_location)
-        self.assertEqual(RootfsPipeline, pipeline_class)
+        self.assertEqual(RootFS, pipeline_class)
         pipeline_class = get_pipeline_class(self.scan_pipeline_location)
-        self.assertEqual(LoadInventoryFromScanCodeScan, pipeline_class)
+        self.assertEqual(LoadInventory, pipeline_class)
 
     def test_scanpipe_pipelines_get_pipeline_doc(self):
         doc = get_pipeline_doc(self.docker_pipeline_location)

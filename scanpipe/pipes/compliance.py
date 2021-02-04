@@ -23,7 +23,6 @@
 from scanpipe.models import CodebaseResource
 from scanpipe.pipes import scan_file
 
-
 """
 A common compliance pattern for images is to store known licenses in a /licenses
 directory and the corresponding source code archives for packages that are
@@ -33,8 +32,8 @@ an image (VM or container image).
 Usage example within a Pipeline:
 
 def analyze_licenses_and_sources(self):
-    utilities.tag_compliance_files(self.project)
-    utilities.analyze_compliance_licenses(self.project)
+    util.tag_compliance_files(self.project)
+    util.analyze_compliance_licenses(self.project)
 """
 
 

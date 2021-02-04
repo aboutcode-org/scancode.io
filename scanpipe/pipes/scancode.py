@@ -34,7 +34,6 @@ from scanner.tasks import run_command
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 
-
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
