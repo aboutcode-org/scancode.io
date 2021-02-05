@@ -64,13 +64,6 @@ class RunStatusCommandMixin:
         return status
 
 
-def indent(text, by=0, sep="\n"):
-    """
-    Indent each line of the provided `text`.
-    """
-    return sep.join(" " * by + line for line in text.split(sep))
-
-
 def validate_inputs(inputs):
     """
     Raise an error if one of the provided `inputs` is not an existing file.

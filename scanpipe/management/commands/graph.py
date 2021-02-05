@@ -22,11 +22,11 @@
 
 import subprocess
 import sys
+from textwrap import indent
 
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import indent
 from scanpipe.management.commands import scanpipe_app_config
 from scanpipe.pipelines import get_pipeline_class
 from scanpipe.pipelines import get_pipeline_doc
@@ -88,7 +88,7 @@ class Command(BaseCommand):
             for location, _ in scanpipe_app_config.pipelines:
                 self.stdout.write("- " + self.style.SUCCESS(location))
                 pipeline_doc = get_pipeline_doc(location)
-                self.stdout.write(indent(pipeline_doc, by=2), ending="\n\n")
+                self.stdout.write(indent(pipeline_doc, "  "), ending="\n\n")
             sys.exit(0)
 
         if not is_graphviz_installed():
