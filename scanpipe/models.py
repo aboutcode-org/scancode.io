@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import re
 import shutil
 import traceback
 import uuid
@@ -552,30 +553,23 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         if not self.task_succeeded:
             return
 
+        pattern = re.compile(r"Step \[(?P<step>.+)] completed in (?P<time>.+) seconds")
+
         profiler = {}
-        for line in self.task_output.split("\n"):
-            if not line.endswith(("starting.", "successfully.")):
-                continue
+        for line in self.log.split("\n"):
+            match = pattern.search(line)
+            if match:
+                step, runtime = match.groups()
+                profiler[step] = float(runtime)
 
-            segments = line.split()
-            line_date_str = " ".join(segments[0:2])
-            line_date = datetime.strptime(line_date_str, "%Y-%m-%d %H:%M:%S.%f")
-            step = segments[2].split("/")[1]
-
-            if line.endswith("starting."):
-                profiler[step] = line_date
-            elif line.endswith("successfully."):
-                start_date = profiler[step]
-                profiler[step] = (line_date - start_date).seconds
-
-        if not print_results:
+        if not print_results or not profiler:
             return profiler
 
-        total_run_time = sum(profiler.values())
+        total_runtime = sum(profiler.values())
         padding = max(len(name) for name in profiler.keys()) + 1
-        for step, step_execution_time in profiler.items():
-            percent = round(step_execution_time * 100 / total_run_time, 1)
-            output_str = f"{step:{padding}} {step_execution_time:>3} seconds {percent}%"
+        for step, runtime in profiler.items():
+            percent = round(runtime * 100 / total_runtime, 1)
+            output_str = f"{step:{padding}} {runtime:>3} seconds {percent}%"
             if percent > 50:
                 print("\033[41;37m" + output_str + "\033[m")
             else:

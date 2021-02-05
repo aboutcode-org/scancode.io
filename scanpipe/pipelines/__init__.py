@@ -23,6 +23,7 @@
 import importlib
 import inspect
 import logging
+import timeit
 import traceback
 from contextlib import contextmanager
 from pydoc import getdoc
@@ -68,6 +69,7 @@ class Pipeline:
 
         for step in self.steps:
             self.log(f"Step [{step.__name__}] starting")
+            start_time = timeit.default_timer()
 
             try:
                 step(self)
@@ -76,7 +78,8 @@ class Pipeline:
                 tb = "".join(traceback.format_tb(e.__traceback__))
                 return 1, f"{e}\n\nTraceback:\n{tb}"
 
-            self.log(f"Step [{step.__name__}] completed")
+            run_time = timeit.default_timer() - start_time
+            self.log(f"Step [{step.__name__}] completed in {run_time:.2f} seconds")
 
         self.log(f"Pipeline completed")
 
