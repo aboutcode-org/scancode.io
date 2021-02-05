@@ -44,6 +44,7 @@ from scanpipe import tasks
 from scanpipe.apps import remove_dot_py_suffix
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
+from scanpipe.pipelines import get_pipeline_class
 from scanpipe.pipelines import get_pipeline_doc
 
 
@@ -496,6 +497,10 @@ class RunQuerySet(ProjectRelatedQuerySet):
 
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
+    """
+    The Database representation of a Pipeline execution.
+    """
+
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
@@ -511,6 +516,13 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def run_pipeline_task_async(self):
         tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
+
+    @property
+    def pipeline_class(self):
+        return get_pipeline_class(self.pipeline)
+
+    def make_pipeline_instance(self):
+        return self.pipeline_class(self)
 
     @property
     def task_succeeded(self):
@@ -572,13 +584,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     @property
     def pipeline_basename(self):
         return remove_dot_py_suffix(self.pipeline.split("/")[-1])
-
-    @property
-    def output_log(self):
-        """
-        Return the `task_output` cleaned.
-        """
-        return "\n".join(self.task_output.split("\n")[1:]).strip()
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):

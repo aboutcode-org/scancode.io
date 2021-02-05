@@ -38,14 +38,31 @@ class ScanPipePipelinesTest(TestCase):
     rootfs_pipeline_location = "scanpipe/pipelines/root_filesystems.py"
     scan_pipeline_location = "scanpipe/pipelines/load_inventory.py"
 
-    def test_scanpipe_pipeline_class_get_project(self):
+    def test_scanpipe_pipeline_class_get_doc(self):
+        expected = "A pipeline to analyze a Docker image."
+        self.assertEqual(expected, Docker.get_doc())
+
+    def test_scanpipe_pipeline_class_pipeline_name(self):
         project1 = Project.objects.create(name="Analysis")
-        project_instance = Pipeline.get_project(project1.name)
-        self.assertEqual(project1, project_instance)
+        run = project1.add_pipeline(self.docker_pipeline_location)
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual("Docker", pipeline.pipeline_name)
+
+    def test_scanpipe_pipeline_class_log(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline(self.docker_pipeline_location)
+        pipeline = run.make_pipeline_instance()
+        pipeline.log("Event1")
+        pipeline.log("Event2")
+
+        run.refresh_from_db()
+        self.assertIn("Event1", run.log)
+        self.assertIn("Event2", run.log)
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
-        pipeline = Docker(project_name=project1.name)
+        run = project1.add_pipeline(self.docker_pipeline_location)
+        pipeline = run.make_pipeline_instance()
         self.assertEqual(project1, pipeline.project)
 
         with pipeline.save_errors(Exception):

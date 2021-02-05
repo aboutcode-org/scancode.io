@@ -25,8 +25,6 @@ from django.apps import apps
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
-from scanpipe.pipelines import get_pipeline_class
-
 tasks_logger = get_task_logger(__name__)
 
 
@@ -63,8 +61,8 @@ def run_pipeline_task(self, run_pk):
     run.set_task_started(task_id)
 
     info(f'Run pipeline: "{run.pipeline}" on project: "{project.name}"', run_pk)
-    pipeline_class = get_pipeline_class(run.pipeline)
-    pipeline = pipeline_class(project.name)
+
+    pipeline = run.make_pipeline_instance()
     exitcode, output = pipeline.execute()
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)

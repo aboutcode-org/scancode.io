@@ -22,8 +22,13 @@
 
 import importlib
 import inspect
+import logging
 from contextlib import contextmanager
 from pydoc import getdoc
+
+from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 class Pipeline:
@@ -32,35 +37,43 @@ class Pipeline:
     """
 
     steps = ()
+    run = None
+    project = None
 
-    def __init__(self, project_name):
+    def __init__(self, run):
         """
-        Load the Project instance.
+        Load the Run and Project instances.
         """
-        self.project = self.get_project(project_name)
         assert self.steps
+        self.run = run
+        self.project = run.project
+        self.pipeline_name = self.__class__.__name__
 
     @classmethod
     def get_doc(cls):
         return getdoc(cls)
 
+    def log(self, message):
+        """
+        Log the `message` to this module logger and to the Run instance.
+        """
+        timestamp = timezone.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
+        message = f"{timestamp} {message}"
+        logger.info(message)
+        self.run.append_to_log(message, save=True)
+
     def execute(self):
+        self.log(f"Pipeline [{self.pipeline_name}] starting")
+
         for step in self.steps:
             step_name = step.__name__
-            print(f"Start {step_name}")
+            self.log(f"Step [{step_name}] starting")
             step(self)
-            print(f"End {step_name}")
+            self.log(f"Step [{step_name}] completed")
+
+        self.log(f"Pipeline [{self.pipeline_name}] completed")
 
         return 0, "Completed"
-
-    @staticmethod
-    def get_project(name):
-        """
-        Return the project instance from the database.
-        """
-        from scanpipe.models import Project
-
-        return Project.objects.get(name=name)
 
     @contextmanager
     def save_errors(self, *exceptions):

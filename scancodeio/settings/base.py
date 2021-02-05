@@ -129,6 +129,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# True if running tests through `./manage test`
+IS_TESTS = "test" in sys.argv
+
 # Logging
 
 LOGGING = {
@@ -144,14 +147,15 @@ LOGGING = {
     },
     "loggers": {
         "scanner.tasks": {
-            "handlers": ["console"],
+            "handlers": ["null"] if IS_TESTS else ["console"],
+            "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
+        },
+        "scanpipe.pipelines": {
+            "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
         },
     },
 }
-
-# True if running tests through `./manage test`
-IS_TESTS = "test" in sys.argv
 
 # Instead of sending out real emails the console backend just writes the emails
 # that would be sent to the standard output.
