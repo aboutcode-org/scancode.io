@@ -1,6 +1,12 @@
 // Release notes
 // -------------
 
+### v1.1.0 (unreleased)
+
+- Remove the dependency on Metaflow
+  WARNING: The new Pipelines syntax is not backward compatible with v1.0.x
+  https://github.com/nexB/scancode.io/issues/82
+
 ### v1.0.7 (2021-02-01)
 
 - Add user interface to manage Projects from a web browser
