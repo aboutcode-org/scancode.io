@@ -23,6 +23,7 @@
 import importlib
 import inspect
 import logging
+import traceback
 from contextlib import contextmanager
 from pydoc import getdoc
 
@@ -66,14 +67,20 @@ class Pipeline:
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         for step in self.steps:
-            step_name = step.__name__
-            self.log(f"Step [{step_name}] starting")
-            step(self)
-            self.log(f"Step [{step_name}] completed")
+            self.log(f"Step [{step.__name__}] starting")
 
-        self.log(f"Pipeline [{self.pipeline_name}] completed")
+            try:
+                step(self)
+            except Exception as e:
+                self.log(f"Pipeline failed")
+                tb = "".join(traceback.format_tb(e.__traceback__))
+                return 1, f"{e}\n\nTraceback:\n{tb}"
 
-        return 0, "Completed"
+            self.log(f"Step [{step.__name__}] completed")
+
+        self.log(f"Pipeline completed")
+
+        return 0, ""
 
     @contextmanager
     def save_errors(self, *exceptions):

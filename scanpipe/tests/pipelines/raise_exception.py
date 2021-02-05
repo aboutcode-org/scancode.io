@@ -20,28 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from unittest import mock
-
-from django.test import TestCase
-
-from scanpipe import tasks
-from scanpipe.models import Project
+from scanpipe.pipelines import Pipeline
 
 
-class ScanPipeTasksTest(TestCase):
-    pipeline_location = "scanpipe/tests/pipelines/do_nothing.py"
+class RaiseException(Pipeline):
+    """
+    A pipeline that raises an Exception.
+    """
 
-    @mock.patch("scanpipe.pipelines.Pipeline.execute")
-    def test_scanpipe_tasks_run_pipeline_task(self, mock_execute):
-        project = Project.objects.create(name="my_project")
-        run = project.add_pipeline(self.pipeline_location)
+    def raise_exception(self):
+        raise ValueError("Error message")
 
-        mock_execute.return_value = 0, ""
-        tasks.run_pipeline_task(run.pk)
-        mock_execute.assert_called_once()
-
-        run.refresh_from_db()
-        self.assertEqual(0, run.task_exitcode)
-        self.assertEqual("", run.task_output)
-        self.assertIsNotNone(run.task_start_date)
-        self.assertIsNotNone(run.task_end_date)
+    steps = (raise_exception,)

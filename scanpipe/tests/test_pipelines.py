@@ -59,6 +59,42 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Event1", run.log)
         self.assertIn("Event2", run.log)
 
+    def test_scanpipe_pipeline_class_execute(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("scanpipe/tests/pipelines/do_nothing.py")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, output = pipeline.execute()
+        self.assertEqual(0, exitcode)
+        self.assertEqual("", output)
+
+        run.refresh_from_db()
+        self.assertIn("Pipeline [DoNothing] starting", run.log)
+        self.assertIn("Step [step1] starting", run.log)
+        self.assertIn("Step [step1] completed", run.log)
+        self.assertIn("Step [step2] starting", run.log)
+        self.assertIn("Step [step2] completed", run.log)
+        self.assertIn("Pipeline completed", run.log)
+
+    def test_scanpipe_pipeline_class_execute_with_exception(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("scanpipe/tests/pipelines/raise_exception.py")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, output = pipeline.execute()
+        self.assertEqual(1, exitcode)
+        self.assertTrue(output.startswith("Error message"))
+        self.assertIn("Traceback:", output)
+        self.assertIn("in execute", output)
+        self.assertIn("step(self)", output)
+        self.assertIn("in raise_exception", output)
+        self.assertIn("raise ValueError", output)
+
+        run.refresh_from_db()
+        self.assertIn("Pipeline [RaiseException] starting", run.log)
+        self.assertIn("Step [raise_exception] starting", run.log)
+        self.assertIn("Pipeline failed", run.log)
+
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline(self.docker_pipeline_location)
