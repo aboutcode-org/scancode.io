@@ -20,42 +20,24 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-# isort:skip_file
-
 import os
-
-import django
-
-django.setup()
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import step
 from scanpipe.pipes import rootfs
 
 
-class RootfsPipeline(Pipeline):
+class RootFS(Pipeline):
     """
     A pipeline to analyze a Linux root filesystem aka. rootfs.
     """
 
-    @step
-    def start(self):
-        """
-        Initialize the pipeline.
-        """
-        self.init_pipeline()
-        self.next(self.find_root_filesystems)
-
-    @step
     def find_root_filesystems(self):
         """
         Find the root filesystems in project codebase/.
         """
         self.root_filesystems = list(rootfs.RootFs.from_project_codebase(self.project))
-        self.next(self.collect_rootfs_information)
 
-    @step
     def collect_rootfs_information(self):
         """
         Collect rootfs information and store on project.
@@ -67,51 +49,39 @@ class RootfsPipeline(Pipeline):
             rootfs_data["distro"] = rfs.distro.to_dict()
         self.project.extra_data.update({"images": rootfs_data})
         self.project.save()
-        self.next(self.collect_and_create_codebase_resources)
 
-    @step
     def collect_and_create_codebase_resources(self):
         """
         Collect and create all image files as CodebaseResource.
         """
         for rfs in self.root_filesystems:
             rootfs.create_codebase_resources(self.project, rfs)
-        self.next(self.collect_and_create_system_packages)
 
-    @step
     def collect_and_create_system_packages(self):
         """
         Collect installed system packages for each rootfs based on the distro.
         """
         for rfs in self.root_filesystems:
             rootfs.scan_rootfs_for_system_packages(self.project, rfs)
-        self.next(self.tag_uninteresting_codebase_resources)
 
-    @step
     def tag_uninteresting_codebase_resources(self):
         """
         Flag remaining files not from a system package if they are not worth tracking.
         """
         rootfs.tag_uninteresting_codebase_resources(self.project)
-        self.next(self.scan_for_application_packages)
 
-    @step
     def scan_for_application_packages(self):
         """
         Scan unknown resources for packages infos.
         """
         pipes.scan_for_application_packages(self.project)
-        self.next(self.ignore_empty_files)
 
-    @step
     def ignore_empty_files(self):
         """
         Skip and mark as ignored any empty file.
         """
         rootfs.tag_empty_codebase_resources(self.project)
-        self.next(self.match_not_analyzed_to_system_packages)
 
-    @step
     def match_not_analyzed_to_system_packages(self):
         """
         Match not-yet-analyzed files to files already related to system packages.
@@ -121,9 +91,7 @@ class RootfsPipeline(Pipeline):
             reference_status="system-package",
             not_analyzed_status="",
         )
-        self.next(self.match_not_analyzed_to_application_packages)
 
-    @step
     def match_not_analyzed_to_application_packages(self):
         """
         Match not-yet-analyzed files to files already related to application packages.
@@ -134,38 +102,35 @@ class RootfsPipeline(Pipeline):
             reference_status="application-package",
             not_analyzed_status="",
         )
-        self.next(self.scan_for_files)
 
-    @step
     def scan_for_files(self):
         """
         Scan unknown resources for copyrights, licenses, emails, and urls.
         """
         pipes.scan_for_files(self.project)
-        self.next(self.analyze_scanned_files)
 
-    @step
     def analyze_scanned_files(self):
         """
         Analyze single file scan results for completeness.
         """
         pipes.analyze_scanned_files(self.project)
-        self.next(self.tag_not_analyzed_codebase_resources)
 
-    @step
     def tag_not_analyzed_codebase_resources(self):
         """
         Check for leftover files for sanity. We should have none.
         """
         pipes.tag_not_analyzed_codebase_resources(self.project)
-        self.next(self.end)
 
-    @step
-    def end(self):
-        """
-        Analysis completed.
-        """
-
-
-if __name__ == "__main__":
-    RootfsPipeline()
+    steps = (
+        find_root_filesystems,
+        collect_rootfs_information,
+        collect_and_create_codebase_resources,
+        collect_and_create_system_packages,
+        tag_uninteresting_codebase_resources,
+        scan_for_application_packages,
+        ignore_empty_files,
+        match_not_analyzed_to_system_packages,
+        scan_for_files,
+        analyze_scanned_files,
+        tag_not_analyzed_codebase_resources,
+    )

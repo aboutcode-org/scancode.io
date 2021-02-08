@@ -3,6 +3,7 @@
 # Code validation
 pycodestyle==2.6.0
 black==20.8b1
+isort==5.7.0
 
 # Documentation
 Sphinx==3.4.3

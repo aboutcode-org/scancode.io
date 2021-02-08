@@ -31,7 +31,9 @@ from django.test import TestCase
 from django.utils import timezone
 
 from scanpipe.management.commands.graph import is_graphviz_installed
+from scanpipe.management.commands.graph import pipeline_graph_dot
 from scanpipe.models import Project
+from scanpipe.pipelines import get_pipeline_class
 
 
 def task_success(run):
@@ -61,8 +63,17 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("graph", self.pipeline_location, "--output", temp_dir, stdout=out)
         out_value = out.getvalue()
         self.assertIn("Graph(s) generated:", out_value)
-        self.assertIn("DockerPipeline.png", out_value)
-        self.assertTrue(Path(f"/{temp_dir}/DockerPipeline.png").exists())
+        self.assertIn("Docker.png", out_value)
+        self.assertTrue(Path(f"/{temp_dir}/Docker.png").exists())
+
+    def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
+        pipeline_class = get_pipeline_class(self.pipeline_location)
+        output_dot = pipeline_graph_dot(pipeline_class)
+        self.assertIn("rankdir=TB;", output_dot)
+        self.assertIn('"extract_images"[label=<<b>extract_images</b>>', output_dot)
+        self.assertIn('"extract_layers"[label=<<b>extract_layers</b>>', output_dot)
+        self.assertIn("extract_images -> extract_layers;", output_dot)
+        self.assertIn("extract_layers -> find_images_linux_distro;", output_dot)
 
     def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()
@@ -251,27 +262,6 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = "Error during scanpipe/pipelines/docker.py execution:"
         self.assertIn(expected, err.getvalue())
         self.assertIn("Error log", err.getvalue())
-
-    @mock.patch("scanpipe.models.Run.resume_pipeline_task_async")
-    def test_scanpipe_management_command_run_resume(self, mock_resume_pipeline_task):
-        project = Project.objects.create(name="my_project")
-        options = ["--project", project.name, "--resume"]
-
-        out = StringIO()
-        expected = "No pipelines to resume on project my_project"
-        with self.assertRaisesMessage(CommandError, expected):
-            call_command("run", *options, stdout=out)
-
-        run = project.add_pipeline(self.pipeline_location)
-        run.task_exitcode = 1
-        run.save()
-
-        err = StringIO()
-        with self.assertRaisesMessage(SystemExit, "1"):
-            call_command("run", *options, stdout=out, stderr=err)
-        mock_resume_pipeline_task.assert_called_once()
-        expected = "Error during scanpipe/pipelines/docker.py execution:"
-        self.assertIn(expected, err.getvalue())
 
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")

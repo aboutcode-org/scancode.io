@@ -319,28 +319,23 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
-
         self.assertIsNone(run1.profile())
 
-        run1.task_output = (
-            "Validating your flow...\n"
-            "    The graph looks good!\n"
-            "Running pylint...\n"
-            "    Pylint is happy!\n"
-            "2021-01-08 15:44:19.380 Workflow starting (run-id 1):\n"
-            "2021-01-08 15:44:19.385 [1/start/1 (pid 1)] Task is starting.\n"
-            "2021-01-08 15:44:20.720 [1/start/1 (pid 1)] Task finished successfully.\n"
-            "2021-01-08 15:44:20.727 [1/step1/2 (pid 1)] Task is starting.\n"
-            "2021-01-08 15:44:26.722 [1/step1/2 (pid 1)] Task finished successfully.\n"
-            "2021-01-08 15:44:26.729 [1/step2/3 (pid 1)] Task is starting.\n"
-            "2021-01-08 15:44:31.619 [1/step2/3 (pid 1)] Task finished successfully.\n"
-            "2021-01-08 15:44:31.626 [1/step3/4 (pid 1)] Task is starting.\n"
-            "2021-01-08 15:44:33.119 [1/step3/4 (pid 1)] Task finished successfully.\n"
-            "2021-01-08 15:44:38.481 [1/step4/5 (pid 1)] Task is starting.\n"
-            "2021-01-08 15:54:40.042 [1/step4/5 (pid 1)] Task finished successfully.\n"
-            "2021-01-08 15:55:04.345 [1/end/13 (pid 1)] Task is starting.\n"
-            "2021-01-08 15:55:05.651 [1/end/13 (pid 1)] Task finished successfully.\n"
-            "2021-01-08 15:55:05.652 Done!'"
+        run1.log = (
+            "2021-02-05 12:46:47.63 Pipeline [ScanCodebase] starting\n"
+            "2021-02-05 12:46:47.63 Step [copy_inputs_to_codebase_directory] starting\n"
+            "2021-02-05 12:46:47.63 Step [copy_inputs_to_codebase_directory]"
+            " completed in 0.00 seconds\n"
+            "2021-02-05 12:46:47.63 Step [run_extractcode] starting\n"
+            "2021-02-05 12:46:48.13 Step [run_extractcode] completed in 0.50 seconds\n"
+            "2021-02-05 12:46:48.14 Step [run_scancode] starting\n"
+            "2021-02-05 12:46:52.59 Step [run_scancode] completed in 4.45 seconds\n"
+            "2021-02-05 12:46:52.59 Step [build_inventory_from_scan] starting\n"
+            "2021-02-05 12:46:52.75 Step [build_inventory_from_scan]"
+            " completed in 0.16 seconds\n"
+            "2021-02-05 12:46:52.75 Step [csv_output] starting\n"
+            "2021-02-05 12:46:52.82 Step [csv_output] completed in 0.06 seconds\n"
+            "2021-02-05 12:46:52.82 Pipeline completed\n"
         )
         run1.save()
         self.assertIsNone(run1.profile())
@@ -349,12 +344,11 @@ class ScanPipeModelsTest(TestCase):
         run1.save()
 
         expected = {
-            "start": 1,
-            "step1": 5,
-            "step2": 4,
-            "step3": 1,
-            "step4": 601,
-            "end": 1,
+            "build_inventory_from_scan": 0.16,
+            "copy_inputs_to_codebase_directory": 0.0,
+            "csv_output": 0.06,
+            "run_extractcode": 0.5,
+            "run_scancode": 4.45,
         }
         self.assertEqual(expected, run1.profile())
 
@@ -363,12 +357,11 @@ class ScanPipeModelsTest(TestCase):
             self.assertIsNone(run1.profile(print_results=True))
 
         expected = (
-            "start    1 seconds 0.2%\n"
-            "step1    5 seconds 0.8%\n"
-            "step2    4 seconds 0.7%\n"
-            "step3    1 seconds 0.2%\n"
-            "\x1b[41;37mstep4  601 seconds 98.0%\x1b[m\n"
-            "end      1 seconds 0.2%\n"
+            "copy_inputs_to_codebase_directory  0.0 seconds 0.0%\n"
+            "run_extractcode                    0.5 seconds 9.7%\n"
+            "\x1b[41;37mrun_scancode                       4.45 seconds 86.1%\x1b[m\n"
+            "build_inventory_from_scan          0.16 seconds 3.1%\n"
+            "csv_output                         0.06 seconds 1.2%\n"
         )
         self.assertEqual(expected, output.getvalue())
 

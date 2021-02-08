@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import re
 import shutil
 import traceback
 import uuid
@@ -44,6 +45,7 @@ from scanpipe import tasks
 from scanpipe.apps import remove_dot_py_suffix
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
+from scanpipe.pipelines import get_pipeline_class
 from scanpipe.pipelines import get_pipeline_doc
 
 
@@ -496,10 +498,13 @@ class RunQuerySet(ProjectRelatedQuerySet):
 
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
+    """
+    The Database representation of a Pipeline execution.
+    """
+
     pipeline = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
-    run_id = models.CharField(max_length=16, blank=True, editable=False)
     log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
@@ -513,8 +518,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def run_pipeline_task_async(self):
         tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
 
-    def resume_pipeline_task_async(self):
-        tasks.run_pipeline_task.apply_async(args=[self.pk, True], queue="default")
+    @property
+    def pipeline_class(self):
+        return get_pipeline_class(self.pipeline)
+
+    def make_pipeline_instance(self):
+        return self.pipeline_class(self)
 
     @property
     def task_succeeded(self):
@@ -544,30 +553,23 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         if not self.task_succeeded:
             return
 
+        pattern = re.compile(r"Step \[(?P<step>.+)] completed in (?P<time>.+) seconds")
+
         profiler = {}
-        for line in self.task_output.split("\n"):
-            if not line.endswith(("starting.", "successfully.")):
-                continue
+        for line in self.log.split("\n"):
+            match = pattern.search(line)
+            if match:
+                step, runtime = match.groups()
+                profiler[step] = float(runtime)
 
-            segments = line.split()
-            line_date_str = " ".join(segments[0:2])
-            line_date = datetime.strptime(line_date_str, "%Y-%m-%d %H:%M:%S.%f")
-            step = segments[2].split("/")[1]
-
-            if line.endswith("starting."):
-                profiler[step] = line_date
-            elif line.endswith("successfully."):
-                start_date = profiler[step]
-                profiler[step] = (line_date - start_date).seconds
-
-        if not print_results:
+        if not print_results or not profiler:
             return profiler
 
-        total_run_time = sum(profiler.values())
+        total_runtime = sum(profiler.values())
         padding = max(len(name) for name in profiler.keys()) + 1
-        for step, step_execution_time in profiler.items():
-            percent = round(step_execution_time * 100 / total_run_time, 1)
-            output_str = f"{step:{padding}} {step_execution_time:>3} seconds {percent}%"
+        for step, runtime in profiler.items():
+            percent = round(runtime * 100 / total_runtime, 1)
+            output_str = f"{step:{padding}} {runtime:>3} seconds {percent}%"
             if percent > 50:
                 print("\033[41;37m" + output_str + "\033[m")
             else:
@@ -576,13 +578,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     @property
     def pipeline_basename(self):
         return remove_dot_py_suffix(self.pipeline.split("/")[-1])
-
-    @property
-    def output_log(self):
-        """
-        Return the `task_output` cleaned.
-        """
-        return "\n".join(self.task_output.split("\n")[1:]).strip()
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):

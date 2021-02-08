@@ -20,33 +20,21 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import sys
-
-from django.core.management import CommandError
-
-from scanpipe.management.commands import ProjectCommand
+from scanpipe.pipelines import Pipeline
 
 
-class Command(ProjectCommand):
-    help = "Run pipelines of a project."
+class DoNothing(Pipeline):
+    """
+    A pipeline that does nothing, in 2 steps.
+    """
 
-    def handle(self, *args, **options):
-        super().handle(*args, **options)
+    def step1(self):
+        pass
 
-        run = self.project.get_next_run()
+    def step2(self):
+        pass
 
-        if not run:
-            raise CommandError(f"No pipelines to run on project {self.project}")
-
-        self.stdout.write(f"Pipeline {run.pipeline} run in progress...")
-        run.run_pipeline_task_async()
-        run.refresh_from_db()
-
-        if run.task_succeeded:
-            msg = f"{run.pipeline} successfully executed on project {self.project}"
-            self.stdout.write(self.style.SUCCESS(msg))
-        else:
-            msg = f"Error during {run.pipeline} execution:\n"
-            self.stderr.write(self.style.ERROR(msg))
-            self.stderr.write(run.task_output)
-            sys.exit(1)
+    steps = (
+        step1,
+        step2,
+    )

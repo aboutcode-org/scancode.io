@@ -16,14 +16,6 @@
             {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
           </div>
         </div>
-        {% if run.run_id %}
-          <div class="control">
-            <div class="tags has-addons">
-              <span class="tag is-dark">Run ID</span>
-              <span class="tag is-info">{{ run.run_id }}</span>
-            </div>
-          </div>
-        {% endif %}
         {% if run.task_exitcode %}
           <div class="control">
             <div class="tags has-addons">
@@ -65,13 +57,16 @@
           </div>
         {% endif %}
       </div>
-      {% if run.output_log %}
-        <figure class="highlight">
-          <pre class="log p-3"><code>{{ run.output_log }}</code></pre>
-        </figure>
-      {% elif run.log %}
+      {% if run.log %}
+        <span class="tag is-dark tag-header">Run log</span>
         <figure class="highlight">
           <pre class="log p-3"><code>{{ run.log }}</code></pre>
+        </figure>
+      {% endif %}
+      {% if run.task_output %}
+        <span class="tag is-dark tag-header">Task output</span>
+        <figure class="highlight">
+          <pre class="log p-3"><code>{{ run.task_output }}</code></pre>
         </figure>
       {% endif %}
     </section>

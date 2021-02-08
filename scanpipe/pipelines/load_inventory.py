@@ -20,32 +20,16 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-# isort:skip_file
-
-import django
-
-django.setup()
-
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import step
 from scanpipe.pipes import scancode
 
 
-class LoadInventoryFromScanCodeScan(Pipeline):
+class LoadInventory(Pipeline):
     """
     A pipeline to load a files and packages inventory from a ScanCode JSON scan.
     (assumed to contain file information and package scan data).
     """
 
-    @step
-    def start(self):
-        """
-        Initialize the pipeline.
-        """
-        self.init_pipeline()
-        self.next(self.get_scan_json_input)
-
-    @step
     def get_scan_json_input(self):
         """
         Locate the JSON scan input from the project input/ directory.
@@ -54,9 +38,7 @@ class LoadInventoryFromScanCodeScan(Pipeline):
         if len(inputs) != 1:
             raise Exception("Only 1 JSON input file supported")
         self.input_location = str(inputs[0].absolute())
-        self.next(self.build_inventory_from_scan)
 
-    @step
     def build_inventory_from_scan(self):
         """
         Process the JSON scan to populate resources and packages.
@@ -65,14 +47,8 @@ class LoadInventoryFromScanCodeScan(Pipeline):
         scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
         scancode.create_codebase_resources(project, scanned_codebase)
         scancode.create_discovered_packages(project, scanned_codebase)
-        self.next(self.end)
 
-    @step
-    def end(self):
-        """
-        Inventory loaded.
-        """
-
-
-if __name__ == "__main__":
-    LoadInventoryFromScanCodeScan()
+    steps = (
+        get_scan_json_input,
+        build_inventory_from_scan,
+    )

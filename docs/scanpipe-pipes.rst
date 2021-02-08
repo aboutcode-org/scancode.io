@@ -18,6 +18,11 @@ Codebase
 .. automodule:: scanpipe.pipes.codebase
     :members:
 
+Compliance
+----------
+.. automodule:: scanpipe.pipes.compliance
+    :members:
+
 Debian
 ------
 .. automodule:: scanpipe.pipes.debian
@@ -43,9 +48,4 @@ RootFS
 ScanCode
 --------
 .. automodule:: scanpipe.pipes.scancode
-    :members:
-
-Utilities
----------
-.. automodule:: scanpipe.pipes.utilities
     :members:

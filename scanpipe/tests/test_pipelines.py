@@ -20,24 +20,17 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import uuid
-from unittest import mock
-
 from django.test import TestCase
-
-from metaflow.current import current
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import PipelineGraph
 from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_description
 from scanpipe.pipelines import get_pipeline_doc
-from scanpipe.pipelines import get_pipeline_steps
+from scanpipe.pipelines import get_pipeline_graph
 from scanpipe.pipelines import is_pipeline_subclass
-from scanpipe.pipelines.docker import DockerPipeline
-from scanpipe.pipelines.load_inventory import LoadInventoryFromScanCodeScan
-from scanpipe.pipelines.root_filesystems import RootfsPipeline
+from scanpipe.pipelines.docker import Docker
+from scanpipe.pipelines.load_inventory import LoadInventory
+from scanpipe.pipelines.root_filesystems import RootFS
 
 
 class ScanPipePipelinesTest(TestCase):
@@ -45,42 +38,74 @@ class ScanPipePipelinesTest(TestCase):
     rootfs_pipeline_location = "scanpipe/pipelines/root_filesystems.py"
     scan_pipeline_location = "scanpipe/pipelines/load_inventory.py"
 
-    def test_scanpipe_pipeline_class_get_project(self):
-        project1 = Project.objects.create(name="Analysis")
-        project_instance = Pipeline.get_project(project1.name)
-        self.assertEqual(project1, project_instance)
+    def test_scanpipe_pipeline_class_get_doc(self):
+        expected = "A pipeline to analyze a Docker image."
+        self.assertEqual(expected, Docker.get_doc())
 
-    def test_scanpipe_pipeline_class_get_run(self):
-        project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline(self.docker_pipeline_location)
-        self.assertEqual(run, Pipeline.get_run(project1, run.uuid))
-        self.assertIsNone(Pipeline.get_run(project1, uuid.uuid4()))
-
-    def test_scanpipe_pipeline_class_set_run_id(self):
+    def test_scanpipe_pipeline_class_pipeline_name(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline(self.docker_pipeline_location)
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual("Docker", pipeline.pipeline_name)
 
-        run_id = "1234567890123456"
-        current._set_env(run_id=run_id)
-        Pipeline.set_run_id(run)
+    def test_scanpipe_pipeline_class_log(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline(self.docker_pipeline_location)
+        pipeline = run.make_pipeline_instance()
+        pipeline.log("Event1")
+        pipeline.log("Event2")
 
         run.refresh_from_db()
-        self.assertEqual(run_id, run.run_id)
+        self.assertIn("Event1", run.log)
+        self.assertIn("Event2", run.log)
 
-    # This patch allows to instantiate a Pipeline subclass bypassing the __init__
-    @mock.patch("metaflow.flowspec.FlowSpec.__init__")
-    def test_scanpipe_pipeline_class_save_errors_context_manager(self, mock_flow_init):
-        mock_flow_init.return_value = None
-
+    def test_scanpipe_pipeline_class_execute(self):
         project1 = Project.objects.create(name="Analysis")
-        pipeline = DockerPipeline(use_cli=False)
-        pipeline.project = Pipeline.get_project(project1.name)
+        run = project1.add_pipeline("scanpipe/tests/pipelines/do_nothing.py")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, output = pipeline.execute()
+        self.assertEqual(0, exitcode)
+        self.assertEqual("", output)
+
+        run.refresh_from_db()
+        self.assertIn("Pipeline [DoNothing] starting", run.log)
+        self.assertIn("Step [step1] starting", run.log)
+        self.assertIn("Step [step1] completed", run.log)
+        self.assertIn("Step [step2] starting", run.log)
+        self.assertIn("Step [step2] completed", run.log)
+        self.assertIn("Pipeline completed", run.log)
+
+    def test_scanpipe_pipeline_class_execute_with_exception(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("scanpipe/tests/pipelines/raise_exception.py")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, output = pipeline.execute()
+        self.assertEqual(1, exitcode)
+        self.assertTrue(output.startswith("Error message"))
+        self.assertIn("Traceback:", output)
+        self.assertIn("in execute", output)
+        self.assertIn("step(self)", output)
+        self.assertIn("in raise_exception", output)
+        self.assertIn("raise ValueError", output)
+
+        run.refresh_from_db()
+        self.assertIn("Pipeline [RaiseException] starting", run.log)
+        self.assertIn("Step [raise_exception] starting", run.log)
+        self.assertIn("Pipeline failed", run.log)
+
+    def test_scanpipe_pipeline_class_save_errors_context_manager(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline(self.docker_pipeline_location)
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual(project1, pipeline.project)
 
         with pipeline.save_errors(Exception):
             raise Exception("Error message")
 
         error = project1.projecterrors.get()
-        self.assertEqual("DockerPipeline", error.model)
+        self.assertEqual("Docker", error.model)
         self.assertEqual({}, error.details)
         self.assertEqual("Error message", error.message)
         self.assertIn('raise Exception("Error message")', error.traceback)
@@ -88,43 +113,26 @@ class ScanPipePipelinesTest(TestCase):
     def test_scanpipe_pipelines_is_pipeline_subclass(self):
         self.assertFalse(is_pipeline_subclass(None))
         self.assertFalse(is_pipeline_subclass(Pipeline))
-        self.assertTrue(is_pipeline_subclass(DockerPipeline))
-        self.assertTrue(is_pipeline_subclass(RootfsPipeline))
-        self.assertTrue(is_pipeline_subclass(LoadInventoryFromScanCodeScan))
+        self.assertTrue(is_pipeline_subclass(Docker))
+        self.assertTrue(is_pipeline_subclass(RootFS))
+        self.assertTrue(is_pipeline_subclass(LoadInventory))
 
     def test_scanpipe_pipelines_get_pipeline_class(self):
         pipeline_class = get_pipeline_class(self.docker_pipeline_location)
-        self.assertEqual(DockerPipeline, pipeline_class)
+        self.assertEqual(Docker, pipeline_class)
         pipeline_class = get_pipeline_class(self.rootfs_pipeline_location)
-        self.assertEqual(RootfsPipeline, pipeline_class)
+        self.assertEqual(RootFS, pipeline_class)
         pipeline_class = get_pipeline_class(self.scan_pipeline_location)
-        self.assertEqual(LoadInventoryFromScanCodeScan, pipeline_class)
+        self.assertEqual(LoadInventory, pipeline_class)
 
     def test_scanpipe_pipelines_get_pipeline_doc(self):
         doc = get_pipeline_doc(self.docker_pipeline_location)
         self.assertEqual("A pipeline to analyze a Docker image.", doc)
 
-    def test_scanpipe_pipelines_get_pipeline_description(self):
-        description = get_pipeline_description(self.docker_pipeline_location)
-        self.assertIn("executing DockerPipeline for user:", description)
-        self.assertIn("A pipeline to analyze a Docker image.", description)
-        self.assertIn("Step start", description)
-        self.assertIn("Step start", description)
-        self.assertIn("Step end", description)
-        self.assertIn("Analysis completed.", description)
-
-    def test_scanpipe_pipelines_get_pipeline_steps(self):
-        steps = get_pipeline_steps(self.docker_pipeline_location)
+    def test_scanpipe_pipelines_get_pipeline_graph(self):
+        graph = get_pipeline_graph(self.docker_pipeline_location)
         expected = [
-            {"name": "start", "doc": "Initialize the pipeline."},
             {"name": "extract_images", "doc": "Extract the images from tarballs."},
+            {"name": "extract_layers", "doc": "Extract layers from images."},
         ]
-        self.assertEqual(expected, steps[0:2])
-
-    def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
-        pipeline_class = get_pipeline_class(self.docker_pipeline_location)
-        pipeline_graph = PipelineGraph(pipeline_class)
-        output_dot = pipeline_graph.output_dot()
-        self.assertIn("rankdir=TB;", output_dot)
-        self.assertIn("start -> extract_images;", output_dot)
-        self.assertIn("tag_not_analyzed_codebase_resources -> end;", output_dot)
+        self.assertEqual(expected, graph[0:2])

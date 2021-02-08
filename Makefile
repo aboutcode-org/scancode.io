@@ -45,7 +45,6 @@ conf:
 	@echo "-> Configure the Python venv and install dependencies"
 	${PYTHON_EXE} -m venv .
 	@${ACTIVATE} pip install -r etc/requirements/base.txt
-	@${ACTIVATE} pip install --editable .
 	# Workaround https://github.com/python/typing/issues/573#issuecomment-405986724
 	@${ACTIVATE} pip uninstall --yes typing
 
@@ -68,13 +67,13 @@ check:
 	@echo "-> Run pycodestyle (PEP8) validation"
 	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings,data,pipelines,var .
 	@echo "-> Run isort imports ordering validation"
-	@${ACTIVATE} isort --recursive --check-only .
+	@${ACTIVATE} isort --check-only .
 	@echo "-> Run black validation"
 	@${ACTIVATE} black --check ${BLACK_ARGS}
 
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"
-	bin/isort --recursive --apply .
+	bin/isort .
 
 black:
 	@echo "-> Apply black code formatter"

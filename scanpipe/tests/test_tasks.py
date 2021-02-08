@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import sys
 from unittest import mock
 
 from django.test import TestCase
@@ -29,28 +28,20 @@ from scanpipe import tasks
 from scanpipe.models import Project
 
 
-# WARNING: Running the actual Pipeline execution within a subprocess will not be
-# within the test context and will hit the default database.
-# Therefore, the mocking of subprocess function is required to test the tasks functions.
-@mock.patch("subprocess.getstatusoutput")
 class ScanPipeTasksTest(TestCase):
-    pipeline_location = "scanpipe/pipelines/docker.py"
+    pipeline_location = "scanpipe/tests/pipelines/do_nothing.py"
 
-    def test_scanpipe_tasks_run_pipeline_task(self, mock_getstatusoutput):
+    @mock.patch("scanpipe.pipelines.Pipeline.execute")
+    def test_scanpipe_tasks_run_pipeline_task(self, mock_execute):
         project = Project.objects.create(name="my_project")
         run = project.add_pipeline(self.pipeline_location)
 
-        mock_getstatusoutput.return_value = (0, "mocked_output")
+        mock_execute.return_value = 0, ""
         tasks.run_pipeline_task(run.pk)
-        expected_cmd = (
-            f"{sys.executable} {self.pipeline_location} run "
-            f'--project "my_project" '
-            f'--run-uuid "{run.uuid}"'
-        )
-        mock_getstatusoutput.assert_called_once_with(expected_cmd)
+        mock_execute.assert_called_once()
 
         run.refresh_from_db()
         self.assertEqual(0, run.task_exitcode)
-        self.assertEqual("mocked_output", run.task_output)
+        self.assertEqual("", run.task_output)
         self.assertIsNotNone(run.task_start_date)
         self.assertIsNotNone(run.task_end_date)
