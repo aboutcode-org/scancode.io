@@ -270,7 +270,7 @@ def analyze_scanned_files(project):
     Set the status for CodebaseResource with unknown or no licenses.
     """
     queryset = CodebaseResource.objects.project(project).files().status("scanned")
-    queryset.no_licenses().update(status="no-licenses")
+    queryset.has_no_licenses().update(status="no-licenses")
 
     for codebase_resource in queryset:
         if has_unknown_license(codebase_resource):
