@@ -42,7 +42,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
-from scanpipe.pipes.outputs import JSONResultsGenerator
+from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import package_data1
 
 

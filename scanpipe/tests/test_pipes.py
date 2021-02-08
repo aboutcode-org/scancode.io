@@ -33,7 +33,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import filename_now
-from scanpipe.pipes import outputs
+from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.tests import mocked_now
@@ -74,7 +74,7 @@ class ScanPipePipesTest(TestCase):
 
         output_file_path = project1.get_output_file_path("packages", "csv")
         with output_file_path.open("w") as output_file:
-            outputs.queryset_to_csv_file(queryset, fieldnames, output_file)
+            output.queryset_to_csv_file(queryset, fieldnames, output_file)
 
         expected = [
             "purl,name,version\n",
@@ -87,7 +87,7 @@ class ScanPipePipesTest(TestCase):
         fieldnames = ["for_packages", "path"]
         output_file_path = project1.get_output_file_path("resources", "csv")
         with output_file_path.open("w") as output_file:
-            outputs.queryset_to_csv_file(queryset, fieldnames, output_file)
+            output.queryset_to_csv_file(queryset, fieldnames, output_file)
 
         expected = [
             "for_packages,path\n",
@@ -112,7 +112,7 @@ class ScanPipePipesTest(TestCase):
 
         output_file = project1.get_output_file_path("packages", "csv")
         with output_file.open("w") as output_stream:
-            generator = outputs.queryset_to_csv_stream(
+            generator = output.queryset_to_csv_stream(
                 queryset, fieldnames, output_stream
             )
             collections.deque(generator, maxlen=0)  # Exhaust the generator
@@ -128,12 +128,12 @@ class ScanPipePipesTest(TestCase):
         fieldnames = ["for_packages", "path"]
         output_file = project1.get_output_file_path("resources", "csv")
         with output_file.open("w") as output_stream:
-            generator = outputs.queryset_to_csv_stream(
+            generator = output.queryset_to_csv_stream(
                 queryset, fieldnames, output_stream
             )
             collections.deque(generator, maxlen=0)  # Exhaust the generator
 
-        outputs.queryset_to_csv_stream(queryset, fieldnames, output_file)
+        output.queryset_to_csv_stream(queryset, fieldnames, output_file)
 
         expected = [
             "for_packages,path\n",
@@ -145,7 +145,7 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_outputs_to_csv(self):
         project1 = Project.objects.create(name="Analysis")
-        output_files = outputs.to_csv(project=project1)
+        output_files = output.to_csv(project=project1)
         expected = [
             "codebaseresource-2010-10-10-10-10-10.csv",
             "discoveredpackage-2010-10-10-10-10-10.csv",
@@ -161,7 +161,7 @@ class ScanPipePipesTest(TestCase):
         )
         DiscoveredPackage.create_for_resource(package_data1, codebase_resource)
 
-        output_file = outputs.to_json(project=project1)
+        output_file = output.to_json(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
 
         with output_file.open() as f:
@@ -182,7 +182,7 @@ class ScanPipePipesTest(TestCase):
         )
         DiscoveredPackage.create_for_resource(package_data1, codebase_resource)
 
-        output_file = outputs.to_xlsx(project=project1)
+        output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)

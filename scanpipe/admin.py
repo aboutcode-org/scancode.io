@@ -44,7 +44,7 @@ from scanpipe.api.serializers import get_serializer_fields
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectError
-from scanpipe.pipes.outputs import queryset_to_csv_stream
+from scanpipe.pipes.output import queryset_to_csv_stream
 
 
 class ListDisplayField:

@@ -3,6 +3,8 @@
 
 ### v1.1.0 (unreleased)
 
+- Rename the pipes.outputs module to pipes.output for consistency
+
 - Remove the dependency on Metaflow
   WARNING: The new Pipelines syntax is not backward compatible with v1.0.x
   https://github.com/nexB/scancode.io/issues/82

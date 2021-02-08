@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import outputs
+from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_inputs
 
@@ -97,7 +97,7 @@ class ScanCodebase(Pipeline):
         """
         Generate csv outputs.
         """
-        outputs.to_csv(self.project)
+        output.to_csv(self.project)
 
     steps = (
         copy_inputs_to_codebase_directory,

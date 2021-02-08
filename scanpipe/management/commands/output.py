@@ -21,9 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.pipes.outputs import to_csv
-from scanpipe.pipes.outputs import to_json
-from scanpipe.pipes.outputs import to_xlsx
+from scanpipe.pipes.output import to_csv
+from scanpipe.pipes.output import to_json
+from scanpipe.pipes.output import to_xlsx
 
 
 class Command(ProjectCommand):

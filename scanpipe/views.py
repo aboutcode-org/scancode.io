@@ -42,7 +42,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.pipes import codebase
-from scanpipe.pipes import outputs
+from scanpipe.pipes import output
 
 
 class PrefetchRelatedViewMixin:
@@ -203,7 +203,7 @@ def project_results_json_response(project, as_attachment=False):
     class.
     If `as_attachment` is True, the response will force the download of the file.
     """
-    results_generator = outputs.JSONResultsGenerator(project)
+    results_generator = output.JSONResultsGenerator(project)
     response = FileResponse(
         streaming_content=results_generator,
         content_type="application/json",
@@ -225,7 +225,7 @@ class ProjectResultsView(ProjectViewMixin, generic.DetailView):
             return project_results_json_response(project, as_attachment=True)
 
         elif format == "xlsx":
-            output_file = outputs.to_xlsx(project)
+            output_file = output.to_xlsx(project)
             filename = f"{project.name}_{output_file.name}"
             return FileResponse(output_file.open("rb"), filename=filename)
 

@@ -33,9 +33,9 @@ Docker
 .. automodule:: scanpipe.pipes.docker
     :members:
 
-Outputs
--------
-.. automodule:: scanpipe.pipes.outputs
+Output
+------
+.. automodule:: scanpipe.pipes.output
     :members:
     :exclude-members: JSONResultsGenerator
 
