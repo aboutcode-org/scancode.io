@@ -212,3 +212,13 @@ def run_command(cmd):
 
     exitcode, output = subprocess.getstatusoutput(cmd)
     return exitcode, output
+
+
+def inject_policy_data(licenses, policies):
+    """
+    Inject license policies from the `policies` index on the provided licenses list.
+    """
+    for license_data in licenses:
+        key = license_data.get("key")
+        license_data["policy"] = policies.get(key, None)
+    return licenses

@@ -26,6 +26,7 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 
+from django.apps import apps
 from django.conf import settings
 
 import packagedcode
@@ -42,6 +43,8 @@ from scanpipe.models import CodebaseResource
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 # The maximum number of processes that can be used to execute the given calls.
 # If None or not given then as many worker processes, minus one, will be created as the
@@ -271,6 +274,12 @@ def create_codebase_resources(project, scanned_codebase):
         path = resource_data.pop("path")
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
         resource_data["type"] = CodebaseResource.Type[resource_type]
+
+        policies = scanpipe_app_config.license_policies
+        if policies:
+            licenses = resource_data.get("licenses")
+            if licenses:
+                resource_data["licenses"] = pipes.inject_policy_data(licenses, policies)
 
         CodebaseResource.objects.get_or_create(
             project=project,
