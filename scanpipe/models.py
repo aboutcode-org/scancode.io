@@ -32,6 +32,7 @@ from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db import transaction
+from django.db.models import Q
 from django.forms import model_to_dict
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -584,8 +585,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def status(self, status=None):
         if status:
             return self.filter(status=status)
-
-        return self.exclude(status="")
+        return self.filter(~Q(status=""))
 
     def no_status(self):
         return self.filter(status="")
@@ -606,7 +606,13 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(type=self.model.Type.SYMLINK)
 
     def without_symlinks(self):
-        return self.exclude(type=self.model.Type.SYMLINK)
+        return self.filter(~Q(type=self.model.Type.SYMLINK))
+
+    def has_licenses(self):
+        return self.filter(~Q(licenses=[]))
+
+    def has_no_licenses(self):
+        return self.filter(licenses=[])
 
 
 class ScanFieldsModelMixin(models.Model):

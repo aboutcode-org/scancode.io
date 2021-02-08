@@ -439,6 +439,20 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(directory, qs)
         self.assertNotIn(symlink, qs)
 
+        file.licenses = [{"key": "bsd-new", "name": "BSD-3-Clause"}]
+        file.save()
+        qs = CodebaseResource.objects.has_licenses()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+        self.assertNotIn(directory, qs)
+        self.assertNotIn(symlink, qs)
+
+        qs = CodebaseResource.objects.has_no_licenses()
+        self.assertEqual(2, len(qs))
+        self.assertNotIn(file, qs)
+        self.assertIn(directory, qs)
+        self.assertIn(symlink, qs)
+
         self.assertEqual(0, CodebaseResource.objects.in_package().count())
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
