@@ -151,6 +151,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
 
 class CodebaseResourceSerializer(serializers.ModelSerializer):
     for_packages = serializers.JSONField()
+    compliance_alert = serializers.CharField()
 
     class Meta:
         model = CodebaseResource

@@ -43,6 +43,8 @@ SECRET_KEY = env.str("SECRET_KEY")
 
 SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])
 
+POLICIES_FILE = env.str("POLICIES_FILE", default=".policies.yml")
+
 # Application definition
 
 INSTALLED_APPS = (

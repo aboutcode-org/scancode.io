@@ -761,6 +761,18 @@ class CodebaseResource(
     def is_symlink(self):
         return self.type == self.Type.SYMLINK
 
+    @property
+    def compliance_alert(self):
+        alerts = [
+            license_data.get("policy", {}).get("compliance_alert")
+            for license_data in self.licenses
+        ]
+        if "error" in alerts:
+            return "error"
+        elif "warning" in alerts:
+            return "warning"
+        return ""
+
     def descendants(self):
         """
         Return a QuerySet of descendant CodebaseResource objects using a

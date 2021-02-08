@@ -23,6 +23,7 @@
 import csv
 import json
 
+from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
 
 import xlsxwriter
@@ -35,6 +36,8 @@ from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.api.serializers import get_serializer_fields
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -226,6 +229,9 @@ def to_xlsx(project):
     """
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = ["licenses", "extra_data", "declared_license"]
+
+    if not scanpipe_app_config.license_policies:
+        exclude_fields.append("compliance_alert")
 
     querysets = [
         project.discoveredpackages.all(),

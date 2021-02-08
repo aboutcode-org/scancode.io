@@ -22,6 +22,7 @@
 
 import shlex
 
+from django.apps import apps
 from django.conf import settings
 
 import packagedcode
@@ -37,6 +38,8 @@ from scanpipe.models import CodebaseResource
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 def run_extractcode(location, options=None, raise_on_error=False):
@@ -118,6 +121,12 @@ def create_codebase_resources(project, scanned_codebase):
         path = resource_data.pop("path")
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
         resource_data["type"] = CodebaseResource.Type[resource_type]
+
+        policies = scanpipe_app_config.license_policies
+        if policies:
+            licenses = resource_data.get("licenses")
+            if licenses:
+                resource_data["licenses"] = pipes.inject_policy_data(licenses, policies)
 
         CodebaseResource.objects.get_or_create(
             project=project,

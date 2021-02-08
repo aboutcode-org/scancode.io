@@ -25,6 +25,7 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 
+from django.apps import apps
 from django.db.models import Count
 from django.forms import model_to_dict
 
@@ -35,6 +36,8 @@ from scancode import api as scancode_api
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import ProjectError
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 def make_codebase_resource(project, location, rootfs_path=None):
@@ -227,6 +230,16 @@ def scan_file(location):
     return scan_results
 
 
+def inject_policy_data(licenses, policies):
+    """
+    Inject license policies from the `policies` index on the provided licenses list.
+    """
+    for license_data in licenses:
+        key = license_data.get("key")
+        license_data["policy"] = policies.get(key, None)
+    return licenses
+
+
 def scan_for_files(project):
     """
     Run a license, copyright, email, and url scan on remainder of files
@@ -252,6 +265,12 @@ def scan_for_files(project):
                 codebase_resource.status = "scanned-with-error"
         else:
             codebase_resource.status = "scanned"
+
+        policies = scanpipe_app_config.license_policies
+        if policies:
+            licenses = scan_results.get("licenses")
+            if licenses:
+                scan_results["licenses"] = inject_policy_data(licenses, policies)
 
         codebase_resource.set_scan_results(scan_results, save=True)
 
