@@ -41,7 +41,7 @@ class Command(BaseCommand):
             dest="pipelines",
             default=list(),
             help=(
-                "Pipelines locations to add on the project. "
+                "Pipelines names to add on the project. "
                 "The pipelines are added and ran respecting this provided order."
             ),
         )
@@ -81,8 +81,8 @@ class Command(BaseCommand):
         msg = f"Project {name} created with work directory {project.work_directory}"
         self.stdout.write(self.style.SUCCESS(msg))
 
-        for pipeline_location in pipelines:
-            project.add_pipeline(pipeline_location)
+        for pipeline_name in pipelines:
+            project.add_pipeline(pipeline_name)
 
         for input_location in inputs:
             project.copy_input_from(input_location)

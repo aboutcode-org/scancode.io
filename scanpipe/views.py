@@ -75,12 +75,11 @@ class ProjectCreateView(generic.CreateView):
         context = super().get_context_data(**kwargs)
         context["pipelines"] = [
             {
-                "location": location,
                 "name": name,
-                "description": pipelines.get_pipeline_doc(location),
-                "steps": pipelines.get_pipeline_graph(location),
+                "description": pipeline_class.get_doc(),
+                "steps": pipeline_class.get_graph(),
             }
-            for location, name in scanpipe_app_config.pipelines
+            for name, pipeline_class in scanpipe_app_config.pipelines.items()
         ]
         return context
 

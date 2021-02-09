@@ -78,10 +78,9 @@ def validate_pipelines(pipelines):
     """
     Raise an error if one of the `pipelines` is not available.
     """
-    for pipeline_location in pipelines:
-        if not scanpipe_app_config.is_valid(pipeline_location):
-            pipeline_list = [location for location, _ in scanpipe_app_config.pipelines]
+    for pipeline_name in pipelines:
+        if pipeline_name not in scanpipe_app_config.pipelines:
             raise CommandError(
-                f"{pipeline_location} is not a valid pipeline. \n"
-                f"Available: {', '.join(pipeline_list)}"
+                f"{pipeline_name} is not a valid pipeline. \n"
+                f"Available: {', '.join(scanpipe_app_config.pipelines.keys())}"
             )

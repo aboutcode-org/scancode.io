@@ -98,7 +98,7 @@
             {% for run in project.runs.all %}
               <a class="panel-block modal-button" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
                 {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
-                <span class="ml-2">{{ run.pipeline_basename }}</span>
+                <span class="ml-2">{{ run.pipeline }}</span>
               </a>
               {% include "scanpipe/includes/run_modal.html" with run=run only %}
             {% endfor %}

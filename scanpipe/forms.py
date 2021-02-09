@@ -38,7 +38,8 @@ class ProjectForm(forms.ModelForm):
         widget=forms.ClearableFileInput(attrs={"multiple": True}),
     )
     pipeline = forms.ChoiceField(
-        choices=EMPTY_CHOICE + scanpipe_app_config.pipelines,
+        choices=EMPTY_CHOICE
+        + [(name, name) for name in scanpipe_app_config.pipelines.keys()],
         required=False,
     )
     run_pipeline = forms.BooleanField(

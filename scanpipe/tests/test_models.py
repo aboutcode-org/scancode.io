@@ -39,7 +39,6 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
-from scanpipe.pipelines import get_pipeline_doc
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -87,7 +86,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(work_path.exists())
 
         self.project1.add_input_file(SimpleUploadedFile("file.ext", content=b"content"))
-        self.project1.add_pipeline(scanpipe_app_config.pipelines[0][0])
+        self.project1.add_pipeline("docker")
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
@@ -264,18 +263,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
-
-    def test_scanpipe_run_model_pipeline_basename_property(self):
-        run1 = self.create_run()
-        self.assertEqual("pipeline", run1.pipeline_basename)
-
-        run1.pipeline = "scanpipe/pipelines/docker.py"
-        run1.save()
-        self.assertEqual("docker", run1.pipeline_basename)
-
-        run1.pipeline = ""
-        run1.save()
-        self.assertEqual("", run1.pipeline_basename)
 
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
@@ -543,16 +530,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(0, project1.runs.count())
 
-        pipeline, _name = scanpipe_app_config.pipelines[0]
-        project1.add_pipeline(pipeline)
+        pipeline_name = "docker"
+        pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
+        project1.add_pipeline(pipeline_name)
 
         self.assertEqual(1, project1.runs.count())
         run = project1.runs.get()
-        self.assertEqual(pipeline, run.pipeline)
-        self.assertEqual(get_pipeline_doc(pipeline), run.description)
+        self.assertEqual(pipeline_name, run.pipeline)
+        self.assertEqual(pipeline_class.get_doc(), run.description)
         run_task.assert_not_called()
 
-        project1.add_pipeline(pipeline, start_run=True)
+        project1.add_pipeline(pipeline_name, start_run=True)
         run_task.assert_called_once()
 
     def test_scanpipe_project_model_add_error(self):

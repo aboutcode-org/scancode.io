@@ -28,8 +28,6 @@ from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import scanpipe_app_config
-from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_doc
 
 
 def is_graphviz_installed():
@@ -74,7 +72,7 @@ class Command(BaseCommand):
             "args",
             metavar="pipelines",
             nargs="*",
-            help="One or more pipeline locations.",
+            help="One or more pipeline names.",
         )
         parser.add_argument(
             "--list",
@@ -85,10 +83,9 @@ class Command(BaseCommand):
 
     def handle(self, *pipelines, **options):
         if options["list"]:
-            for location, _ in scanpipe_app_config.pipelines:
-                self.stdout.write("- " + self.style.SUCCESS(location))
-                pipeline_doc = get_pipeline_doc(location)
-                self.stdout.write(indent(pipeline_doc, "  "), ending="\n\n")
+            for name, pipeline_class in scanpipe_app_config.pipelines.items():
+                self.stdout.write("- " + self.style.SUCCESS(name))
+                self.stdout.write(indent(pipeline_class.get_doc(), "  "), ending="\n\n")
             sys.exit(0)
 
         if not is_graphviz_installed():
@@ -99,13 +96,10 @@ class Command(BaseCommand):
             sys.exit(1)
 
         outputs = []
-        for pipeline_location in pipelines:
-            try:
-                pipeline_class = get_pipeline_class(pipeline_location)
-            except ModuleNotFoundError:
-                self.stderr.write(
-                    self.style.ERROR(f"{pipeline_location} is not valid.")
-                )
+        for pipeline_name in pipelines:
+            pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
+            if not pipeline_class:
+                self.stderr.write(self.style.ERROR(f"{pipeline_name} is not valid."))
                 sys.exit(1)
 
             output_directory = options.get("output")

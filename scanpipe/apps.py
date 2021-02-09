@@ -20,45 +20,45 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from pathlib import Path
-
 from django.apps import AppConfig
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
-dot_py_suffix = ".py"
-
-
-def remove_dot_py_suffix(filename):
-    """
-    Return the `filename` without the trailing ".py" suffix if any.
-    """
-    if filename.endswith(dot_py_suffix):
-        return filename[: -len(dot_py_suffix)]
-    return filename
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 
 
 class ScanPipeConfig(AppConfig):
     name = "scanpipe"
     verbose_name = _("ScanPipe")
-    pipelines = []
+    pipelines = {}
 
     def ready(self):
-        """
-        Load available Pipelines.
-        """
-        project_root = Path(__file__).parent.parent.absolute()
-        pipelines_dir = project_root / "scanpipe" / "pipelines"
+        self.load_pipelines()
 
-        for child in pipelines_dir.iterdir():
-            if child.name.endswith(dot_py_suffix) and not child.name.startswith("_"):
-                location = str(child.relative_to(project_root))
-                name = remove_dot_py_suffix(child.name)
-                self.pipelines.append((location, name))
+    def load_pipelines(self):
+        """
+        Load Pipelines from the "scancodeio_pipelines" entry point group.
+        """
+        from scanpipe.pipelines import is_pipeline_subclass
 
-    def is_valid(self, pipeline):
-        """
-        Return True if the pipeline is valid and available.
-        """
-        if pipeline in [location for location, name in self.pipelines]:
-            return True
-        return False
+        entry_points = importlib_metadata.entry_points()
+        # Ignore duplicated entries caused by duplicated paths in `sys.path`.
+        pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
+
+        for entry_point in pipeline_entry_points:
+            pipeline_class = entry_point.load()
+
+            if not is_pipeline_subclass(pipeline_class):
+                raise ImproperlyConfigured(
+                    f'The entry point "{pipeline_class}" is not a `Pipeline` subclass.'
+                )
+
+            if entry_point.name in self.pipelines:
+                raise ImproperlyConfigured(
+                    f'The name "{entry_point.name}" is already registered.'
+                )
+
+            self.pipelines[entry_point.name] = pipeline_class

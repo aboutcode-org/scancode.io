@@ -25,9 +25,9 @@ import shutil
 import traceback
 import uuid
 from contextlib import suppress
-from datetime import datetime
 from pathlib import Path
 
+from django.apps import apps
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -43,11 +43,10 @@ from packageurl import normalize_qualifiers
 
 from scancodeio import WORKSPACE_LOCATION
 from scanpipe import tasks
-from scanpipe.apps import remove_dot_py_suffix
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
-from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_doc
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 class UUIDPKModel(models.Model):
@@ -332,7 +331,7 @@ class Project(UUIDPKModel, models.Model):
 
         move_inputs([input_location], self.input_path)
 
-    def add_pipeline(self, pipeline, start_run=False):
+    def add_pipeline(self, pipeline_name, start_run=False):
         """
         Create a new Run instance with the provided `pipeline` on this project.
 
@@ -341,8 +340,11 @@ class Project(UUIDPKModel, models.Model):
         successfully committed.
         If there isn’t an active transaction, the callback will be executed immediately.
         """
+        pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
         run = Run.objects.create(
-            project=self, pipeline=pipeline, description=get_pipeline_doc(pipeline)
+            project=self,
+            pipeline=pipeline_name,
+            description=pipeline_class.get_doc(),
         )
         if start_run:
             transaction.on_commit(run.run_pipeline_task_async)
@@ -521,7 +523,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     @property
     def pipeline_class(self):
-        return get_pipeline_class(self.pipeline)
+        return scanpipe_app_config.pipelines.get(self.pipeline)
 
     def make_pipeline_instance(self):
         return self.pipeline_class(self)
@@ -575,10 +577,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print("\033[41;37m" + output_str + "\033[m")
             else:
                 print(output_str)
-
-    @property
-    def pipeline_basename(self):
-        return remove_dot_py_suffix(self.pipeline.split("/")[-1])
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):

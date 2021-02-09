@@ -33,15 +33,15 @@ class Command(ProjectCommand):
             "args",
             metavar="pipeline",
             nargs="+",
-            help="One or more pipeline locations.",
+            help="One or more pipeline names.",
         )
 
     def handle(self, *pipelines, **options):
         super().handle(*pipelines, **options)
 
         validate_pipelines(pipelines)
-        for pipeline_location in pipelines:
-            self.project.add_pipeline(pipeline_location)
+        for pipeline_name in pipelines:
+            self.project.add_pipeline(pipeline_name)
 
         msg = "Pipeline(s) added to the project"
         self.stdout.write(self.style.SUCCESS(msg))

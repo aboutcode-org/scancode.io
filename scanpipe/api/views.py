@@ -40,8 +40,6 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
-from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_graph
 from scanpipe.views import project_results_json_response
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
@@ -90,11 +88,10 @@ class ProjectViewSet(
     @action(detail=False)
     def pipelines(self, request, *args, **kwargs):
         data = {}
-        for location, name in scanpipe_app_config.pipelines:
+        for name, pipeline_class in scanpipe_app_config.pipelines.items():
             data[name] = {
-                "location": location,
-                "description": get_pipeline_class(location).get_doc(),
-                "steps": get_pipeline_graph(location),
+                "description": pipeline_class.get_doc(),
+                "steps": pipeline_class.get_graph(),
             }
         return Response(data)
 
@@ -156,7 +153,7 @@ class ProjectViewSet(
 
         pipeline = request.data.get("pipeline")
         if pipeline:
-            if scanpipe_app_config.is_valid(pipeline):
+            if pipeline in scanpipe_app_config.pipelines:
                 project.add_pipeline(pipeline)
                 return Response({"status": "Pipeline added."})
             message = {"status": f"{pipeline} is not a valid pipeline."}
@@ -164,7 +161,7 @@ class ProjectViewSet(
 
         message = {
             "status": "Pipeline required.",
-            "pipelines": [location for location, _ in scanpipe_app_config.pipelines],
+            "pipelines": list(scanpipe_app_config.pipelines.keys()),
         }
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 

@@ -24,9 +24,6 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_doc
-from scanpipe.pipelines import get_pipeline_graph
 from scanpipe.pipelines import is_pipeline_subclass
 from scanpipe.pipelines.docker import Docker
 from scanpipe.pipelines.load_inventory import LoadInventory
@@ -34,23 +31,19 @@ from scanpipe.pipelines.root_filesystems import RootFS
 
 
 class ScanPipePipelinesTest(TestCase):
-    docker_pipeline_location = "scanpipe/pipelines/docker.py"
-    rootfs_pipeline_location = "scanpipe/pipelines/root_filesystems.py"
-    scan_pipeline_location = "scanpipe/pipelines/load_inventory.py"
-
     def test_scanpipe_pipeline_class_get_doc(self):
         expected = "A pipeline to analyze a Docker image."
         self.assertEqual(expected, Docker.get_doc())
 
-    def test_scanpipe_pipeline_class_pipeline_name(self):
+    def test_scanpipe_pipeline_class_pipeline_get_name(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline(self.docker_pipeline_location)
+        run = project1.add_pipeline("docker")
         pipeline = run.make_pipeline_instance()
-        self.assertEqual("Docker", pipeline.pipeline_name)
+        self.assertEqual("Docker", pipeline.get_name())
 
     def test_scanpipe_pipeline_class_log(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline(self.docker_pipeline_location)
+        run = project1.add_pipeline("docker")
         pipeline = run.make_pipeline_instance()
         pipeline.log("Event1")
         pipeline.log("Event2")
@@ -97,7 +90,7 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline(self.docker_pipeline_location)
+        run = project1.add_pipeline("docker")
         pipeline = run.make_pipeline_instance()
         self.assertEqual(project1, pipeline.project)
 
@@ -117,20 +110,11 @@ class ScanPipePipelinesTest(TestCase):
         self.assertTrue(is_pipeline_subclass(RootFS))
         self.assertTrue(is_pipeline_subclass(LoadInventory))
 
-    def test_scanpipe_pipelines_get_pipeline_class(self):
-        pipeline_class = get_pipeline_class(self.docker_pipeline_location)
-        self.assertEqual(Docker, pipeline_class)
-        pipeline_class = get_pipeline_class(self.rootfs_pipeline_location)
-        self.assertEqual(RootFS, pipeline_class)
-        pipeline_class = get_pipeline_class(self.scan_pipeline_location)
-        self.assertEqual(LoadInventory, pipeline_class)
+    def test_scanpipe_pipelines_pipeline_class_get_doc(self):
+        self.assertEqual("A pipeline to analyze a Docker image.", Docker.get_doc())
 
-    def test_scanpipe_pipelines_get_pipeline_doc(self):
-        doc = get_pipeline_doc(self.docker_pipeline_location)
-        self.assertEqual("A pipeline to analyze a Docker image.", doc)
-
-    def test_scanpipe_pipelines_get_pipeline_graph(self):
-        graph = get_pipeline_graph(self.docker_pipeline_location)
+    def test_scanpipe_pipelines_pipeline_class_get_graph(self):
+        graph = Docker.get_graph()
         expected = [
             {"name": "extract_images", "doc": "Extract the images from tarballs."},
             {"name": "extract_layers", "doc": "Extract layers from images."},
