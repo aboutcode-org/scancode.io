@@ -29,12 +29,10 @@ from scanpipe.models import Project
 
 
 class ScanPipeTasksTest(TestCase):
-    pipeline_location = "scanpipe/tests/pipelines/do_nothing.py"
-
     @mock.patch("scanpipe.pipelines.Pipeline.execute")
     def test_scanpipe_tasks_run_pipeline_task(self, mock_execute):
         project = Project.objects.create(name="my_project")
-        run = project.add_pipeline(self.pipeline_location)
+        run = project.add_pipeline("do_nothing")
 
         mock_execute.return_value = 0, ""
         tasks.run_pipeline_task(run.pk)

@@ -80,7 +80,7 @@ class Pipeline:
         self.run.append_to_log(message, save=True)
 
     def execute(self):
-        self.log(f"Pipeline [{self.name}] starting")
+        self.log(f"Pipeline [{self.__class__.__name__}] starting")
 
         for step in self.steps:
             self.log(f"Step [{step.__name__}] starting")

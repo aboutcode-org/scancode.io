@@ -54,7 +54,7 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipeline_class_execute(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("scanpipe/tests/pipelines/do_nothing.py")
+        run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
         exitcode, output = pipeline.execute()
@@ -71,7 +71,7 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipeline_class_execute_with_exception(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("scanpipe/tests/pipelines/raise_exception.py")
+        run = project1.add_pipeline("raise_exception")
         pipeline = run.make_pipeline_instance()
 
         exitcode, output = pipeline.execute()

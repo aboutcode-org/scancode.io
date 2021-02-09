@@ -29,6 +29,8 @@ try:
 except ImportError:
     import importlib_metadata
 
+from scanpipe.pipelines import is_pipeline_subclass
+
 
 class ScanPipeConfig(AppConfig):
     name = "scanpipe"
@@ -42,23 +44,27 @@ class ScanPipeConfig(AppConfig):
         """
         Load Pipelines from the "scancodeio_pipelines" entry point group.
         """
-        from scanpipe.pipelines import is_pipeline_subclass
-
         entry_points = importlib_metadata.entry_points()
+
         # Ignore duplicated entries caused by duplicated paths in `sys.path`.
         pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
 
         for entry_point in pipeline_entry_points:
             pipeline_class = entry_point.load()
+            self.register_pipeline(entry_point.name, pipeline_class)
 
-            if not is_pipeline_subclass(pipeline_class):
-                raise ImproperlyConfigured(
-                    f'The entry point "{pipeline_class}" is not a `Pipeline` subclass.'
-                )
+    def register_pipeline(self, name, class_):
+        """
+        Register the provided `name` and `class_` as a valid pipeline.
+        """
+        if not is_pipeline_subclass(class_):
+            raise ImproperlyConfigured(
+                f'The entry point "{class_}" is not a `Pipeline` subclass.'
+            )
 
-            if entry_point.name in self.pipelines:
-                raise ImproperlyConfigured(
-                    f'The name "{entry_point.name}" is already registered.'
-                )
+        if name in self.pipelines:
+            raise ImproperlyConfigured(
+                f'The pipeline name "{name}" is already registered.'
+            )
 
-            self.pipelines[entry_point.name] = pipeline_class
+        self.pipelines[name] = class_
