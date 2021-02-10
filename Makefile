@@ -45,8 +45,6 @@ conf:
 	@echo "-> Configure the Python venv and install dependencies"
 	${PYTHON_EXE} -m venv .
 	@${ACTIVATE} pip install -e .
-	# Workaround https://github.com/python/typing/issues/573#issuecomment-405986724
-	@${ACTIVATE} pip uninstall --yes typing
 
 dev: conf
 	@echo "-> Configure and install development dependencies"

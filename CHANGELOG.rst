@@ -3,6 +3,8 @@
 
 ### v1.1.0 (unreleased)
 
+- Upgrade scancode-toolkit to version 21.2.9
+
 - Rename the pipes.outputs module to pipes.output for consistency
 
 - Remove the dependency on Metaflow
