@@ -3,6 +3,10 @@
 
 ### v1.1.0 (unreleased)
 
+- Allow to start the pipeline run immediately on addition in the `add_pipeline` action
+  of the Project API endpoint.
+  https://github.com/nexB/scancode.io/issues/92
+
 - Rename the pipes.outputs module to pipes.output for consistency
 
 - Remove the dependency on Metaflow
