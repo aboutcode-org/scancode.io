@@ -31,6 +31,7 @@ container_inspector==3.1.2
 
 # ScanCode-toolkit
 scancode-toolkit[full]==21.2.9
+extractcode-libarchive==3.5.1.210122
 
 # Utilities
 XlsxWriter==1.3.7
