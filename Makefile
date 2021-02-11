@@ -41,10 +41,12 @@ else
 	SUDO_POSTGRES=
 endif
 
-conf:
-	@echo "-> Configure the Python venv and install dependencies"
+venv:
+	@echo "-> Configure the Python venv"
 	${PYTHON_EXE} -m venv .
-	@if [[ `python --version` == "Python 3.6"* ]]; then ${ACTIVATE} pip install --upgrade pip; fi
+
+conf: venv
+	@echo "-> Install dependencies"
 	@${ACTIVATE} pip install -e .
 
 dev: conf
@@ -56,6 +58,10 @@ envfile:
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
+
+upgrade-pip:
+	@echo "-> Upgrade pip to latest version"
+	@${ACTIVATE} pip install --upgrade pip
 
 install:
 	@echo "-> Install and configure the Python env with base dependencies, offline"
@@ -129,4 +135,4 @@ docs:
 	rm -rf docs/_build/
 	sphinx-build docs/ docs/_build/
 
-.PHONY: conf dev envfile install check valid isort clean migrate postgres sqlite run test package bump docs
+.PHONY: venv conf dev envfile upgrade-pip install check valid isort clean migrate postgres sqlite run test package bump docs
