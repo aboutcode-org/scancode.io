@@ -44,7 +44,7 @@ endif
 conf:
 	@echo "-> Configure the Python venv and install dependencies"
 	${PYTHON_EXE} -m venv .
-	@${ACTIVATE} pip install --upgrade pip
+	@if [[ `python --version` == "Python 3.6"* ]]; then ${ACTIVATE} pip install --upgrade pip; fi
 	@${ACTIVATE} pip install -e .
 
 dev: conf
