@@ -104,9 +104,10 @@
               {% include "scanpipe/includes/run_modal.html" with project=project run=run only %}
             {% endfor %}
             <div class="panel-block">
-              <button class="button is-link is-outlined is-fullwidth" disabled>
+              <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
                 Add pipeline
               </button>
+              {% include "scanpipe/includes/add_pipeline_modal.html" %}
             </div>
           </nav>
         </div>

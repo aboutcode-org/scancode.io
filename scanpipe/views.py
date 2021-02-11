@@ -34,6 +34,7 @@ from django_filters.views import FilterView
 
 from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import PackageFilterSet
 from scanpipe.forms import ProjectFilterSet
 from scanpipe.forms import ProjectForm
@@ -170,9 +171,23 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
                 "file_filter": file_filter,
+                "add_pipeline_form": AddPipelineForm(),
             }
         )
         return context
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_object()
+        form = AddPipelineForm(request.POST)
+        if form.is_valid():
+            pipeline = form.data["pipeline"]
+            run_pipeline = form.data.get("run_pipeline", False)
+            project.add_pipeline(pipeline, start_run=run_pipeline)
+            messages.success(request, f"Pipeline {pipeline} added.")
+        else:
+            messages.error(request, "Pipeline addition error.")
+
+        return redirect(project)
 
 
 class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):

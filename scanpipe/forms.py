@@ -72,6 +72,18 @@ class ProjectForm(forms.ModelForm):
         return project
 
 
+class AddPipelineForm(forms.Form):
+    pipeline = forms.ChoiceField(
+        choices=EMPTY_CHOICE + scanpipe_app_config.pipelines,
+        required=True,
+    )
+    run_pipeline = forms.BooleanField(
+        label="Run the selected pipeline",
+        initial=True,
+        required=False,
+    )
+
+
 class ProjectFilterSet(django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
 
