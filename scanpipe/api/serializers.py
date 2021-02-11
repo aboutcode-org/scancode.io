@@ -183,6 +183,28 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
         return project_error.traceback.split("\n")
 
 
+class PipelineSerializer(serializers.ModelSerializer):
+    """
+    Serializer used in the `ProjectViewSet.add_pipeline` action.
+    """
+
+    start = serializers.BooleanField(
+        write_only=True,
+    )
+    pipeline = serializers.ChoiceField(
+        choices=scanpipe_app_config.pipelines,
+        required=True,
+        write_only=True,
+    )
+
+    class Meta:
+        model = Run
+        fields = [
+            "pipeline",
+            "start",
+        ]
+
+
 def get_model_serializer(model_class):
     """
     Return the Serializer class related to the provided `model_class`.

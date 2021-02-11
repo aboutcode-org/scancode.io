@@ -25,7 +25,8 @@ From a ``Project Instance`` view:
 Add pipeline
 ------------
 
-Add the selected ``pipeline`` to the ``project``.
+Add the selected ``pipeline`` to the ``project``. If the ``start`` value is provided,
+the pipeline run will start immediately on pipeline addition.
 
 Errors
 ------
