@@ -23,7 +23,7 @@
 # Python version can be specified with `$ PYTHON_EXE=python3.x make conf`
 PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
-ACTIVATE?=. bin/activate;
+ACTIVATE=
 ANSIBLE_PLAYBOOK=cd etc/ansible/ && ansible-playbook --inventory-file=hosts --verbose --ask-become-pass --user=${USER}
 BLACK_ARGS=--exclude="migrations|data|docs" .
 # Do not depend on Python to generate the SECRET_KEY
