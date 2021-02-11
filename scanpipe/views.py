@@ -26,6 +26,7 @@ from django.contrib import messages
 from django.http import FileResponse
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import generic
 
@@ -41,6 +42,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
 from scanpipe.pipes import codebase
 from scanpipe.pipes import output
 
@@ -194,6 +196,18 @@ class ProjectTreeView(ProjectViewMixin, generic.DetailView):
         context["tree_data"] = [codebase.get_tree(project_codebase.root, fields)]
 
         return context
+
+
+def run_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.task_start_date:
+        raise Http404("Pipeline already started.")
+
+    run.run_pipeline_task_async()
+    messages.success(request, f'Pipeline "{run.pipeline}" run started.')
+    return redirect(project)
 
 
 def project_results_json_response(project, as_attachment=False):

@@ -43,6 +43,7 @@ class ProjectForm(forms.ModelForm):
     )
     run_pipeline = forms.BooleanField(
         label="Run the selected pipeline",
+        initial=True,
         required=False,
     )
 
