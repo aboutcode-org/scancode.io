@@ -43,6 +43,7 @@ class ProjectForm(forms.ModelForm):
     )
     run_pipeline = forms.BooleanField(
         label="Run the selected pipeline",
+        initial=True,
         required=False,
     )
 
@@ -69,6 +70,18 @@ class ProjectForm(forms.ModelForm):
             project.add_pipeline(pipeline, start_run=run_pipeline)
 
         return project
+
+
+class AddPipelineForm(forms.Form):
+    pipeline = forms.ChoiceField(
+        choices=EMPTY_CHOICE + scanpipe_app_config.pipelines,
+        required=True,
+    )
+    run_pipeline = forms.BooleanField(
+        label="Run the selected pipeline",
+        initial=True,
+        required=False,
+    )
 
 
 class ProjectFilterSet(django_filters.FilterSet):

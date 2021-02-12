@@ -56,6 +56,11 @@ urlpatterns = [
         name="project_results",
     ),
     path(
+        "project/<uuid:uuid>/run_pipeline/<uuid:run_uuid>/",
+        views.run_pipeline_view,
+        name="project_run_pipeline",
+    ),
+    path(
         "project/add/",
         views.ProjectCreateView.as_view(),
         name="project_add",
