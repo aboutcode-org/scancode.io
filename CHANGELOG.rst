@@ -3,6 +3,10 @@
 
 ### v1.1.0 (unreleased)
 
+- Implement Pipeline registration through distribution entry points
+  Pipeline can now be installed as part of external libraries
+  https://github.com/nexB/scancode.io/issues/91
+
 - Add a "Run Pipeline" button in the Pipeline modal of the Project details view
   Pipelines can now be added from the Project details view
   https://github.com/nexB/scancode.io/issues/84
