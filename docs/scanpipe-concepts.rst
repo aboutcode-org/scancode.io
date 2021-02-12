@@ -46,14 +46,11 @@ Analysis results and reports are eventually posted at the end of a pipeline run.
 
 All pipelines are located in the ``scanpipe.pipelines`` module.
 Each pipeline consist of a Python script including one subclass of the ``Pipeline`` class.
-Each step is a method of the ``Pipeline`` class decorated with a ``@step`` decorator.
-At its end, a step states which is the next step to execute.
+Each step is a method of the ``Pipeline`` class.
+The execution order of the steps is declared through the ``steps`` class attribute.
 
 .. note::
     One or more pipelines can be assigned to a project as a sequence.
-    If one pipeline of a sequence completes successfully, the next pipeline in
-    the queue for this project is launched automatically and this until all
-    the scheduled pipelines have executed.
 
 
 Codebase Resources

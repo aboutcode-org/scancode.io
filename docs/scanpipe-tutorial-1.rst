@@ -39,7 +39,7 @@ Step-by-step
 
 - Add the docker pipeline to your project::
 
-    $ scanpipe add-pipeline --project staticbox scanpipe/pipelines/docker.py
+    $ scanpipe add-pipeline --project docker
 
 - Check that the docker pipeline was added to your project::
 
@@ -59,13 +59,13 @@ Step-by-step
   pipeline run::
 
     $ scanpipe show-pipeline --project staticbox
-    "[SUCCESS] scanpipe/pipelines/docker.py"
+    "[SUCCESS] docker"
 
 - Get the results of the pipeline run as a JSON file using the ``output`` command::
 
-    $ scanpipe output --project staticbox results.json
+    $ scanpipe output --project staticbox --format json
 
-- Open the ``results.json`` in your preferred viewer.
+- Open the ``output/results-<timestamp>.json`` in your preferred viewer.
 
 ----
 
@@ -80,5 +80,5 @@ Step-by-step
 
       $ scanpipe create-project staticbox2 \
         --input ~/30-alpine-nickolashkraus-staticbox-latest.tar \
-        --pipeline scanpipe/pipelines/docker.py \
+        --pipeline docker \
         --run

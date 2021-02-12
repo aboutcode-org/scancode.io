@@ -19,7 +19,7 @@ required for the creation of the Docker image.
 Clone the git `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
 create an environment file, and build the Docker image::
 
-    git clone git@github.com:nexB/scancode.io.git && cd scancode.io
+    git clone https://github.com/nexB/scancode.io.git && cd scancode.io
     make envfile
     docker-compose build
 

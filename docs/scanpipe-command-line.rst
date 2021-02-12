@@ -76,7 +76,7 @@ copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` director
 `$ scanpipe add-pipeline --project PROJECT <pipeline ...>`
 ----------------------------------------------------------
 
-Add the ``<pipeline>`` found at this location to the project named ``PROJECT``.
+Add the ``<pipeline>`` to the provided ``PROJECT``.
 You can use more than one ``<pipeline>`` to add multiple pipelines at once.
 
 .. warning::
@@ -85,17 +85,13 @@ You can use more than one ``<pipeline>`` to add multiple pipelines at once.
 For example, assuming you have created beforehand a project named "foo", this will
 add the docker pipeline to your project::
 
-    $ scanpipe add-pipeline --project foo scanpipe/pipelines/docker.py
+    $ scanpipe add-pipeline --project foo docker
 
 
 `$ scanpipe run --project PROJECT`
 ----------------------------------
 
-Run all the pipelines of the project named ``PROJECT``.
-
-Optional arguments:
-
-- ``--resume`` Resume the latest failed pipeline execution.
+Run the next pipeline of the project named ``PROJECT`` queue.
 
 
 `$ scanpipe show-pipeline --project PROJECT`
