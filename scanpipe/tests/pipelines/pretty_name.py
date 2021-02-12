@@ -23,24 +23,15 @@
 from scanpipe.pipelines import Pipeline
 
 
-class DoNothing(Pipeline):
+class PrettyPipeline(Pipeline):
     """
-    A pipeline that does nothing, in 2 steps.
+    Doc from docstring.
     """
+
+    name = "Pretty name"
+    doc = "Doc from attribute"
 
     def step1(self):
-        """
-        Step1 doc.
-        """
         pass
 
-    def step2(self):
-        """
-        Step2 doc.
-        """
-        pass
-
-    steps = (
-        step1,
-        step2,
-    )
+    steps = (step1,)

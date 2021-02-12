@@ -54,7 +54,7 @@ class Pipeline:
         """
         Return the name declared on the class or the name of the class itself.
         """
-        return cls.name or cls.__class__.__name__
+        return cls.name or cls.__name__
 
     @classmethod
     def get_doc(cls):

@@ -25,25 +25,52 @@ from django.test import TestCase
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline_subclass
-from scanpipe.pipelines.docker import Docker
-from scanpipe.pipelines.load_inventory import LoadInventory
-from scanpipe.pipelines.root_filesystems import RootFS
+from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests.pipelines.pretty_name import PrettyPipeline
 
 
 class ScanPipePipelinesTest(TestCase):
-    def test_scanpipe_pipeline_class_get_doc(self):
-        expected = "A pipeline to analyze a Docker image."
-        self.assertEqual(expected, Docker.get_doc())
-
-    def test_scanpipe_pipeline_class_pipeline_get_name(self):
+    def test_scanpipe_pipeline_class_get_name(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("docker")
-        pipeline = run.make_pipeline_instance()
-        self.assertEqual("Docker", pipeline.get_name())
+        run = project1.add_pipeline("do_nothing")
+
+        pipeline_class = DoNothing
+        pipeline_instance = DoNothing(run)
+        self.assertIsNone(pipeline_class.name)
+        self.assertIsNone(pipeline_instance.name)
+        self.assertEqual("DoNothing", pipeline_class.get_name())
+        self.assertEqual("DoNothing", pipeline_instance.get_name())
+
+        pipeline_class = PrettyPipeline
+        pipeline_instance = PrettyPipeline(run)
+        self.assertEqual("Pretty name", pipeline_class.name)
+        self.assertEqual("Pretty name", pipeline_instance.name)
+        self.assertEqual("Pretty name", pipeline_class.get_name())
+        self.assertEqual("Pretty name", pipeline_instance.get_name())
+
+    def test_scanpipe_pipelines_class_get_doc(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline_class = DoNothing
+        pipeline_instance = DoNothing(run)
+
+        expected = "A pipeline that does nothing, in 2 steps."
+        self.assertIsNone(pipeline_class.doc)
+        self.assertIsNone(pipeline_instance.doc)
+        self.assertEqual(expected, pipeline_class.get_doc())
+        self.assertEqual(expected, pipeline_instance.get_doc())
+
+        pipeline_class = PrettyPipeline
+        pipeline_instance = PrettyPipeline(run)
+        expected = "Doc from attribute"
+        self.assertEqual(expected, pipeline_class.doc)
+        self.assertEqual(expected, pipeline_instance.doc)
+        self.assertEqual(expected, pipeline_class.get_doc())
+        self.assertEqual(expected, pipeline_instance.get_doc())
 
     def test_scanpipe_pipeline_class_log(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("docker")
+        run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
         pipeline.log("Event1")
         pipeline.log("Event2")
@@ -90,7 +117,7 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("docker")
+        run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
         self.assertEqual(project1, pipeline.project)
 
@@ -98,7 +125,7 @@ class ScanPipePipelinesTest(TestCase):
             raise Exception("Error message")
 
         error = project1.projecterrors.get()
-        self.assertEqual("Docker", error.model)
+        self.assertEqual("DoNothing", error.model)
         self.assertEqual({}, error.details)
         self.assertEqual("Error message", error.message)
         self.assertIn('raise Exception("Error message")', error.traceback)
@@ -106,17 +133,12 @@ class ScanPipePipelinesTest(TestCase):
     def test_scanpipe_pipelines_is_pipeline_subclass(self):
         self.assertFalse(is_pipeline_subclass(None))
         self.assertFalse(is_pipeline_subclass(Pipeline))
-        self.assertTrue(is_pipeline_subclass(Docker))
-        self.assertTrue(is_pipeline_subclass(RootFS))
-        self.assertTrue(is_pipeline_subclass(LoadInventory))
+        self.assertTrue(is_pipeline_subclass(DoNothing))
+        self.assertTrue(is_pipeline_subclass(PrettyPipeline))
 
-    def test_scanpipe_pipelines_pipeline_class_get_doc(self):
-        self.assertEqual("A pipeline to analyze a Docker image.", Docker.get_doc())
-
-    def test_scanpipe_pipelines_pipeline_class_get_graph(self):
-        graph = Docker.get_graph()
+    def test_scanpipe_pipelines_class_get_graph(self):
         expected = [
-            {"name": "extract_images", "doc": "Extract the images from tarballs."},
-            {"name": "extract_layers", "doc": "Extract layers from images."},
+            {"doc": "Step1 doc.", "name": "step1"},
+            {"doc": "Step2 doc.", "name": "step2"},
         ]
-        self.assertEqual(expected, graph[0:2])
+        self.assertEqual(expected, DoNothing.get_graph())
