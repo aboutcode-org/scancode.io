@@ -41,6 +41,7 @@ from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
+from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -202,17 +203,14 @@ class ScanPipeModelsTest(TestCase):
         run1.save()
         self.assertEqual(run2, self.project1.get_latest_failed_run())
 
-    def test_scanpipe_run_model_task_methods(self):
-        run1 = self.create_run()
-        self.assertFalse(run1.task_succeeded)
+    def test_scanpipe_run_model_pipeline_class_property(self):
+        run1 = Run.objects.create(project=self.project1, pipeline="do_nothing")
+        self.assertEqual(DoNothing, run1.pipeline_class)
 
-        run1.task_exitcode = 0
-        run1.save()
-        self.assertTrue(run1.task_succeeded)
-
-        run1.task_exitcode = 1
-        run1.save()
-        self.assertFalse(run1.task_succeeded)
+    def test_scanpipe_run_model_make_pipeline_instance(self):
+        run1 = Run.objects.create(project=self.project1, pipeline="do_nothing")
+        pipeline_instance = run1.make_pipeline_instance()
+        self.assertTrue(isinstance(pipeline_instance, DoNothing))
 
     def test_scanpipe_run_model_task_execution_time_property(self):
         run1 = self.create_run()
