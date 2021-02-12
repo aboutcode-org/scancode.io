@@ -3,6 +3,16 @@
 
 ### v1.1.0 (unreleased)
 
+- Add a "Run Pipeline" button in the Pipeline modal of the Project details view
+  Pipelines can now be added from the Project details view
+  https://github.com/nexB/scancode.io/issues/84
+
+- Upgrade scancode-toolkit to version 21.2.9
+
+- Allow to start the pipeline run immediately on addition in the `add_pipeline` action
+  of the Project API endpoint
+  https://github.com/nexB/scancode.io/issues/92
+
 - Rename the pipes.outputs module to pipes.output for consistency
 
 - Remove the dependency on Metaflow

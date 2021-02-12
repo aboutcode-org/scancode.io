@@ -32,6 +32,7 @@ from rest_framework.response import Response
 
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
+from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectErrorSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
@@ -147,15 +148,17 @@ class ProjectViewSet(
 
         return Response({"file_content": file_content})
 
-    @action(detail=True, methods=["get", "post"])
+    @action(detail=True, methods=["get", "post"], serializer_class=PipelineSerializer)
     def add_pipeline(self, request, *args, **kwargs):
         project = self.get_object()
 
         pipeline = request.data.get("pipeline")
         if pipeline:
             if pipeline in scanpipe_app_config.pipelines:
-                project.add_pipeline(pipeline)
+                start = request.data.get("start")
+                project.add_pipeline(pipeline, start)
                 return Response({"status": "Pipeline added."})
+
             message = {"status": f"{pipeline} is not a valid pipeline."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 

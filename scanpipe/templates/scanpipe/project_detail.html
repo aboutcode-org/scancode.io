@@ -10,6 +10,7 @@
 {% block content %}
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
     <section class="mx-5 mb-3">
       {% include 'scanpipe/includes/breadcrumb.html' %}
@@ -100,12 +101,13 @@
                 {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
                 <span class="ml-2">{{ run.pipeline }}</span>
               </a>
-              {% include "scanpipe/includes/run_modal.html" with run=run only %}
+              {% include "scanpipe/includes/run_modal.html" with project=project run=run only %}
             {% endfor %}
             <div class="panel-block">
-              <button class="button is-link is-outlined is-fullwidth" disabled>
+              <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
                 Add pipeline
               </button>
+              {% include "scanpipe/includes/add_pipeline_modal.html" %}
             </div>
           </nav>
         </div>

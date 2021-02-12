@@ -21,15 +21,22 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django import forms
+from django.apps import apps
+from django.db.models import BLANK_CHOICE_DASH
 
 import django_filters
 
-from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 
-EMPTY_CHOICE = [("", "---------")]
+scanpipe_app_config = apps.get_app_config("scanpipe")
+
+
+def get_pipeline_choices(include_blank=True):
+    choices = list(BLANK_CHOICE_DASH) if include_blank else []
+    choices.extend([(name, name) for name in scanpipe_app_config.pipelines.keys()])
+    return choices
 
 
 class ProjectForm(forms.ModelForm):
@@ -38,12 +45,12 @@ class ProjectForm(forms.ModelForm):
         widget=forms.ClearableFileInput(attrs={"multiple": True}),
     )
     pipeline = forms.ChoiceField(
-        choices=EMPTY_CHOICE
-        + [(name, name) for name in scanpipe_app_config.pipelines.keys()],
+        choices=get_pipeline_choices(),
         required=False,
     )
     run_pipeline = forms.BooleanField(
         label="Run the selected pipeline",
+        initial=True,
         required=False,
     )
 
@@ -70,6 +77,18 @@ class ProjectForm(forms.ModelForm):
             project.add_pipeline(pipeline, start_run=run_pipeline)
 
         return project
+
+
+class AddPipelineForm(forms.Form):
+    pipeline = forms.ChoiceField(
+        choices=get_pipeline_choices(),
+        required=True,
+    )
+    run_pipeline = forms.BooleanField(
+        label="Run the selected pipeline",
+        initial=True,
+        required=False,
+    )
 
 
 class ProjectFilterSet(django_filters.FilterSet):

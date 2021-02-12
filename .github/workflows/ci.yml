@@ -29,8 +29,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        # Python 3.9 not supported until next scancode-toolkit version
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
       - name: Checkout code
@@ -42,9 +41,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          make dev
-          make envfile
+        run: make venv upgrade-pip dev envfile
 
       - name: Validate code format
         run: make check

@@ -34,6 +34,7 @@ from django.db import models
 from django.db import transaction
 from django.db.models import Q
 from django.forms import model_to_dict
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -376,6 +377,9 @@ class Project(UUIDPKModel, models.Model):
             message=str(error),
             traceback="".join(traceback.format_tb(error.__traceback__)),
         )
+
+    def get_absolute_url(self):
+        return reverse("project_detail", args=[self.uuid])
 
     @cached_property
     def resource_count(self):

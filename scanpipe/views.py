@@ -26,6 +26,7 @@ from django.contrib import messages
 from django.http import FileResponse
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import generic
 
@@ -33,6 +34,7 @@ from django_filters.views import FilterView
 
 from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import PackageFilterSet
 from scanpipe.forms import ProjectFilterSet
 from scanpipe.forms import ProjectForm
@@ -41,6 +43,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
 from scanpipe.pipes import codebase
 from scanpipe.pipes import output
 
@@ -167,9 +170,23 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
                 "file_filter": file_filter,
+                "add_pipeline_form": AddPipelineForm(),
             }
         )
         return context
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_object()
+        form = AddPipelineForm(request.POST)
+        if form.is_valid():
+            pipeline = form.data["pipeline"]
+            run_pipeline = form.data.get("run_pipeline", False)
+            project.add_pipeline(pipeline, start_run=run_pipeline)
+            messages.success(request, f"Pipeline {pipeline} added.")
+        else:
+            messages.error(request, "Pipeline addition error.")
+
+        return redirect(project)
 
 
 class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
@@ -193,6 +210,18 @@ class ProjectTreeView(ProjectViewMixin, generic.DetailView):
         context["tree_data"] = [codebase.get_tree(project_codebase.root, fields)]
 
         return context
+
+
+def run_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.task_start_date:
+        raise Http404("Pipeline already started.")
+
+    run.run_pipeline_task_async()
+    messages.success(request, f'Pipeline "{run.pipeline}" run started.')
+    return redirect(project)
 
 
 def project_results_json_response(project, as_attachment=False):
