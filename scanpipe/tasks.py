@@ -40,15 +40,6 @@ def get_run_instance(run_pk):
     return run_model.objects.get(pk=run_pk)
 
 
-def start_next_run_task(run):
-    """
-    Start the next Pipeline Run in the Project queue, if any.
-    """
-    next_run = run.project.get_next_run()
-    if next_run:
-        next_run.run_pipeline_task_async()
-
-
 @shared_task(bind=True)
 def run_pipeline_task(self, run_pk):
     task_id = self.request.id
@@ -71,4 +62,3 @@ def run_pipeline_task(self, run_pk):
     if run.task_succeeded:
         # We keep the temporary files available for debugging in case of error
         project.clear_tmp_directory()
-        start_next_run_task(run)

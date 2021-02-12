@@ -80,7 +80,7 @@ class Pipeline:
         self.run.append_to_log(message, save=True)
 
     def execute(self):
-        self.log(f"Pipeline [{self.__class__.__name__}] starting")
+        self.log(f"Pipeline [{self.get_name()}] starting")
 
         for step in self.steps:
             self.log(f"Step [{step.__name__}] starting")
@@ -113,7 +113,7 @@ class Pipeline:
         try:
             yield
         except exceptions as error:
-            self.project.add_error(error, model=self.__class__.__name__)
+            self.project.add_error(error, model=self.get_name())
 
 
 def is_pipeline_subclass(obj):

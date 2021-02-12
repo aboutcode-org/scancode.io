@@ -144,7 +144,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             project.add_input_file(upload_file)
 
         if pipeline:
-            project.add_pipeline(pipeline, start_run=bool(upload_file))
+            project.add_pipeline(pipeline, start=bool(upload_file))
 
         return project
 

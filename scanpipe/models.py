@@ -332,11 +332,11 @@ class Project(UUIDPKModel, models.Model):
 
         move_inputs([input_location], self.input_path)
 
-    def add_pipeline(self, pipeline_name, start_run=False):
+    def add_pipeline(self, pipeline_name, start=False):
         """
         Create a new Run instance with the provided `pipeline` on this project.
 
-        If `start_run` is True, the pipeline task is created.
+        If `start` is True, the pipeline task is created.
         The on_commit() is used to postpone the task creation after the transaction is
         successfully committed.
         If there isn’t an active transaction, the callback will be executed immediately.
@@ -347,7 +347,7 @@ class Project(UUIDPKModel, models.Model):
             pipeline=pipeline_name,
             description=pipeline_class.get_doc(),
         )
-        if start_run:
+        if start:
             transaction.on_commit(run.run_pipeline_task_async)
         return run
 

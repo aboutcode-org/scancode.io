@@ -74,7 +74,7 @@ class ProjectForm(forms.ModelForm):
             project.add_input_file(upload_file)
 
         if pipeline:
-            project.add_pipeline(pipeline, start_run=run_pipeline)
+            project.add_pipeline(pipeline, start=run_pipeline)
 
         return project
 

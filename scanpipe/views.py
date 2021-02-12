@@ -181,7 +181,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         if form.is_valid():
             pipeline = form.data["pipeline"]
             run_pipeline = form.data.get("run_pipeline", False)
-            project.add_pipeline(pipeline, start_run=run_pipeline)
+            project.add_pipeline(pipeline, start=run_pipeline)
             messages.success(request, f"Pipeline {pipeline} added.")
         else:
             messages.error(request, "Pipeline addition error.")

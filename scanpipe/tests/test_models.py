@@ -540,7 +540,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(pipeline_class.get_doc(), run.description)
         run_task.assert_not_called()
 
-        project1.add_pipeline(pipeline_name, start_run=True)
+        project1.add_pipeline(pipeline_name, start=True)
         run_task.assert_called_once()
 
     def test_scanpipe_project_model_add_error(self):
