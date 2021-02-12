@@ -17,7 +17,7 @@
           </div>
         </div>
         {% if not run.task_start_date %}
-          <a href="{% url 'project_run_pipeline' project.uuid run.uuid %}" class="has-text-weight-bold">
+          <a href="{% url 'project_run_pipeline' project.uuid run.uuid %}" class="run-pipeline-link has-text-weight-bold">
             <i class="fas fa-play-circle"></i>
             Run Pipeline
           </a>

@@ -46,7 +46,7 @@
 
     <section class="section pt-0">
       {% if project.resource_count or project.package_count %}
-        <article class="message is-success">
+        <article class="message is-info">
           <div class="message-body">
             Download results as:
             <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.uuid 'json' %}">
@@ -233,5 +233,22 @@
     makeChart("file_license_categories", "#licenseCategoryChart", "License\nCategory");
     makeChart("package_types", "#packageTypeChart", "Package\nType");
     makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense\nExpression");
+  </script>
+  <script>
+    displayOverlay = function () {
+      let background = document.createElement("div");
+      background.className = "modal-background";
+      background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
+      background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
+      document.body.appendChild(background);
+    };
+
+    let run_pipeline_links = document.querySelector(".run-pipeline-link");
+    if (run_pipeline_links)
+      run_pipeline_links.addEventListener('click', displayOverlay);
+
+    let add_pipeline_button = document.querySelector("#add-pipeline-button");
+    if (add_pipeline_button)
+      add_pipeline_button.addEventListener('click', displayOverlay);
   </script>
 {% endblock %}
