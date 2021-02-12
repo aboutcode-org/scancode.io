@@ -70,6 +70,17 @@ class Pipeline:
         """
         return [{"name": step.__name__, "doc": getdoc(step)} for step in cls.steps]
 
+    @classmethod
+    def get_info(cls):
+        """
+        Return a dict of combined data about this Pipeline.
+        """
+        return {
+            "name": cls.get_name(),
+            "description": cls.get_doc(),
+            "steps": cls.get_graph(),
+        }
+
     def log(self, message):
         """
         Log the `message` to this module logger and to the Run instance.

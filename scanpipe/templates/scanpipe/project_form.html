@@ -75,35 +75,35 @@
 
         <div class="column has-background-light has-border-radius">
           <h3 class="subtitle mb-3">Pipelines:</h3>
-          {% for pipeline in pipelines %}
+          {% for pipeline_key, pipeline_info in pipelines.items %}
             <div class="mb-3">
               <div>
-                <a class="help-text modal-button" data-target="{{ pipeline.name }}-modal" aria-haspopup="true">
-                  <strong>{{ pipeline.name }}</strong>
+                <a class="help-text modal-button" data-target="{{ pipeline_key }}-modal" aria-haspopup="true">
+                  <strong>{{ pipeline_key }}</strong>
                 </a>
-                <div id="{{ pipeline.name }}-modal" class="modal">
+                <div id="{{ pipeline_key }}-modal" class="modal">
                   <div class="modal-background"></div>
                   <div class="modal-card">
                     <header class="modal-card-head">
                       <p class="modal-card-title">
-                        <strong>{{ pipeline.name }}</strong>
+                        <strong>{{ pipeline_key }}</strong>
                       </p>
                       <button class="delete" aria-label="close"></button>
                     </header>
                     <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
-                      {{ pipeline.description }}
+                      {{ pipeline_info.description }}
                     </div>
                     <section class="modal-card-body has-text-centered border-bottom-radius">
-                      {% for step in pipeline.steps %}
-                      <span class="tag is-info">{{ step.name }}</span>
-                      <div>{{ step.doc }}</div>
-                      {% if not forloop.last %}<div>&darr;</div>{% endif %}
-                    {% endfor %}
+                      {% for step in pipeline_info.steps %}
+                        <span class="tag is-info">{{ step.name }}</span>
+                        <div>{{ step.doc }}</div>
+                        {% if not forloop.last %}<div>&darr;</div>{% endif %}
+                      {% endfor %}
                     </section>
                   </div>
                 </div>
               </div>
-              {{ pipeline.description }}
+              {{ pipeline_info.description }}
             </div>
           {% endfor %}
         </div>

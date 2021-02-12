@@ -68,6 +68,17 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual(expected, pipeline_class.get_doc())
         self.assertEqual(expected, pipeline_instance.get_doc())
 
+    def test_scanpipe_pipelines_class_get_info(self):
+        expected = {
+            "name": "DoNothing",
+            "description": "A pipeline that does nothing, in 2 steps.",
+            "steps": [
+                {"name": "step1", "doc": "Step1 doc."},
+                {"name": "step2", "doc": "Step2 doc."},
+            ],
+        }
+        self.assertEqual(expected, DoNothing.get_info())
+
     def test_scanpipe_pipeline_class_log(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")

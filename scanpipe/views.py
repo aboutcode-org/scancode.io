@@ -76,14 +76,10 @@ class ProjectCreateView(generic.CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["pipelines"] = [
-            {
-                "name": name,
-                "description": pipeline_class.get_doc(),
-                "steps": pipeline_class.get_graph(),
-            }
-            for name, pipeline_class in scanpipe_app_config.pipelines.items()
-        ]
+        context["pipelines"] = {
+            key: pipeline_class.get_info()
+            for key, pipeline_class in scanpipe_app_config.pipelines.items()
+        }
         return context
 
     def get_success_url(self):
