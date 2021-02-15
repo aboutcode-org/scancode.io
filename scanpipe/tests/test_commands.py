@@ -66,11 +66,12 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("graph", self.pipeline_name, "--output", temp_dir, stdout=out)
         out_value = out.getvalue()
         self.assertIn("Graph(s) generated:", out_value)
-        self.assertIn("Docker.png", out_value)
-        self.assertTrue(Path(f"/{temp_dir}/Docker.png").exists())
+        self.assertIn("docker.png", out_value)
+        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
+        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
 
     def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
-        output_dot = pipeline_graph_dot(self.pipeline_class)
+        output_dot = pipeline_graph_dot(self.pipeline_name, self.pipeline_class)
         self.assertIn("rankdir=TB;", output_dot)
         self.assertIn('"extract_images"[label=<<b>extract_images</b>>', output_dot)
         self.assertIn('"extract_layers"[label=<<b>extract_layers</b>>', output_dot)

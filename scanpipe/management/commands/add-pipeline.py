@@ -31,7 +31,7 @@ class Command(ProjectCommand):
         super().add_arguments(parser)
         parser.add_argument(
             "args",
-            metavar="pipeline-names",
+            metavar="PIPELINE_NAME",
             nargs="+",
             help="One or more pipeline names.",
         )

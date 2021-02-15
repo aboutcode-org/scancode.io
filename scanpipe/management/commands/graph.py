@@ -37,11 +37,13 @@ def is_graphviz_installed():
     return False
 
 
-def pipeline_graph_dot(pipeline_class, fontname="Helvetica", shape="record"):
+def pipeline_graph_dot(pipeline_name, pipeline_class):
     """
     Return the pipeline graph as DOT format compatible with Graphviz.
     """
-    dot_output = [f"digraph {pipeline_class.__name__} {{", "rankdir=TB;"]
+    fontname = "Helvetica"
+    shape = "record"
+    dot_output = [f"digraph {pipeline_name} {{", "rankdir=TB;"]
 
     edges = []
     nodes = []
@@ -70,7 +72,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "args",
-            metavar="pipeline-names",
+            metavar="PIPELINE_NAME",
             nargs="*",
             help="One or more pipeline names.",
         )
@@ -105,18 +107,22 @@ class Command(BaseCommand):
                 sys.exit(1)
 
             output_directory = options.get("output")
-            outputs.append(self.generate_graph_png(pipeline_class, output_directory))
+            outputs.append(
+                self.generate_graph_png(pipeline_name, pipeline_class, output_directory)
+            )
 
         separator = "\n - "
         msg = f"Graph(s) generated:{separator}" + separator.join(outputs)
         self.stdout.write(self.style.SUCCESS(msg))
 
     @staticmethod
-    def generate_graph_png(pipeline_class, output_directory):
-        output_dot = pipeline_graph_dot(pipeline_class)
-        output_location = f"{pipeline_class.__name__}.png"
+    def generate_graph_png(pipeline_name, pipeline_class, output_directory):
+        output_location = f"{pipeline_name}.png"
         if output_directory:
             output_location = f"{output_directory}/{output_location}"
+
+        output_dot = pipeline_graph_dot(pipeline_name, pipeline_class)
         dot_cmd = f'echo "{output_dot}" | dot -Tpng -o {output_location}'
         subprocess.getoutput(dot_cmd)
+
         return output_location

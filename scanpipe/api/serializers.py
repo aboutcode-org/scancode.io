@@ -142,9 +142,6 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
         pipeline = validated_data.pop("pipeline", None)
         start = validated_data.pop("start", False)
 
-        # if not pipeline and "pipeline_name" in self.initial_data:
-        #     raise ValidationError
-
         project = super().create(validated_data)
 
         if upload_file:
