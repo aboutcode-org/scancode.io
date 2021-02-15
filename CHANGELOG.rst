@@ -3,6 +3,14 @@
 
 ### v1.1.0 (unreleased)
 
+- Support inputs as tarballs in root_filesystem pipelines.
+  The input archives are now extracted with extractcode to the codebase/ directory.
+  https://github.com/nexB/scancode.io/issues/96
+
+- Improve support for unknown distros in docker and root_filesystem pipelines.
+  The pipeline logs the distro errors on the project instead of failing.
+  https://github.com/nexB/scancode.io/issues/97
+
 - Implement Pipeline registration through distribution entry points.
   Pipeline can now be installed as part of external libraries.
   With this change pipelines are no longer referenced by the

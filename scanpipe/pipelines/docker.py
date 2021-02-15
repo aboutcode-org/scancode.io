@@ -74,8 +74,9 @@ class Docker(Pipeline):
         """
         Collect installed system packages for each layer based on the distro.
         """
-        for image in self.images:
-            docker.scan_image_for_system_packages(self.project, image)
+        with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
+            for image in self.images:
+                docker.scan_image_for_system_packages(self.project, image)
 
     def tag_uninteresting_codebase_resources(self):
         """

@@ -107,10 +107,12 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
     as a CodebaseResource and relate that CodebaseResource to its
     DiscoveredPackage or keep that as a missing file.
     """
-    distro_id = image.distro.identifier
+    if not image.distro:
+        raise rootfs.DistroNotFound(f"Distro not found.")
 
+    distro_id = image.distro.identifier
     if distro_id not in rootfs.PACKAGE_GETTER_BY_DISTRO:
-        raise NotImplementedError(f'Distro "{distro_id}" is not supported.')
+        raise rootfs.DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
     package_getter = partial(
         rootfs.PACKAGE_GETTER_BY_DISTRO[distro_id],

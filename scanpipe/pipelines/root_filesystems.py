@@ -22,6 +22,8 @@
 
 import os
 
+from extractcode.extract import extract_file
+
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import rootfs
@@ -31,6 +33,22 @@ class RootFS(Pipeline):
     """
     A pipeline to analyze a Linux root filesystem aka. rootfs.
     """
+
+    def extract_input_files_to_codebase_directory(self):
+        """
+        Extract root filesystem input archives with extractcode.
+        """
+        input_files = self.project.inputs("*")
+        target = str(self.project.codebase_path)
+        extract_errors = []
+
+        for input_file in input_files:
+            for event in extract_file(input_file, target):
+                if event.done:
+                    extract_errors.extend(event.errors)
+
+        if extract_errors:
+            self.add_error("\n".join(extract_errors))
 
     def find_root_filesystems(self):
         """
@@ -42,11 +60,11 @@ class RootFS(Pipeline):
         """
         Collect rootfs information and store on project.
         """
-
         rootfs_data = {}
         for rfs in self.root_filesystems:
             rootfs_data["name"] = os.path.basename(rfs.location)
-            rootfs_data["distro"] = rfs.distro.to_dict()
+            rootfs_data["distro"] = rfs.distro.to_dict() if rfs.distro else {}
+
         self.project.extra_data.update({"images": rootfs_data})
         self.project.save()
 
@@ -60,9 +78,11 @@ class RootFS(Pipeline):
     def collect_and_create_system_packages(self):
         """
         Collect installed system packages for each rootfs based on the distro.
+        The collection of system packages is only available for known distros.
         """
-        for rfs in self.root_filesystems:
-            rootfs.scan_rootfs_for_system_packages(self.project, rfs)
+        with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
+            for rfs in self.root_filesystems:
+                rootfs.scan_rootfs_for_system_packages(self.project, rfs)
 
     def tag_uninteresting_codebase_resources(self):
         """
@@ -122,6 +142,7 @@ class RootFS(Pipeline):
         pipes.tag_not_analyzed_codebase_resources(self.project)
 
     steps = (
+        extract_input_files_to_codebase_directory,
         find_root_filesystems,
         collect_rootfs_information,
         collect_and_create_codebase_resources,

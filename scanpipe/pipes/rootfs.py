@@ -41,6 +41,14 @@ PACKAGE_GETTER_BY_DISTRO = {
 }
 
 
+class DistroNotFound(Exception):
+    pass
+
+
+class DistroNotSupported(Exception):
+    pass
+
+
 @attr.attributes
 class Resource:
     rootfs_path = attr.attrib(
@@ -154,10 +162,12 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     as a CodebaseResource and relate that CodebaseResource to its
     DiscoveredPackage or keep that as a missing file.
     """
-    distro_id = rootfs.distro.identifier
+    if not rootfs.distro:
+        raise DistroNotFound(f"Distro not found.")
 
+    distro_id = rootfs.distro.identifier
     if distro_id not in PACKAGE_GETTER_BY_DISTRO:
-        raise NotImplementedError(f'Distro "{distro_id}" is not supported.')
+        raise DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
     package_getter = partial(
         PACKAGE_GETTER_BY_DISTRO[distro_id],
