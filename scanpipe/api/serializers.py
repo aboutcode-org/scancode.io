@@ -80,7 +80,6 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
 class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     pipeline = serializers.ChoiceField(
         choices=scanpipe_app_config.pipelines,
-        # allow_blank=True,
         required=False,
         write_only=True,
         help_text=(
