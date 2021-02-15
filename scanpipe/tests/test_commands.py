@@ -25,6 +25,7 @@ from io import StringIO
 from pathlib import Path
 from unittest import mock
 
+from django.apps import apps
 from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
@@ -33,7 +34,8 @@ from django.utils import timezone
 from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.management.commands.graph import pipeline_graph_dot
 from scanpipe.models import Project
-from scanpipe.pipelines import get_pipeline_class
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 def task_success(run):
@@ -48,7 +50,8 @@ def task_failure(run):
 
 
 class ScanPipeManagementCommandTest(TestCase):
-    pipeline_location = "scanpipe/pipelines/docker.py"
+    pipeline_name = "docker"
+    pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
 
     def test_scanpipe_management_command_graph(self):
         out = StringIO()
@@ -57,18 +60,18 @@ class ScanPipeManagementCommandTest(TestCase):
         if not is_graphviz_installed():
             expected = "Graphviz is not installed."
             with self.assertRaisesMessage(CommandError, expected):
-                call_command("graph", self.pipeline_location)
+                call_command("graph", self.pipeline_name)
             return
 
-        call_command("graph", self.pipeline_location, "--output", temp_dir, stdout=out)
+        call_command("graph", self.pipeline_name, "--output", temp_dir, stdout=out)
         out_value = out.getvalue()
         self.assertIn("Graph(s) generated:", out_value)
-        self.assertIn("Docker.png", out_value)
-        self.assertTrue(Path(f"/{temp_dir}/Docker.png").exists())
+        self.assertIn("docker.png", out_value)
+        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
+        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
 
     def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
-        pipeline_class = get_pipeline_class(self.pipeline_location)
-        output_dot = pipeline_graph_dot(pipeline_class)
+        output_dot = pipeline_graph_dot(self.pipeline_name, self.pipeline_class)
         self.assertIn("rankdir=TB;", output_dot)
         self.assertIn('"extract_images"[label=<<b>extract_images</b>>', output_dot)
         self.assertIn('"extract_layers"[label=<<b>extract_layers</b>>', output_dot)
@@ -93,31 +96,31 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_create_project_pipelines(self):
         out = StringIO()
 
-        options = ["--pipeline", "non-existing.py"]
-        expected = "non-existing.py is not a valid pipeline"
+        options = ["--pipeline", "non-existing"]
+        expected = "non-existing is not a valid pipeline"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
         options = [
             "--pipeline",
-            self.pipeline_location,
+            self.pipeline_name,
             "--pipeline",
-            "scanpipe/pipelines/root_filesystems.py",
+            "root_filesystems",
         ]
         call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
         expected = [
-            self.pipeline_location,
-            "scanpipe/pipelines/root_filesystems.py",
+            self.pipeline_name,
+            "root_filesystems",
         ]
-        self.assertEqual(expected, [run.pipeline for run in project.runs.all()])
+        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
 
     def test_scanpipe_management_command_create_project_inputs(self):
         out = StringIO()
 
-        options = ["--input", "non-existing.py"]
-        expected = "non-existing.py not found or not a file"
+        options = ["--input", "non-existing"]
+        expected = "non-existing not found or not a file"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
@@ -134,21 +137,21 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
 
-    def test_scanpipe_management_command_create_project_run(self):
-        options = ["--run"]
-        expected = "The --run option requires one or more pipelines."
+    def test_scanpipe_management_command_create_project_execute(self):
+        options = ["--execute"]
+        expected = "The --execute option requires one or more pipelines."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
-        pipeline = "scanpipe/pipelines/load_inventory.py"
+        pipeline = "load_inventory"
         options = [
             "--pipeline",
             pipeline,
-            "--run",
+            "--execute",
         ]
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_success):
+        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
             call_command("create-project", "my_project", *options, stdout=out)
 
         self.assertIn("Project my_project created", out.getvalue())
@@ -186,8 +189,8 @@ class ScanPipeManagementCommandTest(TestCase):
         project = Project.objects.create(name="my_project")
 
         pipelines = [
-            self.pipeline_location,
-            "scanpipe/pipelines/root_filesystems.py",
+            self.pipeline_name,
+            "root_filesystems",
         ]
 
         options = pipelines[:]
@@ -198,74 +201,68 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
         self.assertIn("Pipeline(s) added to the project", out.getvalue())
-        self.assertEqual(pipelines, [run.pipeline for run in project.runs.all()])
+        self.assertEqual(pipelines, [run.pipeline_name for run in project.runs.all()])
 
-        options = ["--project", project.name, "non-existing.py"]
-        expected = "non-existing.py is not a valid pipeline"
+        options = ["--project", project.name, "non-existing"]
+        expected = "non-existing is not a valid pipeline"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-pipeline", *options, stdout=out)
 
     def test_scanpipe_management_command_show_pipeline(self):
-        pipelines = [
-            self.pipeline_location,
-            "scanpipe/pipelines/root_filesystems.py",
+        pipeline_names = [
+            self.pipeline_name,
+            "root_filesystems",
         ]
 
         project = Project.objects.create(name="my_project")
-        for pipeline_location in pipelines:
-            project.add_pipeline(pipeline_location)
+        for pipeline_name in pipeline_names:
+            project.add_pipeline(pipeline_name)
 
         options = ["--project", project.name, "--no-color"]
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
-        expected = (
-            " [ ] scanpipe/pipelines/docker.py\n"
-            " [ ] scanpipe/pipelines/root_filesystems.py\n"
-        )
+        expected = " [ ] docker\n" " [ ] root_filesystems\n"
         self.assertEqual(expected, out.getvalue())
 
-        project.runs.filter(pipeline=pipelines[0]).update(task_exitcode=0)
-        project.runs.filter(pipeline=pipelines[1]).update(task_exitcode=1)
+        project.runs.filter(pipeline_name=pipeline_names[0]).update(task_exitcode=0)
+        project.runs.filter(pipeline_name=pipeline_names[1]).update(task_exitcode=1)
 
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
-        expected = (
-            " [SUCCESS] scanpipe/pipelines/docker.py\n"
-            " [FAILURE] scanpipe/pipelines/root_filesystems.py\n"
-        )
+        expected = " [SUCCESS] docker\n" " [FAILURE] root_filesystems\n"
         self.assertEqual(expected, out.getvalue())
 
-    def test_scanpipe_management_command_run(self):
+    def test_scanpipe_management_command_execute(self):
         project = Project.objects.create(name="my_project")
         options = ["--project", project.name]
 
         out = StringIO()
         expected = "No pipelines to run on project my_project"
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("run", *options, stdout=out)
+            call_command("execute", *options, stdout=out)
 
-        project.add_pipeline(self.pipeline_location)
+        project.add_pipeline(self.pipeline_name)
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_success):
-            call_command("run", *options, stdout=out)
-        expected = "Pipeline scanpipe/pipelines/docker.py run in progress..."
+        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+            call_command("execute", *options, stdout=out)
+        expected = "Pipeline docker run in progress..."
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
         self.assertIn(expected, out.getvalue())
 
         err = StringIO()
-        project.add_pipeline(self.pipeline_location)
-        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_failure):
+        project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.models.Run.execute_task_async", task_failure):
             with self.assertRaisesMessage(SystemExit, "1"):
-                call_command("run", *options, stdout=out, stderr=err)
-        expected = "Error during scanpipe/pipelines/docker.py execution:"
+                call_command("execute", *options, stdout=out, stderr=err)
+        expected = "Error during docker execution:"
         self.assertIn(expected, err.getvalue())
         self.assertIn("Error log", err.getvalue())
 
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")
-        run = project.add_pipeline(self.pipeline_location)
+        run = project.add_pipeline(self.pipeline_name)
 
         options = ["--project", project.name, "--no-color"]
         out = StringIO()
@@ -276,7 +273,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- CodebaseResource: 0", output)
         self.assertIn("- DiscoveredPackage: 0", output)
         self.assertIn("- ProjectError: 0", output)
-        self.assertIn("[ ] scanpipe/pipelines/docker.py", output)
+        self.assertIn("[ ] docker", output)
 
         run.task_start_date = timezone.now()
         run.log = (
@@ -288,7 +285,7 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("status", *options, stdout=out)
 
         output = out.getvalue()
-        self.assertIn("[RUNNING] scanpipe/pipelines/docker.py", output)
+        self.assertIn("[RUNNING] docker", output)
         for line in run.log.split("\n"):
             self.assertIn(line, output)
 

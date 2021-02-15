@@ -29,9 +29,15 @@ class DoNothing(Pipeline):
     """
 
     def step1(self):
+        """
+        Step1 doc.
+        """
         pass
 
     def step2(self):
+        """
+        Step2 doc.
+        """
         pass
 
     steps = (

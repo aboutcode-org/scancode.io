@@ -58,7 +58,7 @@ class Command(ProjectCommand, RunStatusCommandMixin):
             message.append("\nPipelines:")
             for run in runs:
                 status_code = self.get_run_status_code(run)
-                message.append(f" [{status_code}] {run.pipeline}")
+                message.append(f" [{status_code}] {run.pipeline_name}")
                 if display_runs_log and run.log:
                     for line in run.log.split("\n"):
                         message.append(3 * " " + line)

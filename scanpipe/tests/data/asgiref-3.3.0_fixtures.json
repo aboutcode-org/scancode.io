@@ -19,7 +19,7 @@
     "task_exitcode": 0,
     "task_output": "Metaflow 2.2.5 executing ScanCodebase",
     "project": "44915ce7-7664-42ff-8334-04399f844c04",
-    "pipeline": "scanpipe/pipelines/scan_codebase.py",
+    "pipeline_name": "scan_codebase",
     "created_date": "2020-11-25T14:56:55.585Z",
     "description": "A pipeline to scan a codebase with ScanCode-toolkit.\n\nThe input files are copied to the project codebase/ directory and extracted\nin place before running the scan.\nAlternatively, the code can be manually copied to the project codebase/\ndirectory."
   }

@@ -41,8 +41,6 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
-from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_graph
 from scanpipe.views import project_results_json_response
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
@@ -90,14 +88,11 @@ class ProjectViewSet(
 
     @action(detail=False)
     def pipelines(self, request, *args, **kwargs):
-        data = {}
-        for location, name in scanpipe_app_config.pipelines:
-            data[name] = {
-                "location": location,
-                "description": get_pipeline_class(location).get_doc(),
-                "steps": get_pipeline_graph(location),
-            }
-        return Response(data)
+        pipeline_data = [
+            {"name": name, **pipeline_class.get_info()}
+            for name, pipeline_class in scanpipe_app_config.pipelines.items()
+        ]
+        return Response(pipeline_data)
 
     @action(detail=True)
     def resources(self, request, *args, **kwargs):
@@ -157,9 +152,9 @@ class ProjectViewSet(
 
         pipeline = request.data.get("pipeline")
         if pipeline:
-            if scanpipe_app_config.is_valid(pipeline):
-                start = request.data.get("start")
-                project.add_pipeline(pipeline, start)
+            if pipeline in scanpipe_app_config.pipelines:
+                execute_now = request.data.get("execute_now")
+                project.add_pipeline(pipeline, execute_now)
                 return Response({"status": "Pipeline added."})
 
             message = {"status": f"{pipeline} is not a valid pipeline."}
@@ -167,7 +162,7 @@ class ProjectViewSet(
 
         message = {
             "status": "Pipeline required.",
-            "pipelines": [location for location, _ in scanpipe_app_config.pipelines],
+            "pipelines": list(scanpipe_app_config.pipelines.keys()),
         }
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
@@ -190,6 +185,6 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             message = {"status": "Pipeline already started."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        transaction.on_commit(run.run_pipeline_task_async)
+        transaction.on_commit(run.execute_task_async)
 
-        return Response({"status": f"Pipeline {run.pipeline} started."})
+        return Response({"status": f"Pipeline {run.pipeline_name} started."})

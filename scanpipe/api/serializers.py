@@ -23,6 +23,7 @@
 from django.apps import apps
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
@@ -61,7 +62,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
         model = Run
         fields = [
             "url",
-            "pipeline",
+            "pipeline_name",
             "description",
             "project",
             "uuid",
@@ -79,7 +80,6 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
 class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     pipeline = serializers.ChoiceField(
         choices=scanpipe_app_config.pipelines,
-        allow_blank=True,
         required=False,
         write_only=True,
         help_text=(
@@ -87,6 +87,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             "Requires an input file."
         ),
     )
+    execute_now = serializers.BooleanField(write_only=True)
     upload_file = serializers.FileField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
@@ -102,6 +103,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             "upload_file",
             "created_date",
             "pipeline",
+            "execute_now",
             "input_root",
             "output_root",
             "next_run",
@@ -133,10 +135,11 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Create a new `project` with optionally provided `upload_file` and `pipeline`.
-        If both are provided, the pipeline run is automatically started.
+        The `execute_now` parameter can be provided to execute the Pipeline on creation.
         """
         upload_file = validated_data.pop("upload_file", None)
         pipeline = validated_data.pop("pipeline", None)
+        execute_now = validated_data.pop("execute_now", False)
 
         project = super().create(validated_data)
 
@@ -144,7 +147,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             project.add_input_file(upload_file)
 
         if pipeline:
-            project.add_pipeline(pipeline, start_run=bool(upload_file))
+            project.add_pipeline(pipeline, execute_now)
 
         return project
 
@@ -188,20 +191,18 @@ class PipelineSerializer(serializers.ModelSerializer):
     Serializer used in the `ProjectViewSet.add_pipeline` action.
     """
 
-    start = serializers.BooleanField(
-        write_only=True,
-    )
     pipeline = serializers.ChoiceField(
         choices=scanpipe_app_config.pipelines,
         required=True,
         write_only=True,
     )
+    execute_now = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = Run
         fields = [
             "pipeline",
-            "start",
+            "execute_now",
         ]
 
 

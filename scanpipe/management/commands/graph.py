@@ -28,8 +28,6 @@ from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import scanpipe_app_config
-from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_doc
 
 
 def is_graphviz_installed():
@@ -39,11 +37,13 @@ def is_graphviz_installed():
     return False
 
 
-def pipeline_graph_dot(pipeline_class, fontname="Helvetica", shape="record"):
+def pipeline_graph_dot(pipeline_name, pipeline_class):
     """
     Return the pipeline graph as DOT format compatible with Graphviz.
     """
-    dot_output = [f"digraph {pipeline_class.__name__} {{", "rankdir=TB;"]
+    fontname = "Helvetica"
+    shape = "record"
+    dot_output = [f"digraph {pipeline_name} {{", "rankdir=TB;"]
 
     edges = []
     nodes = []
@@ -72,9 +72,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "args",
-            metavar="pipelines",
+            metavar="PIPELINE_NAME",
             nargs="*",
-            help="One or more pipeline locations.",
+            help="One or more pipeline names.",
         )
         parser.add_argument(
             "--list",
@@ -83,44 +83,46 @@ class Command(BaseCommand):
         )
         parser.add_argument("--output", help="Output directory location.")
 
-    def handle(self, *pipelines, **options):
+    def handle(self, *pipeline_names, **options):
         if options["list"]:
-            for location, _ in scanpipe_app_config.pipelines:
-                self.stdout.write("- " + self.style.SUCCESS(location))
-                pipeline_doc = get_pipeline_doc(location)
-                self.stdout.write(indent(pipeline_doc, "  "), ending="\n\n")
+            for pipeline_name, pipeline_class in scanpipe_app_config.pipelines.items():
+                self.stdout.write("- " + self.style.SUCCESS(pipeline_name))
+                self.stdout.write(indent(pipeline_class.get_doc(), "  "), ending="\n\n")
             sys.exit(0)
 
         if not is_graphviz_installed():
             raise CommandError("Graphviz is not installed.")
 
-        if not pipelines:
-            self.stderr.write(self.style.ERROR("The pipelines argument is required."))
+        if not pipeline_names:
+            self.stderr.write(
+                self.style.ERROR("The pipeline-names argument is required.")
+            )
             sys.exit(1)
 
         outputs = []
-        for pipeline_location in pipelines:
-            try:
-                pipeline_class = get_pipeline_class(pipeline_location)
-            except ModuleNotFoundError:
-                self.stderr.write(
-                    self.style.ERROR(f"{pipeline_location} is not valid.")
-                )
+        for pipeline_name in pipeline_names:
+            pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
+            if not pipeline_class:
+                self.stderr.write(self.style.ERROR(f"{pipeline_name} is not valid."))
                 sys.exit(1)
 
             output_directory = options.get("output")
-            outputs.append(self.generate_graph_png(pipeline_class, output_directory))
+            outputs.append(
+                self.generate_graph_png(pipeline_name, pipeline_class, output_directory)
+            )
 
         separator = "\n - "
         msg = f"Graph(s) generated:{separator}" + separator.join(outputs)
         self.stdout.write(self.style.SUCCESS(msg))
 
     @staticmethod
-    def generate_graph_png(pipeline_class, output_directory):
-        output_dot = pipeline_graph_dot(pipeline_class)
-        output_location = f"{pipeline_class.__name__}.png"
+    def generate_graph_png(pipeline_name, pipeline_class, output_directory):
+        output_location = f"{pipeline_name}.png"
         if output_directory:
             output_location = f"{output_directory}/{output_location}"
+
+        output_dot = pipeline_graph_dot(pipeline_name, pipeline_class)
         dot_cmd = f'echo "{output_dot}" | dot -Tpng -o {output_location}'
         subprocess.getoutput(dot_cmd)
+
         return output_location

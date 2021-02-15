@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import importlib
 import inspect
 import logging
 import timeit
@@ -39,8 +38,6 @@ class Pipeline:
     """
 
     steps = ()
-    run = None
-    project = None
 
     def __init__(self, run):
         """
@@ -49,11 +46,34 @@ class Pipeline:
         assert self.steps
         self.run = run
         self.project = run.project
-        self.pipeline_name = self.__class__.__name__
 
     @classmethod
     def get_doc(cls):
+        """
+        Return the docstring.
+        """
         return getdoc(cls)
+
+    @classmethod
+    def get_graph(cls):
+        """
+        Return the graph of steps.
+        """
+        return [{"name": step.__name__, "doc": getdoc(step)} for step in cls.steps]
+
+    @classmethod
+    def get_info(cls):
+        """
+        Return a dict of combined data about this Pipeline.
+        """
+        return {
+            "description": cls.get_doc(),
+            "steps": cls.get_graph(),
+        }
+
+    @property
+    def pipeline_name(self):
+        return self.run.pipeline_name
 
     def log(self, message):
         """
@@ -85,6 +105,9 @@ class Pipeline:
 
         return 0, ""
 
+    def add_error(self, error):
+        self.project.add_error(error, model=self.pipeline_name)
+
     @contextmanager
     def save_errors(self, *exceptions):
         """
@@ -98,40 +121,12 @@ class Pipeline:
         try:
             yield
         except exceptions as error:
-            self.project.add_error(error, model=self.__class__.__name__)
+            self.add_error(error)
 
 
-def is_pipeline_subclass(obj):
+def is_pipeline(obj):
     """
     Return True if the `obj` is a subclass of `Pipeline` except for the
     `Pipeline` class itself.
     """
     return inspect.isclass(obj) and issubclass(obj, Pipeline) and obj is not Pipeline
-
-
-def get_pipeline_class(pipeline_location):
-    """
-    Return the Pipeline subclass of the provided `pipeline_location`.
-    """
-    module_name = pipeline_location.replace(".py", "").replace("/", ".")
-    module = importlib.import_module(module_name)
-    module_classes = inspect.getmembers(module, is_pipeline_subclass)
-    _, pipeline_class = [cls for cls in module_classes][0]
-    return pipeline_class
-
-
-def get_pipeline_doc(pipeline_location):
-    """
-    Return the provided `pipeline_location` documentation from the docstring.
-    """
-    return get_pipeline_class(pipeline_location).get_doc()
-
-
-def get_pipeline_graph(pipeline_location):
-    """
-    Return the graph of steps for the provided `pipeline_location`.
-    """
-    pipeline_class = get_pipeline_class(pipeline_location)
-    return [
-        {"name": step.__name__, "doc": getdoc(step)} for step in pipeline_class.steps
-    ]

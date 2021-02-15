@@ -34,7 +34,7 @@ Display help for the provided subcommand.
 For example::
 
     $ scanpipe create-project --help
-    usage: scanpipe create-project [--pipeline PIPELINES] [--input INPUTS] name
+    usage: scanpipe create-project [--pipeline PIPELINES] [--input INPUTS] [--execute] name
 
     Create a ScanPipe project.
     
@@ -50,15 +50,15 @@ be unique.
 
 Optional arguments:
 
-- ``--pipeline PIPELINES``  Pipelines locations to add on the project.
+- ``--pipeline PIPELINES``  Pipelines names to add on the project.
 
 - ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace
   directory.
 
-- ``--run``  Start running the pipelines right after project creation.
+- ``--execute``  Execute the pipelines right after project creation.
 
 .. warning::
-    The pipelines are added and will be running in the order of the provided options.
+    The pipelines are added and will be executed in the order of the provided options.
 
 `$ scanpipe add-input --project PROJECT <input ...>`
 ----------------------------------------------------
@@ -73,11 +73,11 @@ copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` director
     $ scanpipe add-input --project foo ~/docker/alpine-base.tar
 
 
-`$ scanpipe add-pipeline --project PROJECT <pipeline ...>`
-----------------------------------------------------------
+`$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`
+-----------------------------------------------------------------------------
 
-Add the ``<pipeline>`` found at this location to the project named ``PROJECT``.
-You can use more than one ``<pipeline>`` to add multiple pipelines at once.
+Add the ``PIPELINE_NAME`` to the provided ``PROJECT``.
+You can use more than one ``PIPELINE_NAME`` to add multiple pipelines at once.
 
 .. warning::
     The pipelines are added and will be running in the order of the provided options.
@@ -85,17 +85,13 @@ You can use more than one ``<pipeline>`` to add multiple pipelines at once.
 For example, assuming you have created beforehand a project named "foo", this will
 add the docker pipeline to your project::
 
-    $ scanpipe add-pipeline --project foo scanpipe/pipelines/docker.py
+    $ scanpipe add-pipeline --project foo docker
 
 
-`$ scanpipe run --project PROJECT`
-----------------------------------
+`$ scanpipe execute --project PROJECT`
+--------------------------------------
 
-Run all the pipelines of the project named ``PROJECT``.
-
-Optional arguments:
-
-- ``--resume`` Resume the latest failed pipeline execution.
+Execute the next pipeline of the project named ``PROJECT`` queue.
 
 
 `$ scanpipe show-pipeline --project PROJECT`
@@ -105,7 +101,7 @@ List all the pipelines added of the project named ``PROJECT``.
 
 
 `$ scanpipe status --project PROJECT`
---------------------------------------------
+-------------------------------------
 
 Display status information about the provided ``PROJECT``.
 
@@ -121,13 +117,12 @@ Output the ``PROJECT`` results as JSON, CSV or XLSX.
 The output files are created in the ``PROJECT`` :guilabel:`output/` directory.
 
 
-`$ scanpipe graph [pipelines ...]`
-----------------------------------
+`$ scanpipe graph [PIPELINE_NAME ...]`
+--------------------------------------
 
 Generate one or more pipeline graph image as PNG
 (using `Graphviz <https://graphviz.org/>`_).
-The output files are named using the pipeline class name with a ``.png``
-extension.
+The output files are named using the pipeline name with a ``.png`` extension.
 
 Optional arguments:
 

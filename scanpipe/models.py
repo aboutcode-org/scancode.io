@@ -27,6 +27,7 @@ import uuid
 from contextlib import suppress
 from pathlib import Path
 
+from django.apps import apps
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -43,11 +44,10 @@ from packageurl import normalize_qualifiers
 
 from scancodeio import WORKSPACE_LOCATION
 from scanpipe import tasks
-from scanpipe.apps import remove_dot_py_suffix
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
-from scanpipe.pipelines import get_pipeline_class
-from scanpipe.pipelines import get_pipeline_doc
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 class UUIDPKModel(models.Model):
@@ -251,10 +251,11 @@ class Project(UUIDPKModel, models.Model):
 
     def inputs(self, pattern="**/*"):
         """
-        Return a generator of all the files and directories path of the input/
-        directory matching the provided `pattern`.
-        The default "**" pattern means: "this directory and all subdirectories,
+        Yield all the files and directories path of the input/ directory matching the
+        provided `pattern`.
+        The default "**/*" pattern means: "this directory and all subdirectories,
         recursively".
+        Use the "*" pattern to list the root content only.
         """
         return self.input_path.glob(pattern)
 
@@ -332,20 +333,23 @@ class Project(UUIDPKModel, models.Model):
 
         move_inputs([input_location], self.input_path)
 
-    def add_pipeline(self, pipeline, start_run=False):
+    def add_pipeline(self, pipeline_name, execute_now=False):
         """
         Create a new Run instance with the provided `pipeline` on this project.
 
-        If `start_run` is True, the pipeline task is created.
+        If `execute_now` is True, the pipeline task is created.
         The on_commit() is used to postpone the task creation after the transaction is
         successfully committed.
         If there isn’t an active transaction, the callback will be executed immediately.
         """
+        pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
         run = Run.objects.create(
-            project=self, pipeline=pipeline, description=get_pipeline_doc(pipeline)
+            project=self,
+            pipeline_name=pipeline_name,
+            description=pipeline_class.get_doc(),
         )
-        if start_run:
-            transaction.on_commit(run.run_pipeline_task_async)
+        if execute_now:
+            transaction.on_commit(run.execute_task_async)
         return run
 
     def get_next_run(self):
@@ -506,7 +510,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     The Database representation of a Pipeline execution.
     """
 
-    pipeline = models.CharField(max_length=1024)
+    pipeline_name = models.CharField(
+        max_length=256,
+        help_text=_("Identify a registered Pipeline class."),
+    )
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
     log = models.TextField(blank=True, editable=False)
@@ -517,14 +524,14 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         ordering = ["created_date"]
 
     def __str__(self):
-        return f"{self.pipeline}"
+        return f"{self.pipeline_name}"
 
-    def run_pipeline_task_async(self):
-        tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
+    def execute_task_async(self):
+        tasks.execute_pipeline_task.apply_async(args=[self.pk], queue="default")
 
     @property
     def pipeline_class(self):
-        return get_pipeline_class(self.pipeline)
+        return scanpipe_app_config.pipelines.get(self.pipeline_name)
 
     def make_pipeline_instance(self):
         return self.pipeline_class(self)
@@ -578,10 +585,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print("\033[41;37m" + output_str + "\033[m")
             else:
                 print(output_str)
-
-    @property
-    def pipeline_basename(self):
-        return remove_dot_py_suffix(self.pipeline.split("/")[-1])
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):

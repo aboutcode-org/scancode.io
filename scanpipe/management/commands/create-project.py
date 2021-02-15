@@ -41,7 +41,7 @@ class Command(BaseCommand):
             dest="pipelines",
             default=list(),
             help=(
-                "Pipelines locations to add on the project. "
+                "Pipelines names to add on the project. "
                 "The pipelines are added and ran respecting this provided order."
             ),
         )
@@ -53,16 +53,16 @@ class Command(BaseCommand):
             help="Input file locations to copy in the input/ work directory.",
         )
         parser.add_argument(
-            "--run",
+            "--execute",
             action="store_true",
-            help="Start running the pipelines right after project creation.",
+            help="Execute the pipelines right after project creation.",
         )
 
     def handle(self, *args, **options):
         name = options["name"]
-        pipelines = options["pipelines"]
+        pipeline_names = options["pipelines"]
         inputs = options["inputs"]
-        run = options["run"]
+        execute = options["execute"]
 
         project = Project(name=name)
         try:
@@ -71,21 +71,23 @@ class Command(BaseCommand):
             raise CommandError("\n".join(e.messages))
 
         # Run validation before creating the project in the database
-        validate_pipelines(pipelines)
+        validate_pipelines(pipeline_names)
         validate_inputs(inputs)
 
-        if run and not pipelines:
-            raise CommandError("The --run option requires one or more pipelines.")
+        if execute and not pipeline_names:
+            raise CommandError("The --execute option requires one or more pipelines.")
 
         project.save()
         msg = f"Project {name} created with work directory {project.work_directory}"
         self.stdout.write(self.style.SUCCESS(msg))
 
-        for pipeline_location in pipelines:
-            project.add_pipeline(pipeline_location)
+        for pipeline_name in pipeline_names:
+            project.add_pipeline(pipeline_name)
 
         for input_location in inputs:
             project.copy_input_from(input_location)
 
-        if run:
-            call_command("run", project=project, stderr=self.stderr, stdout=self.stdout)
+        if execute:
+            call_command(
+                "execute", project=project, stderr=self.stderr, stdout=self.stdout
+            )

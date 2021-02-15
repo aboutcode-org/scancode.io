@@ -40,17 +40,8 @@ def get_run_instance(run_pk):
     return run_model.objects.get(pk=run_pk)
 
 
-def start_next_run_task(run):
-    """
-    Start the next Pipeline Run in the Project queue, if any.
-    """
-    next_run = run.project.get_next_run()
-    if next_run:
-        next_run.run_pipeline_task_async()
-
-
 @shared_task(bind=True)
-def run_pipeline_task(self, run_pk):
+def execute_pipeline_task(self, run_pk):
     task_id = self.request.id
     info(f"Enter `{self.name}` Task.id={task_id}", run_pk)
 
@@ -60,7 +51,7 @@ def run_pipeline_task(self, run_pk):
     run.reset_task_values()
     run.set_task_started(task_id)
 
-    info(f'Run pipeline: "{run.pipeline}" on project: "{project.name}"', run_pk)
+    info(f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
 
     pipeline = run.make_pipeline_instance()
     exitcode, output = pipeline.execute()
@@ -71,4 +62,3 @@ def run_pipeline_task(self, run_pk):
     if run.task_succeeded:
         # We keep the temporary files available for debugging in case of error
         project.clear_tmp_directory()
-        start_next_run_task(run)

@@ -55,10 +55,14 @@ setup(
         "console_scripts": [
             "scanpipe = scancodeio:command_line",
         ],
+        "scancodeio_pipelines": [
+            "docker = scanpipe.pipelines.docker:Docker",
+            "load_inventory = scanpipe.pipelines.load_inventory:LoadInventory",
+            "root_filesystems = scanpipe.pipelines.root_filesystems:RootFS",
+            "scan_codebase = scanpipe.pipelines.scan_codebase:ScanCodebase",
+        ],
     },
     classifiers=[
-        # complete classifiers list
-        # http://pypi.python.org/pypi?%3Aaction=list_classifiers
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Intended Audience :: Information Technology",

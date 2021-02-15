@@ -57,8 +57,8 @@ urlpatterns = [
     ),
     path(
         "project/<uuid:uuid>/run_pipeline/<uuid:run_uuid>/",
-        views.run_pipeline_view,
-        name="project_run_pipeline",
+        views.execute_pipeline_view,
+        name="project_execute_pipeline",
     ),
     path(
         "project/add/",

@@ -14,9 +14,6 @@ To get started locally with the API:
 From the bottom of this page you can **create a new project**, **upload an input
 file** and **add a pipeline** to this project at once.
 
-.. note::
-    If you add a pipeline, the pipeline starts immediately on project creation.
-
 ----
 
 Multiple **views** and **actions** are available to manage projects.
@@ -25,8 +22,9 @@ From a ``Project Instance`` view:
 Add pipeline
 ------------
 
-Add the selected ``pipeline`` to the ``project``. If the ``start`` value is provided,
-the pipeline run will start immediately on pipeline addition.
+Add the selected ``pipeline`` to the ``project``.
+If the ``execute_now`` value is provided, the pipeline execution will start immediately
+on pipeline addition.
 
 Errors
 ------
