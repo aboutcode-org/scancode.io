@@ -29,7 +29,7 @@ try:
 except ImportError:
     import importlib_metadata
 
-from scanpipe.pipelines import is_pipeline_subclass
+from scanpipe.pipelines import is_pipeline
 
 
 class ScanPipeConfig(AppConfig):
@@ -57,7 +57,7 @@ class ScanPipeConfig(AppConfig):
         """
         Register the provided `name` and `class_` as a valid pipeline.
         """
-        if not is_pipeline_subclass(class_):
+        if not is_pipeline(class_):
             raise ImproperlyConfigured(
                 f'The entry point "{class_}" is not a `Pipeline` subclass.'
             )

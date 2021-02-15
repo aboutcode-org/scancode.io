@@ -24,7 +24,7 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import is_pipeline_subclass
+from scanpipe.pipelines import is_pipeline
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.pretty_name import PrettyPipeline
 
@@ -141,11 +141,11 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual("Error message", error.message)
         self.assertIn('raise Exception("Error message")', error.traceback)
 
-    def test_scanpipe_pipelines_is_pipeline_subclass(self):
-        self.assertFalse(is_pipeline_subclass(None))
-        self.assertFalse(is_pipeline_subclass(Pipeline))
-        self.assertTrue(is_pipeline_subclass(DoNothing))
-        self.assertTrue(is_pipeline_subclass(PrettyPipeline))
+    def test_scanpipe_pipelines_is_pipeline(self):
+        self.assertFalse(is_pipeline(None))
+        self.assertFalse(is_pipeline(Pipeline))
+        self.assertTrue(is_pipeline(DoNothing))
+        self.assertTrue(is_pipeline(PrettyPipeline))
 
     def test_scanpipe_pipelines_class_get_graph(self):
         expected = [

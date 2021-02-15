@@ -127,7 +127,7 @@ class Pipeline:
             self.project.add_error(error, model=self.get_name())
 
 
-def is_pipeline_subclass(obj):
+def is_pipeline(obj):
     """
     Return True if the `obj` is a subclass of `Pipeline` except for the
     `Pipeline` class itself.
