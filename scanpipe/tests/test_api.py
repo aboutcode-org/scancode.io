@@ -195,8 +195,8 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
         response = self.csrf_client.get(url)
-        docker_pipeline = response.data.get("docker")
-        self.assertEqual(["description", "steps"], list(docker_pipeline.keys()))
+        expected = ["name", "description", "steps"]
+        self.assertEqual(expected, list(response.data[0].keys()))
 
     def test_scanpipe_api_project_action_resources(self):
         url = reverse("project-resources", args=[self.project1.uuid])

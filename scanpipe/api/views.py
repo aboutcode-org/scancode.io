@@ -88,13 +88,16 @@ class ProjectViewSet(
 
     @action(detail=False)
     def pipelines(self, request, *args, **kwargs):
-        data = {}
+        pipeline_data = []
         for name, pipeline_class in scanpipe_app_config.pipelines.items():
-            data[name] = {
-                "description": pipeline_class.get_doc(),
-                "steps": pipeline_class.get_graph(),
-            }
-        return Response(data)
+            pipeline_data.append(
+                {
+                    "name": name,
+                    "description": pipeline_class.get_doc(),
+                    "steps": pipeline_class.get_graph(),
+                }
+            )
+        return Response(pipeline_data)
 
     @action(detail=True)
     def resources(self, request, *args, **kwargs):
