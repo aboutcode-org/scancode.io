@@ -176,8 +176,8 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         form = AddPipelineForm(request.POST)
         if form.is_valid():
             pipeline = form.data["pipeline"]
-            run_pipeline = form.data.get("run_pipeline", False)
-            project.add_pipeline(pipeline, start=run_pipeline)
+            execute_now = form.data.get("execute_now", False)
+            project.add_pipeline(pipeline, execute_now)
             messages.success(request, f"Pipeline {pipeline} added.")
         else:
             messages.error(request, "Pipeline addition error.")
@@ -208,14 +208,14 @@ class ProjectTreeView(ProjectViewMixin, generic.DetailView):
         return context
 
 
-def run_pipeline_view(request, uuid, run_uuid):
+def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
     if run.task_start_date:
         raise Http404("Pipeline already started.")
 
-    run.run_pipeline_task_async()
+    run.execute_task_async()
     messages.success(request, f'Pipeline "{run.pipeline_name}" run started.')
     return redirect(project)
 

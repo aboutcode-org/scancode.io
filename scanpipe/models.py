@@ -251,10 +251,11 @@ class Project(UUIDPKModel, models.Model):
 
     def inputs(self, pattern="**/*"):
         """
-        Return a generator of all the files and directories path of the input/
-        directory matching the provided `pattern`.
-        The default "**" pattern means: "this directory and all subdirectories,
+        Yield all the files and directories path of the input/ directory matching the
+        provided `pattern`.
+        The default "**/*" pattern means: "this directory and all subdirectories,
         recursively".
+        Use the "*" pattern to list the root content only.
         """
         return self.input_path.glob(pattern)
 
@@ -332,11 +333,11 @@ class Project(UUIDPKModel, models.Model):
 
         move_inputs([input_location], self.input_path)
 
-    def add_pipeline(self, pipeline_name, start=False):
+    def add_pipeline(self, pipeline_name, execute_now=False):
         """
         Create a new Run instance with the provided `pipeline` on this project.
 
-        If `start` is True, the pipeline task is created.
+        If `execute_now` is True, the pipeline task is created.
         The on_commit() is used to postpone the task creation after the transaction is
         successfully committed.
         If there isn’t an active transaction, the callback will be executed immediately.
@@ -347,8 +348,8 @@ class Project(UUIDPKModel, models.Model):
             pipeline_name=pipeline_name,
             description=pipeline_class.get_doc(),
         )
-        if start:
-            transaction.on_commit(run.run_pipeline_task_async)
+        if execute_now:
+            transaction.on_commit(run.execute_task_async)
         return run
 
     def get_next_run(self):
@@ -525,8 +526,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def __str__(self):
         return f"{self.pipeline_name}"
 
-    def run_pipeline_task_async(self):
-        tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
+    def execute_task_async(self):
+        tasks.execute_pipeline_task.apply_async(args=[self.pk], queue="default")
 
     @property
     def pipeline_class(self):

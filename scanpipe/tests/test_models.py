@@ -526,8 +526,8 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     the tests.
     """
 
-    @mock.patch("scanpipe.models.Run.run_pipeline_task_async")
-    def test_scanpipe_project_model_add_pipeline(self, run_task):
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_project_model_add_pipeline(self, mock_execute_task):
         project1 = Project.objects.create(name="Analysis")
 
         self.assertEqual(0, project1.runs.count())
@@ -540,10 +540,10 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         run = project1.runs.get()
         self.assertEqual(pipeline_name, run.pipeline_name)
         self.assertEqual(pipeline_class.get_doc(), run.description)
-        run_task.assert_not_called()
+        mock_execute_task.assert_not_called()
 
-        project1.add_pipeline(pipeline_name, start=True)
-        run_task.assert_called_once()
+        project1.add_pipeline(pipeline_name, execute_now=True)
+        mock_execute_task.assert_called_once()
 
     def test_scanpipe_project_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")

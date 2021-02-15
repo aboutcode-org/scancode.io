@@ -34,7 +34,7 @@ Display help for the provided subcommand.
 For example::
 
     $ scanpipe create-project --help
-    usage: scanpipe create-project [--pipeline PIPELINES] [--input INPUTS] name
+    usage: scanpipe create-project [--pipeline PIPELINES] [--input INPUTS] [--execute] name
 
     Create a ScanPipe project.
     
@@ -55,10 +55,10 @@ Optional arguments:
 - ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace
   directory.
 
-- ``--run``  Start running the pipelines right after project creation.
+- ``--execute``  Execute the pipelines right after project creation.
 
 .. warning::
-    The pipelines are added and will be running in the order of the provided options.
+    The pipelines are added and will be executed in the order of the provided options.
 
 `$ scanpipe add-input --project PROJECT <input ...>`
 ----------------------------------------------------
@@ -88,10 +88,10 @@ add the docker pipeline to your project::
     $ scanpipe add-pipeline --project foo docker
 
 
-`$ scanpipe run --project PROJECT`
-----------------------------------
+`$ scanpipe execute --project PROJECT`
+--------------------------------------
 
-Run the next pipeline of the project named ``PROJECT`` queue.
+Execute the next pipeline of the project named ``PROJECT`` queue.
 
 
 `$ scanpipe show-pipeline --project PROJECT`
@@ -101,7 +101,7 @@ List all the pipelines added of the project named ``PROJECT``.
 
 
 `$ scanpipe status --project PROJECT`
---------------------------------------------
+-------------------------------------
 
 Display status information about the provided ``PROJECT``.
 

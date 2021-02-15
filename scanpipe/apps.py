@@ -35,7 +35,12 @@ from scanpipe.pipelines import is_pipeline
 class ScanPipeConfig(AppConfig):
     name = "scanpipe"
     verbose_name = _("ScanPipe")
-    pipelines = {}
+
+    def __init__(self, app_name, app_module):
+        super().__init__(app_name, app_module)
+
+        # Mapping of registered pipeline names to pipeline classes.
+        self.pipelines = {}
 
     def ready(self):
         self.load_pipelines()

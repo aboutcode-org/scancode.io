@@ -48,8 +48,8 @@ class ProjectForm(forms.ModelForm):
         choices=get_pipeline_choices(),
         required=False,
     )
-    run_pipeline = forms.BooleanField(
-        label="Run the selected pipeline",
+    execute_now = forms.BooleanField(
+        label="Execute pipeline now",
         initial=True,
         required=False,
     )
@@ -60,21 +60,21 @@ class ProjectForm(forms.ModelForm):
             "name",
             "inputs",
             "pipeline",
-            "run_pipeline",
+            "execute_now",
         ]
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
 
         pipeline = self.cleaned_data["pipeline"]
-        run_pipeline = self.cleaned_data["run_pipeline"]
+        execute_now = self.cleaned_data["execute_now"]
 
         inputs = self.files.getlist("inputs")
         for upload_file in inputs:
             project.add_input_file(upload_file)
 
         if pipeline:
-            project.add_pipeline(pipeline, start=run_pipeline)
+            project.add_pipeline(pipeline, execute_now)
 
         return project
 
@@ -84,8 +84,8 @@ class AddPipelineForm(forms.Form):
         choices=get_pipeline_choices(),
         required=True,
     )
-    run_pipeline = forms.BooleanField(
-        label="Run the selected pipeline",
+    execute_now = forms.BooleanField(
+        label="Execute pipeline now",
         initial=True,
         required=False,
     )

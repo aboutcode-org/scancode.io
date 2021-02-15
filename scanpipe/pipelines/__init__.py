@@ -105,6 +105,9 @@ class Pipeline:
 
         return 0, ""
 
+    def add_error(self, error):
+        self.project.add_error(error, model=self.pipeline_name)
+
     @contextmanager
     def save_errors(self, *exceptions):
         """
@@ -118,7 +121,7 @@ class Pipeline:
         try:
             yield
         except exceptions as error:
-            self.project.add_error(error, model=self.pipeline_name)
+            self.add_error(error)
 
 
 def is_pipeline(obj):

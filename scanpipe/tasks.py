@@ -41,7 +41,7 @@ def get_run_instance(run_pk):
 
 
 @shared_task(bind=True)
-def run_pipeline_task(self, run_pk):
+def execute_pipeline_task(self, run_pk):
     task_id = self.request.id
     info(f"Enter `{self.name}` Task.id={task_id}", run_pk)
 

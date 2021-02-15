@@ -153,8 +153,8 @@ class ProjectViewSet(
         pipeline = request.data.get("pipeline")
         if pipeline:
             if pipeline in scanpipe_app_config.pipelines:
-                start = request.data.get("start")
-                project.add_pipeline(pipeline, start)
+                execute_now = request.data.get("execute_now")
+                project.add_pipeline(pipeline, execute_now)
                 return Response({"status": "Pipeline added."})
 
             message = {"status": f"{pipeline} is not a valid pipeline."}
@@ -185,6 +185,6 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             message = {"status": "Pipeline already started."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        transaction.on_commit(run.run_pipeline_task_async)
+        transaction.on_commit(run.execute_task_async)
 
         return Response({"status": f"Pipeline {run.pipeline_name} started."})

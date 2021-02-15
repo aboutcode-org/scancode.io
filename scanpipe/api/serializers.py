@@ -88,7 +88,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             "Requires an input file."
         ),
     )
-    start = serializers.BooleanField(write_only=True)
+    execute_now = serializers.BooleanField(write_only=True)
     upload_file = serializers.FileField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
@@ -104,7 +104,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             "upload_file",
             "created_date",
             "pipeline",
-            "start",
+            "execute_now",
             "input_root",
             "output_root",
             "next_run",
@@ -136,11 +136,11 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Create a new `project` with optionally provided `upload_file` and `pipeline`.
-        The `start` paramter can be provided to start the Pipeline run on creation.
+        The `execute_now` parameter can be provided to execute the Pipeline on creation.
         """
         upload_file = validated_data.pop("upload_file", None)
         pipeline = validated_data.pop("pipeline", None)
-        start = validated_data.pop("start", False)
+        execute_now = validated_data.pop("execute_now", False)
 
         project = super().create(validated_data)
 
@@ -148,7 +148,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             project.add_input_file(upload_file)
 
         if pipeline:
-            project.add_pipeline(pipeline, start)
+            project.add_pipeline(pipeline, execute_now)
 
         return project
 
@@ -197,13 +197,13 @@ class PipelineSerializer(serializers.ModelSerializer):
         required=True,
         write_only=True,
     )
-    start = serializers.BooleanField(write_only=True)
+    execute_now = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = Run
         fields = [
             "pipeline",
-            "start",
+            "execute_now",
         ]
 
 

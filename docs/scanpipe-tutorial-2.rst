@@ -26,12 +26,12 @@ Step-by-step
 
 - The following command will create a new project named ``asgiref``,
   add the archive as an input for the project,
-  add the ``scan_codebase`` pipeline, and run its execution::
+  add the ``scan_codebase`` pipeline, and execute it::
 
     $ scanpipe create-project asgiref \
         --input ~/asgiref-3.3.0-py3-none-any.whl \
         --pipeline scan_codebase \
-        --run
+        --execute
 
 .. note::
     The content of the :guilabel:`input/` directory will be copied in the

@@ -137,9 +137,9 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
 
-    def test_scanpipe_management_command_create_project_run(self):
-        options = ["--run"]
-        expected = "The --run option requires one or more pipelines."
+    def test_scanpipe_management_command_create_project_execute(self):
+        options = ["--execute"]
+        expected = "The --execute option requires one or more pipelines."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
@@ -147,11 +147,11 @@ class ScanPipeManagementCommandTest(TestCase):
         options = [
             "--pipeline",
             pipeline,
-            "--run",
+            "--execute",
         ]
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_success):
+        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
             call_command("create-project", "my_project", *options, stdout=out)
 
         self.assertIn("Project my_project created", out.getvalue())
@@ -232,20 +232,20 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = " [SUCCESS] docker\n" " [FAILURE] root_filesystems\n"
         self.assertEqual(expected, out.getvalue())
 
-    def test_scanpipe_management_command_run(self):
+    def test_scanpipe_management_command_execute(self):
         project = Project.objects.create(name="my_project")
         options = ["--project", project.name]
 
         out = StringIO()
         expected = "No pipelines to run on project my_project"
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("run", *options, stdout=out)
+            call_command("execute", *options, stdout=out)
 
         project.add_pipeline(self.pipeline_name)
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_success):
-            call_command("run", *options, stdout=out)
+        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+            call_command("execute", *options, stdout=out)
         expected = "Pipeline docker run in progress..."
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
@@ -253,9 +253,9 @@ class ScanPipeManagementCommandTest(TestCase):
 
         err = StringIO()
         project.add_pipeline(self.pipeline_name)
-        with mock.patch("scanpipe.models.Run.run_pipeline_task_async", task_failure):
+        with mock.patch("scanpipe.models.Run.execute_task_async", task_failure):
             with self.assertRaisesMessage(SystemExit, "1"):
-                call_command("run", *options, stdout=out, stderr=err)
+                call_command("execute", *options, stdout=out, stderr=err)
         expected = "Error during docker execution:"
         self.assertIn(expected, err.getvalue())
         self.assertIn("Error log", err.getvalue())

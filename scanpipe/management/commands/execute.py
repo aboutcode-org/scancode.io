@@ -39,7 +39,7 @@ class Command(ProjectCommand):
             raise CommandError(f"No pipelines to run on project {self.project}")
 
         self.stdout.write(f"Pipeline {run.pipeline_name} run in progress...")
-        run.run_pipeline_task_async()
+        run.execute_task_async()
         run.refresh_from_db()
 
         if run.task_succeeded:
