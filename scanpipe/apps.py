@@ -51,15 +51,16 @@ class ScanPipeConfig(AppConfig):
 
         for entry_point in pipeline_entry_points:
             pipeline_class = entry_point.load()
-            self.register_pipeline(entry_point.name, pipeline_class)
+            pipeline_name = entry_point.name
+            self.register_pipeline(pipeline_name, pipeline_class)
 
-    def register_pipeline(self, name, class_):
+    def register_pipeline(self, name, cls):
         """
-        Register the provided `name` and `class_` as a valid pipeline.
+        Register the provided `name` and `cls` as a valid pipeline.
         """
-        if not is_pipeline(class_):
+        if not is_pipeline(cls):
             raise ImproperlyConfigured(
-                f'The entry point "{class_}" is not a `Pipeline` subclass.'
+                f'The entry point "{cls}" is not a `Pipeline` subclass.'
             )
 
         if name in self.pipelines:
@@ -67,4 +68,4 @@ class ScanPipeConfig(AppConfig):
                 f'The pipeline name "{name}" is already registered.'
             )
 
-        self.pipelines[name] = class_
+        self.pipelines[name] = cls

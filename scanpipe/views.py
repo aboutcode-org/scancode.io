@@ -216,7 +216,7 @@ def run_pipeline_view(request, uuid, run_uuid):
         raise Http404("Pipeline already started.")
 
     run.run_pipeline_task_async()
-    messages.success(request, f'Pipeline "{run.pipeline}" run started.')
+    messages.success(request, f'Pipeline "{run.pipeline_name}" run started.')
     return redirect(project)
 
 

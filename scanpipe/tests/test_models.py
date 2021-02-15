@@ -55,7 +55,11 @@ class ScanPipeModelsTest(TestCase):
         self.project_asgiref = Project.objects.get(name="asgiref")
 
     def create_run(self, **kwargs):
-        return Run.objects.create(project=self.project1, pipeline="pipeline", **kwargs)
+        return Run.objects.create(
+            project=self.project1,
+            pipeline_name="pipeline",
+            **kwargs,
+        )
 
     def test_scanpipe_project_model_extra_data(self):
         self.assertEqual({}, self.project1.extra_data)
@@ -204,11 +208,11 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(run2, self.project1.get_latest_failed_run())
 
     def test_scanpipe_run_model_pipeline_class_property(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="do_nothing")
+        run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
         self.assertEqual(DoNothing, run1.pipeline_class)
 
     def test_scanpipe_run_model_make_pipeline_instance(self):
-        run1 = Run.objects.create(project=self.project1, pipeline="do_nothing")
+        run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
         pipeline_instance = run1.make_pipeline_instance()
         self.assertTrue(isinstance(pipeline_instance, DoNothing))
 
@@ -534,7 +538,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(1, project1.runs.count())
         run = project1.runs.get()
-        self.assertEqual(pipeline_name, run.pipeline)
+        self.assertEqual(pipeline_name, run.pipeline_name)
         self.assertEqual(pipeline_class.get_doc(), run.description)
         run_task.assert_not_called()
 

@@ -31,16 +31,16 @@ class Command(ProjectCommand):
         super().add_arguments(parser)
         parser.add_argument(
             "args",
-            metavar="pipeline",
+            metavar="pipeline-names",
             nargs="+",
             help="One or more pipeline names.",
         )
 
-    def handle(self, *pipelines, **options):
-        super().handle(*pipelines, **options)
+    def handle(self, *pipeline_names, **options):
+        super().handle(*pipeline_names, **options)
 
-        validate_pipelines(pipelines)
-        for pipeline_name in pipelines:
+        validate_pipelines(pipeline_names)
+        for pipeline_name in pipeline_names:
             self.project.add_pipeline(pipeline_name)
 
         msg = "Pipeline(s) added to the project"

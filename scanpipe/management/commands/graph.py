@@ -70,7 +70,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "args",
-            metavar="pipelines",
+            metavar="pipeline-names",
             nargs="*",
             help="One or more pipeline names.",
         )
@@ -81,22 +81,24 @@ class Command(BaseCommand):
         )
         parser.add_argument("--output", help="Output directory location.")
 
-    def handle(self, *pipelines, **options):
+    def handle(self, *pipeline_names, **options):
         if options["list"]:
-            for name, pipeline_class in scanpipe_app_config.pipelines.items():
-                self.stdout.write("- " + self.style.SUCCESS(name))
+            for pipeline_name, pipeline_class in scanpipe_app_config.pipelines.items():
+                self.stdout.write("- " + self.style.SUCCESS(pipeline_name))
                 self.stdout.write(indent(pipeline_class.get_doc(), "  "), ending="\n\n")
             sys.exit(0)
 
         if not is_graphviz_installed():
             raise CommandError("Graphviz is not installed.")
 
-        if not pipelines:
-            self.stderr.write(self.style.ERROR("The pipelines argument is required."))
+        if not pipeline_names:
+            self.stderr.write(
+                self.style.ERROR("The pipeline-names argument is required.")
+            )
             sys.exit(1)
 
         outputs = []
-        for pipeline_name in pipelines:
+        for pipeline_name in pipeline_names:
             pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
             if not pipeline_class:
                 self.stderr.write(self.style.ERROR(f"{pipeline_name} is not valid."))

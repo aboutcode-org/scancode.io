@@ -38,15 +38,15 @@ class Command(ProjectCommand):
         if not run:
             raise CommandError(f"No pipelines to run on project {self.project}")
 
-        self.stdout.write(f"Pipeline {run.pipeline} run in progress...")
+        self.stdout.write(f"Pipeline {run.pipeline_name} run in progress...")
         run.run_pipeline_task_async()
         run.refresh_from_db()
 
         if run.task_succeeded:
-            msg = f"{run.pipeline} successfully executed on project {self.project}"
+            msg = f"{run.pipeline_name} successfully executed on project {self.project}"
             self.stdout.write(self.style.SUCCESS(msg))
         else:
-            msg = f"Error during {run.pipeline} execution:\n"
+            msg = f"Error during {run.pipeline_name} execution:\n"
             self.stderr.write(self.style.ERROR(msg))
             self.stderr.write(run.task_output)
             sys.exit(1)

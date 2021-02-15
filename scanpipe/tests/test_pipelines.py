@@ -26,51 +26,19 @@ from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.tests.pipelines.do_nothing import DoNothing
-from scanpipe.tests.pipelines.pretty_name import PrettyPipeline
 
 
 class ScanPipePipelinesTest(TestCase):
-    def test_scanpipe_pipeline_class_get_name(self):
+    def test_scanpipe_pipeline_class_pipeline_name_property(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
 
         pipeline_class = DoNothing
         pipeline_instance = DoNothing(run)
-        self.assertIsNone(pipeline_class.name)
-        self.assertIsNone(pipeline_instance.name)
-        self.assertEqual("DoNothing", pipeline_class.get_name())
-        self.assertEqual("DoNothing", pipeline_instance.get_name())
-
-        pipeline_class = PrettyPipeline
-        pipeline_instance = PrettyPipeline(run)
-        self.assertEqual("Pretty name", pipeline_class.name)
-        self.assertEqual("Pretty name", pipeline_instance.name)
-        self.assertEqual("Pretty name", pipeline_class.get_name())
-        self.assertEqual("Pretty name", pipeline_instance.get_name())
-
-    def test_scanpipe_pipelines_class_get_doc(self):
-        project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("do_nothing")
-        pipeline_class = DoNothing
-        pipeline_instance = DoNothing(run)
-
-        expected = "A pipeline that does nothing, in 2 steps."
-        self.assertIsNone(pipeline_class.doc)
-        self.assertIsNone(pipeline_instance.doc)
-        self.assertEqual(expected, pipeline_class.get_doc())
-        self.assertEqual(expected, pipeline_instance.get_doc())
-
-        pipeline_class = PrettyPipeline
-        pipeline_instance = PrettyPipeline(run)
-        expected = "Doc from attribute"
-        self.assertEqual(expected, pipeline_class.doc)
-        self.assertEqual(expected, pipeline_instance.doc)
-        self.assertEqual(expected, pipeline_class.get_doc())
-        self.assertEqual(expected, pipeline_instance.get_doc())
+        self.assertEqual("do_nothing", pipeline_instance.pipeline_name)
 
     def test_scanpipe_pipelines_class_get_info(self):
         expected = {
-            "name": "DoNothing",
             "description": "A pipeline that does nothing, in 2 steps.",
             "steps": [
                 {"name": "step1", "doc": "Step1 doc."},
@@ -100,7 +68,7 @@ class ScanPipePipelinesTest(TestCase):
         self.assertEqual("", output)
 
         run.refresh_from_db()
-        self.assertIn("Pipeline [DoNothing] starting", run.log)
+        self.assertIn("Pipeline [do_nothing] starting", run.log)
         self.assertIn("Step [step1] starting", run.log)
         self.assertIn("Step [step1] completed", run.log)
         self.assertIn("Step [step2] starting", run.log)
@@ -122,8 +90,8 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("raise ValueError", output)
 
         run.refresh_from_db()
-        self.assertIn("Pipeline [RaiseException] starting", run.log)
-        self.assertIn("Step [raise_exception] starting", run.log)
+        self.assertIn("Pipeline [raise_exception] starting", run.log)
+        self.assertIn("Step [raise_exception_step] starting", run.log)
         self.assertIn("Pipeline failed", run.log)
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
@@ -136,7 +104,7 @@ class ScanPipePipelinesTest(TestCase):
             raise Exception("Error message")
 
         error = project1.projecterrors.get()
-        self.assertEqual("DoNothing", error.model)
+        self.assertEqual("do_nothing", error.model)
         self.assertEqual({}, error.details)
         self.assertEqual("Error message", error.message)
         self.assertIn('raise Exception("Error message")', error.traceback)
@@ -145,7 +113,6 @@ class ScanPipePipelinesTest(TestCase):
         self.assertFalse(is_pipeline(None))
         self.assertFalse(is_pipeline(Pipeline))
         self.assertTrue(is_pipeline(DoNothing))
-        self.assertTrue(is_pipeline(PrettyPipeline))
 
     def test_scanpipe_pipelines_class_get_graph(self):
         expected = [

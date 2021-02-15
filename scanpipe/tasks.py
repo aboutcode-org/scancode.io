@@ -51,7 +51,7 @@ def run_pipeline_task(self, run_pk):
     run.reset_task_values()
     run.set_task_started(task_id)
 
-    info(f'Run pipeline: "{run.pipeline}" on project: "{project.name}"', run_pk)
+    info(f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
 
     pipeline = run.make_pipeline_instance()
     exitcode, output = pipeline.execute()

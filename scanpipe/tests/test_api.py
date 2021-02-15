@@ -111,7 +111,10 @@ class ScanPipeAPITest(TransactionTestCase):
         project = Project.objects.get(name=data["name"])
         self.assertEqual({}, project.extra_data)
 
-        data = {"name": "Name", "pipeline": "wrong_pipeline"}
+        data = {
+            "name": "Name",
+            "pipeline": "wrong_pipeline",
+        }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {
@@ -124,11 +127,14 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data)
 
-        data = {"name": "Name", "pipeline": "docker"}
+        data = {
+            "name": "Name",
+            "pipeline": "docker",
+        }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
-        self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline"])
+        self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline_name"])
         self.assertEqual(data["pipeline"], response.data["next_run"])
         mock_run_pipeline_task.assert_not_called()
 
@@ -140,17 +146,23 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
-        self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline"])
+        self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline_name"])
         self.assertEqual(data["pipeline"], response.data["next_run"])
-        mock_run_pipeline_task.assert_called_once()
+        mock_run_pipeline_task.assert_not_called()
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
         self.assertEqual(["upload_file"], response.data["input_root"])
 
-        data = {"name": "BetterName", "upload_file": io.BytesIO(b"Content")}
+        data = {
+            "name": "BetterName",
+            "pipeline": "docker",
+            "upload_file": io.BytesIO(b"Content"),
+            "start": True,
+        }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(0, len(response.data["runs"]))
+        self.assertEqual(1, len(response.data["runs"]))
+        mock_run_pipeline_task.assert_called_once()
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
         self.assertEqual(["upload_file"], response.data["input_root"])
@@ -262,7 +274,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         self.assertEqual(1, self.project1.runs.count())
         run = self.project1.runs.get()
-        self.assertEqual(data["pipeline"], run.pipeline)
+        self.assertEqual(data["pipeline"], run.pipeline_name)
 
         data["start"] = True
         response = self.csrf_client.post(url, data=data)
@@ -276,7 +288,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         self.assertEqual(str(run1.uuid), response.data["uuid"])
         self.assertIn(self.project1_detail_url, response.data["project"])
-        self.assertEqual("docker", response.data["pipeline"])
+        self.assertEqual("docker", response.data["pipeline_name"])
         self.assertEqual(
             "A pipeline to analyze a Docker image.", response.data["description"]
         )

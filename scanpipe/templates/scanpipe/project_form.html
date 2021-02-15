@@ -75,18 +75,18 @@
 
         <div class="column has-background-light has-border-radius">
           <h3 class="subtitle mb-3">Pipelines:</h3>
-          {% for pipeline_key, pipeline_info in pipelines.items %}
+          {% for pipeline_name, pipeline_info in pipelines.items %}
             <div class="mb-3">
               <div>
-                <a class="help-text modal-button" data-target="{{ pipeline_key }}-modal" aria-haspopup="true">
-                  <strong>{{ pipeline_key }}</strong>
+                <a class="help-text modal-button" data-target="{{ pipeline_name }}-modal" aria-haspopup="true">
+                  <strong>{{ pipeline_name }}</strong>
                 </a>
-                <div id="{{ pipeline_key }}-modal" class="modal">
+                <div id="{{ pipeline_name }}-modal" class="modal">
                   <div class="modal-background"></div>
                   <div class="modal-card">
                     <header class="modal-card-head">
                       <p class="modal-card-title">
-                        <strong>{{ pipeline_key }}</strong>
+                        <strong>{{ pipeline_name }}</strong>
                       </p>
                       <button class="delete" aria-label="close"></button>
                     </header>

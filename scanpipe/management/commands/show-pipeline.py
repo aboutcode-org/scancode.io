@@ -32,4 +32,4 @@ class Command(ProjectCommand, RunStatusCommandMixin):
 
         for run in self.project.runs.all():
             status_code = self.get_run_status_code(run)
-            self.stdout.write(f" [{status_code}] {run.pipeline}")
+            self.stdout.write(f" [{status_code}] {run.pipeline_name}")

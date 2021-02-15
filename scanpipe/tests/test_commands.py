@@ -113,7 +113,7 @@ class ScanPipeManagementCommandTest(TestCase):
             self.pipeline_name,
             "root_filesystems",
         ]
-        self.assertEqual(expected, [run.pipeline for run in project.runs.all()])
+        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
 
     def test_scanpipe_management_command_create_project_inputs(self):
         out = StringIO()
@@ -200,7 +200,7 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
         self.assertIn("Pipeline(s) added to the project", out.getvalue())
-        self.assertEqual(pipelines, [run.pipeline for run in project.runs.all()])
+        self.assertEqual(pipelines, [run.pipeline_name for run in project.runs.all()])
 
         options = ["--project", project.name, "non-existing"]
         expected = "non-existing is not a valid pipeline"
@@ -208,13 +208,13 @@ class ScanPipeManagementCommandTest(TestCase):
             call_command("add-pipeline", *options, stdout=out)
 
     def test_scanpipe_management_command_show_pipeline(self):
-        pipelines = [
+        pipeline_names = [
             self.pipeline_name,
             "root_filesystems",
         ]
 
         project = Project.objects.create(name="my_project")
-        for pipeline_name in pipelines:
+        for pipeline_name in pipeline_names:
             project.add_pipeline(pipeline_name)
 
         options = ["--project", project.name, "--no-color"]
@@ -223,8 +223,8 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = " [ ] docker\n" " [ ] root_filesystems\n"
         self.assertEqual(expected, out.getvalue())
 
-        project.runs.filter(pipeline=pipelines[0]).update(task_exitcode=0)
-        project.runs.filter(pipeline=pipelines[1]).update(task_exitcode=1)
+        project.runs.filter(pipeline_name=pipeline_names[0]).update(task_exitcode=0)
+        project.runs.filter(pipeline_name=pipeline_names[1]).update(task_exitcode=1)
 
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)

@@ -88,15 +88,10 @@ class ProjectViewSet(
 
     @action(detail=False)
     def pipelines(self, request, *args, **kwargs):
-        pipeline_data = []
-        for name, pipeline_class in scanpipe_app_config.pipelines.items():
-            pipeline_data.append(
-                {
-                    "name": name,
-                    "description": pipeline_class.get_doc(),
-                    "steps": pipeline_class.get_graph(),
-                }
-            )
+        pipeline_data = [
+            {"name": name, **pipeline_class.get_info()}
+            for name, pipeline_class in scanpipe_app_config.pipelines.items()
+        ]
         return Response(pipeline_data)
 
     @action(detail=True)
@@ -192,4 +187,4 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         transaction.on_commit(run.run_pipeline_task_async)
 
-        return Response({"status": f"Pipeline {run.pipeline} started."})
+        return Response({"status": f"Pipeline {run.pipeline_name} started."})

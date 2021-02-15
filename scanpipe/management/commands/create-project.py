@@ -60,7 +60,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         name = options["name"]
-        pipelines = options["pipelines"]
+        pipeline_names = options["pipelines"]
         inputs = options["inputs"]
         run = options["run"]
 
@@ -71,17 +71,17 @@ class Command(BaseCommand):
             raise CommandError("\n".join(e.messages))
 
         # Run validation before creating the project in the database
-        validate_pipelines(pipelines)
+        validate_pipelines(pipeline_names)
         validate_inputs(inputs)
 
-        if run and not pipelines:
+        if run and not pipeline_names:
             raise CommandError("The --run option requires one or more pipelines.")
 
         project.save()
         msg = f"Project {name} created with work directory {project.work_directory}"
         self.stdout.write(self.style.SUCCESS(msg))
 
-        for pipeline_name in pipelines:
+        for pipeline_name in pipeline_names:
             project.add_pipeline(pipeline_name)
 
         for input_location in inputs:

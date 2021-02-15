@@ -74,11 +74,11 @@ def validate_inputs(inputs):
             raise CommandError(f"{input_location} not found or not a file")
 
 
-def validate_pipelines(pipelines):
+def validate_pipelines(pipeline_names):
     """
-    Raise an error if one of the `pipelines` is not available.
+    Raise an error if one of the `pipeline_names` is not available.
     """
-    for pipeline_name in pipelines:
+    for pipeline_name in pipeline_names:
         if pipeline_name not in scanpipe_app_config.pipelines:
             raise CommandError(
                 f"{pipeline_name} is not a valid pipeline. \n"

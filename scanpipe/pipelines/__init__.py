@@ -37,8 +37,6 @@ class Pipeline:
     Base class for all Pipelines.
     """
 
-    name = None
-    doc = None
     steps = ()
 
     def __init__(self, run):
@@ -50,18 +48,11 @@ class Pipeline:
         self.project = run.project
 
     @classmethod
-    def get_name(cls):
-        """
-        Return the name declared on the class or the name of the class itself.
-        """
-        return cls.name or cls.__name__
-
-    @classmethod
     def get_doc(cls):
         """
-        Return the doc if declared on the class, or the docstring.
+        Return the docstring.
         """
-        return cls.doc or getdoc(cls)
+        return getdoc(cls)
 
     @classmethod
     def get_graph(cls):
@@ -76,10 +67,13 @@ class Pipeline:
         Return a dict of combined data about this Pipeline.
         """
         return {
-            "name": cls.get_name(),
             "description": cls.get_doc(),
             "steps": cls.get_graph(),
         }
+
+    @property
+    def pipeline_name(self):
+        return self.run.pipeline_name
 
     def log(self, message):
         """
@@ -91,7 +85,7 @@ class Pipeline:
         self.run.append_to_log(message, save=True)
 
     def execute(self):
-        self.log(f"Pipeline [{self.get_name()}] starting")
+        self.log(f"Pipeline [{self.pipeline_name}] starting")
 
         for step in self.steps:
             self.log(f"Step [{step.__name__}] starting")
@@ -124,7 +118,7 @@ class Pipeline:
         try:
             yield
         except exceptions as error:
-            self.project.add_error(error, model=self.get_name())
+            self.project.add_error(error, model=self.pipeline_name)
 
 
 def is_pipeline(obj):

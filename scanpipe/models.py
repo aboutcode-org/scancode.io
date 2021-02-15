@@ -344,7 +344,7 @@ class Project(UUIDPKModel, models.Model):
         pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
         run = Run.objects.create(
             project=self,
-            pipeline=pipeline_name,
+            pipeline_name=pipeline_name,
             description=pipeline_class.get_doc(),
         )
         if start:
@@ -509,7 +509,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     The Database representation of a Pipeline execution.
     """
 
-    pipeline = models.CharField(max_length=1024)
+    pipeline_name = models.CharField(
+        max_length=256,
+        help_text=_("Identify a registered Pipeline class."),
+    )
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     description = models.TextField(blank=True)
     log = models.TextField(blank=True, editable=False)
@@ -520,14 +523,14 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         ordering = ["created_date"]
 
     def __str__(self):
-        return f"{self.pipeline}"
+        return f"{self.pipeline_name}"
 
     def run_pipeline_task_async(self):
         tasks.run_pipeline_task.apply_async(args=[self.pk], queue="default")
 
     @property
     def pipeline_class(self):
-        return scanpipe_app_config.pipelines.get(self.pipeline)
+        return scanpipe_app_config.pipelines.get(self.pipeline_name)
 
     def make_pipeline_instance(self):
         return self.pipeline_class(self)
