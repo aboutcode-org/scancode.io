@@ -26,11 +26,13 @@ from unittest import mock
 from django.apps import apps
 
 from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.raise_exception import RaiseException
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
 scanpipe_app_config.register_pipeline("do_nothing", DoNothing)
+scanpipe_app_config.register_pipeline("profile_step", ProfileStep)
 scanpipe_app_config.register_pipeline("raise_exception", RaiseException)
 
 

@@ -3,6 +3,9 @@
 
 ### v1.1.0 (unreleased)
 
+- Add a @profile decorator for profiling pipeline step execution
+  https://github.com/nexB/scancode.io/issues/73
+
 - Support inputs as tarballs in root_filesystem pipelines.
   The input archives are now extracted with extractcode to the codebase/ directory.
   https://github.com/nexB/scancode.io/issues/96

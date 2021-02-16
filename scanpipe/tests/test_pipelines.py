@@ -120,3 +120,20 @@ class ScanPipePipelinesTest(TestCase):
             {"doc": "Step2 doc.", "name": "step2"},
         ]
         self.assertEqual(expected, DoNothing.get_graph())
+
+    def test_scanpipe_pipelines_profile_decorator(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("profile_step")
+        pipeline_instance = run.make_pipeline_instance()
+
+        exitcode, output = pipeline_instance.execute()
+        self.assertEqual(0, exitcode)
+
+        run.refresh_from_db()
+        self.assertIn("Profiling results at", run.log)
+        self.assertIn("Pipeline completed", run.log)
+
+        self.assertEqual(1, len(project1.output_root))
+        output_file = project1.output_root[0]
+        self.assertTrue(output_file.startswith("profile-"))
+        self.assertTrue(output_file.endswith(".html"))

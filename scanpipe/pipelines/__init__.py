@@ -25,9 +25,12 @@ import logging
 import timeit
 import traceback
 from contextlib import contextmanager
+from functools import wraps
 from pydoc import getdoc
 
 from django.utils import timezone
+
+from pyinstrument import Profiler
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +49,7 @@ class Pipeline:
         assert self.steps
         self.run = run
         self.project = run.project
+        self.pipeline_name = run.pipeline_name
 
     @classmethod
     def get_doc(cls):
@@ -70,10 +74,6 @@ class Pipeline:
             "description": cls.get_doc(),
             "steps": cls.get_graph(),
         }
-
-    @property
-    def pipeline_name(self):
-        return self.run.pipeline_name
 
     def log(self, message):
         """
@@ -130,3 +130,32 @@ def is_pipeline(obj):
     `Pipeline` class itself.
     """
     return inspect.isclass(obj) and issubclass(obj, Pipeline) and obj is not Pipeline
+
+
+def profile(step):
+    """
+    Profile a Pipeline step and save the results as HTML in the project output
+    directory.
+
+    Usage:
+        @profile
+        def step(self):
+            pass
+    """
+
+    @wraps(step)
+    def wrapper(*arg, **kwargs):
+        pipeline_instance = arg[0]
+        project = pipeline_instance.project
+
+        with Profiler() as profiler:
+            result = step(*arg, **kwargs)
+
+        output_file = project.get_output_file_path("profile", "html")
+        output_file.write_text(profiler.output_html())
+
+        pipeline_instance.log(f"Profiling results at {output_file.resolve()}")
+
+        return result
+
+    return wrapper
