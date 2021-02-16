@@ -59,7 +59,7 @@
 <!--            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">browse the codebase</a>.-->
           </div>
         </article>
-      {% else %}
+      {% elif not project.runs.all %}
         <article class="message is-warning">
           <div class="message-body">
             <p class="block">
