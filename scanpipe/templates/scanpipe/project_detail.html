@@ -5,6 +5,7 @@
 
 {% block extrahead %}
   <link rel="stylesheet" href="{% static 'billboard-2.2.0-datalab.min.css' %}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{% static 'highlight-10.6.0.an-old-hope.css' %}" crossorigin="anonymous" />
 {% endblock %}
 
 {% block content %}
@@ -40,11 +41,10 @@
       </div>
     </div>
 
-
     <hr class="mx-5">
     {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
 
-    <section class="section pt-0">
+    <section class="section pt-0 pb-5">
       {% if project.resource_count or project.package_count %}
         <article class="message is-info">
           <div class="message-body">
@@ -55,8 +55,6 @@
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
               XLSX <i class="fas fa-download ml-1"></i>
             </a>
-<!--            or-->
-<!--            <a class="has-text-weight-semibold" href="{% url 'project_tree' project.uuid %}">browse the codebase</a>.-->
           </div>
         </article>
       {% elif not project.runs.all %}
@@ -115,6 +113,19 @@
       </div>
     </section>
 
+    {% if project.extra_data %}
+      <article id="project-extra-data" class="panel is-dark mx-5">
+        <p class="panel-heading py-2 is-size-6">
+          Project data
+        </p>
+        <div class="panel-block p-0">
+          <figure class="highlight border-bottom-radius">
+            <pre class="language-yaml"><code class="p-3">{{ extra_data_yaml }}</code></pre>
+          </figure>
+        </div>
+      </article>
+    {% endif %}
+
     {% if project.package_count %}
       <hr class="mx-5">
       <h3 class="title is-4 has-text-centered">
@@ -167,6 +178,7 @@
 
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
+  <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
   <script src="{% static 'billboard-2.2.0.pkgd.min.js' %}" crossorigin="anonymous"></script>
   {% if project.file_count %}
     {{ programming_languages|json_script:"programming_languages" }}
@@ -181,6 +193,8 @@
     {{ package_types|json_script:"package_types" }}
   {% endif %}
   <script>
+    hljs.highlightAll();
+
     let makeChart = function(data_source_id, element_id, title) {
       let data_source = document.getElementById(data_source_id);
       if (!data_source) return false;

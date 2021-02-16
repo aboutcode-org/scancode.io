@@ -3,7 +3,10 @@
 
 ### v1.1.0 (unreleased)
 
-- Add a @profile decorator for profiling pipeline step execution
+- Display project extra data in the project details view.
+  https://github.com/nexB/scancode.io/issues/88
+
+- Add a @profile decorator for profiling pipeline step execution.
   https://github.com/nexB/scancode.io/issues/73
 
 - Support inputs as tarballs in root_filesystem pipelines.
@@ -21,19 +24,19 @@
   This is a breaking command line API change.
   https://github.com/nexB/scancode.io/issues/91
 
-- Add a "Run Pipeline" button in the Pipeline modal of the Project details view
-  Pipelines can now be added from the Project details view
+- Add a "Run Pipeline" button in the Pipeline modal of the Project details view.
+  Pipelines can now be added from the Project details view.
   https://github.com/nexB/scancode.io/issues/84
 
 - Upgrade scancode-toolkit to version 21.2.9
 
 - Allow to start the pipeline run immediately on addition in the `add_pipeline` action
-  of the Project API endpoint
+  of the Project API endpoint.
   https://github.com/nexB/scancode.io/issues/92
 
-- Rename the pipes.outputs module to pipes.output for consistency
+- Rename the pipes.outputs module to pipes.output for consistency.
 
-- Remove the dependency on Metaflow
+- Remove the dependency on Metaflow.
   WARNING: The new Pipelines syntax is not backward compatible with v1.0.x
   https://github.com/nexB/scancode.io/issues/82
 

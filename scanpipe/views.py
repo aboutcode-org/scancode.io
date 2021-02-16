@@ -30,9 +30,9 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import generic
 
+import saneyaml
 from django_filters.views import FilterView
 
-from scanpipe import pipelines
 from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import PackageFilterSet
@@ -169,6 +169,10 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "add_pipeline_form": AddPipelineForm(),
             }
         )
+
+        if project.extra_data:
+            context["extra_data_yaml"] = saneyaml.dump(project.extra_data, indent=2)
+
         return context
 
     def post(self, request, *args, **kwargs):

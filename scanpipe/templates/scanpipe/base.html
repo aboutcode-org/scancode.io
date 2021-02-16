@@ -17,6 +17,7 @@
       .breadcrumb .is-active {font-weight: 600!important;}
       .tag-header {border-radius: 4px 4px 0 0!important;}
       .border-bottom-radius {border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;}
+      .border-no-top-left-radius {border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;}
       .border-dashed {border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);}
       .is-height-auto {height: auto;}
       pre.log {color: #f1f1f1; background-color: #222; font-family: monospace;}
@@ -24,6 +25,9 @@
       .bb-legend-item-hidden {text-decoration: line-through; opacity: 0.7!important;}
       .bb-chart .bb-chart-arcs .bb-chart-arcs-title {font-size: 15px !important; fill: #4a4a4a !important; text-transform: uppercase;}
       svg {overflow: visible !important;}
+      .highlight {width: 100%;}
+      #project-extra-data figure.highlight {max-height: 300px; overflow-y: scroll;}
+      #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>
