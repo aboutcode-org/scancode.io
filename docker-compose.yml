@@ -1,23 +1,51 @@
-version: '3'
+version: "3.9"
 
 services:
   db:
-    image: postgres
+    image: postgres:12
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_DB=scancodeio
       - POSTGRES_USER=scancodeio
       - POSTGRES_PASSWORD=scancodeio
+
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+
+  celery:
+    build: .
+    environment:
+      - SCANCODEIO_DB_HOST=db
+      - CELERY_TASK_ALWAYS_EAGER=False
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    command: celery --app scancodeio worker --loglevel=INFO
+    depends_on:
+      - redis
+      - db
+
   web:
     build: .
     environment:
       - SCANCODEIO_DB_HOST=db
-      # Required by metaflow to prevent raising MetaflowUnknownUser
-      - USERNAME=scancodeio
-      - ALLOWED_HOSTS=0.0.0.0
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      - CELERY_TASK_ALWAYS_EAGER=False
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    command: sh -c "
+      python manage.py migrate &&
+      python manage.py collectstatic --no-input &&
+      python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - 8000:8000
     volumes:
       - .:/opt/scancodeio
-    ports:
-      - "8000:8000"
+      - static_volume:/var/scancodeio/static/
     depends_on:
       - db
+
+volumes:
+  postgres_data:
+  static_volume:

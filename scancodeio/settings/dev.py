@@ -37,7 +37,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "::
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Run celery task in the current thread, no need to start workers in dev mode.
-CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
 
 # The following loggers will be output to the console, except if running the tests.
 if IS_TESTS:

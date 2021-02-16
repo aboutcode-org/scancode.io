@@ -43,7 +43,7 @@ Go to http://localhost:8000 on a web browser to access the web UI.
 You can also run a one-off ``scanpipe`` command through the Docker command line
 interface, for example::
 
-    docker-compose run web scanpipe create-project project_name
+    docker-compose run web ./manage.py create-project project_name
 
 
 .. note::
@@ -53,4 +53,4 @@ Alternatively, you can connect to the Docker container ``bash`` and run commands
 from there::
 
     docker-compose run web bash
-    scanpipe create-project project_name
+    ./manage.py create-project project_name
