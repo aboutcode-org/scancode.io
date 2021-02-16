@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### v1.1.0 (unreleased)
+### v1.1.0 (2021-02-16)
 
 - Display project extra data in the project details view.
   https://github.com/nexB/scancode.io/issues/88
