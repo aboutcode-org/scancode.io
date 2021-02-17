@@ -4,7 +4,7 @@ services:
   db:
     image: postgres:13
     volumes:
-      - db-data:/var/lib/postgresql/data/
+      - db_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_DB=scancodeio
       - POSTGRES_USER=scancodeio
@@ -17,14 +17,14 @@ services:
     build: .
     environment:
       - SCANCODEIO_DB_HOST=db
-      - SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace
+      - SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace/
       - CELERY_TASK_ALWAYS_EAGER=False
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     command: celery --app scancodeio worker --loglevel=INFO
     volumes:
-      - .:/opt/scancodeio
-      - workspace:/var/scancodeio/workspace
+      - .:/opt/scancodeio/
+      - workspace:/var/scancodeio/workspace/
     depends_on:
       - redis
       - db
@@ -33,24 +33,34 @@ services:
     build: .
     environment:
       - SCANCODEIO_DB_HOST=db
-      - SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace
+      - SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace/
       - CELERY_TASK_ALWAYS_EAGER=False
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     command: sh -c "
-      python manage.py migrate &&
-      python manage.py collectstatic --no-input &&
-      python manage.py runserver 0.0.0.0:8000"
-    ports:
-      - 8000:8000
+        ./manage.py migrate &&
+        ./manage.py collectstatic --no-input &&
+        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 3"
+    expose:
+      - 8000
     volumes:
-      - .:/opt/scancodeio
-      - workspace:/var/scancodeio/workspace
-      - static:/var/scancodeio/static
+      - .:/opt/scancodeio/
+      - workspace:/var/scancodeio/workspace/
+      - static:/var/scancodeio/static/
     depends_on:
       - db
 
+  nginx:
+    image: nginx
+    ports:
+      - 80:80
+    volumes:
+      - ./etc/nginx/conf.d/:/etc/nginx/conf.d/
+      - static:/var/scancodeio/static/
+    depends_on:
+      - web
+
 volumes:
-  db-data:
+  db_data:
   static:
   workspace:
