@@ -54,7 +54,7 @@ class ScanPipeConfig(AppConfig):
         # Ignore duplicated entries caused by duplicated paths in `sys.path`.
         pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
 
-        for entry_point in pipeline_entry_points:
+        for entry_point in sorted(pipeline_entry_points):
             pipeline_class = entry_point.load()
             pipeline_name = entry_point.name
             self.register_pipeline(pipeline_name, pipeline_class)

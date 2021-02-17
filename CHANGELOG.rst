@@ -1,6 +1,10 @@
 // Release notes
 // -------------
 
+### v1.1.1 (unreleased)
+
+- Consistent ordering for the pipelines, now sorted alphabetically.
+
 ### v1.1.0 (2021-02-16)
 
 - Display project extra data in the project details view.

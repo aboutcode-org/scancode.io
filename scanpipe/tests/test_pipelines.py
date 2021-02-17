@@ -29,11 +29,9 @@ from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 
 class ScanPipePipelinesTest(TestCase):
-    def test_scanpipe_pipeline_class_pipeline_name_property(self):
+    def test_scanpipe_pipeline_class_pipeline_name_attribute(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
-
-        pipeline_class = DoNothing
         pipeline_instance = DoNothing(run)
         self.assertEqual("do_nothing", pipeline_instance.pipeline_name)
 
