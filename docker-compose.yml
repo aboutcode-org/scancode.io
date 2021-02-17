@@ -3,25 +3,19 @@ version: "3.9"
 services:
   db:
     image: postgres:13
+    env_file:
+      - docker.env
     volumes:
       - db_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_DB=scancodeio
-      - POSTGRES_USER=scancodeio
-      - POSTGRES_PASSWORD=scancodeio
 
   redis:
     image: redis
 
   celery:
     build: .
-    environment:
-      - SCANCODEIO_DB_HOST=db
-      - SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace/
-      - CELERY_TASK_ALWAYS_EAGER=False
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    command: celery --app scancodeio worker --loglevel=INFO
+    command: celery --app scancodeio worker --loglevel=INFO --time-limit=3600
+    env_file:
+      - docker.env
     volumes:
       - .:/opt/scancodeio/
       - workspace:/var/scancodeio/workspace/
@@ -31,16 +25,12 @@ services:
 
   web:
     build: .
-    environment:
-      - SCANCODEIO_DB_HOST=db
-      - SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace/
-      - CELERY_TASK_ALWAYS_EAGER=False
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     command: sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 3"
+    env_file:
+      - docker.env
     expose:
       - 8000
     volumes:
