@@ -18,7 +18,7 @@
       {% endif %}
 
       <div class="columns">
-        <div class="column is-half pr-5">
+        <div class="column is-three-fifths pr-5">
           <form method="post" enctype="multipart/form-data">{% csrf_token %}
             <div class="field">
               <label class="label" for="id_name">Project name</label>
@@ -28,22 +28,35 @@
               </div>
             </div>
 
-            <label class="label mt-5" for="id_inputs">Inputs</label>
-            <div class="file has-name is-boxed is-fullwidth">
-              <label class="file-label">
-                <input class="file-input" type="file" name="inputs" id="id_inputs" multiple>
-                <span class="file-cta">
-                  <span class="file-icon">
-                    <i class="fas fa-upload"></i>
+            <label class="label mt-5">Inputs</label>
+            <div class="box">
+              <label class="label has-text-weight-semibold" for="id_inputs">Upload files</label>
+              <div class="file has-name is-boxed is-fullwidth">
+                <label class="file-label">
+                  <input class="file-input" type="file" name="inputs" id="id_inputs" multiple>
+                  <span class="file-cta">
+                    <span class="file-icon">
+                      <i class="fas fa-upload"></i>
+                    </span>
+                    <span class="file-label has-text-centered">
+                      Choose one or more files…
+                    </span>
                   </span>
-                  <span class="file-label has-text-centered">
-                    Choose one or more files…
+                  <span class="file-name" id="inputs-file-name" style="height: auto;">
+                    <i>No files selected</i>
                   </span>
-                </span>
-                <span class="file-name" id="inputs-file-name" style="height: auto;">
-                  <i>No files selected</i>
-                </span>
-              </label>
+                </label>
+              </div>
+
+              <div class="field mt-5">
+                <label class="label has-text-weight-semibold" for="id_download_urls">{{ form.download_urls.label }}</label>
+                <div class="control">
+                  <textarea class="textarea" rows="2" name="download_urls" id="id_download_urls" placeholder="https://domain.com/archive.zip">{{ form.download_urls.value|default_if_none:'' }}</textarea>
+                  <p class="help">
+                    {{ form.download_urls.help_text }}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div class="field mt-5">

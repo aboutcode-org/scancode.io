@@ -22,10 +22,12 @@
 
 from django import forms
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db.models import BLANK_CHOICE_DASH
 
 import django_filters
 
+from scanner.tasks import download
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -44,6 +46,15 @@ class ProjectForm(forms.ModelForm):
         required=False,
         widget=forms.ClearableFileInput(attrs={"multiple": True}),
     )
+    download_urls = forms.CharField(
+        label="Download URLs",
+        required=False,
+        help_text=(
+            "You can provide multiple URLs separated by a new-line. "
+            "A download URL is one that will immediately initiate the download of a "
+            "file."
+        ),
+    )
     pipeline = forms.ChoiceField(
         choices=get_pipeline_choices(),
         required=False,
@@ -59,20 +70,39 @@ class ProjectForm(forms.ModelForm):
         fields = [
             "name",
             "inputs",
+            "download_urls",
             "pipeline",
             "execute_now",
         ]
 
+    def clean_download_urls(self):
+        download_urls = self.cleaned_data["download_urls"]
+        download_urls = [url.strip() for url in download_urls.strip().split()]
+
+        downloads = []
+        for download_url in download_urls:
+            try:
+                downloaded = download(download_url)
+            except Exception:
+                raise ValidationError(f'Could not fetch URL: "{download_url}"')
+            downloads.append(downloaded)
+
+        self.cleaned_data["downloads"] = downloads
+        return "\n".join(download_urls)
+
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
-
-        pipeline = self.cleaned_data["pipeline"]
-        execute_now = self.cleaned_data["execute_now"]
 
         inputs = self.files.getlist("inputs")
         for upload_file in inputs:
             project.add_input_file(upload_file)
 
+        downloads = self.cleaned_data.get("downloads", [])
+        for downloaded in downloads:
+            project.move_input_from(downloaded.file_path)
+
+        pipeline = self.cleaned_data["pipeline"]
+        execute_now = self.cleaned_data["execute_now"]
         if pipeline:
             project.add_pipeline(pipeline, execute_now)
 

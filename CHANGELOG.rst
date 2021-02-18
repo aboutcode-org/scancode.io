@@ -3,6 +3,10 @@
 
 ### v1.1.1 (unreleased)
 
+- Download URLs can be provided as inputs on the project form.
+  Each URL is fetched and added to the project input directory.
+  https://github.com/nexB/scancode.io/issues/100
+
 - Consistent ordering for the pipelines, now sorted alphabetically.
 
 ### v1.1.0 (2021-02-16)
