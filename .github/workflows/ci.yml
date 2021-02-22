@@ -41,7 +41,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: make venv upgrade-pip dev envfile
+        run: make dev envfile
 
       - name: Validate code format
         run: make check
