@@ -39,6 +39,8 @@ env = environ.Env()
 
 SECRET_KEY = env.str("SECRET_KEY")
 
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
+
 # ScanCode.io
 
 SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])

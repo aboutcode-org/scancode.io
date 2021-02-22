@@ -32,8 +32,6 @@ with Path(__file__).resolve().parent.joinpath("base.py").open() as parent_config
 DEBUG = True
 TEMPLATES[0]["OPTIONS"]["debug"] = True
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "::1"])
-
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # The following loggers will be output to the console, except if running the tests.
