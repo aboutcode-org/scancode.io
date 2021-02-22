@@ -24,7 +24,7 @@
 PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
-ANSIBLE_PLAYBOOK=cd etc/ansible/ && ansible-playbook --inventory-file=hosts --verbose --ask-become-pass --user=${USER}
+VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
 BLACK_ARGS=--exclude="migrations|data|docs" .
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
@@ -41,11 +41,11 @@ else
 	SUDO_POSTGRES=
 endif
 
-venv:
-	@echo "-> Configure the Python venv"
-	${PYTHON_EXE} -m venv .
+virtualenv:
+	@echo "-> Bootstrap the Python virtualenv"
+	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update .
 
-conf: venv
+conf: virtualenv
 	@echo "-> Install dependencies"
 	@${ACTIVATE} pip install -e .
 
@@ -58,10 +58,6 @@ envfile:
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
-
-upgrade-pip:
-	@echo "-> Upgrade pip to latest version"
-	@${ACTIVATE} pip install --upgrade pip
 
 install:
 	@echo "-> Install and configure the Python env with base dependencies, offline"
@@ -135,4 +131,4 @@ docs:
 	rm -rf docs/_build/
 	sphinx-build docs/ docs/_build/
 
-.PHONY: venv conf dev envfile upgrade-pip install check valid isort clean migrate postgres sqlite run test package bump docs
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test package bump docs

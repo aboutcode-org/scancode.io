@@ -1,6 +1,13 @@
 // Release notes
 // -------------
 
+### v1.1.1 (unreleased)
+
+- Create the virtualenv using the virtualenv.pyz app in place of the bundled "venv".
+  https://github.com/nexB/scancode.io/issues/104
+
+- Consistent ordering for the pipelines, now sorted alphabetically.
+
 ### v1.1.0 (2021-02-16)
 
 - Display project extra data in the project details view.

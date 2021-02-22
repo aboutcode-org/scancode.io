@@ -1,7 +1,4 @@
 # Configuration tools
-pip==21.0.1
-setuptools==53.0.0
-wheel==0.36.2
 importlib_metadata==3.4.0; python_version < "3.8"
 
 # Django related
