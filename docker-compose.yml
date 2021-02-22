@@ -18,6 +18,7 @@ services:
       - docker.env
     volumes:
       - .:/opt/scancodeio/
+      - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
     depends_on:
       - redis
@@ -35,6 +36,7 @@ services:
       - 8000
     volumes:
       - .:/opt/scancodeio/
+      - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
     depends_on:
@@ -44,6 +46,7 @@ services:
     image: nginx
     ports:
       - 80:80
+      - 443:443
     volumes:
       - ./etc/nginx/conf.d/:/etc/nginx/conf.d/
       - static:/var/scancodeio/static/
