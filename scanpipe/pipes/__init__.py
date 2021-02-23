@@ -21,17 +21,14 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from datetime import datetime
-from functools import partial
-from pathlib import Path
 
 from django.db.models import Count
 
-from commoncode import fileutils
 from packageurl import normalize_qualifiers
-from scancode import api as scancode_api
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
+from scanpipe.pipes import scancode
 
 
 def make_codebase_resource(project, location, rootfs_path=None):
@@ -57,7 +54,7 @@ def make_codebase_resource(project, location, rootfs_path=None):
     resource_defaults = {}
     if rootfs_path:
         resource_defaults["rootfs_path"] = rootfs_path
-    resource_defaults.update(get_resource_info(location=location))
+    resource_defaults.update(scancode.get_resource_info(location=location))
 
     codebase_resource, _created = CodebaseResource.objects.get_or_create(
         project=project,
@@ -65,59 +62,6 @@ def make_codebase_resource(project, location, rootfs_path=None):
         defaults=resource_defaults,
     )
     return codebase_resource
-
-
-def get_resource_info(location):
-    """
-    Return a mapping suitable for the creation of a new CodebaseResource
-    """
-    file_info = {}
-    is_symlink = Path(location).is_symlink()
-    is_file = Path(location).is_file()
-
-    if is_symlink:
-        resource_type = CodebaseResource.Type.SYMLINK
-        file_info["status"] = "symlink"
-    elif is_file:
-        resource_type = CodebaseResource.Type.FILE
-    else:
-        resource_type = CodebaseResource.Type.DIRECTORY
-
-    file_info.update(
-        {
-            "type": resource_type,
-            "name": fileutils.file_base_name(location),
-            "extension": fileutils.file_extension(location),
-        }
-    )
-
-    if is_symlink:
-        return file_info
-
-    # Missing fields on CodebaseResource model returned by `get_file_info`.
-    unsupported_fields = [
-        "is_binary",
-        "is_text",
-        "is_archive",
-        "is_media",
-        "is_source",
-        "is_script",
-        "date",
-    ]
-
-    other_info = scancode_api.get_file_info(location)
-
-    # Skip unsupported_fields
-    # Skip empty values to avoid null vs. '' conflicts
-    other_info = {
-        field_name: value
-        for field_name, value in other_info.items()
-        if field_name not in unsupported_fields and value
-    }
-
-    file_info.update(other_info)
-
-    return file_info
 
 
 def update_or_create_package(project, package_data):
@@ -178,65 +122,6 @@ def update_or_create_package(project, package_data):
             dp.save()
 
     return dp
-
-
-def scan_for_application_packages(project):
-    """
-    Run a package scan on remainder of files without status.
-    """
-    queryset = CodebaseResource.objects.project(project).no_status()
-
-    for codebase_resource in queryset:
-        package_info = scancode_api.get_package_info(codebase_resource.location)
-        packages = package_info.get("packages", [])
-        if packages:
-            for package in packages:
-                DiscoveredPackage.create_for_resource(package, codebase_resource)
-            codebase_resource.status = "application-package"
-            codebase_resource.save()
-
-
-def scan_file(location):
-    """
-    Run a license, copyright, email, and url scan functions on provided `location`.
-    Return a dict of `scan_results` and a list of `scan_errors`.
-    """
-    scan_functions = [
-        scancode_api.get_copyrights,
-        partial(scancode_api.get_licenses, include_text=True),
-        scancode_api.get_emails,
-        scancode_api.get_urls,
-    ]
-
-    scan_results = {}
-    scan_errors = []
-
-    for function in scan_functions:
-        try:
-            scan_results.update(function(location))
-        except Exception as scan_error:
-            scan_errors.append(scan_error)
-
-    return scan_results, scan_errors
-
-
-def scan_for_files(project):
-    """
-    Run a license, copyright, email, and url scan on remainder of files
-    without status.
-    """
-    queryset = CodebaseResource.objects.project(project).no_status()
-
-    for codebase_resource in queryset:
-        scan_results, scan_errors = scan_file(codebase_resource.location)
-
-        if scan_errors:
-            codebase_resource.add_errors(scan_errors)
-            codebase_resource.status = "scanned-with-error"
-        else:
-            codebase_resource.status = "scanned"
-
-        codebase_resource.set_scan_results(scan_results, save=True)
 
 
 def has_unknown_license(codebase_resource):
