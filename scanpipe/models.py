@@ -459,9 +459,7 @@ class SaveProjectErrorMixin:
         try:
             super().save(*args, **kwargs)
         except Exception as error:
-            self.project.add_error(
-                error, model=self.__class__.__name__, details=model_to_dict(self)
-            )
+            self.add_error(error)
 
     @classmethod
     def check(cls, **kwargs):
@@ -486,6 +484,23 @@ class SaveProjectErrorMixin:
             ]
 
         return []
+
+    def add_error(self, error):
+        """
+        Create a ProjectError record from the provided `error` Exception.instance.
+        """
+        return self.project.add_error(
+            error=error,
+            model=self.__class__.__name__,
+            details=model_to_dict(self),
+        )
+
+    def add_errors(self, errors):
+        """
+        Create ProjectError records from the provided `errors` Exception list.
+        """
+        for error in errors:
+            self.add_error(error)
 
 
 class RunQuerySet(ProjectRelatedQuerySet):

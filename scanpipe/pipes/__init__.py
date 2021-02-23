@@ -20,13 +20,11 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import traceback
 from datetime import datetime
 from functools import partial
 from pathlib import Path
 
 from django.db.models import Count
-from django.forms import model_to_dict
 
 from commoncode import fileutils
 from packageurl import normalize_qualifiers
@@ -34,7 +32,6 @@ from scancode import api as scancode_api
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import ProjectError
 
 
 def make_codebase_resource(project, location, rootfs_path=None):
@@ -201,8 +198,8 @@ def scan_for_application_packages(project):
 
 def scan_file(location):
     """
-    Run a license, copyright, email, and url scan functions on provided
-    `location`.
+    Run a license, copyright, email, and url scan functions on provided `location`.
+    Return a dict of `scan_results` and a list of `scan_errors`.
     """
     scan_functions = [
         scancode_api.get_copyrights,
@@ -211,20 +208,16 @@ def scan_file(location):
         scancode_api.get_urls,
     ]
 
-    scan_errors = []
     scan_results = {}
-    for function in scan_functions:
+    scan_errors = []
 
+    for function in scan_functions:
         try:
             scan_results.update(function(location))
-        except Exception as e:
-            trace = traceback.format_exc()
-            msg = f'ERROR: while scanning: "{location}"\n{trace}'
-            scan_errors.append(msg)
+        except Exception as scan_error:
+            scan_errors.append(scan_error)
 
-    if scan_errors:
-        scan_results["scan_errors"] = scan_errors
-    return scan_results
+    return scan_results, scan_errors
 
 
 def scan_for_files(project):
@@ -235,21 +228,11 @@ def scan_for_files(project):
     queryset = CodebaseResource.objects.project(project).no_status()
 
     for codebase_resource in queryset:
-        scan_results = scan_file(codebase_resource.location)
-        scan_errors = scan_results.get("scan_errors")
+        scan_results, scan_errors = scan_file(codebase_resource.location)
+
         if scan_errors:
-            for err in scan_errors:
-                # by convention the first line is the error message and the
-                # remainder is the traceback
-                message, _, trace = err.partition("\n")
-                ProjectError.objects.create(
-                    project=codebase_resource.project,
-                    model=CodebaseResource.__name__,
-                    details=model_to_dict(codebase_resource),
-                    message=message,
-                    traceback=trace,
-                )
-                codebase_resource.status = "scanned-with-error"
+            codebase_resource.add_errors(scan_errors)
+            codebase_resource.status = "scanned-with-error"
         else:
             codebase_resource.status = "scanned"
 

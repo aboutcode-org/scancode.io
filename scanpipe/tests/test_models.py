@@ -554,6 +554,24 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("Error message", error.message)
         self.assertEqual("", error.traceback)
 
+    def test_scanpipe_codebase_resource_model_add_error(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource = CodebaseResource.objects.create(project=project1)
+        error = codebase_resource.add_error(Exception("Error message"))
+
+        self.assertEqual(error, ProjectError.objects.get())
+        self.assertEqual("CodebaseResource", error.model)
+        self.assertTrue(error.details)
+        self.assertEqual("Error message", error.message)
+        self.assertEqual("", error.traceback)
+
+    def test_scanpipe_codebase_resource_model_add_errors(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource = CodebaseResource.objects.create(project=project1)
+        codebase_resource.add_error(Exception("Error1"))
+        codebase_resource.add_error(Exception("Error2"))
+        self.assertEqual(2, ProjectError.objects.count())
+
     def test_scanpipe_project_error_model_save_non_valid_related_object(self):
         project1 = Project.objects.create(name="Analysis")
         long_value = "value" * 1000

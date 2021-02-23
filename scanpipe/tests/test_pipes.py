@@ -33,7 +33,9 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import filename_now
+from scanpipe.pipes import get_resource_info
 from scanpipe.pipes import output
+from scanpipe.pipes import scan_file
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.tests import mocked_now
@@ -280,3 +282,36 @@ class ScanPipePipesTest(TestCase):
             expected = json.loads(f.read())
 
         self.assertEqual(expected, tree)
+
+    def test_scanpipe_pipes_get_resource_info(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+        sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
+        expected = {
+            "type": CodebaseResource.Type.FILE,
+            "name": "notice",
+            "extension": ".NOTICE",
+            "size": 1178,
+            "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
+            "md5": "90cd416fd24df31f608249b77bae80f1",
+            "sha256": sha256,
+            "mime_type": "text/plain",
+            "file_type": "ASCII text",
+        }
+        self.assertEqual(expected, get_resource_info(input_location))
+
+    def test_scanpipe_pipes_scan_file(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+        scan_results, scan_errors = scan_file(input_location)
+        expected = [
+            "copyrights",
+            "holders",
+            "authors",
+            "licenses",
+            "license_expressions",
+            "spdx_license_expressions",
+            "percentage_of_license_text",
+            "emails",
+            "urls",
+        ]
+        self.assertEqual(expected, list(scan_results.keys()))
+        self.assertEqual([], scan_errors)
