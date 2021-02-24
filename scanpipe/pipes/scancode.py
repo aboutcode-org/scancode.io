@@ -25,6 +25,7 @@ from functools import partial
 from pathlib import Path
 
 from django.conf import settings
+from django.core.cache import caches
 
 import packagedcode
 from commoncode import fileutils
@@ -121,23 +122,44 @@ def scan_file(location):
     return scan_results, scan_errors
 
 
+def scan_and_save_results(codebase_resource):
+    """
+    Scan the `codebase_resource`, save the results in the database, and create
+    project errors if any occurred during the scan.
+    """
+    scan_results, scan_errors = scan_file(codebase_resource.location)
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        codebase_resource.status = "scanned-with-error"
+    else:
+        codebase_resource.status = "scanned"
+
+    codebase_resource.set_scan_results(scan_results, save=True)
+
+
 def scan_for_files(project):
     """
-    Run a license, copyright, email, and url scan on remainder of files
-    without status.
+    Run a license, copyright, email, and url scan on remainder of files without status.
+
+    The scan results are cached using the resource sha1 as the cache key.
+    Getting existing results form the database is much faster than running duplicated
+    scans.
     """
-    queryset = CodebaseResource.objects.project(project).no_status()
+    queryset = project.codebaseresources.no_status()
+    cache = caches["scan_results"]
 
     for codebase_resource in queryset:
-        scan_results, scan_errors = scan_file(codebase_resource.location)
+        cached_resource_pk = cache.get(codebase_resource.sha1)
 
-        if scan_errors:
-            codebase_resource.add_errors(scan_errors)
-            codebase_resource.status = "scanned-with-error"
+        if cached_resource_pk:
+            cached_resource = project.codebaseresources.get(pk=cached_resource_pk)
+            codebase_resource.status = cached_resource.status
+            codebase_resource.copy_scan_results(cached_resource, save=True)
         else:
-            codebase_resource.status = "scanned"
+            scan_and_save_results(codebase_resource)
+            cache.set(codebase_resource.sha1, codebase_resource.pk)
 
-        codebase_resource.set_scan_results(scan_results, save=True)
+    cache.clear()
 
 
 def scan_for_application_packages(project):
