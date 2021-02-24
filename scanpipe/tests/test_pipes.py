@@ -36,6 +36,7 @@ from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
+from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -221,6 +222,60 @@ class ScanPipePipesTest(TestCase):
         ]
         self.assertEqual(expected, list(scan_results.keys()))
         self.assertEqual([], scan_errors)
+
+    def test_scanpipe_pipes_scancode_scan_and_save_results(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource1 = CodebaseResource.objects.create(
+            project=project1, path="not available"
+        )
+
+        scancode.scan_and_save_results(codebase_resource1)
+        codebase_resource1.refresh_from_db()
+        self.assertEqual("scanned-with-error", codebase_resource1.status)
+
+        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        codebase_resource2 = CodebaseResource.objects.create(
+            project=project1, path="notice.NOTICE"
+        )
+        scancode.scan_and_save_results(codebase_resource2)
+        codebase_resource2.refresh_from_db()
+        self.assertEqual("scanned", codebase_resource2.status)
+        expected = [
+            "apache-2.0",
+            "apache-2.0 AND scancode-acknowledgment",
+            "apache-2.0",
+            "apache-2.0",
+        ]
+        self.assertEqual(expected, codebase_resource2.license_expressions)
+
+    @mock.patch("scanpipe.pipes.scancode.scan_file")
+    def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_file):
+        scan_results = {"license_expressions": ["mit"]}
+        scan_errors = []
+        mock_scan_file.return_value = scan_results, scan_errors
+
+        project1 = Project.objects.create(name="Analysis")
+        sha1 = "51d28a27d919ce8690a40f4f335b9d591ceb16e9"
+        resource1 = CodebaseResource.objects.create(
+            project=project1,
+            path="dir1/file.ext",
+            sha1=sha1,
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=project1,
+            path="dir2/file.ext",
+            sha1=sha1,
+        )
+
+        scancode.scan_for_files(project1)
+        # The scan_file is only called once as the cache is used for the second
+        # duplicated resource.
+        mock_scan_file.assert_called_once()
+
+        for resource in [resource1, resource2]:
+            resource.refresh_from_db()
+            self.assertEqual("scanned", resource.status)
+            self.assertEqual(["mit"], resource.license_expressions)
 
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")

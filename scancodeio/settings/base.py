@@ -132,6 +132,24 @@ AUTH_PASSWORD_VALIDATORS = [
 # True if running tests through `./manage test`
 IS_TESTS = "test" in sys.argv
 
+# Cache
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "default",
+    },
+    "scan_results": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "scan",
+        "TIMEOUT": 86_400,  # 1 day
+        "OPTIONS": {
+            # Maximum entries allowed in the cache before old values are deleted
+            "MAX_ENTRIES": 1_000_000,
+        },
+    },
+}
+
 # Logging
 
 LOGGING = {
