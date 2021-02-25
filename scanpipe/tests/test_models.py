@@ -374,14 +374,36 @@ class ScanPipeModelsTest(TestCase):
         resource.discovered_packages.add(package)
         self.assertEqual([str(package.uuid)], resource.for_packages)
 
+    def test_scanpipe_scan_fields_model_mixin_methods(self):
+        expected = [
+            "copyrights",
+            "holders",
+            "authors",
+            "licenses",
+            "license_expressions",
+            "emails",
+            "urls",
+        ]
+        self.assertEqual(expected, CodebaseResource.scan_fields())
+
+        resource = CodebaseResource.objects.create(
+            project=self.project1, path="filename.ext"
+        )
+
         scan_results = {
+            "license_expressions": ["mit"],
             "name": "name",
-            "extension": "ext",
             "non_resource_field": "value",
         }
         resource.set_scan_results(scan_results, save=True)
-        self.assertEqual(scan_results["name"], resource.name)
-        self.assertEqual(scan_results["extension"], resource.extension)
+        resource.refresh_from_db()
+        self.assertEqual("", resource.name)
+        self.assertEqual(["mit"], resource.license_expressions)
+
+        resource2 = CodebaseResource.objects.create(project=self.project1, path="file2")
+        resource2.copy_scan_results(from_instance=resource, save=True)
+        resource.refresh_from_db()
+        self.assertEqual(["mit"], resource2.license_expressions)
 
     def test_scanpipe_codebase_resource_type_methods(self):
         CodebaseResource.objects.all().delete()
@@ -553,6 +575,24 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual({}, error.details)
         self.assertEqual("Error message", error.message)
         self.assertEqual("", error.traceback)
+
+    def test_scanpipe_codebase_resource_model_add_error(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource = CodebaseResource.objects.create(project=project1)
+        error = codebase_resource.add_error(Exception("Error message"))
+
+        self.assertEqual(error, ProjectError.objects.get())
+        self.assertEqual("CodebaseResource", error.model)
+        self.assertTrue(error.details)
+        self.assertEqual("Error message", error.message)
+        self.assertEqual("", error.traceback)
+
+    def test_scanpipe_codebase_resource_model_add_errors(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource = CodebaseResource.objects.create(project=project1)
+        codebase_resource.add_error(Exception("Error1"))
+        codebase_resource.add_error(Exception("Error2"))
+        self.assertEqual(2, ProjectError.objects.count())
 
     def test_scanpipe_project_error_model_save_non_valid_related_object(self):
         project1 = Project.objects.create(name="Analysis")

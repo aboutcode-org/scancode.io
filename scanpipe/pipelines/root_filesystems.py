@@ -27,6 +27,7 @@ from extractcode.extract import extract_file
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import rootfs
+from scanpipe.pipes import scancode
 
 
 class RootFS(Pipeline):
@@ -94,7 +95,7 @@ class RootFS(Pipeline):
         """
         Scan unknown resources for packages infos.
         """
-        pipes.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project)
 
     def ignore_empty_files(self):
         """
@@ -127,7 +128,7 @@ class RootFS(Pipeline):
         """
         Scan unknown resources for copyrights, licenses, emails, and urls.
         """
-        pipes.scan_for_files(self.project)
+        scancode.scan_for_files(self.project)
 
     def analyze_scanned_files(self):
         """

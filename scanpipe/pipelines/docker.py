@@ -26,6 +26,7 @@ from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
+from scanpipe.pipes import scancode
 
 
 class Docker(Pipeline):
@@ -89,13 +90,13 @@ class Docker(Pipeline):
         """
         Scan unknown resources for packages infos.
         """
-        pipes.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project)
 
     def scan_for_files(self):
         """
         Scan unknown resources for copyrights, licenses, emails, and urls.
         """
-        pipes.scan_for_files(self.project)
+        scancode.scan_for_files(self.project)
 
     def analyze_scanned_files(self):
         """

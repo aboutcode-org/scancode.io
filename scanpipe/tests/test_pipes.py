@@ -36,6 +36,7 @@ from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
+from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -188,6 +189,93 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", filename_now())
+
+    def test_scanpipe_pipes_scancode_get_resource_info(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+        sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
+        expected = {
+            "type": CodebaseResource.Type.FILE,
+            "name": "notice",
+            "extension": ".NOTICE",
+            "size": 1178,
+            "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
+            "md5": "90cd416fd24df31f608249b77bae80f1",
+            "sha256": sha256,
+            "mime_type": "text/plain",
+            "file_type": "ASCII text",
+        }
+        self.assertEqual(expected, scancode.get_resource_info(input_location))
+
+    def test_scanpipe_pipes_scancode_scan_file(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+        scan_results, scan_errors = scancode.scan_file(input_location)
+        expected = [
+            "copyrights",
+            "holders",
+            "authors",
+            "licenses",
+            "license_expressions",
+            "spdx_license_expressions",
+            "percentage_of_license_text",
+            "emails",
+            "urls",
+        ]
+        self.assertEqual(expected, list(scan_results.keys()))
+        self.assertEqual([], scan_errors)
+
+    def test_scanpipe_pipes_scancode_scan_and_save_results(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource1 = CodebaseResource.objects.create(
+            project=project1, path="not available"
+        )
+
+        scancode.scan_and_save_results(codebase_resource1)
+        codebase_resource1.refresh_from_db()
+        self.assertEqual("scanned-with-error", codebase_resource1.status)
+
+        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        codebase_resource2 = CodebaseResource.objects.create(
+            project=project1, path="notice.NOTICE"
+        )
+        scancode.scan_and_save_results(codebase_resource2)
+        codebase_resource2.refresh_from_db()
+        self.assertEqual("scanned", codebase_resource2.status)
+        expected = [
+            "apache-2.0",
+            "apache-2.0 AND scancode-acknowledgment",
+            "apache-2.0",
+            "apache-2.0",
+        ]
+        self.assertEqual(expected, codebase_resource2.license_expressions)
+
+    @mock.patch("scanpipe.pipes.scancode.scan_file")
+    def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_file):
+        scan_results = {"license_expressions": ["mit"]}
+        scan_errors = []
+        mock_scan_file.return_value = scan_results, scan_errors
+
+        project1 = Project.objects.create(name="Analysis")
+        sha1 = "51d28a27d919ce8690a40f4f335b9d591ceb16e9"
+        resource1 = CodebaseResource.objects.create(
+            project=project1,
+            path="dir1/file.ext",
+            sha1=sha1,
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=project1,
+            path="dir2/file.ext",
+            sha1=sha1,
+        )
+
+        scancode.scan_for_files(project1)
+        # The scan_file is only called once as the cache is used for the second
+        # duplicated resource.
+        mock_scan_file.assert_called_once()
+
+        for resource in [resource1, resource2]:
+            resource.refresh_from_db()
+            self.assertEqual("scanned", resource.status)
+            self.assertEqual(["mit"], resource.license_expressions)
 
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")

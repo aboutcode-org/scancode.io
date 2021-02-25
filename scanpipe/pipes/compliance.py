@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.models import CodebaseResource
-from scanpipe.pipes import scan_file
+from scanpipe.pipes import scancode
 
 """
 A common compliance pattern for images is to store known licenses in a /licenses
@@ -54,10 +54,10 @@ def tag_compliance_files(project):
 
 def analyze_compliance_licenses(project):
     """
-    Tag compliance licenses status for the provided `project`.
+    Scan compliance licenses status for the provided `project`.
     """
     qs = CodebaseResource.objects.project(project).status("compliance-licenses")
 
     for codebase_resource in qs:
-        scan_results = scan_file(codebase_resource.location)
+        scan_results, scan_errors = scancode.scan_file(codebase_resource.location)
         codebase_resource.set_scan_results(scan_results, save=True)

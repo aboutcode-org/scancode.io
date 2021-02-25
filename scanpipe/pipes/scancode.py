@@ -21,22 +21,161 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import shlex
+from functools import partial
+from pathlib import Path
 
 from django.conf import settings
+from django.core.cache import caches
 
 import packagedcode
+from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from packageurl import PackageURL
 from scancode import ScancodeError
+from scancode import api as scancode_api
 
 from scanner.tasks import get_bin_executable
 from scanner.tasks import run_command
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
+
+
+def get_resource_info(location):
+    """
+    Return a mapping suitable for the creation of a new CodebaseResource.
+    """
+    file_info = {}
+    is_symlink = Path(location).is_symlink()
+    is_file = Path(location).is_file()
+
+    if is_symlink:
+        resource_type = CodebaseResource.Type.SYMLINK
+        file_info["status"] = "symlink"
+    elif is_file:
+        resource_type = CodebaseResource.Type.FILE
+    else:
+        resource_type = CodebaseResource.Type.DIRECTORY
+
+    file_info.update(
+        {
+            "type": resource_type,
+            "name": fileutils.file_base_name(location),
+            "extension": fileutils.file_extension(location),
+        }
+    )
+
+    if is_symlink:
+        return file_info
+
+    # Missing fields on CodebaseResource model returned by `get_file_info`.
+    unsupported_fields = [
+        "is_binary",
+        "is_text",
+        "is_archive",
+        "is_media",
+        "is_source",
+        "is_script",
+        "date",
+    ]
+
+    other_info = scancode_api.get_file_info(location)
+
+    # Skip unsupported_fields
+    # Skip empty values to avoid null vs. '' conflicts
+    other_info = {
+        field_name: value
+        for field_name, value in other_info.items()
+        if field_name not in unsupported_fields and value
+    }
+
+    file_info.update(other_info)
+
+    return file_info
+
+
+def scan_file(location):
+    """
+    Run a license, copyright, email, and url scan functions on provided `location`.
+    Return a dict of `scan_results` and a list of `scan_errors`.
+    """
+    scan_functions = [
+        scancode_api.get_copyrights,
+        partial(scancode_api.get_licenses, include_text=True),
+        scancode_api.get_emails,
+        scancode_api.get_urls,
+    ]
+
+    scan_results = {}
+    scan_errors = []
+
+    for function in scan_functions:
+        try:
+            scan_results.update(function(location))
+        except Exception as scan_error:
+            scan_errors.append(scan_error)
+
+    return scan_results, scan_errors
+
+
+def scan_and_save_results(codebase_resource):
+    """
+    Scan the `codebase_resource`, save the results in the database, and create
+    project errors if any occurred during the scan.
+    """
+    scan_results, scan_errors = scan_file(codebase_resource.location)
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        codebase_resource.status = "scanned-with-error"
+    else:
+        codebase_resource.status = "scanned"
+
+    codebase_resource.set_scan_results(scan_results, save=True)
+
+
+def scan_for_files(project):
+    """
+    Run a license, copyright, email, and url scan on remainder of files without status.
+
+    The scan results are cached using the resource sha1 as the cache key.
+    Getting existing results form the database is much faster than running duplicated
+    scans.
+    """
+    queryset = project.codebaseresources.no_status()
+    cache = caches["scan_results"]
+
+    for codebase_resource in queryset:
+        cached_resource_pk = cache.get(codebase_resource.sha1)
+
+        if cached_resource_pk:
+            cached_resource = project.codebaseresources.get(pk=cached_resource_pk)
+            codebase_resource.status = cached_resource.status
+            codebase_resource.copy_scan_results(cached_resource, save=True)
+        else:
+            scan_and_save_results(codebase_resource)
+            cache.set(codebase_resource.sha1, codebase_resource.pk)
+
+    cache.clear()
+
+
+def scan_for_application_packages(project):
+    """
+    Run a package scan on files without status.
+    """
+    queryset = CodebaseResource.objects.project(project).no_status()
+
+    for codebase_resource in queryset:
+        package_info = scancode_api.get_package_info(codebase_resource.location)
+        packages = package_info.get("packages", [])
+        if packages:
+            for package in packages:
+                DiscoveredPackage.create_for_resource(package, codebase_resource)
+            codebase_resource.status = "application-package"
+            codebase_resource.save()
 
 
 def run_extractcode(location, options=None, raise_on_error=False):

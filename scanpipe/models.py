@@ -459,9 +459,7 @@ class SaveProjectErrorMixin:
         try:
             super().save(*args, **kwargs)
         except Exception as error:
-            self.project.add_error(
-                error, model=self.__class__.__name__, details=model_to_dict(self)
-            )
+            self.add_error(error)
 
     @classmethod
     def check(cls, **kwargs):
@@ -486,6 +484,23 @@ class SaveProjectErrorMixin:
             ]
 
         return []
+
+    def add_error(self, error):
+        """
+        Create a ProjectError record from the provided `error` Exception.instance.
+        """
+        return self.project.add_error(
+            error=error,
+            model=self.__class__.__name__,
+            details=model_to_dict(self),
+        )
+
+    def add_errors(self, errors):
+        """
+        Create ProjectError records from the provided `errors` Exception list.
+        """
+        for error in errors:
+            self.add_error(error)
 
 
 class RunQuerySet(ProjectRelatedQuerySet):
@@ -669,6 +684,33 @@ class ScanFieldsModelMixin(models.Model):
     class Meta:
         abstract = True
 
+    @classmethod
+    def scan_fields(cls):
+        return [field.name for field in ScanFieldsModelMixin._meta.get_fields()]
+
+    def set_scan_results(self, scan_results, save=False):
+        """
+        Set the values from `scan_results` on this instance scan related fields.
+        """
+        scan_fields = self.scan_fields()
+        for field_name, value in scan_results.items():
+            if value and field_name in scan_fields:
+                setattr(self, field_name, value)
+
+        if save:
+            self.save()
+
+    def copy_scan_results(self, from_instance, save=False):
+        """
+        Copy the scan related fields values from `from_instance`to this instance.
+        """
+        for field_name in self.scan_fields():
+            value_from_instance = getattr(from_instance, field_name)
+            setattr(self, field_name, value_from_instance)
+
+        if save:
+            self.save()
+
 
 class CodebaseResource(
     ProjectRelatedModel, ScanFieldsModelMixin, SaveProjectErrorMixin, AbstractResource
@@ -801,15 +843,6 @@ class CodebaseResource(
     @property
     def for_packages(self):
         return [str(package) for package in self.discovered_packages.all()]
-
-    def set_scan_results(self, scan_results, save=False):
-        model_fields = self.model_fields()
-        for field_name, value in scan_results.items():
-            if value and field_name in model_fields:
-                setattr(self, field_name, value)
-
-        if save:
-            self.save()
 
 
 class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPackage):

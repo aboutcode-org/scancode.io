@@ -3,9 +3,11 @@
 
 ### v1.1.1 (unreleased)
 
-- Download URLs can be provided as inputs on the project form.
-  Each URL is fetched and added to the project input directory.
-  https://github.com/nexB/scancode.io/issues/100
+- Implement cache to prevent scanning multiple times a duplicated codebase resource.
+  https://github.com/nexB/scancode.io/issues/70
+
+- Create the virtualenv using the virtualenv.pyz app in place of the bundled "venv".
+  https://github.com/nexB/scancode.io/issues/104
 
 - Consistent ordering for the pipelines, now sorted alphabetically.
 
