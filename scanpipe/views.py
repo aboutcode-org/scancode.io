@@ -119,7 +119,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
 
         input_path = project.input_path
         context["inputs"] = [
-            (path.relative_to(input_path), path.is_file())
+            (path.relative_to(input_path), path.is_file(), path.stat().st_size)
             for path in input_path.glob("*")
         ]
 

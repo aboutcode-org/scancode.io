@@ -25,15 +25,17 @@ from django.core.management import CommandError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
+from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import validate_input_files
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
 
 
-class Command(BaseCommand):
+class Command(AddInputCommandMixin, BaseCommand):
     help = "Create a ScanPipe project."
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument("name", help="Project name.")
         parser.add_argument(
             "--pipeline",
@@ -46,20 +48,6 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--input-file",
-            action="append",
-            dest="inputs_files",
-            default=list(),
-            help="Input file locations to copy in the input/ work directory.",
-        )
-        parser.add_argument(
-            "--input-url",
-            action="append",
-            dest="input_urls",
-            default=list(),
-            help="Input URLs to download in the input/ work directory.",
-        )
-        parser.add_argument(
             "--execute",
             action="store_true",
             help="Execute the pipelines right after project creation.",
@@ -69,7 +57,7 @@ class Command(BaseCommand):
         name = options["name"]
         pipeline_names = options["pipelines"]
         inputs_files = options["inputs_files"]
-        input_urls = options["input_urls"]  # TODO
+        input_urls = options["input_urls"]
         execute = options["execute"]
 
         project = Project(name=name)
@@ -92,8 +80,13 @@ class Command(BaseCommand):
         for pipeline_name in pipeline_names:
             project.add_pipeline(pipeline_name)
 
-        for file_location in inputs_files:
-            project.copy_input_from(file_location)
+        self.project = project
+        if inputs_files:
+            self.validate_input_files(inputs_files)
+            self.handle_input_files(inputs_files)
+
+        if input_urls:
+            self.handle_input_urls(input_urls)
 
         if execute:
             call_command(
