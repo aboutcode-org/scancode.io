@@ -119,16 +119,16 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_create_project_inputs(self):
         out = StringIO()
 
-        options = ["--input", "non-existing"]
+        options = ["--input-file", "non-existing"]
         expected = "non-existing not found or not a file"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
         parent_path = Path(__file__).parent
         options = [
-            "--input",
+            "--input-file",
             str(parent_path / "test_commands.py"),
-            "--input",
+            "--input-file",
             str(parent_path / "test_models.py"),
         ]
         call_command("create-project", "my_project", *options, stdout=out)
@@ -164,7 +164,9 @@ class ScanPipeManagementCommandTest(TestCase):
         project = Project.objects.create(name="my_project")
         parent_path = Path(__file__).parent
         options = [
+            "--input-file",
             str(parent_path / "test_commands.py"),
+            "--input-file",
             str(parent_path / "test_models.py"),
         ]
 
@@ -178,7 +180,7 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
 
-        options = ["--project", project.name, "non-existing.py"]
+        options = ["--project", project.name, "--input-file", "non-existing.py"]
         expected = "non-existing.py not found or not a file"
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)

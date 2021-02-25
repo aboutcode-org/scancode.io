@@ -21,19 +21,19 @@
         <div class="column is-three-fifths pr-5">
           <form method="post" enctype="multipart/form-data">{% csrf_token %}
             <div class="field">
-              <label class="label" for="id_name">Project name</label>
+              <label class="label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
               <div class="control">
-                <input class="input" type="text" name="name" maxlength="100" id="id_name" value="{{ form.name.value|default_if_none:'' }}" required>
-                <p class="help">The unique name of your project.</p>
+                {{ form.name }}
+                <p class="help">{{ form.name.help_text }}</p>
               </div>
             </div>
 
             <label class="label mt-5">Inputs</label>
             <div class="box">
-              <label class="label has-text-weight-semibold" for="id_inputs">Upload files</label>
+              <label class="label has-text-weight-semibold" for="{{ form.input_files.id_for_label }}">Upload files</label>
               <div class="file has-name is-boxed is-fullwidth">
                 <label class="file-label">
-                  <input class="file-input" type="file" name="inputs" id="id_inputs" multiple>
+                  {{ form.input_files }}
                   <span class="file-cta">
                     <span class="file-icon">
                       <i class="fas fa-upload"></i>
@@ -49,18 +49,16 @@
               </div>
 
               <div class="field mt-5">
-                <label class="label has-text-weight-semibold" for="id_download_urls">{{ form.download_urls.label }}</label>
+                <label class="label has-text-weight-semibold" for="{{ form.download_urls.id_for_label }}">{{ form.download_urls.label }}</label>
                 <div class="control">
-                  <textarea class="textarea" rows="2" name="download_urls" id="id_download_urls" placeholder="https://domain.com/archive.zip">{{ form.download_urls.value|default_if_none:'' }}</textarea>
-                  <p class="help">
-                    {{ form.download_urls.help_text }}
-                  </p>
+                  {{ form.download_urls }}
+                  <p class="help">{{ form.download_urls.help_text }}</p>
                 </div>
               </div>
             </div>
 
             <div class="field mt-5">
-              <label class="label" for="id_pipeline">Pipeline</label>
+              <label class="label" for="{{ form.pipeline.id_for_label }}">Pipeline</label>
               <div class="control">
                 <span class="select">
                   {{ form.pipeline }}
@@ -69,7 +67,7 @@
             </div>
 
             <div class="field">
-              <label class="checkbox" for="id_execute_now">
+              <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
                 {{ form.execute_now }}
                 {{ form.execute_now.label }}
               </label>
@@ -128,7 +126,7 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script>
-    const fileInput = document.querySelector('#id_inputs');
+    const fileInput = document.querySelector('#id_input_files');
     fileInput.onchange = () => {
       if (fileInput.files.length > 0) {
         const fileName = document.querySelector('#inputs-file-name');

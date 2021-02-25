@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.management.commands import validate_inputs
+from scanpipe.management.commands import validate_input_files
 
 
 class Command(ProjectCommand):
@@ -30,18 +30,28 @@ class Command(ProjectCommand):
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "args",
-            metavar="input",
-            nargs="+",
-            help="One or more input file locations.",
+            "--input-file",
+            action="append",
+            dest="inputs_files",
+            default=list(),
+            help="Input file locations to copy in the input/ work directory.",
+        )
+        parser.add_argument(
+            "--input-url",
+            action="append",
+            dest="input_urls",
+            default=list(),
+            help="Input URLs to download in the input/ work directory.",
         )
 
-    def handle(self, *inputs, **options):
-        super().handle(*inputs, **options)
+    def handle(self, *args, **options):
+        super().handle(*args, **options)
+        inputs_files = options["inputs_files"]
+        input_urls = options["input_urls"]  # TODO
 
-        validate_inputs(inputs)
-        for input_location in inputs:
-            self.project.copy_input_from(input_location)
+        validate_input_files(inputs_files)
+        for file_location in inputs_files:
+            self.project.copy_input_from(file_location)
 
         msg = (
             f"File(s) copied to the project inputs directory: {self.project.input_path}"

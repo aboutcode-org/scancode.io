@@ -25,7 +25,7 @@ from django.core.management import CommandError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import validate_inputs
+from scanpipe.management.commands import validate_input_files
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
 
@@ -46,11 +46,18 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--input",
+            "--input-file",
             action="append",
-            dest="inputs",
+            dest="inputs_files",
             default=list(),
             help="Input file locations to copy in the input/ work directory.",
+        )
+        parser.add_argument(
+            "--input-url",
+            action="append",
+            dest="input_urls",
+            default=list(),
+            help="Input URLs to download in the input/ work directory.",
         )
         parser.add_argument(
             "--execute",
@@ -61,7 +68,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         name = options["name"]
         pipeline_names = options["pipelines"]
-        inputs = options["inputs"]
+        inputs_files = options["inputs_files"]
+        input_urls = options["input_urls"]  # TODO
         execute = options["execute"]
 
         project = Project(name=name)
@@ -72,7 +80,7 @@ class Command(BaseCommand):
 
         # Run validation before creating the project in the database
         validate_pipelines(pipeline_names)
-        validate_inputs(inputs)
+        validate_input_files(inputs_files)
 
         if execute and not pipeline_names:
             raise CommandError("The --execute option requires one or more pipelines.")
@@ -84,8 +92,8 @@ class Command(BaseCommand):
         for pipeline_name in pipeline_names:
             project.add_pipeline(pipeline_name)
 
-        for input_location in inputs:
-            project.copy_input_from(input_location)
+        for file_location in inputs_files:
+            project.copy_input_from(file_location)
 
         if execute:
             call_command(

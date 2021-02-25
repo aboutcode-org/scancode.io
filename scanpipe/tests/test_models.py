@@ -90,7 +90,8 @@ class ScanPipeModelsTest(TestCase):
         work_path = self.project1.work_path
         self.assertTrue(work_path.exists())
 
-        self.project1.add_input_file(SimpleUploadedFile("file.ext", content=b"content"))
+        uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
+        self.project1.write_input_file(uploaded_file)
         self.project1.add_pipeline("docker")
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
@@ -137,11 +138,11 @@ class ScanPipeModelsTest(TestCase):
         filename = self.project1.get_output_file_path("file", "ext")
         self.assertTrue(str(filename).endswith("/output/file-2010-10-10-10-10-10.ext"))
 
-    def test_scanpipe_project_model_add_input_file(self):
+    def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
-        self.project1.add_input_file(uploaded_file)
+        self.project1.write_input_file(uploaded_file)
 
         self.assertEqual(["file.ext"], self.project1.input_files)
 

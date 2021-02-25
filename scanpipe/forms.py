@@ -42,17 +42,22 @@ def get_pipeline_choices(include_blank=True):
 
 
 class ProjectForm(forms.ModelForm):
-    inputs = forms.FileField(
+    input_files = forms.FileField(
         required=False,
-        widget=forms.ClearableFileInput(attrs={"multiple": True}),
+        widget=forms.ClearableFileInput(
+            attrs={"class": "file-input", "multiple": True},
+        ),
     )
     download_urls = forms.CharField(
         label="Download URLs",
         required=False,
-        help_text=(
-            "You can provide multiple URLs separated by a new-line. "
-            "A download URL is one that will immediately initiate the download of a "
-            "file."
+        help_text="Provide one or more URLs to download, one per line.",
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea",
+                "rows": 2,
+                "placeholder": "https://domain.com/archive.zip",
+            },
         ),
     )
     pipeline = forms.ChoiceField(
@@ -69,11 +74,17 @@ class ProjectForm(forms.ModelForm):
         model = Project
         fields = [
             "name",
-            "inputs",
+            "input_files",
             "download_urls",
             "pipeline",
             "execute_now",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        name_field = self.fields["name"]
+        name_field.widget.attrs["class"] = "input"
+        name_field.help_text = "The unique name of your project."
 
     def clean_download_urls(self):
         download_urls = self.cleaned_data["download_urls"]
@@ -88,18 +99,20 @@ class ProjectForm(forms.ModelForm):
             downloads.append(downloaded)
 
         self.cleaned_data["downloads"] = downloads
-        return "\n".join(download_urls)
+        return download_urls
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
 
-        inputs = self.files.getlist("inputs")
-        for upload_file in inputs:
-            project.add_input_file(upload_file)
+        input_files = self.files.getlist("input_files")
+        for upload_file in input_files:
+            project.write_input_file(upload_file)
+            project.add_input_source(filename=upload_file.name, source="uploaded")
 
         downloads = self.cleaned_data.get("downloads", [])
         for downloaded in downloads:
             project.move_input_from(downloaded.file_path)
+            project.add_input_source(downloaded.filename, downloaded.uri)
 
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]

@@ -64,14 +64,14 @@ class RunStatusCommandMixin:
         return status
 
 
-def validate_inputs(inputs):
+def validate_input_files(file_locations):
     """
-    Raise an error if one of the provided `inputs` is not an existing file.
+    Raise an error if one of the provided `file_locations` is not an existing file.
     """
-    for input_location in inputs:
-        input_path = Path(input_location)
-        if not input_path.is_file():
-            raise CommandError(f"{input_location} not found or not a file")
+    for file_location in file_locations:
+        file_path = Path(file_location)
+        if not file_path.is_file():
+            raise CommandError(f"{file_location} not found or not a file")
 
 
 def validate_pipelines(pipeline_names):

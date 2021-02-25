@@ -189,6 +189,7 @@ class Project(UUIDPKModel, models.Model):
         editable=False,
         help_text=_("Project work directory location."),
     )
+    input_sources = models.JSONField(default=dict, blank=True, editable=False)
     extra_data = models.JSONField(default=dict, editable=False)
 
     class Meta:
@@ -306,7 +307,15 @@ class Project(UUIDPKModel, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
-    def add_input_file(self, file_object):
+    def add_input_source(self, filename, source, save=True):
+        """
+        Add the provided `filename` and `source` on this project `input_sources` field.
+        """
+        self.input_sources[filename] = source
+        if save:
+            self.save()
+
+    def write_input_file(self, file_object):
         """
         Write the provided `file_object` to this project input/ directory.
         """

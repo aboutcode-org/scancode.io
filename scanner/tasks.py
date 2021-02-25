@@ -71,7 +71,7 @@ def run_command(cmd):
     return exitcode, output
 
 
-Download = namedtuple("Download", "directory filename file_path size sha1 md5")
+Download = namedtuple("Download", "uri directory filename file_path size sha1 md5")
 
 
 def download(uri):
@@ -103,6 +103,7 @@ def download(uri):
     checksums = multi_checksums(download_file, ("md5", "sha1"))
 
     return Download(
+        uri=uri,
         directory=download_directory,
         filename=filename,
         file_path=download_file,
