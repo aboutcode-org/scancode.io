@@ -542,7 +542,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return f"{self.pipeline_name}"
 
     def execute_task_async(self):
-        tasks.execute_pipeline_task.apply_async(args=[self.pk], queue="default")
+        tasks.execute_pipeline_task.apply_async(args=[self.pk])
 
     @property
     def pipeline_class(self):

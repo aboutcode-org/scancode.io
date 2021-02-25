@@ -299,13 +299,13 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertIsNone(response.data["execution_time"])
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
-    def test_scanpipe_api_run_action_start_pipeline(self, mock_run_pipeline_task):
+    def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):
         run1 = self.project1.add_pipeline("docker")
         url = reverse("run-start-pipeline", args=[run1.uuid])
         response = self.csrf_client.get(url)
         expected = {"status": "Pipeline docker started."}
         self.assertEqual(expected, response.data)
-        mock_run_pipeline_task.assert_called_once()
+        mock_execute_task.assert_called_once()
 
         run1.task_start_date = timezone.now()
         run1.save()
