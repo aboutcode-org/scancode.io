@@ -13,7 +13,10 @@ services:
 
   celery:
     build: .
-    command: celery --app scancodeio worker --loglevel=INFO --time-limit=3600
+    command: celery --app scancodeio worker
+                    --loglevel=INFO
+                    --soft-time-limit=21600 --time-limit=22000
+                    --events -Ofair --prefetch-multiplier=1
     env_file:
       - docker.env
     volumes:
@@ -29,7 +32,8 @@ services:
     command: sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input &&
-        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 3"
+        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 3
+            --error-logfile /opt/scancodeio/var/gunicorn.log"
     env_file:
       - docker.env
     expose:
