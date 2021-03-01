@@ -23,6 +23,7 @@
 from django.apps import apps
 
 from celery import shared_task
+from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 
 tasks_logger = get_task_logger(__name__)
@@ -54,7 +55,12 @@ def execute_pipeline_task(self, run_pk):
     info(f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
 
     pipeline = run.make_pipeline_instance()
-    exitcode, output = pipeline.execute()
+
+    try:
+        exitcode, output = pipeline.execute()
+    except SoftTimeLimitExceeded:
+        info("SoftTimeLimitExceeded", run_pk)
+        exitcode, output = 1, "SoftTimeLimitExceeded"
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
     run.set_task_ended(exitcode, output, refresh_first=True)
