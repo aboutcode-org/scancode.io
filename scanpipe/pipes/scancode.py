@@ -216,7 +216,7 @@ def run_scancode(location, output_file, options, raise_on_error=False):
         f"--json-pp {shlex.quote(output_file)}",
     ]
 
-    exitcode, output = run_command(scancode_args)
+    exitcode, output = pipes.run_command(scancode_args)
     if exitcode > 0 and raise_on_error:
         raise ScancodeError(output)
 

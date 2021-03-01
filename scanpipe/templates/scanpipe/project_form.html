@@ -137,6 +137,12 @@
       }
     }
 
+    const input_urls = document.querySelector('#id_input_urls');
+    input_urls.oninput = () => {
+      input_urls.style.height = "";
+      input_urls.style.height = input_urls.scrollHeight + 3 + "px";
+    }
+
     displayOverlay = function () {
       let background = document.createElement("div");
       background.className = "modal-background";
@@ -146,7 +152,7 @@
     };
 
     let form = document.querySelector("form");
-    form.addEventListener('submit', function(event) {
+    form.addEventListener("submit", function(event) {
       displayOverlay();
     });
   </script>

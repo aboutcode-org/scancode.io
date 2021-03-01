@@ -85,13 +85,6 @@ class ProjectCreateView(generic.CreateView):
     def get_success_url(self):
         return reverse_lazy("project_detail", kwargs={"uuid": self.object.pk})
 
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        input_errors = form._input_errors
-        if input_errors:
-            messages.error(self.request, "Could not fetch:\n" + "\n".join(input_errors))
-        return response
-
 
 class ProjectDetailView(ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_detail.html"

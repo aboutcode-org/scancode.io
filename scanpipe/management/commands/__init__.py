@@ -93,7 +93,7 @@ class AddInputCommandMixin:
             self.project.copy_input_from(file_location)
             filename = Path(file_location).name
             copied.append(filename)
-            self.project.add_input_source(filename, source="uploaded")
+            self.project.add_input_source(filename, source="uploaded", save=True)
 
         msg = "File(s) copied to the project inputs directory:"
         self.stdout.write(self.style.SUCCESS(msg))
@@ -114,9 +114,10 @@ class AddInputCommandMixin:
         """
         Fetch provided `input_urls` and store to the project `input` directory.
         """
-        downloads, errors = fetch_urls(self.project, input_urls)
+        downloads, errors = fetch_urls(input_urls)
 
         if downloads:
+            self.project.add_downloads(downloads)
             msg = "File(s) downloaded to the project inputs directory:"
             self.stdout.write(self.style.SUCCESS(msg))
             msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])

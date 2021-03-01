@@ -22,6 +22,7 @@
 
 from django import forms
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.db.models import BLANK_CHOICE_DASH
 
 import django_filters
@@ -87,22 +88,32 @@ class ProjectForm(forms.ModelForm):
         name_field.widget.attrs["class"] = "input"
         name_field.help_text = "The unique name of your project."
 
+    def clean_input_urls(self):
+        """
+        Fetch the `input_urls` and set the `downloads` objects in the cleaned_data.
+        A validation error is raised if at least one URL could not be fetched.
+        """
+        input_urls = self.cleaned_data.get("input_urls", [])
+
+        self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
+        if errors:
+            raise ValidationError("Could not fetch: " + "\n".join(errors))
+
+        return input_urls
+
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
 
         input_files = self.files.getlist("input_files")
-        input_urls = self.cleaned_data.get("input_urls", [])
+        downloads = self.cleaned_data.get("downloads")
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]
 
-        for upload_file in input_files:
-            project.write_input_file(upload_file)
-            project.add_input_source(filename=upload_file.name, source="uploaded")
+        if input_files:
+            project.add_uploads(input_files)
 
-        downloads, errors = fetch_urls(project, input_urls)
-        if errors:
-            self._input_errors.extend(errors)
-            execute_now = False
+        if downloads:
+            project.add_downloads(downloads)
 
         if pipeline:
             project.add_pipeline(pipeline, execute_now)

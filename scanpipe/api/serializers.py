@@ -148,20 +148,21 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
         The `execute_now` parameter can be provided to execute the Pipeline on creation.
         """
         upload_file = validated_data.pop("upload_file", None)
-        input_urls = validated_data.pop("input_urls", None)
+        input_urls = validated_data.pop("input_urls", [])
         pipeline = validated_data.pop("pipeline", None)
         execute_now = validated_data.pop("execute_now", False)
+
+        downloads, errors = fetch_urls(input_urls)
+        if errors:
+            raise serializers.ValidationError("Could not fetch: " + "\n".join(errors))
 
         project = super().create(validated_data)
 
         if upload_file:
-            project.write_input_file(upload_file)
-            project.add_input_source(filename=upload_file.name, source="uploaded")
+            project.add_uploads([upload_file])
 
-        if input_urls:
-            downloads, errors = fetch_urls(project, input_urls)
-            if errors:
-                execute_now = False
+        if downloads:
+            project.add_downloads(downloads)
 
         if pipeline:
             project.add_pipeline(pipeline, execute_now)

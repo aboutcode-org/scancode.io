@@ -307,7 +307,7 @@ class Project(UUIDPKModel, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
-    def add_input_source(self, filename, source, save=True):
+    def add_input_source(self, filename, source, save=False):
         """
         Add the provided `filename` and `source` on this project `input_sources` field.
         """
@@ -341,6 +341,26 @@ class Project(UUIDPKModel, models.Model):
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
+
+    def add_downloads(self, downloads):
+        """
+        Move the provided `downloads` to this project input/ directory and add the
+        `input_source` for each entry.
+        """
+        for downloaded in downloads:
+            self.move_input_from(downloaded.path)
+            self.add_input_source(downloaded.filename, downloaded.uri)
+        self.save()
+
+    def add_uploads(self, uploads):
+        """
+        Write the provided `uploads` to this project input/ directory and add the
+        `input_source` for each entry.
+        """
+        for uploaded in uploads:
+            self.write_input_file(uploaded)
+            self.add_input_source(filename=uploaded.name, source="uploaded")
+        self.save()
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """

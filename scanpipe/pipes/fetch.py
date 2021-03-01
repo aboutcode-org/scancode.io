@@ -29,7 +29,7 @@ from urllib.parse import urlparse
 import requests
 from commoncode.hash import multi_checksums
 
-Download = namedtuple("Download", "uri directory filename file_path size sha1 md5")
+Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 
 
 def download(uri, to=None):
@@ -63,16 +63,16 @@ def download(uri, to=None):
         uri=uri,
         directory=download_directory,
         filename=filename,
-        file_path=download_file,
+        path=download_file,
         size=len(file_content),
         sha1=checksums["sha1"],
         md5=checksums["md5"],
     )
 
 
-def fetch_urls(project, urls):
+def fetch_urls(urls):
     """
-    Fetch provided `urls` list to the project `input` directory.
+    Fetch provided `urls` list.
     The `urls` can also be provided as a string containing one URL per line.
     Return the fetched URLs as `downloads` objects and a list of `errors`.
     """
@@ -84,11 +84,11 @@ def fetch_urls(project, urls):
 
     for url in urls:
         try:
-            downloaded = download(url, to=project.input_path)
-        except Exception:
+            downloaded = download(url)
+        except Exception as e:
+            print(e)
             errors.append(url)
         else:
             downloads.append(downloaded)
-            project.add_input_source(downloaded.filename, downloaded.uri)
 
     return downloads, errors
