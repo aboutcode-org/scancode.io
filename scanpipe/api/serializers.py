@@ -32,6 +32,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
+from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -89,7 +90,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     )
     execute_now = serializers.BooleanField(write_only=True)
     upload_file = serializers.FileField(write_only=True, required=False)
-    download_urls = serializers.CharField(
+    input_urls = serializers.CharField(
         write_only=True,
         required=False,
         style={"base_template": "textarea.html"},
@@ -107,7 +108,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             "url",
             "uuid",
             "upload_file",
-            "download_urls",
+            "input_urls",
             "created_date",
             "pipeline",
             "execute_now",
@@ -147,7 +148,7 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
         The `execute_now` parameter can be provided to execute the Pipeline on creation.
         """
         upload_file = validated_data.pop("upload_file", None)
-        download_urls = validated_data.pop("download_urls", None)
+        input_urls = validated_data.pop("input_urls", None)
         pipeline = validated_data.pop("pipeline", None)
         execute_now = validated_data.pop("execute_now", False)
 
@@ -157,8 +158,10 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
             project.write_input_file(upload_file)
             project.add_input_source(filename=upload_file.name, source="uploaded")
 
-        if download_urls:
-            pass  # TODO
+        if input_urls:
+            downloads, errors = fetch_urls(project, input_urls)
+            if errors:
+                execute_now = False
 
         if pipeline:
             project.add_pipeline(pipeline, execute_now)

@@ -27,8 +27,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
-from scanner.tasks import download
 from scanpipe.models import Project
+from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -114,17 +114,7 @@ class AddInputCommandMixin:
         """
         Fetch provided `input_urls` and store to the project `input` directory.
         """
-        downloads = []
-        errors = []
-
-        for url in input_urls:
-            try:
-                downloaded = download(url)
-                self.project.move_input_from(downloaded.file_path)
-                self.project.add_input_source(downloaded.filename, downloaded.uri)
-                downloads.append(downloaded)
-            except Exception:
-                errors.append(url)
+        downloads, errors = fetch_urls(self.project, input_urls)
 
         if downloads:
             msg = "File(s) downloaded to the project inputs directory:"

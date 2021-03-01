@@ -22,15 +22,14 @@
 
 from django import forms
 from django.apps import apps
-from django.core.exceptions import ValidationError
 from django.db.models import BLANK_CHOICE_DASH
 
 import django_filters
 
-from scanner.tasks import download
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -48,7 +47,7 @@ class ProjectForm(forms.ModelForm):
             attrs={"class": "file-input", "multiple": True},
         ),
     )
-    download_urls = forms.CharField(
+    input_urls = forms.CharField(
         label="Download URLs",
         required=False,
         help_text="Provide one or more URLs to download, one per line.",
@@ -75,47 +74,36 @@ class ProjectForm(forms.ModelForm):
         fields = [
             "name",
             "input_files",
-            "download_urls",
+            "input_urls",
             "pipeline",
             "execute_now",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._input_errors = []
+
         name_field = self.fields["name"]
         name_field.widget.attrs["class"] = "input"
         name_field.help_text = "The unique name of your project."
-
-    def clean_download_urls(self):
-        download_urls = self.cleaned_data["download_urls"]
-        download_urls = [url.strip() for url in download_urls.strip().split()]
-
-        downloads = []
-        for download_url in download_urls:
-            try:
-                downloaded = download(download_url)
-            except Exception:
-                raise ValidationError(f'Could not fetch URL: "{download_url}"')
-            downloads.append(downloaded)
-
-        self.cleaned_data["downloads"] = downloads
-        return download_urls
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
 
         input_files = self.files.getlist("input_files")
+        input_urls = self.cleaned_data.get("input_urls", [])
+        pipeline = self.cleaned_data["pipeline"]
+        execute_now = self.cleaned_data["execute_now"]
+
         for upload_file in input_files:
             project.write_input_file(upload_file)
             project.add_input_source(filename=upload_file.name, source="uploaded")
 
-        downloads = self.cleaned_data.get("downloads", [])
-        for downloaded in downloads:
-            project.move_input_from(downloaded.file_path)
-            project.add_input_source(downloaded.filename, downloaded.uri)
+        downloads, errors = fetch_urls(project, input_urls)
+        if errors:
+            self._input_errors.extend(errors)
+            execute_now = False
 
-        pipeline = self.cleaned_data["pipeline"]
-        execute_now = self.cleaned_data["execute_now"]
         if pipeline:
             project.add_pipeline(pipeline, execute_now)
 
