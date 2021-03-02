@@ -40,7 +40,7 @@ class ScanPipeConfig(AppConfig):
         super().__init__(app_name, app_module)
 
         # Mapping of registered pipeline names to pipeline classes.
-        self.pipelines = {}
+        self._pipelines = {}
 
     def ready(self):
         self.load_pipelines()
@@ -68,9 +68,13 @@ class ScanPipeConfig(AppConfig):
                 f'The entry point "{cls}" is not a `Pipeline` subclass.'
             )
 
-        if name in self.pipelines:
+        if name in self._pipelines:
             raise ImproperlyConfigured(
                 f'The pipeline name "{name}" is already registered.'
             )
 
-        self.pipelines[name] = cls
+        self._pipelines[name] = cls
+
+    @property
+    def pipelines(self):
+        return dict(self._pipelines)

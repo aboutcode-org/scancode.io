@@ -21,11 +21,13 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
+from django.utils.functional import lazy
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from scanpipe.api import ExcludeFromListViewMixin
+from scanpipe.forms import get_pipeline_choices
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -79,7 +81,8 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
 
 class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     pipeline = serializers.ChoiceField(
-        choices=scanpipe_app_config.pipelines,
+        # Using lazy as this serializer is initialized before the pipelines are loaded
+        choices=lazy(get_pipeline_choices, tuple)(),
         required=False,
         write_only=True,
         help_text=(
