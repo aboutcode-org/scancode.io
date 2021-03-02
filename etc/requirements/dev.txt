@@ -6,7 +6,7 @@ black==20.8b1
 isort==5.7.0
 
 # Documentation
-Sphinx==3.4.3
+Sphinx==3.5.1
 sphinx_rtd_theme==0.5.1
 
 # Release
