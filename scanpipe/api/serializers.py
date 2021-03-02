@@ -106,9 +106,9 @@ class ProjectSerializer(
         required=False,
         style={"base_template": "textarea.html"},
     )
-    input_sources = serializers.JSONField(read_only=True)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
+    input_sources = serializers.SerializerMethodField()
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_package_summary = serializers.SerializerMethodField()
 
@@ -139,6 +139,12 @@ class ProjectSerializer(
             "extra_data",
             "codebase_resources_summary",
             "discovered_package_summary",
+        ]
+
+    def get_input_sources(self, project):
+        return [
+            {"filename": filename, "source": source}
+            for filename, source in project.input_sources.items()
         ]
 
     def get_codebase_resources_summary(self, project):
