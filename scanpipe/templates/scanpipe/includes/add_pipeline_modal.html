@@ -1,4 +1,4 @@
-<div id="add-pipeline-modal" class="modal is-desktop-size">
+<div id="add-pipeline-modal" class="modal">
   <div class="modal-background"></div>
   <form method="post">{% csrf_token %}
     <div class="modal-card">
@@ -15,7 +15,6 @@
             </span>
           </div>
         </div>
-
         <div class="field">
           <label class="checkbox" for="id_run_pipeline">
             {{ add_pipeline_form.execute_now }}
