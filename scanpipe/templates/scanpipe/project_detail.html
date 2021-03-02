@@ -69,33 +69,10 @@
 
       <div class="columns">
         <div class="column">
-          <nav class="panel is-info">
-            <p class="panel-heading py-2 is-size-6">
-              Inputs
-            </p>
-            {% for input_path, input_is_file, input_size in inputs %}
-              <span class="panel-block is-flex is-justify-content-space-between">
-                <span>
-                  <span class="panel-icon pt-1">
-                    <i class="is-size-6 {% if input_is_file %}far fa-file-alt{% else %}fas fa-folder{% endif %}" aria-hidden="true"></i>
-                  </span>
-                  {{ input_path.name }}
-                </span>
-                <span class="is-family-monospace is-size-7">
-                  {{ input_size|filesizeformat }}
-                </span>
-              </span>
-            {% endfor %}
-            <div class="panel-block">
-              <button class="button is-link is-outlined is-fullwidth" disabled>
-                Add input
-              </button>
-            </div>
-          </nav>
+          {% include "scanpipe/includes/project_inputs.html" %}
         </div>
-
         <div class="column">
-          <nav class="panel is-info">
+          <article class="panel is-info">
             <p class="panel-heading py-2 is-size-6">
               Pipelines
             </p>
@@ -112,9 +89,8 @@
               </button>
               {% include "scanpipe/includes/add_pipeline_modal.html" %}
             </div>
-          </nav>
+          </article>
         </div>
-
       </div>
     </section>
 

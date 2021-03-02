@@ -288,6 +288,27 @@ class Project(UUIDPKModel, models.Model):
         """
         return self.get_root_content(self.input_path)
 
+    def inputs_with_source(self):
+        """
+        Return the list of inputs inlcuding the source, type, and size data.
+        Only the first level children are listed.
+        """
+        inputs = []
+        input_path = self.input_path
+        sources = dict(self.input_sources)
+
+        for path in input_path.glob("*"):
+            inputs.append(
+                {
+                    "name": path.name,
+                    "is_file": path.is_file(),
+                    "size": path.stat().st_size,
+                    "source": sources.pop(path.name, "not_found"),
+                }
+            )
+
+        return inputs
+
     @property
     def output_root(self):
         """

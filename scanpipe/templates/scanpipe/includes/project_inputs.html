@@ -1,0 +1,40 @@
+<article class="panel is-info">
+  <p class="panel-heading py-2 is-size-6">
+    Inputs
+  </p>
+  {% for input in project.inputs_with_source %}
+    <div class="panel-block is-flex is-justify-content-space-between dropdown is-hoverable is-up is-cursor-help">
+      <div>
+        <div class="panel-icon pt-1">
+          <div class="dropdown-trigger">
+            <i class="is-size-6 {% if input.is_file %}far fa-file-alt{% else %}fas fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.name|slugify }}"></i>
+          </div>
+          <div class="dropdown-menu" id="dropdown-input-{{ file.name|slugify }}" role="menu">
+            <div class="dropdown-content">
+              Source:
+              <strong class="dropdown-item">
+                {% if input.source == "not_found" %}
+                  Manually added
+                {% elif input.source == "uploaded" %}
+                  Uploaded
+                {% elif input.source %}
+                  Downloaded from {{ input.source }}
+                {% endif %}
+              </strong>
+            </div>
+          </div>
+        </div>{{ input.name }}
+      </div>
+      <div class="is-family-monospace is-size-7">
+        {% if input.is_file %}
+          {{ input.size|filesizeformat }}
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+  <div class="panel-block">
+    <button class="button is-link is-outlined is-fullwidth" disabled>
+      Add input
+    </button>
+  </div>
+</article>
