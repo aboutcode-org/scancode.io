@@ -80,7 +80,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
 
 class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     pipeline = serializers.ChoiceField(
-        choices=get_pipeline_choices(),
+        choices=(),
         required=False,
         write_only=True,
         help_text=(
@@ -100,6 +100,14 @@ class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
     runs = RunSerializer(many=True, read_only=True)
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_package_summary = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        """
+        Load the pipeline field choices on class init instead of on module load to
+        ensure that all the pipelines where properly loaded.
+        """
+        super().__init__(*args, **kwargs)
+        self.fields["pipeline"].choices = scanpipe_app_config.get_pipeline_choices()
 
     class Meta:
         model = Project
