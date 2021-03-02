@@ -22,6 +22,7 @@
 
 from django.apps import AppConfig
 from django.core.exceptions import ImproperlyConfigured
+from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 
 try:
@@ -78,3 +79,11 @@ class ScanPipeConfig(AppConfig):
     @property
     def pipelines(self):
         return dict(self._pipelines)
+
+    def get_pipeline_choices(self, include_blank=True):
+        """
+        Return a `choices` list of tuple suitable for a Django ChoiceField.
+        """
+        choices = list(BLANK_CHOICE_DASH) if include_blank else []
+        choices.extend([(name, name) for name in self.pipelines.keys()])
+        return choices

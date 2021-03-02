@@ -31,10 +31,6 @@ from packagedcode.utils import combine_expressions
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
-from scanpipe.api.serializers import CodebaseResourceSerializer
-from scanpipe.api.serializers import DiscoveredPackageSerializer
-from scanpipe.api.serializers import RunSerializer
-from scanpipe.api.serializers import get_serializer_fields
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -78,6 +74,8 @@ def to_csv(project):
     The output files are created in the `project` output/ directory.
     Return the list of path of the generated output files.
     """
+    from scanpipe.api.serializers import get_serializer_fields
+
     querysets = [
         project.discoveredpackages.all(),
         project.codebaseresources.without_symlinks(),
@@ -110,6 +108,10 @@ class JSONResultsGenerator:
     The results would have to be streamed to a file first, then iterated by the
     StreamingHttpResponse, which do not work great in a HTTP request context as
     the request can timeout while the file is generated.
+
+    This class re-use Serializers from the API to avoid code duplication.
+    We need to keep those imports internal to this class to prevent circular import
+    issues.
     """
 
     def __init__(self, project):
@@ -142,6 +144,8 @@ class JSONResultsGenerator:
         return json.dumps(data, indent=2, cls=DjangoJSONEncoder)
 
     def get_headers(self, project):
+        from scanpipe.api.serializers import RunSerializer
+
         runs = project.runs.all()
         runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
 
@@ -158,12 +162,16 @@ class JSONResultsGenerator:
         yield self.encode(headers)
 
     def get_packages(self, project):
+        from scanpipe.api.serializers import DiscoveredPackageSerializer
+
         packages = project.discoveredpackages.all()
 
         for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)
 
     def get_files(self, project):
+        from scanpipe.api.serializers import CodebaseResourceSerializer
+
         resources = project.codebaseresources.without_symlinks()
 
         for obj in resources.iterator():
@@ -187,6 +195,8 @@ def to_json(project):
 
 
 def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=None):
+    from scanpipe.api.serializers import get_serializer_fields
+
     multivalues_separator = "\n"
 
     model_class = queryset.model
