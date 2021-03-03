@@ -32,9 +32,12 @@
       </div>
     </div>
   {% endfor %}
-<!--  <div class="panel-block">-->
-<!--    <button class="button is-link is-outlined is-fullwidth" {% if not project.can_add_input %}disabled{% endif %}>-->
-<!--      Add input-->
-<!--    </button>-->
-<!--  </div>-->
+  <div class="panel-block">
+    {% if project.can_add_input %}
+      <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
+      {% include "scanpipe/includes/add_inputs_modal.html" %}
+    {% else %}
+      <button class="button is-link is-outlined is-fullwidth" disabled>Add inputs</button>
+    {% endif %}
+  </div>
 </article>

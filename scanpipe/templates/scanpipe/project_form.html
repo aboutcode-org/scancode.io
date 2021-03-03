@@ -82,6 +82,7 @@
               </div>
             </div>
           </form>
+          {{ form.media }}
         </div>
 
         <div class="column has-background-light has-border-radius">
@@ -126,23 +127,6 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script>
-    const fileInput = document.querySelector('#id_input_files');
-    fileInput.onchange = () => {
-      if (fileInput.files.length > 0) {
-        const fileName = document.querySelector('#inputs-file-name');
-        fileName.innerHTML = "";
-        for (file of fileInput.files) {
-          fileName.innerHTML += `<span class="is-block">${file.name}</span>`
-        }
-      }
-    }
-
-    const input_urls = document.querySelector('#id_input_urls');
-    input_urls.oninput = () => {
-      input_urls.style.height = "";
-      input_urls.style.height = input_urls.scrollHeight + 3 + "px";
-    }
-
     displayOverlay = function () {
       let background = document.createElement("div");
       background.className = "modal-background";

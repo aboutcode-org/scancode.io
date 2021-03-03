@@ -34,6 +34,7 @@ import saneyaml
 from django_filters.views import FilterView
 
 from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import PackageFilterSet
 from scanpipe.forms import ProjectFilterSet
@@ -170,6 +171,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "package_types": self.get_summary(package_types),
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
+                "add_inputs_form": AddInputsForm(),
             }
         )
 
@@ -180,14 +182,27 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
 
     def post(self, request, *args, **kwargs):
         project = self.get_object()
-        form = AddPipelineForm(request.POST)
-        if form.is_valid():
-            pipeline = form.data["pipeline"]
-            execute_now = form.data.get("execute_now", False)
-            project.add_pipeline(pipeline, execute_now)
-            messages.success(request, f"Pipeline {pipeline} added.")
+
+        form_kwargs = {
+            "data": request.POST,
+            "files": request.FILES,
+        }
+
+        if "add-inputs-submit" in request.POST:
+            form = AddInputsForm(**form_kwargs)
+            if form.is_valid():
+                form.save(project)
+                messages.success(request, "Input file(s) Added.")
+            else:
+                messages.error(request, "Error.")
+
         else:
-            messages.error(request, "Pipeline addition error.")
+            form = AddPipelineForm(**form_kwargs)
+            if form.is_valid():
+                form.save(project)
+                messages.success(request, "Pipeline added.")
+            else:
+                messages.error(request, "Pipeline addition error.")
 
         return redirect(project)
 

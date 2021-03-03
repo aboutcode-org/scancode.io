@@ -248,5 +248,10 @@
     let add_pipeline_button = document.querySelector("#add-pipeline-button");
     if (add_pipeline_button)
       add_pipeline_button.addEventListener('click', displayOverlay);
+
+    let form = document.querySelector("#add-inputs-modal form");
+    form.addEventListener("submit", function(event) {
+      displayOverlay();
+    });
   </script>
 {% endblock %}

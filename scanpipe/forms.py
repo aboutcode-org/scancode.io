@@ -22,6 +22,7 @@
 
 from django import forms
 from django.apps import apps
+from django.core.exceptions import ValidationError
 
 import django_filters
 
@@ -71,6 +72,9 @@ class ProjectForm(forms.ModelForm):
             "pipeline",
             "execute_now",
         ]
+
+    class Media:
+        js = ("add-inputs.js",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -123,6 +127,67 @@ class AddPipelineForm(forms.Form):
         initial=True,
         required=False,
     )
+
+    def save(self, project):
+        pipeline = self.cleaned_data["pipeline"]
+        execute_now = self.cleaned_data["execute_now"]
+        project.add_pipeline(pipeline, execute_now)
+
+        return project
+
+
+# TODO: Remove duplication with ProjectForm
+class AddInputsForm(forms.Form):
+    input_files = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(
+            attrs={"class": "file-input", "multiple": True},
+        ),
+    )
+    input_urls = forms.CharField(
+        label="Download URLs",
+        required=False,
+        help_text="Provide one or more URLs to download, one per line.",
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea",
+                "rows": 2,
+                "placeholder": "https://domain.com/archive.zip",
+            },
+        ),
+    )
+
+    class Media:
+        js = ("add-inputs.js",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._input_errors = []
+
+    def clean_input_urls(self):
+        """
+        Fetch the `input_urls` and set the `downloads` objects in the cleaned_data.
+        A validation error is raised if at least one URL could not be fetched.
+        """
+        input_urls = self.cleaned_data.get("input_urls", [])
+
+        self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
+        if errors:
+            raise ValidationError("Could not fetch: " + "\n".join(errors))
+
+        return input_urls
+
+    def save(self, project):
+        input_files = self.files.getlist("input_files")
+        downloads = self.cleaned_data.get("downloads")
+
+        if input_files:
+            project.add_uploads(input_files)
+
+        if downloads:
+            project.add_downloads(downloads)
+
+        return project
 
 
 class ProjectFilterSet(django_filters.FilterSet):
