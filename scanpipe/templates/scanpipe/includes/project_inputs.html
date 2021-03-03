@@ -33,7 +33,7 @@
     </div>
   {% endfor %}
 <!--  <div class="panel-block">-->
-<!--    <button class="button is-link is-outlined is-fullwidth" disabled>-->
+<!--    <button class="button is-link is-outlined is-fullwidth" {% if not project.can_add_input %}disabled{% endif %}>-->
 <!--      Add input-->
 <!--    </button>-->
 <!--  </div>-->

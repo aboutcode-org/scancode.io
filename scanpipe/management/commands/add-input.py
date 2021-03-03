@@ -34,8 +34,13 @@ class Command(AddInputCommandMixin, ProjectCommand):
         inputs_files = options["inputs_files"]
         input_urls = options["input_urls"]
 
+        if not self.project.can_add_input:
+            raise CommandError(
+                "Cannot add inputs once a pipeline has started to execute on a project."
+            )
+
         if not (inputs_files or input_urls):
-            raise CommandError(f"Provide inputs with the --input-file or --input-url")
+            raise CommandError("Provide inputs with the --input-file or --input-url")
 
         if inputs_files:
             self.validate_input_files(inputs_files)

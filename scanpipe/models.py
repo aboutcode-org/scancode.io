@@ -331,6 +331,13 @@ class Project(UUIDPKModel, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
+    @cached_property
+    def can_add_input(self):
+        """
+        Return True until one pipeline has started to execute on this project.
+        """
+        return not self.runs.started().exists()
+
     def add_input_source(self, filename, source, save=False):
         """
         Add the provided `filename` and `source` on this project `input_sources` field.
