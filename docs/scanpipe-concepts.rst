@@ -36,7 +36,7 @@ Pipelines
 ---------
 
 A pipeline is a Python script that contains a series of steps from start to end
-to run in order to **perform a code analysis**.
+to execute in order to **perform a code analysis**.
 
 It usually starts from the uploaded input files, and may extract these then
 generates ``CodebaseResource`` records in the database accordingly.
