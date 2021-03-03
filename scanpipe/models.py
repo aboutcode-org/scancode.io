@@ -288,15 +288,18 @@ class Project(UUIDPKModel, models.Model):
         """
         return self.get_root_content(self.input_path)
 
+    @property
     def inputs_with_source(self):
         """
-        Return the list of inputs inlcuding the source, type, and size data.
+        Return the list of inputs including the source, type, and size data.
+        Return the sources defined in the `input_sources` field but not available
+        in the input/ directory.
         Only the first level children are listed.
         """
-        inputs = []
         input_path = self.input_path
         sources = dict(self.input_sources)
 
+        inputs = []
         for path in input_path.glob("*"):
             inputs.append(
                 {
@@ -307,7 +310,7 @@ class Project(UUIDPKModel, models.Model):
                 }
             )
 
-        return inputs
+        return inputs, sources
 
     @property
     def output_root(self):

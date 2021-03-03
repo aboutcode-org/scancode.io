@@ -61,7 +61,10 @@
         <article class="message is-warning">
           <div class="message-body">
             <p class="block">
-              Add <strong>Inputs</strong> and run a <strong>Pipeline</strong> to generate some results.
+              <i class="fas fa-info-circle mr-1"></i>
+              Add
+              {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
+              and execute a <strong>pipeline</strong> to generate some results.
             </p>
           </div>
         </article>

@@ -117,12 +117,6 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        input_path = project.input_path
-        context["inputs"] = [
-            (path.relative_to(input_path), path.is_file(), path.stat().st_size)
-            for path in input_path.glob("*")
-        ]
-
         files_qs = project.codebaseresources.files()
 
         file_filter = self.request.GET.get("file-filter", "all")
@@ -155,8 +149,17 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
 
+        inputs, sources = project.inputs_with_source
+        if sources:
+            message = (
+                "The following input files are not available on disk anymore:\n- "
+                + "\n- ".join(sources.keys())
+            )
+            messages.error(self.request, message)
+
         context.update(
             {
+                "inputs_with_source": inputs,
                 "programming_languages": self.get_summary(file_languages),
                 "mime_types": self.get_summary(file_mime_types),
                 "holders": self.get_summary(file_holders),
