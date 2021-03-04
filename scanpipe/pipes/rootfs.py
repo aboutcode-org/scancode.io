@@ -31,6 +31,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.pipes import alpine
 from scanpipe.pipes import debian
+from scanpipe.pipes import rpm
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,12 @@ PACKAGE_GETTER_BY_DISTRO = {
     "alpine": alpine.package_getter,
     "debian": partial(debian.package_getter, distro="debian"),
     "ubuntu": partial(debian.package_getter, distro="ubuntu"),
+    "rhel": rpm.package_getter,
+    "centos": rpm.package_getter,
+    "fedora": rpm.package_getter,
+    "sles": rpm.package_getter,
+    "opensuse": rpm.package_getter,
+    "opensuse-tumbleweed":rpm.package_getter, 
 }
 
 
