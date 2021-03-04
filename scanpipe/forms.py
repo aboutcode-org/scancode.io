@@ -34,7 +34,7 @@ from scanpipe.pipes.fetch import fetch_urls
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
-class ProjectForm(forms.ModelForm):
+class InputsBaseForm(forms.Form):
     input_files = forms.FileField(
         required=False,
         widget=forms.ClearableFileInput(
@@ -53,6 +53,39 @@ class ProjectForm(forms.ModelForm):
             },
         ),
     )
+
+    class Media:
+        js = ("add-inputs.js",)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._input_errors = []
+
+    def clean_input_urls(self):
+        """
+        Fetch the `input_urls` and set the `downloads` objects in the cleaned_data.
+        A validation error is raised if at least one URL could not be fetched.
+        """
+        input_urls = self.cleaned_data.get("input_urls", [])
+
+        self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
+        if errors:
+            raise ValidationError("Could not fetch: " + "\n".join(errors))
+
+        return input_urls
+
+    def handle_inputs(self, project):
+        input_files = self.files.getlist("input_files")
+        downloads = self.cleaned_data.get("downloads")
+
+        if input_files:
+            project.add_uploads(input_files)
+
+        if downloads:
+            project.add_downloads(downloads)
+
+
+class PipelineBaseForm(forms.Form):
     pipeline = forms.ChoiceField(
         choices=scanpipe_app_config.get_pipeline_choices(),
         required=False,
@@ -63,6 +96,14 @@ class ProjectForm(forms.ModelForm):
         required=False,
     )
 
+    def handle_pipeline(self, project):
+        pipeline = self.cleaned_data["pipeline"]
+        execute_now = self.cleaned_data["execute_now"]
+        if pipeline:
+            project.add_pipeline(pipeline, execute_now)
+
+
+class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
     class Meta:
         model = Project
         fields = [
@@ -73,120 +114,35 @@ class ProjectForm(forms.ModelForm):
             "execute_now",
         ]
 
-    class Media:
-        js = ("add-inputs.js",)
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._input_errors = []
-
         name_field = self.fields["name"]
         name_field.widget.attrs["class"] = "input"
         name_field.help_text = "The unique name of your project."
 
-    def clean_input_urls(self):
-        """
-        Fetch the `input_urls` and set the `downloads` objects in the cleaned_data.
-        A validation error is raised if at least one URL could not be fetched.
-        """
-        input_urls = self.cleaned_data.get("input_urls", [])
-
-        self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
-        if errors:
-            raise ValidationError("Could not fetch: " + "\n".join(errors))
-
-        return input_urls
-
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
-
-        input_files = self.files.getlist("input_files")
-        downloads = self.cleaned_data.get("downloads")
-        pipeline = self.cleaned_data["pipeline"]
-        execute_now = self.cleaned_data["execute_now"]
-
-        if input_files:
-            project.add_uploads(input_files)
-
-        if downloads:
-            project.add_downloads(downloads)
-
-        if pipeline:
-            project.add_pipeline(pipeline, execute_now)
-
+        self.handle_inputs(project)
+        self.handle_pipeline(project)
         return project
 
 
-class AddPipelineForm(forms.Form):
-    pipeline = forms.ChoiceField(
-        choices=scanpipe_app_config.get_pipeline_choices(),
-        required=True,
-    )
-    execute_now = forms.BooleanField(
-        label="Execute pipeline now",
-        initial=True,
-        required=False,
-    )
-
+class AddInputsForm(InputsBaseForm, forms.Form):
     def save(self, project):
-        pipeline = self.cleaned_data["pipeline"]
-        execute_now = self.cleaned_data["execute_now"]
-        project.add_pipeline(pipeline, execute_now)
-
+        self.handle_inputs(project)
         return project
 
 
-# TODO: Remove duplication with ProjectForm
-class AddInputsForm(forms.Form):
-    input_files = forms.FileField(
-        required=False,
-        widget=forms.ClearableFileInput(
-            attrs={"class": "file-input", "multiple": True},
-        ),
-    )
-    input_urls = forms.CharField(
-        label="Download URLs",
-        required=False,
-        help_text="Provide one or more URLs to download, one per line.",
-        widget=forms.Textarea(
-            attrs={
-                "class": "textarea",
-                "rows": 2,
-                "placeholder": "https://domain.com/archive.zip",
-            },
-        ),
-    )
-
-    class Media:
-        js = ("add-inputs.js",)
-
+class AddPipelineForm(PipelineBaseForm):
     def __init__(self, *args, **kwargs):
+        """
+        The `pipeline` field is required in the context of this form.
+        """
         super().__init__(*args, **kwargs)
-        self._input_errors = []
-
-    def clean_input_urls(self):
-        """
-        Fetch the `input_urls` and set the `downloads` objects in the cleaned_data.
-        A validation error is raised if at least one URL could not be fetched.
-        """
-        input_urls = self.cleaned_data.get("input_urls", [])
-
-        self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
-        if errors:
-            raise ValidationError("Could not fetch: " + "\n".join(errors))
-
-        return input_urls
+        self.fields["pipeline"].required = True
 
     def save(self, project):
-        input_files = self.files.getlist("input_files")
-        downloads = self.cleaned_data.get("downloads")
-
-        if input_files:
-            project.add_uploads(input_files)
-
-        if downloads:
-            project.add_downloads(downloads)
-
+        self.handle_pipeline(project)
         return project
 
 
