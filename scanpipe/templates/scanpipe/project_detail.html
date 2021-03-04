@@ -80,9 +80,9 @@
               Pipelines
             </p>
             {% for run in project.runs.all %}
-              <a class="panel-block modal-button" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
+              <a class="panel-block modal-button is-flex is-justify-content-space-between" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
+                <span>{{ run.pipeline_name }}</span>
                 {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
-                <span class="ml-2">{{ run.pipeline_name }}</span>
               </a>
               {% include "scanpipe/includes/run_modal.html" with project=project run=run only %}
             {% endfor %}
