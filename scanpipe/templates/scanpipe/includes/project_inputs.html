@@ -1,4 +1,4 @@
-<article class="panel is-info">
+<article id="inputs-panel" class="panel is-info">
   <p class="panel-heading py-2 is-size-6">
     Inputs
   </p>
@@ -11,16 +11,18 @@
           </div>
           <div class="dropdown-menu" id="dropdown-input-{{ file.name|slugify }}" role="menu">
             <div class="dropdown-content">
-              Source:
-              <strong class="dropdown-item">
-                {% if input.source == "not_found" %}
-                  Manually added
-                {% elif input.source == "uploaded" %}
-                  Uploaded
-                {% elif input.source %}
-                  Downloaded from {{ input.source }}
-                {% endif %}
-              </strong>
+              <div class="dropdown-item">
+                Source:
+                <strong>
+                  {% if input.source == "not_found" %}
+                    Manually added
+                  {% elif input.source == "uploaded" %}
+                    Uploaded
+                  {% elif input.source %}
+                    Downloaded from {{ input.source }}
+                  {% endif %}
+                  </strong>
+              </div>
             </div>
           </div>
         </div>{{ input.name }}
