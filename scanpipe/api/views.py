@@ -29,6 +29,9 @@ from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, JSONParser
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
@@ -67,6 +70,7 @@ class ProjectViewSet(
 
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    parser_classes = [MultiPartParser, JSONParser]
 
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):
@@ -126,6 +130,11 @@ class ProjectViewSet(
 
         return Response(serializer.data)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("path", OpenApiTypes.STR, description="Path to resource")
+        ]
+    )
     @action(detail=True, methods=["get"])
     def file_content(self, request, *args, **kwargs):
         project = self.get_object()
