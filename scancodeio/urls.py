@@ -25,8 +25,9 @@ from django.urls import include
 from django.urls import path
 from django.views.generic import RedirectView
 
+from drf_spectacular.views import SpectacularAPIView
+from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
-from drf_spectacular.views import SpectacularSwaggerView, SpectacularAPIView
 
 from scancodeio import licenses
 from scanner.api.views import ScanViewSet
