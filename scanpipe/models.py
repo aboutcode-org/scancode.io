@@ -210,7 +210,7 @@ class Project(UUIDPKModel, models.Model):
         """
         Delete the `work_directory` along all the project related data in the database.
         """
-        shutil.rmtree(self.work_directory)
+        shutil.rmtree(self.work_directory, ignore_errors=True)
         return super().delete(*args, **kwargs)
 
     def setup_work_directory(self):
@@ -542,7 +542,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return f"{self.pipeline_name}"
 
     def execute_task_async(self):
-        tasks.execute_pipeline_task.apply_async(args=[self.pk], queue="default")
+        tasks.execute_pipeline_task.apply_async(args=[self.pk])
 
     @property
     def pipeline_class(self):

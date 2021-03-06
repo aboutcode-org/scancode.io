@@ -107,13 +107,13 @@ container_inspector==3.1.2 \
     --hash=sha256:1ab778cf17867fc0d551a858ddb8ebe4c97e8dab46cdbfb49776c0d494d6a2a1 \
     --hash=sha256:54a6162d6f541a297a199857f8e445b1f2f5c9da81051644d800869bbae2e362
     # via -r etc/requirements/base.txt
-debut==0.9.8 \
-    --hash=sha256:b353e1d826d0be80a7268762efd99ba05f9d1df1aef0553fb7ea17c670bee85c \
-    --hash=sha256:edd4ff3d265ca5bf645c73d6863a886d34743152d215a5de094c4d31fa6943e3
+debut==0.9.9 \
+    --hash=sha256:3cc75b01fbdf553376d566027d54af4c957844cf4fc2456a426e658ea7b68588 \
+    --hash=sha256:a3a71e475295f4cf4292440c9c7303ebca0309d395536d2a7f86a5f4d7465dc1
     # via scancode-toolkit
-django-crispy-forms==1.11.0 \
-    --hash=sha256:21cf717b621f93cdf01bac0a419b520fe3b17bffd67e140b6c16558d9b75ab80 \
-    --hash=sha256:a2aa34ee3fccafdebb33c016cbd60246b37df85dae717637c6419b929fa24b25
+django-crispy-forms==1.11.1 \
+    --hash=sha256:2ea206f35a9554597b89315ea52737d32d2fd9f5304e79a469a08887aa0824b0 \
+    --hash=sha256:5c600dea66e2f435f774fe2c4cacfb5b5eb9914dd6da0728edd174b95f6956fd
     # via -r etc/requirements/base.txt
 django-environ==0.4.5 \
     --hash=sha256:6c9d87660142608f63ec7d5ce5564c49b603ea8ff25da595fd6098f6dc82afde \
@@ -123,9 +123,9 @@ django-filter==2.4.0 \
     --hash=sha256:84e9d5bb93f237e451db814ed422a3a625751cbc9968b484ecc74964a8696b06 \
     --hash=sha256:e00d32cebdb3d54273c48f4f878f898dced8d5dfaad009438fe61ebdf535ace1
     # via -r etc/requirements/base.txt
-django==3.1.6 \
-    --hash=sha256:169e2e7b4839a7910b393eec127fd7cbae62e80fa55f89c6510426abf673fe5f \
-    --hash=sha256:c6c0462b8b361f8691171af1fb87eceb4442da28477e12200c40420176206ba7
+django==3.1.7 \
+    --hash=sha256:32ce792ee9b6a0cbbec340123e229ac9f765dff8c2a4ae9247a14b2ba3a365a7 \
+    --hash=sha256:baf099db36ad31f970775d0be5587cc58a6256a6771a44eb795b554d45f211b8
     # via
     #   -r etc/requirements/base.txt
     #   django-filter
@@ -148,21 +148,19 @@ drf-spectacular==0.13.2 \
     --hash=sha256:0572019a7ae3c00aa1706e803f1182ef434da680a167900fae53e65a2dac9bbf \
     --hash=sha256:3e79a838960f27dc8a8ea955eac0c1c7335a94c0fba9657b85258ae6ac22d6ab
     # via -r etc/requirements/base.txt
-extractcode-7z==16.5.210122 \
-    --hash=sha256:096da744899efcf73c6f81467056d86ebdeb8b6bceff6d50ae1326376bc12ed7 \
-    --hash=sha256:13101e88ecbfd4d750d63a51af2caf06aa78991c34e7d41c528098d5afeb1270 \
-    --hash=sha256:64124961d2bb923c06f428047580c884bbbee08acfffdca751abbd538a227e33 \
-    --hash=sha256:df515289ca6ede7f7c1a7b1ae822c694cbaf788274120df5dc63293468e59a70
+extractcode-7z==16.5.210223 \
+    --hash=sha256:528fbb1c9156f0f8cff50bb1e7aba68c607e399f97494f6af6b725802cd36758 \
+    --hash=sha256:af242a6c64e0abbe169bce2961385518944ca7d163d2f44736b06f98dd44e008 \
+    --hash=sha256:d75a45b43f9adaa6b047da637581518fe8cc1dda3f9e476062a6b663be9a46df
     # via extractcode
-extractcode-libarchive==3.5.1.210122 \
-    --hash=sha256:2aa5fe1970b095ec5fee73164184c7921dc66250af2b636921c9b89bef7cbd0f \
-    --hash=sha256:5cada9a1b6775e6bd5e53a93b6ef34173dbbdef3d81caf4912dc1fc58a0c6727 \
-    --hash=sha256:7ab41a09293cd7e30f7dc2681c43d97052de8d7f48ad8c13c7e24c3cfc4bbd72 \
-    --hash=sha256:d6e87a8cbaf6a6e34d18aafadf0c3e94e60799bd915c18b13ca758c2b403a77c
+extractcode-libarchive==3.5.1.210223 \
+    --hash=sha256:1a3651f70db72a19647e9764d010ec23b7d090f48eed55bdc4062e0714637b60 \
+    --hash=sha256:5d8f7b165576857e06b9c720be8c7083dee1c833639bf975f46ebbb0a34b1127 \
+    --hash=sha256:a34467ba170fbb14f3b809fe35a9adb8fb523f52e742f6a561228c8ee7c306de
     # via extractcode
-extractcode[full]==21.1.21 \
-    --hash=sha256:531c4cce46ad91d9ac100e12c5afa5b8e4f2867f3360a25708f2f6998011d0f8 \
-    --hash=sha256:7b79c57f5976e2f73a85edb999dce6df5f925ebae12be13e5932f8580480cfb2
+extractcode[full]==21.2.24 \
+    --hash=sha256:d92bbcd86b14c5128c9cad1dca0732daa07e8f282844e1961446d20cc51ee1eb \
+    --hash=sha256:f91638dbf523b80df90ac184c25d5cd1ea24cac53f67a6bb7d7b389867e0744b
     # via scancode-toolkit
 fasteners==0.16 \
     --hash=sha256:74b6847e0a6bb3b56c8511af8e24c40e4cf7a774dfff5b251c260ed338096a4b \
@@ -196,9 +194,9 @@ idna==2.8 \
     --hash=sha256:c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407 \
     --hash=sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c
     # via requests
-importlib-metadata==3.4.0 ; python_version < "3.8" \
-    --hash=sha256:ace61d5fc652dc280e7b6b4ff732a9c2d40db2c0f92bc6cb74e07b73d53a1771 \
-    --hash=sha256:fa5daa4477a7414ae34e95942e4dd07f62adf589143c875c133c1e53c4eff38d
+importlib-metadata==3.7.0 ; python_version < "3.8" \
+    --hash=sha256:24499ffde1b80be08284100393955842be4a59c7c16bbf2738aad0e464a8e0aa \
+    --hash=sha256:c6af5dbf1126cd959c4a8d8efd61d4d3c83bddb0459a17e554284a077574b614
     # via
     #   -r etc/requirements/base.txt
     #   jsonschema
@@ -483,9 +481,9 @@ pyinstrument-cext==0.2.4 \
     --hash=sha256:fe2eaf64e09b59c7579c775fd3ec075a0728d9be55eef673b2cdb35531b4005b \
     --hash=sha256:fe611732306651d0a10e99bbd1f174d4e0a0572b68b74f0673a5665146507a26
     # via pyinstrument
-pyinstrument==3.3.0 \
-    --hash=sha256:1cb0c9900a7ce75f8a64c10b7f11c1cdce1f7ff7e02fed687d35f8e95876cb5b \
-    --hash=sha256:9a6e1645acc2a66e078386fc580937c30ab384c828ac3e28d1037bca1ea59562
+pyinstrument==3.4.1 \
+    --hash=sha256:716302e6727514ea2c61639c4e749a637fd3d63986a9203df15f4669ea1963a8 \
+    --hash=sha256:d421fcf458f10926fbbaff701d11ffc42b06240294a3d0ee96299af7aca9b5fe
     # via -r etc/requirements/base.txt
 pymaven-patch==0.2.9 \
     --hash=sha256:a247eb10474838e24dbddfdb73e97c8b8e139bc23c2ea983a2934e36c32e8478 \
@@ -547,9 +545,9 @@ saneyaml==0.4 \
     # via
     #   commoncode
     #   scancode-toolkit
-scancode-toolkit[full]==21.2.9 \
-    --hash=sha256:31d5dbe70c4261e5878898229d6c60f2d65c060c4445ad093f60beac3b0aa514 \
-    --hash=sha256:3d7ee37b0f4a32fec93c56209cb7a8b891b11fad29c93968f47553fead63269c
+scancode-toolkit[full]==21.2.25 \
+    --hash=sha256:3b3edb8ec59c922d1b66200d1ed47164b33c58ef9b5bb850274db808897e38cb \
+    --hash=sha256:8a83937e7959ad7590220b498bb5b74de0055b5ffe9d529e9638a3f79b7f9abc
     # via -r etc/requirements/base.txt
 six==1.14.0 \
     --hash=sha256:236bdbdce46e6e6a3d61a337c0f8b763ca1e8717c03b369e87a7ec7ce1319c0a \
@@ -599,9 +597,14 @@ toml==0.10.0 \
     # via
     #   dparse2
     #   scancode-toolkit
-typecode==21.1.21 \
-    --hash=sha256:d1a2d1ee7157d0b4bbfa52bd686360fbac197ef16847965e415399c6b3bcaef6 \
-    --hash=sha256:e25225edf330ed14762d78856997e7cadf5b3eb6b4689a6db2a48ee23e1d4dec
+typecode-libmagic==5.39.210223 \
+    --hash=sha256:2aa6f386143ac04f7f588ae2424d6dbc51f9a0f632e9946ed9278e7d41dee524 \
+    --hash=sha256:d627fa45cceea5f91852ae97708a7b329481ef293643637ca1f0f5b5c39fe942 \
+    --hash=sha256:e2e56c09062fea57086eee1a69256a23f355f728c1d7db4ce38f9a1e8d476a29
+    # via typecode
+typecode[full]==21.2.24 \
+    --hash=sha256:4d46d4c98fae2f6d018e8b293013061d2c2715278cf2e929ef8c56e9684294ea \
+    --hash=sha256:eaac8aee0b9c6142ad44671252ba00748202d218347d1c0451ce6cd76561e01b
     # via
     #   extractcode
     #   scancode-toolkit

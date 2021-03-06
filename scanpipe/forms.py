@@ -22,7 +22,6 @@
 
 from django import forms
 from django.apps import apps
-from django.db.models import BLANK_CHOICE_DASH
 
 import django_filters
 
@@ -33,19 +32,13 @@ from scanpipe.models import Project
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
-def get_pipeline_choices(include_blank=True):
-    choices = list(BLANK_CHOICE_DASH) if include_blank else []
-    choices.extend([(name, name) for name in scanpipe_app_config.pipelines.keys()])
-    return choices
-
-
 class ProjectForm(forms.ModelForm):
     inputs = forms.FileField(
         required=False,
         widget=forms.ClearableFileInput(attrs={"multiple": True}),
     )
     pipeline = forms.ChoiceField(
-        choices=get_pipeline_choices(),
+        choices=scanpipe_app_config.get_pipeline_choices(),
         required=False,
     )
     execute_now = forms.BooleanField(
@@ -81,7 +74,7 @@ class ProjectForm(forms.ModelForm):
 
 class AddPipelineForm(forms.Form):
     pipeline = forms.ChoiceField(
-        choices=get_pipeline_choices(),
+        choices=scanpipe_app_config.get_pipeline_choices(),
         required=True,
     )
     execute_now = forms.BooleanField(

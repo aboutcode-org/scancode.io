@@ -39,6 +39,8 @@ env = environ.Env()
 
 SECRET_KEY = env.str("SECRET_KEY")
 
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
+
 # ScanCode.io
 
 SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])
@@ -210,11 +212,11 @@ CRISPY_TEMPLATE_PACK = "bootstrap3"
 
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://")
 CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", default="redis://")
-CELERY_IGNORE_RESULT = False
-CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_IGNORE_RESULT = env.bool("CELERY_IGNORE_RESULT", default=True)
+CELERY_TASK_DEFAULT_QUEUE = env.str("CELERY_RESULT_BACKEND", default="default")
 # When True, tasks will be executed immediately in the local thread instead of being
 # sent to the queue for execution by a worker.
-CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
 
 # Django restframework
 

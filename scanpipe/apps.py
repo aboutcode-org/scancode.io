@@ -22,6 +22,7 @@
 
 from django.apps import AppConfig
 from django.core.exceptions import ImproperlyConfigured
+from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 
 try:
@@ -40,7 +41,7 @@ class ScanPipeConfig(AppConfig):
         super().__init__(app_name, app_module)
 
         # Mapping of registered pipeline names to pipeline classes.
-        self.pipelines = {}
+        self._pipelines = {}
 
     def ready(self):
         self.load_pipelines()
@@ -68,9 +69,21 @@ class ScanPipeConfig(AppConfig):
                 f'The entry point "{cls}" is not a `Pipeline` subclass.'
             )
 
-        if name in self.pipelines:
+        if name in self._pipelines:
             raise ImproperlyConfigured(
                 f'The pipeline name "{name}" is already registered.'
             )
 
-        self.pipelines[name] = cls
+        self._pipelines[name] = cls
+
+    @property
+    def pipelines(self):
+        return dict(self._pipelines)
+
+    def get_pipeline_choices(self, include_blank=True):
+        """
+        Return a `choices` list of tuple suitable for a Django ChoiceField.
+        """
+        choices = list(BLANK_CHOICE_DASH) if include_blank else []
+        choices.extend([(name, name) for name in self.pipelines.keys()])
+        return choices

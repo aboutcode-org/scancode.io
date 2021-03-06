@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
+from django.utils.functional import lazy
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -53,6 +54,16 @@ class SerializerExcludeFieldsMixin:
             self.fields.pop(field_name)
 
 
+class PipelineChoicesMixin:
+    def __init__(self, *args, **kwargs):
+        """
+        Load the pipeline field choices on class init instead of on module import to
+        ensure that all the pipelines where properly loaded first.
+        """
+        super().__init__(*args, **kwargs)
+        self.fields["pipeline"].choices = scanpipe_app_config.get_pipeline_choices()
+
+
 class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
     project = serializers.HyperlinkedRelatedField(
         view_name="project-detail", read_only=True
@@ -77,9 +88,11 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
         ]
 
 
-class ProjectSerializer(ExcludeFromListViewMixin, serializers.ModelSerializer):
+class ProjectSerializer(
+    ExcludeFromListViewMixin, PipelineChoicesMixin, serializers.ModelSerializer
+):
     pipeline = serializers.ChoiceField(
-        choices=scanpipe_app_config.pipelines,
+        choices=(),
         required=False,
         write_only=True,
         help_text=(
@@ -186,13 +199,13 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
         return project_error.traceback.split("\n")
 
 
-class PipelineSerializer(serializers.ModelSerializer):
+class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
     """
     Serializer used in the `ProjectViewSet.add_pipeline` action.
     """
 
     pipeline = serializers.ChoiceField(
-        choices=scanpipe_app_config.pipelines,
+        choices=(),
         required=True,
         write_only=True,
     )
