@@ -26,6 +26,7 @@ from django.urls import path
 from django.views.generic import RedirectView
 
 from rest_framework.routers import DefaultRouter
+from drf_spectacular.views import SpectacularSwaggerView, SpectacularAPIView
 
 from scancodeio import licenses
 from scanner.api.views import ScanViewSet
@@ -39,6 +40,8 @@ api_router.register(r"runs", RunViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(), name="swagger-ui"),
     path("api/", include(api_router.urls)),
     path("license/", include(licenses.urls)),
     path("", include("scanpipe.urls")),
