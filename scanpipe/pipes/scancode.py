@@ -26,7 +26,6 @@ from functools import partial
 from pathlib import Path
 
 from django.conf import settings
-from django.core.cache import caches
 
 import packagedcode
 from commoncode import fileutils
@@ -44,6 +43,11 @@ from scanpipe.models import DiscoveredPackage
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
+
+# The maximum number of processes that can be used to execute the given calls.
+# If None or not given then as many worker processes will be created as the machine
+# has processors.
+MAX_WORKERS = getattr(settings, "SCANCODE_PROCESSES")
 
 
 def get_resource_info(location):
@@ -139,37 +143,15 @@ def scan_file_and_save_results(codebase_resource):
     codebase_resource.set_scan_results(scan_results, save=True)
 
 
-# def scan_for_files_cache(project):
-#     queryset = project.codebaseresources.no_status()
-#     cache = caches["scan_results"]
-#
-#     for codebase_resource in queryset:
-#         cached_resource_pk = cache.get(codebase_resource.sha1)
-#
-#         if cached_resource_pk:
-#             cached_resource = project.codebaseresources.get(pk=cached_resource_pk)
-#             codebase_resource.status = cached_resource.status
-#             codebase_resource.copy_scan_results(cached_resource, save=True)
-#         else:
-#             scan_file_and_save_results(codebase_resource)
-#             cache.set(codebase_resource.sha1, codebase_resource.pk)
-#
-#     cache.clear()
-
-
 def scan_for_files(project):
     """
     Run a license, copyright, email, and url scan on remainder of files without status
     for `project`.
-
-    # The scan results are cached using the resource sha1 as the cache key.
-    # Getting existing results form the database is much faster than running duplicated
-    # scans.
     """
-    queryset = project.codebaseresources.no_status()
+    codebase_resources = project.codebaseresources.no_status()
 
-    with ProcessPoolExecutor(max_workers=4) as executor:
-        executor.map(scan_file_and_save_results, queryset)
+    with ProcessPoolExecutor(MAX_WORKERS) as executor:
+        executor.map(scan_file_and_save_results, codebase_resources, timeout=120)
 
 
 def scan_package_and_save_results(codebase_resource):
@@ -179,21 +161,21 @@ def scan_package_and_save_results(codebase_resource):
     package_info = scancode_api.get_package_info(codebase_resource.location)
     packages = package_info.get("packages", [])
 
-    for package in packages:
-        DiscoveredPackage.create_for_resource(package, codebase_resource)
-
-    codebase_resource.status = "application-package"
-    codebase_resource.save()
+    if packages:
+        for package in packages:
+            DiscoveredPackage.create_for_resource(package, codebase_resource)
+        codebase_resource.status = "application-package"
+        codebase_resource.save()
 
 
 def scan_for_application_packages(project):
     """
     Run a package scan on files without status for `project`.
     """
-    queryset = project.codebaseresources.no_status()
+    codebase_resources = project.codebaseresources.no_status()
 
-    with ProcessPoolExecutor(max_workers=4) as executor:
-        executor.map(scan_package_and_save_results, queryset)
+    with ProcessPoolExecutor(MAX_WORKERS) as executor:
+        executor.map(scan_package_and_save_results, codebase_resources, timeout=120)
 
 
 def run_extractcode(location, options=None, raise_on_error=False):

@@ -223,13 +223,13 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected, list(scan_results.keys()))
         self.assertEqual([], scan_errors)
 
-    def test_scanpipe_pipes_scancode_scan_and_save_results(self):
+    def test_scanpipe_pipes_scancode_scan_file_and_save_results(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource1 = CodebaseResource.objects.create(
             project=project1, path="not available"
         )
 
-        scancode.scan_and_save_results(codebase_resource1)
+        scancode.scan_file_and_save_results(codebase_resource1)
         codebase_resource1.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource1.status)
 
@@ -237,7 +237,7 @@ class ScanPipePipesTest(TestCase):
         codebase_resource2 = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
-        scancode.scan_and_save_results(codebase_resource2)
+        scancode.scan_file_and_save_results(codebase_resource2)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
         expected = [
@@ -270,7 +270,8 @@ class ScanPipePipesTest(TestCase):
         scancode.scan_for_files(project1)
         # The scan_file is only called once as the cache is used for the second
         # duplicated resource.
-        mock_scan_file.assert_called_once()
+        # WARNING: The cache is turned off for now in favor of multiprocessing
+        # mock_scan_file.assert_called_once()
 
         for resource in [resource1, resource2]:
             resource.refresh_from_db()
