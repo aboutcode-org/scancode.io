@@ -16,7 +16,7 @@ services:
     command: celery --app scancodeio worker
                     --loglevel=INFO
                     --soft-time-limit=21600 --time-limit=22000
-                    --events -Ofair --prefetch-multiplier=1
+                    --events -Ofair --prefetch-multiplier=1 --pool threads
     env_file:
       - docker.env
     volumes:
