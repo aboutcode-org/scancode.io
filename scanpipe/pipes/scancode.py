@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import os
 import shlex
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
@@ -46,9 +47,9 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
 
 # The maximum number of processes that can be used to execute the given calls.
-# If None or not given then as many worker processes will be created as the machine
-# has processors.
-MAX_WORKERS = getattr(settings, "SCANCODE_PROCESSES")
+# If None or not given then as many worker processes, minus one, will be created as the
+# machine has processors.
+MAX_WORKERS = getattr(settings, "SCANCODE_PROCESSES") or os.cpu_count() - 1
 
 
 def extract(location, target):
