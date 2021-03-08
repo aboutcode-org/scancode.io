@@ -298,7 +298,7 @@ def match_not_analyzed(
 
 def tag_empty_codebase_resources(project):
     """
-    Tag remaining empty files as ignored
+    Tag empty files as ignored.
     """
     project.codebaseresources.select_for_update().filter(
         type__exact="file",
@@ -324,9 +324,7 @@ def tag_uninteresting_codebase_resources(project):
         "/proc/",
         "/dev/",
         "/run/",
-    ) + (
-        # alpine specific
-        "/lib/apk/db/",
+        "/lib/apk/db/",  # alpine specific
     )
 
     qs = project.codebaseresources.no_status()

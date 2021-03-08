@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
-
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import docker
@@ -38,16 +36,17 @@ class Docker(Pipeline):
         """
         Extract the images from tarballs.
         """
-        self.images = docker.get_and_extract_images_from_image_tarballs(self.project)
+        self.images, errors = docker.extract_images_from_inputs(self.project)
+        if errors:
+            self.add_error("\n".join(errors))
 
     def extract_layers(self):
         """
         Extract layers from images.
         """
-        for image in self.images:
-            image_dirname = os.path.basename(image.base_location)
-            target_dir = str(self.project.codebase_path / image_dirname)
-            image.extract_layers(target_dir=target_dir)
+        errors = docker.extract_layers_from_images(self.project, self.images)
+        if errors:
+            self.add_error("\n".join(errors))
 
     def find_images_linux_distro(self):
         """
@@ -86,6 +85,12 @@ class Docker(Pipeline):
         docker.tag_whiteout_codebase_resources(self.project)
         rootfs.tag_uninteresting_codebase_resources(self.project)
 
+    def tag_empty_files(self):
+        """
+        Flag empty files.
+        """
+        rootfs.tag_empty_codebase_resources(self.project)
+
     def scan_for_application_packages(self):
         """
         Scan unknown resources for packages infos.
@@ -118,6 +123,7 @@ class Docker(Pipeline):
         collect_and_create_codebase_resources,
         collect_and_create_system_packages,
         tag_uninteresting_codebase_resources,
+        tag_empty_files,
         scan_for_application_packages,
         scan_for_files,
         analyze_scanned_files,

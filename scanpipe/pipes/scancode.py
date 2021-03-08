@@ -30,6 +30,7 @@ from django.conf import settings
 import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
+from extractcode.extract import extract_file
 from packageurl import PackageURL
 from scancode import ScancodeError
 from scancode import api as scancode_api
@@ -48,6 +49,19 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 # If None or not given then as many worker processes will be created as the machine
 # has processors.
 MAX_WORKERS = getattr(settings, "SCANCODE_PROCESSES")
+
+
+def extract(location, target):
+    """
+    Wraps the `extractcode.extract_file` to execute the extraction and return errors.
+    """
+    errors = []
+
+    for event in extract_file(location, target):
+        if event.done:
+            errors.extend(event.errors)
+
+    return errors
 
 
 def get_resource_info(location):
