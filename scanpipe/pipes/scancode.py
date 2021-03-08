@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import shlex
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 
@@ -122,12 +123,13 @@ def scan_file(location):
     return scan_results, scan_errors
 
 
-def scan_and_save_results(codebase_resource):
+def scan_file_and_save_results(codebase_resource):
     """
-    Scan the `codebase_resource`, save the results in the database, and create
-    project errors if any occurred during the scan.
+    Scan the `codebase_resource` and save the results in the database.
+    Create project errors if any occurred during the scan.
     """
     scan_results, scan_errors = scan_file(codebase_resource.location)
+
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
         codebase_resource.status = "scanned-with-error"
@@ -137,45 +139,61 @@ def scan_and_save_results(codebase_resource):
     codebase_resource.set_scan_results(scan_results, save=True)
 
 
+# def scan_for_files_cache(project):
+#     queryset = project.codebaseresources.no_status()
+#     cache = caches["scan_results"]
+#
+#     for codebase_resource in queryset:
+#         cached_resource_pk = cache.get(codebase_resource.sha1)
+#
+#         if cached_resource_pk:
+#             cached_resource = project.codebaseresources.get(pk=cached_resource_pk)
+#             codebase_resource.status = cached_resource.status
+#             codebase_resource.copy_scan_results(cached_resource, save=True)
+#         else:
+#             scan_file_and_save_results(codebase_resource)
+#             cache.set(codebase_resource.sha1, codebase_resource.pk)
+#
+#     cache.clear()
+
+
 def scan_for_files(project):
     """
-    Run a license, copyright, email, and url scan on remainder of files without status.
+    Run a license, copyright, email, and url scan on remainder of files without status
+    for `project`.
 
-    The scan results are cached using the resource sha1 as the cache key.
-    Getting existing results form the database is much faster than running duplicated
-    scans.
+    # The scan results are cached using the resource sha1 as the cache key.
+    # Getting existing results form the database is much faster than running duplicated
+    # scans.
     """
     queryset = project.codebaseresources.no_status()
-    cache = caches["scan_results"]
 
-    for codebase_resource in queryset:
-        cached_resource_pk = cache.get(codebase_resource.sha1)
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        executor.map(scan_file_and_save_results, queryset)
 
-        if cached_resource_pk:
-            cached_resource = project.codebaseresources.get(pk=cached_resource_pk)
-            codebase_resource.status = cached_resource.status
-            codebase_resource.copy_scan_results(cached_resource, save=True)
-        else:
-            scan_and_save_results(codebase_resource)
-            cache.set(codebase_resource.sha1, codebase_resource.pk)
 
-    cache.clear()
+def scan_package_and_save_results(codebase_resource):
+    """
+    Scan the `codebase_resource` for package and save the results in the database.
+    """
+    package_info = scancode_api.get_package_info(codebase_resource.location)
+    packages = package_info.get("packages", [])
+
+    for package in packages:
+        DiscoveredPackage.create_for_resource(package, codebase_resource)
+
+    codebase_resource.status = "application-package"
+    codebase_resource.save()
 
 
 def scan_for_application_packages(project):
     """
-    Run a package scan on files without status.
+    Run a package scan on files without status for `project`.
     """
-    queryset = CodebaseResource.objects.project(project).no_status()
+    queryset = project.codebaseresources.no_status()
 
-    for codebase_resource in queryset:
-        package_info = scancode_api.get_package_info(codebase_resource.location)
-        packages = package_info.get("packages", [])
-        if packages:
-            for package in packages:
-                DiscoveredPackage.create_for_resource(package, codebase_resource)
-            codebase_resource.status = "application-package"
-            codebase_resource.save()
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        executor.map(scan_package_and_save_results, queryset)
 
 
 def run_extractcode(location, options=None, raise_on_error=False):
