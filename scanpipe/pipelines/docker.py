@@ -20,7 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
+from pathlib import Path
+
+from container_inspector.image import Image
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
@@ -38,16 +40,39 @@ class Docker(Pipeline):
         """
         Extract the images from tarballs.
         """
-        self.images = docker.get_and_extract_images_from_image_tarballs(self.project)
+        target_path = self.project.tmp_path
+        extract_errors = []
+        all_images = []
+
+        for input_tarball in self.project.inputs(pattern="*.tar*"):
+            extract_target = target_path / f"{input_tarball.name}-extract"
+            errors = scancode.extract(input_tarball, extract_target)
+            extract_errors.extend(errors)
+            all_images.extend(Image.get_images_from_dir(extract_target))
+
+        if extract_errors:
+            self.add_error("\n".join(extract_errors))
+
+        self.images = all_images
 
     def extract_layers(self):
         """
         Extract layers from images.
         """
+        extract_errors = []
+
         for image in self.images:
-            image_dirname = os.path.basename(image.base_location)
-            target_dir = str(self.project.codebase_path / image_dirname)
-            image.extract_layers(target_dir=target_dir)
+            image_dirname = Path(image.base_location).name
+            target_path = self.project.codebase_path / image_dirname
+
+            for layer in image.layers:
+                extract_target = target_path / layer.layer_id
+                errors = scancode.extract(layer.layer_location, extract_target)
+                extract_errors.extend(errors)
+                layer.extracted_to_location = str(extract_target)
+
+        if extract_errors:
+            self.add_error("\n".join(extract_errors))
 
     def find_images_linux_distro(self):
         """

@@ -22,8 +22,6 @@
 
 import os
 
-from extractcode.extract import extract_file
-
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import rootfs
@@ -40,13 +38,11 @@ class RootFS(Pipeline):
         Extract root filesystem input archives with extractcode.
         """
         input_files = self.project.inputs("*")
-        target = str(self.project.codebase_path)
+        target_path = self.project.codebase_path
         extract_errors = []
 
         for input_file in input_files:
-            for event in extract_file(input_file, target):
-                if event.done:
-                    extract_errors.extend(event.errors)
+            extract_errors = scancode.extract(input_file, target_path)
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))

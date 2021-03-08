@@ -30,6 +30,7 @@ from django.core.cache import caches
 import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
+from extractcode.extract import extract_file
 from packageurl import PackageURL
 from scancode import ScancodeError
 from scancode import api as scancode_api
@@ -43,6 +44,19 @@ from scanpipe.models import DiscoveredPackage
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
+
+
+def extract(location, target):
+    """
+    Wraps the `extractcode.extract_file` to execute the extraction and return errors.
+    """
+    errors = []
+
+    for event in extract_file(location, target):
+        if event.done:
+            errors.extend(event.errors)
+
+    return errors
 
 
 def get_resource_info(location):

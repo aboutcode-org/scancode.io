@@ -25,7 +25,6 @@ import posixpath
 from functools import partial
 from pathlib import Path
 
-from container_inspector.image import Image
 from container_inspector.rootfs import get_whiteout_marker_type
 
 from scanpipe import pipes
@@ -35,44 +34,44 @@ from scanpipe.pipes import rootfs
 logger = logging.getLogger(__name__)
 
 
-def get_images_from_extracted_codebase(project):
-    """
-    Yield images collected from the project "codebase" directory. The
-    image tarball should be extracted there first, with its manifest.json at the
-    root.
-    """
-    codebase = project.codebase_path.absolute()
-    for image in Image.get_images_from_dir(location=codebase):
-        yield image
-
-
-def get_and_extract_images_from_image_tarballs(project, force_extract=False):
-    """
-    Yield images collected from the project "codebase" directory.
-    The process is to:
-    1. collect all the tarballs from this directory.
-    2. for each, extract that under a -extract directory and collect its images.
-
-    If `force_extract` is False, do not extract if already extracted.
-    """
-    all_images = []
-
-    for tarball in project.inputs(pattern="*.tar*"):
-        tarball_location = str(tarball.absolute())
-        if tarball_location.endswith("-extract"):
-            continue
-        extracted_location = tarball_location + "-extract"
-        tarball_images = Image.get_images_from_tarball(
-            location=tarball_location,
-            target_dir=extracted_location,
-            force_extract=force_extract,
-        )
-
-        for image in tarball_images:
-            logger.info("Collected Docker image: {}".format(image.image_id))
-            all_images.append(image)
-
-    return all_images
+# def get_images_from_extracted_codebase(project):
+#     """
+#     Yield images collected from the project "codebase" directory. The
+#     image tarball should be extracted there first, with its manifest.json at the
+#     root.
+#     """
+#     codebase = project.codebase_path.absolute()
+#     for image in Image.get_images_from_dir(location=codebase):
+#         yield image
+#
+#
+# def get_and_extract_images_from_image_tarballs(project, force_extract=False):
+#     """
+#     Yield images collected from the project "codebase" directory.
+#     The process is to:
+#     1. collect all the tarballs from this directory.
+#     2. for each, extract that under a -extract directory and collect its images.
+#
+#     If `force_extract` is False, do not extract if already extracted.
+#     """
+#     all_images = []
+#
+#     for tarball in project.inputs(pattern="*.tar*"):
+#         tarball_location = str(tarball.absolute())
+#         if tarball_location.endswith("-extract"):
+#             continue
+#         extracted_location = tarball_location + "-extract"
+#         tarball_images = Image.get_images_from_tarball(
+#             location=tarball_location,
+#             target_dir=extracted_location,
+#             force_extract=force_extract,
+#         )
+#
+#         for image in tarball_images:
+#             logger.info("Collected Docker image: {}".format(image.image_id))
+#             all_images.append(image)
+#
+#     return all_images
 
 
 def get_image_data(image):
