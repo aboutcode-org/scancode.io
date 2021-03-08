@@ -3,6 +3,10 @@
 
 ### v1.1.1 (unreleased)
 
+- Use the extractcode API for the Docker pipeline.
+  This change helps with performance and results consistency between pipelines.
+  https://github.com/nexB/scancode.io/issues/70
+
 - Implement cache to prevent scanning multiple times a duplicated codebase resource.
   https://github.com/nexB/scancode.io/issues/70
 
