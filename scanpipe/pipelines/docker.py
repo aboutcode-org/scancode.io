@@ -85,6 +85,12 @@ class Docker(Pipeline):
         docker.tag_whiteout_codebase_resources(self.project)
         rootfs.tag_uninteresting_codebase_resources(self.project)
 
+    def tag_empty_files(self):
+        """
+        Flag empty files.
+        """
+        rootfs.tag_empty_codebase_resources(self.project)
+
     def scan_for_application_packages(self):
         """
         Scan unknown resources for packages infos.
@@ -117,6 +123,7 @@ class Docker(Pipeline):
         collect_and_create_codebase_resources,
         collect_and_create_system_packages,
         tag_uninteresting_codebase_resources,
+        tag_empty_files,
         scan_for_application_packages,
         scan_for_files,
         analyze_scanned_files,
