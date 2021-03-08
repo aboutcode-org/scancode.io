@@ -189,7 +189,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
         missing_resources = created_package.missing_resources[:]
         modified_resources = created_package.modified_resources[:]
 
-        codebase_resources = CodebaseResource.objects.project(project)
+        codebase_resources = project.codebaseresources.all()
 
         for install_file in package.installed_files:
             rootfs_path = pipes.normalize_path(install_file.path)
