@@ -3,6 +3,10 @@
 
 ### v1.1.1 (unreleased)
 
+- Optimize "tag" type pipes using the update() API in place of save() on the QuerySet
+  iteration.
+  https://github.com/nexB/scancode.io/issues/70
+
 - Use the extractcode API for the Docker pipeline.
   This change helps with performance and results consistency between pipelines.
   https://github.com/nexB/scancode.io/issues/70

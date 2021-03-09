@@ -149,11 +149,9 @@ def analyze_scanned_files(project):
 
 def tag_not_analyzed_codebase_resources(project):
     """
-    Flag as "not-analyzed" the `CodebaseResource` without a status of the
-    provided `project`
+    Flag as "not-analyzed" the `CodebaseResource` without a status of the `project`.
     """
-    no_status = project.codebaseresources.no_status()
-    no_status.update(status="not-analyzed")
+    project.codebaseresources.no_status().update(status="not-analyzed")
 
 
 def normalize_path(path):

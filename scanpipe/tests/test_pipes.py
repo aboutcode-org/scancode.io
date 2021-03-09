@@ -32,10 +32,13 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
+from scanpipe.pipes import docker
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
+from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
+from scanpipe.pipes import tag_not_analyzed_codebase_resources
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -58,6 +61,25 @@ class ScanPipePipesTest(TestCase):
         for path in input_paths:
             self.assertEqual(expected, strip_root(path))
             self.assertEqual(expected, strip_root(Path(path)))
+
+    def test_scanpipe_pipes_tag_not_analyzed_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="filename1.ext",
+            status="scanned",
+        )
+
+        tag_not_analyzed_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("not-analyzed", resource1.status)
+        self.assertEqual("scanned", resource2.status)
+
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_pipes_filename_now(self):
+        self.assertEqual("2010-10-10-10-10-10", filename_now())
 
     def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
         project1 = Project.objects.create(name="Analysis")
@@ -185,10 +207,6 @@ class ScanPipePipesTest(TestCase):
 
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
-
-    @mock.patch("scanpipe.pipes.datetime", mocked_now)
-    def test_scanpipe_pipes_filename_now(self):
-        self.assertEqual("2010-10-10-10-10-10", filename_now())
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
@@ -369,3 +387,38 @@ class ScanPipePipesTest(TestCase):
             expected = json.loads(f.read())
 
         self.assertEqual(expected, tree)
+
+    def test_scanpipe_pipes_docker_tag_whiteout_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource2 = CodebaseResource.objects.create(project=p1, name=".wh.filename2")
+
+        docker.tag_whiteout_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("", resource1.status)
+        self.assertEqual("ignored-whiteout", resource2.status)
+
+    def test_scanpipe_pipes_rootfs_tag_empty_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(project=p1, path="dir/")
+        resource2 = CodebaseResource.objects.create(
+            project=p1, path="filename.ext", type=CodebaseResource.Type.FILE
+        )
+
+        rootfs.tag_empty_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("", resource1.status)
+        self.assertEqual("ignored-empty-file", resource2.status)
+
+    def test_scanpipe_pipes_rootfs_tag_uninteresting_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource2 = CodebaseResource.objects.create(project=p1, rootfs_path="/tmp/file")
+
+        rootfs.tag_uninteresting_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("", resource1.status)
+        self.assertEqual("ignored-not-interesting", resource2.status)
