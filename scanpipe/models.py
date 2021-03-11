@@ -612,7 +612,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(status="")
 
     def empty(self):
-        return self.filter(size__isnull=True)
+        return self.filter(Q(size__isnull=True) | Q(size=0))
 
     def in_package(self):
         return self.filter(discovered_packages__isnull=False)
