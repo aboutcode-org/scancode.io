@@ -453,13 +453,16 @@ class SaveProjectErrorMixin:
     Use `SaveProjectErrorMixin` on a model to create a ProjectError entry
     from a raised exception during `save()` in place of stopping the analysis
     process.
+    The creation of ProjectError can be skipped providing False for the `save_error`
+    argument.
     """
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, save_error=True, **kwargs):
         try:
             super().save(*args, **kwargs)
         except Exception as error:
-            self.add_error(error)
+            if save_error:
+                self.add_error(error)
 
     @classmethod
     def check(cls, **kwargs):

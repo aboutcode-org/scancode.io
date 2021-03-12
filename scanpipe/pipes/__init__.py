@@ -33,8 +33,7 @@ from scanpipe.pipes import scancode
 
 def make_codebase_resource(project, location, rootfs_path=None):
     """
-    Get or create and return a CodebaseResource with `location` absolute path
-    for the `project` Project.
+    Create a CodebaseResource with the `location` absolute path for the `project`.
 
     The `location` of this Resource must be rooted in `project.codebase_path`.
 
@@ -42,26 +41,29 @@ def make_codebase_resource(project, location, rootfs_path=None):
     Image/VM filesystem context. e.g.: "/var/log/file.log"
 
     All paths use the POSIX separators.
+
+    If a CodebaseResource already exists in the `project` for with the same path,
+    the error raised on save() is not stored in the database and the creation is
+    skipped.
     """
-    location = location.rstrip("/")
-    codebase_path = str(project.codebase_path)
-    assert location.startswith(
-        codebase_path
-    ), f"Location: {location} is not under project/codebase: {codebase_path}"
+    resource_location = location.rstrip("/")
+    codebase_dir = str(project.codebase_path)
 
-    path = location.replace(codebase_path, "")
+    assert resource_location.startswith(
+        codebase_dir
+    ), f"Location: {resource_location} is not under project/codebase/: {codebase_dir}"
 
-    resource_defaults = {}
+    resource_data = scancode.get_resource_info(location=resource_location)
+
     if rootfs_path:
-        resource_defaults["rootfs_path"] = rootfs_path
-    resource_defaults.update(scancode.get_resource_info(location=location))
+        resource_data["rootfs_path"] = rootfs_path
 
-    codebase_resource, _created = CodebaseResource.objects.get_or_create(
+    codebase_resource = CodebaseResource(
         project=project,
-        path=path,
-        defaults=resource_defaults,
+        path=resource_location.replace(codebase_dir, ""),
+        **resource_data,
     )
-    return codebase_resource
+    codebase_resource.save(save_error=False)
 
 
 def update_or_create_package(project, package_data):

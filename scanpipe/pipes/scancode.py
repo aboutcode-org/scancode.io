@@ -70,8 +70,10 @@ def get_resource_info(location):
     Return a mapping suitable for the creation of a new CodebaseResource.
     """
     file_info = {}
-    is_symlink = Path(location).is_symlink()
-    is_file = Path(location).is_file()
+
+    location_path = Path(location)
+    is_symlink = location_path.is_symlink()
+    is_file = location_path.is_file()
 
     if is_symlink:
         resource_type = CodebaseResource.Type.SYMLINK

@@ -27,6 +27,7 @@ from unittest import mock
 
 from django.core.management import call_command
 from django.test import TestCase
+from django.test import TransactionTestCase
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -34,6 +35,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import docker
 from scanpipe.pipes import filename_now
+from scanpipe.pipes import make_codebase_resource
 from scanpipe.pipes import output
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
@@ -422,3 +424,40 @@ class ScanPipePipesTest(TestCase):
         resource2.refresh_from_db()
         self.assertEqual("", resource1.status)
         self.assertEqual("ignored-not-interesting", resource2.status)
+
+
+class ScanPipePipesTransactionTest(TransactionTestCase):
+    """
+    Since we are testing some Database errors, we need to use a
+    TransactionTestCase to avoid any TransactionManagementError while running
+    the tests.
+    """
+
+    data_location = Path(__file__).parent / "data"
+
+    def test_scanpipe_pipes_make_codebase_resource(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource_location = str(self.data_location / "notice.NOTICE")
+
+        with self.assertRaises(AssertionError) as cm:
+            make_codebase_resource(p1, resource_location)
+
+        self.assertIn("is not under project/codebase/", str(cm.exception))
+
+        copy_inputs([resource_location], p1.codebase_path)
+        resource_location = str(p1.codebase_path / "notice.NOTICE")
+        make_codebase_resource(p1, resource_location)
+
+        resource = p1.codebaseresources.get()
+        self.assertEqual(1178, resource.size)
+        self.assertEqual("4bd631df28995c332bf69d9d4f0f74d7ee089598", resource.sha1)
+        self.assertEqual("90cd416fd24df31f608249b77bae80f1", resource.md5)
+        self.assertEqual("text/plain", resource.mime_type)
+        self.assertEqual("ASCII text", resource.file_type)
+        self.assertEqual("", resource.status)
+        self.assertEqual(CodebaseResource.Type.FILE, resource.type)
+
+        # Duplicated path: skip the creation and no project error added
+        make_codebase_resource(p1, resource_location)
+        self.assertEqual(1, p1.codebaseresources.count())
+        self.assertEqual(0, p1.projecterrors.count())
