@@ -183,26 +183,22 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
     def post(self, request, *args, **kwargs):
         project = self.get_object()
 
-        form_kwargs = {
-            "data": request.POST,
-            "files": request.FILES,
-        }
-
         if "add-inputs-submit" in request.POST:
-            form = AddInputsForm(**form_kwargs)
-            if form.is_valid():
-                form.save(project)
-                messages.success(request, "Input file(s) Added.")
-            else:
-                messages.error(request, "Error.")
-
+            form_class = AddInputsForm
+            success_message = "Input file(s) added."
+            error_message = "Input file addition error."
         else:
-            form = AddPipelineForm(**form_kwargs)
-            if form.is_valid():
-                form.save(project)
-                messages.success(request, "Pipeline added.")
-            else:
-                messages.error(request, "Pipeline addition error.")
+            form_class = AddPipelineForm
+            success_message = "Pipeline added."
+            error_message = "Pipeline addition error."
+
+        form_kwargs = {"data": request.POST, "files": request.FILES}
+        form = form_class(**form_kwargs)
+        if form.is_valid():
+            form.save(project)
+            messages.success(request, success_message)
+        else:
+            messages.error(request, error_message)
 
         return redirect(project)
 

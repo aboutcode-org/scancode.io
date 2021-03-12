@@ -45,7 +45,7 @@ class ScanPipeViewsTest(TestCase):
 
         mock_get.side_effect = Exception
         response = self.client.post(url, data, follow=True)
-        self.assertContains(response, "Error.")
+        self.assertContains(response, "Input file addition error.")
 
         mock_get.side_effect = None
         mock_get.return_value = mock.Mock(
@@ -55,7 +55,7 @@ class ScanPipeViewsTest(TestCase):
             url="url/archive.zip",
         )
         response = self.client.post(url, data, follow=True)
-        self.assertContains(response, "Input file(s) Added.")
+        self.assertContains(response, "Input file(s) added.")
 
         self.assertEqual(["archive.zip"], self.project1.input_files)
         expected = {"archive.zip": "https://example.com/archive.zip"}

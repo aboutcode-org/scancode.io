@@ -241,17 +241,20 @@
       document.body.appendChild(background);
     };
 
+    onSubmitOverlay = function (selector) {
+      let element = document.querySelector(selector);
+      if (element) {
+        element.addEventListener("submit", function() {
+          displayOverlay();
+        });
+      }
+    };
+
+    onSubmitOverlay("#add-pipeline-modal form");
+    onSubmitOverlay("#add-inputs-modal form");
+
     let run_pipeline_links = document.querySelector(".run-pipeline-link");
     if (run_pipeline_links)
       run_pipeline_links.addEventListener('click', displayOverlay);
-
-    let add_pipeline_button = document.querySelector("#add-pipeline-button");
-    if (add_pipeline_button)
-      add_pipeline_button.addEventListener('click', displayOverlay);
-
-    let form = document.querySelector("#add-inputs-modal form");
-    form.addEventListener("submit", function(event) {
-      displayOverlay();
-    });
   </script>
 {% endblock %}
