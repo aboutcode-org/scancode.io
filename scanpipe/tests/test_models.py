@@ -25,6 +25,7 @@ import tempfile
 import uuid
 from contextlib import redirect_stdout
 from datetime import datetime
+from operator import attrgetter
 from pathlib import Path
 from unittest import mock
 
@@ -193,7 +194,13 @@ class ScanPipeModelsTest(TestCase):
                 "source": "not_found",
             },
         ]
-        self.assertEqual(expected, inputs)
+
+        def sort_by_name(x):
+            return x.get("name")
+
+        self.assertEqual(
+            sorted(expected, key=sort_by_name), sorted(inputs, key=sort_by_name)
+        )
         self.assertEqual({"missing.zip": "uploaded"}, missing_inputs)
 
     def test_scanpipe_project_model_can_add_input(self):
