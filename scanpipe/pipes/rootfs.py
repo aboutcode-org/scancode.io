@@ -145,7 +145,7 @@ def get_resources(location, with_dir=False):
 
 def create_codebase_resources(project, rootfs):
     """
-    Create the CodebaseResource for a `rootfs` RootFs in `project` Project.
+    Create the CodebaseResource for a `rootfs` in `project`.
     """
     for resource in rootfs.get_resources():
         pipes.make_codebase_resource(

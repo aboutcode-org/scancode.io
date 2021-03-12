@@ -21,10 +21,8 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
-from django.utils.functional import lazy
 
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
