@@ -292,12 +292,12 @@ class Project(UUIDPKModel, models.Model):
     def inputs_with_source(self):
         """
         Return the list of inputs including the source, type, and size data.
-        Return the sources defined in the `input_sources` field but not available
-        in the input/ directory.
+        Return the `missing_inputs` defined in the `input_sources` field but not
+        available in the input/ directory.
         Only the first level children are listed.
         """
         input_path = self.input_path
-        sources = dict(self.input_sources)
+        input_sources = dict(self.input_sources)
 
         inputs = []
         for path in input_path.glob("*"):
@@ -306,11 +306,12 @@ class Project(UUIDPKModel, models.Model):
                     "name": path.name,
                     "is_file": path.is_file(),
                     "size": path.stat().st_size,
-                    "source": sources.pop(path.name, "not_found"),
+                    "source": input_sources.pop(path.name, "not_found"),
                 }
             )
 
-        return inputs, sources
+        missing_inputs = input_sources
+        return inputs, missing_inputs
 
     @property
     def output_root(self):

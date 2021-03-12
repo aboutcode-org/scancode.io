@@ -150,11 +150,11 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
 
-        inputs, sources = project.inputs_with_source
-        if sources:
+        inputs, missing_inputs = project.inputs_with_source
+        if missing_inputs:
             message = (
                 "The following input files are not available on disk anymore:\n- "
-                + "\n- ".join(sources.keys())
+                + "\n- ".join(missing_inputs.keys())
             )
             messages.error(self.request, message)
 

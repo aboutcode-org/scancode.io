@@ -32,7 +32,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 from scancode_config import __version__ as scancode_version
 
 from scanner.models import Scan
-from scanner.tasks import download
 from scanner.tasks import download_and_scan
 from scanner.tasks import dump_key_files_data
 from scanner.tasks import get_scan_input_location
@@ -54,31 +53,6 @@ class TasksTest(TestCase):
         scan_location = tempfile.mkdtemp()
         shutil.copyfile(input_file, Path(scan_location, filename))
         return scan_location
-
-    @mock.patch("requests.get")
-    def test_task_download(self, mock_get):
-        url = "https://example.com/filename.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=url
-        )
-        downloaded_file = download(url)
-        self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
-
-        redirect_url = "https://example.com/redirect.zip"
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=redirect_url
-        )
-        downloaded_file = download(url)
-        self.assertTrue(Path(downloaded_file.directory, "redirect.zip").exists())
-
-        headers = {
-            "content-disposition": 'attachment; filename="another_name.zip"',
-        }
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers=headers, status_code=200, url=url
-        )
-        downloaded_file = download(url)
-        self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
 
     def test_task_download_and_scan_with_fake_uri(self):
         scan1 = Scan.objects.create(uri="http://thisdoesnotexists.com")

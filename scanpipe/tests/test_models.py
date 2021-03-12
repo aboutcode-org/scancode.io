@@ -39,6 +39,8 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.pipes.fetch import Download
+from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
@@ -165,6 +167,92 @@ class ScanPipeModelsTest(TestCase):
         self.project1.move_input_from(input_location)
         self.assertEqual([input_filename], self.project1.input_files)
         self.assertFalse(Path(input_location).exists())
+
+    def test_scanpipe_project_model_inputs_with_source(self):
+        inputs, missing_inputs = self.project1.inputs_with_source
+        self.assertEqual([], inputs)
+        self.assertEqual({}, missing_inputs)
+
+        uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
+        self.project1.add_uploads([uploaded_file])
+        self.project1.copy_input_from(self.data_location / "notice.NOTICE")
+        self.project1.add_input_source(filename="missing.zip", source="uploaded")
+
+        inputs, missing_inputs = self.project1.inputs_with_source
+        expected = [
+            {
+                "is_file": True,
+                "name": "file.ext",
+                "size": 7,
+                "source": "uploaded",
+            },
+            {
+                "is_file": True,
+                "name": "notice.NOTICE",
+                "size": 1178,
+                "source": "not_found",
+            },
+        ]
+        self.assertEqual(expected, inputs)
+        self.assertEqual({"missing.zip": "uploaded"}, missing_inputs)
+
+    def test_scanpipe_project_model_can_add_input(self):
+        self.assertTrue(self.project1.can_add_input)
+
+        run = self.project1.add_pipeline("docker")
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.can_add_input)
+
+        run.task_start_date = timezone.now()
+        run.save()
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertFalse(self.project1.can_add_input)
+
+    def test_scanpipe_project_model_add_input_source(self):
+        self.assertEqual({}, self.project1.input_sources)
+
+        self.project1.add_input_source("filename", "source", save=True)
+        self.project1.refresh_from_db()
+        self.assertEqual({"filename": "source"}, self.project1.input_sources)
+
+    def test_scanpipe_project_model_add_downloads(self):
+        file_location = self.data_location / "notice.NOTICE"
+        copy_inputs([file_location], self.project1.tmp_path)
+
+        download = Download(
+            uri="https://example.com/filename.zip",
+            directory="",
+            filename="notice.NOTICE",
+            path=self.project1.tmp_path / "notice.NOTICE",
+            size="",
+            sha1="",
+            md5="",
+        )
+
+        self.project1.add_downloads([download])
+
+        inputs, missing_inputs = self.project1.inputs_with_source
+        expected = [
+            {
+                "is_file": True,
+                "name": "notice.NOTICE",
+                "size": 1178,
+                "source": "https://example.com/filename.zip",
+            }
+        ]
+        self.assertEqual(expected, inputs)
+        self.assertEqual({}, missing_inputs)
+
+    def test_scanpipe_project_model_add_uploads(self):
+        uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
+        self.project1.add_uploads([uploaded_file])
+
+        inputs, missing_inputs = self.project1.inputs_with_source
+        expected = [
+            {"name": "file.ext", "is_file": True, "size": 7, "source": "uploaded"}
+        ]
+        self.assertEqual(expected, inputs)
+        self.assertEqual({}, missing_inputs)
 
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())

@@ -57,10 +57,6 @@ class InputsBaseForm(forms.Form):
     class Media:
         js = ("add-inputs.js",)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._input_errors = []
-
     def clean_input_urls(self):
         """
         Fetch the `input_urls` and set the `downloads` objects in the cleaned_data.

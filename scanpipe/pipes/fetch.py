@@ -85,8 +85,7 @@ def fetch_urls(urls):
     for url in urls:
         try:
             downloaded = download(url)
-        except Exception as e:
-            print(e)
+        except Exception:
             errors.append(url)
         else:
             downloads.append(downloaded)

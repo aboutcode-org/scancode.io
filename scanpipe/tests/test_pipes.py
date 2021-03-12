@@ -32,6 +32,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
+from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
@@ -368,3 +369,51 @@ class ScanPipePipesTest(TestCase):
             expected = json.loads(f.read())
 
         self.assertEqual(expected, tree)
+
+    @mock.patch("requests.get")
+    def test_scanpipe_pipes_fetch_download(self, mock_get):
+        url = "https://example.com/filename.zip"
+
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url=url
+        )
+        downloaded_file = fetch.download(url)
+        self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
+
+        redirect_url = "https://example.com/redirect.zip"
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url=redirect_url
+        )
+        downloaded_file = fetch.download(url)
+        self.assertTrue(Path(downloaded_file.directory, "redirect.zip").exists())
+
+        headers = {
+            "content-disposition": 'attachment; filename="another_name.zip"',
+        }
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers=headers, status_code=200, url=url
+        )
+        downloaded_file = fetch.download(url)
+        self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
+
+    @mock.patch("requests.get")
+    def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
+        urls = [
+            "https://example.com/filename.zip",
+            "https://example.com/archive.tar.gz",
+        ]
+
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url="mocked_url"
+        )
+        downloads, errors = fetch.fetch_urls(urls)
+        self.assertEqual(2, len(downloads))
+        self.assertEqual(urls[0], downloads[0].uri)
+        self.assertEqual(urls[1], downloads[1].uri)
+        self.assertEqual(0, len(errors))
+
+        mock_get.side_effect = Exception
+        downloads, errors = fetch.fetch_urls(urls)
+        self.assertEqual(0, len(downloads))
+        self.assertEqual(2, len(errors))
+        self.assertEqual(urls, errors)
