@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
 from rest_framework import mixins
@@ -36,10 +37,7 @@ from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectErrorSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
-from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.views import project_results_json_response
 
@@ -97,9 +95,7 @@ class ProjectViewSet(
     @action(detail=True)
     def resources(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = CodebaseResource.objects.project(project).prefetch_related(
-            "discovered_packages"
-        )
+        queryset = project.codebaseresources.prefetch_related("discovered_packages")
 
         paginated_qs = self.paginate_queryset(queryset)
         serializer = CodebaseResourceSerializer(paginated_qs, many=True)
@@ -109,7 +105,7 @@ class ProjectViewSet(
     @action(detail=True)
     def packages(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = DiscoveredPackage.objects.project(project)
+        queryset = project.discoveredpackages.all()
 
         paginated_qs = self.paginate_queryset(queryset)
         serializer = DiscoveredPackageSerializer(paginated_qs, many=True)
@@ -119,7 +115,7 @@ class ProjectViewSet(
     @action(detail=True)
     def errors(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = ProjectError.objects.project(project)
+        queryset = project.projecterrors.all()
 
         paginated_qs = self.paginate_queryset(queryset)
         serializer = ProjectErrorSerializer(paginated_qs, many=True)
@@ -130,11 +126,11 @@ class ProjectViewSet(
     def file_content(self, request, *args, **kwargs):
         project = self.get_object()
         path = request.query_params.get("path")
-        codebase_resources = CodebaseResource.objects.project(project)
+        codebase_resources = project.codebaseresources.all()
 
         try:
             codebase_resource = codebase_resources.get(path=path)
-        except CodebaseResource.DoesNotExist:
+        except ObjectDoesNotExist:
             message = {"status": "Resource not found. Use ?path=<resource_path>"}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 

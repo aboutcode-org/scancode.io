@@ -22,8 +22,6 @@
 
 import os
 
-from extractcode.extract import extract_file
-
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import rootfs
@@ -40,13 +38,11 @@ class RootFS(Pipeline):
         Extract root filesystem input archives with extractcode.
         """
         input_files = self.project.inputs("*")
-        target = str(self.project.codebase_path)
+        target_path = self.project.codebase_path
         extract_errors = []
 
         for input_file in input_files:
-            for event in extract_file(input_file, target):
-                if event.done:
-                    extract_errors.extend(event.errors)
+            extract_errors = scancode.extract(input_file, target_path)
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
@@ -91,17 +87,17 @@ class RootFS(Pipeline):
         """
         rootfs.tag_uninteresting_codebase_resources(self.project)
 
+    def tag_empty_files(self):
+        """
+        Flag empty files.
+        """
+        rootfs.tag_empty_codebase_resources(self.project)
+
     def scan_for_application_packages(self):
         """
         Scan unknown resources for packages infos.
         """
         scancode.scan_for_application_packages(self.project)
-
-    def ignore_empty_files(self):
-        """
-        Skip and mark as ignored any empty file.
-        """
-        rootfs.tag_empty_codebase_resources(self.project)
 
     def match_not_analyzed_to_system_packages(self):
         """
@@ -149,8 +145,8 @@ class RootFS(Pipeline):
         collect_and_create_codebase_resources,
         collect_and_create_system_packages,
         tag_uninteresting_codebase_resources,
+        tag_empty_files,
         scan_for_application_packages,
-        ignore_empty_files,
         match_not_analyzed_to_system_packages,
         scan_for_files,
         analyze_scanned_files,
