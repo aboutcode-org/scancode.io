@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.models import CodebaseResource
 from scanpipe.pipes import scancode
 
 """
@@ -56,7 +55,7 @@ def analyze_compliance_licenses(project):
     """
     Scan compliance licenses status for the provided `project`.
     """
-    qs = CodebaseResource.objects.project(project).status("compliance-licenses")
+    qs = project.codebaseresources.status("compliance-licenses")
 
     for codebase_resource in qs:
         scan_results, scan_errors = scancode.scan_file(codebase_resource.location)

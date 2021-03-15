@@ -24,6 +24,8 @@ import logging
 import os
 from functools import partial
 
+from django.db.models import Q
+
 import attr
 from container_inspector.distro import Distro
 
@@ -143,7 +145,7 @@ def get_resources(location, with_dir=False):
 
 def create_codebase_resources(project, rootfs):
     """
-    Create the CodebaseResource for a `rootfs` RootFs in `project` Project.
+    Create the CodebaseResource for a `rootfs` in `project`.
     """
     for resource in rootfs.get_resources():
         pipes.make_codebase_resource(
@@ -189,7 +191,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
         missing_resources = created_package.missing_resources[:]
         modified_resources = created_package.modified_resources[:]
 
-        codebase_resources = CodebaseResource.objects.project(project)
+        codebase_resources = project.codebaseresources.all()
 
         for install_file in package.installed_files:
             rootfs_path = pipes.normalize_path(install_file.path)
@@ -300,14 +302,8 @@ def tag_empty_codebase_resources(project):
     """
     Tag empty files as ignored.
     """
-    project.codebaseresources.select_for_update().filter(
-        type__exact="file",
-        status__in=(
-            "",
-            "not-analyzed",
-        ),
-        size__isnull=True,
-    ).update(status="ignored-empty-file")
+    qs = project.codebaseresources.files().empty()
+    qs.filter(status__in=("", "not-analyzed")).update(status="ignored-empty-file")
 
 
 def tag_uninteresting_codebase_resources(project):
@@ -327,9 +323,9 @@ def tag_uninteresting_codebase_resources(project):
         "/lib/apk/db/",  # alpine specific
     )
 
-    qs = project.codebaseresources.no_status()
+    lookups = Q()
+    for segment in uninteresting_and_transient:
+        lookups |= Q(rootfs_path__startswith=segment)
 
-    for codebase_resource in qs:
-        if codebase_resource.rootfs_path.startswith(uninteresting_and_transient):
-            codebase_resource.status = "ignored-not-interesting"
-            codebase_resource.save()
+    qs = project.codebaseresources.no_status()
+    qs.filter(lookups).update(status="ignored-not-interesting")

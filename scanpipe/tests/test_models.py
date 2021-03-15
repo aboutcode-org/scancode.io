@@ -436,6 +436,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
 
+        qs = CodebaseResource.objects.empty()
+        self.assertEqual(3, len(qs))
+        file.size = 1
+        file.save()
+        qs = CodebaseResource.objects.empty()
+        self.assertEqual(2, len(qs))
+        self.assertNotIn(file, qs)
+        file.size = 0
+        file.save()
+        qs = CodebaseResource.objects.empty()
+        self.assertEqual(3, len(qs))
+
         qs = CodebaseResource.objects.directories()
         self.assertEqual(1, len(qs))
         self.assertIn(directory, qs)

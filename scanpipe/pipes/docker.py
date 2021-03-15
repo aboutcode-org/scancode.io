@@ -26,10 +26,8 @@ from functools import partial
 from pathlib import Path
 
 from container_inspector.image import Image
-from container_inspector.rootfs import get_whiteout_marker_type
 
 from scanpipe import pipes
-from scanpipe.models import CodebaseResource
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 
@@ -133,7 +131,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         missing_resources = created_package.missing_resources[:]
         modified_resources = created_package.modified_resources[:]
 
-        codebase_resources = CodebaseResource.objects.project(project)
+        codebase_resources = project.codebaseresources.all()
 
         for install_file in package.installed_files:
             install_file_path = pipes.normalize_path(install_file.path)
@@ -194,12 +192,10 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
 
 def tag_whiteout_codebase_resources(project):
     """
-    Mark overlayfs/AUFS whiteout special files CodebaseResource as "ignored".
+    Mark overlayfs/AUFS whiteout special files CodebaseResource as "ignored-whiteout".
+    See https://github.com/opencontainers/image-spec/blob/master/layer.md#whiteouts
+    for details.
     """
+    whiteout_prefix = ".wh."
     qs = project.codebaseresources.no_status()
-
-    for codebase_resource in qs:
-        filename = Path(codebase_resource.path).name
-        if get_whiteout_marker_type(filename):
-            codebase_resource.status = "ignored-whiteout"
-            codebase_resource.save()
+    qs.filter(name__startswith=whiteout_prefix).update(status="ignored-whiteout")
