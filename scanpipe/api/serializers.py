@@ -94,12 +94,11 @@ class ProjectSerializer(
         choices=(),
         required=False,
         write_only=True,
-        help_text=(
-            "If provided, the selected pipeline will start on project creation. "
-            "Requires an input file."
-        ),
     )
-    execute_now = serializers.BooleanField(write_only=True)
+    execute_now = serializers.BooleanField(
+        write_only=True,
+        help_text=("Execute pipeline now"),
+    )
     upload_file = serializers.FileField(write_only=True, required=False)
     input_urls = serializers.CharField(
         write_only=True,
