@@ -29,13 +29,13 @@ Step-by-step
   add the ``scan_codebase`` pipeline, and execute it::
 
     $ scanpipe create-project asgiref \
-        --input ~/asgiref-3.3.0-py3-none-any.whl \
+        --input-file ~/asgiref-3.3.0-py3-none-any.whl \
         --pipeline scan_codebase \
         --execute
 
 .. note::
     The content of the :guilabel:`input/` directory will be copied in the
-    :guilabel:`codebase/` directory where ``extractcode`` will be run before
+    :guilabel:`codebase/` directory where ``extractcode`` will be executed before
     running ``scancode``.
     Alternatively, the codebase content can be manually copied to the
     :guilabel:`codebase/` directory in which case the ``--input`` option can be

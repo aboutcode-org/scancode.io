@@ -18,36 +18,47 @@
       {% endif %}
 
       <div class="columns">
-        <div class="column is-half pr-5">
+        <div class="column is-three-fifths pr-5">
           <form method="post" enctype="multipart/form-data">{% csrf_token %}
             <div class="field">
-              <label class="label" for="id_name">Project name</label>
+              <label class="label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
               <div class="control">
-                <input class="input" type="text" name="name" maxlength="100" id="id_name" value="{{ form.name.value|default_if_none:'' }}" required>
-                <p class="help">The unique name of your project.</p>
+                {{ form.name }}
+                <p class="help">{{ form.name.help_text }}</p>
               </div>
             </div>
 
-            <label class="label mt-5" for="id_inputs">Inputs</label>
-            <div class="file has-name is-boxed is-fullwidth">
-              <label class="file-label">
-                <input class="file-input" type="file" name="inputs" id="id_inputs" multiple>
-                <span class="file-cta">
-                  <span class="file-icon">
-                    <i class="fas fa-upload"></i>
+            <label class="label mt-5">Inputs</label>
+            <div class="box">
+              <label class="label has-text-weight-semibold" for="{{ form.input_files.id_for_label }}">Upload files</label>
+              <div class="file has-name is-boxed is-fullwidth">
+                <label class="file-label">
+                  {{ form.input_files }}
+                  <span class="file-cta">
+                    <span class="file-icon">
+                      <i class="fas fa-upload"></i>
+                    </span>
+                    <span class="file-label has-text-centered">
+                      Choose one or more files…
+                    </span>
                   </span>
-                  <span class="file-label has-text-centered">
-                    Choose one or more files…
+                  <span class="file-name" id="inputs-file-name" style="height: auto;">
+                    <i>No files selected</i>
                   </span>
-                </span>
-                <span class="file-name" id="inputs-file-name" style="height: auto;">
-                  <i>No files selected</i>
-                </span>
-              </label>
+                </label>
+              </div>
+
+              <div class="field mt-5">
+                <label class="label has-text-weight-semibold" for="{{ form.input_urls.id_for_label }}">{{ form.input_urls.label }}</label>
+                <div class="control">
+                  {{ form.input_urls }}
+                  <p class="help">{{ form.input_urls.help_text }}</p>
+                </div>
+              </div>
             </div>
 
             <div class="field mt-5">
-              <label class="label" for="id_pipeline">Pipeline</label>
+              <label class="label" for="{{ form.pipeline.id_for_label }}">Pipeline</label>
               <div class="control">
                 <span class="select">
                   {{ form.pipeline }}
@@ -56,7 +67,7 @@
             </div>
 
             <div class="field">
-              <label class="checkbox" for="id_execute_now">
+              <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
                 {{ form.execute_now }}
                 {{ form.execute_now.label }}
               </label>
@@ -71,6 +82,7 @@
               </div>
             </div>
           </form>
+          {{ form.media }}
         </div>
 
         <div class="column has-background-light has-border-radius">
@@ -115,17 +127,6 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script>
-    const fileInput = document.querySelector('#id_inputs');
-    fileInput.onchange = () => {
-      if (fileInput.files.length > 0) {
-        const fileName = document.querySelector('#inputs-file-name');
-        fileName.innerHTML = "";
-        for (file of fileInput.files) {
-          fileName.innerHTML += `<span class="is-block">${file.name}</span>`
-        }
-      }
-    }
-
     displayOverlay = function () {
       let background = document.createElement("div");
       background.className = "modal-background";
@@ -135,7 +136,7 @@
     };
 
     let form = document.querySelector("form");
-    form.addEventListener('submit', function(event) {
+    form.addEventListener("submit", function(event) {
       displayOverlay();
     });
   </script>

@@ -22,7 +22,7 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
         create-project
         graph
         output
-        run
+        execute
         show-pipeline
 
 
@@ -34,10 +34,11 @@ Display help for the provided subcommand.
 For example::
 
     $ scanpipe create-project --help
-    usage: scanpipe create-project [--pipeline PIPELINES] [--input INPUTS] [--execute] name
+    usage: scanpipe create-project [--input-file INPUTS_FILES]
+        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] name
 
     Create a ScanPipe project.
-    
+
     positional arguments:
       name                  Project name.
 
@@ -50,27 +51,40 @@ be unique.
 
 Optional arguments:
 
-- ``--pipeline PIPELINES``  Pipelines names to add on the project.
+- ``--pipeline PIPELINES`` Pipelines names to add on the project.
 
-- ``--input INPUTS``  Input file locations to copy in the :guilabel:`input/` workspace
+- ``--input-file INPUTS_FILES`` Input file locations to copy in the :guilabel:`input/`
+  work directory.
+
+- ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
   directory.
 
-- ``--execute``  Execute the pipelines right after project creation.
+- ``--execute`` Execute the pipelines right after project creation.
 
 .. warning::
     The pipelines are added and will be executed in the order of the provided options.
 
-`$ scanpipe add-input --project PROJECT <input ...>`
-----------------------------------------------------
 
-Copy the file found at the ``<input>`` path to the project named ``PROJECT`` workspace
-:guilabel:`input/` directory.
-You can use more than one ``<input>`` to copy multiple files at once.
+`$ scanpipe add-input --project PROJECT [--input-file FILES] [--input-url URLS]`
+--------------------------------------------------------------------------------
+
+Add input files in a project work directory.
+
+- ``--input-file INPUTS_FILES`` Input file locations to copy in the :guilabel:`input/`
+  work directory.
+
+- ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
+  directory.
 
 For example, assuming you have created beforehand a project named "foo", this will
 copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` directory::
 
-    $ scanpipe add-input --project foo ~/docker/alpine-base.tar
+    $ scanpipe add-input --project foo --input-file ~/docker/alpine-base.tar
+
+You can also provide URLs of files to be downloaded to foo project :guilabel:`input/`
+directory::
+
+    $ scanpipe add-input --project foo --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
 
 
 `$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`
@@ -80,7 +94,7 @@ Add the ``PIPELINE_NAME`` to the provided ``PROJECT``.
 You can use more than one ``PIPELINE_NAME`` to add multiple pipelines at once.
 
 .. warning::
-    The pipelines are added and will be running in the order of the provided options.
+    The pipelines are added and will be executed in the order of the provided options.
 
 For example, assuming you have created beforehand a project named "foo", this will
 add the docker pipeline to your project::

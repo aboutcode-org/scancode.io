@@ -28,6 +28,7 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
 from scanpipe.models import Project
+from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -64,14 +65,78 @@ class RunStatusCommandMixin:
         return status
 
 
-def validate_inputs(inputs):
+class AddInputCommandMixin:
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--input-file",
+            action="append",
+            dest="inputs_files",
+            default=list(),
+            help="Input file locations to copy in the input/ work directory.",
+        )
+        parser.add_argument(
+            "--input-url",
+            action="append",
+            dest="input_urls",
+            default=list(),
+            help="Input URLs to download in the input/ work directory.",
+        )
+
+    def handle_input_files(self, inputs_files):
+        """
+        Copy provided `inputs_files` to the project `input` directory.
+        """
+        copied = []
+
+        for file_location in inputs_files:
+            self.project.copy_input_from(file_location)
+            filename = Path(file_location).name
+            copied.append(filename)
+            self.project.add_input_source(filename, source="uploaded", save=True)
+
+        msg = "File(s) copied to the project inputs directory:"
+        self.stdout.write(self.style.SUCCESS(msg))
+        msg = "\n".join(["- " + filename for filename in copied])
+        self.stdout.write(msg)
+
+    @staticmethod
+    def validate_input_files(inputs_files):
+        """
+        Raise an error if one of the provided `inputs_files` is not an existing file.
+        """
+        for file_location in inputs_files:
+            file_path = Path(file_location)
+            if not file_path.is_file():
+                raise CommandError(f"{file_location} not found or not a file")
+
+    def handle_input_urls(self, input_urls):
+        """
+        Fetch provided `input_urls` and store to the project `input` directory.
+        """
+        downloads, errors = fetch_urls(input_urls)
+
+        if downloads:
+            self.project.add_downloads(downloads)
+            msg = "File(s) downloaded to the project inputs directory:"
+            self.stdout.write(self.style.SUCCESS(msg))
+            msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])
+            self.stdout.write(msg)
+
+        if errors:
+            self.stdout.write(self.style.ERROR("Could not fetch URL(s):"))
+            msg = "\n".join(["- " + url for url in errors])
+            self.stdout.write(self.style.ERROR(msg))
+
+
+def validate_input_files(file_locations):
     """
-    Raise an error if one of the provided `inputs` is not an existing file.
+    Raise an error if one of the provided `file_locations` is not an existing file.
     """
-    for input_location in inputs:
-        input_path = Path(input_location)
-        if not input_path.is_file():
-            raise CommandError(f"{input_location} not found or not a file")
+    for file_location in file_locations:
+        file_path = Path(file_location)
+        if not file_path.is_file():
+            raise CommandError(f"{file_location} not found or not a file")
 
 
 def validate_pipelines(pipeline_names):

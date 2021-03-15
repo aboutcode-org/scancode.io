@@ -1,0 +1,42 @@
+<div id="add-inputs-modal" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Add inputs</p>
+      <button class="delete" type="button" aria-label="close"></button>
+    </header>
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+      <section class="modal-card-body">
+        <label class="label has-text-weight-semibold" for="{{ add_inputs_form.input_files.id_for_label }}">Upload files</label>
+        <div class="file has-name is-boxed is-fullwidth">
+          <label class="file-label">
+            {{ add_inputs_form.input_files }}
+            <span class="file-cta">
+              <span class="file-icon">
+                <i class="fas fa-upload"></i>
+              </span>
+              <span class="file-label has-text-centered">
+                Choose one or more files…
+              </span>
+            </span>
+            <span class="file-name" id="inputs-file-name" style="height: auto;">
+              <i>No files selected</i>
+            </span>
+          </label>
+        </div>
+        <div class="field mt-5">
+          <label class="label has-text-weight-semibold" for="{{ add_inputs_form.input_urls.id_for_label }}">{{ add_inputs_form.input_urls.label }}</label>
+          <div class="control">
+            {{ add_inputs_form.input_urls }}
+            <p class="help">{{ add_inputs_form.input_urls.help_text }}</p>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button id="add-inputs-button" name="add-inputs-submit" class="button is-link" type="submit">Add inputs</button>
+        <button class="button" type="button">Close</button>
+      </footer>
+    </form>
+  </div>
+  {{ add_inputs_form.media }}
+</div>

@@ -34,6 +34,7 @@ import saneyaml
 from django_filters.views import FilterView
 
 from scanpipe.api.serializers import scanpipe_app_config
+from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import PackageFilterSet
 from scanpipe.forms import ProjectFilterSet
@@ -117,12 +118,6 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        input_path = project.input_path
-        context["inputs"] = [
-            (path.relative_to(input_path), path.is_file())
-            for path in input_path.glob("*")
-        ]
-
         files_qs = project.codebaseresources.files()
 
         file_filter = self.request.GET.get("file-filter", "all")
@@ -155,8 +150,17 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
 
+        inputs, missing_inputs = project.inputs_with_source
+        if missing_inputs:
+            message = (
+                "The following input files are not available on disk anymore:\n- "
+                + "\n- ".join(missing_inputs.keys())
+            )
+            messages.error(self.request, message)
+
         context.update(
             {
+                "inputs_with_source": inputs,
                 "programming_languages": self.get_summary(file_languages),
                 "mime_types": self.get_summary(file_mime_types),
                 "holders": self.get_summary(file_holders),
@@ -167,6 +171,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "package_types": self.get_summary(package_types),
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
+                "add_inputs_form": AddInputsForm(),
             }
         )
 
@@ -177,14 +182,23 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
 
     def post(self, request, *args, **kwargs):
         project = self.get_object()
-        form = AddPipelineForm(request.POST)
-        if form.is_valid():
-            pipeline = form.data["pipeline"]
-            execute_now = form.data.get("execute_now", False)
-            project.add_pipeline(pipeline, execute_now)
-            messages.success(request, f"Pipeline {pipeline} added.")
+
+        if "add-inputs-submit" in request.POST:
+            form_class = AddInputsForm
+            success_message = "Input file(s) added."
+            error_message = "Input file addition error."
         else:
-            messages.error(request, "Pipeline addition error.")
+            form_class = AddPipelineForm
+            success_message = "Pipeline added."
+            error_message = "Pipeline addition error."
+
+        form_kwargs = {"data": request.POST, "files": request.FILES}
+        form = form_class(**form_kwargs)
+        if form.is_valid():
+            form.save(project)
+            messages.success(request, success_message)
+        else:
+            messages.error(request, error_message)
 
         return redirect(project)
 

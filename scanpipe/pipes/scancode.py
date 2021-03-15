@@ -36,8 +36,6 @@ from packageurl import PackageURL
 from scancode import ScancodeError
 from scancode import api as scancode_api
 
-from scanner.tasks import get_bin_executable
-from scanner.tasks import run_command
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -204,14 +202,14 @@ def run_extractcode(location, options=None, raise_on_error=False):
     exitcode greater than 0.
     """
     extractcode_args = [
-        get_bin_executable("extractcode"),
+        pipes.get_bin_executable("extractcode"),
         shlex.quote(location),
     ]
 
     if options:
         extractcode_args.extend(options)
 
-    exitcode, output = run_command(extractcode_args)
+    exitcode, output = pipes.run_command(extractcode_args)
     if exitcode > 0 and raise_on_error:
         raise ScancodeError(output)
 
@@ -228,14 +226,14 @@ def run_scancode(location, output_file, options, raise_on_error=False):
     default_options = getattr(settings, "SCANCODE_DEFAULT_OPTIONS", [])
 
     scancode_args = [
-        get_bin_executable("scancode"),
+        pipes.get_bin_executable("scancode"),
         shlex.quote(location),
         *default_options,
         *options,
         f"--json-pp {shlex.quote(output_file)}",
     ]
 
-    exitcode, output = run_command(scancode_args)
+    exitcode, output = pipes.run_command(scancode_args)
     if exitcode > 0 and raise_on_error:
         raise ScancodeError(output)
 

@@ -20,28 +20,23 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import cgi
 import json
-import os
 import shlex
 import shutil
-import subprocess
-import sys
-import tempfile
-from collections import namedtuple
 from pathlib import Path
-from urllib.parse import urlparse
 
 from django.apps import apps
 from django.utils import timezone
 
-import requests
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
-from commoncode.hash import multi_checksums
 from scancode_config import __version__ as scancode_version
 from textcode.analysis import numbered_text_lines
+
+from scanpipe.pipes import get_bin_executable
+from scanpipe.pipes import run_command
+from scanpipe.pipes.fetch import download
 
 tasks_logger = get_task_logger(__name__)
 app_config = apps.get_app_config("scanner")
@@ -53,62 +48,6 @@ DOWNLOAD_SIZE_THRESHOLD = 26_214_400  # 25MB
 
 def log_info(message, scan_pk):
     tasks_logger.info(f"Scan[{scan_pk}] {message}")
-
-
-def get_bin_executable(filename):
-    return str(Path(sys.executable).parent / filename)
-
-
-def run_command(cmd):
-    """
-    Return (exitcode, output) of executing `cmd` in a shell.
-    `cmd` can be provided as a string or as a list of arguments.
-    """
-    if isinstance(cmd, list):
-        cmd = " ".join(cmd)
-
-    exitcode, output = subprocess.getstatusoutput(cmd)
-    return exitcode, output
-
-
-Download = namedtuple("Download", "directory filename size sha1 md5")
-
-
-def download(uri):
-    """
-    Downloads the given `uri` in a temporary directory and returns that
-    directory path.
-    """
-    response = requests.get(uri)
-
-    if response.status_code != 200:
-        raise requests.RequestException
-
-    content_disposition = response.headers.get("content-disposition", "")
-    _, params = cgi.parse_header(content_disposition)
-    filename = params.get("filename")
-
-    if not filename:
-        # Using `response.url` in place of provided `Scan.uri` since the former
-        # will be more accurate in case of HTTP redirect.
-        filename = os.path.basename(urlparse(response.url).path)
-
-    download_directory = tempfile.mkdtemp()
-    download_file = Path(download_directory, filename)
-
-    file_content = response.content
-    with open(download_file, "wb") as f:
-        f.write(file_content)
-
-    checksums = multi_checksums(download_file, ("md5", "sha1"))
-
-    return Download(
-        directory=download_directory,
-        filename=filename,
-        size=len(file_content),
-        sha1=checksums["sha1"],
-        md5=checksums["md5"],
-    )
 
 
 def get_scan_input_location(download_location):

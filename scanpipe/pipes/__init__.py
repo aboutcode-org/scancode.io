@@ -20,7 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import subprocess
+import sys
 from datetime import datetime
+from pathlib import Path
 
 from django.db.models import Count
 
@@ -190,3 +193,22 @@ def count_group_by(queryset, field_name):
     )
 
     return {entry.get(field_name): entry.get("count") for entry in counts}
+
+
+def get_bin_executable(filename):
+    """
+    Return the location of the `filename` executable binary.
+    """
+    return str(Path(sys.executable).parent / filename)
+
+
+def run_command(cmd):
+    """
+    Return (exitcode, output) of executing the provided `cmd` in a shell.
+    `cmd` can be provided as a string or as a list of arguments.
+    """
+    if isinstance(cmd, list):
+        cmd = " ".join(cmd)
+
+    exitcode, output = subprocess.getstatusoutput(cmd)
+    return exitcode, output

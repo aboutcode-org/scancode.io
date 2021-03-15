@@ -21,6 +21,8 @@
 
     if ($modalCloses.length > 0) {
       $modalCloses.forEach(function ($el) {
+        // Do not close on form submit buttons
+        if ($el.type === "submit") return;
         $el.addEventListener('click', function () {
           closeModals();
         });

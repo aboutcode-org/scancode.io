@@ -20,30 +20,31 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.core.management import CommandError
+
+from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.management.commands import validate_inputs
 
 
-class Command(ProjectCommand):
+class Command(AddInputCommandMixin, ProjectCommand):
     help = "Add input files in a project work directory."
 
-    def add_arguments(self, parser):
-        super().add_arguments(parser)
-        parser.add_argument(
-            "args",
-            metavar="input",
-            nargs="+",
-            help="One or more input file locations.",
-        )
+    def handle(self, *args, **options):
+        super().handle(*args, **options)
+        inputs_files = options["inputs_files"]
+        input_urls = options["input_urls"]
 
-    def handle(self, *inputs, **options):
-        super().handle(*inputs, **options)
+        if not self.project.can_add_input:
+            raise CommandError(
+                "Cannot add inputs once a pipeline has started to execute on a project."
+            )
 
-        validate_inputs(inputs)
-        for input_location in inputs:
-            self.project.copy_input_from(input_location)
+        if not (inputs_files or input_urls):
+            raise CommandError("Provide inputs with the --input-file or --input-url")
 
-        msg = (
-            f"File(s) copied to the project inputs directory: {self.project.input_path}"
-        )
-        self.stdout.write(self.style.SUCCESS(msg))
+        if inputs_files:
+            self.validate_input_files(inputs_files)
+            self.handle_input_files(inputs_files)
+
+        if input_urls:
+            self.handle_input_urls(input_urls)

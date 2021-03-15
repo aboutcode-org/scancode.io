@@ -25,15 +25,17 @@ from django.core.management import CommandError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import validate_inputs
+from scanpipe.management.commands import AddInputCommandMixin
+from scanpipe.management.commands import validate_input_files
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
 
 
-class Command(BaseCommand):
+class Command(AddInputCommandMixin, BaseCommand):
     help = "Create a ScanPipe project."
 
     def add_arguments(self, parser):
+        super().add_arguments(parser)
         parser.add_argument("name", help="Project name.")
         parser.add_argument(
             "--pipeline",
@@ -46,13 +48,6 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument(
-            "--input",
-            action="append",
-            dest="inputs",
-            default=list(),
-            help="Input file locations to copy in the input/ work directory.",
-        )
-        parser.add_argument(
             "--execute",
             action="store_true",
             help="Execute the pipelines right after project creation.",
@@ -61,7 +56,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         name = options["name"]
         pipeline_names = options["pipelines"]
-        inputs = options["inputs"]
+        inputs_files = options["inputs_files"]
+        input_urls = options["input_urls"]
         execute = options["execute"]
 
         project = Project(name=name)
@@ -72,7 +68,7 @@ class Command(BaseCommand):
 
         # Run validation before creating the project in the database
         validate_pipelines(pipeline_names)
-        validate_inputs(inputs)
+        validate_input_files(inputs_files)
 
         if execute and not pipeline_names:
             raise CommandError("The --execute option requires one or more pipelines.")
@@ -84,8 +80,13 @@ class Command(BaseCommand):
         for pipeline_name in pipeline_names:
             project.add_pipeline(pipeline_name)
 
-        for input_location in inputs:
-            project.copy_input_from(input_location)
+        self.project = project
+        if inputs_files:
+            self.validate_input_files(inputs_files)
+            self.handle_input_files(inputs_files)
+
+        if input_urls:
+            self.handle_input_urls(input_urls)
 
         if execute:
             call_command(

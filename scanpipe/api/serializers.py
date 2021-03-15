@@ -31,6 +31,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
+from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
@@ -100,8 +101,14 @@ class ProjectSerializer(
     )
     execute_now = serializers.BooleanField(write_only=True)
     upload_file = serializers.FileField(write_only=True, required=False)
+    input_urls = serializers.CharField(
+        write_only=True,
+        required=False,
+        style={"base_template": "textarea.html"},
+    )
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
+    input_sources = serializers.SerializerMethodField()
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_package_summary = serializers.SerializerMethodField()
 
@@ -112,9 +119,11 @@ class ProjectSerializer(
             "url",
             "uuid",
             "upload_file",
+            "input_urls",
             "created_date",
             "pipeline",
             "execute_now",
+            "input_sources",
             "input_root",
             "output_root",
             "next_run",
@@ -124,11 +133,18 @@ class ProjectSerializer(
             "discovered_package_summary",
         )
         exclude_from_list_view = [
+            "input_sources",
             "input_root",
             "output_root",
             "extra_data",
             "codebase_resources_summary",
             "discovered_package_summary",
+        ]
+
+    def get_input_sources(self, project):
+        return [
+            {"filename": filename, "source": source}
+            for filename, source in project.input_sources.items()
         ]
 
     def get_codebase_resources_summary(self, project):
@@ -149,13 +165,21 @@ class ProjectSerializer(
         The `execute_now` parameter can be provided to execute the Pipeline on creation.
         """
         upload_file = validated_data.pop("upload_file", None)
+        input_urls = validated_data.pop("input_urls", [])
         pipeline = validated_data.pop("pipeline", None)
         execute_now = validated_data.pop("execute_now", False)
+
+        downloads, errors = fetch_urls(input_urls)
+        if errors:
+            raise serializers.ValidationError("Could not fetch: " + "\n".join(errors))
 
         project = super().create(validated_data)
 
         if upload_file:
-            project.add_input_file(upload_file)
+            project.add_uploads([upload_file])
+
+        if downloads:
+            project.add_downloads(downloads)
 
         if pipeline:
             project.add_pipeline(pipeline, execute_now)

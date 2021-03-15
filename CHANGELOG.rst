@@ -3,6 +3,10 @@
 
 ### v1.1.1 (unreleased)
 
+- Download URLs can be provided as inputs on the project form.
+  Each URL is fetched and added to the project input directory.
+  https://github.com/nexB/scancode.io/issues/100
+
 - Run celery worker with the "threads" pool implementation.
   Implement parallelization with ProcessPoolExecutor for file and package scans.
   Add a SCANCODE_PROCESSES settings to control the multiprocessing CPUs count.

@@ -189,6 +189,7 @@ class Project(UUIDPKModel, models.Model):
         editable=False,
         help_text=_("Project work directory location."),
     )
+    input_sources = models.JSONField(default=dict, blank=True, editable=False)
     extra_data = models.JSONField(default=dict, editable=False)
 
     class Meta:
@@ -288,6 +289,31 @@ class Project(UUIDPKModel, models.Model):
         return self.get_root_content(self.input_path)
 
     @property
+    def inputs_with_source(self):
+        """
+        Return the list of inputs including the source, type, and size data.
+        Return the `missing_inputs` defined in the `input_sources` field but not
+        available in the input/ directory.
+        Only the first level children are listed.
+        """
+        input_path = self.input_path
+        input_sources = dict(self.input_sources)
+
+        inputs = []
+        for path in input_path.glob("*"):
+            inputs.append(
+                {
+                    "name": path.name,
+                    "is_file": path.is_file(),
+                    "size": path.stat().st_size,
+                    "source": input_sources.pop(path.name, "not_found"),
+                }
+            )
+
+        missing_inputs = input_sources
+        return inputs, missing_inputs
+
+    @property
     def output_root(self):
         """
         Return the list of all files and directories of the output/ directory.
@@ -306,7 +332,22 @@ class Project(UUIDPKModel, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
-    def add_input_file(self, file_object):
+    @cached_property
+    def can_add_input(self):
+        """
+        Return True until one pipeline has started to execute on this project.
+        """
+        return not self.runs.started().exists()
+
+    def add_input_source(self, filename, source, save=False):
+        """
+        Add the provided `filename` and `source` on this project `input_sources` field.
+        """
+        self.input_sources[filename] = source
+        if save:
+            self.save()
+
+    def write_input_file(self, file_object):
         """
         Write the provided `file_object` to this project input/ directory.
         """
@@ -332,6 +373,26 @@ class Project(UUIDPKModel, models.Model):
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
+
+    def add_downloads(self, downloads):
+        """
+        Move the provided `downloads` to this project input/ directory and add the
+        `input_source` for each entry.
+        """
+        for downloaded in downloads:
+            self.move_input_from(downloaded.path)
+            self.add_input_source(downloaded.filename, downloaded.uri)
+        self.save()
+
+    def add_uploads(self, uploads):
+        """
+        Write the provided `uploads` to this project input/ directory and add the
+        `input_source` for each entry.
+        """
+        for uploaded in uploads:
+            self.write_input_file(uploaded)
+            self.add_input_source(filename=uploaded.name, source="uploaded")
+        self.save()
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """

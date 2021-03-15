@@ -39,7 +39,7 @@ Run your image as a container::
 At this point, the ScanCode.io app should be running at port 80 on your Docker host.
 Go to http://localhost/ on a web browser to access the web UI.
 
-You can also run a one-off ``scanpipe`` command through the Docker command line
+You can also execute a one-off ``scanpipe`` command through the Docker command line
 interface, for example::
 
     docker-compose run web ./manage.py create-project project_name
