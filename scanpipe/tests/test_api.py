@@ -51,12 +51,10 @@ from scanpipe.tests import package_data1
 class ScanPipeAPITest(TransactionTestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
-        self.codebase_resource1 = CodebaseResource.objects.create(
+        self.resource1 = CodebaseResource.objects.create(
             project=self.project1, path="filename.ext"
         )
-        self.discovered_package1 = DiscoveredPackage.create_for_resource(
-            package_data1, self.codebase_resource1
-        )
+        self.discovered_package1 = self.resource1.create_and_add_package(package_data1)
 
         self.project_list_url = reverse("project-list")
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
@@ -276,7 +274,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Resource not found. Use ?path=<resource_path>"}
         self.assertEqual(expected, response.data)
 
-        response = self.csrf_client.get(url + f"?path={self.codebase_resource1.path}")
+        response = self.csrf_client.get(url + f"?path={self.resource1.path}")
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "File not available"}
         self.assertEqual(expected, response.data)

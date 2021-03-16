@@ -25,7 +25,6 @@ import tempfile
 import uuid
 from contextlib import redirect_stdout
 from datetime import datetime
-from operator import attrgetter
 from pathlib import Path
 from unittest import mock
 
@@ -575,7 +574,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, CodebaseResource.objects.in_package().count())
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
-        DiscoveredPackage.create_for_resource(package_data1, file)
+        file.create_and_add_package(package_data1)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
@@ -621,6 +620,16 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, [resource.path for resource in children])
 
+    def test_scanpipe_codebase_resource_create_and_add_package(self):
+        codebase_resource = CodebaseResource.objects.create(
+            project=self.project1, path="filename.ext"
+        )
+        package = codebase_resource.create_and_add_package(package_data1)
+        self.assertEqual(self.project1, package.project)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual(1, codebase_resource.discovered_packages.count())
+        self.assertEqual(package, codebase_resource.discovered_packages.get())
+
     def test_scanpipe_discovered_package_model_create_from_data(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertEqual(self.project1, package.project)
@@ -635,18 +644,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(
             "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
         )
-
-    def test_scanpipe_discovered_package_model_create_for_resource(self):
-        codebase_resource = CodebaseResource.objects.create(
-            project=self.project1, path="filename.ext"
-        )
-        package = DiscoveredPackage.create_for_resource(
-            package_data1, codebase_resource
-        )
-        self.assertEqual(self.project1, package.project)
-        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
-        self.assertEqual(1, codebase_resource.discovered_packages.count())
-        self.assertEqual(package, codebase_resource.discovered_packages.get())
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

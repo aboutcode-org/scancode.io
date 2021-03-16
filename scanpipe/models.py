@@ -907,6 +907,16 @@ class CodebaseResource(
         numbered_lines = numbered_text_lines(self.location)
         return "".join(l for _, l in numbered_lines)
 
+    def create_and_add_package(self, package_data):
+        """
+        Create a DiscoveredPackage instance using the `package_data` and assign
+        it to this CodebaseResource instance.
+        """
+        created_package = DiscoveredPackage.create_from_data(self.project, package_data)
+        if created_package:
+            self.discovered_packages.add(created_package)
+            return created_package
+
     @property
     def for_packages(self):
         return [str(package) for package in self.discovered_packages.all()]
@@ -952,14 +962,3 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
         }
 
         return cls.objects.create(project=project, **cleaned_package_data)
-
-    @classmethod
-    def create_for_resource(cls, package_data, codebase_resource):
-        """
-        Create a DiscoveredPackage instance using the `package_data` and assign
-        it to the provided `codebase_resource`.
-        """
-        project = codebase_resource.project
-        created_package = cls.create_from_data(project, package_data)
-        codebase_resource.discovered_packages.add(created_package)
-        return created_package

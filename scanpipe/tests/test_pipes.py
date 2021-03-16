@@ -90,10 +90,7 @@ class ScanPipePipesTest(TestCase):
             project=project1,
             path="filename.ext",
         )
-        DiscoveredPackage.create_for_resource(
-            package_data1,
-            codebase_resource,
-        )
+        codebase_resource.create_and_add_package(package_data1)
 
         queryset = project1.discoveredpackages.all()
         fieldnames = ["purl", "name", "version"]
@@ -128,10 +125,7 @@ class ScanPipePipesTest(TestCase):
             project=project1,
             path="filename.ext",
         )
-        DiscoveredPackage.create_for_resource(
-            package_data1,
-            codebase_resource,
-        )
+        codebase_resource.create_and_add_package(package_data1)
 
         queryset = project1.discoveredpackages.all()
         fieldnames = ["purl", "name", "version"]
@@ -185,7 +179,7 @@ class ScanPipePipesTest(TestCase):
             project=project1,
             path="filename.ext",
         )
-        DiscoveredPackage.create_for_resource(package_data1, codebase_resource)
+        codebase_resource.create_and_add_package(package_data1)
 
         output_file = output.to_json(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
@@ -206,7 +200,7 @@ class ScanPipePipesTest(TestCase):
             project=project1,
             path="filename.ext",
         )
-        DiscoveredPackage.create_for_resource(package_data1, codebase_resource)
+        codebase_resource.create_and_add_package(package_data1)
 
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
