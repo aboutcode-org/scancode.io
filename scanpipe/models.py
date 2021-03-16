@@ -22,10 +22,10 @@
 
 import re
 import shutil
-import traceback
 import uuid
 from contextlib import suppress
 from pathlib import Path
+from traceback import format_tb
 
 from django.apps import apps
 from django.core import checks
@@ -432,12 +432,16 @@ class Project(UUIDPKModel, models.Model):
         Create a ProjectError record from the provided `error` Exception for this
         project.
         """
+        traceback = ""
+        if hasattr(error, "__traceback__"):
+            traceback = "".join(format_tb(error.__traceback__))
+
         return ProjectError.objects.create(
             project=self,
             model=model,
             details=details or {},
             message=str(error),
-            traceback="".join(traceback.format_tb(error.__traceback__)),
+            traceback=traceback,
         )
 
     def get_absolute_url(self):
@@ -946,11 +950,21 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
     @classmethod
     def create_from_data(cls, project, package_data):
         """
-        Create and return a DiscoveredPackage for `project` using the
-        `package_data` mapping.
-        # TODO: we should ensure these entries are UNIQUE
-        # tomd: Create a ProjectError if not unique?
+        Create and return a DiscoveredPackage for `project` from the `package_data`.
+        If one of the required fields value is not available, a ProjectError is create
+        in place of the DiscoveredPackage instance.
         """
+        required_fields = ["type", "name", "version"]
+        required_values = [package_data.get(field) for field in required_fields]
+
+        if not all(required_values):
+            message = (
+                f"One or more of the required fields have no value: "
+                f"{', '.join(required_fields)}"
+            )
+            project.add_error(error=message, model=cls.__name__, details=package_data)
+            return
+
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
             package_data["qualifiers"] = normalize_qualifiers(qualifiers, encode=True)

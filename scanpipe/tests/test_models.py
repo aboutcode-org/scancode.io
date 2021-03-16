@@ -645,6 +645,14 @@ class ScanPipeModelsTest(TestCase):
             "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
         )
 
+        package_count = DiscoveredPackage.objects.count()
+        missing_required_field = dict(package_data1)
+        missing_required_field["name"] = ""
+        self.assertIsNone(
+            DiscoveredPackage.create_from_data(self.project1, missing_required_field)
+        )
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
