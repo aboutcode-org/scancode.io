@@ -39,6 +39,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import mocked_now
@@ -69,15 +70,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual({}, project1_from_db.extra_data)
 
     def test_scanpipe_project_model_work_directories(self):
-        expected_work_directory = (
-            f"projects/{self.project1.name}-{self.project1.short_uuid}"
-        )
+        expected_work_directory = f"projects/analysis-{self.project1.short_uuid}"
         self.assertTrue(self.project1.work_directory.endswith(expected_work_directory))
         self.assertTrue(self.project1.work_path.exists())
         self.assertTrue(self.project1.input_path.exists())
         self.assertTrue(self.project1.output_path.exists())
         self.assertTrue(self.project1.codebase_path.exists())
         self.assertTrue(self.project1.tmp_path.exists())
+
+    def test_scanpipe_get_project_work_directory(self):
+        project = Project.objects.create(name="Name with spaces and @£$éæ")
+        expected = f"/projects/name-with-spaces-and-e-{project.short_uuid}"
+        self.assertTrue(get_project_work_directory(project).endswith(expected))
+        self.assertTrue(project.work_directory.endswith(expected))
 
     def test_scanpipe_project_model_clear_tmp_directory(self):
         new_file_path = self.project1.tmp_path / "file.ext"

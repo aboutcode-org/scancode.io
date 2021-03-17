@@ -37,6 +37,7 @@ from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
@@ -162,8 +163,12 @@ class AbstractTaskFieldsModel(models.Model):
 def get_project_work_directory(project):
     """
     Return the work directory location for the provided `project`.
+    The `project` name is "slugified" to generate a nicer directory path, without any
+    whitespace or special characters.
+    A short version of the `project` uuid is added as suffix to ensure uniqueness of
+    the work directory location.
     """
-    return f"{WORKSPACE_LOCATION}/projects/{project.name}-{project.short_uuid}"
+    return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
 
 
 class Project(UUIDPKModel, models.Model):
