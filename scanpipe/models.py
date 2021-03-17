@@ -865,6 +865,10 @@ class CodebaseResource(
         return str(self.location_path)
 
     @property
+    def filename(self):
+        return f"{self.name}{self.extension}"
+
+    @property
     def is_file(self):
         return self.type == self.Type.FILE
 
@@ -895,6 +899,9 @@ class CodebaseResource(
         exactly_one_sub_directory = "[^/]+$"
         children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
         return self.descendants().filter(path__regex=children_regex)
+
+    def get_absolute_url(self):
+        return reverse("resource_detail", args=[self.project_id, self.pk])
 
     @property
     def file_content(self):

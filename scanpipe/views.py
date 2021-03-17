@@ -314,3 +314,18 @@ class ProjectErrorListView(ProjectRelatedViewMixin, generic.ListView):
     model = ProjectError
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
+
+
+class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
+    model = CodebaseResource
+    template_name = "scanpipe/resource_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            context["file_content"] = self.object.file_content
+        except OSError:
+            raise Http404("File not found.")
+
+        return context

@@ -1,0 +1,43 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - {{ object.filename }}{% endblock %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    <section class="mx-5 mb-3">
+      {% include 'scanpipe/includes/breadcrumb.html' with current="Codebase Resources" %}
+    </section>
+
+    <section class="mx-5">
+      <div class="message-header">
+        <p>
+          {{ object.filename }} | {{ object.size|filesizeformat }}<br>
+          <span style="font-size: 10px;">{{ object.path }}</span>
+        </p>
+      </div>
+      <div id="editor" style="min-height:700px; border: lightgrey 1px solid;">{{ file_content }}</div>
+    </section>
+
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
+  <script>
+    let editor = ace.edit("editor", {
+        theme: "ace/theme/chrome",
+        mode: "ace/mode/text",
+        autoScrollEditorIntoView: true,
+        wrap: true,
+        readOnly: true,
+        printMarginColumn: false,
+        fontSize: 14,
+        foldStyle: "manual",
+        fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
+    });
+  </script>
+{% endblock %}
