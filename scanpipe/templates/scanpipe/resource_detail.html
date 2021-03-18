@@ -12,6 +12,19 @@
       {% include 'scanpipe/includes/breadcrumb.html' with current="Codebase Resources" %}
     </section>
 
+    <div class="tabs is-toggle mx-5 mb-3 mt-4">
+      <ul>
+        {% for key, value in detected_values.items %}
+          <li>
+            <a data-type="{{ key }}">
+              {{ key|title }}
+              <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
     <section class="mx-5">
       <div class="message-header">
         <p>
@@ -19,7 +32,7 @@
           <span style="font-size: 10px;">{{ object.path }}</span>
         </p>
       </div>
-      <div id="editor" style="min-height:700px; border: lightgrey 1px solid;">{{ file_content }}</div>
+      <div id="editor" style="min-height:730px; border: lightgrey 1px solid;">{{ file_content }}</div>
     </section>
 
   </div>
@@ -27,6 +40,7 @@
 
 {% block scripts %}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
+  {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {
         theme: "ace/theme/chrome",
@@ -34,10 +48,67 @@
         autoScrollEditorIntoView: true,
         wrap: true,
         readOnly: true,
-        printMarginColumn: false,
-        fontSize: 14,
+        showPrintMargin: false,
+        fontSize: 15,
         foldStyle: "manual",
         fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
     });
+
+    function getAll(selector) {
+      return Array.prototype.slice.call(document.querySelectorAll(selector), 0);
+    }
+
+    function removeAllMarkers() {
+      let session = editor.getSession();
+      let markers = session.getMarkers();
+        for (const [key, value] of Object.entries(markers)) {
+          session.removeMarker(value.id);
+        }
+    }
+
+    // Range(startRow, startColumn, endRow, endColumn);
+    const Range = require("ace/range").Range
+
+    function setDetectedValues(detected_data) {
+      let annotations = [];
+      removeAllMarkers();
+
+      detected_data.forEach(function ($el) {
+        let range = new Range($el.start_line, 0, $el.end_line, 0);
+        editor.session.addMarker(range, 'ace-marker', 'line');
+        annotations.push({
+          row: $el.start_line,
+          column: 0,
+          text: $el.text,
+          type: $el.type,
+        });
+      });
+
+      editor.getSession().setAnnotations(annotations);
+    }
+
+    const $selectionButtons = getAll('.tabs a');
+
+    let detected_values = JSON.parse(document.querySelector("#detected_values").textContent);
+
+    if ($selectionButtons.length > 0) {
+      $selectionButtons.forEach(function ($el) {
+        $el.addEventListener('click', function () {
+          let active_li = document.querySelector("li.is-active");
+          if (active_li) active_li.classList.remove("is-active");
+          $el.parentElement.classList.add("is-active");
+
+          let type = $el.getAttribute("data-type");
+          let detected_data = detected_values[type];
+          if (detected_data) {
+            setDetectedValues(detected_data);
+          }
+          else {
+            removeAllMarkers();
+            editor.getSession().setAnnotations([]);
+          }
+        });
+      });
+    }
   </script>
 {% endblock %}

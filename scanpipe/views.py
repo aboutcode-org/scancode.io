@@ -320,6 +320,17 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
     model = CodebaseResource
     template_name = "scanpipe/resource_detail.html"
 
+    def get_annotations(self, field_name, value_key="value", end_line_offset=1):
+        return [
+            {
+                "start_line": entry["start_line"] - 1,
+                "end_line": entry["end_line"] - end_line_offset,
+                "text": entry[value_key],
+                "type": "info",
+            }
+            for entry in getattr(self.object, field_name)
+        ]
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -327,5 +338,31 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
             context["file_content"] = self.object.file_content
         except OSError:
             raise Http404("File not found.")
+
+        license_annotations = [
+            {
+                "start_line": entry["start_line"] - 1,
+                "end_line": entry["end_line"],
+                "text": (
+                    f"{entry['key']}\n"
+                    f"{entry['name']}\n"
+                    f"Category: {entry['category']}\n"
+                    f"Score: {entry['score']}"
+                ),
+                "type": "info",
+            }
+            for entry in self.object.licenses
+        ]
+
+        context["detected_values"] = {
+            "licenses": license_annotations,
+            "copyrights": self.get_annotations("copyrights"),
+            "holders": self.get_annotations("holders"),
+            "authors": self.get_annotations("authors", end_line_offset=0),
+            "emails": self.get_annotations(
+                "emails", value_key="email", end_line_offset=0
+            ),
+            "urls": self.get_annotations("urls", value_key="url", end_line_offset=0),
+        }
 
         return context
