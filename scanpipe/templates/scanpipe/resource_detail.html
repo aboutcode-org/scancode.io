@@ -41,11 +41,10 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.4.12.min.js' %}" crossorigin="anonymous"></script>
   {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {
-      theme: "ace/theme/chrome",
       mode: "ace/mode/text",
       autoScrollEditorIntoView: true,
       wrap: true,
