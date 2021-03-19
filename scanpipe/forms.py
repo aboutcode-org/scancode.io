@@ -114,6 +114,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         super().__init__(*args, **kwargs)
         name_field = self.fields["name"]
         name_field.widget.attrs["class"] = "input"
+        name_field.widget.attrs["autofocus"] = True
         name_field.help_text = "The unique name of your project."
 
     def save(self, *args, **kwargs):

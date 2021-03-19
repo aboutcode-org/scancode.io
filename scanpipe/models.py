@@ -22,10 +22,10 @@
 
 import re
 import shutil
-import traceback
 import uuid
 from contextlib import suppress
 from pathlib import Path
+from traceback import format_tb
 
 from django.apps import apps
 from django.core import checks
@@ -37,6 +37,7 @@ from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
@@ -162,8 +163,12 @@ class AbstractTaskFieldsModel(models.Model):
 def get_project_work_directory(project):
     """
     Return the work directory location for the provided `project`.
+    The `project` name is "slugified" to generate a nicer directory path, without any
+    whitespace or special characters.
+    A short version of the `project` uuid is added as suffix to ensure uniqueness of
+    the work directory location.
     """
-    return f"{WORKSPACE_LOCATION}/projects/{project.name}-{project.short_uuid}"
+    return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
 
 
 class Project(UUIDPKModel, models.Model):
@@ -432,12 +437,16 @@ class Project(UUIDPKModel, models.Model):
         Create a ProjectError record from the provided `error` Exception for this
         project.
         """
+        traceback = ""
+        if hasattr(error, "__traceback__"):
+            traceback = "".join(format_tb(error.__traceback__))
+
         return ProjectError.objects.create(
             project=self,
             model=model,
             details=details or {},
             message=str(error),
-            traceback="".join(traceback.format_tb(error.__traceback__)),
+            traceback=traceback,
         )
 
     def get_absolute_url(self):
@@ -914,6 +923,16 @@ class CodebaseResource(
         numbered_lines = numbered_text_lines(self.location)
         return "".join(l for _, l in numbered_lines)
 
+    def create_and_add_package(self, package_data):
+        """
+        Create a DiscoveredPackage instance using the `package_data` and assign
+        it to this CodebaseResource instance.
+        """
+        created_package = DiscoveredPackage.create_from_data(self.project, package_data)
+        if created_package:
+            self.discovered_packages.add(created_package)
+            return created_package
+
     @property
     def for_packages(self):
         return [str(package) for package in self.discovered_packages.all()]
@@ -943,11 +962,21 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
     @classmethod
     def create_from_data(cls, project, package_data):
         """
-        Create and return a DiscoveredPackage for `project` using the
-        `package_data` mapping.
-        # TODO: we should ensure these entries are UNIQUE
-        # tomd: Create a ProjectError if not unique?
+        Create and return a DiscoveredPackage for `project` from the `package_data`.
+        If one of the required fields value is not available, a ProjectError is create
+        in place of the DiscoveredPackage instance.
         """
+        required_fields = ["type", "name", "version"]
+        required_values = [package_data.get(field) for field in required_fields]
+
+        if not all(required_values):
+            message = (
+                f"One or more of the required fields have no value: "
+                f"{', '.join(required_fields)}"
+            )
+            project.add_error(error=message, model=cls.__name__, details=package_data)
+            return
+
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
             package_data["qualifiers"] = normalize_qualifiers(qualifiers, encode=True)
@@ -959,14 +988,3 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
         }
 
         return cls.objects.create(project=project, **cleaned_package_data)
-
-    @classmethod
-    def create_for_resource(cls, package_data, codebase_resource):
-        """
-        Create a DiscoveredPackage instance using the `package_data` and assign
-        it to the provided `codebase_resource`.
-        """
-        project = codebase_resource.project
-        created_package = cls.create_from_data(project, package_data)
-        codebase_resource.discovered_packages.add(created_package)
-        return created_package

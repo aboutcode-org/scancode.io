@@ -25,7 +25,6 @@ import tempfile
 import uuid
 from contextlib import redirect_stdout
 from datetime import datetime
-from operator import attrgetter
 from pathlib import Path
 from unittest import mock
 
@@ -40,6 +39,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import mocked_now
@@ -70,15 +70,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual({}, project1_from_db.extra_data)
 
     def test_scanpipe_project_model_work_directories(self):
-        expected_work_directory = (
-            f"projects/{self.project1.name}-{self.project1.short_uuid}"
-        )
+        expected_work_directory = f"projects/analysis-{self.project1.short_uuid}"
         self.assertTrue(self.project1.work_directory.endswith(expected_work_directory))
         self.assertTrue(self.project1.work_path.exists())
         self.assertTrue(self.project1.input_path.exists())
         self.assertTrue(self.project1.output_path.exists())
         self.assertTrue(self.project1.codebase_path.exists())
         self.assertTrue(self.project1.tmp_path.exists())
+
+    def test_scanpipe_get_project_work_directory(self):
+        project = Project.objects.create(name="Name with spaces and @£$éæ")
+        expected = f"/projects/name-with-spaces-and-e-{project.short_uuid}"
+        self.assertTrue(get_project_work_directory(project).endswith(expected))
+        self.assertTrue(project.work_directory.endswith(expected))
 
     def test_scanpipe_project_model_clear_tmp_directory(self):
         new_file_path = self.project1.tmp_path / "file.ext"
@@ -575,7 +579,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, CodebaseResource.objects.in_package().count())
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
-        DiscoveredPackage.create_for_resource(package_data1, file)
+        file.create_and_add_package(package_data1)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
@@ -621,6 +625,16 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, [resource.path for resource in children])
 
+    def test_scanpipe_codebase_resource_create_and_add_package(self):
+        codebase_resource = CodebaseResource.objects.create(
+            project=self.project1, path="filename.ext"
+        )
+        package = codebase_resource.create_and_add_package(package_data1)
+        self.assertEqual(self.project1, package.project)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual(1, codebase_resource.discovered_packages.count())
+        self.assertEqual(package, codebase_resource.discovered_packages.get())
+
     def test_scanpipe_discovered_package_model_create_from_data(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertEqual(self.project1, package.project)
@@ -636,17 +650,13 @@ class ScanPipeModelsTest(TestCase):
             "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
         )
 
-    def test_scanpipe_discovered_package_model_create_for_resource(self):
-        codebase_resource = CodebaseResource.objects.create(
-            project=self.project1, path="filename.ext"
+        package_count = DiscoveredPackage.objects.count()
+        missing_required_field = dict(package_data1)
+        missing_required_field["name"] = ""
+        self.assertIsNone(
+            DiscoveredPackage.create_from_data(self.project1, missing_required_field)
         )
-        package = DiscoveredPackage.create_for_resource(
-            package_data1, codebase_resource
-        )
-        self.assertEqual(self.project1, package.project)
-        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
-        self.assertEqual(1, codebase_resource.discovered_packages.count())
-        self.assertEqual(package, codebase_resource.discovered_packages.get())
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

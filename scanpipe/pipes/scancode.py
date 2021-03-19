@@ -38,7 +38,6 @@ from scancode import api as scancode_api
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
 
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
@@ -177,8 +176,8 @@ def scan_package_and_save_results(codebase_resource):
     packages = package_info.get("packages", [])
 
     if packages:
-        for package in packages:
-            DiscoveredPackage.create_for_resource(package, codebase_resource)
+        for package_data in packages:
+            codebase_resource.create_and_add_package(package_data)
         codebase_resource.status = "application-package"
         codebase_resource.save()
 
