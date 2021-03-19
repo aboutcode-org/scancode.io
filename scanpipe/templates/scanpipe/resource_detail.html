@@ -12,11 +12,14 @@
       {% include 'scanpipe/includes/breadcrumb.html' with current="Codebase Resources" %}
     </section>
 
-    <div class="tabs is-toggle mx-5 mb-3 mt-4">
+    <div class="tabs is-toggle is-fullwidth mx-5 mb-3 mt-4">
       <ul>
+        <li class="has-text-weight-semibold is-radiusless">
+          Detected values:
+        </li>
         {% for key, value in detected_values.items %}
           <li>
-            <a data-type="{{ key }}">
+            <a data-type="{{ key }}" {% if forloop.first %}class="border-left-radius"{% endif %}>
               {{ key|title }}
               <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
             </a>
@@ -34,7 +37,6 @@
       </div>
       <div id="editor" style="min-height:730px; border: lightgrey 1px solid;">{{ file_content }}</div>
     </section>
-
   </div>
 {% endblock %}
 
@@ -43,15 +45,15 @@
   {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {
-        theme: "ace/theme/chrome",
-        mode: "ace/mode/text",
-        autoScrollEditorIntoView: true,
-        wrap: true,
-        readOnly: true,
-        showPrintMargin: false,
-        fontSize: 15,
-        foldStyle: "manual",
-        fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
+      theme: "ace/theme/chrome",
+      mode: "ace/mode/text",
+      autoScrollEditorIntoView: true,
+      wrap: true,
+      readOnly: true,
+      showPrintMargin: false,
+      fontSize: 15,
+      foldStyle: "manual",
+      fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
     });
 
     function getAll(selector) {
@@ -66,7 +68,7 @@
         }
     }
 
-    // Range(startRow, startColumn, endRow, endColumn);
+    // Range(startRow, startColumn, endRow, endColumn)
     const Range = require("ace/range").Range
 
     function setDetectedValues(detected_data) {
@@ -74,10 +76,17 @@
       removeAllMarkers();
 
       detected_data.forEach(function ($el) {
-        let range = new Range($el.start_line, 0, $el.end_line, 0);
-        editor.session.addMarker(range, 'ace-marker', 'line');
+        // Indexes a 0-based in ace.js
+        let start_row = $el.start_line - 1;
+        let start_column = 0;
+        let end_row = $el.end_line - 1;
+        let end_column = 10000;
+
+        let range = new Range(start_row, start_column, end_row, end_column);
+        editor.session.addMarker(range, 'ace-marker', 'line');  // "fullLine"
+
         annotations.push({
-          row: $el.start_line,
+          row: start_row,
           column: 0,
           text: $el.text,
           type: $el.type,

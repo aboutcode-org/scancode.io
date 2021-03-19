@@ -320,12 +320,25 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
     model = CodebaseResource
     template_name = "scanpipe/resource_detail.html"
 
-    def get_annotations(self, field_name, value_key="value", end_line_offset=1):
+    @staticmethod
+    def get_annotation_text(entry, field_name, value_key):
+        """
+        Workaround to get the license_expression until the data structure is updated
+        on the ScanCode-toolkit side.
+        See also https://github.com/nexB/scancode-results-analyzer/blob/
+        6c132bc20153d5c96929cf378bd0f06d83db9005/src/results_analyze/
+        analyzer_plugin.py#L131-L198
+        """
+        if field_name == "licenses":
+            return entry["matched_rule"]["license_expression"]
+        return entry[value_key]
+
+    def get_annotations(self, field_name, value_key="value"):
         return [
             {
-                "start_line": entry["start_line"] - 1,
-                "end_line": entry["end_line"] - end_line_offset,
-                "text": entry[value_key],
+                "start_line": entry["start_line"],
+                "end_line": entry["end_line"],
+                "text": self.get_annotation_text(entry, field_name, value_key),
                 "type": "info",
             }
             for entry in getattr(self.object, field_name)
@@ -339,30 +352,13 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         except OSError:
             raise Http404("File not found.")
 
-        license_annotations = [
-            {
-                "start_line": entry["start_line"] - 1,
-                "end_line": entry["end_line"],
-                "text": (
-                    f"{entry['key']}\n"
-                    f"{entry['name']}\n"
-                    f"Category: {entry['category']}\n"
-                    f"Score: {entry['score']}"
-                ),
-                "type": "info",
-            }
-            for entry in self.object.licenses
-        ]
-
         context["detected_values"] = {
-            "licenses": license_annotations,
+            "licenses": self.get_annotations("licenses"),
             "copyrights": self.get_annotations("copyrights"),
             "holders": self.get_annotations("holders"),
-            "authors": self.get_annotations("authors", end_line_offset=0),
-            "emails": self.get_annotations(
-                "emails", value_key="email", end_line_offset=0
-            ),
-            "urls": self.get_annotations("urls", value_key="url", end_line_offset=0),
+            "authors": self.get_annotations("authors"),
+            "emails": self.get_annotations("emails", value_key="email"),
+            "urls": self.get_annotations("urls", value_key="url"),
         }
 
         return context
