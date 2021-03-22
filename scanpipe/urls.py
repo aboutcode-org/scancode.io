@@ -26,6 +26,11 @@ from scanpipe import views
 
 urlpatterns = [
     path(
+        "project/<uuid:uuid>/resources/<int:pk>",
+        views.CodebaseResourceDetailsView.as_view(),
+        name="resource_detail",
+    ),
+    path(
         "project/<uuid:uuid>/resources/",
         views.CodebaseResourceListView.as_view(),
         name="project_resources",

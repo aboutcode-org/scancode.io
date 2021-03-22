@@ -314,3 +314,50 @@ class ProjectErrorListView(ProjectRelatedViewMixin, generic.ListView):
     model = ProjectError
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
+
+
+class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
+    model = CodebaseResource
+    template_name = "scanpipe/resource_detail.html"
+
+    @staticmethod
+    def get_annotation_text(entry, field_name, value_key):
+        """
+        Workaround to get the license_expression until the data structure is updated
+        on the ScanCode-toolkit side.
+        https://github.com/nexB/scancode-results-analyzer/blob/6c132bc20153d5c96929c
+        f378bd0f06d83db9005/src/results_analyze/analyzer_plugin.py#L131-L198
+        """
+        if field_name == "licenses":
+            return entry["matched_rule"]["license_expression"]
+        return entry[value_key]
+
+    def get_annotations(self, field_name, value_key="value"):
+        return [
+            {
+                "start_line": entry["start_line"],
+                "end_line": entry["end_line"],
+                "text": self.get_annotation_text(entry, field_name, value_key),
+                "type": "info",
+            }
+            for entry in getattr(self.object, field_name)
+        ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            context["file_content"] = self.object.file_content
+        except OSError:
+            raise Http404("File not found.")
+
+        context["detected_values"] = {
+            "licenses": self.get_annotations("licenses"),
+            "copyrights": self.get_annotations("copyrights"),
+            "holders": self.get_annotations("holders"),
+            "authors": self.get_annotations("authors"),
+            "emails": self.get_annotations("emails", value_key="email"),
+            "urls": self.get_annotations("urls", value_key="url"),
+        }
+
+        return context
