@@ -11,6 +11,3 @@ sphinx_rtd_theme==0.5.1
 
 # Release
 bump2version==1.0.1
-
-# Dependencies lock file
-pip_tools==5.5.0
