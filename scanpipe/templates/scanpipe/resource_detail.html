@@ -9,7 +9,13 @@
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
     <section class="mx-5 mb-3">
-      {% include 'scanpipe/includes/breadcrumb.html' with current="Codebase Resources" %}
+      <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
+        <ul>
+            <li><a href="{% url 'project_list' %}">Projects</a></li>
+            <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+            <li><a href="{% url 'project_resources' project.uuid %}">Codebase Resources</a></li>
+        </ul>
+      </nav>
     </section>
 
     <div class="tabs is-toggle is-fullwidth mx-5 mb-3 mt-4">
@@ -82,7 +88,7 @@
         let end_column = 10000;
 
         let range = new Range(start_row, start_column, end_row, end_column);
-        editor.session.addMarker(range, 'ace-marker', 'line');  // "fullLine"
+        editor.session.addMarker(range, 'ace-marker', 'line');  // "fullLine" also available
 
         annotations.push({
           row: start_row,
