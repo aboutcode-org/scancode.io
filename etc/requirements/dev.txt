@@ -1,12 +1,12 @@
 -r base.txt
 
 # Code validation
-pycodestyle==2.6.0
+pycodestyle==2.7.0
 black==20.8b1
-isort==5.7.0
+isort==5.8.0
 
 # Documentation
-Sphinx==3.5.1
+Sphinx==3.5.3
 sphinx_rtd_theme==0.5.1
 
 # Release
