@@ -35,6 +35,8 @@ from scancodeio import __version__ as scancodeio_version
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
+scanpipe_app_config = apps.get_app_config("scanpipe")
+
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
     """
