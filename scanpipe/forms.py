@@ -70,6 +70,13 @@ class InputsBaseForm(forms.Form):
 
         return input_urls
 
+    def handle_name(self):
+        """
+        Remove extra spaces in between the project name.
+        """
+        name = self.cleaned_data.get("name")
+        self.cleaned_data["name"] = " ".join(name.split())
+
     def handle_inputs(self, project):
         input_files = self.files.getlist("input_files")
         downloads = self.cleaned_data.get("downloads")
@@ -116,6 +123,10 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         name_field.widget.attrs["class"] = "input"
         name_field.widget.attrs["autofocus"] = True
         name_field.help_text = "The unique name of your project."
+
+    def clean(self):
+        super().clean()
+        self.handle_name()
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
