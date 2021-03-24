@@ -24,5 +24,21 @@ of parallel processes to 4::
 POLICIES_FILE
 -------------
 
-Location of the policies file. Default: ``.policies.yml``.
+Location of the policies file. Default: ``policies.yml``.
 A valid policies file is required to enable the compliance related features.
+
+.. code-block:: yaml
+
+    license_policies:
+    -   license_key: mit
+        label: Approved License
+        color_code: '#008000'
+        compliance_alert: ''
+    -   license_key: mpl-2.0
+        label: Restricted License
+        color_code: '#ffcc33'
+        compliance_alert: warning
+    -   license_key: gpl-3.0
+        label: Prohibited License
+        color_code: '#c83025'
+        compliance_alert: error

@@ -87,3 +87,45 @@ package_data1 = {
     "repository_download_url": None,
     "api_data_url": None,
 }
+
+license_policies = [
+    {
+        "license_key": "mit",
+        "label": "Approved License",
+        "color_code": "#008000",
+        "compliance_alert": "",
+    },
+    {
+        "license_key": "mpl-2.0",
+        "label": "Restricted License",
+        "color_code": "#ffcc33",
+        "compliance_alert": "warning",
+    },
+    {
+        "license_key": "gpl-3.0",
+        "label": "Prohibited License",
+        "color_code": "#c83025",
+        "compliance_alert": "error",
+    },
+]
+
+license_policies_index = {
+    "gpl-3.0": {
+        "color_code": "#c83025",
+        "compliance_alert": "error",
+        "label": "Prohibited License",
+        "license_key": "gpl-3.0",
+    },
+    "mit": {
+        "color_code": "#008000",
+        "compliance_alert": "",
+        "label": "Approved License",
+        "license_key": "mit",
+    },
+    "mpl-2.0": {
+        "color_code": "#ffcc33",
+        "compliance_alert": "warning",
+        "label": "Restricted License",
+        "license_key": "mpl-2.0",
+    },
+}

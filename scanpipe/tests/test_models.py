@@ -474,6 +474,46 @@ class ScanPipeModelsTest(TestCase):
         resource.discovered_packages.add(package)
         self.assertEqual([str(package.uuid)], resource.for_packages)
 
+    def test_scanpipe_codebase_resource_model_compliance_alert(self):
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        self.assertEqual("", resource.compliance_alert)
+
+        resource.licenses = [
+            {
+                "key": "bsd-new",
+                "policy": {
+                    "label": "Approved License",
+                    "compliance_alert": "",
+                },
+            }
+        ]
+        resource.save()
+        self.assertEqual("", resource.compliance_alert)
+
+        resource.licenses += [
+            {
+                "key": "mpl-2.0",
+                "policy": {
+                    "label": "Restricted License",
+                    "compliance_alert": "warning",
+                },
+            }
+        ]
+        resource.save()
+        self.assertEqual("warning", resource.compliance_alert)
+
+        resource.licenses += [
+            {
+                "key": "gpl-3.0",
+                "policy": {
+                    "label": "Prohibited License",
+                    "compliance_alert": "error",
+                },
+            }
+        ]
+        resource.save()
+        self.assertEqual("error", resource.compliance_alert)
+
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
             "copyrights",

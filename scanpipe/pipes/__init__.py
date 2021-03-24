@@ -214,11 +214,11 @@ def run_command(cmd):
     return exitcode, output
 
 
-def inject_policy_data(licenses, policies):
+def inject_policy_data(licenses, policies_index):
     """
-    Inject license policies from the `policies` index on the provided licenses list.
+    Inject license policies from the `policies_index` on the provided licenses list.
     """
     for license_data in licenses:
         key = license_data.get("key")
-        license_data["policy"] = policies.get(key, None)
+        license_data["policy"] = policies_index.get(key, None)
     return licenses

@@ -35,8 +35,6 @@ from scancodeio import __version__ as scancodeio_version
 
 scanpipe_app_config = apps.get_app_config("scanpipe")
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
-
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
     """
@@ -242,7 +240,7 @@ def to_xlsx(project):
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = ["licenses", "extra_data", "declared_license"]
 
-    if not scanpipe_app_config.license_policies:
+    if not scanpipe_app_config.license_policies_index:
         exclude_fields.append("compliance_alert")
 
     querysets = [

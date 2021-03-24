@@ -47,10 +47,11 @@ class ScanPipeConfig(AppConfig):
 
         # Mapping of registered pipeline names to pipeline classes.
         self._pipelines = {}
-        self.license_policies = {}
+        self.license_policies_index = {}
 
     def ready(self):
         self.load_pipelines()
+        self.set_policies()
 
     def load_pipelines(self):
         """
@@ -100,15 +101,17 @@ class ScanPipeConfig(AppConfig):
 
         If a policies file is available but not under the proper format, or not
         including the proper content, we want to let an exception to be raised
-        during the app loading to warn the admin about the issue.
+        during the app loading to warn the sysadmin about the issue.
         """
-        policies_file = Path(settings.POLICIES_FILE)
-        if policies_file.exists():
-            policies = saneyaml.load(policies_file.read_text())
-            license_policies = policies.get("license_policies", [])
-            if license_policies:
-                self.license_policies = self.get_policies_index(
-                    license_policies, key="license_key"
+        policies_file_location = getattr(settings, "POLICIES_FILE", None)
+        if policies_file_location:
+            policies_file = Path(policies_file_location)
+            if policies_file.exists():
+                policies = saneyaml.load(policies_file.read_text())
+                license_policies = policies.get("license_policies", [])
+                self.license_policies_index = self.get_policies_index(
+                    policies_list=license_policies,
+                    key="license_key",
                 )
 
     @staticmethod

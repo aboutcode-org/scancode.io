@@ -49,7 +49,7 @@ SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])
 # If the SCANCODE_PROCESSES argument is not set, defaults to the number of CPUs minus 1.
 SCANCODE_PROCESSES = env.int("SCANCODE_PROCESSES", default=None)
 
-POLICIES_FILE = env.str("POLICIES_FILE", default=".policies.yml")
+POLICIES_FILE = env.str("POLICIES_FILE", default="policies.yml")
 
 # Application definition
 

@@ -2,15 +2,12 @@ license_policies:
 -   license_key: mit
     label: Approved License
     color_code: '#008000'
-    icon: far fa-check-circle
     compliance_alert: ''
--   license_key: gpl-3.0
-    label: Prohibited License
-    color_code: '#c83025'
-    icon: fas fa-ban
-    compliance_alert: error
 -   license_key: mpl-2.0
     label: Restricted License
     color_code: '#ffcc33'
-    icon: fas fa-exclamation-triangle
     compliance_alert: warning
+-   license_key: gpl-3.0
+    label: Prohibited License
+    color_code: '#c83025'
+    compliance_alert: error

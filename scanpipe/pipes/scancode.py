@@ -275,7 +275,7 @@ def create_codebase_resources(project, scanned_codebase):
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
         resource_data["type"] = CodebaseResource.Type[resource_type]
 
-        policies = scanpipe_app_config.license_policies
+        policies = scanpipe_app_config.license_policies_index
         if policies:
             licenses = resource_data.get("licenses")
             if licenses:
