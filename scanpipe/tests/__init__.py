@@ -90,7 +90,7 @@ package_data1 = {
 
 license_policies = [
     {
-        "license_key": "mit",
+        "license_key": "apache-2.0",
         "label": "Approved License",
         "color_code": "#008000",
         "compliance_alert": "",
@@ -116,11 +116,11 @@ license_policies_index = {
         "label": "Prohibited License",
         "license_key": "gpl-3.0",
     },
-    "mit": {
+    "apache-2.0": {
         "color_code": "#008000",
         "compliance_alert": "",
         "label": "Approved License",
-        "license_key": "mit",
+        "license_key": "apache-2.0",
     },
     "mpl-2.0": {
         "color_code": "#ffcc33",

@@ -25,6 +25,7 @@ import json
 from pathlib import Path
 from unittest import mock
 
+from django.apps import apps
 from django.core.management import call_command
 from django.test import TestCase
 from django.test import TransactionTestCase
@@ -36,7 +37,7 @@ from scanpipe.pipes import codebase
 from scanpipe.pipes import docker
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
-from scanpipe.pipes import inject_policy_data
+from scanpipe.pipes import inject_policy
 from scanpipe.pipes import make_codebase_resource
 from scanpipe.pipes import output
 from scanpipe.pipes import rootfs
@@ -44,8 +45,11 @@ from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
+
+scanpipe_app_config = apps.get_app_config("scanpipe")
 
 
 class ScanPipePipesTest(TestCase):
@@ -312,6 +316,30 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
 
+    def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
+        project = Project.objects.create(name="asgiref")
+        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        virtual_codebase = scancode.get_virtual_codebase(project, input_location)
+
+        scanpipe_app_config.license_policies_index = license_policies_index
+        scancode.create_codebase_resources(project, virtual_codebase)
+        resources = project.codebaseresources
+
+        resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")
+        self.assertEqual("bsd-new", resource1.licenses[0]["key"])
+        self.assertNotIn("bsd-new", license_policies_index)
+        self.assertIsNone(resource1.licenses[0]["policy"])
+
+        resource2 = resources.get(path__endswith="asgiref/timeout.py")
+        self.assertEqual("apache-2.0", resource2.licenses[0]["key"])
+        expected = {
+            "label": "Approved License",
+            "color_code": "#008000",
+            "license_key": "apache-2.0",
+            "compliance_alert": "",
+        }
+        self.assertEqual(expected, resource2.licenses[0]["policy"])
+
     def test_scanpipe_pipes_scancode_run_extractcode(self):
         project = Project.objects.create(name="name with space")
         exitcode, output = scancode.run_extractcode(str(project.codebase_path))
@@ -469,25 +497,23 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("", resource1.status)
         self.assertEqual("ignored-not-interesting", resource2.status)
 
-    def test_scanpipe_pipes_inject_policy_data(self):
-        from scanpipe.tests import license_policies_index
-
+    def test_scanpipe_pipes_inject_policy(self):
         licenses = [
             {"key": "mit"},
             {"key": "apache-2.0"},
             {"key": "gpl-3.0"},
         ]
         expected = [
+            {"key": "mit", "policy": None},
             {
-                "key": "mit",
+                "key": "apache-2.0",
                 "policy": {
                     "color_code": "#008000",
                     "compliance_alert": "",
                     "label": "Approved License",
-                    "license_key": "mit",
+                    "license_key": "apache-2.0",
                 },
             },
-            {"key": "apache-2.0", "policy": None},
             {
                 "key": "gpl-3.0",
                 "policy": {
@@ -498,7 +524,7 @@ class ScanPipePipesTest(TestCase):
                 },
             },
         ]
-        self.assertEqual(expected, inject_policy_data(licenses, license_policies_index))
+        self.assertEqual(expected, inject_policy(licenses, license_policies_index))
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

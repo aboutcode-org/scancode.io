@@ -214,7 +214,7 @@ def run_command(cmd):
     return exitcode, output
 
 
-def inject_policy_data(licenses, policies_index):
+def inject_policy(licenses, policies_index):
     """
     Inject license policies from the `policies_index` on the provided licenses list.
     """

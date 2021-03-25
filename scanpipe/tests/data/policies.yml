@@ -1,5 +1,5 @@
 license_policies:
--   license_key: mit
+-   license_key: apache-2.0
     label: Approved License
     color_code: '#008000'
     compliance_alert: ''
