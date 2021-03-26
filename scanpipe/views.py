@@ -299,6 +299,11 @@ class CodebaseResourceListView(
     paginate_by = 100
     prefetch_related = ["discovered_packages"]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["include_compliance_alert"] = scanpipe_app_config.policies_enabled
+        return context
+
 
 class DiscoveredPackageListView(
     PrefetchRelatedViewMixin, ProjectRelatedViewMixin, FilterView

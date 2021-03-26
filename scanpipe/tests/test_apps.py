@@ -64,3 +64,9 @@ class ScanPipeAppsTest(TestCase):
             self.assertEqual(
                 license_policies_index, scanpipe_app_config.license_policies_index
             )
+
+    def test_scanpipe_apps_policies_enabled(self):
+        scanpipe_app_config.license_policies_index = {}
+        self.assertFalse(scanpipe_app_config.policies_enabled)
+        scanpipe_app_config.license_policies_index = {"key": "value"}
+        self.assertTrue(scanpipe_app_config.policies_enabled)

@@ -240,7 +240,7 @@ def to_xlsx(project):
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = ["licenses", "extra_data", "declared_license"]
 
-    if not scanpipe_app_config.license_policies_index:
+    if not scanpipe_app_config.policies_enabled:
         exclude_fields.append("compliance_alert")
 
     querysets = [

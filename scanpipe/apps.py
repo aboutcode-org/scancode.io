@@ -120,3 +120,10 @@ class ScanPipeConfig(AppConfig):
         Return an inverted index by `key` of the `policies_list`.
         """
         return {policy.get(key): policy for policy in policies_list}
+
+    @property
+    def policies_enabled(self):
+        """
+        Return True if the policies where provided and properly loaded.
+        """
+        return bool(self.license_policies_index)

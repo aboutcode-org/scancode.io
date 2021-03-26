@@ -22,6 +22,9 @@
             <th>Programming language</th>
             <th>Mime type</th>
             <th>License expressions</th>
+            {% if include_compliance_alert %}
+              <th>Compliance alert</th>
+            {% endif %}
             <th>Packages</th>
           </tr>
         </thead>
@@ -37,6 +40,9 @@
               <td>{{ resource.programming_language }}</td>
               <td>{{ resource.mime_type }}</td>
               <td>{{ resource.license_expressions|join:"<br>" }}</td>
+              {% if include_compliance_alert %}
+                <td>{{ resource.compliance_alert }}</td>
+              {% endif %}
               <td>{{ resource.for_packages|join:"<br>" }}</td>
             </tr>
           {% endfor %}
