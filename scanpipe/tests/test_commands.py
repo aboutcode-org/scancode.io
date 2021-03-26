@@ -35,7 +35,7 @@ from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.management.commands.graph import pipeline_graph_dot
 from scanpipe.models import Project
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 def task_success(run):
@@ -51,7 +51,7 @@ def task_failure(run):
 
 class ScanPipeManagementCommandTest(TestCase):
     pipeline_name = "docker"
-    pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
+    pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
 
     def test_scanpipe_management_command_graph(self):
         out = StringIO()

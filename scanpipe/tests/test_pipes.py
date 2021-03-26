@@ -48,7 +48,7 @@ from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipePipesTest(TestCase):
@@ -320,7 +320,7 @@ class ScanPipePipesTest(TestCase):
         input_location = self.data_location / "asgiref-3.3.0_scan.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
 
-        scanpipe_app_config.license_policies_index = license_policies_index
+        scanpipe_app.license_policies_index = license_policies_index
         scancode.create_codebase_resources(project, virtual_codebase)
         resources = project.codebaseresources
 

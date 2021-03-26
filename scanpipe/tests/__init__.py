@@ -29,11 +29,11 @@ from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.raise_exception import RaiseException
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
-scanpipe_app_config.register_pipeline("do_nothing", DoNothing)
-scanpipe_app_config.register_pipeline("profile_step", ProfileStep)
-scanpipe_app_config.register_pipeline("raise_exception", RaiseException)
+scanpipe_app.register_pipeline("do_nothing", DoNothing)
+scanpipe_app.register_pipeline("profile_step", ProfileStep)
+scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
 
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))

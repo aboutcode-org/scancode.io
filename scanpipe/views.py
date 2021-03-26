@@ -22,6 +22,7 @@
 
 from collections import Counter
 
+from django.apps import apps
 from django.contrib import messages
 from django.http import FileResponse
 from django.http import Http404
@@ -33,7 +34,6 @@ from django.views import generic
 import saneyaml
 from django_filters.views import FilterView
 
-from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import PackageFilterSet
@@ -47,6 +47,8 @@ from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipes import codebase
 from scanpipe.pipes import output
+
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class PrefetchRelatedViewMixin:
@@ -79,7 +81,7 @@ class ProjectCreateView(generic.CreateView):
         context = super().get_context_data(**kwargs)
         context["pipelines"] = {
             key: pipeline_class.get_info()
-            for key, pipeline_class in scanpipe_app_config.pipelines.items()
+            for key, pipeline_class in scanpipe_app.pipelines.items()
         }
         return context
 
@@ -301,7 +303,7 @@ class CodebaseResourceListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["include_compliance_alert"] = scanpipe_app_config.policies_enabled
+        context["include_compliance_alert"] = scanpipe_app.policies_enabled
         return context
 
 

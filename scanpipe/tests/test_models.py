@@ -47,7 +47,7 @@ from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeModelsTest(TestCase):
@@ -510,7 +510,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, resource.licenses)
 
     def test_scanpipe_pipes_scancode_codebase_resources_inject_policy_on_save(self):
-        scanpipe_app_config.license_policies_index = license_policies_index
+        scanpipe_app.license_policies_index = license_policies_index
 
         resource = CodebaseResource.objects.create(
             project=self.project1, path="file", licenses=[{"key": "gpl-3.0"}]
@@ -787,7 +787,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(0, project1.runs.count())
 
         pipeline_name = "docker"
-        pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
+        pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
         project1.add_pipeline(pipeline_name)
 
         self.assertEqual(1, project1.runs.count())

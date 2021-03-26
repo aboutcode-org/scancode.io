@@ -41,7 +41,7 @@ from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.views import project_results_json_response
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class PassThroughRenderer(renderers.BaseRenderer):
@@ -88,7 +88,7 @@ class ProjectViewSet(
     def pipelines(self, request, *args, **kwargs):
         pipeline_data = [
             {"name": name, **pipeline_class.get_info()}
-            for name, pipeline_class in scanpipe_app_config.pipelines.items()
+            for name, pipeline_class in scanpipe_app.pipelines.items()
         ]
         return Response(pipeline_data)
 
@@ -148,7 +148,7 @@ class ProjectViewSet(
 
         pipeline = request.data.get("pipeline")
         if pipeline:
-            if pipeline in scanpipe_app_config.pipelines:
+            if pipeline in scanpipe_app.pipelines:
                 execute_now = request.data.get("execute_now")
                 project.add_pipeline(pipeline, execute_now)
                 return Response({"status": "Pipeline added."})
@@ -158,7 +158,7 @@ class ProjectViewSet(
 
         message = {
             "status": "Pipeline required.",
-            "pipelines": list(scanpipe_app_config.pipelines.keys()),
+            "pipelines": list(scanpipe_app.pipelines.keys()),
         }
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 

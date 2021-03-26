@@ -31,7 +31,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes.fetch import fetch_urls
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class InputsBaseForm(forms.Form):
@@ -83,7 +83,7 @@ class InputsBaseForm(forms.Form):
 
 class PipelineBaseForm(forms.Form):
     pipeline = forms.ChoiceField(
-        choices=scanpipe_app_config.get_pipeline_choices(),
+        choices=scanpipe_app.get_pipeline_choices(),
         required=False,
     )
     execute_now = forms.BooleanField(

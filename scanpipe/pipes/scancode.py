@@ -44,7 +44,7 @@ from scanpipe.models import CodebaseResource
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 # The maximum number of processes that can be used to execute the given calls.
 # If None or not given then as many worker processes, minus one, will be created as the
