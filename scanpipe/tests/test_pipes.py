@@ -37,7 +37,6 @@ from scanpipe.pipes import codebase
 from scanpipe.pipes import docker
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
-from scanpipe.pipes import inject_policy
 from scanpipe.pipes import make_codebase_resource
 from scanpipe.pipes import output
 from scanpipe.pipes import rootfs
@@ -496,35 +495,6 @@ class ScanPipePipesTest(TestCase):
         resource2.refresh_from_db()
         self.assertEqual("", resource1.status)
         self.assertEqual("ignored-not-interesting", resource2.status)
-
-    def test_scanpipe_pipes_inject_policy(self):
-        licenses = [
-            {"key": "mit"},
-            {"key": "apache-2.0"},
-            {"key": "gpl-3.0"},
-        ]
-        expected = [
-            {"key": "mit", "policy": None},
-            {
-                "key": "apache-2.0",
-                "policy": {
-                    "color_code": "#008000",
-                    "compliance_alert": "",
-                    "label": "Approved License",
-                    "license_key": "apache-2.0",
-                },
-            },
-            {
-                "key": "gpl-3.0",
-                "policy": {
-                    "color_code": "#c83025",
-                    "compliance_alert": "error",
-                    "label": "Prohibited License",
-                    "license_key": "gpl-3.0",
-                },
-            },
-        ]
-        self.assertEqual(expected, inject_policy(licenses, license_policies_index))
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

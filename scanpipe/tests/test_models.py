@@ -42,6 +42,7 @@ from scanpipe.models import Run
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
@@ -473,6 +474,79 @@ class ScanPipeModelsTest(TestCase):
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
         self.assertEqual([str(package.uuid)], resource.for_packages)
+
+    def test_scanpipe_pipes_codebase_resources_inject_licenses_policy(self):
+        resource = CodebaseResource(
+            licenses=[
+                {"key": "mit"},
+                {"key": "apache-2.0"},
+                {"key": "gpl-3.0"},
+            ]
+        )
+
+        expected = [
+            {"key": "mit", "policy": None},
+            {
+                "key": "apache-2.0",
+                "policy": {
+                    "color_code": "#008000",
+                    "compliance_alert": "",
+                    "label": "Approved License",
+                    "license_key": "apache-2.0",
+                },
+            },
+            {
+                "key": "gpl-3.0",
+                "policy": {
+                    "color_code": "#c83025",
+                    "compliance_alert": "error",
+                    "label": "Prohibited License",
+                    "license_key": "gpl-3.0",
+                },
+            },
+        ]
+
+        resource.inject_licenses_policy(license_policies_index)
+        self.assertEqual(expected, resource.licenses)
+
+    def test_scanpipe_pipes_scancode_codebase_resources_inject_policy_on_save(self):
+        scanpipe_app_config.license_policies_index = license_policies_index
+
+        resource = CodebaseResource.objects.create(
+            project=self.project1, path="file", licenses=[{"key": "gpl-3.0"}]
+        )
+        expected = [
+            {
+                "key": "gpl-3.0",
+                "policy": {
+                    "color_code": "#c83025",
+                    "compliance_alert": "error",
+                    "label": "Prohibited License",
+                    "license_key": "gpl-3.0",
+                },
+            }
+        ]
+        self.assertEqual(expected, resource.licenses)
+
+        resource.licenses = [{"key": "not-in-index"}]
+        resource.save()
+        expected = [{"key": "not-in-index", "policy": None}]
+        self.assertEqual(expected, resource.licenses)
+
+        resource.licenses = [{"key": "apache-2.0"}]
+        resource.save()
+        expected = [
+            {
+                "key": "apache-2.0",
+                "policy": {
+                    "color_code": "#008000",
+                    "compliance_alert": "",
+                    "label": "Approved License",
+                    "license_key": "apache-2.0",
+                },
+            }
+        ]
+        self.assertEqual(expected, resource.licenses)
 
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
