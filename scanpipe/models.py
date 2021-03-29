@@ -854,6 +854,21 @@ class CodebaseResource(
         help_text=_("Descriptive file type for this resource."),
     )
 
+    class Compliance(models.TextChoices):
+        WARNING = "warning", _("Warning")
+        ERROR = "error", _("Error")
+
+    compliance_alert = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=Compliance.choices,
+        editable=False,
+        help_text=_(
+            "Indicates how the detected licenses in a codebase resource complies with "
+            "provided policies."
+        ),
+    )
+
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
@@ -885,6 +900,7 @@ class CodebaseResource(
             loaded_licenses = getattr(self, "loaded_licenses", [])
             if self.licenses != loaded_licenses:
                 self.inject_licenses_policy(scanpipe_app.license_policies_index)
+                self.compliance_alert = self.compute_compliance_alert()
 
         super().save(*args, **kwargs)
 
@@ -922,21 +938,26 @@ class CodebaseResource(
     def is_symlink(self):
         return self.type == self.Type.SYMLINK
 
-    @property
-    def compliance_alert(self):
+    def compute_compliance_alert(self):
         """
         Compute and return the compliance_alert value from the `licenses` policies.
         """
+        if not self.licenses:
+            return ""
+
         alerts = []
         for license_data in self.licenses:
             policy = license_data.get("policy")
             if policy:
                 alerts.append(policy.get("compliance_alert"))
 
-        if "error" in alerts:
-            return "error"
-        elif "warning" in alerts:
-            return "warning"
+        error = self.Compliance.ERROR.value
+        warning = self.Compliance.WARNING.value
+
+        if error in alerts:
+            return error
+        elif warning in alerts:
+            return warning
         return ""
 
     def descendants(self):
