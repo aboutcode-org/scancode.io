@@ -149,6 +149,10 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             files, "licenses", "category"
         )
 
+        file_compliance_alert = []
+        if scanpipe_app.policies_enabled:
+            file_compliance_alert = files.values_list("compliance_alert", flat=True)
+
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
 
@@ -169,6 +173,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "copyrights": self.get_summary(file_copyrights),
                 "file_license_keys": self.get_summary(file_license_keys),
                 "file_license_categories": self.get_summary(file_license_categories),
+                "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
                 "file_filter": file_filter,

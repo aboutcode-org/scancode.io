@@ -157,6 +157,7 @@ class ResourceFilterSet(django_filters.FilterSet):
         fields = [
             "programming_language",
             "mime_type",
+            "compliance_alert",
         ]
 
 
