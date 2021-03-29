@@ -13,7 +13,7 @@
 
 - Run celery worker with the "threads" pool implementation.
   Implement parallelization with ProcessPoolExecutor for file and package scans.
-  Add a SCANCODE_PROCESSES settings to control the multiprocessing CPUs count.
+  Add a SCANCODEIO_PROCESSES settings to control the multiprocessing CPUs count.
   https://github.com/nexB/scancode.io/issues/70
 
 - Optimize "tag" type pipes using the update() API in place of save() on the QuerySet

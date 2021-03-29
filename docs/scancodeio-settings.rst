@@ -21,8 +21,8 @@ of parallel processes to 4::
 
     SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 60
 
-POLICIES_FILE
--------------
+SCANCODEIO_POLICIES_FILE
+------------------------
 
 Location of the policies file. Default: ``policies.yml``.
 A valid policies file is required to enable the compliance related features.

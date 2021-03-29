@@ -103,7 +103,7 @@ class ScanPipeConfig(AppConfig):
         including the proper content, we want to let an exception to be raised
         during the app loading to warn the sysadmin about the issue.
         """
-        policies_file_location = getattr(settings, "POLICIES_FILE", None)
+        policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
         if policies_file_location:
             policies_file = Path(policies_file_location)
             if policies_file.exists():

@@ -47,9 +47,9 @@ SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])
 
 # Set the number of parallel processes to use for ScanCode related scan execution.
 # If the SCANCODE_PROCESSES argument is not set, defaults to the number of CPUs minus 1.
-SCANCODE_PROCESSES = env.int("SCANCODE_PROCESSES", default=None)
+SCANCODEIO_PROCESSES = env.int("SCANCODEIO_PROCESSES", default=None)
 
-POLICIES_FILE = env.str("POLICIES_FILE", default="policies.yml")
+SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies.yml")
 
 # Application definition
 

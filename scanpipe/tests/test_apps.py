@@ -47,19 +47,19 @@ class ScanPipeAppsTest(TestCase):
     def test_scanpipe_apps_set_policies(self):
         scanpipe_app.license_policies_index = {}
         policies_files = None
-        with override_settings(POLICIES_FILE=policies_files):
+        with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
             scanpipe_app.set_policies()
             self.assertEqual({}, scanpipe_app.license_policies_index)
 
         scanpipe_app.license_policies_index = {}
         policies_files = "not_existing"
-        with override_settings(POLICIES_FILE=policies_files):
+        with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
             scanpipe_app.set_policies()
             self.assertEqual({}, scanpipe_app.license_policies_index)
 
         scanpipe_app.license_policies_index = {}
         policies_files = self.data_location / "policies.yml"
-        with override_settings(POLICIES_FILE=policies_files):
+        with override_settings(SCANCODEIO_POLICIES_FILE=policies_files):
             scanpipe_app.set_policies()
             self.assertEqual(
                 license_policies_index, scanpipe_app.license_policies_index

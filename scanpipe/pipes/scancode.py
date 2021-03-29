@@ -49,7 +49,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 # The maximum number of processes that can be used to execute the given calls.
 # If None or not given then as many worker processes, minus one, will be created as the
 # machine has processors.
-MAX_WORKERS = getattr(settings, "SCANCODE_PROCESSES") or os.cpu_count() - 1
+MAX_WORKERS = getattr(settings, "SCANCODEIO_PROCESSES") or os.cpu_count() - 1
 
 
 def extract(location, target):
