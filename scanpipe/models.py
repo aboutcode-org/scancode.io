@@ -921,7 +921,12 @@ class CodebaseResource(
         from textcode.analysis import numbered_text_lines
 
         numbered_lines = numbered_text_lines(self.location)
-        return "".join(l for _, l in numbered_lines)
+
+        # ScanCode-toolkit is not providing the "\n" suffix when reading binary files.
+        # The following is a workaround until the issue is fixed in the toolkit.
+        lines = (l if l.endswith("\n") else l + "\n" for _, l in numbered_lines)
+
+        return "".join(lines)
 
     def create_and_add_package(self, package_data):
         """
