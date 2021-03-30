@@ -469,7 +469,7 @@ class ScanPipeModelsTest(TestCase):
 
         with open(resource.location, "w") as f:
             f.write("content")
-        self.assertEqual("content", resource.file_content)
+        self.assertEqual("content\n", resource.file_content)
 
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
@@ -562,7 +562,7 @@ class ScanPipeModelsTest(TestCase):
             }
         ]
         resource.save()
-        self.assertEqual("", resource.compliance_alert)
+        self.assertEqual("ok", resource.compliance_alert)
 
         resource.licenses += [
             {
