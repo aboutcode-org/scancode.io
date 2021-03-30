@@ -31,7 +31,9 @@
         <tbody>
           {% for resource in object_list %}
             <tr>
-              <td><a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a></td>
+              <td class="break-all">
+                <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+              </td>
               <td>{{ resource.status }}</td>
               <td>{{ resource.type }}</td>
               <td>{{ resource.size|default_if_none:"" }}</td>
@@ -39,7 +41,7 @@
               <td>{{ resource.extension }}</td>
               <td>{{ resource.programming_language }}</td>
               <td>{{ resource.mime_type }}</td>
-              <td>{{ resource.license_expressions|join:"<br>" }}</td>
+              <td>{{ resource.unique_license_expressions|join:"<br>" }}</td>
               {% if include_compliance_alert %}
                 <td>{{ resource.compliance_alert }}</td>
               {% endif %}

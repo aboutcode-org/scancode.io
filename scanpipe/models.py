@@ -968,6 +968,10 @@ class CodebaseResource(
             return missing
         return ok
 
+    @property
+    def unique_license_expressions(self):
+        return sorted(set(self.license_expressions))
+
     def descendants(self):
         """
         Return a QuerySet of descendant CodebaseResource objects using a
