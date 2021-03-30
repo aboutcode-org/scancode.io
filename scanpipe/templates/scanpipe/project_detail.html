@@ -4,7 +4,7 @@
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'billboard-2.2.0-datalab.min.css' %}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
   <link rel="stylesheet" href="{% static 'highlight-10.6.0.atom-one-light.css' %}" crossorigin="anonymous" />
 {% endblock %}
 
@@ -171,7 +171,7 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
-  <script src="{% static 'billboard-2.2.0.pkgd.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   {% if project.file_count %}
     {{ programming_languages|json_script:"programming_languages" }}
     {{ mime_types|json_script:"mime_types" }}
@@ -204,6 +204,7 @@
             "error": "rgb(200, 48, 37)",
             "warning": "rgb(255, 204, 51)",
           },
+          hide: "(No value detected)",
           onclick: function(data, element) {
             let base_chart_div = element.closest(".bb");
             let url = base_chart_div.dataset.url;
