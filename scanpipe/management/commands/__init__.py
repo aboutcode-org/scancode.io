@@ -55,7 +55,7 @@ class ProjectCommand(BaseCommand):
 
 class RunStatusCommandMixin:
     def get_run_status_code(self, run):
-        status = " "
+        status = "NOT_STARTED"
         if run.task_succeeded:
             status = self.style.SUCCESS("SUCCESS")
         elif run.task_exitcode and run.task_exitcode > 0:
