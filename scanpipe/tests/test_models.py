@@ -549,41 +549,38 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, resource.licenses)
 
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
+        scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.compliance_alert)
 
-        resource.licenses = [
-            {
-                "key": "bsd-new",
-                "policy": {
-                    "label": "Approved License",
-                    "compliance_alert": "",
-                },
-            }
-        ]
+        license_key = "bsd-new"
+        self.assertNotIn(license_key, scanpipe_app.license_policies_index)
+        resource.licenses = [{"key": license_key}]
+        resource.save()
+        self.assertEqual("missing", resource.compliance_alert)
+
+        license_key = "apache-2.0"
+        self.assertIn(license_key, scanpipe_app.license_policies_index)
+        resource.licenses = [{"key": license_key}]
         resource.save()
         self.assertEqual("ok", resource.compliance_alert)
 
-        resource.licenses += [
-            {
-                "key": "mpl-2.0",
-                "policy": {
-                    "label": "Restricted License",
-                    "compliance_alert": "warning",
-                },
-            }
-        ]
+        license_key = "mpl-2.0"
+        self.assertIn(license_key, scanpipe_app.license_policies_index)
+        resource.licenses = [{"key": license_key}]
         resource.save()
         self.assertEqual("warning", resource.compliance_alert)
 
-        resource.licenses += [
-            {
-                "key": "gpl-3.0",
-                "policy": {
-                    "label": "Prohibited License",
-                    "compliance_alert": "error",
-                },
-            }
+        license_key = "gpl-3.0"
+        self.assertIn(license_key, scanpipe_app.license_policies_index)
+        resource.licenses = [{"key": license_key}]
+        resource.save()
+        self.assertEqual("error", resource.compliance_alert)
+
+        resource.licenses = [
+            {"key": "apache-2.0"},
+            {"key": "mpl-2.0"},
+            {"key": "gpl-3.0"},
         ]
         resource.save()
         self.assertEqual("error", resource.compliance_alert)
