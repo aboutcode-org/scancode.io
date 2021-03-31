@@ -157,6 +157,10 @@
         </div>
       </div>
       {% if file_compliance_alert %}
+        <hr class="mx-5">
+        <h3 class="title is-4 has-text-centered mb-3">
+          Policies
+        </h3>
         <div class="columns is-gapless">
           <div class="column">
             <div id="complianceAlertChart" data-url="{% url 'project_resources' project.uuid %}" data-field="compliance_alert"></div>
@@ -201,10 +205,10 @@
           type: "donut",
           colors: {
             "(No value detected)": "rgba(201, 203, 207, 0.5)",
-            "ok": "rgb(0, 128, 0)",
-            "error": "rgb(200, 48, 37)",
-            "warning": "rgb(255, 204, 51)",
-            "missing": "rgb(148, 0, 211)",
+            "ok": "rgb(42, 196, 179)",
+            "error": "rgb(255, 97, 123)",
+            "warning": "rgb(254, 175, 41)",
+            "missing": "rgb(177, 128, 208)",
           },
           hide: "(No value detected)",
           onclick: function(data, element) {
@@ -243,7 +247,7 @@
     makeChart("copyrights", "#copyrightChart", "Copyright");
     makeChart("file_license_keys", "#licenseKeyChart", "License\nKey");
     makeChart("file_license_categories", "#licenseCategoryChart", "License\nCategory");
-    makeChart("file_compliance_alert", "#complianceAlertChart", "Policy\nCompliance\nAlert");
+    makeChart("file_compliance_alert", "#complianceAlertChart", "Compliance\nAlert");
     makeChart("package_types", "#packageTypeChart", "Package\nType");
     makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense\nExpression");
   </script>
