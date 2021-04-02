@@ -30,7 +30,7 @@ Step-by-step
 
 - Add the test Docker image tarball to the project workspace's :guilabel:`input/` directory::
 
-    $ scanpipe add-input --project staticbox ~/30-alpine-nickolashkraus-staticbox-latest.tar
+    $ scanpipe add-input --project staticbox --input-file ~/30-alpine-nickolashkraus-staticbox-latest.tar
 
 .. note::
     The command output will let you know where is the project workspace :guilabel:`input/` directory
@@ -39,7 +39,7 @@ Step-by-step
 
 - Add the docker pipeline to your project::
 
-    $ scanpipe add-pipeline --project docker
+    $ scanpipe add-pipeline --project staticbox docker
 
 - Check that the docker pipeline was added to your project::
 
@@ -47,21 +47,21 @@ Step-by-step
 
 .. note::
     The ``scanpipe show-pipeline`` command lists all the pipelines added to the
-    project and their planned runs.
+    project and their planned execution.
     You can use this to get a quick overview of the pipelines that have been running already
     (with their "SUCCESS" or "FAILURE" status) and those that will be running next.
 
 - Run the docker pipeline on this project::
 
-    $ scanpipe run --project staticbox
+    $ scanpipe execute --project staticbox
 
 - Executing the ``show-pipeline`` command again will confirm the success of the
-  pipeline run::
+  pipeline execution::
 
     $ scanpipe show-pipeline --project staticbox
     "[SUCCESS] docker"
 
-- Get the results of the pipeline run as a JSON file using the ``output`` command::
+- Get the results of the pipeline execution as a JSON file using the ``output`` command::
 
     $ scanpipe output --project staticbox --format json
 
@@ -75,10 +75,10 @@ Step-by-step
     An ``execute`` option is also available to start the pipeline execution right
     after the project creation.
     For example, the following command will create a project named ``staticbox2``,
-    copy the test docker image to the project's inputs, add the docker pipeline,
+    download the test docker image to the project's inputs, add the docker pipeline,
     and execute the pipeline in one operation::
 
       $ scanpipe create-project staticbox2 \
-        --input ~/30-alpine-nickolashkraus-staticbox-latest.tar \
+        --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar \
         --pipeline docker \
         --execute

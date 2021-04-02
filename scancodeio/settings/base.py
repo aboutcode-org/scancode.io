@@ -45,6 +45,10 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[
 
 SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])
 
+# Set the number of parallel processes to use for ScanCode related scan execution.
+# If the SCANCODE_PROCESSES argument is not set, defaults to the number of CPUs minus 1.
+SCANCODE_PROCESSES = env.int("SCANCODE_PROCESSES", default=None)
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -234,6 +238,6 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 50,
+    "PAGE_SIZE": 10,
     "UPLOADED_FILES_USE_URL": False,
 }

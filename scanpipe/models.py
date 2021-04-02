@@ -22,10 +22,10 @@
 
 import re
 import shutil
-import traceback
 import uuid
 from contextlib import suppress
 from pathlib import Path
+from traceback import format_tb
 
 from django.apps import apps
 from django.core import checks
@@ -37,6 +37,7 @@ from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
@@ -162,8 +163,12 @@ class AbstractTaskFieldsModel(models.Model):
 def get_project_work_directory(project):
     """
     Return the work directory location for the provided `project`.
+    The `project` name is "slugified" to generate a nicer directory path, without any
+    whitespace or special characters.
+    A short version of the `project` uuid is added as suffix to ensure uniqueness of
+    the work directory location.
     """
-    return f"{WORKSPACE_LOCATION}/projects/{project.name}-{project.short_uuid}"
+    return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
 
 
 class Project(UUIDPKModel, models.Model):
@@ -189,6 +194,7 @@ class Project(UUIDPKModel, models.Model):
         editable=False,
         help_text=_("Project work directory location."),
     )
+    input_sources = models.JSONField(default=dict, blank=True, editable=False)
     extra_data = models.JSONField(default=dict, editable=False)
 
     class Meta:
@@ -288,6 +294,31 @@ class Project(UUIDPKModel, models.Model):
         return self.get_root_content(self.input_path)
 
     @property
+    def inputs_with_source(self):
+        """
+        Return the list of inputs including the source, type, and size data.
+        Return the `missing_inputs` defined in the `input_sources` field but not
+        available in the input/ directory.
+        Only the first level children are listed.
+        """
+        input_path = self.input_path
+        input_sources = dict(self.input_sources)
+
+        inputs = []
+        for path in input_path.glob("*"):
+            inputs.append(
+                {
+                    "name": path.name,
+                    "is_file": path.is_file(),
+                    "size": path.stat().st_size,
+                    "source": input_sources.pop(path.name, "not_found"),
+                }
+            )
+
+        missing_inputs = input_sources
+        return inputs, missing_inputs
+
+    @property
     def output_root(self):
         """
         Return the list of all files and directories of the output/ directory.
@@ -306,7 +337,22 @@ class Project(UUIDPKModel, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
-    def add_input_file(self, file_object):
+    @cached_property
+    def can_add_input(self):
+        """
+        Return True until one pipeline has started to execute on this project.
+        """
+        return not self.runs.started().exists()
+
+    def add_input_source(self, filename, source, save=False):
+        """
+        Add the provided `filename` and `source` on this project `input_sources` field.
+        """
+        self.input_sources[filename] = source
+        if save:
+            self.save()
+
+    def write_input_file(self, file_object):
         """
         Write the provided `file_object` to this project input/ directory.
         """
@@ -332,6 +378,26 @@ class Project(UUIDPKModel, models.Model):
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
+
+    def add_downloads(self, downloads):
+        """
+        Move the provided `downloads` to this project input/ directory and add the
+        `input_source` for each entry.
+        """
+        for downloaded in downloads:
+            self.move_input_from(downloaded.path)
+            self.add_input_source(downloaded.filename, downloaded.uri)
+        self.save()
+
+    def add_uploads(self, uploads):
+        """
+        Write the provided `uploads` to this project input/ directory and add the
+        `input_source` for each entry.
+        """
+        for uploaded in uploads:
+            self.write_input_file(uploaded)
+            self.add_input_source(filename=uploaded.name, source="uploaded")
+        self.save()
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
@@ -371,12 +437,16 @@ class Project(UUIDPKModel, models.Model):
         Create a ProjectError record from the provided `error` Exception for this
         project.
         """
+        traceback = ""
+        if hasattr(error, "__traceback__"):
+            traceback = "".join(format_tb(error.__traceback__))
+
         return ProjectError.objects.create(
             project=self,
             model=model,
             details=details or {},
             message=str(error),
-            traceback="".join(traceback.format_tb(error.__traceback__)),
+            traceback=traceback,
         )
 
     def get_absolute_url(self):
@@ -453,13 +523,16 @@ class SaveProjectErrorMixin:
     Use `SaveProjectErrorMixin` on a model to create a ProjectError entry
     from a raised exception during `save()` in place of stopping the analysis
     process.
+    The creation of ProjectError can be skipped providing False for the `save_error`
+    argument.
     """
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, save_error=True, **kwargs):
         try:
             super().save(*args, **kwargs)
         except Exception as error:
-            self.add_error(error)
+            if save_error:
+                self.add_error(error)
 
     @classmethod
     def check(cls, **kwargs):
@@ -610,6 +683,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def no_status(self):
         return self.filter(status="")
+
+    def empty(self):
+        return self.filter(Q(size__isnull=True) | Q(size=0))
 
     def in_package(self):
         return self.filter(discovered_packages__isnull=False)
@@ -798,6 +874,10 @@ class CodebaseResource(
         return str(self.location_path)
 
     @property
+    def filename(self):
+        return f"{self.name}{self.extension}"
+
+    @property
     def is_file(self):
         return self.type == self.Type.FILE
 
@@ -829,6 +909,9 @@ class CodebaseResource(
         children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
         return self.descendants().filter(path__regex=children_regex)
 
+    def get_absolute_url(self):
+        return reverse("resource_detail", args=[self.project_id, self.pk])
+
     @property
     def file_content(self):
         """
@@ -838,7 +921,22 @@ class CodebaseResource(
         from textcode.analysis import numbered_text_lines
 
         numbered_lines = numbered_text_lines(self.location)
-        return "".join(l for _, l in numbered_lines)
+
+        # ScanCode-toolkit is not providing the "\n" suffix when reading binary files.
+        # The following is a workaround until the issue is fixed in the toolkit.
+        lines = (l if l.endswith("\n") else l + "\n" for _, l in numbered_lines)
+
+        return "".join(lines)
+
+    def create_and_add_package(self, package_data):
+        """
+        Create a DiscoveredPackage instance using the `package_data` and assign
+        it to this CodebaseResource instance.
+        """
+        created_package = DiscoveredPackage.create_from_data(self.project, package_data)
+        if created_package:
+            self.discovered_packages.add(created_package)
+            return created_package
 
     @property
     def for_packages(self):
@@ -869,11 +967,21 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
     @classmethod
     def create_from_data(cls, project, package_data):
         """
-        Create and return a DiscoveredPackage for `project` using the
-        `package_data` mapping.
-        # TODO: we should ensure these entries are UNIQUE
-        # tomd: Create a ProjectError if not unique?
+        Create and return a DiscoveredPackage for `project` from the `package_data`.
+        If one of the required fields value is not available, a ProjectError is create
+        in place of the DiscoveredPackage instance.
         """
+        required_fields = ["type", "name", "version"]
+        required_values = [package_data.get(field) for field in required_fields]
+
+        if not all(required_values):
+            message = (
+                f"One or more of the required fields have no value: "
+                f"{', '.join(required_fields)}"
+            )
+            project.add_error(error=message, model=cls.__name__, details=package_data)
+            return
+
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
             package_data["qualifiers"] = normalize_qualifiers(qualifiers, encode=True)
@@ -885,14 +993,3 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
         }
 
         return cls.objects.create(project=project, **cleaned_package_data)
-
-    @classmethod
-    def create_for_resource(cls, package_data, codebase_resource):
-        """
-        Create a DiscoveredPackage instance using the `package_data` and assign
-        it to the provided `codebase_resource`.
-        """
-        project = codebase_resource.project
-        created_package = cls.create_from_data(project, package_data)
-        codebase_resource.discovered_packages.add(created_package)
-        return created_package

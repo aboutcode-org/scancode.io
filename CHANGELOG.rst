@@ -3,6 +3,27 @@
 
 ### v1.1.1 (unreleased)
 
+- Add a new codebase resource detail view including the file content.
+  Detected value can be displayed as annotation in the file source.
+  https://github.com/nexB/scancode.io/issues/102
+
+- Download URLs can be provided as inputs on the project form.
+  Each URL is fetched and added to the project input directory.
+  https://github.com/nexB/scancode.io/issues/100
+
+- Run celery worker with the "threads" pool implementation.
+  Implement parallelization with ProcessPoolExecutor for file and package scans.
+  Add a SCANCODE_PROCESSES settings to control the multiprocessing CPUs count.
+  https://github.com/nexB/scancode.io/issues/70
+
+- Optimize "tag" type pipes using the update() API in place of save() on the QuerySet
+  iteration.
+  https://github.com/nexB/scancode.io/issues/70
+
+- Use the extractcode API for the Docker pipeline.
+  This change helps with performance and results consistency between pipelines.
+  https://github.com/nexB/scancode.io/issues/70
+
 - Implement cache to prevent scanning multiple times a duplicated codebase resource.
   https://github.com/nexB/scancode.io/issues/70
 

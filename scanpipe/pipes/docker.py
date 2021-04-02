@@ -26,53 +26,50 @@ from functools import partial
 from pathlib import Path
 
 from container_inspector.image import Image
-from container_inspector.rootfs import get_whiteout_marker_type
 
 from scanpipe import pipes
-from scanpipe.models import CodebaseResource
 from scanpipe.pipes import rootfs
+from scanpipe.pipes import scancode
 
 logger = logging.getLogger(__name__)
 
 
-def get_images_from_extracted_codebase(project):
+def extract_images_from_inputs(project):
     """
-    Yield images collected from the project "codebase" directory. The
-    image tarball should be extracted there first, with its manifest.json at the
-    root.
+    Collect all the tarballs from the `project` input/ work directory, extract each
+    tarball to the tmp/ work directory and collect the images.
+    Return the `images` and `errors` that may have happen during the extraction.
     """
-    codebase = project.codebase_path.absolute()
-    for image in Image.get_images_from_dir(location=codebase):
-        yield image
+    target_path = project.tmp_path
+    images = []
+    errors = []
+
+    for input_tarball in project.inputs(pattern="*.tar*"):
+        extract_target = target_path / f"{input_tarball.name}-extract"
+        extract_errors = scancode.extract(input_tarball, extract_target)
+        images.extend(Image.get_images_from_dir(extract_target))
+        errors.extend(extract_errors)
+
+    return images, errors
 
 
-def get_and_extract_images_from_image_tarballs(project, force_extract=False):
+def extract_layers_from_images(project, images):
     """
-    Yield images collected from the project "codebase" directory.
-    The process is to:
-    1. collect all the tarballs from this directory.
-    2. for each, extract that under a -extract directory and collect its images.
-
-    If `force_extract` is False, do not extract if already extracted.
+    Extract all the layers from provided `images` into the `project` codebase/ work
+    directory.
+    Return the `errors` that may have happen during the extraction.
     """
-    all_images = []
+    errors = []
 
-    for tarball in project.inputs(pattern="*.tar*"):
-        tarball_location = str(tarball.absolute())
-        if tarball_location.endswith("-extract"):
-            continue
-        extracted_location = tarball_location + "-extract"
-        tarball_images = Image.get_images_from_tarball(
-            location=tarball_location,
-            target_dir=extracted_location,
-            force_extract=force_extract,
-        )
+    for image in images:
+        image_dirname = Path(image.base_location).name
+        target_path = project.codebase_path / image_dirname
 
-        for image in tarball_images:
-            logger.info("Collected Docker image: {}".format(image.image_id))
-            all_images.append(image)
-
-    return all_images
+        for layer in image.layers:
+            extract_target = target_path / layer.layer_id
+            extract_errors = scancode.extract(layer.layer_location, extract_target)
+            errors.extend(extract_errors)
+            layer.extracted_to_location = str(extract_target)
 
 
 def get_image_data(image):
@@ -134,7 +131,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         missing_resources = created_package.missing_resources[:]
         modified_resources = created_package.modified_resources[:]
 
-        codebase_resources = CodebaseResource.objects.project(project)
+        codebase_resources = project.codebaseresources.all()
 
         for install_file in package.installed_files:
             install_file_path = pipes.normalize_path(install_file.path)
@@ -195,12 +192,10 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
 
 def tag_whiteout_codebase_resources(project):
     """
-    Mark overlayfs/AUFS whiteout special files CodebaseResource as "ignored".
+    Mark overlayfs/AUFS whiteout special files CodebaseResource as "ignored-whiteout".
+    See https://github.com/opencontainers/image-spec/blob/master/layer.md#whiteouts
+    for details.
     """
+    whiteout_prefix = ".wh."
     qs = project.codebaseresources.no_status()
-
-    for codebase_resource in qs:
-        filename = Path(codebase_resource.path).name
-        if get_whiteout_marker_type(filename):
-            codebase_resource.status = "ignored-whiteout"
-            codebase_resource.save()
+    qs.filter(name__startswith=whiteout_prefix).update(status="ignored-whiteout")

@@ -23,8 +23,8 @@
           {% for package in object_list %}
             <tr>
               <td>{{ package.package_url }}</td>
-              <td>{{ package.license_expression }}</td>
-              <td>{{ package.copyright }}</td>
+              <td>{{ package.license_expression|linebreaksbr }}</td>
+              <td>{{ package.copyright|linebreaksbr }}</td>
               <td>{{ package.codebase_resources.all|join:"<br>" }}</td>
             </tr>
           {% endfor %}

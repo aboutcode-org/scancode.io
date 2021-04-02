@@ -39,6 +39,9 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import get_project_work_directory
+from scanpipe.pipes.fetch import Download
+from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
@@ -67,15 +70,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual({}, project1_from_db.extra_data)
 
     def test_scanpipe_project_model_work_directories(self):
-        expected_work_directory = (
-            f"projects/{self.project1.name}-{self.project1.short_uuid}"
-        )
+        expected_work_directory = f"projects/analysis-{self.project1.short_uuid}"
         self.assertTrue(self.project1.work_directory.endswith(expected_work_directory))
         self.assertTrue(self.project1.work_path.exists())
         self.assertTrue(self.project1.input_path.exists())
         self.assertTrue(self.project1.output_path.exists())
         self.assertTrue(self.project1.codebase_path.exists())
         self.assertTrue(self.project1.tmp_path.exists())
+
+    def test_scanpipe_get_project_work_directory(self):
+        project = Project.objects.create(name="Name with spaces and @£$éæ")
+        expected = f"/projects/name-with-spaces-and-e-{project.short_uuid}"
+        self.assertTrue(get_project_work_directory(project).endswith(expected))
+        self.assertTrue(project.work_directory.endswith(expected))
 
     def test_scanpipe_project_model_clear_tmp_directory(self):
         new_file_path = self.project1.tmp_path / "file.ext"
@@ -90,7 +97,8 @@ class ScanPipeModelsTest(TestCase):
         work_path = self.project1.work_path
         self.assertTrue(work_path.exists())
 
-        self.project1.add_input_file(SimpleUploadedFile("file.ext", content=b"content"))
+        uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
+        self.project1.write_input_file(uploaded_file)
         self.project1.add_pipeline("docker")
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
@@ -137,11 +145,11 @@ class ScanPipeModelsTest(TestCase):
         filename = self.project1.get_output_file_path("file", "ext")
         self.assertTrue(str(filename).endswith("/output/file-2010-10-10-10-10-10.ext"))
 
-    def test_scanpipe_project_model_add_input_file(self):
+    def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
-        self.project1.add_input_file(uploaded_file)
+        self.project1.write_input_file(uploaded_file)
 
         self.assertEqual(["file.ext"], self.project1.input_files)
 
@@ -164,6 +172,98 @@ class ScanPipeModelsTest(TestCase):
         self.project1.move_input_from(input_location)
         self.assertEqual([input_filename], self.project1.input_files)
         self.assertFalse(Path(input_location).exists())
+
+    def test_scanpipe_project_model_inputs_with_source(self):
+        inputs, missing_inputs = self.project1.inputs_with_source
+        self.assertEqual([], inputs)
+        self.assertEqual({}, missing_inputs)
+
+        uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
+        self.project1.add_uploads([uploaded_file])
+        self.project1.copy_input_from(self.data_location / "notice.NOTICE")
+        self.project1.add_input_source(filename="missing.zip", source="uploaded")
+
+        inputs, missing_inputs = self.project1.inputs_with_source
+        expected = [
+            {
+                "is_file": True,
+                "name": "file.ext",
+                "size": 7,
+                "source": "uploaded",
+            },
+            {
+                "is_file": True,
+                "name": "notice.NOTICE",
+                "size": 1178,
+                "source": "not_found",
+            },
+        ]
+
+        def sort_by_name(x):
+            return x.get("name")
+
+        self.assertEqual(
+            sorted(expected, key=sort_by_name), sorted(inputs, key=sort_by_name)
+        )
+        self.assertEqual({"missing.zip": "uploaded"}, missing_inputs)
+
+    def test_scanpipe_project_model_can_add_input(self):
+        self.assertTrue(self.project1.can_add_input)
+
+        run = self.project1.add_pipeline("docker")
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.can_add_input)
+
+        run.task_start_date = timezone.now()
+        run.save()
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertFalse(self.project1.can_add_input)
+
+    def test_scanpipe_project_model_add_input_source(self):
+        self.assertEqual({}, self.project1.input_sources)
+
+        self.project1.add_input_source("filename", "source", save=True)
+        self.project1.refresh_from_db()
+        self.assertEqual({"filename": "source"}, self.project1.input_sources)
+
+    def test_scanpipe_project_model_add_downloads(self):
+        file_location = self.data_location / "notice.NOTICE"
+        copy_inputs([file_location], self.project1.tmp_path)
+
+        download = Download(
+            uri="https://example.com/filename.zip",
+            directory="",
+            filename="notice.NOTICE",
+            path=self.project1.tmp_path / "notice.NOTICE",
+            size="",
+            sha1="",
+            md5="",
+        )
+
+        self.project1.add_downloads([download])
+
+        inputs, missing_inputs = self.project1.inputs_with_source
+        expected = [
+            {
+                "is_file": True,
+                "name": "notice.NOTICE",
+                "size": 1178,
+                "source": "https://example.com/filename.zip",
+            }
+        ]
+        self.assertEqual(expected, inputs)
+        self.assertEqual({}, missing_inputs)
+
+    def test_scanpipe_project_model_add_uploads(self):
+        uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
+        self.project1.add_uploads([uploaded_file])
+
+        inputs, missing_inputs = self.project1.inputs_with_source
+        expected = [
+            {"name": "file.ext", "is_file": True, "size": 7, "source": "uploaded"}
+        ]
+        self.assertEqual(expected, inputs)
+        self.assertEqual({}, missing_inputs)
 
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())
@@ -368,7 +468,7 @@ class ScanPipeModelsTest(TestCase):
 
         with open(resource.location, "w") as f:
             f.write("content")
-        self.assertEqual("content", resource.file_content)
+        self.assertEqual("content\n", resource.file_content)
 
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
@@ -436,6 +536,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
 
+        qs = CodebaseResource.objects.empty()
+        self.assertEqual(3, len(qs))
+        file.size = 1
+        file.save()
+        qs = CodebaseResource.objects.empty()
+        self.assertEqual(2, len(qs))
+        self.assertNotIn(file, qs)
+        file.size = 0
+        file.save()
+        qs = CodebaseResource.objects.empty()
+        self.assertEqual(3, len(qs))
+
         qs = CodebaseResource.objects.directories()
         self.assertEqual(1, len(qs))
         self.assertIn(directory, qs)
@@ -467,7 +579,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, CodebaseResource.objects.in_package().count())
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
-        DiscoveredPackage.create_for_resource(package_data1, file)
+        file.create_and_add_package(package_data1)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
@@ -513,6 +625,16 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, [resource.path for resource in children])
 
+    def test_scanpipe_codebase_resource_create_and_add_package(self):
+        codebase_resource = CodebaseResource.objects.create(
+            project=self.project1, path="filename.ext"
+        )
+        package = codebase_resource.create_and_add_package(package_data1)
+        self.assertEqual(self.project1, package.project)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual(1, codebase_resource.discovered_packages.count())
+        self.assertEqual(package, codebase_resource.discovered_packages.get())
+
     def test_scanpipe_discovered_package_model_create_from_data(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         self.assertEqual(self.project1, package.project)
@@ -528,17 +650,13 @@ class ScanPipeModelsTest(TestCase):
             "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
         )
 
-    def test_scanpipe_discovered_package_model_create_for_resource(self):
-        codebase_resource = CodebaseResource.objects.create(
-            project=self.project1, path="filename.ext"
+        package_count = DiscoveredPackage.objects.count()
+        missing_required_field = dict(package_data1)
+        missing_required_field["name"] = ""
+        self.assertIsNone(
+            DiscoveredPackage.create_from_data(self.project1, missing_required_field)
         )
-        package = DiscoveredPackage.create_for_resource(
-            package_data1, codebase_resource
-        )
-        self.assertEqual(self.project1, package.project)
-        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
-        self.assertEqual(1, codebase_resource.discovered_packages.count())
-        self.assertEqual(package, codebase_resource.discovered_packages.get())
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

@@ -51,12 +51,10 @@ from scanpipe.tests import package_data1
 class ScanPipeAPITest(TransactionTestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
-        self.codebase_resource1 = CodebaseResource.objects.create(
+        self.resource1 = CodebaseResource.objects.create(
             project=self.project1, path="filename.ext"
         )
-        self.discovered_package1 = DiscoveredPackage.create_for_resource(
-            package_data1, self.codebase_resource1
-        )
+        self.discovered_package1 = self.resource1.create_and_add_package(package_data1)
 
         self.project_list_url = reverse("project-list")
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
@@ -76,12 +74,14 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["count"])
         self.assertNotContains(response, "input_root")
         self.assertNotContains(response, "extra_data")
+        self.assertNotContains(response, "input_sources")
 
     def test_scanpipe_api_project_detail(self):
         response = self.csrf_client.get(self.project1_detail_url)
         self.assertIn(self.project1_detail_url, response.data["url"])
         self.assertEqual(str(self.project1.uuid), response.data["uuid"])
         self.assertEqual(self.project1.name, response.data["name"])
+        self.assertEqual([], response.data["input_sources"])
         self.assertIn("input_root", response.data)
         self.assertIn("extra_data", response.data)
 
@@ -94,8 +94,14 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data["discovered_package_summary"])
 
+        self.project1.add_input_source(filename="file", source="uploaded", save=True)
+        response = self.csrf_client.get(self.project1_detail_url)
+        expected = [{"filename": "file", "source": "uploaded"}]
+        self.assertEqual(expected, response.data["input_sources"])
+
+    @mock.patch("requests.get")
     @mock.patch("scanpipe.models.Run.execute_task_async")
-    def test_scanpipe_api_project_create(self, mock_execute_pipeline_task):
+    def test_scanpipe_api_project_create(self, mock_execute_pipeline_task, mock_get):
         data = {}
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
@@ -166,6 +172,24 @@ class ScanPipeAPITest(TransactionTestCase):
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
         self.assertEqual(["upload_file"], response.data["input_root"])
+
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url="archive.zip"
+        )
+        data = {
+            "name": "Upload",
+            "input_urls": ["https://example.com/archive.zip"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        created_project_detail_url = response.data["url"]
+        response = self.csrf_client.get(created_project_detail_url)
+        expected = {
+            "filename": "archive.zip",
+            "source": "https://example.com/archive.zip",
+        }
+        self.assertEqual([expected], response.data["input_sources"])
+        self.assertEqual(["archive.zip"], response.data["input_root"])
 
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
@@ -250,7 +274,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Resource not found. Use ?path=<resource_path>"}
         self.assertEqual(expected, response.data)
 
-        response = self.csrf_client.get(url + f"?path={self.codebase_resource1.path}")
+        response = self.csrf_client.get(url + f"?path={self.resource1.path}")
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "File not available"}
         self.assertEqual(expected, response.data)

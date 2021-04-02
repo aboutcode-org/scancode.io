@@ -4,7 +4,7 @@
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'billboard-2.2.0-datalab.min.css' %}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
   <link rel="stylesheet" href="{% static 'highlight-10.6.0.atom-one-light.css' %}" crossorigin="anonymous" />
 {% endblock %}
 
@@ -61,7 +61,10 @@
         <article class="message is-warning">
           <div class="message-body">
             <p class="block">
-              Add <strong>Inputs</strong> and run a <strong>Pipeline</strong> to generate some results.
+              <i class="fas fa-info-circle mr-1"></i>
+              Add
+              {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
+              and execute a <strong>pipeline</strong> to generate some results.
             </p>
           </div>
         </article>
@@ -69,35 +72,17 @@
 
       <div class="columns">
         <div class="column">
-          <nav class="panel is-info">
-            <p class="panel-heading py-2 is-size-6">
-              Inputs
-            </p>
-            {% for input_path, input_is_file in inputs %}
-              <span class="panel-block">
-                <span class="panel-icon pt-1">
-                  <i class="is-size-6 {% if input_is_file %}far fa-file-alt{% else %}fas fa-folder{% endif %}" aria-hidden="true"></i>
-                </span>
-                {{ input_path.name }}
-              </span>
-            {% endfor %}
-            <div class="panel-block">
-              <button class="button is-link is-outlined is-fullwidth" disabled>
-                Add input
-              </button>
-            </div>
-          </nav>
+          {% include "scanpipe/includes/project_inputs.html" %}
         </div>
-
         <div class="column">
-          <nav class="panel is-info">
+          <article class="panel is-info">
             <p class="panel-heading py-2 is-size-6">
               Pipelines
             </p>
             {% for run in project.runs.all %}
-              <a class="panel-block modal-button" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
+              <a class="panel-block modal-button is-flex is-justify-content-space-between" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
+                <span>{{ run.pipeline_name }}</span>
                 {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
-                <span class="ml-2">{{ run.pipeline_name }}</span>
               </a>
               {% include "scanpipe/includes/run_modal.html" with project=project run=run only %}
             {% endfor %}
@@ -107,9 +92,8 @@
               </button>
               {% include "scanpipe/includes/add_pipeline_modal.html" %}
             </div>
-          </nav>
+          </article>
         </div>
-
       </div>
     </section>
 
@@ -179,7 +163,7 @@
 {% block scripts %}
   {% include "scanpipe/includes/modal.js.html" %}
   <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
-  <script src="{% static 'billboard-2.2.0.pkgd.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   {% if project.file_count %}
     {{ programming_languages|json_script:"programming_languages" }}
     {{ mime_types|json_script:"mime_types" }}
@@ -209,6 +193,7 @@
           colors: {
             "(No value detected)": "rgba(201, 203, 207, 0.5)",
           },
+          hide: "(No value detected)",
           onclick: function(data, element) {
             let base_chart_div = element.closest(".bb");
             let url = base_chart_div.dataset.url;
@@ -257,12 +242,20 @@
       document.body.appendChild(background);
     };
 
-    let run_pipeline_links = document.querySelector(".run-pipeline-link");
-    if (run_pipeline_links)
-      run_pipeline_links.addEventListener('click', displayOverlay);
+    onSubmitOverlay = function (selector) {
+      let element = document.querySelector(selector);
+      if (element) {
+        element.addEventListener("submit", function() {
+          displayOverlay();
+        });
+      }
+    };
 
-    let add_pipeline_button = document.querySelector("#add-pipeline-button");
-    if (add_pipeline_button)
-      add_pipeline_button.addEventListener('click', displayOverlay);
+    onSubmitOverlay("#add-pipeline-modal form");
+    onSubmitOverlay("#add-inputs-modal form");
+
+    let execute_pipeline_links = document.querySelector(".execute-pipeline-link");
+    if (execute_pipeline_links)
+      execute_pipeline_links.addEventListener('click', displayOverlay);
   </script>
 {% endblock %}
