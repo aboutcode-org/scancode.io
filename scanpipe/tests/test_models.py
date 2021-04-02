@@ -468,7 +468,7 @@ class ScanPipeModelsTest(TestCase):
 
         with open(resource.location, "w") as f:
             f.write("content")
-        self.assertEqual("content", resource.file_content)
+        self.assertEqual("content\n", resource.file_content)
 
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
