@@ -22,6 +22,7 @@ Optional:
     ScanCode.io can also be run through a Docker image,
     refer to the :ref:`docker_image` chapter for details.
 
+
 Local installation
 ------------------
 
@@ -39,6 +40,7 @@ install dependencies and create an environment file::
         make dev PYTHON_EXE=python3.6
 
     When ``PYTHON_EXE`` is not specified, the default ``python3`` executable is used.
+
 
 Database
 --------
@@ -60,12 +62,14 @@ development as a single user::
     https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes
     for details.
 
+
 Tests
 -----
 
 Validate the installation by running the tests suite::
 
     make test
+
 
 Web Application
 ---------------
@@ -74,12 +78,14 @@ A web application is available to create and manage your projects from a browser
 To start the local webserver and access the app::
 
     make run
-    open http://127.0.0.1:8001/
+
+Then open you web browser at visit: http://127.0.0.1:8001/
 
 ------------------
 
 .. note::
     You are now ready to move onto the **Tutorials**: :ref:`scanpipe_tutorial_1`.
+
 
 Upgrading
 ---------
