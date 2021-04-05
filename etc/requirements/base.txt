@@ -27,7 +27,6 @@ gunicorn==20.1.0
 container_inspector>=3.1.2
 
 # ScanCode-toolkit
-rpm-inspector-rpm>=4.16.1.3.210404
 scancode-toolkit[packages]==21.3.31
 
 # Utilities
