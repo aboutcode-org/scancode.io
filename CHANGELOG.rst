@@ -3,7 +3,8 @@
 
 ### v1.1.1 (unreleased)
 
-- Add support for RPM-based distros for docker and rootfs images
+- Add support for Docker and VM images using RPMs such as Fedora, CentOS, RHEL,
+  and openSUSE linux distributions.
   https://github.com/nexB/scancode.io/issues/6
 
 - Add a compliance alert system based on license policies provided through a
