@@ -23,9 +23,13 @@
 from pathlib import Path
 from unittest import mock
 
+from django.apps import apps
 from django.test import TestCase
 
 from scanpipe.models import Project
+from scanpipe.tests import license_policies_index
+
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeViewsTest(TestCase):
@@ -86,3 +90,14 @@ class ScanPipeViewsTest(TestCase):
         run = self.project1.runs.get()
         self.assertEqual("docker", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
+
+    def test_scanpipe_views_project_details_compliance_alert(self):
+        url = self.project1.get_absolute_url()
+        expected = "complianceAlertChart"
+
+        response = self.client.get(url)
+        self.assertNotContains(response, expected)
+
+        scanpipe_app.license_policies_index = license_policies_index
+        response = self.client.get(url)
+        self.assertContains(response, expected)

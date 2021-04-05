@@ -475,6 +475,18 @@ class ScanPipeModelsTest(TestCase):
         resource.discovered_packages.add(package)
         self.assertEqual([str(package.uuid)], resource.for_packages)
 
+    def test_scanpipe_codebase_resource_model_unique_license_expressions(self):
+        resource = CodebaseResource(project=self.project1)
+        resource.license_expressions = [
+            "mit",
+            "apache-2.0",
+            "apache-2.0",
+            "mit AND apache-2.0",
+            "gpl-3.0",
+        ]
+        expected = ["apache-2.0", "gpl-3.0", "mit", "mit AND apache-2.0"]
+        self.assertEqual(expected, resource.unique_license_expressions)
+
     def test_scanpipe_pipes_codebase_resources_inject_licenses_policy(self):
         resource = CodebaseResource(
             licenses=[

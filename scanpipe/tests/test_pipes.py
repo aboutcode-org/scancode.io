@@ -198,6 +198,8 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
 
+        self.assertIn("compliance_alert", results["files"][0])
+
     def test_scanpipe_pipes_outputs_to_xlsx(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(

@@ -245,6 +245,12 @@ class ScanPipeAPITest(TransactionTestCase):
         )
         self.assertEqual("filename.ext", resource["path"])
 
+        self.assertEqual("", resource["compliance_alert"])
+        self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR.value
+        self.resource1.save()
+        response = self.csrf_client.get(url)
+        self.assertEqual("error", response.data[0]["compliance_alert"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
