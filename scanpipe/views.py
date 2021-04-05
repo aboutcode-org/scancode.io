@@ -350,7 +350,7 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
                 "start_line": entry["start_line"],
                 "end_line": entry["end_line"],
                 "text": self.get_annotation_text(entry, field_name, value_key),
-                "type": "info",
+                "type": entry.get("policy", {}).get("compliance_alert") or "info",
             }
             for entry in getattr(self.object, field_name)
         ]
