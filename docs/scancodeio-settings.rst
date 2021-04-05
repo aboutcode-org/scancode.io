@@ -32,13 +32,17 @@ A valid policies file is required to enable the compliance related features.
     license_policies:
     -   license_key: mit
         label: Approved License
-        color_code: '#008000'
         compliance_alert: ''
     -   license_key: mpl-2.0
         label: Restricted License
-        color_code: '#ffcc33'
         compliance_alert: warning
     -   license_key: gpl-3.0
         label: Prohibited License
-        color_code: '#c83025'
         compliance_alert: error
+
+Licenses are referenced by ``license_key``. The policy is defined with a ``label`` and
+a ``compliance_alert``.
+The ``compliance_alert`` accepts 3 values: "" (empty string), warning, and error.
+
+When the policy feature is enabled, the ``compliance_alert`` values are displayed in
+the UI and returned in all the downloadable results.

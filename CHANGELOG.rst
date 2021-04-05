@@ -3,6 +3,14 @@
 
 ### v1.1.1 (unreleased)
 
+- Add a compliance alert system based on license policies provided through a
+  policies.yml file. The compliance alerts are computed from the license_expression and
+  stored on the codebase resource. When the policy feature is enabled, the compliance
+  alert values are displayed in the UI and returned in all the downloadable results.
+  The enable and setup the policy feature, refer to
+  https://scancodeio.readthedocs.io/en/latest/scancodeio-settings.html#scancode-io-settings
+  https://github.com/nexB/scancode.io/issues/90
+
 - Add a new codebase resource detail view including the file content.
   Detected value can be displayed as annotation in the file source.
   https://github.com/nexB/scancode.io/issues/102
