@@ -26,6 +26,7 @@ from unittest import mock
 from django.apps import apps
 from django.test import TestCase
 
+from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.tests import license_policies_index
 
@@ -93,11 +94,20 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_details_compliance_alert(self):
         url = self.project1.get_absolute_url()
-        expected = "complianceAlertChart"
+        expected = 'id="complianceAlertChart"'
 
+        scanpipe_app.license_policies_index = None
         response = self.client.get(url)
         self.assertNotContains(response, expected)
 
         scanpipe_app.license_policies_index = license_policies_index
+        response = self.client.get(url)
+        self.assertNotContains(response, expected)
+
+        CodebaseResource.objects.create(
+            project=self.project1,
+            compliance_alert="error",
+            type=CodebaseResource.Type.FILE,
+        )
         response = self.client.get(url)
         self.assertContains(response, expected)

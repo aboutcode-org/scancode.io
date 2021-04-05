@@ -855,10 +855,10 @@ class CodebaseResource(
     )
 
     class Compliance(models.TextChoices):
-        OK = "ok", _("Ok")
-        WARNING = "warning", _("Warning")
-        ERROR = "error", _("Error")
-        MISSING = "missing", _("Missing")
+        OK = "ok"
+        WARNING = "warning"
+        ERROR = "error"
+        MISSING = "missing"
 
     compliance_alert = models.CharField(
         max_length=10,
@@ -947,10 +947,10 @@ class CodebaseResource(
         if not self.licenses:
             return ""
 
-        ok = self.Compliance.OK.value
-        error = self.Compliance.ERROR.value
-        warning = self.Compliance.WARNING.value
-        missing = self.Compliance.MISSING.value
+        ok = self.Compliance.OK
+        error = self.Compliance.ERROR
+        warning = self.Compliance.WARNING
+        missing = self.Compliance.MISSING
 
         alerts = []
         for license_data in self.licenses:
