@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### v1.1.1 (unreleased)
+### v21.4.5
 
 - Add support for Docker and VM images using RPMs such as Fedora, CentOS, RHEL,
   and openSUSE linux distributions.
