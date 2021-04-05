@@ -24,13 +24,13 @@ import logging
 import os
 from functools import partial
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 import attr
 from container_inspector.distro import Distro
 
 from scanpipe import pipes
-from scanpipe.models import CodebaseResource
 from scanpipe.pipes import alpine
 from scanpipe.pipes import debian
 from scanpipe.pipes import rpm
@@ -208,7 +208,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
                 codebase_resource = codebase_resources.get(
                     rootfs_path=rootfs_path,
                 )
-            except CodebaseResource.DoesNotExist:
+            except ObjectDoesNotExist:
                 if rootfs_path not in missing_resources:
                     missing_resources.append(rootfs_path)
                 logger.info(f"      installed file is missing: {rootfs_path}")

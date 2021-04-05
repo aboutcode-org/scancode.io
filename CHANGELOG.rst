@@ -6,6 +6,14 @@
 - Add support for RPM-based distros for docker and rootfs images
   https://github.com/nexB/scancode.io/issues/6
 
+- Add a compliance alert system based on license policies provided through a
+  policies.yml file. The compliance alerts are computed from the license_expression and
+  stored on the codebase resource. When the policy feature is enabled, the compliance
+  alert values are displayed in the UI and returned in all the downloadable results.
+  The enable and setup the policy feature, refer to
+  https://scancodeio.readthedocs.io/en/latest/scancodeio-settings.html#scancode-io-settings
+  https://github.com/nexB/scancode.io/issues/90
+
 - Add a new codebase resource detail view including the file content.
   Detected value can be displayed as annotation in the file source.
   https://github.com/nexB/scancode.io/issues/102
@@ -16,7 +24,7 @@
 
 - Run celery worker with the "threads" pool implementation.
   Implement parallelization with ProcessPoolExecutor for file and package scans.
-  Add a SCANCODE_PROCESSES settings to control the multiprocessing CPUs count.
+  Add a SCANCODEIO_PROCESSES settings to control the multiprocessing CPUs count.
   https://github.com/nexB/scancode.io/issues/70
 
 - Optimize "tag" type pipes using the update() API in place of save() on the QuerySet

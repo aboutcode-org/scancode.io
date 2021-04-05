@@ -48,7 +48,7 @@ from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class UUIDPKModel(models.Model):
@@ -408,7 +408,7 @@ class Project(UUIDPKModel, models.Model):
         successfully committed.
         If there isn’t an active transaction, the callback will be executed immediately.
         """
-        pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
+        pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
         run = Run.objects.create(
             project=self,
             pipeline_name=pipeline_name,
@@ -619,7 +619,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     @property
     def pipeline_class(self):
-        return scanpipe_app_config.pipelines.get(self.pipeline_name)
+        return scanpipe_app.pipelines.get(self.pipeline_name)
 
     def make_pipeline_instance(self):
         return self.pipeline_class(self)
@@ -854,6 +854,23 @@ class CodebaseResource(
         help_text=_("Descriptive file type for this resource."),
     )
 
+    class Compliance(models.TextChoices):
+        OK = "ok"
+        WARNING = "warning"
+        ERROR = "error"
+        MISSING = "missing"
+
+    compliance_alert = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=Compliance.choices,
+        editable=False,
+        help_text=_(
+            "Indicates how the detected licenses in a codebase resource complies with "
+            "provided policies."
+        ),
+    )
+
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
@@ -862,6 +879,40 @@ class CodebaseResource(
 
     def __str__(self):
         return self.path
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """
+        Store the `licenses` field on creating this instance from the database value.
+        The cached value is then used to detected changes on `save()`.
+        """
+        new = super().from_db(db, field_names, values)
+
+        if "licenses" in field_names:
+            new._loaded_licenses = values[field_names.index("licenses")]
+
+        return new
+
+    def save(self, *args, **kwargs):
+        """
+        Inject policies if the feature is enabled when the `licenses` field value is
+        changed.
+        """
+        if scanpipe_app.policies_enabled:
+            loaded_licenses = getattr(self, "loaded_licenses", [])
+            if self.licenses != loaded_licenses:
+                self.inject_licenses_policy(scanpipe_app.license_policies_index)
+                self.compliance_alert = self.compute_compliance_alert()
+
+        super().save(*args, **kwargs)
+
+    def inject_licenses_policy(self, policies_index):
+        """
+        Inject license policies from the `policies_index` into the `licenses` field.
+        """
+        for license_data in self.licenses:
+            key = license_data.get("key")
+            license_data["policy"] = policies_index.get(key, None)
 
     @property
     def location_path(self):
@@ -888,6 +939,38 @@ class CodebaseResource(
     @property
     def is_symlink(self):
         return self.type == self.Type.SYMLINK
+
+    def compute_compliance_alert(self):
+        """
+        Compute and return the compliance_alert value from the `licenses` policies.
+        """
+        if not self.licenses:
+            return ""
+
+        ok = self.Compliance.OK
+        error = self.Compliance.ERROR
+        warning = self.Compliance.WARNING
+        missing = self.Compliance.MISSING
+
+        alerts = []
+        for license_data in self.licenses:
+            policy = license_data.get("policy")
+            if policy:
+                alerts.append(policy.get("compliance_alert") or ok)
+            else:
+                alerts.append(missing)
+
+        if error in alerts:
+            return error
+        elif warning in alerts:
+            return warning
+        elif missing in alerts:
+            return missing
+        return ok
+
+    @property
+    def unique_license_expressions(self):
+        return sorted(set(self.license_expressions))
 
     def descendants(self):
         """

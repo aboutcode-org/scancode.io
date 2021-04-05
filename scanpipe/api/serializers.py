@@ -33,7 +33,7 @@ from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import fetch_urls
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class SerializerExcludeFieldsMixin:
@@ -60,7 +60,7 @@ class PipelineChoicesMixin:
         ensure that all the pipelines where properly loaded first.
         """
         super().__init__(*args, **kwargs)
-        self.fields["pipeline"].choices = scanpipe_app_config.get_pipeline_choices()
+        self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices()
 
 
 class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
@@ -188,6 +188,7 @@ class ProjectSerializer(
 
 class CodebaseResourceSerializer(serializers.ModelSerializer):
     for_packages = serializers.JSONField()
+    compliance_alert = serializers.CharField()
 
     class Meta:
         model = CodebaseResource

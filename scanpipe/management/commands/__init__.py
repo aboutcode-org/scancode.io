@@ -30,7 +30,7 @@ from django.core.management.base import CommandError
 from scanpipe.models import Project
 from scanpipe.pipes.fetch import fetch_urls
 
-scanpipe_app_config = apps.get_app_config("scanpipe")
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ProjectCommand(BaseCommand):
@@ -144,8 +144,8 @@ def validate_pipelines(pipeline_names):
     Raise an error if one of the `pipeline_names` is not available.
     """
     for pipeline_name in pipeline_names:
-        if pipeline_name not in scanpipe_app_config.pipelines:
+        if pipeline_name not in scanpipe_app.pipelines:
             raise CommandError(
                 f"{pipeline_name} is not a valid pipeline. \n"
-                f"Available: {', '.join(scanpipe_app_config.pipelines.keys())}"
+                f"Available: {', '.join(scanpipe_app.pipelines.keys())}"
             )

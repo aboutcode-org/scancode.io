@@ -245,6 +245,12 @@ class ScanPipeAPITest(TransactionTestCase):
         )
         self.assertEqual("filename.ext", resource["path"])
 
+        self.assertEqual("", resource["compliance_alert"])
+        self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR
+        self.resource1.save()
+        response = self.csrf_client.get(url)
+        self.assertEqual("error", response.data[0]["compliance_alert"])
+
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
@@ -357,6 +363,6 @@ class ScanPipeAPITest(TransactionTestCase):
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
         self.assertEqual(28, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(20, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(21, len(get_serializer_fields(CodebaseResource)))
         with self.assertRaises(LookupError):
             get_serializer_fields(None)

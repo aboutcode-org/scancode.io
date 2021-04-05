@@ -22,6 +22,7 @@
 
 from collections import Counter
 
+from django.apps import apps
 from django.contrib import messages
 from django.http import FileResponse
 from django.http import Http404
@@ -33,7 +34,6 @@ from django.views import generic
 import saneyaml
 from django_filters.views import FilterView
 
-from scanpipe.api.serializers import scanpipe_app_config
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import PackageFilterSet
@@ -47,6 +47,8 @@ from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipes import codebase
 from scanpipe.pipes import output
+
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class PrefetchRelatedViewMixin:
@@ -79,7 +81,7 @@ class ProjectCreateView(generic.CreateView):
         context = super().get_context_data(**kwargs)
         context["pipelines"] = {
             key: pipeline_class.get_info()
-            for key, pipeline_class in scanpipe_app_config.pipelines.items()
+            for key, pipeline_class in scanpipe_app.pipelines.items()
         }
         return context
 
@@ -147,6 +149,10 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             files, "licenses", "category"
         )
 
+        file_compliance_alert = []
+        if scanpipe_app.policies_enabled:
+            file_compliance_alert = files.values_list("compliance_alert", flat=True)
+
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
 
@@ -167,6 +173,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "copyrights": self.get_summary(file_copyrights),
                 "file_license_keys": self.get_summary(file_license_keys),
                 "file_license_categories": self.get_summary(file_license_categories),
+                "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
                 "file_filter": file_filter,
@@ -299,6 +306,11 @@ class CodebaseResourceListView(
     paginate_by = 100
     prefetch_related = ["discovered_packages"]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["include_compliance_alert"] = scanpipe_app.policies_enabled
+        return context
+
 
 class DiscoveredPackageListView(
     PrefetchRelatedViewMixin, ProjectRelatedViewMixin, FilterView
@@ -338,7 +350,7 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
                 "start_line": entry["start_line"],
                 "end_line": entry["end_line"],
                 "text": self.get_annotation_text(entry, field_name, value_key),
-                "type": "info",
+                "type": entry.get("policy", {}).get("compliance_alert") or "info",
             }
             for entry in getattr(self.object, field_name)
         ]
