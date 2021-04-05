@@ -3,6 +3,9 @@
 
 ### v1.1.1 (unreleased)
 
+- Add support for RPM-based distros for docker and rootfs images
+  https://github.com/nexB/scancode.io/issues/6
+
 - Add a compliance alert system based on license policies provided through a
   policies.yml file. The compliance alerts are computed from the license_expression and
   stored on the codebase resource. When the policy feature is enabled, the compliance

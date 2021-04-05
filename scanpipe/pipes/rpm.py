@@ -20,31 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from packagedcode import rpm
 
-FROM python:3.9
 
-# Force unbuffered stdout and stderr (e.g. they are flushed to terminal immediately)
-ENV PYTHONUNBUFFERED 1
-
-# Requirements as per https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
-RUN apt-get update \
- && apt-get install -y \
-       bzip2 \
-       xz-utils \
-       zlib1g \
-       libxml2-dev \
-       libxslt1-dev \
-       libgomp1 \
-       libsqlite3-0 \
-       libgcrypt20 \
-       libpopt0 \
-       libzstd1 \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-RUN mkdir /opt/scancodeio/
-RUN mkdir -p /var/scancodeio/static/
-RUN mkdir -p /var/scancodeio/workspace/
-COPY . /opt/scancodeio/
-WORKDIR /opt/scancodeio/
-RUN pip install .
+def package_getter(root_dir, detect_licenses=True, **kwargs):
+    """
+    Yield installed package objects.
+    """
+    packages = rpm.get_installed_packages(root_dir, detect_licenses=detect_licenses)
+    for package in packages:
+        yield package.purl, package
