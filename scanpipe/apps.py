@@ -20,10 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from pathlib import Path
+
 from django.apps import AppConfig
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
+
+import saneyaml
 
 try:
     from importlib import metadata as importlib_metadata
@@ -42,9 +47,11 @@ class ScanPipeConfig(AppConfig):
 
         # Mapping of registered pipeline names to pipeline classes.
         self._pipelines = {}
+        self.license_policies_index = {}
 
     def ready(self):
         self.load_pipelines()
+        self.set_policies()
 
     def load_pipelines(self):
         """
@@ -87,3 +94,36 @@ class ScanPipeConfig(AppConfig):
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
         choices.extend([(name, name) for name in self.pipelines.keys()])
         return choices
+
+    def set_policies(self):
+        """
+        Compute and set the `license_policies` on the app instance.
+
+        If a policies file is available but not under the proper format, or not
+        including the proper content, we want to let an exception to be raised
+        during the app loading to warn the sysadmin about the issue.
+        """
+        policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+        if policies_file_location:
+            policies_file = Path(policies_file_location)
+            if policies_file.exists():
+                policies = saneyaml.load(policies_file.read_text())
+                license_policies = policies.get("license_policies", [])
+                self.license_policies_index = self.get_policies_index(
+                    policies_list=license_policies,
+                    key="license_key",
+                )
+
+    @staticmethod
+    def get_policies_index(policies_list, key):
+        """
+        Return an inverted index by `key` of the `policies_list`.
+        """
+        return {policy.get(key): policy for policy in policies_list}
+
+    @property
+    def policies_enabled(self):
+        """
+        Return True if the policies where provided and properly loaded.
+        """
+        return bool(self.license_policies_index)

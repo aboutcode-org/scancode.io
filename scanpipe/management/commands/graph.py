@@ -24,10 +24,11 @@ import subprocess
 import sys
 from textwrap import indent
 
+from django.apps import apps
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
-from scanpipe.management.commands import scanpipe_app_config
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 def is_graphviz_installed():
@@ -85,7 +86,7 @@ class Command(BaseCommand):
 
     def handle(self, *pipeline_names, **options):
         if options["list"]:
-            for pipeline_name, pipeline_class in scanpipe_app_config.pipelines.items():
+            for pipeline_name, pipeline_class in scanpipe_app.pipelines.items():
                 self.stdout.write("- " + self.style.SUCCESS(pipeline_name))
                 self.stdout.write(indent(pipeline_class.get_doc(), "  "), ending="\n\n")
             sys.exit(0)
@@ -101,7 +102,7 @@ class Command(BaseCommand):
 
         outputs = []
         for pipeline_name in pipeline_names:
-            pipeline_class = scanpipe_app_config.pipelines.get(pipeline_name)
+            pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
             if not pipeline_class:
                 self.stderr.write(self.style.ERROR(f"{pipeline_name} is not valid."))
                 sys.exit(1)

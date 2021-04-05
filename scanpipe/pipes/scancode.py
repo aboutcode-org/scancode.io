@@ -26,6 +26,7 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 
+from django.apps import apps
 from django.conf import settings
 
 import packagedcode
@@ -43,10 +44,12 @@ from scanpipe.models import CodebaseResource
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
 """
 
+scanpipe_app = apps.get_app_config("scanpipe")
+
 # The maximum number of processes that can be used to execute the given calls.
 # If None or not given then as many worker processes, minus one, will be created as the
 # machine has processors.
-MAX_WORKERS = getattr(settings, "SCANCODE_PROCESSES") or os.cpu_count() - 1
+MAX_WORKERS = getattr(settings, "SCANCODEIO_PROCESSES") or os.cpu_count() - 1
 
 
 def extract(location, target):
@@ -255,7 +258,7 @@ def get_virtual_codebase(project, input_location):
 def create_codebase_resources(project, scanned_codebase):
     """
     Save the resources of a ScanCode `scanned_codebase` scancode.resource.Codebase
-    object to the DB as CodebaseResource of `project`.
+    object to the DB as CodebaseResource of the `project`.
     This function can be used to expends an existing `project` Codebase with new
     CodebaseResource objects as the existing objects (based on the `path`) will be
     skipped.
@@ -268,10 +271,10 @@ def create_codebase_resources(project, scanned_codebase):
             if value is not None:
                 resource_data[field.name] = value
 
-        path = resource_data.pop("path")
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
         resource_data["type"] = CodebaseResource.Type[resource_type]
 
+        path = resource_data.pop("path")
         CodebaseResource.objects.get_or_create(
             project=project,
             path=path,

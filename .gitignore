@@ -37,6 +37,7 @@ local
 /.python-version
 /.pytest_cache/
 /scancodeio.egg-info/
+policies.yml
 
 # This is only created when packaging for external redistribution
 /thirdparty/
