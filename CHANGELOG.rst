@@ -3,6 +3,9 @@
 
 ### v1.1.1 (unreleased)
 
+- Add support for RPM-based distros for docker and rootfs images
+  https://github.com/nexB/scancode.io/issues/6
+
 - Add a new codebase resource detail view including the file content.
   Detected value can be displayed as annotation in the file source.
   https://github.com/nexB/scancode.io/issues/102
