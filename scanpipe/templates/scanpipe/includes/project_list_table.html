@@ -13,7 +13,7 @@
   <tbody>
   {% for project in projects %}
     <tr>
-      <th>
+      <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
       </th>
       <td>
@@ -51,8 +51,8 @@
       </td>
       <td>
         {% for run in project.runs.all %}
-          <div class="is-flex is-justify-content-space-between ml-1 {% if not forloop.first %}mt-1{% endif %}">
-            {{ run.pipeline_name }}
+          <div class="is-flex is-justify-content-space-between {% if not forloop.first %}mt-1{% endif %}">
+            <span class="mr-1">{{ run.pipeline_name }}</span>
             {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
           </div>
         {% endfor %}
