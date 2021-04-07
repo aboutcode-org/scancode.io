@@ -241,15 +241,13 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
             queryset = queryset.prefetch_related(*self.prefetch_related)
         return queryset
 
+    @admin.display(ordering="project", description="Project")
     def project_filter(self, obj):
         return format_html(
             '<a href="?project__uuid__exact={project_uuid}">{project}</a>',
             project=obj.project,
             project_uuid=obj.project.uuid,
         )
-
-    project_filter.short_description = "Project"
-    project_filter.admin_order_field = "project"
 
     def get_urls(self):
         urls = []
@@ -267,6 +265,7 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
             )
         return urls + super().get_urls()
 
+    @admin.action(description="Export selected objects to CSV")
     def export_to_csv(self, request, queryset):
         opts = self.model._meta
         view_url = reverse(f"admin:{opts.app_label}_{opts.model_name}_export")
@@ -274,8 +273,7 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
         params = urlencode({"pks": ",".join(str(pk) for pk in selected)})
         return redirect(f"{view_url}?{params}")
 
-    export_to_csv.short_description = "Export selected objects to CSV"
-
+    @admin.action(description="Export selected objects to JSON")
     def export_to_json(self, request, queryset):
         model_name = queryset.model._meta.model_name
         serializer_class = get_model_serializer(queryset.model)
@@ -285,8 +283,6 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
         response = StreamingHttpResponse(json_data, content_type="application/json")
         response["Content-Disposition"] = f'attachment; filename="{model_name}.json"'
         return response
-
-    export_to_json.short_description = "Export selected objects to JSON"
 
 
 def get_admin_url(obj, view="change"):
@@ -322,6 +318,7 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
     prefetch_related = ["discovered_packages"]
     actions = ["export_to_csv", "export_to_json"]
 
+    @admin.display(ordering="path", description="Path")
     def path_filter(self, obj):
         """
         Split the `obj.path` into clickable segments.
@@ -344,9 +341,6 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
                 links.append(f'<a href="?{query_dict.urlencode()}">{segment}</a>')
 
         return mark_safe('<span class="path_separator">/</span>'.join(links))
-
-    path_filter.short_description = "Path"
-    path_filter.admin_order_field = "path"
 
     def packages(self, obj):
         return mark_safe(
@@ -381,6 +375,7 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
 
         raise Http404
 
+    @admin.display(description="File")
     def view_file_links(self, obj):
         if obj.type == obj.Type.FILE:
             return format_html(
@@ -388,8 +383,6 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
                 '<a href="{url}?as_attachment=1">Download</a>',
                 url=get_admin_url(obj, view="raw"),
             )
-
-    view_file_links.short_description = "File"
 
 
 class CodebaseResourceInline(admin.TabularInline):

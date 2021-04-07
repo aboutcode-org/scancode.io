@@ -2,7 +2,7 @@
 importlib_metadata==3.10.0; python_version < "3.8"
 
 # Django related
-Django==3.1.7
+Django==3.2
 django-environ==0.4.5
 django-crispy-forms==1.11.2
 pytz==2021.1

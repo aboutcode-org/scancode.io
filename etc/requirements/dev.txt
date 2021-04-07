@@ -7,7 +7,7 @@ isort==5.8.0
 
 # Documentation
 Sphinx==3.5.3
-sphinx_rtd_theme==0.5.1
+sphinx_rtd_theme==0.5.2
 
 # Release
 bump2version==1.0.1
