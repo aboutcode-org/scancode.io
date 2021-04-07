@@ -124,8 +124,8 @@ package: conf
 	bin/python setup.py sdist
 
 bump:
-	@echo "-> Bump the version to next patch number: 'major.minor.patch'"
-	bin/bumpversion patch --allow-dirty
+	@echo "-> Bump the version"
+	bin/bumpver update --no-fetch
 
 docs:
 	rm -rf docs/_build/
