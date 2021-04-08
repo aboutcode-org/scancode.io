@@ -1,6 +1,11 @@
 // Release notes
 // -------------
 
+### unreleased
+
+- Implement timeout on the scan functions, default to 120 seconds per resources.
+  https://github.com/nexB/scancode.io/issues/135
+
 ### v21.4.5
 
 - Add support for Docker and VM images using RPMs such as Fedora, CentOS, RHEL,
