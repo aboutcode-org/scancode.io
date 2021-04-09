@@ -1,143 +1,143 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-  <div class="container is-max-desktop">
-    {% include 'scanpipe/includes/navbar_header.html' %}
+<div class="container is-max-desktop">
+  {% include 'scanpipe/includes/navbar_header.html' %}
 
-    <section class="section pt-0">
-      <h2 class="subtitle mb-0 pt-2 mb-5">
-        Create a <strong>Project</strong>
-      </h2>
+  <section class="section pt-0">
+    <h2 class="subtitle mb-0 pt-2 mb-5">
+      Create a <strong>Project</strong>
+    </h2>
 
-      {% if form.errors %}
-        <div class="notification is-danger">
-          {% for field_name, errors in form.errors.items %}
-            {{ errors }}
-          {% endfor %}
-        </div>
-      {% endif %}
+    {% if form.errors %}
+    <div class="notification is-danger">
+      {% for field_name, errors in form.errors.items %}
+      {{ errors }}
+      {% endfor %}
+    </div>
+    {% endif %}
 
-      <div class="columns">
-        <div class="column is-three-fifths pr-5">
-          <form method="post" enctype="multipart/form-data">{% csrf_token %}
-            <div class="field">
-              <label class="label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
-              <div class="control">
-                {{ form.name }}
-                <p class="help">{{ form.name.help_text }}</p>
-              </div>
+    <div class="columns">
+      <div class="column is-three-fifths pr-5">
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+          <div class="field">
+            <label class="label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+            <div class="control">
+              {{ form.name }}
+              <p class="help">{{ form.name.help_text }}</p>
             </div>
+          </div>
 
-            <label class="label mt-5">Inputs</label>
-            <div class="box">
-              <label class="label has-text-weight-semibold" for="{{ form.input_files.id_for_label }}">Upload files</label>
-              <div class="file has-name is-boxed is-fullwidth">
-                <label class="file-label">
-                  {{ form.input_files }}
-                  <span class="file-cta">
-                    <span class="file-icon">
-                      <i class="fas fa-upload"></i>
-                    </span>
-                    <span class="file-label has-text-centered">
-                      Choose one or more files…
-                    </span>
+          <label class="label mt-5">Inputs</label>
+          <div class="box">
+            <label class="label has-text-weight-semibold" for="{{ form.input_files.id_for_label }}">Upload files</label>
+            <div class="file has-name is-boxed is-fullwidth">
+              <label class="file-label" id="file_upload_label">
+                {{ form.input_files }}
+                <span class="file-cta">
+                  <span class="file-icon">
+                    <i class="fas fa-upload"></i>
                   </span>
-                  <span class="file-name" id="inputs-file-name" style="height: auto;">
-                    <i>No files selected</i>
+                  <span class="file-label has-text-centered">
+                    Choose one or more files…
                   </span>
-                </label>
-              </div>
-
-              <div class="field mt-5">
-                <label class="label has-text-weight-semibold" for="{{ form.input_urls.id_for_label }}">{{ form.input_urls.label }}</label>
-                <div class="control">
-                  {{ form.input_urls }}
-                  <p class="help">{{ form.input_urls.help_text }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="field mt-5">
-              <label class="label" for="{{ form.pipeline.id_for_label }}">Pipeline</label>
-              <div class="control">
-                <span class="select">
-                  {{ form.pipeline }}
                 </span>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
-                {{ form.execute_now }}
-                {{ form.execute_now.label }}
+                <span class="file-name" id="inputs-file-name" style="height: auto;">
+                  <i>No files selected</i>
+                </span>
               </label>
             </div>
 
-            <div class="columns mt-6 is-variable is-1">
-              <div class="column is-one-third">
-                <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
-              </div>
-              <div class="column">
-                <input type="submit" class="button is-fullwidth is-link" value="Create">
+            <div class="field mt-5">
+              <label class="label has-text-weight-semibold" for="{{ form.input_urls.id_for_label }}">{{ form.input_urls.label }}</label>
+              <div class="control">
+                {{ form.input_urls }}
+                <p class="help">{{ form.input_urls.help_text }}</p>
               </div>
             </div>
-          </form>
-          {{ form.media }}
-        </div>
+          </div>
 
-        <div class="column has-background-light has-border-radius">
-          <h3 class="subtitle mb-3">Pipelines:</h3>
-          {% for pipeline_name, pipeline_info in pipelines.items %}
-            <div class="mb-3">
-              <div>
-                <a class="help-text modal-button" data-target="{{ pipeline_name }}-modal" aria-haspopup="true">
-                  <strong>{{ pipeline_name }}</strong>
-                </a>
-                <div id="{{ pipeline_name }}-modal" class="modal">
-                  <div class="modal-background"></div>
-                  <div class="modal-card">
-                    <header class="modal-card-head">
-                      <p class="modal-card-title">
-                        <strong>{{ pipeline_name }}</strong>
-                      </p>
-                      <button class="delete" aria-label="close"></button>
-                    </header>
-                    <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
-                      {{ pipeline_info.description }}
-                    </div>
-                    <section class="modal-card-body has-text-centered border-bottom-radius">
-                      {% for step in pipeline_info.steps %}
-                        <span class="tag is-info">{{ step.name }}</span>
-                        <div>{{ step.doc }}</div>
-                        {% if not forloop.last %}<div>&darr;</div>{% endif %}
-                      {% endfor %}
-                    </section>
-                  </div>
-                </div>
-              </div>
-              {{ pipeline_info.description }}
+          <div class="field mt-5">
+            <label class="label" for="{{ form.pipeline.id_for_label }}">Pipeline</label>
+            <div class="control">
+              <span class="select">
+                {{ form.pipeline }}
+              </span>
             </div>
-          {% endfor %}
-        </div>
+          </div>
+
+          <div class="field">
+            <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
+              {{ form.execute_now }}
+              {{ form.execute_now.label }}
+            </label>
+          </div>
+
+          <div class="columns mt-6 is-variable is-1">
+            <div class="column is-one-third">
+              <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
+            </div>
+            <div class="column">
+              <input type="submit" class="button is-fullwidth is-link" value="Create">
+            </div>
+          </div>
+        </form>
+        {{ form.media }}
       </div>
-    </section>
-  </div>
+
+      <div class="column has-background-light has-border-radius">
+        <h3 class="subtitle mb-3">Pipelines:</h3>
+        {% for pipeline_name, pipeline_info in pipelines.items %}
+        <div class="mb-3">
+          <div>
+            <a class="help-text modal-button" data-target="{{ pipeline_name }}-modal" aria-haspopup="true">
+              <strong>{{ pipeline_name }}</strong>
+            </a>
+            <div id="{{ pipeline_name }}-modal" class="modal">
+              <div class="modal-background"></div>
+              <div class="modal-card">
+                <header class="modal-card-head">
+                  <p class="modal-card-title">
+                    <strong>{{ pipeline_name }}</strong>
+                  </p>
+                  <button class="delete" aria-label="close"></button>
+                </header>
+                <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
+                  {{ pipeline_info.description }}
+                </div>
+                <section class="modal-card-body has-text-centered border-bottom-radius">
+                  {% for step in pipeline_info.steps %}
+                  <span class="tag is-info">{{ step.name }}</span>
+                  <div>{{ step.doc }}</div>
+                  {% if not forloop.last %}<div>&darr;</div>{% endif %}
+                  {% endfor %}
+                </section>
+              </div>
+            </div>
+          </div>
+          {{ pipeline_info.description }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
 {% endblock %}
 
 {% block scripts %}
-  {% include "scanpipe/includes/modal.js.html" %}
-  <script>
-    displayOverlay = function () {
-      let background = document.createElement("div");
-      background.className = "modal-background";
-      background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
-      background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
-      document.body.appendChild(background);
-    };
+{% include "scanpipe/includes/modal.js.html" %}
+<script>
+  displayOverlay = function () {
+    let background = document.createElement("div");
+    background.className = "modal-background";
+    background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
+    background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
+    document.body.appendChild(background);
+  };
 
-    let form = document.querySelector("form");
-    form.addEventListener("submit", function(event) {
-      displayOverlay();
-    });
-  </script>
+  let form = document.querySelector("form");
+  form.addEventListener("submit", function(event) {
+    displayOverlay();
+  });
+</script>
 {% endblock %}
