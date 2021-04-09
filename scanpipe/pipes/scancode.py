@@ -20,9 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import concurrent.futures
 import os
 import shlex
-from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 
@@ -35,7 +35,9 @@ from commoncode.resource import VirtualCodebase
 from extractcode.extract import extract_file
 from packageurl import PackageURL
 from scancode import ScancodeError
+from scancode import Scanner
 from scancode import api as scancode_api
+from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
@@ -122,26 +124,23 @@ def get_resource_info(location):
 
 def scan_file(location):
     """
-    Run a license, copyright, email, and url scan functions on provided `location`.
-    Return a dict of `scan_results` and a list of `scan_errors`.
+    Run a license, copyright, email, and url scan functions on provided `location`,
+    using the scancode-toolkit scan_resource method to support timeout.
+
+    Return a dict of scan `results` and a list of `errors`.
     """
-    scan_functions = [
-        scancode_api.get_copyrights,
-        partial(scancode_api.get_licenses, include_text=True),
-        scancode_api.get_emails,
-        scancode_api.get_urls,
+    scanners = [
+        Scanner("copyrights", scancode_api.get_copyrights),
+        Scanner("licenses", partial(scancode_api.get_licenses, include_text=True)),
+        Scanner("emails", scancode_api.get_emails),
+        Scanner("urls", scancode_api.get_urls),
     ]
 
-    scan_results = {}
-    scan_errors = []
+    # `rid` is not needed in this context, yet required in the scan_resource args
+    location_rid = location, 0
+    _, _, errors, _, results, _ = scancode_cli.scan_resource(location_rid, scanners)
 
-    for function in scan_functions:
-        try:
-            scan_results.update(function(location))
-        except Exception as scan_error:
-            scan_errors.append(scan_error)
-
-    return scan_results, scan_errors
+    return results, errors
 
 
 def scan_file_and_save_results(codebase_resource):
@@ -164,11 +163,14 @@ def scan_for_files(project):
     """
     Run a license, copyright, email, and url scan on remainder of files without status
     for `project`.
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
     """
     codebase_resources = project.codebaseresources.no_status()
 
-    with ProcessPoolExecutor(MAX_WORKERS) as executor:
-        executor.map(scan_file_and_save_results, codebase_resources, timeout=120)
+    with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
+        for resource in codebase_resources:
+            executor.submit(scan_file_and_save_results, resource)
 
 
 def scan_package_and_save_results(codebase_resource):
@@ -188,11 +190,14 @@ def scan_package_and_save_results(codebase_resource):
 def scan_for_application_packages(project):
     """
     Run a package scan on files without status for `project`.
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
     """
     codebase_resources = project.codebaseresources.no_status()
 
-    with ProcessPoolExecutor(MAX_WORKERS) as executor:
-        executor.map(scan_package_and_save_results, codebase_resources, timeout=120)
+    with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
+        for resource in codebase_resources:
+            executor.submit(scan_package_and_save_results, resource)
 
 
 def run_extractcode(location, options=None, raise_on_error=False):

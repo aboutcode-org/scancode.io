@@ -24,10 +24,6 @@ from django import forms
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
-import django_filters
-
-from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes.fetch import fetch_urls
 
@@ -141,27 +137,3 @@ class AddPipelineForm(PipelineBaseForm):
     def save(self, project):
         self.handle_pipeline(project)
         return project
-
-
-class ProjectFilterSet(django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
-
-    class Meta:
-        model = Project
-        fields = ["search"]
-
-
-class ResourceFilterSet(django_filters.FilterSet):
-    class Meta:
-        model = CodebaseResource
-        fields = [
-            "programming_language",
-            "mime_type",
-            "compliance_alert",
-        ]
-
-
-class PackageFilterSet(django_filters.FilterSet):
-    class Meta:
-        model = DiscoveredPackage
-        fields = ["type", "license_expression"]
