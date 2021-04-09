@@ -5,8 +5,17 @@ ScanCode.io Settings
 
 The ``.env`` file is created at the root of the ScanCode.io codebase during its
 installation.
-You can configure your preferences using the following settings in the ``.env``
-file.
+You can configure your preferences using the following settings in the ``.env`` file.
+
+DATABASE
+--------
+
+The database can be configured using the following settings::
+
+    SCANCODEIO_DB_HOST
+    SCANCODEIO_DB_NAME
+    SCANCODEIO_DB_USER
+    SCANCODEIO_DB_PASSWORD
 
 SCANCODE_DEFAULT_OPTIONS
 ------------------------
