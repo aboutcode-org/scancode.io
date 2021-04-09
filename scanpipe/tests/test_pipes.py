@@ -243,7 +243,7 @@ class ScanPipePipesTest(TestCase):
             "emails",
             "urls",
         ]
-        self.assertEqual(expected, list(scan_results.keys()))
+        self.assertEqual(sorted(expected), sorted(scan_results.keys()))
         self.assertEqual([], scan_errors)
 
     def test_scanpipe_pipes_scancode_scan_file_timeout(self):
@@ -267,7 +267,7 @@ class ScanPipePipesTest(TestCase):
             "emails",
             "urls",
         ]
-        self.assertEqual(expected, list(scan_results.keys()))
+        self.assertEqual(sorted(expected), sorted(scan_results.keys()))
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results(self):
         project1 = Project.objects.create(name="Analysis")
