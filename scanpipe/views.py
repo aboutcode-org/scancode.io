@@ -34,12 +34,12 @@ from django.views import generic
 import saneyaml
 from django_filters.views import FilterView
 
+from scanpipe.filters import PackageFilterSet
+from scanpipe.filters import ProjectFilterSet
+from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
-from scanpipe.forms import PackageFilterSet
-from scanpipe.forms import ProjectFilterSet
 from scanpipe.forms import ProjectForm
-from scanpipe.forms import ResourceFilterSet
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project

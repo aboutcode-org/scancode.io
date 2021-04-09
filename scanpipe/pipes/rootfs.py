@@ -214,7 +214,8 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
                 logger.info(f"      installed file is missing: {rootfs_path}")
                 continue
 
-            if created_package not in codebase_resource.discovered_packages:
+            # id list?
+            if created_package not in codebase_resource.discovered_packages.all():
                 codebase_resource.discovered_packages.add(created_package)
                 codebase_resource.status = "system-package"
                 logger.info(f"      added as system-package to: {purl}")

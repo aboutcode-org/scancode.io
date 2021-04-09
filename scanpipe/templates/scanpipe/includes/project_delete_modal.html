@@ -19,8 +19,8 @@
     </section>
     <form action="{% url 'project_delete' project.uuid %}" method="post">{% csrf_token %}
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
-        <button class="button has-text-weight-semibold">No, Cancel</button>
-        <button class="button is-danger is-light">Yes, Delete Project</button>
+        <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+        <button class="button is-danger is-light is-no-close" type="submit">Yes, Delete Project</button>
       </footer>
     </form>
   </div>
