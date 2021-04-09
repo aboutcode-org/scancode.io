@@ -240,7 +240,7 @@ class Project(UUIDPKModel, models.Model):
 
     @property
     def codebase_path(self):
-        return Path(self.work_path / "codebase")
+        return Path(self.work_path)
 
     @property
     def tmp_path(self):
