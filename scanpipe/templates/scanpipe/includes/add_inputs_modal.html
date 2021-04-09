@@ -9,14 +9,14 @@
       <section class="modal-card-body">
         <label class="label has-text-weight-semibold" for="{{ add_inputs_form.input_files.id_for_label }}">Upload files</label>
         <div class="file has-name is-boxed is-fullwidth">
-          <label class="file-label">
+          <label class="file-label" id="file_upload_label">
             {{ add_inputs_form.input_files }}
             <span class="file-cta">
               <span class="file-icon">
                 <i class="fas fa-upload"></i>
               </span>
               <span class="file-label has-text-centered">
-                Choose one or more files…
+                Drop files over here
               </span>
             </span>
             <span class="file-name" id="inputs-file-name" style="height: auto;">

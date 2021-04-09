@@ -21,7 +21,7 @@
 // Visit https://github.com/nexB/scancode.io for support and download.
 
 const fileInput = document.querySelector('#id_input_files');
-fileInput.onchange = update_files
+fileInput.onchange = update_files;
 
 const input_urls = document.querySelector('#id_input_urls');
 input_urls.oninput = () => {
@@ -31,28 +31,20 @@ input_urls.oninput = () => {
 
 // Handling DropZone Events
 const dropzone = document.querySelector('#file_upload_label');
-dropzone.addEventListener("dragenter", dragenter, false);
-dropzone.addEventListener("dragover", dragover, false);
-dropzone.addEventListener("drop", dropHandler, false);
+dropzone.addEventListener("dragenter", disable_event);
+dropzone.addEventListener("dragover", disable_event);
+dropzone.addEventListener("drop", dropHandler);
 
-function dragenter(e) {
-  e.stopPropagation();
-  e.preventDefault();
-}
-
-function dragover(e) {
+function disable_event(e) {
   e.stopPropagation();
   e.preventDefault();
 }
 
 function dropHandler(event) {
   // Prevent default behavior (Prevent file from being opened)
-  event.stopPropagation();
-  event.preventDefault();
-  const dt = event.dataTransfer;
-  const files = dt.files;
-  document.querySelector('#id_input_files').files = files
-  update_files()
+  disable_event(event);
+  document.querySelector('#id_input_files').files = event.dataTransfer.files;
+  update_files();
 }
 
 // Function for updating file_names in span
@@ -61,7 +53,7 @@ function update_files() {
     const fileName = document.querySelector('#inputs-file-name');
     fileName.innerHTML = "";
     for (file of fileInput.files) {
-      fileName.innerHTML += `<span class="is-block">${file.name}</span>`
+      fileName.innerHTML += `<span class="is-block">${file.name}</span>`;
     }
   }
 }
