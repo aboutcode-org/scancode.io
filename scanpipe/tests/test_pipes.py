@@ -30,6 +30,8 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.test import TransactionTestCase
 
+from scancode.interrupt import TimeoutError as InterruptTimeoutError
+
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -243,6 +245,29 @@ class ScanPipePipesTest(TestCase):
         ]
         self.assertEqual(expected, list(scan_results.keys()))
         self.assertEqual([], scan_errors)
+
+    def test_scanpipe_pipes_scancode_scan_file_timeout(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+
+        with mock.patch("scancode.api.get_copyrights") as get_copyrights:
+            get_copyrights.side_effect = InterruptTimeoutError
+            scan_results, scan_errors = scancode.scan_file(input_location)
+
+        expected_errors = [
+            "ERROR: for scanner: copyrights:\n"
+            "ERROR: Processing interrupted: timeout after 120 seconds."
+        ]
+        self.assertEqual(expected_errors, scan_errors)
+
+        expected = [
+            "licenses",
+            "license_expressions",
+            "spdx_license_expressions",
+            "percentage_of_license_text",
+            "emails",
+            "urls",
+        ]
+        self.assertEqual(expected, list(scan_results.keys()))
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results(self):
         project1 = Project.objects.create(name="Analysis")
