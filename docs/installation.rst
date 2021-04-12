@@ -13,18 +13,23 @@ Pre-requisite
 Optional:
  * **PostgreSQL 10** or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
 
-.. warning::
-    On Linux, several OS packages are required by ScanCode toolkit.
-    Make sure those are installed before attempting the ScanCode.io installation.
-    Refer to `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html#prerequisites>`_
-
 .. note::
-    ScanCode.io can also be run through a Docker image,
-    refer to the :ref:`docker_image` chapter for details.
+    ScanCode.io can also be run through **Docker**, this is the preferred approach
+    **on Windows**. Refer to the :ref:`docker_image` chapter for details.
 
 
 Local installation
 ------------------
+
+.. warning::
+    On **Linux**, several **system packages are required** by ScanCode toolkit.
+    Make sure those are installed before attempting the ScanCode.io installation::
+
+        sudo apt-get install \
+            build-essential libssl-dev python3-dev \
+            bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0
+
+    See also to `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html#prerequisites>`_
 
 Clone the git `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
 install dependencies and create an environment file::
