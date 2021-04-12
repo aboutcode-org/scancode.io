@@ -21,39 +21,40 @@
 // Visit https://github.com/nexB/scancode.io for support and download.
 
 const fileInput = document.querySelector('#id_input_files');
-fileInput.onchange = update_files;
+fileInput.onchange = updateFiles;
 
-const input_urls = document.querySelector('#id_input_urls');
-input_urls.oninput = () => {
-  input_urls.style.height = "";
-  input_urls.style.height = input_urls.scrollHeight + 3 + "px";
-}
-
-// Handling DropZone Events
-const dropzone = document.querySelector('#file_upload_label');
-dropzone.addEventListener("dragenter", disable_event);
-dropzone.addEventListener("dragover", disable_event);
-dropzone.addEventListener("drop", dropHandler);
-
-function disable_event(e) {
-  e.stopPropagation();
-  e.preventDefault();
-}
-
-function dropHandler(event) {
-  // Prevent default behavior (Prevent file from being opened)
-  disable_event(event);
-  document.querySelector('#id_input_files').files = event.dataTransfer.files;
-  update_files();
-}
-
-// Function for updating file_names in span
-function update_files() {
+// Update the list of files to be uploaded in the UI
+function updateFiles() {
   if (fileInput.files.length > 0) {
-    const fileName = document.querySelector('#inputs-file-name');
+    const fileName = document.querySelector('#inputs_file_name');
     fileName.innerHTML = "";
-    for (file of fileInput.files) {
+    for (let file of fileInput.files) {
       fileName.innerHTML += `<span class="is-block">${file.name}</span>`;
     }
   }
+}
+
+// Prevent default behavior (prevent file from being opened)
+function disableEvent(event) {
+  event.stopPropagation();
+  event.preventDefault();
+}
+
+function dropHandler(event) {
+  disableEvent(event);
+  fileInput.files = event.dataTransfer.files;
+  updateFiles();
+}
+
+// Handle drag and drop events
+const inputFilesBox = document.querySelector('#input_files_box');
+inputFilesBox.addEventListener("dragenter", disableEvent);
+inputFilesBox.addEventListener("dragover", disableEvent);
+inputFilesBox.addEventListener("drop", dropHandler);
+
+// Dynamic size for the input URLs textarea
+const inputURLs = document.querySelector('#id_input_urls');
+inputURLs.oninput = () => {
+  inputURLs.style.height = "";
+  inputURLs.style.height = inputURLs.scrollHeight + 3 + "px";
 }

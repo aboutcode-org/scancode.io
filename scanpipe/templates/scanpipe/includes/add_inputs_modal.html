@@ -8,8 +8,8 @@
     <form method="post" enctype="multipart/form-data">{% csrf_token %}
       <section class="modal-card-body">
         <label class="label has-text-weight-semibold" for="{{ add_inputs_form.input_files.id_for_label }}">Upload files</label>
-        <div class="file has-name is-boxed is-fullwidth">
-          <label class="file-label" id="file_upload_label">
+        <div class="file has-name is-boxed is-fullwidth" id="input_files_box">
+          <label class="file-label">
             {{ add_inputs_form.input_files }}
             <span class="file-cta">
               <span class="file-icon">
@@ -19,7 +19,7 @@
                 Drop files over here
               </span>
             </span>
-            <span class="file-name" id="inputs-file-name" style="height: auto;">
+            <span class="file-name" id="inputs_file_name" style="height: auto;">
               <i>No files selected</i>
             </span>
           </label>
