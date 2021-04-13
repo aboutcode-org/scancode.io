@@ -30,6 +30,7 @@ from container_inspector.image import Image
 from scanpipe import pipes
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
+from scanpipe.pipes.rootfs import has_hash_diff
 
 logger = logging.getLogger(__name__)
 
@@ -154,30 +155,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
                     logger.info(f"      added as system-package to: {purl}")
                     codebase_resource.save()
 
-                if (
-                    (
-                        install_file.sha512
-                        and codebase_resource.sha512
-                        and codebase_resource.sha512 != install_file.sha512
-                    )
-                    or (
-                        install_file.sha256
-                        and codebase_resource.sha256
-                        and codebase_resource.sha256 != install_file.sha256
-                    )
-                    or (
-                        install_file.sha1
-                        and codebase_resource.sha1
-                        and codebase_resource.sha1 != install_file.sha1
-                    )
-                    or (
-                        install_file.md5
-                        and codebase_resource.md5
-                        and codebase_resource.md5 != install_file.md5
-                    )
-                ):
-                    # Alpine uses SHA1 while Debian uses MD5, we prefer te strongest
-                    # hash that's present
+                if has_hash_diff(install_file, codebase_resource):
                     if install_file.path not in modified_resources:
                         modified_resources.append(install_file.path)
 

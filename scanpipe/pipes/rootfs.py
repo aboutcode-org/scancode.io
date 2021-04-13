@@ -162,6 +162,31 @@ def create_codebase_resources(project, rootfs):
         )
 
 
+def has_hash_diff(install_file, codebase_resource):
+    """
+    Return True if the one of available hashes on both `install_file` and
+    `codebase_resource`, by hash type, is different.
+    For example: Alpine uses SHA1 while Debian uses MD5, we prefer the strongest hash
+    that's present.
+    """
+    hash_types = ["sha512", "sha256", "sha1", "md5"]
+
+    for hash_type in hash_types:
+        install_file_sum = getattr(install_file, hash_type)
+        codebase_resource_sum = getattr(codebase_resource, hash_type)
+        hashes_differ = all(
+            [
+                install_file_sum,
+                codebase_resource_sum,
+                install_file_sum != codebase_resource_sum,
+            ]
+        )
+        if hashes_differ:
+            return True
+
+    return False
+
+
 def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     """
     Given a `project` Project and an `rootfs` RootFs, scan the `rootfs` for
@@ -221,30 +246,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
                 logger.info(f"      added as system-package to: {purl}")
                 codebase_resource.save()
 
-            if (
-                (
-                    install_file.sha512
-                    and codebase_resource.sha512
-                    and codebase_resource.sha512 != install_file.sha512
-                )
-                or (
-                    install_file.sha256
-                    and codebase_resource.sha256
-                    and codebase_resource.sha256 != install_file.sha256
-                )
-                or (
-                    install_file.sha1
-                    and codebase_resource.sha1
-                    and codebase_resource.sha1 != install_file.sha1
-                )
-                or (
-                    install_file.md5
-                    and codebase_resource.md5
-                    and codebase_resource.md5 != install_file.md5
-                )
-            ):
-                # Alpine uses SHA1 while Debian uses MD5, we prefer te strongest
-                # hash that's present
+            if has_hash_diff(install_file, codebase_resource):
                 if install_file.path not in modified_resources:
                     modified_resources.append(install_file.path)
 

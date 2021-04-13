@@ -523,6 +523,19 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("", resource1.status)
         self.assertEqual("ignored-not-interesting", resource2.status)
 
+    def test_scanpipe_pipes_rootfs_has_hash_diff(self):
+        install_file = mock.Mock(sha256="else", md5="md5")
+        codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
+        self.assertTrue(rootfs.has_hash_diff(install_file, codebase_resource))
+
+        install_file = mock.Mock(sha512="sha512", md5="md5")
+        codebase_resource = CodebaseResource(sha512="sha512", md5="else")
+        self.assertTrue(rootfs.has_hash_diff(install_file, codebase_resource))
+
+        install_file = mock.Mock(sha256="sha256", md5="md5")
+        codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
+        self.assertFalse(rootfs.has_hash_diff(install_file, codebase_resource))
+
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
     """
