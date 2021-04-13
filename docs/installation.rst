@@ -26,7 +26,7 @@ Local installation
     Make sure those are installed before attempting the ScanCode.io installation::
 
         sudo apt-get install \
-            build-essential libssl-dev python3-dev \
+            build-essential python3-dev libssl-dev libpq-dev \
             bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0
 
     See also to `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html#prerequisites>`_
