@@ -25,6 +25,7 @@ import django_filters
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectError
 
 
 class ProjectFilterSet(django_filters.FilterSet):
@@ -78,4 +79,13 @@ class PackageFilterSet(django_filters.FilterSet):
             "copyright",
             "manifest_path",
             "contains_source_code",
+        ]
+
+
+class ErrorFilterSet(django_filters.FilterSet):
+    class Meta:
+        model = ProjectError
+        fields = [
+            "model",
+            "message",
         ]

@@ -34,6 +34,7 @@ from django.views import generic
 import saneyaml
 from django_filters.views import FilterView
 
+from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
@@ -322,8 +323,9 @@ class DiscoveredPackageListView(
     prefetch_related = ["codebase_resources"]
 
 
-class ProjectErrorListView(ProjectRelatedViewMixin, generic.ListView):
+class ProjectErrorListView(ProjectRelatedViewMixin, FilterView):
     model = ProjectError
+    filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
 
