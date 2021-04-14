@@ -23,13 +23,21 @@
         <tbody>
           {% for error in object_list %}
             <tr>
-              <td>{{ error.model }}</td>
-              <td>{{ error.message }}</td>
-              <td style="word-break: break-word;">{{ error.details }}</td>
               <td>
-                <pre class="log p-0"><code>{{ error.traceback }}</code></pre>
+                <a href="?model={{ error.model }}" class="is-black-link">{{ error.model }}</a>
               </td>
-              <td>{{ error.created_date }}</td>
+              <td>
+                <a href="?message={{ error.message }}" class="is-black-link">{{ error.message }}</a>
+              </td>
+              <td class="break-word" title="{{ error.details }}" style="max-width: 300px;">
+                {{ error.details|truncatechars:200 }}
+              </td>
+              <td style="max-width: 600px;">
+                <pre class="log p-0" style="max-height: 120px;"><code>{{ error.traceback }}</code></pre>
+              </td>
+              <td>
+                {{ error.created_date }}
+              </td>
             </tr>
           {% endfor %}
         </tbody>

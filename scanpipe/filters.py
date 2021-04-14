@@ -62,6 +62,12 @@ class PackageFilterSet(django_filters.FilterSet):
     class Meta:
         model = DiscoveredPackage
         fields = [
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
             "filename",
             "primary_language",
             "release_date",

@@ -34,16 +34,30 @@
               <td class="break-all">
                 <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
               </td>
-              <td>{{ resource.status }}</td>
-              <td>{{ resource.type }}</td>
+              <td>
+                <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
+              </td>
+              <td>
+                 <a href="?type={{ resource.type }}" class="is-black-link">{{ resource.type }}</a>
+              </td>
               <td>{{ resource.size|default_if_none:"" }}</td>
-              <td>{{ resource.name }}</td>
-              <td>{{ resource.extension }}</td>
-              <td>{{ resource.programming_language }}</td>
-              <td>{{ resource.mime_type }}</td>
+              <td>
+                <a href="?name={{ resource.name }}" class="is-black-link">{{ resource.name }}</a>
+              </td>
+              <td>
+                <a href="?extension={{ resource.extension }}" class="is-black-link">{{ resource.extension }}</a>
+              </td>
+              <td>
+                <a href="?programming_language={{ resource.programming_language }}" class="is-black-link">{{ resource.programming_language }}</a>
+              </td>
+              <td>
+                <a href="?mime_type={{ resource.mime_type }}" class="is-black-link">{{ resource.mime_type }}</a>
+              </td>
               <td>{{ resource.unique_license_expressions|join:"<br>" }}</td>
               {% if include_compliance_alert %}
-                <td>{{ resource.compliance_alert }}</td>
+                <td>
+                  <a href="?compliance_alert={{ resource.compliance_alert }}" class="is-black-link">{{ resource.compliance_alert }}</a>
+                </td>
               {% endif %}
               <td>{{ resource.for_packages|join:"<br>" }}</td>
             </tr>

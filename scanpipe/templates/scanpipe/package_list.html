@@ -21,11 +21,19 @@
         </thead>
         <tbody>
           {% for package in object_list %}
-            <tr>
-              <td>{{ package.package_url }}</td>
-              <td>{{ package.license_expression|linebreaksbr }}</td>
-              <td>{{ package.copyright|linebreaksbr }}</td>
-              <td>{{ package.codebase_resources.all|join:"<br>" }}</td>
+            <tr class="break-word">
+              <td style="min-width: 500px;">
+                {{ package.package_url }}
+              </td>
+              <td style="min-width: 300px; max-width: 400px;">
+                {{ package.license_expression|linebreaksbr }}
+              </td>
+              <td title="{{ package.copyright }}">
+                {{ package.copyright|truncatechars:150|linebreaksbr }}
+              </td>
+              <td title="{{ package.codebase_resources.all|join:'<br>' }}">
+                {{ package.codebase_resources.all|join:"<br>"|truncatechars:150 }}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
