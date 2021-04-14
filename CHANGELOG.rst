@@ -3,12 +3,14 @@
 
 ### unreleased
 
-- Fix issue with closing modal buttons in the web UI.
-  https://github.com/nexB/scancode.io/issues/116
-  https://github.com/nexB/scancode.io/issues/141
+### v21.4.14
 
 - Implement timeout on the scan functions, default to 120 seconds per resources.
   https://github.com/nexB/scancode.io/issues/135
+
+- Fix issue with closing modal buttons in the web UI.
+  https://github.com/nexB/scancode.io/issues/116
+  https://github.com/nexB/scancode.io/issues/141
 
 ### v21.4.5
 
