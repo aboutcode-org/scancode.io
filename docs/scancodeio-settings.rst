@@ -17,6 +17,20 @@ The database can be configured using the following settings::
     SCANCODEIO_DB_USER
     SCANCODEIO_DB_PASSWORD
 
+SCANCODEIO_PROCESSES
+--------------------
+
+By default, multiprocessing is enabled and setup to use the number of available CPUs on
+the machine, minus 1.
+You can control the number of parallel processes available to ScanCode.io using the
+SCANCODE_PROCESSES setting::
+
+    SCANCODE_PROCESSES=4
+
+To disable multiprocessing and run on a single process::
+
+    SCANCODE_PROCESSES=1
+
 SCANCODE_DEFAULT_OPTIONS
 ------------------------
 
@@ -28,7 +42,7 @@ for the full options list.
 The following example explicitly define a value for timeout and set the number
 of parallel processes to 4::
 
-    SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 60
+    SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 120
 
 SCANCODEIO_POLICIES_FILE
 ------------------------
