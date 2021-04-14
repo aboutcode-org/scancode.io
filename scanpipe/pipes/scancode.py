@@ -122,10 +122,23 @@ def get_resource_info(location):
     return file_info
 
 
+def scan_resource(location, scanners):
+    """
+    Wrap the scancode-toolkit `scan_resource` method to support timeout on direct
+    scanner functions calls.
+
+    Return a dict of scan `results` and a list of `errors`.
+    """
+    # `rid` is not needed in this context, yet required in the scan_resource args
+    location_rid = location, 0
+    _, _, errors, _, results, _ = scancode_cli.scan_resource(location_rid, scanners)
+    return results, errors
+
+
 def scan_file(location):
     """
-    Run a license, copyright, email, and url scan functions on provided `location`,
-    using the scancode-toolkit scan_resource method to support timeout.
+    Run a license, copyright, email, and url scan on provided `location`,
+    using the scancode-toolkit direct API.
 
     Return a dict of scan `results` and a list of `errors`.
     """
@@ -135,12 +148,19 @@ def scan_file(location):
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
+    return scan_resource(location, scanners)
 
-    # `rid` is not needed in this context, yet required in the scan_resource args
-    location_rid = location, 0
-    _, _, errors, _, results, _ = scancode_cli.scan_resource(location_rid, scanners)
 
-    return results, errors
+def scan_for_package_info(location):
+    """
+    Run a package scan on provided `location` using the scancode-toolkit direct API.
+
+    Return a dict of scan `results` and a list of `errors`.
+    """
+    scanners = [
+        Scanner("packages", scancode_api.get_package_info),
+    ]
+    return scan_resource(location, scanners)
 
 
 def scan_file_and_save_results(codebase_resource):
@@ -176,14 +196,20 @@ def scan_for_files(project):
 def scan_package_and_save_results(codebase_resource):
     """
     Scan the `codebase_resource` for package and save the results in the database.
+    Create project errors if any occurred during the scan.
     """
-    package_info = scancode_api.get_package_info(codebase_resource.location)
-    packages = package_info.get("packages", [])
+    scan_results, scan_errors = scan_for_package_info(codebase_resource.location)
 
+    packages = scan_results.get("packages", [])
     if packages:
         for package_data in packages:
             codebase_resource.create_and_add_package(package_data)
         codebase_resource.status = "application-package"
+        codebase_resource.save()
+
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        codebase_resource.status = "scanned-with-error"
         codebase_resource.save()
 
 

@@ -275,9 +275,11 @@ class ScanPipePipesTest(TestCase):
             project=project1, path="not available"
         )
 
+        self.assertEqual(0, project1.projecterrors.count())
         scancode.scan_file_and_save_results(codebase_resource1)
         codebase_resource1.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource1.status)
+        self.assertEqual(4, project1.projecterrors.count())
 
         copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
@@ -293,6 +295,29 @@ class ScanPipePipesTest(TestCase):
             "apache-2.0",
         ]
         self.assertEqual(expected, codebase_resource2.license_expressions)
+
+    def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
+        project1 = Project.objects.create(name="Analysis")
+        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        codebase_resource = CodebaseResource.objects.create(
+            project=project1, path="notice.NOTICE"
+        )
+
+        with mock.patch("scancode.api.get_copyrights") as get_copyrights:
+            get_copyrights.side_effect = InterruptTimeoutError
+            scancode.scan_file_and_save_results(codebase_resource)
+
+        codebase_resource.refresh_from_db()
+        self.assertEqual("scanned-with-error", codebase_resource.status)
+        self.assertEqual(1, project1.projecterrors.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("CodebaseResource", error.model)
+        self.assertEqual("", error.traceback)
+        expected_message = (
+            "ERROR: for scanner: copyrights:\n"
+            "ERROR: Processing interrupted: timeout after 120 seconds."
+        )
+        self.assertEqual(expected_message, error.message)
 
     @mock.patch("scanpipe.pipes.scancode.scan_file")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_file):
@@ -323,6 +348,42 @@ class ScanPipePipesTest(TestCase):
             resource.refresh_from_db()
             self.assertEqual("scanned", resource.status)
             self.assertEqual(["mit"], resource.license_expressions)
+
+    def test_scanpipe_pipes_scancode_scan_for_package_info_timeout(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+
+        with mock.patch("scancode.api.get_package_info") as get_package_info:
+            get_package_info.side_effect = InterruptTimeoutError
+            scan_results, scan_errors = scancode.scan_for_package_info(input_location)
+
+        expected_errors = [
+            "ERROR: for scanner: packages:\n"
+            "ERROR: Processing interrupted: timeout after 120 seconds."
+        ]
+        self.assertEqual(expected_errors, scan_errors)
+
+    def test_scanpipe_pipes_scancode_scan_package_and_save_results_timeout_error(self):
+        project1 = Project.objects.create(name="Analysis")
+        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        codebase_resource = CodebaseResource.objects.create(
+            project=project1, path="notice.NOTICE"
+        )
+
+        with mock.patch("scancode.api.get_package_info") as get_package_info:
+            get_package_info.side_effect = InterruptTimeoutError
+            scancode.scan_package_and_save_results(codebase_resource)
+
+        codebase_resource.refresh_from_db()
+        self.assertEqual("scanned-with-error", codebase_resource.status)
+        self.assertEqual(1, project1.projecterrors.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("CodebaseResource", error.model)
+        self.assertEqual("", error.traceback)
+        expected_message = (
+            "ERROR: for scanner: packages:\n"
+            "ERROR: Processing interrupted: timeout after 120 seconds."
+        )
+        self.assertEqual(expected_message, error.message)
 
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
