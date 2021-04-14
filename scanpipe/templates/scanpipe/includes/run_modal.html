@@ -34,7 +34,9 @@
           <div class="control">
             <div class="tags has-addons">
               <span class="tag is-dark">Execution time</span>
-              <span class="tag is-info">{{ run.execution_time }} seconds</span>
+              <span class="tag is-info">
+                {{ run.execution_time_for_display }}
+              </span>
             </div>
           </div>
         {% endif %}

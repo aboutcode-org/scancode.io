@@ -124,6 +124,17 @@ class AbstractTaskFieldsModel(models.Model):
             total_seconds = (self.task_end_date - self.task_start_date).total_seconds()
             return int(total_seconds)
 
+    @property
+    def execution_time_for_display(self):
+        execution_time = self.execution_time
+        if execution_time:
+            message = f"{execution_time} seconds"
+            if execution_time > 3600:
+                message += f" ({execution_time / 3600:.1f} hours)"
+            elif execution_time > 60:
+                message += f" ({execution_time / 60:.1f} minutes)"
+            return message
+
     def reset_task_values(self):
         """
         Reset all task related fields to their initial null value.
