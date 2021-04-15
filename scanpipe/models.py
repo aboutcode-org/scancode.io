@@ -42,6 +42,7 @@ from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
 from packageurl import normalize_qualifiers
+from packageurl.contrib.django.models import PackageURLQuerySetMixin
 
 from scancodeio import WORKSPACE_LOCATION
 from scanpipe import tasks
@@ -1037,6 +1038,10 @@ class CodebaseResource(
         return [str(package) for package in self.discovered_packages.all()]
 
 
+class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+    pass
+
+
 class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPackage):
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
@@ -1047,6 +1052,8 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
     # AbstractPackage overrides:
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
+
+    objects = DiscoveredPackageQuerySet.as_manager()
 
     class Meta:
         ordering = ["uuid"]

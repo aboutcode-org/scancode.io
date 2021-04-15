@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import django_filters
+from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -59,9 +60,12 @@ class ResourceFilterSet(django_filters.FilterSet):
 
 
 class PackageFilterSet(django_filters.FilterSet):
+    purl = PackageURLFilter()
+
     class Meta:
         model = DiscoveredPackage
         fields = [
+            "purl",
             "type",
             "namespace",
             "name",

@@ -59,7 +59,15 @@
                   <a href="?compliance_alert={{ resource.compliance_alert }}" class="is-black-link">{{ resource.compliance_alert }}</a>
                 </td>
               {% endif %}
-              <td>{{ resource.for_packages|join:"<br>" }}</td>
+              <td>
+                <ul>
+                  {% for package in resource.discovered_packages.all %}
+                    <li>
+                      <a href="{% url 'project_packages' project.uuid %}?purl={{ package.package_url }}">{{ package }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </td>
             </tr>
           {% endfor %}
         </tbody>

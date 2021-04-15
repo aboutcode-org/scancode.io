@@ -3,6 +3,8 @@
 
 ### unreleased
 
+- Add links to codebase resource and to discovered packages in list views
+
 ### v21.4.14
 
 - Implement timeout on the scan functions, default to 120 seconds per resources.

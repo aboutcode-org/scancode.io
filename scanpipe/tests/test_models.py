@@ -802,6 +802,20 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
 
+    def test_scanpipe_discovered_package_model_queryset_methods(self):
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        inputs = [
+            ("pkg:deb/debian/adduser@3.118?arch=all", 1),
+            ("pkg:deb/debian/adduser@3.118", 1),
+            ("pkg:deb/debian/adduser", 1),
+            ("pkg:deb/debian", 0),
+            ("pkg:deb/debian/adduser@4", 0),
+        ]
+
+        for purl, expected_count in inputs:
+            qs = DiscoveredPackage.objects.for_package_url(purl)
+            self.assertEqual(expected_count, qs.count(), msg=purl)
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """

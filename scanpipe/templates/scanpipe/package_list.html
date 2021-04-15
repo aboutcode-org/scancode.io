@@ -31,8 +31,14 @@
               <td title="{{ package.copyright }}">
                 {{ package.copyright|truncatechars:150|linebreaksbr }}
               </td>
-              <td title="{{ package.codebase_resources.all|join:'<br>' }}">
-                {{ package.codebase_resources.all|join:"<br>"|truncatechars:150 }}
+              <td>
+                <ul>
+                  {% for resource in package.codebase_resources.all %}
+                    <li>
+                      <a href="{{ resource.get_absolute_url }}">{{ resource }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
               </td>
             </tr>
           {% endfor %}
