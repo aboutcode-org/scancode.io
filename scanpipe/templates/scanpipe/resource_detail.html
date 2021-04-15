@@ -37,7 +37,10 @@
     <section class="mx-5">
       <div class="message-header">
         <p>
-          {{ object.filename }} | {{ object.size|filesizeformat }}<br>
+          {{ object.filename }}
+          | {{ object.size|filesizeformat }}
+          | <a class="has-text-white" href="{{ object.get_raw_url }}?as_attachment=1"><i class="fas fa-download"></i></a>
+          <br>
           <span style="font-size: 10px;">{{ object.path }}</span>
         </p>
       </div>

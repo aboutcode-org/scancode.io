@@ -299,7 +299,9 @@ class ProjectRelatedViewMixin:
 
 
 class CodebaseResourceListView(
-    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, FilterView
+    PrefetchRelatedViewMixin,
+    ProjectRelatedViewMixin,
+    FilterView,
 ):
     model = CodebaseResource
     filterset_class = ResourceFilterSet
@@ -314,7 +316,9 @@ class CodebaseResourceListView(
 
 
 class DiscoveredPackageListView(
-    PrefetchRelatedViewMixin, ProjectRelatedViewMixin, FilterView
+    PrefetchRelatedViewMixin,
+    ProjectRelatedViewMixin,
+    FilterView,
 ):
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
@@ -375,3 +379,23 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         }
 
         return context
+
+
+class CodebaseResourceRawView(
+    ProjectRelatedViewMixin,
+    generic.detail.SingleObjectMixin,
+    generic.base.View,
+):
+    model = CodebaseResource
+
+    def get(self, request, *args, **kwargs):
+        resource = self.get_object()
+        resource_location_path = resource.location_path
+
+        if resource_location_path.is_file():
+            return FileResponse(
+                resource_location_path.open("rb"),
+                as_attachment=request.GET.get("as_attachment", False),
+            )
+
+        raise Http404

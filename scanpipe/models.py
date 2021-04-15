@@ -1007,6 +1007,9 @@ class CodebaseResource(
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project_id, self.pk])
 
+    def get_raw_url(self):
+        return reverse("resource_raw", args=[self.project_id, self.pk])
+
     @property
     def file_content(self):
         """
