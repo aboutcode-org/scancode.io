@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Filtered list views from a click on chart sections can now be opened in a new tab
+  using ctrl/meta + click
+  https://github.com/nexB/scancode.io/issues/125
+
 - Add links to codebase resource and to discovered packages in list views
 
 ### v21.4.14

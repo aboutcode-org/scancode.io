@@ -210,13 +210,7 @@
             "warning": "rgb(254, 175, 41)",
             "missing": "rgb(177, 128, 208)",
           },
-          hide: "(No value detected)",
-          onclick: function(data, element) {
-            let base_chart_div = element.closest(".bb");
-            let url = base_chart_div.dataset.url;
-            let field = base_chart_div.dataset.field;
-            if (url && field) window.location.href = `${url}?${field}=${data.name}`;
-          },
+          hide: "(No value detected)"
         },
         legend: {
           position: 'inset',
@@ -237,7 +231,26 @@
             }
           }
         },
-        bindto: element_id
+        bindto: element_id,
+        onafterinit: function() {
+          // Open a filtered list based on the clicked data.
+          // Ctrl/Meta + click will open in a _blank target.
+          // Using onafterinit to attach click event handler manually
+          // in place of using data.onclick: function(data, element)
+          // as the event is not provided there but required for the metaKey support.
+          this.$.main.on("click", function(event) {
+            let base_chart_div = event.target.closest(".bb");
+            let base_url = base_chart_div.dataset.url;
+            let field = base_chart_div.dataset.field;
+            // Retrieve the data ("name" value for filtering) from the .bb-tooltip section
+            let name = document.querySelector(`#${base_chart_div.id} .bb-tooltip .name`).textContent;
+            if (base_url && field) {
+              let full_url = `${base_url}?${field}=${name}`;
+              if (event.ctrlKey || event.metaKey) window.open(full_url, '_blank');
+              else window.location.href = full_url;
+            }
+          });
+        }
      });
     };
 
