@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Add ability to filter on codebase resource detected values such as licenses,
+  copyrights, holders, authors, emails, and urls
+  https://github.com/nexB/scancode.io/issues/153
+
 - Filtered list views from a click on chart sections can now be opened in a new tab
   using ctrl/meta + click
   https://github.com/nexB/scancode.io/issues/125
