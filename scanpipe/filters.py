@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.db import models
+
 import django_filters
 from packageurl.contrib.django.filters import PackageURLFilter
 
@@ -35,6 +37,18 @@ class ProjectFilterSet(django_filters.FilterSet):
     class Meta:
         model = Project
         fields = ["search"]
+
+
+class JSONContainsFilter(django_filters.CharFilter):
+    """
+    Allow "contains" lookup on a JSONField converted to text.
+    This is useful for datastructures stored as list of dictionaries, where  Django's
+    default lookups are not available.
+    Require the implementation of "json_field_contains" method on the QuerySet.
+    """
+
+    def filter(self, qs, value):
+        return qs.json_field_contains(self.field_name, value)
 
 
 class ResourceFilterSet(django_filters.FilterSet):
@@ -56,7 +70,24 @@ class ResourceFilterSet(django_filters.FilterSet):
             "mime_type",
             "file_type",
             "compliance_alert",
+            "copyrights",
+            "holders",
+            "authors",
+            "licenses",
+            "license_expressions",
+            "emails",
+            "urls",
         ]
+
+    @classmethod
+    def filter_for_lookup(cls, field, lookup_type):
+        """
+        Add support for JSONField storing "list" using the JSONListFilter.
+        """
+        if isinstance(field, models.JSONField) and field.default == list:
+            return JSONContainsFilter, {}
+
+        return super().filter_for_lookup(field, lookup_type)
 
 
 class PackageFilterSet(django_filters.FilterSet):

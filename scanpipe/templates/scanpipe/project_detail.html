@@ -142,18 +142,18 @@
       </div>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="holderChart"></div>
+          <div id="holderChart" data-url="{% url 'project_resources' project.uuid %}" data-field="holders"></div>
         </div>
         <div class="column">
-          <div id="copyrightChart"></div>
+          <div id="copyrightChart" data-url="{% url 'project_resources' project.uuid %}" data-field="copyrights"></div>
         </div>
       </div>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="licenseKeyChart"></div>
+          <div id="licenseKeyChart" data-url="{% url 'project_resources' project.uuid %}" data-field="licenses"></div>
         </div>
         <div class="column">
-          <div id="licenseCategoryChart"></div>
+          <div id="licenseCategoryChart" data-url="{% url 'project_resources' project.uuid %}" data-field="licenses"></div>
         </div>
       </div>
       {% if file_compliance_alert %}

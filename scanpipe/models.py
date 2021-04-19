@@ -33,6 +33,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db import transaction
 from django.db.models import Q
+from django.db.models import TextField
+from django.db.models.functions import Cast
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
@@ -722,6 +724,18 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def has_no_licenses(self):
         return self.filter(licenses=[])
+
+    def json_field_contains(self, field_name, value):
+        """
+        Filter the QuerySet looking for the `value` string in the `field_name` JSON
+        field converted into text.
+        Empty values are excluded as there's no need to cast those into text.
+        """
+        return (
+            self.filter(~Q(**{field_name: []}))
+            .annotate(**{f"{field_name}_as_text": Cast(field_name, TextField())})
+            .filter(**{f"{field_name}_as_text__contains": value})
+        )
 
 
 class ScanFieldsModelMixin(models.Model):

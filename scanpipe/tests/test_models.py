@@ -649,7 +649,7 @@ class ScanPipeModelsTest(TestCase):
         resource.refresh_from_db()
         self.assertEqual(["mit"], resource2.license_expressions)
 
-    def test_scanpipe_codebase_resource_type_methods(self):
+    def test_scanpipe_codebase_resource_queryset_methods(self):
         CodebaseResource.objects.all().delete()
 
         file = CodebaseResource.objects.create(
@@ -727,6 +727,24 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
+    def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
+        resource1 = CodebaseResource.objects.create(project=self.project1, path="1")
+        resource1.holders = [
+            {"value": "H1", "end_line": 51, "start_line": 50},
+            {"value": "H2", "end_line": 61, "start_line": 60},
+        ]
+        resource1.save()
+
+        resource2 = CodebaseResource.objects.create(project=self.project1, path="2")
+        resource2.holders = [{"value": "H3", "end_line": 558, "start_line": 556}]
+        resource2.save()
+
+        qs = CodebaseResource.objects
+        self.assertQuerysetEqual([resource2], qs.json_field_contains("holders", "H3"))
+        self.assertQuerysetEqual([resource1], qs.json_field_contains("holders", "H1"))
+        expected = [resource1, resource2]
+        self.assertQuerysetEqual(expected, qs.json_field_contains("holders", "H"))
+
     def test_scanpipe_codebase_resource_descendants(self):
         path = "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
         resource = self.project_asgiref.codebaseresources.get(path=path)
@@ -803,7 +821,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
 
     def test_scanpipe_discovered_package_model_queryset_methods(self):
-        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
         inputs = [
             ("pkg:deb/debian/adduser@3.118?arch=all", 1),
             ("pkg:deb/debian/adduser@3.118", 1),
