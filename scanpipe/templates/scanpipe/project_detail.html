@@ -118,10 +118,10 @@
       </h3>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="packageTypeChart" data-url="{% url 'project_packages' project.uuid %}" data-field="type"></div>
+          <div id="package_type_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="type"></div>
         </div>
         <div class="column">
-          <div id="packageLicenseChart" data-url="{% url 'project_packages' project.uuid %}" data-field="license_expression"></div>
+          <div id="package_license_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="license_expression"></div>
         </div>
       </div>
     {% endif %}
@@ -133,28 +133,16 @@
       </h3>
       {% include "scanpipe/includes/file_filter.html" with project=project file_filter=file_filter only %}
       <div class="columns is-gapless">
-        <div class="column">
-          <div id="programmingLanguageChart" data-url="{% url 'project_resources' project.uuid %}" data-field="programming_language"></div>
-        </div>
-        <div class="column">
-          <div id="mimeTypeChart" data-url="{% url 'project_resources' project.uuid %}" data-field="mime_type"></div>
-        </div>
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="programming_language" %}
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="mime_type" %}
       </div>
       <div class="columns is-gapless">
-        <div class="column">
-          <div id="holderChart" data-url="{% url 'project_resources' project.uuid %}" data-field="holders"></div>
-        </div>
-        <div class="column">
-          <div id="copyrightChart" data-url="{% url 'project_resources' project.uuid %}" data-field="copyrights"></div>
-        </div>
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="holders" %}
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="copyrights" %}
       </div>
       <div class="columns is-gapless">
-        <div class="column">
-          <div id="licenseKeyChart" data-url="{% url 'project_resources' project.uuid %}" data-field="licenses"></div>
-        </div>
-        <div class="column">
-          <div id="licenseCategoryChart" data-url="{% url 'project_resources' project.uuid %}" data-field="licenses"></div>
-        </div>
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_key" lookup_field="licenses" %}
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_category" lookup_field="licenses" %}
       </div>
       {% if file_compliance_alert %}
         <hr class="mx-5">
@@ -162,9 +150,7 @@
           Policies
         </h3>
         <div class="columns is-gapless">
-          <div class="column">
-            <div id="complianceAlertChart" data-url="{% url 'project_resources' project.uuid %}" data-field="compliance_alert"></div>
-          </div>
+          {% include "scanpipe/includes/resource_chart_column.html" with field_name="compliance_alert" %}
           <div class="column"></div>
         </div>
       {% endif %}
@@ -241,11 +227,13 @@
           this.$.main.on("click", function(event) {
             let base_chart_div = event.target.closest(".bb");
             let base_url = base_chart_div.dataset.url;
-            let field = base_chart_div.dataset.field;
+            let field = base_chart_div.dataset.lookup_field;
+            let in_package = base_chart_div.dataset.in_package;
             // Retrieve the data ("name" value for filtering) from the .bb-tooltip section
             let name = document.querySelector(`#${base_chart_div.id} .bb-tooltip .name`).textContent;
             if (base_url && field) {
               let full_url = `${base_url}?${field}=${name}`;
+              if (in_package) full_url += `&in_package=${in_package}`;
               if (event.ctrlKey || event.metaKey) window.open(full_url, '_blank');
               else window.location.href = full_url;
             }
@@ -254,15 +242,18 @@
      });
     };
 
-    makeChart("programming_languages", "#programmingLanguageChart", "Programming\nLanguage");
-    makeChart("mime_types", "#mimeTypeChart", "Mime\nType");
-    makeChart("holders", "#holderChart", "Holder");
-    makeChart("copyrights", "#copyrightChart", "Copyright");
-    makeChart("file_license_keys", "#licenseKeyChart", "License\nKey");
-    makeChart("file_license_categories", "#licenseCategoryChart", "License\nCategory");
-    makeChart("file_compliance_alert", "#complianceAlertChart", "Compliance\nAlert");
+    // Packages
     makeChart("package_types", "#packageTypeChart", "Package\nType");
     makeChart("package_licenses", "#packageLicenseChart", "Package\nLicense\nExpression");
+    // Resources
+    makeChart("programming_languages", "#programming_language_chart", "Programming\nLanguage");
+    makeChart("mime_types", "#mime_type_chart", "Mime\nType");
+    makeChart("holders", "#holders_chart", "Holder");
+    makeChart("copyrights", "#copyrights_chart", "Copyright");
+    makeChart("file_license_keys", "#license_key_chart", "License\nKey");
+    makeChart("file_license_categories", "#license_category_chart", "License\nCategory");
+    makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
+
   </script>
   <script>
     displayOverlay = function () {

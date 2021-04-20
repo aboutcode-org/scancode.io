@@ -1,0 +1,10 @@
+<div class="column">
+  <div id="{{ field_name }}_chart"
+    data-url="{% url 'project_resources' project.uuid %}"
+    data-lookup_field="{% if lookup_field %}{{ lookup_field }}{% else %}{{ field_name }}{% endif %}"
+    {% if file_filter %}
+      data-in_package="{% if file_filter == 'in-a-package' %}true{% elif file_filter == 'not-in-a-package' %}false{% endif %}"
+    {% endif %}
+    >
+  </div>
+</div>

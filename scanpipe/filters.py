@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 import django_filters
 from packageurl.contrib.django.filters import PackageURLFilter
@@ -53,7 +54,25 @@ class JSONContainsFilter(django_filters.CharFilter):
         return qs
 
 
+class InPackageFilter(django_filters.ChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs["choices"] = (
+            ("true", _("Yes")),
+            ("false", _("No")),
+        )
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == "true":
+            return qs.in_package()
+        elif value == "false":
+            return qs.not_in_package()
+        return qs
+
+
 class ResourceFilterSet(django_filters.FilterSet):
+    in_package = InPackageFilter()
+
     class Meta:
         model = CodebaseResource
         fields = [
@@ -79,6 +98,7 @@ class ResourceFilterSet(django_filters.FilterSet):
             "license_expressions",
             "emails",
             "urls",
+            "in_package",
         ]
 
     @classmethod

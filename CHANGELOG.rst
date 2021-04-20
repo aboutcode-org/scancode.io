@@ -3,15 +3,19 @@
 
 ### unreleased
 
+- Links from the charts to the resources list are now also filtered by
+  in_package/not_in_package if enabled on the project details view.
+  https://github.com/nexB/scancode.io/issues/124
+
 - Add ability to filter on codebase resource detected values such as licenses,
-  copyrights, holders, authors, emails, and urls
+  copyrights, holders, authors, emails, and urls.
   https://github.com/nexB/scancode.io/issues/153
 
 - Filtered list views from a click on chart sections can now be opened in a new tab
-  using ctrl/meta + click
+  using ctrl/meta + click.
   https://github.com/nexB/scancode.io/issues/125
 
-- Add links to codebase resource and to discovered packages in list views
+- Add links to codebase resource and to discovered packages in list views.
 
 ### v21.4.14
 
