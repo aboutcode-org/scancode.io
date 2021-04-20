@@ -75,7 +75,7 @@
     </div>
 
     {% if is_paginated %}
-      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj only %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
     {% endif %}
   </div>
 {% endblock %}

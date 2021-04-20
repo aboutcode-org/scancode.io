@@ -65,7 +65,23 @@ class ProjectViewMixin:
     slug_field = "uuid"
 
 
-class ProjectListView(PrefetchRelatedViewMixin, FilterView):
+class PaginatedFilterView(FilterView):
+    """
+    Add a `url_params_without_page` value in the template context to include current
+    filtering in the pagination.
+    """
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        query_dict = self.request.GET.copy()
+        query_dict.pop("page", None)
+        context["url_params_without_page"] = query_dict.urlencode()
+
+        return context
+
+
+class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
@@ -301,7 +317,7 @@ class ProjectRelatedViewMixin:
 class CodebaseResourceListView(
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
-    FilterView,
+    PaginatedFilterView,
 ):
     model = CodebaseResource
     filterset_class = ResourceFilterSet
@@ -311,6 +327,11 @@ class CodebaseResourceListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        query_dict = self.request.GET.copy()
+        query_dict.pop("page", None)
+        context["url_params_without_page"] = query_dict.urlencode()
+
         context["include_compliance_alert"] = scanpipe_app.policies_enabled
         return context
 
@@ -318,7 +339,7 @@ class CodebaseResourceListView(
 class DiscoveredPackageListView(
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
-    FilterView,
+    PaginatedFilterView,
 ):
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
