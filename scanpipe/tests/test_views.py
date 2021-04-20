@@ -94,7 +94,7 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_details_compliance_alert(self):
         url = self.project1.get_absolute_url()
-        expected = 'id="complianceAlertChart"'
+        expected = 'id="compliance_alert_chart"'
 
         scanpipe_app.license_policies_index = None
         response = self.client.get(url)
