@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import concurrent.futures
+import logging
 import os
 import shlex
 from functools import partial
@@ -41,6 +42,8 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
+
+logger = logging.getLogger("scanpipe.pipes")
 
 """
 Utilities to deal with ScanCode objects, in particular Codebase and Package.
@@ -163,13 +166,11 @@ def scan_for_package_info(location):
     return scan_resource(location, scanners)
 
 
-def scan_file_and_save_results(codebase_resource):
+def save_results(codebase_resource, scan_results, scan_errors):
     """
-    Scan the `codebase_resource` and save the results in the database.
+    Save the resource scan results in the database.
     Create project errors if any occurred during the scan.
     """
-    scan_results, scan_errors = scan_file(codebase_resource.location)
-
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
         codebase_resource.status = "scanned-with-error"
@@ -185,12 +186,24 @@ def scan_for_files(project):
     for `project`.
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
+    Note that all database related actions are executed in this main process as the
+    database connection does not always fork nicely in the pool processes.
     """
-    codebase_resources = project.codebaseresources.no_status()
+    codebase_resources = list(project.codebaseresources.no_status())
+    resource_count = len(codebase_resources)
 
     with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
-        for resource in codebase_resources:
-            executor.submit(scan_file_and_save_results, resource)
+        future_to_resource = {
+            executor.submit(scan_file, resource.location): resource
+            for resource in codebase_resources
+        }
+
+        for i, future in enumerate(concurrent.futures.as_completed(future_to_resource)):
+            resource = future_to_resource[future]
+            progress = f"{i / resource_count * 100:.1f}% ({i}/{resource_count})"
+            logger.info(progress + str(resource.pk))
+            scan_results, scan_errors = future.result()
+            save_results(resource, scan_results, scan_errors)
 
 
 def scan_package_and_save_results(codebase_resource):

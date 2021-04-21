@@ -183,6 +183,10 @@ LOGGING = {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
         },
+        "scanpipe.pipes": {
+            "handlers": ["null"] if IS_TESTS else ["console"],
+            "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
+        },
     },
 }
 
