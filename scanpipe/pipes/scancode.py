@@ -180,12 +180,14 @@ def save_results(codebase_resource, scan_results, scan_errors):
     codebase_resource.set_scan_results(scan_results, save=True)
 
 
-def scan_for_files(project):
+def scan_for_files(project, logger_func=logger.info):
     """
     Run a license, copyright, email, and url scan on remainder of files without status
     for `project`.
+
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
+
     Note that all database related actions are executed in this main process as the
     database connection does not always fork nicely in the pool processes.
     """
@@ -198,10 +200,13 @@ def scan_for_files(project):
             for resource in codebase_resources
         }
 
+        # Iterate over the Futures as they complete (finished or cancelled)
         for i, future in enumerate(concurrent.futures.as_completed(future_to_resource)):
             resource = future_to_resource[future]
+
             progress = f"{i / resource_count * 100:.1f}% ({i}/{resource_count})"
-            logger.info(f"{progress} pk={resource.pk}")
+            logger_func(f"{progress} pk={resource.pk}")
+
             scan_results, scan_errors = future.result()
             save_results(resource, scan_results, scan_errors)
 

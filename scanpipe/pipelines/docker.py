@@ -101,7 +101,7 @@ class Docker(Pipeline):
         """
         Scan unknown resources for copyrights, licenses, emails, and urls.
         """
-        scancode.scan_for_files(self.project)
+        scancode.scan_for_files(self.project, logger_func=self.log)
 
     def analyze_scanned_files(self):
         """
