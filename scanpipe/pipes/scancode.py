@@ -201,7 +201,7 @@ def scan_for_files(project):
         for i, future in enumerate(concurrent.futures.as_completed(future_to_resource)):
             resource = future_to_resource[future]
             progress = f"{i / resource_count * 100:.1f}% ({i}/{resource_count})"
-            logger.info(progress + str(resource.pk))
+            logger.info(f"{progress} pk={resource.pk}")
             scan_results, scan_errors = future.result()
             save_results(resource, scan_results, scan_errors)
 
