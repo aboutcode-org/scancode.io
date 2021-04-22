@@ -24,7 +24,8 @@ from unittest import mock
 
 from django.test import TestCase
 
-from scanpipe.forms import InputsBaseForm, ProjectForm
+from scanpipe.forms import InputsBaseForm
+from scanpipe.forms import ProjectForm
 from scanpipe.models import Project
 
 
