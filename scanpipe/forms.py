@@ -116,7 +116,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data["name"]
         return ' '.join(name.split())
-        
+
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
         self.handle_inputs(project)
