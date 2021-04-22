@@ -276,7 +276,9 @@ class ScanPipePipesTest(TestCase):
         )
 
         self.assertEqual(0, project1.projecterrors.count())
-        scancode.scan_file_and_save_results(codebase_resource1)
+        scan_results, scan_errors = scancode.scan_file(codebase_resource1.location)
+        scancode.save_scan_file_results(codebase_resource1, scan_results, scan_errors)
+
         codebase_resource1.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource1.status)
         self.assertEqual(4, project1.projecterrors.count())
@@ -285,7 +287,8 @@ class ScanPipePipesTest(TestCase):
         codebase_resource2 = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
-        scancode.scan_file_and_save_results(codebase_resource2)
+        scan_results, scan_errors = scancode.scan_file(codebase_resource2.location)
+        scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
         expected = [
@@ -305,7 +308,8 @@ class ScanPipePipesTest(TestCase):
 
         with mock.patch("scancode.api.get_copyrights") as get_copyrights:
             get_copyrights.side_effect = InterruptTimeoutError
-            scancode.scan_file_and_save_results(codebase_resource)
+            results, errors = scancode.scan_file(codebase_resource.location)
+            scancode.save_scan_file_results(codebase_resource, results, errors)
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)
@@ -319,11 +323,11 @@ class ScanPipePipesTest(TestCase):
         )
         self.assertEqual(expected_message, error.message)
 
-    @mock.patch("scanpipe.pipes.scancode.scan_file")
-    def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_file):
+    @mock.patch("scanpipe.pipes.scancode._scan_resource")
+    def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
         scan_results = {"license_expressions": ["mit"]}
         scan_errors = []
-        mock_scan_file.return_value = scan_results, scan_errors
+        mock_scan_resource.return_value = scan_results, scan_errors
 
         project1 = Project.objects.create(name="Analysis")
         sha1 = "51d28a27d919ce8690a40f4f335b9d591ceb16e9"
@@ -339,15 +343,27 @@ class ScanPipePipesTest(TestCase):
         )
 
         scancode.scan_for_files(project1)
-        # The scan_file is only called once as the cache is used for the second
-        # duplicated resource.
-        # WARNING: The cache is turned off for now in favor of multiprocessing
-        # mock_scan_file.assert_called_once()
 
-        for resource in [resource1, resource2]:
-            resource.refresh_from_db()
-            self.assertEqual("scanned", resource.status)
-            self.assertEqual(["mit"], resource.license_expressions)
+        resource1.refresh_from_db()
+        self.assertEqual("scanned", resource1.status)
+        self.assertEqual(["mit"], resource1.license_expressions)
+        resource2.refresh_from_db()
+        self.assertEqual("scanned", resource2.status)
+        self.assertEqual(["mit"], resource2.license_expressions)
+
+        resource3 = CodebaseResource.objects.create(
+            project=project1,
+            path="dir3/file.ext",
+            sha1=sha1,
+        )
+        scan_results = {"copyrights": ["copy"]}
+        scan_errors = ["ERROR"]
+        mock_scan_resource.return_value = scan_results, scan_errors
+        scancode.scan_for_files(project1)
+        resource3.refresh_from_db()
+        self.assertEqual("scanned-with-error", resource3.status)
+        self.assertEqual([], resource3.license_expressions)
+        self.assertEqual(["copy"], resource3.copyrights)
 
     def test_scanpipe_pipes_scancode_scan_for_package_info_timeout(self):
         input_location = str(self.data_location / "notice.NOTICE")
@@ -371,7 +387,8 @@ class ScanPipePipesTest(TestCase):
 
         with mock.patch("scancode.api.get_package_info") as get_package_info:
             get_package_info.side_effect = InterruptTimeoutError
-            scancode.scan_package_and_save_results(codebase_resource)
+            results, errors = scancode.scan_for_package_info(codebase_resource.location)
+            scancode.save_scan_package_results(codebase_resource, results, errors)
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)
