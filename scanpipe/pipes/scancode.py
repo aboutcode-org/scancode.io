@@ -198,7 +198,7 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
         codebase_resource.save()
 
 
-def _scan_and_save(project, scan_func, save_func, logger_func=logger.info):
+def _scan_and_save(project, scan_func, save_func):
     """
     Run the `scan_func` on files without status for `project`.
     The `save_func` is called to save the results
@@ -223,32 +223,30 @@ def _scan_and_save(project, scan_func, save_func, logger_func=logger.info):
             resource = future_to_resource[future]
 
             progress = f"{i / resource_count * 100:.1f}% ({i}/{resource_count})"
-            logger_func(f"{progress} pk={resource.pk}")
+            logger.info(f"{progress} pk={resource.pk}")
 
             scan_results, scan_errors = future.result()
             save_func(resource, scan_results, scan_errors)
 
 
-def scan_for_files(project, logger_func=logger.info):
+def scan_for_files(project):
     """
     Run a license, copyright, email, and url scan on files without status for `project`.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    _scan_and_save(project, scan_file, save_scan_file_results, logger_func)
+    _scan_and_save(project, scan_file, save_scan_file_results)
 
 
-def scan_for_application_packages(project, logger_func=logger.info):
+def scan_for_application_packages(project):
     """
     Run a package scan on files without status for `project`.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    _scan_and_save(
-        project, scan_for_package_info, save_scan_package_results, logger_func
-    )
+    _scan_and_save(project, scan_for_package_info, save_scan_package_results)
 
 
 def run_extractcode(location, options=None, raise_on_error=False):
