@@ -125,7 +125,7 @@ def get_resource_info(location):
     return file_info
 
 
-def scan_resource(location, scanners):
+def _scan_resource(location, scanners):
     """
     Wrap the scancode-toolkit `scan_resource` method to support timeout on direct
     scanner functions calls.
@@ -151,7 +151,7 @@ def scan_file(location):
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
-    return scan_resource(location, scanners)
+    return _scan_resource(location, scanners)
 
 
 def scan_for_package_info(location):
@@ -163,12 +163,12 @@ def scan_for_package_info(location):
     scanners = [
         Scanner("packages", scancode_api.get_package_info),
     ]
-    return scan_resource(location, scanners)
+    return _scan_resource(location, scanners)
 
 
-def save_results(codebase_resource, scan_results, scan_errors):
+def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     """
-    Save the resource scan results in the database.
+    Save the resource scan file results in the database.
     Create project errors if any occurred during the scan.
     """
     if scan_errors:
@@ -180,44 +180,11 @@ def save_results(codebase_resource, scan_results, scan_errors):
     codebase_resource.set_scan_results(scan_results, save=True)
 
 
-def scan_for_files(project, logger_func=logger.info):
+def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     """
-    Run a license, copyright, email, and url scan on remainder of files without status
-    for `project`.
-
-    Multiprocessing is enabled by default on this pipe, the number of processes can be
-    controlled through the SCANCODEIO_PROCESSES setting.
-
-    Note that all database related actions are executed in this main process as the
-    database connection does not always fork nicely in the pool processes.
-    """
-    codebase_resources = list(project.codebaseresources.no_status())
-    resource_count = len(codebase_resources)
-
-    with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
-        future_to_resource = {
-            executor.submit(scan_file, resource.location): resource
-            for resource in codebase_resources
-        }
-
-        # Iterate over the Futures as they complete (finished or cancelled)
-        for i, future in enumerate(concurrent.futures.as_completed(future_to_resource)):
-            resource = future_to_resource[future]
-
-            progress = f"{i / resource_count * 100:.1f}% ({i}/{resource_count})"
-            logger_func(f"{progress} pk={resource.pk}")
-
-            scan_results, scan_errors = future.result()
-            save_results(resource, scan_results, scan_errors)
-
-
-def scan_package_and_save_results(codebase_resource):
-    """
-    Scan the `codebase_resource` for package and save the results in the database.
+    Save the resource scan package results in the database.
     Create project errors if any occurred during the scan.
     """
-    scan_results, scan_errors = scan_for_package_info(codebase_resource.location)
-
     packages = scan_results.get("packages", [])
     if packages:
         for package_data in packages:
@@ -231,17 +198,57 @@ def scan_package_and_save_results(codebase_resource):
         codebase_resource.save()
 
 
-def scan_for_application_packages(project):
+def _scan_and_save(project, scan_func, save_func, logger_func=logger.info):
     """
-    Run a package scan on files without status for `project`.
+    Run the `scan_func` on files without status for `project`.
+    The `save_func` is called to save the results
+
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+
+    Note that all database related actions are executed in this main process as the
+    database connection does not always fork nicely in the pool processes.
+    """
+    codebase_resources = list(project.codebaseresources.no_status())
+    resource_count = len(codebase_resources)
+
+    with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
+        future_to_resource = {
+            executor.submit(scan_func, resource.location): resource
+            for resource in codebase_resources
+        }
+
+        # Iterate over the Futures as they complete (finished or cancelled)
+        for i, future in enumerate(concurrent.futures.as_completed(future_to_resource)):
+            resource = future_to_resource[future]
+
+            progress = f"{i / resource_count * 100:.1f}% ({i}/{resource_count})"
+            logger_func(f"{progress} pk={resource.pk}")
+
+            scan_results, scan_errors = future.result()
+            save_func(resource, scan_results, scan_errors)
+
+
+def scan_for_files(project, logger_func=logger.info):
+    """
+    Run a license, copyright, email, and url scan on files without status for `project`.
+
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    codebase_resources = project.codebaseresources.no_status()
+    _scan_and_save(project, scan_file, save_scan_file_results, logger_func)
 
-    with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
-        for resource in codebase_resources:
-            executor.submit(scan_package_and_save_results, resource)
+
+def scan_for_application_packages(project, logger_func=logger.info):
+    """
+    Run a package scan on files without status for `project`.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
+    """
+    _scan_and_save(
+        project, scan_for_package_info, save_scan_package_results, logger_func
+    )
 
 
 def run_extractcode(location, options=None, raise_on_error=False):

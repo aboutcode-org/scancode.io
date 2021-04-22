@@ -95,7 +95,7 @@ class Docker(Pipeline):
         """
         Scan unknown resources for packages infos.
         """
-        scancode.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project, logger_func=self.log)
 
     def scan_for_files(self):
         """

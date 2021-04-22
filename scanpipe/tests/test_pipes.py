@@ -277,7 +277,7 @@ class ScanPipePipesTest(TestCase):
 
         self.assertEqual(0, project1.projecterrors.count())
         scan_results, scan_errors = scancode.scan_file(codebase_resource1.location)
-        scancode.save_results(codebase_resource1, scan_results, scan_errors)
+        scancode.save_scan_file_results(codebase_resource1, scan_results, scan_errors)
 
         codebase_resource1.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource1.status)
@@ -288,7 +288,7 @@ class ScanPipePipesTest(TestCase):
             project=project1, path="notice.NOTICE"
         )
         scan_results, scan_errors = scancode.scan_file(codebase_resource2.location)
-        scancode.save_results(codebase_resource2, scan_results, scan_errors)
+        scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
         expected = [
@@ -308,8 +308,8 @@ class ScanPipePipesTest(TestCase):
 
         with mock.patch("scancode.api.get_copyrights") as get_copyrights:
             get_copyrights.side_effect = InterruptTimeoutError
-            scan_results, scan_errors = scancode.scan_file(codebase_resource.location)
-            scancode.save_results(codebase_resource, scan_results, scan_errors)
+            results, errors = scancode.scan_file(codebase_resource.location)
+            scancode.save_scan_file_results(codebase_resource, results, errors)
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)
@@ -323,7 +323,7 @@ class ScanPipePipesTest(TestCase):
         )
         self.assertEqual(expected_message, error.message)
 
-    @mock.patch("scanpipe.pipes.scancode.scan_resource")
+    @mock.patch("scanpipe.pipes.scancode._scan_resource")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
         scan_results = {"license_expressions": ["mit"]}
         scan_errors = []
@@ -387,7 +387,8 @@ class ScanPipePipesTest(TestCase):
 
         with mock.patch("scancode.api.get_package_info") as get_package_info:
             get_package_info.side_effect = InterruptTimeoutError
-            scancode.scan_package_and_save_results(codebase_resource)
+            results, errors = scancode.scan_for_package_info(codebase_resource.location)
+            scancode.save_scan_package_results(codebase_resource, results, errors)
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)

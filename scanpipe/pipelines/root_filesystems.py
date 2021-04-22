@@ -97,7 +97,7 @@ class RootFS(Pipeline):
         """
         Scan unknown resources for packages infos.
         """
-        scancode.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project, logger_func=self.log)
 
     def match_not_analyzed_to_system_packages(self):
         """
@@ -124,7 +124,7 @@ class RootFS(Pipeline):
         """
         Scan unknown resources for copyrights, licenses, emails, and urls.
         """
-        scancode.scan_for_files(self.project)
+        scancode.scan_for_files(self.project, logger_func=self.log)
 
     def analyze_scanned_files(self):
         """
