@@ -3,6 +3,12 @@
 
 ### unreleased
 
+- Refactor the multiprocessing code for file and package scanning.
+  All database related operation are now executed in the main process as forking the
+  existing database connection in sub-processes is a source of issues.
+  Add progress logging for scan_for_files and scan_for_application_packages pipes.
+  https://github.com/nexB/scancode.io/issues/145
+
 - Links from the charts to the resources list are now also filtered by
   in_package/not_in_package if enabled on the project details view.
   https://github.com/nexB/scancode.io/issues/124
