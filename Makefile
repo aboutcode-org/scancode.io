@@ -115,6 +115,13 @@ test:
 	@echo "-> Run the test suite"
 	${MANAGE} test --noinput
 
+worker:
+	bin/celery --app scancodeio worker \
+               --loglevel=INFO \
+               --concurrency 1 --pool threads \
+               --events -Ofair --prefetch-multiplier=1 \
+               --soft-time-limit=21600 --time-limit=22000
+
 package: conf
 	@echo "-> Create a scancode.io package for offline installation"
 	@echo "-> Fetch dependencies in thirdparty/ for offline installation"
