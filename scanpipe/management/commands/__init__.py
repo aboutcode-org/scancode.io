@@ -55,16 +55,12 @@ class ProjectCommand(BaseCommand):
 
 class RunStatusCommandMixin:
     def get_run_status_code(self, run):
-        status = "NOT_STARTED"
-        if run.task_succeeded:
-            status = self.style.SUCCESS("SUCCESS")
-        elif run.task_exitcode and run.task_exitcode > 0:
-            status = self.style.ERROR("FAILURE")
-        elif run.task_start_date:
-            status = "RUNNING"
-        elif run.task_id:
-            status = "QUEUED"
-        return status
+        status = run.status
+        if status == run.Status.SUCCESS:
+            return self.style.SUCCESS(status.upper())
+        elif status == run.Status.FAILURE:
+            return self.style.ERROR(status.upper())
+        return status.upper()
 
 
 class AddInputCommandMixin:

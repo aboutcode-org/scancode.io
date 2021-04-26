@@ -600,14 +600,14 @@ class SaveProjectErrorMixin:
 
 
 class RunQuerySet(ProjectRelatedQuerySet):
-    def started(self):
-        return self.filter(task_start_date__isnull=False)
-
     def not_started(self):
         return self.filter(task_start_date__isnull=True, task_id__isnull=True)
 
     def queued(self):
         return self.filter(task_start_date__isnull=True, task_id__isnull=False)
+
+    def started(self):
+        return self.filter(task_start_date__isnull=False)
 
     def executed(self):
         return self.filter(task_end_date__isnull=False)
@@ -663,6 +663,27 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Return True if the pipeline task was successfully executed.
         """
         return self.task_exitcode == 0
+
+    class Status(models.TextChoices):
+        NOT_STARTED = "not_started"
+        QUEUED = "queued"
+        STARTED = "started"
+        RUNNING = "running"
+        SUCCESS = "success"
+        FAILURE = "failure"
+
+    @property
+    def status(self):
+        status = self.Status
+        if self.task_succeeded:
+            return status.SUCCESS
+        elif self.task_exitcode and self.task_exitcode > 0:
+            return status.FAILURE
+        elif self.task_start_date:
+            return status.RUNNING
+        elif self.task_id:
+            return status.QUEUED
+        return status.NOT_STARTED
 
     def append_to_log(self, message, save=False):
         """

@@ -256,9 +256,9 @@ def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
-    if run.task_start_date:
+    if run.status == run.Status.RUNNING:
         raise Http404("Pipeline already started.")
-    elif run.task_id:
+    elif run.status == run.Status.QUEUED:
         raise Http404("Pipeline already queued.")
 
     run.execute_task_async()
