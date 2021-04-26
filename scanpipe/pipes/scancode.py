@@ -201,21 +201,25 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 def _scan_and_save(project, scan_func, save_func):
     """
     Run the `scan_func` on files without status for `project`.
-    The `save_func` is called to save the results
+    The `save_func` is called to save the results.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
 
+    The codebase resources QuerySet is chunked in 2000 results at the time,
+    this can result in a significant reduction in memory usage.
+
     Note that all database related actions are executed in this main process as the
     database connection does not always fork nicely in the pool processes.
     """
-    codebase_resources = list(project.codebaseresources.no_status())
-    resource_count = len(codebase_resources)
+    codebase_resources = project.codebaseresources.no_status()
+    resource_count = codebase_resources.count()
+    logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
 
     with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
         future_to_resource = {
             executor.submit(scan_func, resource.location): resource
-            for resource in codebase_resources
+            for resource in codebase_resources.iterator(chunk_size=2000)
         }
 
         # Iterate over the Futures as they complete (finished or cancelled)
