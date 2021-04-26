@@ -16,7 +16,7 @@
             {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
           </div>
         </div>
-        {% if not run.task_start_date %}
+        {% if not run.task_start_date and not run.task_id %}
           <a href="{% url 'project_execute_pipeline' project.uuid run.uuid %}" class="execute-pipeline-link has-text-weight-bold">
             <i class="fas fa-play-circle"></i>
             Run Pipeline

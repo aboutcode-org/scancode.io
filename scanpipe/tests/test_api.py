@@ -22,6 +22,7 @@
 
 import io
 import json
+import uuid
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -336,6 +337,13 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Pipeline docker started."}
         self.assertEqual(expected, response.data)
         mock_execute_task.assert_called_once()
+
+        run1.task_id = uuid.uuid4()
+        run1.save()
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Pipeline already queued."}
+        self.assertEqual(expected, response.data)
 
         run1.task_start_date = timezone.now()
         run1.save()

@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Add a new QUEUED status to differentiate a pipeline that is in the queue for execution
+  from a pipeline execution not requested yet.
+  https://github.com/nexB/scancode.io/issues/130
+
 - Refactor the multiprocessing code for file and package scanning.
   All database related operation are now executed in the main process as forking the
   existing database connection in sub-processes is a source of issues.

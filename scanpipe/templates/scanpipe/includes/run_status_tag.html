@@ -4,6 +4,8 @@
   <span class="tag is-danger">Failure</span>
 {% elif run.task_start_date %}
   <span class="tag is-info">Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i></span>
+{% elif run.task_id %}
+  <span class="tag is-info">Queued <i class="fas fa-clock ml-1"></i></span>
 {% else %}
   <span class="tag is-light">Not started</span>
 {% endif %}

@@ -180,6 +180,9 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         elif run.task_start_date:
             message = {"status": "Pipeline already started."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
+        elif run.task_id:
+            message = {"status": "Pipeline already queued."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
         transaction.on_commit(run.execute_task_async)
 

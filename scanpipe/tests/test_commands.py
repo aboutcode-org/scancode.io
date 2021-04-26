@@ -22,6 +22,7 @@
 
 import datetime
 import tempfile
+import uuid
 from io import StringIO
 from pathlib import Path
 from unittest import mock
@@ -289,6 +290,13 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- DiscoveredPackage: 0", output)
         self.assertIn("- ProjectError: 0", output)
         self.assertIn("[NOT_STARTED] docker", output)
+
+        run.task_id = uuid.uuid4()
+        run.save()
+        out = StringIO()
+        call_command("status", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn("[QUEUED] docker", output)
 
         run.task_start_date = timezone.now()
         run.log = (

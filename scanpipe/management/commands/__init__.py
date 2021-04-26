@@ -62,6 +62,8 @@ class RunStatusCommandMixin:
             status = self.style.ERROR("FAILURE")
         elif run.task_start_date:
             status = "RUNNING"
+        elif run.task_id:
+            status = "QUEUED"
         return status
 
 

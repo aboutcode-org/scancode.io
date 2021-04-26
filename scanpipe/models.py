@@ -110,8 +110,8 @@ class AbstractTaskFieldsModel(models.Model):
     def task_state(self):
         """
         Possible values includes:
-        - PENDING
-            The task is waiting for execution.
+        - UNKNOWN (PENDING)
+            No history about the task is available.
         - STARTED
             The task has been started.
         - RETRY
@@ -123,11 +123,12 @@ class AbstractTaskFieldsModel(models.Model):
             The task executed successfully. The result attribute then contains
             the tasks return value.
 
-        Notes: All tasks are PENDING by default, so the state would’ve been better
-        named "unknown". Celery doesn't update the state when a task is sent,
+        Notes: All tasks are PENDING by default in Celery, so the state would’ve been
+        better named "unknown". Celery doesn't update the state when a task is sent,
         and any task with no history is assumed to be pending.
         """
-        return self.task_result.state
+        state = self.task_result.state
+        return "UNKNOWN" if state == "PENDING" else state
 
     @property
     def execution_time(self):
@@ -603,7 +604,10 @@ class RunQuerySet(ProjectRelatedQuerySet):
         return self.filter(task_start_date__isnull=False)
 
     def not_started(self):
-        return self.filter(task_start_date__isnull=True)
+        return self.filter(task_start_date__isnull=True, task_id__isnull=True)
+
+    def queued(self):
+        return self.filter(task_start_date__isnull=True, task_id__isnull=False)
 
     def executed(self):
         return self.filter(task_end_date__isnull=False)
@@ -637,7 +641,14 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return f"{self.pipeline_name}"
 
     def execute_task_async(self):
-        tasks.execute_pipeline_task.apply_async(args=[self.pk])
+        """
+        Send the message to the task manager to create an asynchronous pipeline
+        execution task.
+        Store the `task_id` from the future to this Run instance.
+        """
+        future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
+        self.task_id = future.task_id
+        self.save()
 
     @property
     def pipeline_class(self):

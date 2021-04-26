@@ -393,6 +393,7 @@ class ScanPipeModelsTest(TestCase):
 
         started = self.create_run(task_start_date=now)
         not_started = self.create_run()
+        queued = self.create_run(task_id=uuid.uuid4())
         executed = self.create_run(task_start_date=now, task_end_date=now)
         succeed = self.create_run(task_start_date=now, task_exitcode=0)
         failed = self.create_run(task_start_date=now, task_exitcode=1)
@@ -406,6 +407,9 @@ class ScanPipeModelsTest(TestCase):
 
         qs = self.project1.runs.not_started()
         self.assertEqual([not_started], list(qs))
+
+        qs = self.project1.runs.queued()
+        self.assertEqual([queued], list(qs))
 
         qs = self.project1.runs.executed()
         self.assertEqual([executed], list(qs))
