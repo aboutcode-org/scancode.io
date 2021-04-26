@@ -22,6 +22,14 @@
             Run Pipeline
           </a>
         {% endif %}
+        {% if run.task_id %}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Task ID</span>
+              <span class="tag is-info">{{ run.task_id }}</span>
+            </div>
+          </div>
+        {% endif %}
         {% if run.task_exitcode %}
           <div class="control">
             <div class="tags has-addons">

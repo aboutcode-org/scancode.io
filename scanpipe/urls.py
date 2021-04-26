@@ -85,4 +85,9 @@ urlpatterns = [
         views.ProjectListView.as_view(),
         name="project_list",
     ),
+    path(
+        "monitor/",
+        views.AppMonitorView.as_view(),
+        name="app_monitor",
+    ),
 ]

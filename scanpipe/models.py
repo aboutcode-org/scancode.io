@@ -103,6 +103,10 @@ class AbstractTaskFieldsModel(models.Model):
     class Meta:
         abstract = True
 
+    @property
+    def task_result(self):
+        return AsyncResult(str(self.task_id))
+
     def task_state(self):
         """
         Possible values includes:
@@ -118,8 +122,12 @@ class AbstractTaskFieldsModel(models.Model):
         - SUCCESS
             The task executed successfully. The result attribute then contains
             the tasks return value.
+
+        Notes: All tasks are PENDING by default, so the state would’ve been better
+        named "unknown". Celery doesn't update the state when a task is sent,
+        and any task with no history is assumed to be pending.
         """
-        return AsyncResult(str(self.task_id)).state
+        return self.task_result.state
 
     @property
     def execution_time(self):
