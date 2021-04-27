@@ -540,6 +540,9 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
     class Meta:
         ordering = ["created_date"]
 
+    def __str__(self):
+        return f"[{self.pk}] {self.model}: {self.message}"
+
 
 class SaveProjectErrorMixin:
     """
@@ -583,7 +586,7 @@ class SaveProjectErrorMixin:
 
     def add_error(self, error):
         """
-        Create a ProjectError record from the provided `error` Exception.instance.
+        Create a ProjectError record from the provided `error` Exception instance.
         """
         return self.project.add_error(
             error=error,
@@ -1126,8 +1129,8 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
     def create_from_data(cls, project, package_data):
         """
         Create and return a DiscoveredPackage for `project` from the `package_data`.
-        If one of the required fields value is not available, a ProjectError is create
-        in place of the DiscoveredPackage instance.
+        If one of the required fields value is not available, a ProjectError is created
+        in place of a new DiscoveredPackage instance.
         """
         required_fields = ["type", "name", "version"]
         required_values = [package_data.get(field) for field in required_fields]
@@ -1150,4 +1153,6 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
             if field_name in DiscoveredPackage.model_fields() and value
         }
 
-        return cls.objects.create(project=project, **cleaned_package_data)
+        discovered_package = cls.objects.create(project=project, **cleaned_package_data)
+        if discovered_package.pk:
+            return discovered_package

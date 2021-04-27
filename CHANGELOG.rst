@@ -3,6 +3,9 @@
 
 ### unreleased
 
+- Fix pipeline failure issue related to the assignment of un-saved (not valid) packages.
+  https://github.com/nexB/scancode.io/issues/162
+
 - Add a new QUEUED status to differentiate a pipeline that is in the queue for execution
   from a pipeline execution not requested yet.
   https://github.com/nexB/scancode.io/issues/130

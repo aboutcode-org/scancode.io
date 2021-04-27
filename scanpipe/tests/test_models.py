@@ -816,29 +816,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, codebase_resource.discovered_packages.count())
         self.assertEqual(package, codebase_resource.discovered_packages.get())
 
-    def test_scanpipe_discovered_package_model_create_from_data(self):
-        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        self.assertEqual(self.project1, package.project)
-        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
-        self.assertEqual("deb", package.type)
-        self.assertEqual("debian", package.namespace)
-        self.assertEqual("adduser", package.name)
-        self.assertEqual("3.118", package.version)
-        self.assertEqual("arch=all", package.qualifiers)
-        self.assertEqual("add and remove users and groups", package.description)
-        self.assertEqual("849", package.size)
-        self.assertEqual(
-            "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
-        )
-
-        package_count = DiscoveredPackage.objects.count()
-        missing_required_field = dict(package_data1)
-        missing_required_field["name"] = ""
-        self.assertIsNone(
-            DiscoveredPackage.create_from_data(self.project1, missing_required_field)
-        )
-        self.assertEqual(package_count, DiscoveredPackage.objects.count())
-
     def test_scanpipe_discovered_package_model_queryset_methods(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         inputs = [
@@ -933,3 +910,47 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertIsNone(codebase_resource.id)
         self.assertEqual(0, CodebaseResource.objects.count())
         self.assertEqual(2, project1.projecterrors.count())
+
+    def test_scanpipe_discovered_package_model_create_from_data(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        package = DiscoveredPackage.create_from_data(project1, package_data1)
+        self.assertEqual(project1, package.project)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
+        self.assertEqual("deb", package.type)
+        self.assertEqual("debian", package.namespace)
+        self.assertEqual("adduser", package.name)
+        self.assertEqual("3.118", package.version)
+        self.assertEqual("arch=all", package.qualifiers)
+        self.assertEqual("add and remove users and groups", package.description)
+        self.assertEqual("849", package.size)
+        self.assertEqual(
+            "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
+        )
+
+        package_count = DiscoveredPackage.objects.count()
+        incomplete_data = dict(package_data1)
+        incomplete_data["name"] = ""
+        self.assertIsNone(DiscoveredPackage.create_from_data(project1, incomplete_data))
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("DiscoveredPackage", error.model)
+        expected_message = (
+            "One or more of the required fields have no value: type, name, version"
+        )
+        self.assertEqual(expected_message, error.message)
+        self.assertEqual(package_data1["purl"], error.details["purl"])
+        self.assertEqual("", error.details["name"])
+        self.assertEqual("", error.traceback)
+
+        package_count = DiscoveredPackage.objects.count()
+        bad_data = dict(package_data1)
+        bad_data["version"] = "a" * 200
+        self.assertIsNone(DiscoveredPackage.create_from_data(project1, bad_data))
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("DiscoveredPackage", error.model)
+        expected_message = "value too long for type character varying(100)\n"
+        self.assertEqual(expected_message, error.message)
+        self.assertEqual(bad_data["version"], error.details["version"])
+        self.assertIn("in save", error.traceback)
