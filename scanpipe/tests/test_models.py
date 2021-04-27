@@ -115,8 +115,34 @@ class ScanPipeModelsTest(TestCase):
         }
         self.assertEqual(expected, delete_log[1])
 
-        self.assertFalse(Project.objects.filter(name="my_project").exists())
+        self.assertFalse(Project.objects.filter(name=self.project1.name).exists())
         self.assertFalse(work_path.exists())
+
+    def test_scanpipe_project_model_reset(self):
+        work_path = self.project1.work_path
+        self.assertTrue(work_path.exists())
+
+        uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
+        self.project1.write_input_file(uploaded_file)
+        self.project1.add_pipeline("docker")
+        CodebaseResource.objects.create(project=self.project1, path="path")
+        DiscoveredPackage.objects.create(project=self.project1)
+        # + run + error
+
+        self.project1.reset()
+
+        self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+        self.assertEqual(0, self.project1.projecterrors.count())
+        self.assertEqual(0, self.project1.runs.count())
+        self.assertEqual(0, self.project1.discoveredpackages.count())
+        self.assertEqual(0, self.project1.codebaseresources.count())
+
+        self.assertTrue(work_path.exists())
+        self.assertTrue(self.project1.input_path.exists())
+        self.assertEqual(["file.ext"], self.project1.input_root)
+        self.assertTrue(self.project1.output_path.exists())
+        self.assertTrue(self.project1.codebase_path.exists())
+        self.assertTrue(self.project1.tmp_path.exists())
 
     def test_scanpipe_project_model_inputs_and_input_files_and_input_root(self):
         self.assertEqual([], list(self.project1.inputs()))

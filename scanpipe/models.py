@@ -242,6 +242,39 @@ class Project(UUIDPKModel, models.Model):
         shutil.rmtree(self.work_directory, ignore_errors=True)
         return super().delete(*args, **kwargs)
 
+    def reset(self, keep_input=True):
+        """
+        Reset the project by deleting all related database objects and all work
+        directories except the input directory when `keep_input` is True.
+        """
+        relationships = [
+            self.projecterrors,
+            self.runs,
+            self.discoveredpackages,
+            self.codebaseresources,
+        ]
+
+        for relation in relationships:
+            relation.all().delete()
+
+        work_directories = [
+            self.codebase_path,
+            self.output_path,
+            self.tmp_path,
+        ]
+
+        if not keep_input:
+            work_directories.append(self.input_path)
+            self.input_sources = {}
+
+        self.extra_data = {}
+        self.save()
+
+        for path in work_directories:
+            shutil.rmtree(path, ignore_errors=True)
+
+        self.setup_work_directory()
+
     def setup_work_directory(self):
         """
         Create all the work_directory structure, skip existing.
