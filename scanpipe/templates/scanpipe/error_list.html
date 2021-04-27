@@ -17,7 +17,6 @@
             <th>Message</th>
             <th>Details</th>
             <th>Traceback</th>
-            <th>Created date</th>
           </tr>
         </thead>
         <tbody>
@@ -34,9 +33,6 @@
               </td>
               <td style="max-width: 600px;">
                 <pre class="log p-0" style="max-height: 120px;"><code>{{ error.traceback }}</code></pre>
-              </td>
-              <td>
-                {{ error.created_date }}
               </td>
             </tr>
           {% endfor %}

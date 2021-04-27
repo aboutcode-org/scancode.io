@@ -17,6 +17,16 @@ The database can be configured using the following settings::
     SCANCODEIO_DB_USER
     SCANCODEIO_DB_PASSWORD
 
+TIME_ZONE
+---------
+
+A string representing the time zone for this ScanCode.io installation.
+Default to ``UTC``::
+
+    TIME_ZONE=Europe/Paris
+
+`See the list of time zones <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
+
 SCANCODEIO_PROCESSES
 --------------------
 
