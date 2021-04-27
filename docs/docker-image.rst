@@ -39,6 +39,16 @@ Run your image as a container::
 At this point, the ScanCode.io app should be running at port 80 on your Docker host.
 Go to http://localhost/ on a web browser to access the web UI.
 
+.. warning::
+
+    To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
+    setting need to be provided in your ``.env`` file::
+
+        ALLOWED_HOSTS=.domain.com,127.0.0.1
+
+    Refer to `Django ALLOWED_HOSTS settings <https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts>`_
+    for documentation.
+
 You can also execute a one-off ``scanpipe`` command through the Docker command line
 interface, for example::
 
