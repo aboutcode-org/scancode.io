@@ -420,6 +420,21 @@ class ScanPipeModelsTest(TestCase):
         qs = self.project1.runs.failed()
         self.assertEqual([failed], list(qs))
 
+    def test_scanpipe_run_model_status_property(self):
+        now = timezone.now()
+
+        started = self.create_run(task_start_date=now)
+        not_started = self.create_run()
+        queued = self.create_run(task_id=uuid.uuid4())
+        succeed = self.create_run(task_start_date=now, task_exitcode=0)
+        failed = self.create_run(task_start_date=now, task_exitcode=1)
+
+        self.assertEqual(Run.Status.RUNNING, started.status)
+        self.assertEqual(Run.Status.NOT_STARTED, not_started.status)
+        self.assertEqual(Run.Status.QUEUED, queued.status)
+        self.assertEqual(Run.Status.SUCCESS, succeed.status)
+        self.assertEqual(Run.Status.FAILURE, failed.status)
+
     def test_scanpipe_run_model_append_to_log(self):
         run1 = self.create_run()
 
