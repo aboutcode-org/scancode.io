@@ -334,6 +334,21 @@ class ScanPipeModelsTest(TestCase):
         run1.save()
         self.assertEqual(run2, self.project1.get_latest_failed_run())
 
+    def test_scanpipe_run_model_init_task_id(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertIsNone(run1.task_id)
+
+        task_id = uuid.uuid4()
+        self.assertEqual(1, run1.init_task_id(task_id))
+        self.assertIsNone(run1.task_id)
+        run1.refresh_from_db()
+        self.assertEqual(task_id, run1.task_id)
+
+        new_id = uuid.uuid4()
+        self.assertEqual(0, run1.init_task_id(new_id))
+        run1.refresh_from_db()
+        self.assertEqual(task_id, run1.task_id)
+
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
         self.assertEqual(DoNothing, run1.pipeline_class)

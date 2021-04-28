@@ -683,8 +683,17 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Store the `task_id` from the future to this Run instance.
         """
         future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
-        self.task_id = future.task_id
-        self.save()
+        self.init_task_id(future.task_id)
+
+    def init_task_id(self, task_id):
+        """
+        Set the provided `task_id` on the Run instance if not already stored in the DB.
+        Using the QuerySet `update` method instead of `save` to prevent from overriding
+        any fields that was set but not saved yet in the DB, this may occur when
+        CELERY_TASK_ALWAYS_EAGER is True.
+        """
+        manager = self.__class__.objects
+        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=task_id)
 
     @property
     def pipeline_class(self):
