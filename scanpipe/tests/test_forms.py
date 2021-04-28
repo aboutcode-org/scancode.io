@@ -25,6 +25,7 @@ from unittest import mock
 from django.test import TestCase
 
 from scanpipe.forms import InputsBaseForm
+from scanpipe.forms import ProjectForm
 from scanpipe.models import Project
 
 
@@ -57,3 +58,13 @@ class ScanPipeFormsTest(TestCase):
         self.assertEqual(["archive.zip"], self.project1.input_files)
         expected = {"archive.zip": "https://example.com/archive.zip"}
         self.assertEqual(expected, self.project1.input_sources)
+
+    def test_scanpipe_forms_project_form_name(self):
+        data = {
+            "name": "  Test   Name   ",
+            "pipeline": "scan_codebase",
+        }
+        form = ProjectForm(data=data)
+        self.assertTrue(form.is_valid())
+        obj = form.save()
+        self.assertEqual("Test Name", obj.name)
