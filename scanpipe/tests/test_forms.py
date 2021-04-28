@@ -59,21 +59,12 @@ class ScanPipeFormsTest(TestCase):
         expected = {"archive.zip": "https://example.com/archive.zip"}
         self.assertEqual(expected, self.project1.input_sources)
 
-    @mock.patch("requests.get")
-    def test_scanpipe_forms_project_form_name(self, mock_get):
+    def test_scanpipe_forms_project_form_name(self):
         data = {
             "name": "  Test   Name   ",
-            "input_urls": "https://example.com/archipe.zip",
             "pipeline": "scan_codebase",
         }
-
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="url/archive.zip",
-        )
         form = ProjectForm(data=data)
         self.assertTrue(form.is_valid())
-        self.assertEqual("Test Name", form.cleaned_data["name"])
+        obj = form.save()
+        self.assertEqual("Test Name", obj.name)
