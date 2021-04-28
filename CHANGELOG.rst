@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### unreleased
+### v21.4.28
 
 - The installation local timezone can be configured using the TIME_ZONE setting.
   The current timezone in now included in the dates representation in the web UI.
