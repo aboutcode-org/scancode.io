@@ -27,9 +27,11 @@ from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from unittest import mock
+from unittest import skipIf
 
 from django.apps import apps
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
 from django.test import TestCase
 from django.test import TransactionTestCase
 from django.utils import timezone
@@ -925,6 +927,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         codebase_resource.add_error(Exception("Error2"))
         self.assertEqual(2, ProjectError.objects.count())
 
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_project_error_model_save_non_valid_related_object(self):
         project1 = Project.objects.create(name="Analysis")
         long_value = "value" * 1000
@@ -952,6 +955,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(0, CodebaseResource.objects.count())
         self.assertEqual(2, project1.projecterrors.count())
 
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_package_model_create_from_data(self):
         project1 = Project.objects.create(name="Analysis")
 

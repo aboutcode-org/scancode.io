@@ -112,7 +112,7 @@ class TasksTest(TestCase):
             "programming_language",
             "license_clarity_score",
         ]
-        self.assertEqual(summary_expected_keys, list(scan1.summary.keys()))
+        self.assertEqual(sorted(summary_expected_keys), sorted(scan1.summary.keys()))
 
     def test_run_scancode_with_extract_failure(self):
         file_extract_issues = Path(__file__).parent / "data" / "tar-2.2.1.tgz"
