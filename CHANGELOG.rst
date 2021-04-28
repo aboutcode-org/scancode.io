@@ -1,6 +1,12 @@
 // Release notes
 // -------------
 
+### unreleased
+
+- Fix an issue accessing codebase resource content using the scan_codebase and
+  load_inventory pipelines.
+  https://github.com/nexB/scancode.io/issues/147
+
 ### v21.4.28
 
 - The installation local timezone can be configured using the TIME_ZONE setting.

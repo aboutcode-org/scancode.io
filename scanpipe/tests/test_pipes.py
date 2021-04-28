@@ -411,13 +411,25 @@ class ScanPipePipesTest(TestCase):
         scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
 
-        self.assertEqual(19, CodebaseResource.objects.count())
+        self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
+        # Make sure the root is not created as a CodebaseResource, walk(skip_root=True)
+        self.assertFalse(CodebaseResource.objects.filter(path="codebase").exists())
+
+        # Make sure the root is properly stripped, see `.get_path(strip_root=True)`
+        self.assertFalse(
+            CodebaseResource.objects.filter(path__startswith="codebase").exists()
+        )
+
+        # Make sure the detected package is properly assigned to its codebase resource
+        package = DiscoveredPackage.objects.get()
+        expected = "asgiref-3.3.0-py3-none-any.whl"
+        self.assertEqual(expected, package.codebase_resources.get().path)
 
         # The functions can be called again and existing objects are skipped
         scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
-        self.assertEqual(19, CodebaseResource.objects.count())
+        self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
