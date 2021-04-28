@@ -51,10 +51,10 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
-# The maximum number of processes that can be used to execute the given calls.
-# If None or not given then as many worker processes, minus one, will be created as the
-# machine has processors.
-MAX_WORKERS = getattr(settings, "SCANCODEIO_PROCESSES") or os.cpu_count() - 1
+# The maximum number of processes that can be used to execute multiprocessing calls.
+# If None or not give,n then as many worker processes, minus one, will be created as the
+# machine has CPUs.
+SCANCODEIO_PROCESSES = getattr(settings, "SCANCODEIO_PROCESSES", None)
 
 
 def extract(location, target):
@@ -215,19 +215,23 @@ def _scan_and_save(project, scan_func, save_func):
     codebase_resources = project.codebaseresources.no_status()
     resource_count = codebase_resources.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
+    resource_iterator = codebase_resources.iterator(chunk_size=2000)
+    max_workers = SCANCODEIO_PROCESSES or os.cpu_count() - 1 or 1
 
-    with concurrent.futures.ProcessPoolExecutor(MAX_WORKERS) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
             executor.submit(scan_func, resource.location): resource
-            for resource in codebase_resources.iterator(chunk_size=2000)
+            for resource in resource_iterator
         }
 
         # Iterate over the Futures as they complete (finished or cancelled)
-        for i, future in enumerate(concurrent.futures.as_completed(future_to_resource)):
+        future_as_completed = concurrent.futures.as_completed(future_to_resource)
+
+        for index, future in enumerate(future_as_completed):
             resource = future_to_resource[future]
 
-            progress = f"{i / resource_count * 100:.1f}% ({i}/{resource_count})"
-            logger.info(f"{progress} pk={resource.pk}")
+            progress = f"{index / resource_count * 100:.1f}% ({index}/{resource_count})"
+            logger.info(f"{scan_func.__name__} {progress} pk={resource.pk}")
 
             scan_results, scan_errors = future.result()
             save_func(resource, scan_results, scan_errors)
