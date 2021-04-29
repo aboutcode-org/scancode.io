@@ -79,7 +79,8 @@ class Pipeline:
         """
         Log the `message` to this module logger and to the Run instance.
         """
-        timestamp = timezone.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
+        now_as_localtime = timezone.localtime(timezone.now())
+        timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
         message = f"{timestamp} {message}"
         logger.info(message)
         self.run.append_to_log(message, save=True)
