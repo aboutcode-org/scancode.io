@@ -15,13 +15,13 @@ and move that file to you offline install server.
 
 On the offline install server:
 
- 1. extract the ScanCode.io code
- 2. install dependencies
- 3. prepare the database
+ 1. Install system dependencies, see :ref:`system_dependencies`
+ 2. Extract the ScanCode.io code, install app dependencies, and prepare the database
 
 ::
 
-   tar -xf scancodeio-21.4.28.tar.gz && cd scancode.io
+   mkdir scancode.io  && tar -xf scancodeio-21.4.28.tar.gz -C scancode.io --strip-components 1
+   cd scancode.io
    make install
    make envfile
    make postgres
@@ -42,14 +42,15 @@ and move that to you offline install server.
 
 On the offline install server:
 
- 1. backup the previous ScanCode.io code
- 2. extract the new ScanCode.io code
- 3. install dependencies
- 4. migrate the database
+ 1. Backup the previous ScanCode.io code
+ 2. Extract the new ScanCode.io code
+ 3. Install app dependencies
+ 4. Migrate the database
 
 ::
 
     mv scancode.io scancode.io-$(date +"%Y-%m-%d_%H%M")
-    tar -xf scancodeio-21.4.28.tar.gz && cd scancode.io
+    mkdir scancode.io  && tar -xf scancodeio-21.4.28.tar.gz -C scancode.io --strip-components 1
+    cd scancode.io
     make install
     make migrate

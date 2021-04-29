@@ -18,6 +18,8 @@ Optional:
     **on Windows**. Refer to the :ref:`docker_image` chapter for details.
 
 
+.. _system_dependencies:
+
 Local installation
 ------------------
 
