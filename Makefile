@@ -59,11 +59,6 @@ envfile:
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
-install:
-	@echo "-> Install and configure the Python env with base dependencies, offline"
-	${PYTHON_EXE} -m venv .
-	bin/pip install --upgrade --no-index --no-cache-dir --find-links=thirdparty -e .
-
 check:
 	@echo "-> Run pycodestyle (PEP8) validation"
 	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings,data,pipelines,var .
@@ -129,6 +124,10 @@ package: conf
 	bin/pip download -r etc/requirements/base.txt --no-cache-dir --dest thirdparty
 	@echo "-> Create package in dist/ for offline installation"
 	bin/python setup.py sdist
+
+install: virtualenv
+	@echo "-> Install and configure the Python env with base dependencies, offline"
+	bin/pip install --upgrade --no-index --no-cache-dir --find-links=thirdparty -e .
 
 bump:
 	@echo "-> Bump the version"
