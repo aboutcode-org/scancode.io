@@ -11,7 +11,7 @@ Create the installable archive::
    make package
 
 Grab the installable archive in ``dist/scancodeio-21.4.28.tar.gz``
-and move that file to you offline install server.
+and move that file to your offline install server.
 
 On the offline install server:
 
@@ -38,7 +38,7 @@ Create the latest installable archive::
    make package
 
 Grab the installable archive in ``dist/scancodeio-21.4.28.tar.gz``
-and move that to you offline install server.
+and move that to your offline install server.
 
 On the offline install server:
 

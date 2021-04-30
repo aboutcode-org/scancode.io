@@ -435,7 +435,7 @@ class AppMonitorView(generic.TemplateView):
         always_eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", None)
         if always_eager:
             raise Http404(
-                "Celery monitoring not supported with " "CELERY_TASK_ALWAYS_EAGER=True"
+                "Celery monitoring not supported with CELERY_TASK_ALWAYS_EAGER=True"
             )
 
         context["inspector"] = celery_app.control.inspect()
