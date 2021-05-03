@@ -159,7 +159,6 @@
 {% endblock %}
 
 {% block scripts %}
-  {% include "scanpipe/includes/modal.js.html" %}
   <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
   <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   {% if project.file_count %}
@@ -253,17 +252,9 @@
     makeChart("file_license_keys", "#license_key_chart", "License\nKey");
     makeChart("file_license_categories", "#license_category_chart", "License\nCategory");
     makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
-
   </script>
-  <script>
-    displayOverlay = function () {
-      let background = document.createElement("div");
-      background.className = "modal-background";
-      background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
-      background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
-      document.body.appendChild(background);
-    };
 
+  <script>
     onSubmitOverlay = function (selector) {
       let element = document.querySelector(selector);
       if (element) {

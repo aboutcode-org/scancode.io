@@ -1,12 +1,12 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ScanCode.io{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'bulma-0.9.1.min.css' %}">
-    <script defer src="{% static 'fontawesome-5.15.1.all.min.js' %}"></script>
     <style>
       .width-100, .select, .select select {width: 100%;}
       .has-border-radius {border-radius: 6px;}
@@ -42,7 +42,9 @@
     {% block extrahead %}{% endblock %}
   </head>
   <body>
-  {% block content %}{% endblock %}
-  {% block scripts %}{% endblock %}
+    {% block content %}{% endblock %}
+    <script src="{% static 'main.js' %}"></script>
+    <script src="{% static 'fontawesome-5.15.1.all.min.js' %}"></script>
+    {% block scripts %}{% endblock %}
   </body>
 </html>

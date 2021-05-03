@@ -125,18 +125,9 @@
 {% endblock %}
 
 {% block scripts %}
-  {% include "scanpipe/includes/modal.js.html" %}
   <script>
-    displayOverlay = function () {
-      let background = document.createElement("div");
-      background.className = "modal-background";
-      background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
-      background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
-      document.body.appendChild(background);
-    };
-
     let form = document.querySelector("form");
-    form.addEventListener("submit", function(event) {
+    form.addEventListener("submit", function() {
       displayOverlay();
     });
   </script>
