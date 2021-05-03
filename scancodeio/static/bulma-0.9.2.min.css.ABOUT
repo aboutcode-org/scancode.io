@@ -1,0 +1,13 @@
+about_resource: bulma-0.9.2.min.css
+name: bulma
+version: 0.9.2
+download_url: https://github.com/jgthms/bulma/releases/download/0.9.2/bulma-0.9.2.zip
+description: Modern CSS framework based on Flexbox
+homepage_url: https://bulma.io
+license_expression: mit
+attribute: yes
+package_url: pkg:npm/bulma@0.9.2
+licenses:
+  - key: mit
+    name: MIT License
+    file: mit.LICENSE
