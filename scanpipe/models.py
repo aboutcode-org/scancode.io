@@ -810,6 +810,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_no_licenses(self):
         return self.filter(licenses=[])
 
+    def unknown_license(self):
+        return self.json_field_contains("license_expressions", "unknown")
+
     def json_field_contains(self, field_name, value):
         """
         Filter the QuerySet looking for the `value` string in the `field_name` JSON

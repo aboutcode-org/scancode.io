@@ -782,6 +782,27 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(directory, qs)
         self.assertIn(symlink, qs)
 
+        qs = CodebaseResource.objects.unknown_license()
+        self.assertEqual(0, len(qs))
+
+        file.license_expressions = ["gpl-3.0", "unknown"]
+        file.save()
+        qs = CodebaseResource.objects.unknown_license()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+
+        file.license_expressions = ["unknown AND mit", "gpl-3.0-plus"]
+        file.save()
+        qs = CodebaseResource.objects.unknown_license()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+
+        file.license_expressions = ["gpl-3.0-plus OR unknown"]
+        file.save()
+        qs = CodebaseResource.objects.unknown_license()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+
         self.assertEqual(0, CodebaseResource.objects.in_package().count())
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 

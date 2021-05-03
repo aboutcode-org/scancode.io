@@ -129,15 +129,6 @@ def update_or_create_package(project, package_data):
     return dp
 
 
-def has_unknown_license(codebase_resource):
-    """
-    Return True if an "unknown" license in present in the license expression.
-    """
-    return any(
-        "unknown" in expression for expression in codebase_resource.license_expressions
-    )
-
-
 def analyze_scanned_files(project):
     """
     Set the status for CodebaseResource with unknown or no licenses.
@@ -145,11 +136,7 @@ def analyze_scanned_files(project):
     scanned_files = project.codebaseresources.files().status("scanned")
 
     scanned_files.has_no_licenses().update(status="no-licenses")
-
-    for codebase_resource in scanned_files:
-        if has_unknown_license(codebase_resource):
-            codebase_resource.status = "unknown-license"
-            codebase_resource.save()
+    scanned_files.unknown_license().update(status="unknown-license")
 
 
 def tag_not_analyzed_codebase_resources(project):
