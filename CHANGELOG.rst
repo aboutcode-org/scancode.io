@@ -3,6 +3,9 @@
 
 ### unreleased
 
+- Pipeline status modals are now loaded asynchronously and available from the
+  project list view.
+
 - Fix an issue accessing codebase resource content using the scan_codebase and
   load_inventory pipelines.
   https://github.com/nexB/scancode.io/issues/147

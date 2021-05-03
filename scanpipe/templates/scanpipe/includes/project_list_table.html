@@ -53,7 +53,9 @@
         {% for run in project.runs.all %}
           <div class="is-flex is-justify-content-space-between {% if not forloop.first %}mt-1{% endif %}">
             <span class="mr-1">{{ run.pipeline_name }}</span>
-            {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+            <a class="modal-button" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
+              {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+            </a>
           </div>
         {% endfor %}
       </td>

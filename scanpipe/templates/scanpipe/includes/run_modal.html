@@ -1,93 +1,31 @@
-<div id="{{ run.uuid }}-modal" class="modal is-desktop-size">
-  <div class="modal-background"></div>
-  <div class="modal-card">
-    <header class="modal-card-head">
-      <p class="modal-card-title">{{ run.pipeline_name }}</p>
-      <button class="delete" aria-label="close"></button>
-    </header>
-    <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
-      {{ run.description }}
-    </div>
-    <section class="modal-card-body">
-      <div class="field is-grouped is-grouped-multiline">
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Run</span>
-            {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
-          </div>
-        </div>
-        {% if not run.task_start_date and not run.task_id %}
-          <a href="{% url 'project_execute_pipeline' project.uuid run.uuid %}" class="execute-pipeline-link has-text-weight-bold">
-            <i class="fas fa-play-circle"></i>
-            Run Pipeline
-          </a>
-        {% endif %}
-        {% if run.task_id %}
-          <div class="control">
-            <div class="tags has-addons">
-              <span class="tag is-dark">Task ID</span>
-              <span class="tag is-info">{{ run.task_id }}</span>
-            </div>
-          </div>
-        {% endif %}
-        {% if run.task_exitcode %}
-          <div class="control">
-            <div class="tags has-addons">
-              <span class="tag is-dark">Exit code</span>
-              <span class="tag is-info">{{ run.task_exitcode }}</span>
-            </div>
-          </div>
-        {% endif %}
-        {% if run.execution_time %}
-          <div class="control">
-            <div class="tags has-addons">
-              <span class="tag is-dark">Execution time</span>
-              <span class="tag is-info">
-                {{ run.execution_time_for_display }}
-              </span>
-            </div>
-          </div>
-        {% endif %}
-      </div>
-      <div class="field is-grouped is-grouped-multiline">
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Created date</span>
-            <span class="tag is-info">{{ run.created_date|date:'N j, Y, P T' }}</span>
-          </div>
-        </div>
-        {% if run.task_start_date %}
-          <div class="control">
-            <div class="tags has-addons">
-              <span class="tag is-dark">Start date</span>
-              <span class="tag is-info">{{ run.task_start_date|date:'N j, Y, P T' }}</span>
-            </div>
-          </div>
-        {% endif %}
-        {% if run.task_end_date %}
-          <div class="control">
-            <div class="tags has-addons">
-              <span class="tag is-dark">End date</span>
-              <span class="tag is-info">{{ run.task_end_date|date:'N j, Y, P T' }}</span>
-            </div>
-          </div>
-        {% endif %}
-      </div>
-      {% if run.log %}
-        <span class="tag is-dark tag-header">Run log</span>
-        <figure class="highlight border-no-top-left-radius">
-          <pre class="language-toml log p-0"><code class="p-3">{{ run.log }}</code></pre>
-        </figure>
-      {% endif %}
-      {% if run.task_output %}
-        <span class="tag is-dark tag-header">Task output</span>
-        <figure class="highlight border-no-top-left-radius">
-          <pre class="language-python log p-0"><code class="p-3">{{ run.task_output }}</code></pre>
-        </figure>
-      {% endif %}
-    </section>
-    <footer class="modal-card-foot">
-      <button class="button">Close</button>
-    </footer>
-  </div>
-</div>
+<div id="run-detail-modal" class="modal is-desktop-size"></div>
+<script>
+  document.addEventListener("openModal", function(event) {
+    let modal_id = event.detail.modal;
+    if (modal_id !== "run-detail-modal") return;
+
+    let $modal = document.getElementById(modal_id);
+    let run_uuid = event.detail.$button.dataset.uuid;
+    let run_detail_url = `/runs/${run_uuid}/`;
+    $modal.innerHTML = "";
+
+    fetch(run_detail_url).then(function (response) {
+      if (response.ok) {
+        return response.text();
+      } else {
+        closeModals();
+        throw Error(response.statusText);
+      }
+    }).then(function (html) {
+      $modal.innerHTML = html;
+      setupCloseModalButtons();
+      let execute_pipeline_links = document.querySelector(".execute-pipeline-link");
+      if (execute_pipeline_links) {
+        execute_pipeline_links.addEventListener('click', displayOverlay);
+      }
+    }).catch(function (error) {
+      console.warn('Error:', error);
+    });
+
+  });
+</script>
