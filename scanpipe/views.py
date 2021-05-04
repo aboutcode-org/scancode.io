@@ -50,6 +50,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipes import codebase
+from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -410,7 +411,14 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
 def run_detail_view(request, uuid):
     template = "scanpipe/includes/run_modal_content.html"
     run = get_object_or_404(Run, uuid=uuid)
-    return render(request, template, context={"run": run})
+    status_summary = count_group_by(run.project.codebaseresources, "status")
+
+    context = {
+        "run": run,
+        "status_summary": status_summary,
+    }
+
+    return render(request, template, context)
 
 
 class CodebaseResourceRawView(
