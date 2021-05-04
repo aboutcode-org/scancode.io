@@ -53,7 +53,15 @@
               <td>
                 <a href="?mime_type={{ resource.mime_type }}" class="is-black-link">{{ resource.mime_type }}</a>
               </td>
-              <td>{{ resource.unique_license_expressions|join:"<br>" }}</td>
+              <td>
+                 <ul>
+                  {% for license_expression in resource.unique_license_expressions %}
+                    <li>
+                      <a href="?license_expressions={{ license_expression }}" class="is-black-link">{{ license_expression }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </td>
               {% if include_compliance_alert %}
                 <td>
                   <a href="?compliance_alert={{ resource.compliance_alert }}" class="is-black-link">{{ resource.compliance_alert }}</a>
