@@ -5,7 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ScanCode.io{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'bulma-0.9.2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'bulma-0.9.2.min.css' %}" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'highlight-10.6.0.css' %}" crossorigin="anonymous">
     <style>
       .width-100, .select, .select select {width: 100%;}
       .has-border-radius {border-radius: 6px;}
@@ -27,6 +28,7 @@
       .bb-chart .bb-chart-arcs .bb-chart-arcs-title {font-size: 15px !important; fill: #4a4a4a !important; text-transform: uppercase;}
       svg {overflow: visible !important;}
       .highlight {width: 100%;}
+      .log pre {background-color: #1c1d21;}
       .is-cursor-help {cursor: help;}
       .is-black-link {color: #363636;}
       .is-black-link:hover {color: #3273dc; text-decoration: underline;}
@@ -42,8 +44,9 @@
   </head>
   <body>
     {% block content %}{% endblock %}
-    <script src="{% static 'main.js' %}"></script>
-    <script src="{% static 'fontawesome-5.15.1.all.min.js' %}"></script>
+    <script src="{% static 'main.js' %}" crossorigin="anonymous"></script>
+    <script src="{% static 'fontawesome-5.15.1.all.min.js' %}" crossorigin="anonymous"></script>
+    <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

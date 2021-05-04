@@ -74,14 +74,14 @@
     </div>
     {% if run.log %}
       <span class="tag is-dark tag-header">Run log</span>
-      <figure class="highlight border-no-top-left-radius">
-        <pre class="language-toml log wrap p-3"><code>{{ run.log }}</code></pre>
+      <figure class="highlight log border-no-top-left-radius">
+        <pre class="language-toml wrap p-1"><code>{{ run.log }}</code></pre>
       </figure>
     {% endif %}
     {% if run.task_output %}
       <span class="tag is-dark tag-header">Task output</span>
-      <figure class="highlight border-no-top-left-radius">
-        <pre class="language-python log wrap p-3"><code>{{ run.task_output }}</code></pre>
+      <figure class="highlight log border-no-top-left-radius">
+        <pre class="language-python wrap p-1"><code>{{ run.task_output }}</code></pre>
       </figure>
     {% endif %}
   </section>

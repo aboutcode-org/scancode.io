@@ -22,17 +22,17 @@
         <tbody>
           {% for error in object_list %}
             <tr>
-              <td>
+              <td style="max-width: 130px;">
                 <a href="?model={{ error.model }}" class="is-black-link">{{ error.model }}</a>
               </td>
-              <td>
+              <td style="max-width: 150px;">
                 <a href="?message={{ error.message }}" class="is-black-link">{{ error.message }}</a>
               </td>
-              <td class="break-word" title="{{ error.details }}" style="max-width: 300px;">
-                {{ error.details|truncatechars:200 }}
+              <td class="break-word" title="{{ error.details }}" style="max-width: 400px;">
+                {{ error.details|truncatechars:300 }}
               </td>
               <td style="max-width: 600px;">
-                <pre class="log p-0" style="max-height: 120px;"><code>{{ error.traceback }}</code></pre>
+                <pre class="log wrap p-0" style="max-height: 130px;"><code>{{ error.traceback }}</code></pre>
               </td>
             </tr>
           {% endfor %}

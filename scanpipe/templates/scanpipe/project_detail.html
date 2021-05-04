@@ -5,7 +5,6 @@
 
 {% block extrahead %}
   <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
-  <link rel="stylesheet" href="{% static 'highlight-10.6.0.atom-one-light.css' %}" crossorigin="anonymous" />
 {% endblock %}
 
 {% block content %}
@@ -160,7 +159,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
   <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   {% if project.file_count %}
     {{ programming_languages|json_script:"programming_languages" }}

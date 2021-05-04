@@ -18,6 +18,9 @@
       }
     }).then(function (html) {
       $modal.innerHTML = html;
+      document.querySelectorAll('#run-detail-modal .highlight code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
       setupCloseModalButtons();
       let execute_pipeline_links = document.querySelector(".execute-pipeline-link");
       if (execute_pipeline_links) {
