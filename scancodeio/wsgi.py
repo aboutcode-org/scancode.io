@@ -33,6 +33,28 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
+from scancodeio.celery import app
+from scanpipe.models import Run
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
+
+
+def get_celery_worker_status():
+    i = app.control.inspect()
+    # availability = i.ping()
+    # stats = i.stats()
+    # registered_tasks = i.registered()
+    active = i.active()
+    scheduled = i.scheduled()
+    result = {
+        "active": active[list(active.keys())[0]] if active else 0,
+        "scheduled": active[list(active.keys())[0]] if active else 0,
+    }
+    return result
+
+
+result = get_celery_worker_status()
+if not result["active"] and not result["scheduled"]:
+    Run.objects.filter(task_exitcode__isnull=True).update(task_exitcode=1)
 
 application = get_wsgi_application()
