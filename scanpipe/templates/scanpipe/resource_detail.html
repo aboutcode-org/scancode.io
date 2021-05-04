@@ -66,10 +66,6 @@
       fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
     });
 
-    function getAll(selector) {
-      return Array.prototype.slice.call(document.querySelectorAll(selector), 0);
-    }
-
     function removeAllMarkers() {
       let session = editor.getSession();
       let markers = session.getMarkers();

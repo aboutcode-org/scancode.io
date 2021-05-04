@@ -29,6 +29,7 @@ from django.http import FileResponse
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
 
@@ -404,6 +405,12 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         }
 
         return context
+
+
+def run_detail_view(request, uuid):
+    template = "scanpipe/includes/run_modal_content.html"
+    run = get_object_or_404(Run, uuid=uuid)
+    return render(request, template, context={"run": run})
 
 
 class CodebaseResourceRawView(

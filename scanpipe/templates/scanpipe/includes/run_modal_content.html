@@ -1,0 +1,91 @@
+<div class="modal-background"></div>
+<div class="modal-card">
+  <header class="modal-card-head">
+    <p class="modal-card-title">{{ run.pipeline_name }}</p>
+    <button class="delete" aria-label="close"></button>
+  </header>
+  <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
+    {{ run.description }}
+  </div>
+  <section class="modal-card-body">
+    <div class="field is-grouped is-grouped-multiline">
+      <div class="control">
+        <div class="tags has-addons">
+          <span class="tag is-dark">Run</span>
+          {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+        </div>
+      </div>
+      {% if not run.task_start_date and not run.task_id %}
+        <a href="{% url 'project_execute_pipeline' run.project.uuid run.uuid %}" class="execute-pipeline-link has-text-weight-bold">
+          <i class="fas fa-play-circle"></i>
+          Run Pipeline
+        </a>
+      {% endif %}
+      {% if run.task_id %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Task ID</span>
+            <span class="tag is-info">{{ run.task_id }}</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if run.task_exitcode %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Exit code</span>
+            <span class="tag is-info">{{ run.task_exitcode }}</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if run.execution_time %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Execution time</span>
+            <span class="tag is-info">
+              {{ run.execution_time_for_display }}
+            </span>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    <div class="field is-grouped is-grouped-multiline">
+      <div class="control">
+        <div class="tags has-addons">
+          <span class="tag is-dark">Created date</span>
+          <span class="tag is-info">{{ run.created_date|date:'N j, Y, P T' }}</span>
+        </div>
+      </div>
+      {% if run.task_start_date %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Start date</span>
+            <span class="tag is-info">{{ run.task_start_date|date:'N j, Y, P T' }}</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if run.task_end_date %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">End date</span>
+            <span class="tag is-info">{{ run.task_end_date|date:'N j, Y, P T' }}</span>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    {% if run.log %}
+      <span class="tag is-dark tag-header">Run log</span>
+      <figure class="highlight log border-no-top-left-radius">
+        <pre class="language-toml wrap p-1"><code>{{ run.log }}</code></pre>
+      </figure>
+    {% endif %}
+    {% if run.task_output %}
+      <span class="tag is-dark tag-header">Task output</span>
+      <figure class="highlight log border-no-top-left-radius">
+        <pre class="language-python wrap p-1"><code>{{ run.task_output }}</code></pre>
+      </figure>
+    {% endif %}
+  </section>
+  <footer class="modal-card-foot">
+    <button class="button">Close</button>
+  </footer>
+</div>

@@ -5,7 +5,6 @@
 
 {% block extrahead %}
   <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
-  <link rel="stylesheet" href="{% static 'highlight-10.6.0.atom-one-light.css' %}" crossorigin="anonymous" />
 {% endblock %}
 
 {% block content %}
@@ -80,12 +79,12 @@
               Pipelines
             </p>
             {% for run in project.runs.all %}
-              <a class="panel-block modal-button is-flex is-justify-content-space-between" data-target="{{ run.uuid }}-modal" aria-haspopup="true">
-                <span>{{ run.pipeline_name }}</span>
+              <a class="panel-block modal-button is-flex is-justify-content-space-between" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
+                <span class="mr-1">{{ run.pipeline_name }}</span>
                 {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
               </a>
-              {% include "scanpipe/includes/run_modal.html" with project=project run=run only %}
             {% endfor %}
+            <div id="run-detail-modal" class="modal is-desktop-size"></div>
             <div class="panel-block">
               <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
                 Add pipeline
@@ -156,11 +155,10 @@
       {% endif %}
     {% endif %}
   </div>
+  {% include 'scanpipe/includes/run_modal.html' %}
 {% endblock %}
 
 {% block scripts %}
-  {% include "scanpipe/includes/modal.js.html" %}
-  <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
   <script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
   {% if project.file_count %}
     {{ programming_languages|json_script:"programming_languages" }}
@@ -253,17 +251,9 @@
     makeChart("file_license_keys", "#license_key_chart", "License\nKey");
     makeChart("file_license_categories", "#license_category_chart", "License\nCategory");
     makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
-
   </script>
-  <script>
-    displayOverlay = function () {
-      let background = document.createElement("div");
-      background.className = "modal-background";
-      background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
-      background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
-      document.body.appendChild(background);
-    };
 
+  <script>
     onSubmitOverlay = function (selector) {
       let element = document.querySelector(selector);
       if (element) {
@@ -275,9 +265,5 @@
 
     onSubmitOverlay("#add-pipeline-modal form");
     onSubmitOverlay("#add-inputs-modal form");
-
-    let execute_pipeline_links = document.querySelector(".execute-pipeline-link");
-    if (execute_pipeline_links)
-      execute_pipeline_links.addEventListener('click', displayOverlay);
   </script>
 {% endblock %}
