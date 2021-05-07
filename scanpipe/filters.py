@@ -32,6 +32,56 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 
 
+class FilterSetUtilsMixin:
+    @staticmethod
+    def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
+        """
+        Returns an encoded URL without the value for given `field_name`.
+        For multi-value filters, a single value can be removed using `remove_value`.
+        This URL can be used to remove a filter value from the active filters.
+        """
+        if not query_dict:
+            return ""
+
+        data = query_dict.copy()
+        field_data = data.pop(field_name, [])
+
+        if remove_value and len(field_data) > 1 and remove_value in field_data:
+            for item in field_data:
+                if item != remove_value:
+                    data.update({field_name: item})
+
+        return data.urlencode()
+
+    def is_active(self):
+        """
+        Returns True if any of the filter is active, except the 'sort' filter.
+        """
+        return bool(
+            [
+                field_name
+                for field_name in self.form.changed_data
+                if field_name not in ["sort"]
+            ]
+        )
+
+    def get_query_no_sort(self):
+        return self.remove_field_from_query_dict(self.data, "sort")
+
+    def get_filters_breadcrumb(self):
+        return [
+            {
+                "label": self.filters[field_name].label,
+                "value": value,
+                "remove_url": self.remove_field_from_query_dict(
+                    self.data, field_name, value
+                ),
+            }
+            for field_name in self.form.changed_data
+            for value in self.data.getlist(field_name)
+        ]
+
+
 class ProjectFilterSet(django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
 
@@ -70,7 +120,7 @@ class InPackageFilter(django_filters.ChoiceFilter):
         return qs
 
 
-class ResourceFilterSet(django_filters.FilterSet):
+class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     in_package = InPackageFilter()
 
     class Meta:
@@ -112,7 +162,7 @@ class ResourceFilterSet(django_filters.FilterSet):
         return super().filter_for_lookup(field, lookup_type)
 
 
-class PackageFilterSet(django_filters.FilterSet):
+class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     purl = PackageURLFilter()
 
     class Meta:
@@ -145,7 +195,7 @@ class PackageFilterSet(django_filters.FilterSet):
         ]
 
 
-class ErrorFilterSet(django_filters.FilterSet):
+class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     class Meta:
         model = ProjectError
         fields = [

@@ -1,0 +1,13 @@
+<div class="field is-grouped is-grouped-multiline mt-3">
+  {% for filter in filterset.get_filters_breadcrumb %}
+    <div class="control">
+      <div class="tags has-addons">
+        <span class="tag is-link">
+          {{ filter.label }}:
+          <span class="has-text-weight-bold ml-1">{{ filter.value|truncatechars:40 }}</span>
+        </span>
+        <a class="tag is-delete" href="?{% if filter.remove_url %}{{ filter.remove_url }}{% endif %}"></a>
+      </div>
+    </div>
+  {% endfor %}
+</div>
