@@ -9,11 +9,15 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+
 import os
 import sys
 
+import django
+
 sys.path.insert(0, os.path.abspath(".."))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
+django.setup()
 
 
 # -- Project information -----------------------------------------------------
@@ -43,7 +47,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # Mock Django related modules to avoid complex configuration in the context of
 # autodoc.
-autodoc_mock_imports = ["django", "celery", "scanpipe.models", "scanpipe.api"]
+autodoc_mock_imports = ["celery"]
 
 # Keep the source code order for the autodoc content, as we want to keep
 # the processing order for the Pipelines doc.

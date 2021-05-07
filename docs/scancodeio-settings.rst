@@ -27,6 +27,19 @@ Default to ``UTC``::
 
 `See the list of time zones <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
 
+SCANCODEIO_WORKSPACE_LOCATION
+-----------------------------
+
+Define the workspace location.
+The workspace is the directory where **all the project files are stored**: input,
+codebase, and output files::
+
+    SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace/
+
+Default to a :guilabel:`var/` directory in the local ScanCode.io codebase.
+
+See :ref:`Project workspace` for details.
+
 SCANCODEIO_PROCESSES
 --------------------
 

@@ -18,6 +18,7 @@ In the database, **a project is identified by its unique name**.
 .. note::
     Multiple analysis pipelines can be run on a single project.
 
+.. _Project workspace:
 
 Project workspace
 -----------------

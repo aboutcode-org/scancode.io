@@ -35,21 +35,8 @@ __version__ = "21.4.28"
 SCAN_NOTICE = Path(__file__).resolve().parent.joinpath("scan.NOTICE").read_text()
 
 
-def get_workspace_location():
-    """
-    Return the workspace directory location
-    from the `SCANCODEIO_WORKSPACE_LOCATION` settings/env.
-    Default to a local `var/` directory if not set.
-    """
-    workspace_location = (
-        getattr(settings, "SCANCODEIO_WORKSPACE_LOCATION", None)
-        or os.environ.get("SCANCODEIO_WORKSPACE_LOCATION", None)
-        or "var"
-    )
-    return str(Path(workspace_location).resolve().absolute())
-
-
-WORKSPACE_LOCATION = get_workspace_location()
+# Resolve and set the workspace location from the settings.
+WORKSPACE_LOCATION = str(Path(settings.SCANCODEIO_WORKSPACE_LOCATION).resolve())
 
 
 def command_line():
