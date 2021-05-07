@@ -4,7 +4,8 @@
   <div class="container is-max-desktop mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
-      {% include 'scanpipe/includes/breadcrumb.html' with current="Errors" %}
+      {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True %}
+      {% include 'scanpipe/includes/pagination_header.html' with verbose_name="Errors" %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
     </section>
   </div>
