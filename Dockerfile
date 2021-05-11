@@ -39,6 +39,8 @@ RUN apt-get update \
        libgcrypt20 \
        libpopt0 \
        libzstd1 \
+       libgpgme11 \
+       libdevmapper1.02.1 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
