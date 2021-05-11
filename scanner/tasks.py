@@ -36,7 +36,7 @@ from textcode.analysis import numbered_text_lines
 
 from scanpipe.pipes import get_bin_executable
 from scanpipe.pipes import run_command
-from scanpipe.pipes.fetch import download
+from scanpipe.pipes.fetch import fetch_http
 
 tasks_logger = get_task_logger(__name__)
 app_config = apps.get_app_config("scanner")
@@ -164,7 +164,7 @@ def download_and_scan(self, scan_pk, run_subscriptions=True):
 
     log_info(f"Download {scan.uri}", scan_pk)
     try:
-        downloaded = download(scan.uri)
+        downloaded = fetch_http(scan.uri)
     except Exception as e:
         log_info(f"Download error: {e}", scan_pk)
         scan.task_exitcode = 404

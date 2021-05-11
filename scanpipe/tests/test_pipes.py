@@ -531,20 +531,20 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected, tree)
 
     @mock.patch("requests.get")
-    def test_scanpipe_pipes_fetch_download(self, mock_get):
+    def test_scanpipe_pipes_fetch_http(self, mock_get):
         url = "https://example.com/filename.zip"
 
         mock_get.return_value = mock.Mock(
             content=b"\x00", headers={}, status_code=200, url=url
         )
-        downloaded_file = fetch.download(url)
+        downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
 
         redirect_url = "https://example.com/redirect.zip"
         mock_get.return_value = mock.Mock(
             content=b"\x00", headers={}, status_code=200, url=redirect_url
         )
-        downloaded_file = fetch.download(url)
+        downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "redirect.zip").exists())
 
         headers = {
@@ -553,7 +553,7 @@ class ScanPipePipesTest(TestCase):
         mock_get.return_value = mock.Mock(
             content=b"\x00", headers=headers, status_code=200, url=url
         )
-        downloaded_file = fetch.download(url)
+        downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
 
     @mock.patch("requests.get")

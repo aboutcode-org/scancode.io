@@ -30,6 +30,9 @@ container_inspector>=3.1.2
 scancode-toolkit[packages]==21.3.31
 commoncode>=21.4.28
 
+# FetchCode
+fetchcode-container==1.2.3.210511
+
 # Utilities
 XlsxWriter==1.4.0
 
