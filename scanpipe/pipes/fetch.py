@@ -22,7 +22,6 @@
 
 import cgi
 import logging
-import os
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -82,20 +81,22 @@ class FetchDockerImageError(Exception):
     pass
 
 
-def get_skopeo_location():
+def _get_skopeo_location():
     """
-    Return the Path of the directory where to find skopeo loaded from:
-    - a plugin-provided path,
-    Raise an Exception if no skopeo command can be found.
+    Return the Path of the directory where to find skopeo.
+    Raise an Exception if the skopeo binary cannot be found.
     """
-    bin_loc = get_location("fetchcode_container.skopeo.bindir")
-    if not bin_loc or not os.path.isdir(bin_loc):
+    bin_location = get_location("fetchcode_container.skopeo.bindir")
+    bin_location_path = Path(bin_location)
+
+    if not bin_location_path.is_dir():
         raise Exception(
             "CRITICAL: skopeo executable is not installed. "
             "Unable to continue: you need to install a valid fetchcode_container "
             "plugin with a valid executable available."
         )
-    return Path(bin_loc)
+
+    return bin_location_path
 
 
 def fetch_docker_image(docker_reference, to=None):
@@ -104,22 +105,20 @@ def fetch_docker_image(docker_reference, to=None):
     docker:// reference URL. Return a Download object.
 
     The docker references are documented here:
-    https://github.com/containers/skopeo/blob/0faf16017088f27062123885c650d5563d8e72e5/docs/skopeo.1.md#image-names
+    https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
     """
-    name = docker_reference.replace("docker://", "")
+    name = python_safe_name(docker_reference.replace("docker://", ""))
+    filename = f"{name}.tar"
     download_directory = to or tempfile.mkdtemp()
-    tarball = python_safe_name(name)
-    filename = f"{tarball}.tar"
     output_file = Path(download_directory, filename)
     target = f"docker-archive:{output_file}"
 
-    bin_loc = get_skopeo_location()
-    skopeo_cmd = bin_loc / "skopeo"
-    skope_policy_file = bin_loc / "default-policy.json"
+    skopeo_bin_path = _get_skopeo_location()
+    skopeo_executable = skopeo_bin_path / "skopeo"
+    policy_file = skopeo_bin_path / "default-policy.json"
 
-    cmd = f"{skopeo_cmd} copy {docker_reference} {target} --policy {skope_policy_file}"
+    cmd = f"{skopeo_executable} copy {docker_reference} {target} --policy {policy_file}"
     logger.info(f"Fetching image with: {cmd}")
-
     exitcode, output = pipes.run_command(cmd)
     logger.info(output)
     if exitcode != 0:
@@ -138,7 +137,10 @@ def fetch_docker_image(docker_reference, to=None):
     )
 
 
-def get_fetcher(url):
+def _get_fetcher(url):
+    """
+    Return the fetcher function based on the provided `url`.
+    """
     if url.startswith("docker://"):
         return fetch_docker_image
     return fetch_http
@@ -157,7 +159,7 @@ def fetch_urls(urls):
         urls = [url.strip() for url in urls.split()]
 
     for url in urls:
-        fetcher = get_fetcher(url)
+        fetcher = _get_fetcher(url)
         logger.info(f'Fetching "{url}" using {fetcher.__name__}')
         try:
             downloaded = fetcher(url)
