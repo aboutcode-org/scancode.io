@@ -199,3 +199,13 @@ def run_command(cmd):
 
     exitcode, output = subprocess.getstatusoutput(cmd)
     return exitcode, output
+
+
+def remove_prefix(text, prefix):
+    """
+    Remove the `prefix` from `text`.
+    """
+    if text.startswith(prefix):
+        prefix_len = len(prefix)
+        return text[prefix_len:]
+    return text
