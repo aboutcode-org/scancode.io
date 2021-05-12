@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### unreleased
+### v21.5.12
 
 - Adds a new way to fetch docker images using skopeo provided as a
   plugin using docker:// reference URL-like pointers to a docker image.
