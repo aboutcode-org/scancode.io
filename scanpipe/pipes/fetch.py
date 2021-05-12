@@ -119,11 +119,11 @@ def _get_skopeo_location(_cache=[]):
 
     if not cmd_loc or not os.path.isfile(cmd_loc):
         raise Exception(
-            'CRITICAL: skopeo executable is not installed. '
-            'Unable to continue: you need to install a valid fetchcode-container '
-            'plugin with a valid executable available. '
-            'OR set the FETCHCODE_SKOPEO_PATH environment variable. '
-            'OR ensure that skopeo is installed and available in the PATH.'
+            "CRITICAL: skopeo executable is not installed. "
+            "Unable to continue: you need to install a valid fetchcode-container "
+            "plugin with a valid executable available. "
+            "OR set the FETCHCODE_SKOPEO_PATH environment variable. "
+            "OR ensure that skopeo is installed and available in the PATH."
         )
     _cache.append(cmd_loc)
     return cmd_loc
@@ -168,7 +168,7 @@ def get_docker_image_platform(docker_reference):
     #        "size": 529
 
     inspection = json.loads(output)
-    for manifest in (inspection.get("manifests") or []):
+    for manifest in inspection.get("manifests") or []:
         platform = manifest.get("platform") or {}
         if platform:
             return (
