@@ -24,6 +24,7 @@ import collections
 import json
 from pathlib import Path
 from unittest import mock
+from unittest.case import expectedFailure
 
 from django.apps import apps
 from django.core.management import call_command
@@ -531,20 +532,20 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected, tree)
 
     @mock.patch("requests.get")
-    def test_scanpipe_pipes_fetch_download(self, mock_get):
+    def test_scanpipe_pipes_fetch_http(self, mock_get):
         url = "https://example.com/filename.zip"
 
         mock_get.return_value = mock.Mock(
             content=b"\x00", headers={}, status_code=200, url=url
         )
-        downloaded_file = fetch.download(url)
+        downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
 
         redirect_url = "https://example.com/redirect.zip"
         mock_get.return_value = mock.Mock(
             content=b"\x00", headers={}, status_code=200, url=redirect_url
         )
-        downloaded_file = fetch.download(url)
+        downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "redirect.zip").exists())
 
         headers = {
@@ -553,8 +554,27 @@ class ScanPipePipesTest(TestCase):
         mock_get.return_value = mock.Mock(
             content=b"\x00", headers=headers, status_code=200, url=url
         )
-        downloaded_file = fetch.download(url)
+        downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
+
+    @expectedFailure
+    @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
+    @mock.patch("scanpipe.pipes.run_command")
+    def test_scanpipe_pipes_fetch_docker_image(self, mock_run_command, mock_skopeo):
+        url = "docker://debian:10.9"
+
+        mock_skopeo.return_value = Path("")
+        mock_run_command.return_value = 1, "error"
+
+        with self.assertRaises(fetch.FetchDockerImageError):
+            fetch.fetch_docker_image(url)
+
+        mock_run_command.assert_called_once()
+        cmd = mock_run_command.call_args[0][0]
+        expected = "skopeo copy docker://debian:10.9 docker-archive:/"
+        self.assertTrue(cmd.startswith(expected))
+        expected = "debian_10_9.tar --policy default-policy.json"
+        self.assertTrue(cmd.endswith(expected))
 
     @mock.patch("requests.get")
     def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):

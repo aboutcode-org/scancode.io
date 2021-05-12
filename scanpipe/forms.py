@@ -45,7 +45,10 @@ class InputsBaseForm(forms.Form):
             attrs={
                 "class": "textarea",
                 "rows": 2,
-                "placeholder": "https://domain.com/archive.zip",
+                "placeholder": (
+                    "https://domain.com/archive.zip\n"
+                    "docker://docker-reference (e.g.: docker://postgres:13)"
+                ),
             },
         ),
     )

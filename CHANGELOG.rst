@@ -3,6 +3,13 @@
 
 ### unreleased
 
+- Adds a new way to fetch docker images using skopeo provided as a
+  plugin using docker:// reference URL-like pointers to a docker image.
+  The syntax is docker://<docker image> where <docker image> is the string
+  that would be used in a "docker pull <docker image>" command.
+  Also rename scanpipe.pipes.fetch.download() to fetch_http()
+  https://github.com/nexB/scancode.io/issues/174
+
 - Pipeline status modals are now loaded asynchronously and available from the
   project list view.
 
