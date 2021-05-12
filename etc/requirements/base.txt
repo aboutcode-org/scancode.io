@@ -28,7 +28,7 @@ container_inspector>=3.1.2
 
 # ScanCode-toolkit
 scancode-toolkit[packages]==21.3.31
-commoncode>=21.4.28
+commoncode>=21.5.12
 
 # FetchCode
 fetchcode-container==1.2.3.210511
