@@ -10,7 +10,7 @@ Create the installable archive::
 
    make package
 
-Grab the installable archive in ``dist/scancodeio-21.4.28.tar.gz``
+Grab the installable archive in ``dist/scancodeio-21.5.12.tar.gz``
 and move that file to your offline install server.
 
 On the offline install server:
@@ -20,7 +20,7 @@ On the offline install server:
 
 ::
 
-   mkdir scancode.io  && tar -xf scancodeio-21.4.28.tar.gz -C scancode.io --strip-components 1
+   mkdir scancode.io  && tar -xf scancodeio-21.5.12.tar.gz -C scancode.io --strip-components 1
    cd scancode.io
    make install
    make envfile
@@ -37,7 +37,7 @@ Create the latest installable archive::
 
    make package
 
-Grab the installable archive in ``dist/scancodeio-21.4.28.tar.gz``
+Grab the installable archive in ``dist/scancodeio-21.5.12.tar.gz``
 and move that to your offline install server.
 
 On the offline install server:
@@ -50,7 +50,7 @@ On the offline install server:
 ::
 
     mv scancode.io scancode.io-$(date +"%Y-%m-%d_%H%M")
-    mkdir scancode.io  && tar -xf scancodeio-21.4.28.tar.gz -C scancode.io --strip-components 1
+    mkdir scancode.io  && tar -xf scancodeio-21.5.12.tar.gz -C scancode.io --strip-components 1
     cd scancode.io
     make install
     make migrate
