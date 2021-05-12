@@ -31,7 +31,7 @@ scancode-toolkit[packages]==21.3.31
 commoncode>=21.5.12
 
 # FetchCode
-fetchcode-container==1.2.3.210511
+fetchcode-container==1.2.3.210512; sys_platform == "linux"
 
 # Utilities
 XlsxWriter==1.4.0
