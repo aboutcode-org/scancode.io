@@ -106,36 +106,37 @@ def get_docker_image_platform(docker_reference):
     """
     skopeo_bin_path = _get_skopeo_location()
     skopeo_executable = skopeo_bin_path / "skopeo"
-    cmd = f"{skopeo_executable} inspect --insecure-policy --raw --no-creds {docker_reference}"
+    cmd = (
+        f"{skopeo_executable} inspect --insecure-policy --raw --no-creds "
+        f"{docker_reference}"
+    )
     logger.info(f"Fetching image os/arch data: {cmd}")
     exitcode, output = pipes.run_command(cmd)
     logger.info(output)
     if exitcode != 0:
         raise FetchDockerImageError(output)
     # data has this shape:
-    # {
-    #    "schemaVersion": 2,
-    #    "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
-    #    "manifests": [
-    #       {
-    #          "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
-    #          "size": 886,
-    #          "digest": "sha256:305bad5caac7716b0715bfc77c8dfd41b106b994a23770ab4eca8e19b070aa6c",
-    #          "platform": {
-    #             "architecture": "amd64",
-    #             "os": "windows",
-    #             "os.version": "10.0.19041.985"
-    #          },
-    #         {
-    #           "digest": "sha256:973ab50414f9597fdbd2b496e08eb22942722d9bb571c42e029c26229196259d",
-    #           "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
-    #           "platform": {
-    #             "architecture": "arm",
-    #             "os": "linux",
-    #             "variant": "v7"
-    #           },
-    #           "size": 529
-    #         },
+    # "schemaVersion": 2,
+    # "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+    # "manifests": [
+    #    {
+    #       "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+    #       "size": 886,
+    #       "digest": "sha256:305bad5caac7716b0715bfc77c8d8e19b070aa6c",
+    #       "platform": {
+    #          "architecture": "amd64",
+    #          "os": "windows",
+    #          "os.version": "10.0.19041.985"
+    #       },
+    #      {
+    #        "digest": "sha256:973ab50414f9597fdbd2b496e089c26229196259d",
+    #        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+    #        "platform": {
+    #          "architecture": "arm",
+    #          "os": "linux",
+    #          "variant": "v7"
+    #        },
+    #        "size": 529
 
     inspection = json.loads(output)
     for manifest in (inspection.get("manifests") or []):
@@ -177,7 +178,10 @@ def fetch_docker_image(docker_reference, to=None):
             platform_args.append(f"--override-variant={variant}")
     platform_args = " ".join(platform_args)
 
-    cmd = f"{skopeo_executable} copy --insecure-policy {platform_args} {docker_reference} {target}"
+    cmd = (
+        f"{skopeo_executable} copy --insecure-policy "
+        f"{platform_args} {docker_reference} {target}"
+    )
     logger.info(f"Fetching image with: {cmd}")
     exitcode, output = pipes.run_command(cmd)
     logger.info(output)
