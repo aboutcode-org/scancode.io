@@ -23,12 +23,14 @@
 import cgi
 import json
 import logging
+import os
 import tempfile
 from collections import namedtuple
 from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
 from plugincode.location_provider import get_location
@@ -81,22 +83,50 @@ class FetchDockerImageError(Exception):
     pass
 
 
-def _get_skopeo_location():
+# key of a plugin-provided location
+FETCHCODE_SKOPEO_BINDIR = "fetchcode_container.skopeo.bindir"
+
+FETCHCODE_SKOPEO_PATH_ENVVAR = "FETCHCODE_SKOPEO_PATH"
+
+
+def _get_skopeo_location(_cache=[]):
     """
-    Return the Path of the directory where to find skopeo.
+    Return the Path to the skopeo command line executable, trying:
+    - an environment variable ``FETCHCODE_SKOPEO_PATH``,
+    - a plugin-provided path,
+    - the system PATH.
     Raise an Exception if the skopeo binary cannot be found.
     """
-    bin_location = get_location("fetchcode_container.skopeo.bindir")
-    bin_location_path = Path(bin_location)
+    if _cache:
+        return _cache[0]
 
-    if not bin_location_path.is_dir():
+    # try the environment first
+    cmd_loc = os.environ.get(FETCHCODE_SKOPEO_PATH_ENVVAR)
+    if cmd_loc:
+        cmd_loc = Path(cmd_loc)
+
+    # try a plugin-provided path second
+    if not cmd_loc:
+        bin_location = get_location(FETCHCODE_SKOPEO_BINDIR)
+        if bin_location:
+            cmd_loc = Path(bin_location) / "skopeo"
+
+    # try the PATH
+    if not cmd_loc:
+        cmd_loc = command.find_in_path("skopeo")
+        if cmd_loc:
+            cmd_loc = Path(cmd_loc)
+
+    if not cmd_loc or not os.path.isfile(cmd_loc):
         raise Exception(
-            "CRITICAL: skopeo executable is not installed. "
-            "Unable to continue: you need to install a valid fetchcode_container "
-            "plugin with a valid executable available."
+            'CRITICAL: skopeo executable is not installed. '
+            'Unable to continue: you need to install a valid fetchcode-container '
+            'plugin with a valid executable available. '
+            'OR set the FETCHCODE_SKOPEO_PATH environment variable. '
+            'OR ensure that skopeo is installed and available in the PATH.'
         )
-
-    return bin_location_path
+    _cache.append(cmd_loc)
+    return cmd_loc
 
 
 def get_docker_image_platform(docker_reference):
