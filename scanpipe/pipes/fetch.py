@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import cgi
+import json
 import logging
 import tempfile
 from collections import namedtuple
@@ -35,7 +36,6 @@ from plugincode.location_provider import get_location
 from scanpipe import pipes
 
 logger = logging.getLogger("scanpipe.pipes")
-
 
 Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 
@@ -99,6 +99,55 @@ def _get_skopeo_location():
     return bin_location_path
 
 
+def get_docker_image_platform(docker_reference):
+    """
+    Return a platform mapping of a docker reference.
+    If there are more than one, return the first one default.
+    """
+    skopeo_bin_path = _get_skopeo_location()
+    skopeo_executable = skopeo_bin_path / "skopeo"
+    cmd = f"{skopeo_executable} inspect --insecure-policy --raw --no-creds {docker_reference}"
+    logger.info(f"Fetching image os/arch data: {cmd}")
+    exitcode, output = pipes.run_command(cmd)
+    logger.info(output)
+    if exitcode != 0:
+        raise FetchDockerImageError(output)
+    # data has this shape:
+    # {
+    #    "schemaVersion": 2,
+    #    "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+    #    "manifests": [
+    #       {
+    #          "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+    #          "size": 886,
+    #          "digest": "sha256:305bad5caac7716b0715bfc77c8dfd41b106b994a23770ab4eca8e19b070aa6c",
+    #          "platform": {
+    #             "architecture": "amd64",
+    #             "os": "windows",
+    #             "os.version": "10.0.19041.985"
+    #          },
+    #         {
+    #           "digest": "sha256:973ab50414f9597fdbd2b496e08eb22942722d9bb571c42e029c26229196259d",
+    #           "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+    #           "platform": {
+    #             "architecture": "arm",
+    #             "os": "linux",
+    #             "variant": "v7"
+    #           },
+    #           "size": 529
+    #         },
+
+    inspection = json.loads(output)
+    for manifest in (inspection.get("manifests") or []):
+        platform = manifest.get("platform") or {}
+        if platform:
+            return (
+                platform.get("os") or "linux",
+                platform.get("architecture") or "amd64",
+                platform.get("variant") or "",
+            )
+
+
 def fetch_docker_image(docker_reference, to=None):
     """
     Fetch a docker image from the provided Docker image `docker_reference`
@@ -115,9 +164,20 @@ def fetch_docker_image(docker_reference, to=None):
 
     skopeo_bin_path = _get_skopeo_location()
     skopeo_executable = skopeo_bin_path / "skopeo"
-    policy_file = skopeo_bin_path / "default-policy.json"
 
-    cmd = f"{skopeo_executable} copy {docker_reference} {target} --policy {policy_file}"
+    platform_args = []
+    platform = get_docker_image_platform(docker_reference)
+    if platform:
+        os, arch, variant = platform
+        if os:
+            platform_args.append(f"--override-os={os}")
+        if arch:
+            platform_args.append(f"--override-arch={arch}")
+        if variant:
+            platform_args.append(f"--override-variant={variant}")
+    platform_args = " ".join(platform_args)
+
+    cmd = f"{skopeo_executable} copy --insecure-policy {platform_args} {docker_reference} {target}"
     logger.info(f"Fetching image with: {cmd}")
     exitcode, output = pipes.run_command(cmd)
     logger.info(output)
