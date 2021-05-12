@@ -134,8 +134,7 @@ def get_docker_image_platform(docker_reference):
     Return a platform mapping of a docker reference.
     If there are more than one, return the first one default.
     """
-    skopeo_bin_path = _get_skopeo_location()
-    skopeo_executable = skopeo_bin_path / "skopeo"
+    skopeo_executable = _get_skopeo_location()
     cmd = (
         f"{skopeo_executable} inspect --insecure-policy --raw --no-creds "
         f"{docker_reference}"
@@ -193,9 +192,7 @@ def fetch_docker_image(docker_reference, to=None):
     output_file = Path(download_directory, filename)
     target = f"docker-archive:{output_file}"
 
-    skopeo_bin_path = _get_skopeo_location()
-    skopeo_executable = skopeo_bin_path / "skopeo"
-
+    skopeo_executable = _get_skopeo_location()
     platform_args = []
     platform = get_docker_image_platform(docker_reference)
     if platform:
