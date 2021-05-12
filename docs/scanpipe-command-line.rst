@@ -86,6 +86,15 @@ directory::
 
     $ scanpipe add-input --project foo --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
 
+.. note:: Docker images can be provided as input using their Docker reference with the
+  ``docker://docker-reference`` syntax. For example::
+
+    $ [...] --input-url docker://redis
+    $ [...] --input-url docker://postgres:13
+    $ [...] --input-url docker://docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
+
+See https://docs.docker.com/engine/reference/builder/ for more details about references.
+
 
 `$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`
 -----------------------------------------------------------------------------
