@@ -34,6 +34,7 @@ from scanpipe import pipes
 from scanpipe.pipes import alpine
 from scanpipe.pipes import debian
 from scanpipe.pipes import rpm
+from scanpipe.pipes import windows
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ PACKAGE_GETTER_BY_DISTRO = {
     "opensuse": rpm.package_getter,
     "opensuse-tumbleweed": rpm.package_getter,
     "photon": rpm.package_getter,
+    "windows": windows.package_getter,
 }
 
 
@@ -188,7 +190,7 @@ def has_hash_diff(install_file, codebase_resource):
 
 def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     """
-    Given a `project` Project and an `rootfs` RootFs, scan the `rootfs` for
+    Given a `project` Project and a `rootfs` RootFs, scan the `rootfs` for
     installed system packages, and create a DiscoveredPackage for each.
 
     Then for each installed DiscoveredPackage file, check if it exists
