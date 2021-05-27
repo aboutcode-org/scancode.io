@@ -1,6 +1,12 @@
 // Release notes
 // -------------
 
+### unreleased
+
+- Add the is_binary, is_text, and is_archive fields to the CodebaseResource
+  model.
+  https://github.com/nexB/scancode.io/issues/75
+
 ### v21.5.12
 
 - Adds a new way to fetch docker images using skopeo provided as a
