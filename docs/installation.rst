@@ -3,104 +3,118 @@
 Installation
 ============
 
-Pre-requisite
--------------
+Welcome to the **ScanCode.io** installation guide! This guide describes how to install ScanCode.io on various platforms.
+Please read and follow the instructions carefully to ensure your installation is functional and smooth.
 
- * **Debian-like** distro or **macOS**
- * **Python 3.6 to 3.9**: https://www.python.org/downloads/
- * Recent version of **git**: https://git-scm.com/
+Supported Platforms
+-------------------
+**ScanCode.io** has been tested and is supported on the following operating systems:
 
-Optional:
- * **PostgreSQL 10** or later: https://www.postgresql.org/ (or https://postgresapp.com/ on macOS)
+    #. **Debian-based** Linux distributions
+    #. **MacOS** 10.14 and up
 
-.. note::
-    ScanCode.io can also be run through **Docker**, this is the preferred approach
-    **on Windows**. Refer to the :ref:`docker_image` chapter for details.
-
+In addition, ScanCode.io can also be run through **Docker**; this is the preferred approach **on Windows**. Refer to the :ref:`docker_image` chapter for details.
 
 .. _system_dependencies:
 
-Local installation
+.. warning::
+    ScanCode.io can **ONLY** be run on Windows through `Docker <https://www.docker.com/>`_ or `Virtual Machines <https://www.virtualbox.org/>`_. However, to avoid any installation issues, it is **NOT RECOMMEND** to run ScanCode.io on Windows machines.
+
+Pre-installation Checklist
+--------------------------
+
+Before you install ScanCode.io, make sure you have the following prerequisites:
+
+ * **Python: versions 3.6 to 3.9** found at https://www.python.org/downloads/
+ * **Git**: most recent release available at https://git-scm.com/
+ * **PostgreSQL**: release 10 or later found at https://www.postgresql.org/ or https://postgresapp.com/ on macOS
+
+
+Local Installation
 ------------------
 
-.. warning::
-    On **Linux**, several **system packages are required** by ScanCode toolkit.
-    Make sure those are installed before attempting the ScanCode.io installation::
+The following installation instructions are mainly dedicated to Linux and Mac operating systems.
+
+Prerequisites:
+^^^^^^^^^^^^^^
+In addition to the above pre-installation checklist, there might be some OS-specific system packages that need to be installed before installing ScanCode.io.
+
+* On **Linux**, several **system packages are required** by the ScanCode toolkit. Make sure those are installed before attempting the ScanCode.io installation::
 
         sudo apt-get install \
             build-essential python3-dev libssl-dev libpq-dev \
             bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0 \
             libgpgme11 libdevmapper1.02.1
 
-    See also to `ScanCode-toolkit Prerequisites 
-    <https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html#prerequisites>`_
+See also `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html#prerequisites>`_ for more details.
 
-Clone the git `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
-install dependencies and create an environment file::
+* Clone the `ScanCode.io GitHub repository <https://github.com/nexB/scancode.io>`_::
 
     git clone https://github.com/nexB/scancode.io.git && cd scancode.io
+
+* Inside the ScanCode folder, install the required dependencies::
+
     make dev
-    make envfile
 
 .. note::
-    The Python version can be specified using the following command during the
-    ``make dev`` step::
+    You can specify the Python version during the
+    ``make dev`` step using the following command::
 
         make dev PYTHON_EXE=python3.6
 
-    When ``PYTHON_EXE`` is not specified, the default ``python3`` executable is used.
+    When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is used.
 
+* Create an environment file::
+
+    make envfile
 
 Database
 --------
 
-**PostgreSQL** is the preferred database backend and should always be used on
-production servers.
+**PostgreSQL** is the preferred database backend and should always be used on production servers.
 
-Create the PostgreSQL user, database, and table with::
+* Create the PostgreSQL user, database, and table with::
 
     make postgres
 
-Alternatively, you can also decide to use a **SQLite** database for local
-development as a single user::
 
-    make sqlite
+.. note::
+    You could also use a **SQLite** database for local development as a single user with::
+
+     make sqlite
 
 .. warning::
-    Choosing SQLite over PostgreSQL has some caveats. See
-    https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes
-    for details.
+    Choosing SQLite over PostgreSQL has some caveats. Check this `link
+    <https://docs.djangoproject.com/en/dev/ref/databases/#sqlite-notes>`_
+    for more details.
 
 
 Tests
 -----
 
-Validate the installation by running the tests suite::
+You can validate the ScanCode.io installation by running the tests suite::
 
     make test
 
 
-Web Application
----------------
+ScanCode.io Web Application
+---------------------------
 
-A web application is available to create and manage your projects from a browser.
-To start the local webserver and access the app::
+A web application is available to create and manage your projects from a browser; you can start the local webserver and access the app with::
 
     make run
 
-Then open you web browser at visit: http://127.0.0.1:8001/
+Then open your web browser and visit: http://127.0.0.1:8001/ to access the web application.
 
-------------------
 
 .. note::
-    You are now ready to move onto the **Tutorials**: :ref:`scanpipe_tutorial_1`.
+    Congratulations, you are now ready to use ScanCode.io, and you can move onto the **Tutorials** section starting with the :ref:`scanpipe_tutorial_1` tutorial.
 
 
-Upgrading
----------
+Upgrading ScanCode.io
+---------------------
 
-If you have already a clone of the ScanCode.io repo, you can upgrade to the
-latest version with::
+If you already have the ScanCode.io repo cloned, you can upgrade to the latest version with::
 
     cd scancode.io
     git pull
