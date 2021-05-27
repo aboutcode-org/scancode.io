@@ -221,6 +221,7 @@ class ScanPipePipesTest(TestCase):
             "type": CodebaseResource.Type.FILE,
             "name": "notice",
             "extension": ".NOTICE",
+            "is_text": True,
             "size": 1178,
             "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
             "md5": "90cd416fd24df31f608249b77bae80f1",
@@ -228,7 +229,8 @@ class ScanPipePipesTest(TestCase):
             "mime_type": "text/plain",
             "file_type": "ASCII text",
         }
-        self.assertEqual(expected, scancode.get_resource_info(input_location))
+        resource_info = scancode.get_resource_info(input_location)
+        self.assertEqual(expected, resource_info)
 
     def test_scanpipe_pipes_scancode_scan_file(self):
         input_location = str(self.data_location / "notice.NOTICE")

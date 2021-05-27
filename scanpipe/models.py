@@ -967,6 +967,9 @@ class CodebaseResource(
         blank=True,
         help_text=_("Descriptive file type for this resource."),
     )
+    is_binary = models.BooleanField(default=False)
+    is_text = models.BooleanField(default=False)
+    is_archive = models.BooleanField(default=False)
 
     class Compliance(models.TextChoices):
         OK = "ok"
