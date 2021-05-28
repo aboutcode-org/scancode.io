@@ -2,7 +2,7 @@
 importlib_metadata==3.10.0; python_version < "3.8"
 
 # Django related
-Django==3.2.1
+Django==3.2.3
 django-environ==0.4.5
 django-crispy-forms==1.11.2
 pytz==2021.1
@@ -17,7 +17,7 @@ psycopg2-binary==2.8.6; sys_platform != "linux"
 requests==2.25.1
 
 # Task queue
-celery==5.0.5
+celery==5.1.0
 redis==3.5.3
 
 # WSGI server
@@ -34,7 +34,7 @@ commoncode==21.5.25
 fetchcode-container==1.2.3.210512; sys_platform == "linux"
 
 # Utilities
-XlsxWriter==1.4.0
+XlsxWriter==1.4.3
 
 # Profiling
 pyinstrument==3.4.2
