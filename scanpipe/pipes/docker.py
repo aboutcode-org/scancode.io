@@ -63,21 +63,21 @@ def extract_layers_from_images(project, images):
     errors = []
 
     for image in images:
-        image_dirname = Path(image.base_location).name
+        image_dirname = Path(image.extracted_location).name
         target_path = project.codebase_path / image_dirname
 
         for layer in image.layers:
             extract_target = target_path / layer.layer_id
-            extract_errors = scancode.extract(layer.layer_location, extract_target)
+            extract_errors = scancode.extract(layer.archive_location, extract_target)
             errors.extend(extract_errors)
-            layer.extracted_to_location = str(extract_target)
+            layer.extracted_location = str(extract_target)
 
 
 def get_image_data(image):
     """
     Return a mapping of Image-related data given an `image`.
     """
-    exclude = ["base_location", "extracted_to_location", "layers"]
+    exclude = ["extracted_location", "archive_location", "layers"]
     image_data = {
         key: value for key, value in image.to_dict().items() if key not in exclude
     }

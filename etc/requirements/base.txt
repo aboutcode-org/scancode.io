@@ -24,11 +24,11 @@ redis==3.5.3
 gunicorn==20.1.0
 
 # Docker
-container_inspector>=3.1.2
+container_inspector==21.5.25
 
 # ScanCode-toolkit
 scancode-toolkit[packages]==21.3.31
-commoncode>=21.5.12
+commoncode==21.5.25
 
 # FetchCode
 fetchcode-container==1.2.3.210512; sys_platform == "linux"

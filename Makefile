@@ -42,7 +42,7 @@ else
 endif
 
 virtualenv:
-	@echo "-> Bootstrap the Python virtualenv"
+	@echo "-> Bootstrap the virtualenv with PYTHON_EXE=${PYTHON_EXE}"
 	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update .
 
 conf: virtualenv
