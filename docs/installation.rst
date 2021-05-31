@@ -15,10 +15,9 @@ Supported Platforms
 
 In addition, ScanCode.io can also be run through **Docker**; this is the preferred approach **on Windows**. Refer to the :ref:`docker_image` chapter for details.
 
-.. _system_dependencies:
 
 .. warning::
-    ScanCode.io can **ONLY** be run on Windows through `Docker <https://www.docker.com/>`_ or `Virtual Machines <https://www.virtualbox.org/>`_. However, to avoid any installation issues, it is **NOT RECOMMEND** to run ScanCode.io on Windows machines.
+    ScanCode.io can **Only** be run on Windows through `Docker <https://www.docker.com/>`_ or `Virtual Machines <https://www.virtualbox.org/>`_. However, to avoid any installation issues, it is **Not recommended** to run ScanCode.io on Windows machines.
 
 Pre-installation Checklist
 --------------------------
@@ -35,8 +34,10 @@ Local Installation
 
 The following installation instructions are mainly dedicated to Linux and Mac operating systems.
 
-Prerequisites:
-^^^^^^^^^^^^^^
+.. _system_dependencies:
+
+Prerequisites
+^^^^^^^^^^^^^
 In addition to the above pre-installation checklist, there might be some OS-specific system packages that need to be installed before installing ScanCode.io.
 
 * On **Linux**, several **system packages are required** by the ScanCode toolkit. Make sure those are installed before attempting the ScanCode.io installation::
@@ -52,7 +53,7 @@ See also `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.i
 
     git clone https://github.com/nexB/scancode.io.git && cd scancode.io
 
-* Inside the ScanCode folder, install the required dependencies::
+* Inside the scancode.io/ directory, install the required dependencies::
 
     make dev
 
@@ -97,8 +98,8 @@ You can validate the ScanCode.io installation by running the tests suite::
     make test
 
 
-ScanCode.io Web Application
----------------------------
+Web Application
+---------------
 
 A web application is available to create and manage your projects from a browser; you can start the local webserver and access the app with::
 
@@ -111,8 +112,8 @@ Then open your web browser and visit: http://127.0.0.1:8001/ to access the web a
     Congratulations, you are now ready to use ScanCode.io, and you can move onto the **Tutorials** section starting with the :ref:`scanpipe_tutorial_1` tutorial.
 
 
-Upgrading ScanCode.io
----------------------
+Upgrading
+---------
 
 If you already have the ScanCode.io repo cloned, you can upgrade to the latest version with::
 
