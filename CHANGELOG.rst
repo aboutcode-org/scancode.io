@@ -3,8 +3,10 @@
 
 ### unreleased
 
-- Add the is_binary, is_text, and is_archive fields to the CodebaseResource
-  model.
+- Add ability to search on all list views.
+  https://github.com/nexB/scancode.io/issues/184
+
+- Add the is_binary, is_text, and is_archive fields to the CodebaseResource model.
   https://github.com/nexB/scancode.io/issues/75
 
 ### v21.5.12
