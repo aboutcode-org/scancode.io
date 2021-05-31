@@ -9,7 +9,6 @@
     {% else %}
       <span>&laquo;</span>
     {% endif %}
-
     Page {{ page_obj.number|intcomma }} of {{ page_obj.paginator.num_pages|intcomma }}
     {% if page_obj.has_next %}
       <a href="?page={{ page_obj.next_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}">&raquo;</a>

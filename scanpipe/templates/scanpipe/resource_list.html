@@ -1,10 +1,13 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-  <div class="container is-max-desktop mb-3">
+  <div id="content-header" class="container is-max-desktop mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
-      {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True %}
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+      </div>
       {% include 'scanpipe/includes/pagination_header.html' with verbose_name="Resources" %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
     </section>

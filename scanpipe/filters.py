@@ -81,8 +81,12 @@ class FilterSetUtilsMixin:
             for value in self.data.getlist(field_name)
         ]
 
+    @classmethod
+    def verbose_name_plural(cls):
+        return cls.Meta.model._meta.verbose_name_plural
 
-class ProjectFilterSet(django_filters.FilterSet):
+
+class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
 
     class Meta:
@@ -121,11 +125,13 @@ class InPackageFilter(django_filters.ChoiceFilter):
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = django_filters.CharFilter(field_name="path", lookup_expr="icontains")
     in_package = InPackageFilter()
 
     class Meta:
         model = CodebaseResource
         fields = [
+            "search",
             "path",
             "rootfs_path",
             "md5",
@@ -163,11 +169,13 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
     purl = PackageURLFilter()
 
     class Meta:
         model = DiscoveredPackage
         fields = [
+            "search",
             "purl",
             "type",
             "namespace",
@@ -196,9 +204,12 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = django_filters.CharFilter(field_name="message", lookup_expr="icontains")
+
     class Meta:
         model = ProjectError
         fields = [
+            "search",
             "model",
             "message",
         ]

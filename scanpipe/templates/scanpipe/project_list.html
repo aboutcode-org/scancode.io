@@ -12,16 +12,7 @@
         <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
       </div>
 
-      <div class="field">
-        <form method="get">
-          <p class="control has-icons-left">
-            <input class="input" type="text" placeholder="Filter projects" name="{{ filter.form.search.name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
-            <span class="icon is-small is-left">
-              <i class="fas fa-search"></i>
-            </span>
-          </p>
-        </form>
-      </div>
+      {% include 'scanpipe/includes/search_field.html' %}
 
       {% if object_list %}
         {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
