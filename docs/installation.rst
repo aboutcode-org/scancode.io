@@ -45,7 +45,7 @@ In addition to the above pre-installation checklist, there might be some OS-spec
         sudo apt-get install \
             build-essential python3-dev libssl-dev libpq-dev \
             bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0 \
-            libgpgme11 libdevmapper1.02.1
+            libgpgme11 libdevmapper1.02.1 libguestfs-tools
 
 See also `ScanCode-toolkit Prerequisites <https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html#prerequisites>`_ for more details.
 

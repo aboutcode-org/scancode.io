@@ -28,7 +28,7 @@ container_inspector==21.5.25
 
 # ScanCode-toolkit
 scancode-toolkit[packages]==21.3.31
-extractcode==21.6.1
+extractcode[full]==21.6.1
 commoncode==21.5.25
 
 # FetchCode

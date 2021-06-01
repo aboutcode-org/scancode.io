@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-
 FROM python:3.9
 
 # Force unbuffered stdout and stderr (e.g. they are flushed to terminal immediately)
@@ -41,6 +40,7 @@ RUN apt-get update \
        libzstd1 \
        libgpgme11 \
        libdevmapper1.02.1 \
+       libguestfs-tools \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
