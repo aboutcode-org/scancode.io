@@ -38,6 +38,7 @@ class ScanCodebase(Pipeline):
 
     extractcode_options = [
         "--shallow",
+        "--all-formats",
     ]
     scancode_options = [
         "--copyright",

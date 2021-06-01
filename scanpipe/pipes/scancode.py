@@ -63,7 +63,7 @@ def extract(location, target):
     """
     errors = []
 
-    for event in extract_file(location, target):
+    for event in extract_file(location, target, all_formats=True):
         if event.done:
             errors.extend(event.errors)
 
