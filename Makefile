@@ -66,7 +66,7 @@ check:
 	@${ACTIVATE} isort --check-only .
 	@echo "-> Run black validation"
 	@${ACTIVATE} black --check ${BLACK_ARGS}
-	echo "-> Run doc8 validation"
+	@echo "-> Run doc8 validation"
 	@${ACTIVATE} doc8 --max-line-length 100 --quiet docs/
 
 isort:
@@ -137,6 +137,6 @@ bump:
 
 docs:
 	rm -rf docs/_build/
-	sphinx-build docs/ docs/_build/
+	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
 .PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test package bump docs
