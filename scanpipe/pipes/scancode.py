@@ -33,6 +33,7 @@ from django.conf import settings
 import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
+from extractcode import all_kinds
 from extractcode.extract import extract_file
 from packageurl import PackageURL
 from scancode import ScancodeError
@@ -63,7 +64,7 @@ def extract(location, target):
     """
     errors = []
 
-    for event in extract_file(location, target, all_formats=True):
+    for event in extract_file(location, target, kinds=all_kinds):
         if event.done:
             errors.extend(event.errors)
 
