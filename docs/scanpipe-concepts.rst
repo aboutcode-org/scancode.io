@@ -8,10 +8,12 @@ Project
 
 A **project** encapsulates the analysis of software code:
 
-- it has a **workspace** which is a directory that contains the software code files under analysis
+- it has a **workspace** which is a directory that contains the software code files under
+  analysis
 - it is related to one or more **code analysis pipelines** scripts to automate its analysis
 - it tracks ``Codebase Resources`` e.g. its **code files and directories**
-- it tracks ``Discovered Packages`` e.g. its the **system and application packages** origin and license discovered in the codebase
+- it tracks ``Discovered Packages`` e.g. its the **system and application packages** origin and
+  license discovered in the codebase
 
 In the database, **a project is identified by its unique name**.
 
@@ -27,9 +29,12 @@ A project workspace is the root directory where **all the project files are stor
 
 The following directories exists under this workspace directory:
 
-- :guilabel:`input/` contains all the original uploaded and input files used of the project. For instance, it could be a codebase archive.
-- :guilabel:`codebase/` contains the files and directories (aka. resources) tracked as CodebaseResource records in the database.
-- :guilabel:`output/` contains all output files created by the pipelines: reports, scan results, etc.
+- :guilabel:`input/` contains all the original uploaded and input files used of the project.
+  For instance, it could be a codebase archive.
+- :guilabel:`codebase/` contains the files and directories (aka. resources) tracked as
+  CodebaseResource records in the database.
+- :guilabel:`output/` contains all output files created by the pipelines: reports,
+  scan results, etc.
 - :guilabel:`tmp/` is a scratch pad for temporary files generated during the pipelines runs.
 
 
@@ -66,7 +71,8 @@ Some of the ``CodebaseResource`` interesting attributes are:
 
 - a **status** used to track the analysis status for this resource.
 - a **type** (such as file, directory or symlink)
-- various attributes to track detected **copyrights**, **license expressions**, **copyright holders**, and **related packages**.
+- various attributes to track detected **copyrights**, **license expressions**,
+  **copyright holders**, and **related packages**.
 
 .. note::
     In general the attributes and their names are the same that are used in

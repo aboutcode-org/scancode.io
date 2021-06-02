@@ -46,6 +46,9 @@ jobs:
       - name: Validate code format
         run: make check
 
+      - name: Build the documentation
+        run: make docs
+
       - name: Run tests
         run: bin/python manage.py test --settings=scancodeio.settings.base --verbosity=2 --noinput
         env:

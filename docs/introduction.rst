@@ -61,7 +61,8 @@ Should I use ScanPipe
 If you are working on a software composition analysis project, or you
 are planning to start a new one, consider the following questions:
 
-1. **Automation**: Is this project part of a larger compliance program and process (as opposed to a one-of) and do you need automation?
+1. **Automation**: Is this project part of a larger compliance program and process
+   (as opposed to a one-of) and do you need automation?
 2. **Complexity**: Does the project use many third-party components or technologies?
 3. **Reproducibility**: Is it important that results are reproducible, traceable and auditable?
 
@@ -74,5 +75,6 @@ The first set of available pipelines helps automate the analysis of Docker
 comprehensive software stacks from an operating system with its kernel through
 system and application packages to original and custom applications.
 
-.. Some of this documentation is borrowed from the metaflow documentation and is also under Apache-2.0
+.. Some of this documentation is borrowed from the metaflow documentation and is also under
+   Apache-2.0
 .. Copyright (c) Netflix

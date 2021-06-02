@@ -4,6 +4,7 @@
 pycodestyle==2.7.0
 black==20.8b1
 isort==5.8.0
+doc8==0.8.1
 
 # Documentation
 Sphinx==4.0.2

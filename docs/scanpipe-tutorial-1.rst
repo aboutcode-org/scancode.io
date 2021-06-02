@@ -14,7 +14,8 @@ Before you start
 ----------------
 
 Download the following test Docker image and save this in your home directory:
-`30-alpine-nickolashkraus-staticbox-latest.tar <https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
+`30-alpine-nickolashkraus-staticbox-latest.tar <https://github.com/nexB/scancode.io-tutorial/
+releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
 
 
 Step-by-step
@@ -30,12 +31,14 @@ Step-by-step
 
 - Add the test Docker image tarball to the project workspace's :guilabel:`input/` directory::
 
-    $ scanpipe add-input --project staticbox --input-file ~/30-alpine-nickolashkraus-staticbox-latest.tar
+    $ scanpipe add-input --project staticbox \
+      --input-file ~/30-alpine-nickolashkraus-staticbox-latest.tar
 
 .. note::
     The command output will let you know where is the project workspace :guilabel:`input/` directory
     so you can browse it and check that your file was copied there correctly.
-    You can also copy more files manually to this :guilabel:`input/` directory to include entire directories.
+    You can also copy more files manually to this :guilabel:`input/` directory to include entire
+    directories.
 
 - Add the docker pipeline to your project::
 
