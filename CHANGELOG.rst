@@ -3,6 +3,11 @@
 
 ### unreleased
 
+- Add the ability to disable multiprocessing and threading entirely through the
+  SCANCODEIO_PROCESSES setting. Use 0 to disable multiprocessing and use -1 to also
+  disable threading.
+  https://github.com/nexB/scancode.io/issues/185
+
 - Missing project workspace are restored on reports (xlsx, json) creation. This allow
   to download reports even if the project workspace (input, codebase) was deleted.
   https://github.com/nexB/scancode.io/issues/154
