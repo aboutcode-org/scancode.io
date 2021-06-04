@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import shutil
 import tempfile
 import uuid
 from contextlib import redirect_stdout
@@ -173,6 +174,12 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_model_get_output_file_path(self):
         filename = self.project1.get_output_file_path("file", "ext")
         self.assertTrue(str(filename).endswith("/output/file-2010-10-10-10-10-10.ext"))
+
+        # get_output_file_path always ensure the work_directory is setup
+        shutil.rmtree(self.project1.work_directory)
+        self.assertFalse(self.project1.work_path.exists())
+        self.project1.get_output_file_path("file", "ext")
+        self.assertTrue(self.project1.work_path.exists())
 
     def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)

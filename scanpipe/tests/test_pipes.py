@@ -22,6 +22,7 @@
 
 import collections
 import json
+import shutil
 from pathlib import Path
 from unittest import mock
 from unittest.case import expectedFailure
@@ -203,6 +204,11 @@ class ScanPipePipesTest(TestCase):
 
         self.assertIn("compliance_alert", results["files"][0])
 
+        # Make sure the output can be generated even if the work_directory was wiped
+        shutil.rmtree(project1.work_directory)
+        output_file = output.to_json(project=project1)
+        self.assertEqual([output_file.name], project1.output_root)
+
     def test_scanpipe_pipes_outputs_to_xlsx(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
@@ -211,6 +217,11 @@ class ScanPipePipesTest(TestCase):
         )
         codebase_resource.create_and_add_package(package_data1)
 
+        output_file = output.to_xlsx(project=project1)
+        self.assertEqual([output_file.name], project1.output_root)
+
+        # Make sure the output can be generated even if the work_directory was wiped
+        shutil.rmtree(project1.work_directory)
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
 

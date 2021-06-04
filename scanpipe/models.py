@@ -387,8 +387,13 @@ class Project(UUIDPKModel, models.Model):
         Return a crafted file path in the project output/ directory using
         the provided `name` and `extension`.
         The current date and time string is added to the filename.
+
+        This method ensure the work_directory is properly setup, in case of a manual
+        wipe, and re-create the missing pieces of the directory structure.
         """
         from scanpipe.pipes import filename_now
+
+        self.setup_work_directory()
 
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename

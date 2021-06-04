@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Missing project workspace are restored on reports (xlsx, json) creation. This allow
+  to download reports even if the project workspace (input, codebase) was deleted.
+  https://github.com/nexB/scancode.io/issues/154
+
 - Add ability to search on all list views.
   https://github.com/nexB/scancode.io/issues/184
 
