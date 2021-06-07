@@ -1,9 +1,13 @@
 ScanCode.io documentation
 =========================
 
-ScanCode.io is a server to script and automate software composition analysis
-with ScanPipe pipelines.
-First application is for Docker container and VM composition analysis.
+Welcome to the very start of your ScanCode.io journey! In this documentation you’ll find information on:
+
+- An overview of ScaCode.io and ScanPipe
+- Installation instructions
+- Tutorials to get you started
+- Reference documentation about the ScanPipe concepts, Pipelines, Pipes and more
+- How to make technical contributions to the project and the community
 
 .. toctree::
     :maxdepth: 2
