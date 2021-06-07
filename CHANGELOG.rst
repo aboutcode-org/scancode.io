@@ -3,6 +3,14 @@
 
 ### unreleased
 
+- Add support for VM image formats extraction such as VMDK, VDI and QCOW.
+  See https://github.com/nexB/extractcode#archive-format-kind-file_system for the full
+  list of supported extensions.
+  The new extraction feature requires the installation of `libguestfs-tools`,
+  see https://github.com/nexB/extractcode#adding-support-for-vm-images-extraction for
+  installation details.
+  https://github.com/nexB/scancode.io/issues/132
+
 - Add the ability to disable multiprocessing and threading entirely through the
   SCANCODEIO_PROCESSES setting. Use 0 to disable multiprocessing and use -1 to also
   disable threading.

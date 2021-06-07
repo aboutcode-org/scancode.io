@@ -91,11 +91,9 @@ class RootFs:
     def from_project_codebase(cls, project):
         """
         Yield RootFs objects collected from the project "codebase" directory.
+        Each directory in the input/ is considered as the root of a root filesystem.
         """
-        # for now we do a dumb thing:
-        # each directory in input is considered as the root of a rootfs
-
-        subdirs = [p for p in project.codebase_path.glob("*/") if p.is_dir()]
+        subdirs = [path for path in project.codebase_path.glob("*/") if path.is_dir()]
         for subdir in subdirs:
             rootfs_location = str(subdir.absolute())
             yield RootFs(location=rootfs_location)
@@ -261,9 +259,7 @@ def get_resource_with_md5(project, status):
     a non-empty size and md5.
     """
     return (
-        project.codebaseresources.status(
-            status=status,
-        )
+        project.codebaseresources.status(status=status)
         .exclude(md5__exact="")
         .exclude(size__exact=0)
     )
