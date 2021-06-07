@@ -417,6 +417,26 @@ class ScanPipePipesTest(TestCase):
         )
         self.assertEqual(expected_message, error.message)
 
+    def test_scanpipe_pipes_scancode_scan_and_save_multiprocessing_with_threading(self):
+        def noop(*args, **kwargs):
+            pass
+
+        project1 = Project.objects.create(name="Analysis")
+        CodebaseResource.objects.create(project=project1, path="notice.NOTICE")
+
+        scan_func = mock.Mock(return_value=(None, None))
+        scan_func.__name__ = ""
+
+        with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", -1):
+            scancode._scan_and_save(project1, scan_func, noop)
+        with_threading = scan_func.call_args[0][-1]
+        self.assertFalse(with_threading)
+
+        with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", 0):
+            scancode._scan_and_save(project1, scan_func, noop)
+        with_threading = scan_func.call_args[0][-1]
+        self.assertTrue(with_threading)
+
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
         input_location = self.data_location / "asgiref-3.3.0_scan.json"
