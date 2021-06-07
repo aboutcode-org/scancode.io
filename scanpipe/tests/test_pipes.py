@@ -429,12 +429,12 @@ class ScanPipePipesTest(TestCase):
 
         with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", -1):
             scancode._scan_and_save(project1, scan_func, noop)
-        with_threading = scan_func.call_args_list[-1].args[-1]
+        with_threading = scan_func.call_args.args[-1]
         self.assertFalse(with_threading)
 
         with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", 0):
             scancode._scan_and_save(project1, scan_func, noop)
-        with_threading = scan_func.call_args_list[-1].args[-1]
+        with_threading = scan_func.call_args.args[-1]
         self.assertTrue(with_threading)
 
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
