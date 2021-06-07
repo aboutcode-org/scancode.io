@@ -32,6 +32,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.test import TransactionTestCase
 
+from commoncode.archive import extract_tar
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
@@ -621,6 +622,19 @@ class ScanPipePipesTest(TestCase):
         resource2.refresh_from_db()
         self.assertEqual("", resource1.status)
         self.assertEqual("ignored-whiteout", resource2.status)
+
+    def test_scanpipe_pipes_rootfs_from_project_codebase_class_method(self):
+        p1 = Project.objects.create(name="Analysis")
+        root_filesystems = list(rootfs.RootFs.from_project_codebase(p1))
+        self.assertEqual([], root_filesystems)
+
+        input_location = str(self.data_location / "windows-container-rootfs.tar")
+        extract_tar(input_location, target_dir=p1.codebase_path)
+        root_filesystems = list(rootfs.RootFs.from_project_codebase(p1))
+        self.assertEqual(1, len(root_filesystems))
+        distro = root_filesystems[0].distro
+        self.assertEqual("windows", distro.os)
+        self.assertEqual("windows", distro.identifier)
 
     def test_scanpipe_pipes_rootfs_tag_empty_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
