@@ -3,6 +3,14 @@
 
 ### unreleased
 
+- Add support for VM image formats extraction such as VMDK, VDI and QCOW.
+  See https://github.com/nexB/extractcode#archive-format-kind-file_system for the full
+  list of supported extensions.
+  The new extraction feature requires the installation of `libguestfs-tools`,
+  see https://github.com/nexB/extractcode#adding-support-for-vm-images-extraction for
+  installation details.
+  https://github.com/nexB/scancode.io/issues/132
+
 - Missing project workspace are restored on reports (xlsx, json) creation. This allow
   to download reports even if the project workspace (input, codebase) was deleted.
   https://github.com/nexB/scancode.io/issues/154
