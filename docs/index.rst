@@ -1,9 +1,10 @@
 ScanCode.io documentation
 =========================
 
-Welcome to the very start of your ScanCode.io journey! In this documentation you’ll find information on:
+Welcome to the very start of your ScanCode.io journey! In this documentation
+you’ll find information on:
 
-- An overview of ScaCode.io and ScanPipe
+- An overview of ScanCode.io and ScanPipe
 - Installation instructions
 - Tutorials to get you started
 - Reference documentation about the ScanPipe concepts, Pipelines, Pipes and more
