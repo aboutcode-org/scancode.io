@@ -2,7 +2,7 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "21.2.9",
+      "tool_version": "21.6.7",
       "options": {
         "input": [
           "scanner/tests/data/reference_scan/code"
@@ -25,9 +25,9 @@
         "--url": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2021-02-10T040237.191330",
-      "end_timestamp": "2021-02-10T040241.316641",
-      "duration": 4.125334024429321,
+      "start_timestamp": "2021-06-08T102735.700911",
+      "end_timestamp": "2021-06-08T102754.339395",
+      "duration": 18.638532161712646,
       "message": null,
       "errors": [],
       "extra_data": {
@@ -106,6 +106,7 @@
       ],
       "contains_source_code": null,
       "source_packages": [],
+      "extra_data": {},
       "purl": "pkg:bower/blue-leaf",
       "repository_homepage_url": null,
       "repository_download_url": null,
@@ -163,6 +164,7 @@
       "source_packages": [
         "pkg:maven/aopalliance/aopalliance@1.0?classifier=sources"
       ],
+      "extra_data": {},
       "purl": "pkg:maven/aopalliance/aopalliance@1.0",
       "repository_homepage_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/",
       "repository_download_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.jar",
@@ -192,8 +194,8 @@
           "type": "person",
           "role": "author",
           "name": "Stanis\u0142aw Pitucha",
-          "email": "viraptor@gmail.com",
-          "url": "http://bitbucket.org/viraptor/arpy"
+          "email": null,
+          "url": null
         }
       ],
       "keywords": [],
@@ -210,18 +212,18 @@
       "copyright": null,
       "license_expression": "bsd-simplified",
       "declared_license": {
-        "license": "Simplified BSD",
-        "classifiers": []
+        "license": "Simplified BSD"
       },
       "notice_text": null,
       "root_path": "code/subpackage2/setup.py",
       "dependencies": [],
       "contains_source_code": null,
       "source_packages": [],
+      "extra_data": {},
       "purl": "pkg:pypi/arpy@0.1.1",
-      "repository_homepage_url": "https://pypi.org/project/arpy",
-      "repository_download_url": "https://pypi.io/packages/source/a/arpy/arpy-0.1.1.tar.gz",
-      "api_data_url": "http://pypi.python.org/pypi/arpy/0.1.1/json",
+      "repository_homepage_url": "https://pypi.org/project/https://pypi.org",
+      "repository_download_url": "https://pypi.org/packages/source/a/arpy/arpy-0.1.1.tar.gz",
+      "api_data_url": "https://pypi.org/pypi/arpy/0.1.1/json",
       "identifier": "pkg_pypi_arpy_0_1_1_1",
       "consolidated_license_expression": "bsd-simplified",
       "consolidated_holders": [],
@@ -386,6 +388,7 @@
         ],
         "contains_source_code": null,
         "source_packages": [],
+        "extra_data": {},
         "purl": "pkg:bower/blue-leaf",
         "repository_homepage_url": null,
         "repository_download_url": null,
@@ -436,6 +439,7 @@
         "source_packages": [
           "pkg:maven/aopalliance/aopalliance@1.0?classifier=sources"
         ],
+        "extra_data": {},
         "purl": "pkg:maven/aopalliance/aopalliance@1.0",
         "repository_homepage_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/",
         "repository_download_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.jar",
@@ -462,8 +466,8 @@
             "type": "person",
             "role": "author",
             "name": "Stanis\u0142aw Pitucha",
-            "email": "viraptor@gmail.com",
-            "url": "http://bitbucket.org/viraptor/arpy"
+            "email": null,
+            "url": null
           }
         ],
         "keywords": [],
@@ -480,18 +484,18 @@
         "copyright": null,
         "license_expression": "bsd-simplified",
         "declared_license": {
-          "license": "Simplified BSD",
-          "classifiers": []
+          "license": "Simplified BSD"
         },
         "notice_text": null,
         "root_path": "code/subpackage2/setup.py",
         "dependencies": [],
         "contains_source_code": null,
         "source_packages": [],
+        "extra_data": {},
         "purl": "pkg:pypi/arpy@0.1.1",
-        "repository_homepage_url": "https://pypi.org/project/arpy",
-        "repository_download_url": "https://pypi.io/packages/source/a/arpy/arpy-0.1.1.tar.gz",
-        "api_data_url": "http://pypi.python.org/pypi/arpy/0.1.1/json",
+        "repository_homepage_url": "https://pypi.org/project/https://pypi.org",
+        "repository_download_url": "https://pypi.org/packages/source/a/arpy/arpy-0.1.1.tar.gz",
+        "api_data_url": "https://pypi.org/pypi/arpy/0.1.1/json",
         "files": [
           {
             "path": "code/subpackage2/setup.py",
@@ -746,6 +750,7 @@
           ],
           "contains_source_code": null,
           "source_packages": [],
+          "extra_data": {},
           "purl": "pkg:bower/blue-leaf",
           "repository_homepage_url": null,
           "repository_download_url": null,
@@ -1217,6 +1222,7 @@
           "source_packages": [
             "pkg:maven/aopalliance/aopalliance@1.0?classifier=sources"
           ],
+          "extra_data": {},
           "purl": "pkg:maven/aopalliance/aopalliance@1.0",
           "repository_homepage_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/",
           "repository_download_url": "https://repo1.maven.org/maven2/aopalliance/aopalliance/1.0/aopalliance-1.0.jar",
@@ -1503,8 +1509,8 @@
               "type": "person",
               "role": "author",
               "name": "Stanis\u0142aw Pitucha",
-              "email": "viraptor@gmail.com",
-              "url": "http://bitbucket.org/viraptor/arpy"
+              "email": null,
+              "url": null
             }
           ],
           "keywords": [],
@@ -1521,18 +1527,18 @@
           "copyright": null,
           "license_expression": "bsd-simplified",
           "declared_license": {
-            "license": "Simplified BSD",
-            "classifiers": []
+            "license": "Simplified BSD"
           },
           "notice_text": null,
           "root_path": "code/subpackage2/setup.py",
           "dependencies": [],
           "contains_source_code": null,
           "source_packages": [],
+          "extra_data": {},
           "purl": "pkg:pypi/arpy@0.1.1",
-          "repository_homepage_url": "https://pypi.org/project/arpy",
-          "repository_download_url": "https://pypi.io/packages/source/a/arpy/arpy-0.1.1.tar.gz",
-          "api_data_url": "http://pypi.python.org/pypi/arpy/0.1.1/json",
+          "repository_homepage_url": "https://pypi.org/project/https://pypi.org",
+          "repository_download_url": "https://pypi.org/packages/source/a/arpy/arpy-0.1.1.tar.gz",
+          "api_data_url": "https://pypi.org/pypi/arpy/0.1.1/json",
           "files": [
             {
               "path": "code/subpackage2/setup.py",
