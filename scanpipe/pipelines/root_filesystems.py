@@ -42,7 +42,8 @@ class RootFS(Pipeline):
         extract_errors = []
 
         for input_file in input_files:
-            extract_errors = scancode.extract(input_file, target_path)
+            extract_target = target_path / f"{input_file.name}-extract"
+            extract_errors = scancode.extract(input_file, extract_target)
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
