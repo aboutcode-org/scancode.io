@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### unreleased
+### v21.6.10
 
 - Add support for VM image formats extraction such as VMDK, VDI and QCOW.
   See https://github.com/nexB/extractcode#archive-format-kind-file_system for the full
