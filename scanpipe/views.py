@@ -241,6 +241,19 @@ class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
         return response_redirect
 
 
+class ProjectResetView(ProjectViewMixin, generic.DeleteView):
+    success_message = 'All data, except inputs, for the "{}" project have been removed.'
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Call the reset() method on the project.
+        """
+        self.object = self.get_object()
+        messages.success(self.request, self.success_message.format(self.object.name))
+        self.object.reset(keep_input=True)
+        return redirect(self.object)
+
+
 class ProjectTreeView(ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_tree.html"
 

@@ -61,6 +61,11 @@ urlpatterns = [
         name="project_delete",
     ),
     path(
+        "project/<uuid:uuid>/reset/",
+        views.ProjectResetView.as_view(),
+        name="project_reset",
+    ),
+    path(
         "runs/<uuid:uuid>/",
         views.run_detail_view,
         name="run_detail",
