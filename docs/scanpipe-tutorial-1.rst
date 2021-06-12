@@ -1,33 +1,49 @@
 .. _scanpipe_tutorial_1:
 
-Docker Image Analysis (command line)
-====================================
+Docker Image Analysis
+=====================
+
+This tutorial assumes you have a current version of ScanCode.io installed locally on your machine. If you do not have it installed, see our :ref:`installation` guide for instructions.
+
+There are two options to complete this tutorial; you can either:
+
+- Use the command line, **or**
+- Use the ScanCode.io `web application <https://scancodeio.readthedocs.io/en/latest/installation.html#web-application>`_
+
+Either way, the final result should be the same, so feel free to follow your preferred option.
 
 Requirements
 ------------
+To successfully complete this tutorial, you first need to:
 
-- **ScanCode.io is installed**, see :ref:`installation`
-- **Shell access** on the machine where ScanCode.io is installed
-
-
-Before you start
-----------------
-
-Download the following test Docker image and save this in your home directory:
-`30-alpine-nickolashkraus-staticbox-latest.tar <https://github.com/nexB/scancode.io-tutorial/
-releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
+- Install ScanCode.io locally
+- Download the following test Docker image and save it to your home directory: `30-alpine-nickolashkraus-staticbox-latest.tar <https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
 
 
-Step-by-step
-------------
 
-- Open a shell in the ScanCode.io installation directory and activate the virtualenv::
+Using the Command Line
+----------------------
+
+Prerequisites
+^^^^^^^^^^^^^
+
+- Along with the previous requirements, you need to have **Shell access** on the machine where ScanCode.io is installed
+
+Steps
+^^^^^
+
+- Open a shell in the ScanCode.io installation directory and activate the virtual environment - **virtualenv**::
 
     $ source bin/activate
+
+.. image:: /images/Docker-CL-Image1.png
 
 - Create a new project named ``staticbox``::
 
     $ scanpipe create-project staticbox
+
+.. note::
+    New projects are often created inside the :guilabel:`scancode.io/var/projects/` directory. However, the output of the previous command will include the full path of the new project.
 
 - Add the test Docker image tarball to the project workspace's :guilabel:`input/` directory::
 
@@ -51,7 +67,7 @@ Step-by-step
 .. note::
     The ``scanpipe show-pipeline`` command lists all the pipelines added to the
     project and their planned execution.
-    You can use this to get a quick overview of the pipelines that have been running already
+    You can use this to get a quick overview of the pipelines that have been running already.
     (with their "SUCCESS" or "FAILURE" status) and those that will be running next.
 
 - Run the docker pipeline on this project::
@@ -85,3 +101,7 @@ Step-by-step
         --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar \
         --pipeline docker \
         --execute
+
+
+Using the Web Application
+-------------------------
