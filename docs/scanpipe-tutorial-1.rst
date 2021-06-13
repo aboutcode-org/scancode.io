@@ -43,7 +43,7 @@ Steps
     $ scanpipe create-project staticbox
 
 .. note::
-    New projects are often created inside the :guilabel:`scancode.io/var/projects/` directory. However, the output of the previous command will include the full path of the new project.
+    New projects are often created inside the :guilabel:`scancode.io/var/projects/` directory. Anyway, the output of the previous command will include the full path of the new project.
 
 - Add the test Docker image tarball to the project workspace's :guilabel:`input/` directory::
 
@@ -51,40 +51,54 @@ Steps
       --input-file ~/30-alpine-nickolashkraus-staticbox-latest.tar
 
 .. note::
-    The command output will let you know where is the project workspace :guilabel:`input/` directory
-    so you can browse it and check that your file was copied there correctly.
-    You can also copy more files manually to this :guilabel:`input/` directory to include entire
-    directories.
+    The command output will let you know that the Docker image file was copied to the project's :guilabel:`input/` directory.
+    You can also navigate to this directory and confirm your file is there.
+    Alternatively, you can copy files manually to the :guilabel:`input/` directory to include entire directories.
+
+.. image:: /images/Docker-CL-Image2.png
 
 - Add the docker pipeline to your project::
 
     $ scanpipe add-pipeline --project staticbox docker
 
-- Check that the docker pipeline was added to your project::
+The output of the previous command will show whether the docker pipeline is added
+to the staticbox project or not, as shown in the following screenshot.
+
+.. image:: /images/Docker-CL-Image3.png
+
+- Check whether the docker pipeline was added to your project successfully::
 
     $ scanpipe show-pipeline --project staticbox
 
 .. note::
     The ``scanpipe show-pipeline`` command lists all the pipelines added to the
-    project and their planned execution.
-    You can use this to get a quick overview of the pipelines that have been running already.
-    (with their "SUCCESS" or "FAILURE" status) and those that will be running next.
+    project and their execution status.
+    You can use this to get a quick overview of the pipelines that have been
+    already running, pipelines with "SUCCESS" or "FAILURE" status, and those
+    will be running next, pipelines with "NOT_STARTED" status as shown below.
 
-- Run the docker pipeline on this project::
+.. image:: /images/Docker-CL-Image4.png
+
+- Run the docker pipeline on this project. In the output, you will be shown
+  whether this pipeline's execution is successful or not::
 
     $ scanpipe execute --project staticbox
 
-- Executing the ``show-pipeline`` command again will confirm the success of the
-  pipeline execution::
+.. image:: /images/Docker-CL-Image5.png
+
+- Executing the ``show-pipeline`` command again will also confirm the success
+  of the pipeline execution - "[SUCCESS] docker" status::
 
     $ scanpipe show-pipeline --project staticbox
-    "[SUCCESS] docker"
+
+.. image:: /images/Docker-CL-Image6.png
 
 - Get the results of the pipeline execution as a JSON file using the ``output`` command::
 
     $ scanpipe output --project staticbox --format json
 
-- Open the ``output/results-<timestamp>.json`` in your preferred viewer.
+- Finally, open the ``output/results-<timestamp>.json`` file in your preferred
+  text editor/file viewer.
 
 ----
 
