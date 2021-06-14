@@ -63,8 +63,7 @@ class RootFS(Pipeline):
             rootfs_data["name"] = os.path.basename(rfs.location)
             rootfs_data["distro"] = rfs.distro.to_dict() if rfs.distro else {}
 
-        self.project.extra_data.update({"images": rootfs_data})
-        self.project.save()
+        self.project.update_extra_data({"images": rootfs_data})
 
     def collect_and_create_codebase_resources(self):
         """

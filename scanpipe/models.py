@@ -275,6 +275,16 @@ class Project(UUIDPKModel, models.Model):
 
         self.setup_work_directory()
 
+    def update_extra_data(self, data):
+        """
+        Update the project `extra_data` field with the provide `data` dict.
+        """
+        if type(data) != dict:
+            raise ValueError("Argument `data` value must be a dict()")
+
+        self.extra_data.update(data)
+        self.save()
+
     def setup_work_directory(self):
         """
         Create all the work_directory structure, skip existing.

@@ -60,8 +60,7 @@ class Docker(Pipeline):
         Collect images information and store on project.
         """
         images_data = [docker.get_image_data(image) for image in self.images]
-        self.project.extra_data.update({"images": images_data})
-        self.project.save()
+        self.project.update_extra_data({"images": images_data})
 
     def collect_and_create_codebase_resources(self):
         """
