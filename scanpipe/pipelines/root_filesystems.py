@@ -39,14 +39,15 @@ class RootFS(Pipeline):
         """
         input_files = self.project.inputs("*")
         target_path = self.project.codebase_path
-        extract_errors = []
+        errors = []
 
         for input_file in input_files:
             extract_target = target_path / f"{input_file.name}-extract"
             extract_errors = scancode.extract(input_file, extract_target)
+            errors.extend(extract_errors)
 
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
+        if errors:
+            self.add_error("\n".join(errors))
 
     def find_root_filesystems(self):
         """
