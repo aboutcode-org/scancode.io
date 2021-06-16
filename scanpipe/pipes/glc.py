@@ -1,23 +1,9 @@
-import concurrent.futures
 import logging
-import os
-import shlex
-from functools import partial
-from pathlib import Path
-
-from django.apps import apps
-from django.conf import settings
 
 import packagedcode
-from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
-from extractcode import all_kinds
-from extractcode.extract import extract_file
 from packageurl import PackageURL
 from scancode import ScancodeError
-from scancode import Scanner
-from scancode import api as scancode_api
-from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
@@ -25,104 +11,6 @@ from scanpipe.models import CodebaseResource
 from LicenseClassifier.classifier import LicenseClassifier
 
 logger = logging.getLogger("scanpipe.pipes")
-
-"""
-Utilities to deal with ScanCode objects, in particular Codebase and Package.
-"""
-
-
-def extract(location, target):
-    """
-    Wraps the `extractcode.extract_file` to execute the extraction and return errors.
-    """
-    errors = []
-
-    for event in extract_file(location, target, kinds=all_kinds):
-        if event.done:
-            errors.extend(event.errors)
-
-    return errors
-
-
-def get_resource_info(location):
-    """
-    Return a mapping suitable for the creation of a new CodebaseResource.
-    """
-    file_info = {}
-
-    location_path = Path(location)
-    is_symlink = location_path.is_symlink()
-    is_file = location_path.is_file()
-
-    if is_symlink:
-        resource_type = CodebaseResource.Type.SYMLINK
-        file_info["status"] = "symlink"
-    elif is_file:
-        resource_type = CodebaseResource.Type.FILE
-    else:
-        resource_type = CodebaseResource.Type.DIRECTORY
-
-    file_info.update(
-        {
-            "type": resource_type,
-            "name": fileutils.file_base_name(location),
-            "extension": fileutils.file_extension(location),
-        }
-    )
-
-    if is_symlink:
-        return file_info
-
-    # Missing fields on CodebaseResource model returned by `get_file_info`.
-    unsupported_fields = [
-        "is_media",
-        "is_source",
-        "is_script",
-        "date",
-    ]
-
-    other_info = scancode_api.get_file_info(location)
-
-    # Skip unsupported_fields
-    # Skip empty values to avoid null vs. '' conflicts
-    other_info = {
-        field_name: value
-        for field_name, value in other_info.items()
-        if field_name not in unsupported_fields and value
-    }
-
-    file_info.update(other_info)
-
-    return file_info
-
-
-def scan_file(location, with_threading=True):
-    """
-    Run a license, copyright, email, and url scan on provided `location`,
-    using the scancode-toolkit direct API.
-
-    Return a dict of scan `results` and a list of `errors`.
-    """
-    scanners = [
-        Scanner("copyrights", scancode_api.get_copyrights),
-        Scanner("licenses", partial(scancode_api.get_licenses, include_text=True)),
-        Scanner("emails", scancode_api.get_emails),
-        Scanner("urls", scancode_api.get_urls),
-    ]
-    return _scan_resource(location, scanners, with_threading)
-
-
-def scan_for_package_info(location, with_threading=True):
-    """
-    Run a package scan on provided `location` using the scancode-toolkit direct API.
-
-    Return a dict of scan `results` and a list of `errors`.
-    """
-    scanners = [
-        Scanner("packages", scancode_api.get_package_info),
-    ]
-    return _scan_resource(location, scanners, with_threading)
-
 
 def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     """
@@ -137,126 +25,15 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
 
     codebase_resource.set_scan_results(scan_results, save=True)
 
-
-def save_scan_package_results(codebase_resource, scan_results, scan_errors):
-    """
-    Save the resource scan package results in the database.
-    Create project errors if any occurred during the scan.
-    """
-    packages = scan_results.get("packages", [])
-    if packages:
-        for package_data in packages:
-            codebase_resource.create_and_add_package(package_data)
-        codebase_resource.status = "application-package"
-        codebase_resource.save()
-
-    if scan_errors:
-        codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = "scanned-with-error"
-        codebase_resource.save()
-
-
 def _log_progress(scan_func, resource, resource_count, index):
     progress = f"{index / resource_count * 100:.1f}% ({index}/{resource_count})"
     logger.info(f"{scan_func.__name__} {progress} pk={resource.pk}")
 
 
-def _scan_and_save(project, scan_func, save_func):
-    """
-    Run the `scan_func` on files without status for `project`.
-    The `save_func` is called to save the results.
-
-    Multiprocessing is enabled by default on this pipe, the number of processes can be
-    controlled through the `SCANCODEIO_PROCESSES` setting.
-    Multiprocessing can be disable using `SCANCODEIO_PROCESSES=0`,
-    and threading can also be disabled `SCANCODEIO_PROCESSES=-1`
-
-    The codebase resources QuerySet is chunked in 2000 results at the time,
-    this can result in a significant reduction in memory usage.
-
-    Note that all database related actions are executed in this main process as the
-    database connection does not always fork nicely in the pool processes.
-    """
-    codebase_resources = project.codebaseresources.no_status()
-    resource_count = codebase_resources.count()
-    logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = codebase_resources.iterator(chunk_size=2000)
-
-    if max_workers <= 0:
-        with_threading = True if max_workers == 0 else False
-        for index, resource in enumerate(resource_iterator):
-            _log_progress(scan_func, resource, resource_count, index)
-            scan_results, scan_errors = scan_func(resource.location, with_threading)
-            save_func(resource, scan_results, scan_errors)
-        return
-
-    with concurrent.futures.ProcessPoolExecutor(max_workers) as executor:
-        future_to_resource = {
-            executor.submit(scan_func, resource.location): resource
-            for resource in resource_iterator
-        }
-
-        # Iterate over the Futures as they complete (finished or cancelled)
-        future_as_completed = concurrent.futures.as_completed(future_to_resource)
-
-        for index, future in enumerate(future_as_completed):
-            resource = future_to_resource[future]
-            _log_progress(scan_func, resource, resource_count, index)
-            scan_results, scan_errors = future.result()
-            save_func(resource, scan_results, scan_errors)
-
-
-def scan_for_files(project):
-    """
-    Run a license, copyright, email, and url scan on files without status for `project`.
-
-    Multiprocessing is enabled by default on this pipe, the number of processes can be
-    controlled through the SCANCODEIO_PROCESSES setting.
-    """
-    _scan_and_save(project, scan_file, save_scan_file_results)
-
-
-def scan_for_application_packages(project):
-    """
-    Run a package scan on files without status for `project`.
-
-    Multiprocessing is enabled by default on this pipe, the number of processes can be
-    controlled through the SCANCODEIO_PROCESSES setting.
-    """
-    _scan_and_save(project, scan_for_package_info, save_scan_package_results)
-
-
-def run_extractcode(location, options=None, raise_on_error=False):
-    """
-    Extract content at `location` with extractcode.
-    Optional arguments for the `extractcode` executable can be provided with the
-    `options` list.
-    If `raise_on_error` is enabled, a ScancodeError will be raised if the
-    exitcode greater than 0.
-    """
-    extractcode_args = [
-        pipes.get_bin_executable("extractcode"),
-        shlex.quote(location),
-    ]
-
-    if options:
-        extractcode_args.extend(options)
-
-    exitcode, output = pipes.run_command(extractcode_args)
-    if exitcode > 0 and raise_on_error:
-        raise ScancodeError(output)
-
-    return exitcode, output
-
-
 def run_glc(location, output_file, search_subdir, raise_on_error=False):
     """
     Scan `location` content and write results into `output_file`.
-    The `scancode` executable will be run using the provided `options`.
-    If `raise_on_error` is enabled, a ScancodeError will be raised if the
-    exitcode greater than 0.
     """
-    default_options = getattr(settings, "SCANCODE_DEFAULT_OPTIONS", [])
 
     l = LicenseClassifier()
     l.catalogueDir(location, search_subdir, output_file)
@@ -303,66 +80,3 @@ def create_codebase_resources(project, scanned_codebase):
             path=resource_path,
             defaults=resource_data,
         )
-
-
-def create_discovered_packages(project, scanned_codebase):
-    """
-    Save the packages of a ScanCode `scanned_codebase` scancode.resource.Codebase
-    object to the DB as DiscoveredPackage of `project`.
-    Relate package resources to CodebaseResource.
-    """
-    for scanned_resource in scanned_codebase.walk(skip_root=True):
-        scanned_packages = getattr(scanned_resource, "packages", [])
-        if not scanned_packages:
-            continue
-
-        scanned_resource_path = scanned_resource.get_path(strip_root=True)
-        cbr = CodebaseResource.objects.get(project=project, path=scanned_resource_path)
-
-        for scan_data in scanned_packages:
-            discovered_package = pipes.update_or_create_package(project, scan_data)
-            set_codebase_resource_for_package(
-                codebase_resource=cbr, discovered_package=discovered_package
-            )
-
-            scanned_package = packagedcode.get_package_instance(scan_data)
-            # Set all the resource attached to that package
-            scanned_package_resources = scanned_package.get_package_resources(
-                scanned_resource, scanned_codebase
-            )
-            for scanned_package_res in scanned_package_resources:
-                package_cbr = CodebaseResource.objects.get(
-                    project=project, path=scanned_package_res.get_path(strip_root=True)
-                )
-                set_codebase_resource_for_package(
-                    codebase_resource=package_cbr, discovered_package=discovered_package
-                )
-
-            # also set dependencies as their own packages
-            # TODO: we should instead relate these to the package
-            # TODO: we likely need a status for DiscoveredPackage
-            dependencies = scanned_package.dependencies or []
-            for dependency in dependencies:
-                # FIXME: we should get DependentPackage instances and not a mapping
-                purl = getattr(dependency, "purl", None)
-                if not purl:
-                    # TODO: we should log that
-                    continue
-                purl = PackageURL.from_string(purl)
-                dep = purl.to_dict()
-                dependent_package = pipes.update_or_create_package(project, dep)
-
-                # attached to the current resource (typically a manifest?)
-                set_codebase_resource_for_package(
-                    codebase_resource=cbr, discovered_package=dependent_package
-                )
-
-
-def set_codebase_resource_for_package(codebase_resource, discovered_package):
-    """
-    Assign the `discovered_package` to the `codebase_resource` and set its
-    status to "application-package".
-    """
-    codebase_resource.discovered_packages.add(discovered_package)
-    codebase_resource.status = "application-package"
-    codebase_resource.save()

@@ -1,6 +1,7 @@
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import output
 from scanpipe.pipes import glc
+from scanpipe.pipes.scancode import run_extractcode
 from scanpipe.pipes.input import copy_inputs
 
 
@@ -30,7 +31,7 @@ class TestPipeline(Pipeline):
         Extract with extractcode.
         """
         with self.save_errors(glc.ScancodeError):
-            glc.run_extractcode(
+            run_extractcode(
                 location=str(self.project.codebase_path),
                 options=self.extractcode_options,
                 raise_on_error=True,
@@ -51,7 +52,7 @@ class TestPipeline(Pipeline):
             )
 
         if not self.scan_output.exists():
-            raise FileNotFoundError("ScanCode output not available.")
+            raise FileNotFoundError("GLC output not available.")
 
     def build_inventory_from_scan(self):
         """
@@ -60,7 +61,6 @@ class TestPipeline(Pipeline):
         project = self.project
         scanned_codebase = glc.get_virtual_codebase(project, str(self.scan_output))
         glc.create_codebase_resources(project, scanned_codebase)
-        glc.create_discovered_packages(project, scanned_codebase)
 
     def csv_output(self):
         """
