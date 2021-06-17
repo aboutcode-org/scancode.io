@@ -1,7 +1,6 @@
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import output
-from scanpipe.pipes import glc
-from scanpipe.pipes.scancode import run_extractcode
+from scanpipe.pipes import glc, scancode
 from scanpipe.pipes.input import copy_inputs
 
 
@@ -30,8 +29,8 @@ class TestPipeline(Pipeline):
         """
         Extract with extractcode.
         """
-        with self.save_errors(glc.ScancodeError):
-            run_extractcode(
+        with self.save_errors(scancode.ScancodeError):
+            scancode.run_extractcode(
                 location=str(self.project.codebase_path),
                 options=self.extractcode_options,
                 raise_on_error=True,
@@ -43,12 +42,11 @@ class TestPipeline(Pipeline):
         """
         self.scan_output = self.project.get_output_file_path("scancode", "json")
 
-        with self.save_errors(glc.ScancodeError):
+        with self.save_errors(scancode.ScancodeError):
             glc.run_glc(
                 location=str(self.project.codebase_path),
                 output_file=str(self.scan_output),
                 search_subdir=True,
-                raise_on_error=True,
             )
 
         if not self.scan_output.exists():
@@ -59,8 +57,8 @@ class TestPipeline(Pipeline):
         Process the JSON scan results to populate resources and packages.
         """
         project = self.project
-        scanned_codebase = glc.get_virtual_codebase(project, str(self.scan_output))
-        glc.create_codebase_resources(project, scanned_codebase)
+        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
+        scancode.create_codebase_resources(project, scanned_codebase)
 
     def csv_output(self):
         """
