@@ -88,7 +88,8 @@ class ScanPipeOutputTest(TestCase):
             None,
             "5\n1016\n1017\n1018\n1019\n1020\n1021\n1022\n1023\n1024abcd",
             None,
-            "The value of: foo has been truncated from: 65476 to 32767 length to fit in an XLSL cell maximum length",
+            "The value of: foo has been truncated from: 65476 to 32767 length "
+            "to fit in an XLSL cell maximum length",
         ]
 
         for r, x in zip(values, expected):
