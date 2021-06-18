@@ -13,6 +13,7 @@ class TestPipeline(Pipeline):
     Alternatively, the code can be manually copied to the project codebase/
     directory.
     """
+
     extractcode_options = [
         "--shallow",
         "--all-formats",
@@ -41,13 +42,12 @@ class TestPipeline(Pipeline):
         Scan extracted codebase/ content.
         """
         self.scan_output = self.project.get_output_file_path("scancode", "json")
-
-        with self.save_errors(scancode.ScancodeError):
-            glc.run_glc(
-                location=str(self.project.codebase_path),
-                output_file=str(self.scan_output),
-                search_subdir=True,
-            )
+        # print(self.scan_output)
+        glc.run_glc(
+            location=str(self.project.codebase_path),
+            output_file=str(self.scan_output),
+            search_subdir=True,
+        )
 
         if not self.scan_output.exists():
             raise FileNotFoundError("GLC output not available.")
@@ -57,8 +57,8 @@ class TestPipeline(Pipeline):
         Process the JSON scan results to populate resources and packages.
         """
         project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
-        scancode.create_codebase_resources(project, scanned_codebase)
+        scan_data = glc.to_dict(str(self.scan_output))
+        glc.create_codebase_resources(project, scan_data)
 
     def csv_output(self):
         """
