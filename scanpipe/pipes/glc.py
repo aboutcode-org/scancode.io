@@ -40,9 +40,28 @@ def create_codebase_resources(project, scan_data):
     root = scan_data["headers"][0]["input"]
     for scanned_resource in scan_data["files"]:
         for field in CodebaseResource._meta.fields:
+
             if field.name == "path":
                 continue
-            value = scanned_resource.get(field.name, None)
+
+            elif field.name == "copyrights":
+                value = [
+                    {"value": record.pop("expression", None), **record}
+                    for record in scanned_resource.get("copyrights", [])
+                ]
+
+            elif field.name == "holders":
+                value = [
+                    {
+                        "value": record.pop("holder", None),
+                        "start_index": record.pop("start_index", None),
+                        "end_index": record.pop("end_index", None),
+                    }
+                    for record in scanned_resource.get("copyrights", [])
+                ]
+
+            else:
+                value = scanned_resource.get(field.name, None)
 
             if value is not None:
                 resource_data[field.name] = value
