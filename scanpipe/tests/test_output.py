@@ -240,5 +240,4 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     sstet = etree.parse(str(shared_strings))
     # in our special case the text we care is the last element of the XML
 
-    print("shared_strings:", shared_strings)
     return [t.text for t in sstet.getroot().iter()]
