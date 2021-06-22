@@ -236,9 +236,13 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
-    worksheet.write_row(row=0, col=0, data=list(fields) + ["xlsx_errors"])
+
+    header = list(fields) + ["xlsx_errors"]
+    worksheet.write_row(row=0, col=0, data=header)
 
     errors_count = 0
+    errors_col_index = len(fields) - 1  # rows and cols are zero-indexed
+
     for row_index, record in enumerate(rows, start=1):
         row_errors = []
         for col_index, field in enumerate(fields):
@@ -258,7 +262,7 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
         if row_errors:
             errors_count += len(row_errors)
             row_errors = "\n".join(row_errors)
-            worksheet.write_string(row_index, col_index + 1, row_errors)
+            worksheet.write_string(row_index, errors_col_index, row_errors)
 
     return errors_count
 
