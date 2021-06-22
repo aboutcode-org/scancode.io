@@ -212,7 +212,7 @@ def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model
-    model_name = model_class._meta.model_name
+    model_name = model_class._meta.verbose_name_plural.title()
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
@@ -235,7 +235,7 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     Return a number of conversion errors.
     """
     worksheet = workbook.add_worksheet(worksheet_name)
-
+    worksheet.set_default_row(height=14)
     worksheet.write_row(row=0, col=0, data=list(fields) + ["xlsx_errors"])
 
     errors_count = 0
@@ -289,10 +289,10 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     Return a two tuple of:
     (``value`` adapted for use in an XLSX cell, error message or None)
 
-    Convert the value to a string and performa these adaptations:
+    Convert the value to a string and perform these adaptations:
     - Keep only unique values in lists, preserving ordering.
     - Truncate the "description" field to the first five lines.
-    - Truncate any fieldtoo long to fit in an XLSX cell and report error.
+    - Truncate any field too long to fit in an XLSX cell and report error.
     - Create a combined license expression for expressions
     - Normalize line endings
     - Truncating the value to a ``maximum_length`` supported by XLSX.
