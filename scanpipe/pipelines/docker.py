@@ -32,6 +32,23 @@ class Docker(Pipeline):
     A pipeline to analyze a Docker image.
     """
 
+    @classmethod
+    def steps(cls):
+        return (
+            cls.extract_images,
+            cls.extract_layers,
+            cls.find_images_linux_distro,
+            cls.collect_images_information,
+            cls.collect_and_create_codebase_resources,
+            cls.collect_and_create_system_packages,
+            cls.tag_uninteresting_codebase_resources,
+            cls.tag_empty_files,
+            cls.scan_for_application_packages,
+            cls.scan_for_files,
+            cls.analyze_scanned_files,
+            cls.tag_not_analyzed_codebase_resources,
+        )
+
     def extract_images(self):
         """
         Extract the images from tarballs.
@@ -113,18 +130,3 @@ class Docker(Pipeline):
         Check for leftover files for sanity. We should have none.
         """
         pipes.tag_not_analyzed_codebase_resources(self.project)
-
-    steps = (
-        extract_images,
-        extract_layers,
-        find_images_linux_distro,
-        collect_images_information,
-        collect_and_create_codebase_resources,
-        collect_and_create_system_packages,
-        tag_uninteresting_codebase_resources,
-        tag_empty_files,
-        scan_for_application_packages,
-        scan_for_files,
-        analyze_scanned_files,
-        tag_not_analyzed_codebase_resources,
-    )

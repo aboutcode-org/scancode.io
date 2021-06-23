@@ -30,6 +30,13 @@ class LoadInventory(Pipeline):
     (assumed to contain file information and package scan data).
     """
 
+    @classmethod
+    def steps(cls):
+        return (
+            cls.get_scan_json_input,
+            cls.build_inventory_from_scan,
+        )
+
     def get_scan_json_input(self):
         """
         Locate the JSON scan input from the project input/ directory.
@@ -47,8 +54,3 @@ class LoadInventory(Pipeline):
         scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
         scancode.create_codebase_resources(project, scanned_codebase)
         scancode.create_discovered_packages(project, scanned_codebase)
-
-    steps = (
-        get_scan_json_input,
-        build_inventory_from_scan,
-    )
