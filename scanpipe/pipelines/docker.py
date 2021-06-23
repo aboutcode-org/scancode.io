@@ -20,14 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe import pipes
-from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines import root_filesystems
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
-from scanpipe.pipes import scancode
 
 
-class Docker(Pipeline):
+class Docker(root_filesystems.RootFS):
     """
     A pipeline to analyze a Docker image.
     """
@@ -100,33 +98,3 @@ class Docker(Pipeline):
         """
         docker.tag_whiteout_codebase_resources(self.project)
         rootfs.tag_uninteresting_codebase_resources(self.project)
-
-    def tag_empty_files(self):
-        """
-        Flag empty files.
-        """
-        rootfs.tag_empty_codebase_resources(self.project)
-
-    def scan_for_application_packages(self):
-        """
-        Scan unknown resources for packages infos.
-        """
-        scancode.scan_for_application_packages(self.project)
-
-    def scan_for_files(self):
-        """
-        Scan unknown resources for copyrights, licenses, emails, and urls.
-        """
-        scancode.scan_for_files(self.project)
-
-    def analyze_scanned_files(self):
-        """
-        Analyze single file scan results for completeness.
-        """
-        pipes.analyze_scanned_files(self.project)
-
-    def tag_not_analyzed_codebase_resources(self):
-        """
-        Check for leftover files for sanity. We should have none.
-        """
-        pipes.tag_not_analyzed_codebase_resources(self.project)
