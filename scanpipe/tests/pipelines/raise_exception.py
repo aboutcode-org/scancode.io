@@ -28,7 +28,9 @@ class RaiseException(Pipeline):
     A pipeline that raises an Exception.
     """
 
+    @classmethod
+    def steps(cls):
+        return (cls.raise_exception_step,)
+
     def raise_exception_step(self):
         raise ValueError("Error message")
-
-    steps = (raise_exception_step,)
