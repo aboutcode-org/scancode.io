@@ -46,7 +46,6 @@ class TestPipeline(Pipeline):
         glc.run_glc(
             location=str(self.project.codebase_path),
             output_file=str(self.scan_output),
-            search_subdir=True,
         )
 
         if not self.scan_output.exists():

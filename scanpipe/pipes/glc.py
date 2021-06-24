@@ -11,12 +11,12 @@ from LicenseClassifier.classifier import LicenseClassifier
 from scanpipe.models import CodebaseResource
 
 
-def run_glc(location, output_file, search_subdir):
+def run_glc(location, output_file):
     """
     Scan `location` content and write results into `output_file`.
     """
     classifier = LicenseClassifier()
-    classifier.catalogueDir(location, search_subdir, output_file)
+    _ = classifier.analyze(location, output=output_file)
     return
 
 

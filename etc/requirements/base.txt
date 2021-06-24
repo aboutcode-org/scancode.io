@@ -32,7 +32,7 @@ extractcode[full]==21.6.2
 commoncode==21.5.25
 
 # GLC-Pipeline
-golicense-classifier==0.0.6
+golicense-classifier==0.0.8
 
 # FetchCode
 fetchcode-container==1.2.3.210512; sys_platform == "linux"
