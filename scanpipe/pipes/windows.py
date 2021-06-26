@@ -20,9 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from packagedcode import windows_helpers
+
 
 def package_getter(root_dir, **kwargs):
     """
     Yield installed package objects.
     """
-    return []
+    packages = windows_helpers.get_installed_programs(root_dir)
+    for package in packages:
+        yield package.purl, package
