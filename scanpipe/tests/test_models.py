@@ -937,6 +937,26 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("Error message", error.message)
         self.assertEqual("", error.traceback)
 
+    def test_scanpipe_project_model_update_extra_data(self):
+        project1 = Project.objects.create(name="Analysis")
+        self.assertEqual({}, project1.extra_data)
+
+        with self.assertRaises(ValueError):
+            project1.update_extra_data("not_a_dict")
+
+        data = {"key": "value"}
+        project1.update_extra_data(data)
+        self.assertEqual(data, project1.extra_data)
+        project1.refresh_from_db()
+        self.assertEqual(data, project1.extra_data)
+
+        more_data = {"more": "data"}
+        project1.update_extra_data(more_data)
+        expected = {"key": "value", "more": "data"}
+        self.assertEqual(expected, project1.extra_data)
+        project1.refresh_from_db()
+        self.assertEqual(expected, project1.extra_data)
+
     def test_scanpipe_codebase_resource_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(project=project1)
