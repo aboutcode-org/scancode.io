@@ -20,6 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
+
+from django.core.serializers.json import DjangoJSONEncoder
+
 from commoncode.hash import multi_checksums
 
 from scanpipe.pipelines import Pipeline
@@ -110,10 +114,21 @@ class ScanPackage(Pipeline):
         scancode.create_codebase_resources(project, scanned_codebase)
         scancode.create_discovered_packages(project, scanned_codebase)
 
+    def make_summary_from_scan_results(self):
+        """
+        Build a summary from the JSON scan results.
+        """
+        summary = scancode.make_results_summary(self.project, str(self.scan_output))
+        output_file = self.project.get_output_file_path("summary", "json")
+
+        with output_file.open("w") as summary_file:
+            summary_file.write(json.dumps(summary, indent=2, cls=DjangoJSONEncoder))
+
     steps = (
         get_package_archive_input,
         collect_archive_information,
         extract_archive_to_codebase_directory,
         run_scancode,
         build_inventory_from_scan,
+        make_summary_from_scan_results,
     )
