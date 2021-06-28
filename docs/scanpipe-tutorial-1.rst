@@ -99,6 +99,10 @@ to the staticbox project or not, as shown in the following screenshot.
   text editor/file viewer.
 
 .. note::
+      To understand the output of the pipeline execution, see our :ref:`scancodeio_output`
+      section for details.
+
+.. tip::
     The ``inputs`` and ``pipelines`` can be provided directly at once when
     calling the ``create-project`` command.
     An ``execute`` option is also available to start the pipeline execution right
