@@ -23,26 +23,12 @@
 from scanpipe.pipelines import Pipeline
 
 
-class DoNothing(Pipeline):
+class StepsAsAttribute(Pipeline):
     """
-    A pipeline that does nothing, in 2 steps.
+    A pipeline that declares steps as attribute.
     """
-
-    @classmethod
-    def steps(cls):
-        return (
-            cls.step1,
-            cls.step2,
-        )
 
     def step1(self):
-        """
-        Step1 doc.
-        """
-        pass
+        return
 
-    def step2(self):
-        """
-        Step2 doc.
-        """
-        pass
+    steps = (step1,)

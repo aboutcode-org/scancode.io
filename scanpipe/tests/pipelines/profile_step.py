@@ -29,8 +29,10 @@ class ProfileStep(Pipeline):
     A pipeline to profile a step using the @profile decorator.
     """
 
+    @classmethod
+    def steps(cls):
+        return (cls.step,)
+
     @profile
     def step(self):
         pass
-
-    steps = (step,)

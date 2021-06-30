@@ -24,6 +24,7 @@ import inspect
 import logging
 import timeit
 import traceback
+import warnings
 from contextlib import contextmanager
 from functools import wraps
 from pydoc import getdoc
@@ -40,16 +41,32 @@ class Pipeline:
     Base class for all Pipelines.
     """
 
-    steps = ()
-
     def __init__(self, run):
         """
         Load the Run and Project instances.
         """
-        assert self.steps
         self.run = run
         self.project = run.project
         self.pipeline_name = run.pipeline_name
+
+    @classmethod
+    def steps(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def get_steps(cls):
+        """
+        Raise a deprecation warning when the steps are defined as a tuple in place of
+        a classmethod.
+        """
+        if callable(cls.steps):
+            return cls.steps()
+
+        warnings.warn(
+            "Defining ``steps`` as a tuple is deprecated. "
+            "Use a ``steps(cls)`` classmethod instead."
+        )
+        return cls.steps
 
     @classmethod
     def get_doc(cls):
@@ -63,7 +80,9 @@ class Pipeline:
         """
         Return the graph of steps.
         """
-        return [{"name": step.__name__, "doc": getdoc(step)} for step in cls.steps]
+        return [
+            {"name": step.__name__, "doc": getdoc(step)} for step in cls.get_steps()
+        ]
 
     @classmethod
     def get_info(cls):
@@ -88,7 +107,7 @@ class Pipeline:
     def execute(self):
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
-        for step in self.steps:
+        for step in self.get_steps():
             self.log(f"Step [{step.__name__}] starting")
             start_time = timeit.default_timer()
 
