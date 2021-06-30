@@ -48,7 +48,7 @@ def pipeline_graph_dot(pipeline_name, pipeline_class):
 
     edges = []
     nodes = []
-    steps = pipeline_class.steps
+    steps = pipeline_class.get_steps()
     step_count = len(steps)
 
     for index, step in enumerate(steps, start=1):

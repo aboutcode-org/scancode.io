@@ -26,6 +26,7 @@ import json
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
 
+import saneyaml
 import xlsxwriter
 from license_expression import ordered_unique
 from packagedcode.utils import combine_expressions
@@ -197,45 +198,166 @@ def to_json(project):
     return output_file
 
 
-def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=None):
+def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
+    """
+    Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
+    ``queryset``. The ``queryset`` "model_name" is use as aname for the
+    "worksheet".
+    Exclude fields listed in the ``exclude_fields`` sequence of field names.
+
+    Add an extra trailing "xlsx_errors" column with conversion error messages if
+    any. Return a number of conversion errors.
+    """
+
     from scanpipe.api.serializers import get_serializer_fields
 
-    multivalues_separator = "\n"
-
     model_class = queryset.model
-    model_name = model_class._meta.model_name
+    model_name = model_class._meta.verbose_name_plural.title()
 
-    fieldnames = get_serializer_fields(model_class)
+    fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
-    fieldnames = [field for field in fieldnames if field not in exclude_fields]
+    fields = [field for field in fields if field not in exclude_fields]
 
-    worksheet = workbook.add_worksheet(model_name)
-    worksheet.write_row(row=0, col=0, data=fieldnames)
+    return _add_xlsx_worksheet(
+        workbook=workbook,
+        worksheet_name=model_name,
+        rows=queryset,
+        fields=fields,
+    )
 
-    for row_index, record in enumerate(queryset.iterator(), start=1):
-        for col_index, field in enumerate(fieldnames):
+
+def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
+    """
+    Add a new ``worksheet_name`` worksheet to the ``workbook``
+    ``xlsxwriter.Workbook``. Write the iterable of ``rows`` objects using their
+    attributes listed in the ``fields`` sequence of field names.
+    Add an "xlsx_errors" column with conversion error messages if any.
+    Return a number of conversion errors.
+    """
+    worksheet = workbook.add_worksheet(worksheet_name)
+    worksheet.set_default_row(height=14)
+
+    header = list(fields) + ["xlsx_errors"]
+    worksheet.write_row(row=0, col=0, data=header)
+
+    errors_count = 0
+    errors_col_index = len(fields) - 1  # rows and cols are zero-indexed
+
+    for row_index, record in enumerate(rows, start=1):
+        row_errors = []
+        for col_index, field in enumerate(fields):
             value = getattr(record, field)
+
             if not value:
                 continue
-            elif field == "license_expressions":
-                value = combine_expressions(value)
-            elif isinstance(value, list):
-                value = [
-                    list(entry.values())[0] if isinstance(entry, dict) else str(entry)
-                    for entry in value
-                ]
-                value = multivalues_separator.join(ordered_unique(value))
-            elif isinstance(value, dict):
-                value = json.dumps(value) if value else ""
 
-            worksheet.write_string(row_index, col_index, str(value))
+            value, error = _adapt_value_for_xlsx(field, value)
+
+            if error:
+                row_errors.append(error)
+
+            if value:
+                worksheet.write_string(row_index, col_index, str(value))
+
+        if row_errors:
+            errors_count += len(row_errors)
+            row_errors = "\n".join(row_errors)
+            worksheet.write_string(row_index, errors_col_index, row_errors)
+
+    return errors_count
+
+
+# Some scan attributes such as "copyrights" are list of dicts.
+#
+#  'authors': [{'end_line': 7, 'start_line': 7, 'value': 'John Doe'}],
+#  'copyrights': [{'end_line': 5, 'start_line': 5, 'value': 'Copyright (c) nexB Inc.'}],
+#  'emails': [{'email': 'joe@foobar.com', 'end_line': 1, 'start_line': 1}],
+#  'holders': [{'end_line': 5, 'start_line': 5, 'value': 'nexB Inc.'}],
+#  'urls': [{'end_line': 3, 'start_line': 3, 'url': 'https://foobar.com/'}]
+#
+# We therefore use a mapping to find which key to use in these mappings until
+# this is fixed updated in scancode-toolkit with these:
+# https://github.com/nexB/scancode-toolkit/pull/2381
+# https://github.com/nexB/scancode-toolkit/issues/2350
+mappings_key_by_fieldname = {
+    "copyrights": "value",
+    "holders": "value",
+    "authors": "value",
+    "emails": "email",
+    "urls": "url",
+}
+
+
+def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
+    """
+    Return a two tuple of:
+    (``value`` adapted for use in an XLSX cell, error message or None)
+
+    Convert the value to a string and perform these adaptations:
+    - Keep only unique values in lists, preserving ordering.
+    - Truncate the "description" field to the first five lines.
+    - Truncate any field too long to fit in an XLSX cell and report error.
+    - Create a combined license expression for expressions
+    - Normalize line endings
+    - Truncating the value to a ``maximum_length`` supported by XLSX.
+
+    Do nothing if "_adapt" is False (used for tests).
+    """
+    error = None
+    if not _adapt:
+        return value, error
+
+    if not value:
+        return "", error
+
+    if fieldname == "description":
+        max_description_lines = 5
+        value = "\n".join(value.splitlines(False)[:max_description_lines])
+
+    if fieldname == "license_expressions":
+        value = combine_expressions(value)
+
+    # we only get this key in each dict of a list for some fields
+    mapping_key = mappings_key_by_fieldname.get(fieldname)
+    if mapping_key:
+        value = [mapping[mapping_key] for mapping in value]
+
+    # convert these to text lines, remove duplicates
+    if isinstance(value, (list, tuple)):
+        value = (str(v) for v in value if v)
+        value = ordered_unique(value)
+        value = "\n".join(value)
+
+    # convert these to YAML which is the most readable dump format
+    if isinstance(value, dict):
+        value = saneyaml.dump(value)
+
+    value = str(value)
+
+    # XLSX does not like CRLF
+    value = value.replace("\r\n", "\n")
+
+    # XLSX does not like long values
+    len_val = len(value)
+    if len_val > maximum_length:
+        error = (
+            f"The value of: {fieldname} has been truncated from: {len_val} "
+            f"to {maximum_length} length to fit in an XLSL cell maximum length"
+        )
+        value = value[:maximum_length]
+
+    return value, error
 
 
 def to_xlsx(project):
     """
-    Generate results output for the provided `project` as XLSX format.
-    The output file is created in the `project` output/ directory.
+    Generate results output for the provided ``project`` as XLSX format.
+    The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
+
+    Note that the XLSX worksheets contain each an extra "xlxs_errors" column
+    with possible error messages for a row when converting the data to XLSX
+    exceed the limits of what can be stored in a cell.
     """
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = ["licenses", "extra_data", "declared_license"]

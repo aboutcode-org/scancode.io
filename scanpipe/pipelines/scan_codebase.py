@@ -36,6 +36,16 @@ class ScanCodebase(Pipeline):
     directory.
     """
 
+    @classmethod
+    def steps(cls):
+        return (
+            cls.copy_inputs_to_codebase_directory,
+            cls.run_extractcode,
+            cls.run_scancode,
+            cls.build_inventory_from_scan,
+            cls.csv_output,
+        )
+
     extractcode_options = [
         "--shallow",
         "--all-formats",
@@ -99,11 +109,3 @@ class ScanCodebase(Pipeline):
         Generate csv outputs.
         """
         output.to_csv(self.project)
-
-    steps = (
-        copy_inputs_to_codebase_directory,
-        run_extractcode,
-        run_scancode,
-        build_inventory_from_scan,
-        csv_output,
-    )
