@@ -71,8 +71,50 @@ function displayOverlay() {
   background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
   background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
   document.body.appendChild(background);
+  return background;
 }
 
+// Display and update the `$progress` object on `$form` submitted using XHR
+function displayFormUploadProgress($form, $progress) {
+
+ // Prepare an AJAX request to submit the form and track the progress
+  let xhr = new XMLHttpRequest();
+
+  // Submit the form using initial form attributes
+  xhr.open($form.getAttribute('method'), $form.getAttribute('action'), true);
+  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+  xhr.upload.addEventListener('progress', function(event) {
+    console.log("progress fired");
+    // Compute the progress percentage and set the value on the `progress` element
+    if (event.lengthComputable) {
+      let percent = (event.loaded / event.total * 100).toFixed();
+      $progress.setAttribute('value', percent);
+    }
+  }, false);
+
+  xhr.upload.addEventListener('load', function(event) {
+    console.log("load fired");
+  }, false);
+
+  xhr.addEventListener('readystatechange', function(event) {
+    console.log("readystatechange fired");
+    let target = event.target;
+
+    if (target.readyState === XMLHttpRequest.DONE) {
+      if (target.status === 200) {
+        let response_json = JSON.parse(target.response);
+        window.location.replace(response_json['redirect_url']);
+      }
+      else {
+        throw new Error('Error.');
+      }
+
+    }
+  }, false);
+
+  xhr.send(new FormData($form));
+}
 
 document.addEventListener('DOMContentLoaded', function () {
 

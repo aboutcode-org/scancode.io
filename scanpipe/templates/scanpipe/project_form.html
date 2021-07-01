@@ -19,7 +19,8 @@
 
       <div class="columns">
         <div class="column is-three-fifths pr-5">
-          <form method="post" enctype="multipart/form-data">{% csrf_token %}
+
+          <form method="post" action="{% url 'project_add' %}" enctype="multipart/form-data">{% csrf_token %}
             <div class="field">
               <label class="label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
               <div class="control">
@@ -39,7 +40,7 @@
                       <i class="fas fa-upload"></i>
                     </span>
                     <span class="file-label has-text-centered">
-                      Drop files over here
+                      Drop files over here (or click)
                     </span>
                   </span>
                   <span class="file-name is-height-auto" id="inputs_file_name">
@@ -126,9 +127,25 @@
 
 {% block scripts %}
   <script>
-    let form = document.querySelector("form");
-    form.addEventListener("submit", function() {
-      displayOverlay();
+    let form = document.querySelector('form');
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      let background = displayOverlay();
+
+      let progress_bar = document.createElement('progress');
+      progress_bar.className = 'progress is-success is-medium file-upload';
+      progress_bar.setAttribute('value', '0');
+      progress_bar.setAttribute('max', '100');
+
+      let progress_container = document.createElement('div');
+      progress_container.className = 'container is-max-desktop mt-6 px-6';
+      progress_container.appendChild(progress_bar)
+      background.appendChild(progress_container);
+
+      // TODO: Only use the upload progress when there are files to upload
+      displayFormUploadProgress(form, progress_bar);
     });
   </script>
 {% endblock %}

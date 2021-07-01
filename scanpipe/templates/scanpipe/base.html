@@ -41,6 +41,8 @@
       .break-word {word-break: break-word;}
       #content-header input[name="search"] {width: 205px;}
       button.as-link {height: auto; line-height: initial; font-size: inherit;}
+      .file.is-boxed.has-name .file-cta {border-width: medium; border-style: dashed;}
+      progress.file-upload::before {content: 'Files upload: 'attr(value)'%'; position: absolute; top: -14%; left: 43%; color: black; font-weight: 400;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>
