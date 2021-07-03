@@ -6,12 +6,7 @@ from scanpipe.pipes.input import copy_inputs
 
 class TestPipeline(Pipeline):
     """
-    A pipeline to scan a codebase with GoLicense-Classifier.
-
-    The input files are copied to the project codebase/ directory and extracted
-    in place before running the scan.
-    Alternatively, the code can be manually copied to the project codebase/
-    directory.
+    A pipeline to scan a codebase with GoLicense-Classifier for Copyright and License Detection
     """
 
     extractcode_options = [
