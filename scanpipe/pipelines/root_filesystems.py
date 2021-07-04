@@ -33,6 +33,23 @@ class RootFS(Pipeline):
     A pipeline to analyze a Linux root filesystem aka. rootfs.
     """
 
+    @classmethod
+    def steps(cls):
+        return (
+            cls.extract_input_files_to_codebase_directory,
+            cls.find_root_filesystems,
+            cls.collect_rootfs_information,
+            cls.collect_and_create_codebase_resources,
+            cls.collect_and_create_system_packages,
+            cls.tag_uninteresting_codebase_resources,
+            cls.tag_empty_files,
+            cls.scan_for_application_packages,
+            cls.match_not_analyzed_to_system_packages,
+            cls.scan_for_files,
+            cls.analyze_scanned_files,
+            cls.tag_not_analyzed_codebase_resources,
+        )
+
     def extract_input_files_to_codebase_directory(self):
         """
         Extract root filesystem input archives with extractcode.
@@ -138,18 +155,3 @@ class RootFS(Pipeline):
         Check for leftover files for sanity. We should have none.
         """
         pipes.tag_not_analyzed_codebase_resources(self.project)
-
-    steps = (
-        extract_input_files_to_codebase_directory,
-        find_root_filesystems,
-        collect_rootfs_information,
-        collect_and_create_codebase_resources,
-        collect_and_create_system_packages,
-        tag_uninteresting_codebase_resources,
-        tag_empty_files,
-        scan_for_application_packages,
-        match_not_analyzed_to_system_packages,
-        scan_for_files,
-        analyze_scanned_files,
-        tag_not_analyzed_codebase_resources,
-    )

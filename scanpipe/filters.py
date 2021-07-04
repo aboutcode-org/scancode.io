@@ -126,7 +126,7 @@ class InPackageFilter(django_filters.ChoiceFilter):
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="path", lookup_expr="icontains")
-    in_package = InPackageFilter()
+    in_package = InPackageFilter(label="In a Package")
 
     class Meta:
         model = CodebaseResource

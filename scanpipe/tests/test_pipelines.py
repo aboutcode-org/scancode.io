@@ -20,12 +20,17 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import tempfile
+import warnings
+from unittest import mock
+
 from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
 
 class ScanPipePipelinesTest(TestCase):
@@ -135,3 +140,41 @@ class ScanPipePipelinesTest(TestCase):
         output_file = project1.output_root[0]
         self.assertTrue(output_file.startswith("profile-"))
         self.assertTrue(output_file.endswith(".html"))
+
+    def test_scanpipe_pipelines_class_get_steps(self):
+        expected = (
+            DoNothing.step1,
+            DoNothing.step2,
+        )
+        self.assertEqual(expected, DoNothing.get_steps())
+
+        expected = (StepsAsAttribute.step1,)
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            self.assertEqual(expected, StepsAsAttribute.get_steps())
+            self.assertEquals(len(caught_warnings), 1)
+            caught_warning = caught_warnings[0]
+
+        expected = (
+            "Defining ``steps`` as a tuple is deprecated. "
+            "Use a ``steps(cls)`` classmethod instead."
+        )
+        self.assertEqual(expected, str(caught_warning.message))
+
+
+class RootFSPipelineTest(TestCase):
+    def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("root_filesystems")
+        pipeline_instance = root_filesystems.RootFS(run)
+
+        # Create 2 files in the input/ directory to generate error twice
+        project1.move_input_from(tempfile.mkstemp()[1])
+        project1.move_input_from(tempfile.mkstemp()[1])
+        self.assertEqual(2, len(project1.input_files))
+
+        with mock.patch("scanpipe.pipes.scancode.extract") as extract:
+            extract.return_value = ["Error"]
+            pipeline_instance.extract_input_files_to_codebase_directory()
+
+        error = project1.projecterrors.get()
+        self.assertEqual("Error\nError", error.message)
