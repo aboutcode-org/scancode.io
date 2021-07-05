@@ -1,6 +1,7 @@
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import glc
 from scanpipe.pipes import output
-from scanpipe.pipes import glc, scancode
+from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_inputs
 
 

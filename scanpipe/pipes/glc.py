@@ -68,7 +68,7 @@ def create_codebase_resources(project, scan_data):
 
         resource_type = "FILE" if isfile(scanned_resource["path"]) else "DIRECTORY"
         resource_data["type"] = CodebaseResource.Type[resource_type]
-        resource_path = get_path(root, scanned_resource["path"])
+        resource_path = get_path(root, scanned_resource["path"], strip_root=True)
 
         _, flag = CodebaseResource.objects.get_or_create(
             project=project,
