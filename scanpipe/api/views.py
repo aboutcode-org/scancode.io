@@ -19,6 +19,7 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
+import json
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
@@ -83,6 +84,23 @@ class ProjectViewSet(
         Return the results as an attachment.
         """
         return project_results_json_response(self.get_object(), as_attachment=True)
+
+    @action(detail=True)
+    def summary(self, request, *args, **kwargs):
+        """
+        Return a summary of the results from the latest summary file found in the
+        project `output` work directory.
+        """
+        project = self.get_object()
+        summary_files = sorted(project.output_path.glob("summary*.json"))
+
+        if not summary_files:
+            message = {"error": "Summary file not available"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        latest_summary = summary_files[-1]
+        summary_json = json.loads(latest_summary.read_text())
+        return Response(summary_json)
 
     @action(detail=False)
     def pipelines(self, request, *args, **kwargs):
