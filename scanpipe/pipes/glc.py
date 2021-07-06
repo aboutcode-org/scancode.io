@@ -29,13 +29,22 @@ from LicenseClassifier.classifier import LicenseClassifier
 from scanpipe.models import CodebaseResource
 
 
+def scan_file(location):
+    """
+    Run a license and copyright scan on provided `location`,
+    using golicense-classifier.
+    """
+    classifier = LicenseClassifier()
+    result = classifier.scanFile(location)
+    return result
+
+
 def run_glc(location, output_file):
     """
     Scan `location` content and write results into `output_file`.
     """
     classifier = LicenseClassifier()
     _ = classifier.analyze(location, output=output_file)
-    return
 
 
 def to_dict(location):
@@ -90,7 +99,7 @@ def create_codebase_resources(project, scan_data):
         resource_data["type"] = CodebaseResource.Type[resource_type]
         resource_path = get_path(root, scanned_resource["path"], strip_root=True)
 
-        _, flag = CodebaseResource.objects.get_or_create(
+        CodebaseResource.objects.get_or_create(
             project=project,
             path=resource_path,
             defaults=resource_data,

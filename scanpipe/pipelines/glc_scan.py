@@ -24,9 +24,9 @@ from scanpipe.pipelines import scan_codebase
 from scanpipe.pipes import glc
 
 
-class GLicenseScan(scan_codebase.ScanCodebase):
+class LicenseClassifierScan(scan_codebase.ScanCodebase):
     """
-    A pipeline to scan a codebase with GoLicense-Classifier for Copyright and License Detection
+    A pipeline to scan a codebase with GoLicense-Classifier for Copyright and License Expression
     """
 
     @classmethod
@@ -43,8 +43,9 @@ class GLicenseScan(scan_codebase.ScanCodebase):
         """
         Scan extracted codebase/ content.
         """
-        self.scan_output = self.project.get_output_file_path("scancode", "json")
-        # print(self.scan_output)
+        self.scan_output = self.project.get_output_file_path(
+            "license-classifier", "json"
+        )
         glc.run_glc(
             location=str(self.project.codebase_path),
             output_file=str(self.scan_output),
