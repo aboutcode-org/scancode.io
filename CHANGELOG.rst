@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Detected Package dependencies are not created as Package instance anymore but stored
+  on the Package model itself in a new `dependencies` field.
+  https://github.com/nexB/scancode.io/issues/228
+
 - Add the extra_data field on the DiscoveredPackage model.
   https://github.com/nexB/scancode.io/issues/191
 
