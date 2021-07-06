@@ -38,7 +38,6 @@ from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from extractcode import all_kinds
 from extractcode.extract import extract_file
-from packageurl import PackageURL
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
@@ -398,25 +397,6 @@ def create_discovered_packages(project, scanned_codebase):
                 )
                 set_codebase_resource_for_package(
                     codebase_resource=package_cbr, discovered_package=discovered_package
-                )
-
-            # also set dependencies as their own packages
-            # TODO: we should instead relate these to the package
-            # TODO: we likely need a status for DiscoveredPackage
-            dependencies = scanned_package.dependencies or []
-            for dependency in dependencies:
-                # FIXME: we should get DependentPackage instances and not a mapping
-                purl = getattr(dependency, "purl", None)
-                if not purl:
-                    # TODO: we should log that
-                    continue
-                purl = PackageURL.from_string(purl)
-                dep = purl.to_dict()
-                dependent_package = pipes.update_or_create_package(project, dep)
-
-                # attached to the current resource (typically a manifest?)
-                set_codebase_resource_for_package(
-                    codebase_resource=cbr, discovered_package=dependent_package
                 )
 
 

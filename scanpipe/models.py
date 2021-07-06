@@ -1190,8 +1190,13 @@ class DiscoveredPackage(
     )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
+    dependencies = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("A list of dependencies for this package."),
+    )
 
-    # AbstractPackage overrides:
+    # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
 
