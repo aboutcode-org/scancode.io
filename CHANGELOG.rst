@@ -3,6 +3,9 @@
 
 ### unreleased
 
+- Add the extra_data field on the DiscoveredPackage model.
+  https://github.com/nexB/scancode.io/issues/191
+
 - Improve XLSX creation. We now check that the content is correctly added before
   calling XlsxWriter and report and error if the truncated can be truncated.
   https://github.com/nexB/scancode.io/issues/206

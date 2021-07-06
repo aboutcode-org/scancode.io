@@ -387,14 +387,14 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         f378bd0f06d83db9005/src/results_analyze/analyzer_plugin.py#L131-L198
         """
         if field_name == "licenses":
-            return entry["matched_rule"]["license_expression"]
-        return entry[value_key]
+            return entry.get("matched_rule", {}).get("license_expression")
+        return entry.get(value_key)
 
     def get_annotations(self, field_name, value_key="value"):
         return [
             {
-                "start_line": entry["start_line"],
-                "end_line": entry["end_line"],
+                "start_line": entry.get("start_line"),
+                "end_line": entry.get("end_line"),
                 "text": self.get_annotation_text(entry, field_name, value_key),
                 "type": entry.get("policy", {}).get("compliance_alert") or "info",
             }

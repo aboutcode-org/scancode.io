@@ -32,7 +32,7 @@ services:
     build: .
     command: sh -c "
         ./manage.py migrate &&
-        ./manage.py collectstatic --no-input &&
+        ./manage.py collectstatic --no-input --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 2"
     env_file:
       - docker.env

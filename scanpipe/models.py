@@ -183,6 +183,31 @@ class AbstractTaskFieldsModel(models.Model):
         self.save()
 
 
+class ExtraDataFieldMixin(models.Model):
+    """
+    Adds the `extra_data` field and helper methods.
+    """
+
+    extra_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("Optional mapping of extra data key/values."),
+    )
+
+    def update_extra_data(self, data):
+        """
+        Update the `extra_data` field with the provide `data` dict.
+        """
+        if type(data) != dict:
+            raise ValueError("Argument `data` value must be a dict()")
+
+        self.extra_data.update(data)
+        self.save()
+
+    class Meta:
+        abstract = True
+
+
 def get_project_work_directory(project):
     """
     Return the work directory location for the provided `project`.
@@ -194,7 +219,7 @@ def get_project_work_directory(project):
     return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
 
 
-class Project(UUIDPKModel, models.Model):
+class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     """
     The Project encapsulate all analysis processing.
     Multiple analysis pipelines can be run on the project.
@@ -218,7 +243,6 @@ class Project(UUIDPKModel, models.Model):
         help_text=_("Project work directory location."),
     )
     input_sources = models.JSONField(default=dict, blank=True, editable=False)
-    extra_data = models.JSONField(default=dict, editable=False)
 
     class Meta:
         ordering = ["-created_date"]
@@ -274,16 +298,6 @@ class Project(UUIDPKModel, models.Model):
             shutil.rmtree(path, ignore_errors=True)
 
         self.setup_work_directory()
-
-    def update_extra_data(self, data):
-        """
-        Update the project `extra_data` field with the provide `data` dict.
-        """
-        if type(data) != dict:
-            raise ValueError("Argument `data` value must be a dict()")
-
-        self.extra_data.update(data)
-        self.save()
 
     def setup_work_directory(self):
         """
@@ -918,7 +932,11 @@ class ScanFieldsModelMixin(models.Model):
 
 
 class CodebaseResource(
-    ProjectRelatedModel, ScanFieldsModelMixin, SaveProjectErrorMixin, AbstractResource
+    ProjectRelatedModel,
+    ScanFieldsModelMixin,
+    ExtraDataFieldMixin,
+    SaveProjectErrorMixin,
+    AbstractResource,
 ):
     rootfs_path = models.CharField(
         max_length=2000,
@@ -946,11 +964,6 @@ class CodebaseResource(
         help_text=_(
             "Type of this resource as one of: {}".format(", ".join(Type.values))
         ),
-    )
-    extra_data = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text=_("Optional mapping of extra data key/values."),
     )
     name = models.CharField(
         max_length=255,
@@ -1166,7 +1179,12 @@ class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet)
     pass
 
 
-class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPackage):
+class DiscoveredPackage(
+    ProjectRelatedModel,
+    ExtraDataFieldMixin,
+    SaveProjectErrorMixin,
+    AbstractPackage,
+):
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
