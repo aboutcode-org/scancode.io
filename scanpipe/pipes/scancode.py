@@ -469,6 +469,7 @@ def make_results_summary(project, scan_output_location):
     The `key_files` are also collected and injected in the `summary` output.
     """
     from scanpipe.api.serializers import CodebaseResourceSerializer
+    from scanpipe.api.serializers import DiscoveredPackageSerializer
 
     with open(scan_output_location) as f:
         scan_data = json.load(f)
@@ -482,20 +483,23 @@ def make_results_summary(project, scan_output_location):
     summary["license_matches"] = _get_license_matches_grouped(project)
 
     # Inject the `key_files` and their file content in the summary
-    qs = project.codebaseresources.filter(is_key_file=True, is_text=True)
+    key_files_qs = project.codebaseresources.filter(is_key_file=True, is_text=True)
 
     key_files = []
-    for resource in qs:
+    key_files_packages = []
+
+    for resource in key_files_qs:
         resource_data = CodebaseResourceSerializer(resource).data
         resource_data["content"] = resource.file_content
         key_files.append(resource_data)
-    summary["key_files"] = key_files
 
-    # TODO: Add package support
-    # if key_files:
-    #     key_files_packages = []
-    #     for key_file in key_files:
-    #         key_files_packages.extend(key_file.get("packages", []))
-    #     summary["key_files_packages"] = key_files_packages
+        packages = resource.discovered_packages.all()
+        packages_data = [
+            DiscoveredPackageSerializer(package).data for package in packages
+        ]
+        key_files_packages.extend(packages_data)
+
+    summary["key_files"] = key_files
+    summary["key_files_packages"] = key_files_packages
 
     return summary
