@@ -26,11 +26,11 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 from commoncode.hash import multi_checksums
 
-from scanpipe.pipelines import scan_codebase
+from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import scancode
 
 
-class ScanPackage(scan_codebase.ScanCodebase):
+class ScanPackage(ScanCodebase):
     """
     A pipeline to scan a single package archive with ScanCode-toolkit.
     The output is a summary of scan results as a JSON file.
@@ -46,6 +46,15 @@ class ScanPackage(scan_codebase.ScanCodebase):
             cls.build_inventory_from_scan,
             cls.make_summary_from_scan_results,
         )
+
+    scancode_options = ScanCodebase.scancode_options + [
+        "--classify",
+        "--consolidate",
+        "--is-license-text",
+        "--license-clarity-score",
+        "--summary",
+        "--summary-key-files",
+    ]
 
     def get_package_archive_input(self):
         """
