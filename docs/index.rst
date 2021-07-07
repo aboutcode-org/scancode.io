@@ -32,6 +32,7 @@ you’ll find information on:
     scanpipe-concepts
     scanpipe-pipelines
     scanpipe-pipes
+    scanpipe-output
     scanpipe-command-line
     scanpipe-api
     scancodeio-settings
