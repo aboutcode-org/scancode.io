@@ -1,11 +1,11 @@
-.. _scancodeio_output:
+.. _scanpipe_output:
 
-ScanCode.io Output
-==================
+Output
+======
 
-Whether you use the command line or the ScanCode.io web application to run your
-scan, the generated results are available for review or export in
-**JSON** and **Excel** (**CSV**) file formats.
+Whether you use the command line or the web application to run your
+scans, the generated results are available for review or export in
+**JSON** and **Excel (XLSX)** file formats.
 
 Creating Output Files
 ---------------------
@@ -13,35 +13,38 @@ Creating Output Files
 Command Line
 ^^^^^^^^^^^^
 You can output the scan results using the ``output`` command while specifying
-the output file format with the ``–format`` option::
+the output file format with the ``–-format`` option:
 
-$ scanpipe output –project PROJECT –format {json,csv}
+.. code-block:: console
+
+    $ scanpipe output --project PROJECT --format {json,xlsx}
 
 .. note::
-    The previous command will output the scan results in a JSON or CSV file
+    The previous command will output the scan results in a JSON or XLSX file
     format – as specified – with the output files created in the
-    PROJECT's :guilabel:`output/` directory. By default, JSON output
+    ``PROJECT``'s :guilabel:`output/` directory. By default, JSON output
     files are created when no file format is given.
 
-ScanCode.io Web UI
-^^^^^^^^^^^^^^^^^^
-When using the ScanCode.io web application, the output files are **not** created
-in the PROJECT's :guilabel:`output/` directory by default. Instead, you will
-be given the option to download the results as shown below:
+Web UI
+^^^^^^
+When using the ScanCode.io web application, you can download the results of a project
+in your prefer output format using the as buttons available from the project views:
 
-.. image:: /images/UI-output.png
+.. image:: images/output-download-results.png
 
 Understanding Output Files
 --------------------------
-As previously mentioned, the output file format is set using the ``–format``
-option to either JSON or CSV data files. Regardless of the format, the
+As previously mentioned, the output file format is set using the ``–-format``
+option to either JSON or XLSX data files. Regardless of the format, the
 data included in either output file remains almost the same.
 
-JSON File
-^^^^^^^^^
+JSON
+^^^^
 The JSON file starts with some general information about the scan process,
 including the scan tool, scan date, input file details, pipeline used, etc.,
-as shown below::
+as shown below
+
+.. code-block:: json
 
   {
     "headers": [
@@ -142,7 +145,9 @@ as shown below::
 
 The JSON results file also lists information about any `packages` discovered
 during the scan process with information about each individual `package`
-similar to the following::
+similar to the following:
+
+.. code-block:: json
 
     "packages": [
       {
@@ -178,23 +183,17 @@ similar to the following::
         "source_packages": [
           "pkg:alpine/musl@1.1.24-r0"
         ]
-      },
-      .
-      .
-      .
-    ],
+      }
+    ]
 
-The results will also include all of the Codebase resources or
-files found.
+The results will also include all of the  or files (codebase resources) found.
 
 .. note::
-    Please note that these files might or might not be included within a
-    package.
+    Please note that these files might or might not be included within a package.
 
-::
+.. code-block:: json
 
-    "files": [
-    {
+    "files": [{
       "for_packages": [
         "pkg:alpine/busybox@1.31.1-r9?arch=x86_64"
       ],
@@ -221,80 +220,21 @@ files found.
       "is_binary": true,
       "is_text": false,
       "is_archive": false
-    },
+    }]
 
-CSV File
-^^^^^^^^
-ScanCode.io can produce the scan results in a .csv file format, which will
-include two Excel sheets for the Discovered Packages and the Codebase
-Resources.
+Excel (XLSX)
+^^^^^^^^^^^^
+ScanCode.io can produce the scan results in a .xlsx file format, which will
+include two Excel sheets for the Discovered Packages and the Codebase Resources.
 
 .. note::
-    Unlike the JSON file, the CSV output file does not include any general
+    Unlike the JSON file, the XLSX output file does not include any general
     information about the scan process, tool, date, etc.
 
-The **Discovered Packages** data sheet includes details about all packages found
-with the following heading fields:
+The **Discovered Packages** data sheet includes details about all packages found:
 
-.. hlist::
-       :columns: 4
+.. image:: images/output-xlsx-packages.png
 
-       - purl
-       - type
-       - namespace
-       - name
-       - version
-       - qualifiers
-       - subpath
-       - primary_language
-       - description
-       - release_date
-       - homepage_url
-       - download_url
-       - size
-       - sha1
-       - md5
-       - bug_tracking_url
-       - code_view_url
-       - vcs_url
-       - copyright
-       - license_expression
-       - notice_text
-       - manifest_path
-       - contains_source_code
-       - missing_resources
-       - modified_resources
-       - keywords
-       - source_packages
-       - xlsx_errors
+while the **Codebase Resources** sheet includes information about each individual files:
 
-----
-
-While the **Codebase Resources** sheet includes information about each file
-found with the following heading fields:
-
-.. hlist::
-       :columns: 4
-
-       - for_packages
-       - path
-       - size
-       - sha1
-       - md5
-       - copyrights
-       - holders
-       - authors
-       - license_expressions
-       - emails
-       - urls
-       - status
-       - type
-       - name
-       - extension
-       - programming_language
-       - mime_type
-       - file_type
-       - is_binary
-       - is_text
-       - is_archive
-       - xlsx_errors
+.. image:: images/output-xlsx-resources.png

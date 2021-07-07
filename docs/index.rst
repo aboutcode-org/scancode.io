@@ -30,9 +30,9 @@ you’ll find information on:
     :caption: Reference Documentation
 
     scanpipe-concepts
-    scancodeio-output
     scanpipe-pipelines
     scanpipe-pipes
+    scanpipe-output
     scanpipe-command-line
     scanpipe-api
     scancodeio-settings
