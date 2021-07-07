@@ -20,16 +20,20 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 import tempfile
 import warnings
+from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
+from django.test import tag
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
+from scanpipe.pipelines import scan_package
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
@@ -179,3 +183,65 @@ class RootFSPipelineTest(TestCase):
 
         error = project1.projecterrors.get()
         self.assertEqual("Error\nError", error.message)
+
+
+class ScanPackagePipelineTest(TestCase):
+    data_location = Path(__file__).parent / "data"
+
+    def _without_keys(self, input, exclude_keys):
+        """
+        Returns the input excluding the provided `exclude_keys`.
+        """
+        if type(input) == list:
+            return [self._without_keys(entry, exclude_keys) for entry in input]
+
+        if type(input) == dict:
+            return {
+                key: self._without_keys(value, exclude_keys)
+                if type(value) in [list, dict]
+                else value
+                for key, value in input.items()
+                if key not in exclude_keys
+            }
+
+        return input
+
+    @tag("slow")
+    def test_scanpipe_scan_package_pipeline_integration_test(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline("scan_package")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, _ = pipeline.execute()
+        self.assertEqual(0, exitcode)
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        scancode_json = json.loads(scancode_file.read_text())
+
+        expected_file = self.data_location / "is-npm-1.0.0_scancode.json"
+        expected_json = json.loads(expected_file.read_text())
+
+        self.maxDiff = None
+        exclude_keys = [
+            "start_timestamp",
+            "end_timestamp",
+            "duration",
+            "input",
+            "--json-pp",
+        ]
+        reference_data = self._without_keys(scancode_json, exclude_keys)
+        expected_data = self._without_keys(expected_json, exclude_keys)
+
+        self.assertEqual(expected_data, reference_data)
+
+        summary_file = project1.get_latest_output(filename="summary")
+        summary_json = json.loads(summary_file.read_text())
+
+        expected_file = self.data_location / "is-npm-1.0.0_summary.json"
+        expected_json = json.loads(expected_file.read_text())
+
+        self.assertEqual(expected_json, summary_json)

@@ -92,14 +92,13 @@ class ProjectViewSet(
         project `output` work directory.
         """
         project = self.get_object()
-        summary_files = sorted(project.output_path.glob("summary*.json"))
+        summary_file = project.get_latest_output(filename="summary")
 
-        if not summary_files:
+        if not summary_file:
             message = {"error": "Summary file not available"}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        latest_summary = summary_files[-1]
-        summary_json = json.loads(latest_summary.read_text())
+        summary_json = json.loads(summary_file.read_text())
         return Response(summary_json)
 
     @action(detail=False)
