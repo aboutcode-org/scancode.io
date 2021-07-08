@@ -21,9 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import concurrent.futures
+import hashlib
+import json
 import logging
 import os
 import shlex
+from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
@@ -405,3 +408,78 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     codebase_resource.discovered_packages.add(discovered_package)
     codebase_resource.status = "application-package"
     codebase_resource.save()
+
+
+def _get_license_matches_grouped(project):
+    """
+    Return a dict of all the project license_matches grouped by license_expression.
+    """
+    license_matches = defaultdict(list)
+
+    for resource in project.codebaseresources.has_licenses():
+        file_cache = []
+
+        for license in resource.licenses:
+            matched_rule = license.get("matched_rule", {})
+            license_expression = matched_rule.get("license_expression")
+            matched_text = license.get("matched_text")
+
+            # Do not include duplicated matched_text for a given license_expression
+            # within the same file
+            cache_key = ":".join([license_expression, resource.path, matched_text])
+            cache_key = hashlib.md5(cache_key.encode()).hexdigest()
+            if cache_key in file_cache:
+                continue
+            file_cache.append(cache_key)
+
+            license_matches[license_expression].append(
+                {
+                    "path": resource.path,
+                    "matched_text": matched_text,
+                }
+            )
+
+    return dict(license_matches)
+
+
+def make_results_summary(project, scan_results_location):
+    """
+    Extract selected sections of the Scan results, such as the `summary`
+    `license_clarity_score`, and `license_matches` related data.
+    The `key_files` are also collected and injected in the `summary` output.
+    """
+    from scanpipe.api.serializers import CodebaseResourceSerializer
+    from scanpipe.api.serializers import DiscoveredPackageSerializer
+
+    with open(scan_results_location) as f:
+        scan_data = json.load(f)
+
+    summary = scan_data.get("summary")
+
+    # Inject the `license_clarity_score` entry in the summary
+    summary["license_clarity_score"] = scan_data.get("license_clarity_score")
+
+    # Inject the generated `license_matches` in the summary
+    summary["license_matches"] = _get_license_matches_grouped(project)
+
+    # Inject the `key_files` and their file content in the summary
+    key_files_qs = project.codebaseresources.filter(is_key_file=True, is_text=True)
+
+    key_files = []
+    key_files_packages = []
+
+    for resource in key_files_qs:
+        resource_data = CodebaseResourceSerializer(resource).data
+        resource_data["content"] = resource.file_content
+        key_files.append(resource_data)
+
+        packages = resource.discovered_packages.all()
+        packages_data = [
+            DiscoveredPackageSerializer(package).data for package in packages
+        ]
+        key_files_packages.extend(packages_data)
+
+    summary["key_files"] = key_files
+    summary["key_files_packages"] = key_files_packages
+
+    return summary

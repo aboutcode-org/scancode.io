@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Add a pipeline `scan_package.ScanPackage` to scan a single package archive with
+  ScanCode-toolkit.
+  https://github.com/nexB/scancode.io/issues/25
+
 - Detected Package dependencies are not created as Package instance anymore but stored
   on the Package model itself in a new `dependencies` field.
   https://github.com/nexB/scancode.io/issues/228

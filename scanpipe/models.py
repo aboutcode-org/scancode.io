@@ -422,6 +422,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
+    def get_latest_output(self, filename):
+        """
+        Return the latest output file with the "filename" prefix.
+        For example "scancode-<timestamp>.json".
+        """
+        output_files = sorted(self.output_path.glob(f"*{filename}*.json"))
+        if output_files:
+            return output_files[-1]
+
     @cached_property
     def can_add_input(self):
         """
@@ -998,6 +1007,7 @@ class CodebaseResource(
     is_binary = models.BooleanField(default=False)
     is_text = models.BooleanField(default=False)
     is_archive = models.BooleanField(default=False)
+    is_key_file = models.BooleanField(default=False)
 
     class Compliance(models.TextChoices):
         OK = "ok"
