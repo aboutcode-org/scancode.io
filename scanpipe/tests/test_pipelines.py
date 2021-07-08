@@ -186,25 +186,26 @@ class RootFSPipelineTest(TestCase):
 
 
 class ScanPackagePipelineTest(TestCase):
+    maxDiff = None
     data_location = Path(__file__).parent / "data"
 
-    def _without_keys(self, input, exclude_keys):
+    def _without_keys(self, data, exclude_keys):
         """
-        Returns the input excluding the provided `exclude_keys`.
+        Returns the `data` excluding the provided `exclude_keys`.
         """
-        if type(input) == list:
-            return [self._without_keys(entry, exclude_keys) for entry in input]
+        if type(data) == list:
+            return [self._without_keys(entry, exclude_keys) for entry in data]
 
-        if type(input) == dict:
+        if type(data) == dict:
             return {
                 key: self._without_keys(value, exclude_keys)
                 if type(value) in [list, dict]
                 else value
-                for key, value in input.items()
+                for key, value in data.items()
                 if key not in exclude_keys
             }
 
-        return input
+        return data
 
     @tag("slow")
     def test_scanpipe_scan_package_pipeline_integration_test(self):
@@ -225,13 +226,13 @@ class ScanPackagePipelineTest(TestCase):
         expected_file = self.data_location / "is-npm-1.0.0_scancode.json"
         expected_json = json.loads(expected_file.read_text())
 
-        self.maxDiff = None
         exclude_keys = [
             "start_timestamp",
             "end_timestamp",
             "duration",
             "input",
             "--json-pp",
+            "--processes",
         ]
         reference_data = self._without_keys(scancode_json, exclude_keys)
         expected_data = self._without_keys(expected_json, exclude_keys)
