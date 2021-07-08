@@ -23,6 +23,7 @@
 import io
 import json
 import uuid
+from pathlib import Path
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -43,6 +44,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import package_data1
 
@@ -50,6 +52,8 @@ from scanpipe.tests import package_data1
 # TransactionTestCase is required for the Run related actions that use
 # the transaction.on_commit() signal
 class ScanPipeAPITest(TransactionTestCase):
+    data_location = Path(__file__).parent / "data"
+
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
         self.resource1 = CodebaseResource.objects.create(
@@ -285,6 +289,20 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "File not available"}
         self.assertEqual(expected, response.data)
+
+    def test_scanpipe_api_project_action_summary(self):
+        url = reverse("project-summary", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"error": "Summary file not available"}
+        self.assertEqual(expected, response.data)
+
+        summary_file = self.data_location / "is-npm-1.0.0_summary.json"
+        copy_input(summary_file, self.project1.output_path)
+
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(10, len(response.data.keys()))
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_project_action_add_pipeline(self, mock_execute_pipeline_task):

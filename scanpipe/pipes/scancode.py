@@ -442,7 +442,7 @@ def _get_license_matches_grouped(project):
     return dict(license_matches)
 
 
-def make_results_summary(project, scan_output_location):
+def make_results_summary(project, scan_results_location):
     """
     Extract selected sections of the Scan results, such as the `summary`
     `license_clarity_score`, and `license_matches` related data.
@@ -451,7 +451,7 @@ def make_results_summary(project, scan_output_location):
     from scanpipe.api.serializers import CodebaseResourceSerializer
     from scanpipe.api.serializers import DiscoveredPackageSerializer
 
-    with open(scan_output_location) as f:
+    with open(scan_results_location) as f:
         scan_data = json.load(f)
 
     summary = scan_data.get("summary")

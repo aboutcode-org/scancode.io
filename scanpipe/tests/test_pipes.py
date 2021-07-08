@@ -507,6 +507,13 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(0, exitcode)
         self.assertIn("Scanning done.", output)
 
+    def test_scanpipe_pipes_scancode_make_results_summary(self):
+        project = Project.objects.create(name="Analysis")
+        scan_results_location = self.data_location / "is-npm-1.0.0_scancode.json"
+
+        summary = scancode.make_results_summary(project, scan_results_location)
+        self.assertEqual(10, len(summary.keys()))
+
     def test_scanpipe_pipes_codebase_get_tree(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
