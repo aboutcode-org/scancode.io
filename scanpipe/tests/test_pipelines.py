@@ -188,6 +188,16 @@ class RootFSPipelineTest(TestCase):
 class ScanPackagePipelineTest(TestCase):
     maxDiff = None
     data_location = Path(__file__).parent / "data"
+    exclude_from_diff = [
+        "start_timestamp",
+        "end_timestamp",
+        "duration",
+        "input",
+        "compliance_alert",
+        "policy",
+        "--json-pp",
+        "--processes",
+    ]
 
     def _without_keys(self, data, exclude_keys):
         """
@@ -226,18 +236,10 @@ class ScanPackagePipelineTest(TestCase):
         expected_file = self.data_location / "is-npm-1.0.0_scancode.json"
         expected_json = json.loads(expected_file.read_text())
 
-        exclude_keys = [
-            "start_timestamp",
-            "end_timestamp",
-            "duration",
-            "input",
-            "--json-pp",
-            "--processes",
-        ]
-        reference_data = self._without_keys(scancode_json, exclude_keys)
-        expected_data = self._without_keys(expected_json, exclude_keys)
+        scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
+        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
 
-        self.assertEqual(expected_data, reference_data)
+        self.assertEqual(expected_data, scancode_data)
 
         summary_file = project1.get_latest_output(filename="summary")
         summary_json = json.loads(summary_file.read_text())
@@ -245,4 +247,7 @@ class ScanPackagePipelineTest(TestCase):
         expected_file = self.data_location / "is-npm-1.0.0_summary.json"
         expected_json = json.loads(expected_file.read_text())
 
-        self.assertEqual(expected_json, summary_json)
+        summary_data = self._without_keys(summary_json, self.exclude_from_diff)
+        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+
+        self.assertEqual(expected_data, summary_data)
