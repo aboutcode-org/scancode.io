@@ -21,7 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import scan_codebase
-from scanpipe.pipes import glc
+from scanpipe.pipes import glc, scancode
+from scanpipe.pipes import rootfs
+from scanpipe.pipes import make_codebase_resource
 
 
 class LicenseClassifierScan(scan_codebase.ScanCodebase):
@@ -34,30 +36,30 @@ class LicenseClassifierScan(scan_codebase.ScanCodebase):
         return (
             cls.copy_inputs_to_codebase_directory,
             cls.run_extractcode,
-            cls.run_glc,
-            cls.build_inventory_from_scan,
+            cls.collect_and_create_codebase_resources,
+            cls.run_license_classifier,
             cls.csv_output,
         )
 
-    def run_glc(self):
+    def collect_and_create_codebase_resources(self):
         """
-        Scan extracted codebase/ content.
+        Collect and create all files as CodebaseResource.
         """
-        self.scan_output = self.project.get_output_file_path(
-            "license-classifier", "json"
-        )
-        glc.run_glc(
-            location=str(self.project.codebase_path),
-            output_file=str(self.scan_output),
-        )
+        for resource in rootfs.get_resources(str(self.project.codebase_path)):
+            make_codebase_resource(
+                project=self.project,
+                location=resource.location,
+            )
 
-        if not self.scan_output.exists():
-            raise FileNotFoundError("GLC output not available.")
-
-    def build_inventory_from_scan(self):
+    def run_license_classifier(self):
         """
-        Process the JSON scan results to populate resources and packages.
+        Scan codebase for license and copyright statement
         """
-        project = self.project
-        scan_data = glc.to_dict(str(self.scan_output))
-        glc.create_codebase_resources(project, scan_data)
+        # ToDo: Consider extra filtering
+        for resource in self.project.codebaseresources.files():
+            data = glc.scan_file_for_license(location=resource.location)
+            scancode.save_scan_file_results(
+                codebase_resource=resource,
+                scan_results=data,
+                scan_errors=None,
+            )
