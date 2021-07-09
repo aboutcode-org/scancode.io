@@ -35,7 +35,7 @@ class Docker(root_filesystems.RootFS):
         return (
             cls.extract_images,
             cls.extract_layers,
-            cls.find_images_linux_distro,
+            cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
@@ -63,7 +63,7 @@ class Docker(root_filesystems.RootFS):
         if errors:
             self.add_error("\n".join(errors))
 
-    def find_images_linux_distro(self):
+    def find_images_os_and_distro(self):
         """
         Finds the linux distro of input images.
         """

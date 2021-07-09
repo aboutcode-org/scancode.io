@@ -20,46 +20,36 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.db.models import Q
+from scanpipe.pipelines import docker
+from scanpipe.pipes import docker
+from scanpipe.pipes import windows
 
-from packagedcode import win_reg
 
-
-def package_getter(root_dir, **kwargs):
+class WindowsDocker(docker.Docker):
     """
-    Yield installed package objects.
+    A pipeline to analyze a Windows Docker image.
     """
-    packages = win_reg.get_installed_packages(root_dir)
-    for package in packages:
-        yield package.purl, package
 
+    @classmethod
+    def steps(cls):
+        return (
+            cls.extract_images,
+            cls.extract_layers,
+            cls.find_images_linux_distro,
+            cls.collect_images_information,
+            cls.collect_and_create_codebase_resources,
+            cls.collect_and_create_system_packages,
+            cls.tag_uninteresting_codebase_resources,
+            cls.tag_empty_files,
+            cls.scan_for_application_packages,
+            cls.scan_for_files,
+            cls.analyze_scanned_files,
+            cls.tag_not_analyzed_codebase_resources,
+        )
 
-def tag_uninteresting_windows_codebase_resources(project):
-    """
-    Tag known uninteresting files as uninteresting
-    """
-    uninteresting_files = (
-        'DefaultUser_Delta',
-        'Sam_Delta',
-        'Security_Delta',
-        'Software_Delta',
-        'System_Delta',
-        'NTUSER.DAT',
-        'desktop.ini',
-    )
-
-    uninteresting_file_extensions = (
-        '.lnk',
-        '.library-ms',
-        '.LOG1',
-        '.LOG2',
-    )
-
-    lookups = Q()
-    for file_name in uninteresting_files:
-        lookups |= Q(name=file_name)
-    for file_extension in uninteresting_file_extensions:
-        lookups |= Q(rootfs_path__endsswith=file_extension)
-
-    qs = project.codebaseresources.no_status()
-    qs.filter(lookups).update(status="ignored-not-interesting")
+    def tag_uninteresting_codebase_resources(self):
+        """
+        Flag remaining files not from a system package.
+        """
+        docker.tag_whiteout_codebase_resources(self.project)
+        windows.tag_uninteresting_codebase_resources(self.project)
