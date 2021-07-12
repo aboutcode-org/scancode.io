@@ -67,7 +67,7 @@ check:
 	@echo "-> Run black validation"
 	@${ACTIVATE} black --check ${BLACK_ARGS}
 	@echo "-> Run doc8 validation"
-	@${ACTIVATE} doc8 --max-line-length 100 --quiet docs/
+	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
 
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"

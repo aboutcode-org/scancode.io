@@ -61,6 +61,7 @@ setup(
             "root_filesystems = scanpipe.pipelines.root_filesystems:RootFS",
             "scan_codebase = scanpipe.pipelines.scan_codebase:ScanCodebase",
             "glc_scan = scanpipe.pipelines.glc_scan:LicenseClassifierScan",
+            "scan_package = scanpipe.pipelines.scan_package:ScanPackage",
         ],
     },
     classifiers=[

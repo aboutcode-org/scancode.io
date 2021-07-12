@@ -27,6 +27,8 @@ Default to ``UTC``::
 
 `See the list of time zones <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
 
+.. _scancodeio_settings_workspace_location:
+
 SCANCODEIO_WORKSPACE_LOCATION
 -----------------------------
 

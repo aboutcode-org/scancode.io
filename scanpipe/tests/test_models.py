@@ -181,6 +181,22 @@ class ScanPipeModelsTest(TestCase):
         self.project1.get_output_file_path("file", "ext")
         self.assertTrue(self.project1.work_path.exists())
 
+    def test_scanpipe_project_model_get_latest_output(self):
+        scan1 = self.project1.get_output_file_path("scancode", "json")
+        scan1.write_text("")
+        scan2 = self.project1.get_output_file_path("scancode", "json")
+        scan2.write_text("")
+        summary1 = self.project1.get_output_file_path("summary", "json")
+        summary1.write_text("")
+        scan3 = self.project1.get_output_file_path("scancode", "json")
+        scan3.write_text("")
+        summary2 = self.project1.get_output_file_path("summary", "json")
+        summary2.write_text("")
+
+        self.assertIsNone(self.project1.get_latest_output("none"))
+        self.assertEqual(scan3, self.project1.get_latest_output("scancode"))
+        self.assertEqual(summary2, self.project1.get_latest_output("summary"))
+
     def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)
 
