@@ -21,14 +21,15 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import scan_codebase
-from scanpipe.pipes import glc, scancode
-from scanpipe.pipes import rootfs
+from scanpipe.pipes import glc
 from scanpipe.pipes import make_codebase_resource
+from scanpipe.pipes import rootfs
+from scanpipe.pipes import scancode
 
 
 class LicenseClassifierScan(scan_codebase.ScanCodebase):
     """
-    A pipeline to scan a codebase with GoLicense-Classifier for Copyright and License Expression
+    A pipeline to scan a codebase with GoLicense-Classifier for Copyright and License Details
     """
 
     @classmethod
@@ -53,13 +54,19 @@ class LicenseClassifierScan(scan_codebase.ScanCodebase):
 
     def run_license_classifier(self):
         """
-        Scan codebase for license and copyright statement
+        Scan codebase for license and copyright details
         """
-        # ToDo: Consider extra filtering
+        data = glc.scan_directory(location=self.project.codebase_path)
+        scan_data = data.get("files", [])
         for resource in self.project.codebaseresources.files():
-            data = glc.scan_file_for_license(location=resource.location)
-            scancode.save_scan_file_results(
-                codebase_resource=resource,
-                scan_results=data,
-                scan_errors=None,
+            scan_result = next(
+                (result for result in scan_data if result["path"] == resource.location),
+                None,
             )
+
+            if scan_result:
+                scancode.save_scan_file_results(
+                    codebase_resource=resource,
+                    scan_results=scan_result,
+                    scan_errors=None,
+                )

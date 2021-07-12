@@ -20,15 +20,19 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import json
-import os
-from os.path import isfile
 
-import attr
-from commoncode.resource import get_path
 from LicenseClassifier.classifier import LicenseClassifier
 
-from scanpipe.models import CodebaseResource
+
+def scan_directory(location):
+    """
+    Run a license and copyright scan on directory at `location`,
+    using golicense-classifier.
+    """
+    classifier = LicenseClassifier()
+    result = classifier.scan_directory(location)
+    return result
+
 
 def scan_file_for_license(location):
     """
@@ -36,6 +40,5 @@ def scan_file_for_license(location):
     using golicense-classifier.
     """
     classifier = LicenseClassifier()
-    result =  classifier.scan_file(location)
+    result = classifier.scan_file(location)
     return result
-

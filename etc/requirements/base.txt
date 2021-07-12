@@ -35,7 +35,7 @@ commoncode==21.5.25
 fetchcode-container==1.2.3.210512; sys_platform == "linux"
 
 # GLC-Pipeline
-golicense-classifier
+golicense-classifier==0.0.12
 
 # Utilities
 XlsxWriter==1.4.3
