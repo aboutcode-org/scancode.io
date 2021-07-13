@@ -23,6 +23,8 @@
 
 from LicenseClassifier.classifier import LicenseClassifier
 
+from scanpipe.pipes import scancode
+
 
 def scan_directory(location):
     """
@@ -42,3 +44,20 @@ def scan_file_for_license(location):
     classifier = LicenseClassifier()
     result = classifier.scan_file(location)
     return result
+
+
+def update_codebase_resources(project, scan_data):
+    """
+    Update CodebaseResource model with scan results from golicense-classifier
+    """
+    for resource in project.codebaseresources.no_status():
+        scan_result = next(
+            (result for result in scan_data if result["path"] == resource.location),
+            None,
+        )
+        if scan_result:
+            scancode.save_scan_file_results(
+                codebase_resource=resource,
+                scan_results=scan_result,
+                scan_errors=scan_result.get("scan_errors", []),
+            )

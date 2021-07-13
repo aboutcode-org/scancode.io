@@ -42,6 +42,7 @@ from scanpipe.pipes import codebase
 from scanpipe.pipes import docker
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
+from scanpipe.pipes import glc
 from scanpipe.pipes import make_codebase_resource
 from scanpipe.pipes import output
 from scanpipe.pipes import rootfs
@@ -699,6 +700,43 @@ class ScanPipePipesTest(TestCase):
         install_file = mock.Mock(sha256="sha256", md5="md5")
         codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
         self.assertFalse(rootfs.has_hash_diff(install_file, codebase_resource))
+
+    def test_scanpipe_pipes_glc_scan_file_for_license(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+        scan_results = glc.scan_file_for_license(input_location)
+        expected = [
+            "path",
+            "licenses",
+            "license_expressions",
+            "copyrights",
+            "scan_errors",
+        ]
+        self.assertEqual(sorted(expected), sorted(scan_results.keys()))
+
+    def test_scanpipe_pipes_glc_update_codebase_resources(self):
+        project1 = Project.objects.create(name="Analysis")
+        codebase_resource1 = CodebaseResource.objects.create(
+            project=project1, path="not available"
+        )
+        self.assertEqual(0, project1.projecterrors.count())
+
+        scan_results = glc.scan_file_for_license(codebase_resource1.location)
+        glc.update_codebase_resources(project1, [scan_results])
+
+        codebase_resource1.refresh_from_db()
+        self.assertEqual("scanned-with-error", codebase_resource1.status)
+        self.assertEqual(1, project1.projecterrors.count())
+
+        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        codebase_resource2 = CodebaseResource.objects.create(
+            project=project1, path="notice.NOTICE"
+        )
+
+        scan_results = glc.scan_file_for_license(codebase_resource2.location)
+        glc.update_codebase_resources(project1, [scan_results])
+
+        codebase_resource2.refresh_from_db()
+        self.assertEqual("scanned", codebase_resource2.status)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

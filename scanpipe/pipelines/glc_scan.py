@@ -24,7 +24,6 @@ from scanpipe.pipelines import scan_codebase
 from scanpipe.pipes import glc
 from scanpipe.pipes import make_codebase_resource
 from scanpipe.pipes import rootfs
-from scanpipe.pipes import scancode
 
 
 class LicenseClassifierScan(scan_codebase.ScanCodebase):
@@ -58,15 +57,4 @@ class LicenseClassifierScan(scan_codebase.ScanCodebase):
         """
         data = glc.scan_directory(location=self.project.codebase_path)
         scan_data = data.get("files", [])
-        for resource in self.project.codebaseresources.files():
-            scan_result = next(
-                (result for result in scan_data if result["path"] == resource.location),
-                None,
-            )
-
-            if scan_result:
-                scancode.save_scan_file_results(
-                    codebase_resource=resource,
-                    scan_results=scan_result,
-                    scan_errors=None,
-                )
+        glc.update_codebase_resources(self.project, scan_data)
