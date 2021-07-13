@@ -833,6 +833,38 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
+    def test_scanpipe_codebase_resource_queryset_licenses_categories(self):
+        CodebaseResource.objects.all().delete()
+
+        resource1 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="1",
+            licenses=[{"key": "gpl-3.0", "category": "Copyleft"}],
+        )
+
+        resource2 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="2",
+            licenses=[{"key": "lgpl-3.0-plus", "category": "Copyleft Limited"}],
+        )
+
+        resource_qs = self.project1.codebaseresources
+
+        categories = ["Permissive"]
+        self.assertQuerysetEqual([], resource_qs.licenses_categories(categories))
+
+        categories = ["Copyleft"]
+        expected = [resource1]
+        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+
+        categories = ["Copyleft Limited"]
+        expected = [resource2]
+        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+
+        categories = ["Copyleft", "Copyleft Limited"]
+        expected = [resource1, resource2]
+        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+
     def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
         resource1 = CodebaseResource.objects.create(project=self.project1, path="1")
         resource1.holders = [

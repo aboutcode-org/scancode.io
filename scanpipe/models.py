@@ -848,6 +848,13 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_no_licenses(self):
         return self.filter(licenses=[])
 
+    def licenses_categories(self, categories):
+        return self.json_list_contains(
+            field_name="licenses",
+            key="category",
+            values=categories,
+        )
+
     def unknown_license(self):
         return self.json_field_contains("license_expressions", "unknown")
 
@@ -862,6 +869,19 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             .annotate(**{f"{field_name}_as_text": Cast(field_name, TextField())})
             .filter(**{f"{field_name}_as_text__contains": value})
         )
+
+    def json_list_contains(self, field_name, key, values):
+        """
+        Filter on a JSONField `field_name` that stores a list of dictionaries.
+
+        json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
+        """
+        lookups = Q()
+
+        for value in values:
+            lookups |= Q(**{f"{field_name}__contains": [{key: value}]})
+
+        return self.filter(lookups)
 
 
 class ScanFieldsModelMixin(models.Model):
