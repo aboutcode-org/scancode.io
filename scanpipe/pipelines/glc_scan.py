@@ -54,7 +54,6 @@ class LicenseClassifierScan(scan_codebase.ScanCodebase):
     def run_license_classifier(self):
         """
         Scan codebase for license and copyright details
+        and save results as CodebaseResource
         """
-        data = glc.scan_directory(location=self.project.codebase_path)
-        scan_data = data.get("files", [])
-        glc.update_codebase_resources(self.project, scan_data)
+        glc.scan_and_update_codebase_resources(self.project)

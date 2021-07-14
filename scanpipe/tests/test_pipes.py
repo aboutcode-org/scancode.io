@@ -701,42 +701,74 @@ class ScanPipePipesTest(TestCase):
         codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
         self.assertFalse(rootfs.has_hash_diff(install_file, codebase_resource))
 
-    def test_scanpipe_pipes_glc_scan_file_for_license(self):
-        input_location = str(self.data_location / "notice.NOTICE")
-        scan_results = glc.scan_file_for_license(input_location)
-        expected = [
+    def test_scanpipe_pipes_glc_scan_file(self):
+        input_location = str(self.data_location / "apache-1.1.txt")
+        scan_results = glc.scan_file(input_location)
+        expected_keys = [
             "path",
             "licenses",
             "license_expressions",
             "copyrights",
+            "holders",
             "scan_errors",
         ]
-        self.assertEqual(sorted(expected), sorted(scan_results.keys()))
+        self.assertEqual(sorted(expected_keys), sorted(scan_results.keys()))
+        self.assertEqual([], scan_results.get("scan_errors", None))
 
-    def test_scanpipe_pipes_glc_update_codebase_resources(self):
+    def test_scanpipe_pipes_glc_scan_directory(self):
+        input_location = str(self.data_location)
+        scan_results = glc.scan_directory(input_location)
+        expected_keys = [
+            "header",
+            "files",
+        ]
+        self.assertEqual(sorted(expected_keys), sorted(scan_results.keys()))
+        self.assertEqual(10, len(scan_results.get("files", [])))
+
+    def test_scanpipe_pipes_glc_scan_and_update_codebase_resources(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource1 = CodebaseResource.objects.create(
             project=project1, path="not available"
         )
         self.assertEqual(0, project1.projecterrors.count())
 
-        scan_results = glc.scan_file_for_license(codebase_resource1.location)
-        glc.update_codebase_resources(project1, [scan_results])
+        glc.scan_and_update_codebase_resources(project1)
 
         codebase_resource1.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource1.status)
-        self.assertEqual(1, project1.projecterrors.count())
+        self.assertEqual(2, project1.projecterrors.count())
 
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_inputs([self.data_location / "apache-1.1.txt"], project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
-            project=project1, path="notice.NOTICE"
+            project=project1, path="apache-1.1.txt"
         )
 
-        scan_results = glc.scan_file_for_license(codebase_resource2.location)
-        glc.update_codebase_resources(project1, [scan_results])
+        glc.scan_and_update_codebase_resources(project1)
 
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
+        expected = {
+            "licenses": ["apache-1.1"],
+            "holders": [
+                {
+                    "value": "The Apache Software Foundation",
+                    "start_index": 44,
+                    "end_index": 74,
+                }
+            ],
+            "copyrights": [
+                {
+                    "value": "Copyright (c) 2000 The Apache Software Foundation."
+                    " All rights reserved.",
+                    "start_index": 25,
+                    "end_index": 96,
+                }
+            ],
+        }
+
+        self.assertEqual(expected["licenses"], codebase_resource2.license_expressions)
+        self.assertEqual(expected["copyrights"], codebase_resource2.copyrights)
+        self.assertEqual(expected["holders"], codebase_resource2.holders)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

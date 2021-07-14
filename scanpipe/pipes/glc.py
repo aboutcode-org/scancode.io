@@ -36,7 +36,7 @@ def scan_directory(location):
     return result
 
 
-def scan_file_for_license(location):
+def scan_file(location):
     """
     Run a license and copyright scan on provided `location`,
     using golicense-classifier.
@@ -46,18 +46,14 @@ def scan_file_for_license(location):
     return result
 
 
-def update_codebase_resources(project, scan_data):
+def scan_and_update_codebase_resources(project):
     """
-    Update CodebaseResource model with scan results from golicense-classifier
+    Run Golicense-Classifier on `project` and save results in CodebaseResources model
     """
     for resource in project.codebaseresources.no_status():
-        scan_result = next(
-            (result for result in scan_data if result["path"] == resource.location),
-            None,
+        data = scan_file(location=resource.location)
+        scancode.save_scan_file_results(
+            codebase_resource=resource,
+            scan_results=data,
+            scan_errors=data.get("scan_errors", []),
         )
-        if scan_result:
-            scancode.save_scan_file_results(
-                codebase_resource=resource,
-                scan_results=scan_result,
-                scan_errors=scan_result.get("scan_errors", []),
-            )
