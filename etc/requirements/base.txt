@@ -1,5 +1,5 @@
 # Configuration tools
-importlib_metadata==4.6.1; python_version < "3.8"
+importlib_metadata==3.10.0; python_version < "3.8"
 
 # Django related
 Django==3.2.5
