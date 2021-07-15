@@ -1,7 +1,7 @@
 .. _scanpipe_api:
 
-ScanPipe REST API
-=================
+REST API
+========
 
 To get started locally with the API:
 

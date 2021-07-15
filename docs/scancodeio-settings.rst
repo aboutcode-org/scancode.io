@@ -1,6 +1,6 @@
 .. _scancodeio_settings:
 
-ScanCode.io Settings
+Application Settings
 ====================
 
 The ``.env`` file is created at the root of the ScanCode.io codebase during its

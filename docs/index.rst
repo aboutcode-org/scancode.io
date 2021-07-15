@@ -16,14 +16,15 @@ you’ll find information on:
 
     introduction
     installation
-    docker-image
+    run-docker
+    user-interface
 
 .. toctree::
     :maxdepth: 2
     :caption: Tutorial
 
-    scanpipe-tutorial-1
-    scanpipe-tutorial-2
+    tutorial-1
+    tutorial-2
 
 .. toctree::
     :maxdepth: 2

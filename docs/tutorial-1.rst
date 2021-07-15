@@ -1,4 +1,4 @@
-.. _scanpipe_tutorial_1:
+.. _tutorial_1:
 
 Docker Image Analysis (command line)
 ====================================

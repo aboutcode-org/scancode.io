@@ -1,4 +1,4 @@
-.. _scanpipe_tutorial_2:
+.. _tutorial_2:
 
 Scan Codebase (command line)
 ============================
