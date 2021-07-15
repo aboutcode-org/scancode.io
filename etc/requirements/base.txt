@@ -1,4 +1,5 @@
 # Configuration tools
+# Warning: the importlib_metadata 4.6.x series breaks the documentation builds
 importlib_metadata==3.10.0; python_version < "3.8"
 
 # Django related
