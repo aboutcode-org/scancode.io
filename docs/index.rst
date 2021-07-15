@@ -16,6 +16,7 @@ you’ll find information on:
 
     introduction
     installation
+    scancodeio-ui
     docker-image
 
 .. toctree::
