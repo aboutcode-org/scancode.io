@@ -28,7 +28,7 @@ the output file format with the ``–-format`` option:
 Web UI
 ^^^^^^
 When using the ScanCode.io web application, you can download the results of your
-project in your preferred output format within the project page. 
+project in your preferred output format within the project page.
 
 .. image:: images/output-download-results.png
 
