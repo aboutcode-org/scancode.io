@@ -103,7 +103,7 @@ def tag_known_software(project):
     image layers.
     """
     qs = project.codebaseresources.no_status()
-    python_root_directory_name_pattern = r"/Files/Python(\d\d?)?"
+    python_root_directory_name_pattern = r"/Files/Python(\d*)"
     python_root_directory_name_pattern_compiled = re.compile(python_root_directory_name_pattern)
     python_paths_by_versions = {}
     for python_codebase_resource in qs.filter(rootfs_path__regex=python_root_directory_name_pattern):
@@ -111,10 +111,15 @@ def tag_known_software(project):
             python_root_directory_name_pattern_compiled,
             python_codebase_resource.rootfs_path
         )
-        if not version or version in python_paths_by_versions:
+        if not version:
+            version = 'nv'
+        if version in python_paths_by_versions:
             continue
-        version_with_dots = '.'.join(digit for digit in version)
-        python_paths_by_versions[version_with_dots] = f'/Files/Python{version}'
+        if version != 'nv':
+            version_with_dots = '.'.join(digit for digit in version)
+            python_paths_by_versions[version_with_dots] = f'/Files/Python{version}'
+        else:
+            python_paths_by_versions[version] = '/Files/Python'
 
     for python_version, python_path in python_paths_by_versions.items():
         python_package = Package(
@@ -132,18 +137,24 @@ def tag_known_software(project):
         )
 
     qs = project.codebaseresources.no_status()
-    openjdk_root_directory_name_pattern = r"/Files/(open)?jdk-(\d\d?\.?\d?\.?\d?)"
+    openjdk_root_directory_name_pattern = r"/Files/(open)?jdk(-((\d*)(\.\d+)*))*"
     openjdk_root_directory_name_pattern_compiled = re.compile(openjdk_root_directory_name_pattern)
     openjdk_paths_by_versions = {}
     for openjdk_codebase_resource in qs.filter(rootfs_path__regex=openjdk_root_directory_name_pattern):
-        _, open_prefix, openjdk_version, _ = re.split(
+        _, open_prefix, _, openjdk_version, _, _, _ = re.split(
             openjdk_root_directory_name_pattern_compiled,
             openjdk_codebase_resource.rootfs_path
         )
-        if (not openjdk_version
-                or openjdk_version in openjdk_paths_by_versions):
+        if not openjdk_version:
+            openjdk_version = 'nv'
+        if not open_prefix:
+            open_prefix = ''
+        if openjdk_version in openjdk_paths_by_versions:
             continue
-        openjdk_path = f'/Files/{open_prefix}jdk-{openjdk_version}'
+        if openjdk_version != 'nv':
+            openjdk_path = f'/Files/{open_prefix}jdk-{openjdk_version}'
+        else:
+            openjdk_path = f'/Files/{open_prefix}jdk'
         openjdk_paths_by_versions[openjdk_version] = openjdk_path
 
     for openjdk_version, openjdk_path in openjdk_paths_by_versions.items():

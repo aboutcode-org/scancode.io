@@ -41,11 +41,11 @@ class WindowsDocker(Docker):
             cls.collect_and_create_system_packages,
             cls.tag_known_software_packages,
             cls.tag_uninteresting_codebase_resources,
-            cls.tag_empty_files,
-            cls.scan_for_application_packages,
-            cls.scan_for_files,
-            cls.analyze_scanned_files,
-            cls.tag_not_analyzed_codebase_resources,
+            # cls.tag_empty_files,
+            # cls.scan_for_application_packages,
+            # cls.scan_for_files,
+            # cls.analyze_scanned_files,
+            # cls.tag_not_analyzed_codebase_resources,
         )
 
     def tag_known_software_packages(self):
