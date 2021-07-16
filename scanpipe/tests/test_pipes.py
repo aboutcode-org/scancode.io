@@ -48,6 +48,7 @@ from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
+from scanpipe.pipes import windows
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
@@ -755,6 +756,72 @@ class ScanPipePipesTest(TestCase):
         install_file = mock.Mock(sha256="sha256", md5="md5")
         codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
         self.assertFalse(rootfs.has_hash_diff(install_file, codebase_resource))
+
+    def test_scanpipe_pipes_windows_tag_uninteresting_windows_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/example.lnk",
+            rootfs_path="/Files/example.lnk"
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Hives/Software_Delta",
+            rootfs_path="/Hives/Software_Delta"
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/example.dat",
+            rootfs_path="/Files/example.dat"
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/User/Test/foo.dat",
+            rootfs_path="/Files/User/Test/foo.dat"
+        )
+
+        windows.tag_uninteresting_windows_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        self.assertEqual("ignored-not-interesting", resource1.status)
+        self.assertEqual("ignored-not-interesting", resource2.status)
+        self.assertEqual("", resource3.status)
+        self.assertEqual("", resource4.status)
+
+    def test_scanpipe_pipes_windows_tag_known_software(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python/py.exe",
+            rootfs_path="/Files/Python/py.exe"
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python27/python2.exe",
+            rootfs_path="/Files/Python27/python2.exe"
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python3/python3.exe",
+            rootfs_path="/Files/Python3/python3.exe"
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python39/python3.9",
+            rootfs_path="/Files/Python39/python3.9.exe"
+        )
+
+        windows.tag_known_software(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        self.assertEqual("system-package", resource1.status)
+        self.assertEqual("system-package", resource2.status)
+        self.assertEqual("system-package", resource3.status)
+        self.assertEqual("system-package", resource4.status)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
