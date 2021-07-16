@@ -3,6 +3,8 @@
 Pipelines
 =========
 
+.. _pipeline_base_class:
+
 Pipeline Base Class
 -------------------
 .. autoclass:: scanpipe.pipelines.Pipeline()
