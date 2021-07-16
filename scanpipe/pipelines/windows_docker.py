@@ -49,6 +49,10 @@ class WindowsDocker(Docker):
         )
 
     def tag_known_software_packages(self):
+        """
+        Flag files from well-known software packages by checking common install
+        paths
+        """
         windows.tag_known_software(self.project)
 
     def tag_uninteresting_codebase_resources(self):

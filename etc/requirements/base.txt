@@ -33,7 +33,7 @@ extractcode[full]==21.6.2
 commoncode==21.6.11
 
 # FetchCode
-fetchcode-container>=1.2.3.210512; sys_platform == "linux"
+fetchcode-container==1.2.3.210512; sys_platform == "linux"
 
 # Utilities
 XlsxWriter==1.4.5
