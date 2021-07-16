@@ -74,6 +74,15 @@ of parallel processes to 4::
 
     SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 120
 
+SCANCODEIO_PIPELINES_DIRS
+-------------------------
+
+This setting defines the additional locations ScanCode.io will search for pipelines.
+This should be set to a list of strings that contain full paths to your additional
+pipelines directories::
+
+    SCANCODEIO_PIPELINES_DIRS=/var/scancodeio/pipelines/,/home/user/pipelines/
+
 SCANCODEIO_POLICIES_FILE
 ------------------------
 
