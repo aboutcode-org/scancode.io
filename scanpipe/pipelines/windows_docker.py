@@ -20,12 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines import docker
+from scanpipe.pipelines.docker import Docker
 from scanpipe.pipes import docker
 from scanpipe.pipes import windows
 
 
-class WindowsDocker(docker.Docker):
+class WindowsDocker(Docker):
     """
     A pipeline to analyze a Windows Docker image.
     """
@@ -35,10 +35,11 @@ class WindowsDocker(docker.Docker):
         return (
             cls.extract_images,
             cls.extract_layers,
-            cls.find_images_linux_distro,
+            cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
+            cls.tag_known_software_packages,
             cls.tag_uninteresting_codebase_resources,
             cls.tag_empty_files,
             cls.scan_for_application_packages,
@@ -47,9 +48,12 @@ class WindowsDocker(docker.Docker):
             cls.tag_not_analyzed_codebase_resources,
         )
 
+    def tag_known_software_packages(self):
+        windows.tag_known_software(self.project)
+
     def tag_uninteresting_codebase_resources(self):
         """
         Flag remaining files not from a system package.
         """
         docker.tag_whiteout_codebase_resources(self.project)
-        windows.tag_uninteresting_codebase_resources(self.project)
+        windows.tag_uninteresting_windows_codebase_resources(self.project)
