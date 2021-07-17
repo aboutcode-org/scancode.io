@@ -33,6 +33,7 @@ from django.test import TestCase
 from django.test import TransactionTestCase
 
 from commoncode.archive import extract_tar
+from LicenseClassifier.classifier import LicenseClassifier
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
@@ -703,7 +704,8 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_glc_scan_file(self):
         input_location = str(self.data_location / "apache-1.1.txt")
-        scan_results = glc.scan_file(input_location)
+        classifier = LicenseClassifier()
+        scan_results = glc.scan_file(classifier, input_location)
         expected_keys = [
             "path",
             "licenses",
