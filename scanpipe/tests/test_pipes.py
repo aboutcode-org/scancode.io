@@ -823,6 +823,52 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("system-package", resource3.status)
         self.assertEqual("system-package", resource4.status)
 
+    def test_scanpipe_pipes_windows_tag_program_files(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program_Files_(x86)/Microsoft/example.exe",
+            rootfs_path="/Files/Program_Files_(x86)/Microsoft/example.exe"
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program_Files/Microsoft/example.exe",
+            rootfs_path="/Files/Program_Files/Microsoft/example.exe"
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program_Files_(x86)/7Zip/7z.exe",
+            rootfs_path="/Files/Program_Files_(x86)/7Zip/7z.exe"
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program_Files/7Zip/7z.exe",
+            rootfs_path="/Files/Program_Files/7Zip/7z.exe"
+        )
+        resource5 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program_Files_(x86)/common_files/sample.dat",
+            rootfs_path="/Files/Program_Files_(x86)/common_files/sample.dat"
+        )
+        resource6 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program_Files/common_files/sample.dat",
+            rootfs_path="/Files/Program_Files/common_files/sample.dat"
+        )
+        windows.tag_program_files(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        resource5.refresh_from_db()
+        resource6.refresh_from_db()
+        self.assertEqual("", resource1.status)
+        self.assertEqual("", resource2.status)
+        self.assertEqual("installed-package", resource3.status)
+        self.assertEqual("installed-package", resource4.status)
+        self.assertEqual("", resource5.status)
+        self.assertEqual("", resource6.status)
+
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
     """

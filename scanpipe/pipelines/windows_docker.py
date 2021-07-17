@@ -41,11 +41,12 @@ class WindowsDocker(Docker):
             cls.collect_and_create_system_packages,
             cls.tag_known_software_packages,
             cls.tag_uninteresting_codebase_resources,
-            # cls.tag_empty_files,
-            # cls.scan_for_application_packages,
-            # cls.scan_for_files,
-            # cls.analyze_scanned_files,
-            # cls.tag_not_analyzed_codebase_resources,
+            cls.tag_program_files_dirs_as_packages,
+            cls.tag_empty_files,
+            cls.scan_for_application_packages,
+            cls.scan_for_files,
+            cls.analyze_scanned_files,
+            cls.tag_not_analyzed_codebase_resources,
         )
 
     def tag_known_software_packages(self):
@@ -61,3 +62,10 @@ class WindowsDocker(Docker):
         """
         docker.tag_whiteout_codebase_resources(self.project)
         windows.tag_uninteresting_windows_codebase_resources(self.project)
+
+    def tag_program_files_dirs_as_packages(self):
+        """
+        Report the immediate subdirectories of `Program Files` and `Program
+        Files (x86)` as packages
+        """
+        windows.tag_program_files(self.project)

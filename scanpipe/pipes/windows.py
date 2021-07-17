@@ -77,7 +77,7 @@ def tag_installed_package_files(project, root_dir_pattern, package):
     CodebaseResource and set the status
     """
     qs = project.codebaseresources.no_status()
-    installed_package_files = qs.filter(rootfs_path__regex=root_dir_pattern)
+    installed_package_files = qs.filter(rootfs_path__startswith=root_dir_pattern)
     # If we find files whose names start with `root_dir_pattern`, we consider
     # these files to be part of the Package `package` and tag these files as
     # such
@@ -85,7 +85,7 @@ def tag_installed_package_files(project, root_dir_pattern, package):
         created_package = pipes.update_or_create_package(project=project, package_data=package.to_dict())
         for installed_package_file in installed_package_files:
             installed_package_file.discovered_packages.add(created_package)
-            installed_package_file.status = "system-package"
+            installed_package_file.status = "installed-package"
             installed_package_file.save()
         created_package.save()
 
@@ -170,4 +170,46 @@ def tag_known_software(project):
             project=project,
             root_dir_pattern=openjdk_path,
             package=openjdk_package
+        )
+
+
+PROGRAM_FILES_DIRS_TO_IGNORE = (
+    "Common Files",
+    "Common_Files",
+    "common_files",
+    "Microsoft",
+)
+
+
+def tag_program_files(project):
+    """
+    Report all subdirectories of Program Files and Program Files (x86) as
+    packages
+    """
+    qs = project.codebaseresources.no_status()
+    # Get all files from Program_Files and Program_Files_(x86)
+    program_files_one_directory_below_pattern = r"(/Files/Program_Files(_\(x86\))?/([^/]+))"
+    program_files_one_directory_below_pattern_compiled = re.compile(program_files_one_directory_below_pattern)
+    program_files_dirname_by_path = {}
+    lookup = Q(rootfs_path__startswith="/Files/Program_Files") | Q(rootfs_path__startswith="/Files/Program_Files_(x86)")
+    for program_file in qs.filter(lookup):
+        _, program_files_subdir, _, dirname, _ = re.split(
+            program_files_one_directory_below_pattern_compiled,
+            program_file.rootfs_path
+        )
+        if (program_files_subdir in program_files_dirname_by_path
+                or dirname in PROGRAM_FILES_DIRS_TO_IGNORE):
+            continue
+        program_files_dirname_by_path[program_files_subdir] = dirname
+
+    for program_root_dir, program_root_dir_name in program_files_dirname_by_path.items():
+        package = Package(
+            type="windows-program",
+            name=program_root_dir_name,
+            version="nv",
+        )
+        tag_installed_package_files(
+            project=project,
+            root_dir_pattern=program_root_dir,
+            package=package
         )
