@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Add ability to register custom pipelines through a new SCANCODEIO_PIPELINES_DIRS
+  setting.
+  https://github.com/nexB/scancode.io/issues/237
+
 - Add a pipeline `scan_package.ScanPackage` to scan a single package archive with
   ScanCode-toolkit.
   https://github.com/nexB/scancode.io/issues/25

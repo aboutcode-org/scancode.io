@@ -110,7 +110,9 @@ class ScanPipeConfig(AppConfig):
         pipeline_classes = inspect.getmembers(module, is_pipeline)
 
         if len(pipeline_classes) > 1:
-            raise ImproperlyConfigured("Only 1 Pipeline class allowed per file.")
+            raise ImproperlyConfigured(
+                f"Only one Pipeline class allowed per pipeline file: {path}."
+            )
 
         elif pipeline_classes:
             pipeline_class = pipeline_classes[0][1]
