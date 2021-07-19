@@ -47,6 +47,7 @@ PACKAGE_GETTER_BY_DISTRO = {
     "sles": rpm.package_getter,
     "opensuse": rpm.package_getter,
     "opensuse-tumbleweed": rpm.package_getter,
+    "photon": rpm.package_getter,
 }
 
 
