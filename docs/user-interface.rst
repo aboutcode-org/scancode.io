@@ -90,7 +90,7 @@ to your project by clicking the **"Add inputs"** and **"Add pipeline"** buttons.
 .. image:: images/UI-4-new.png
 
 .. warning::
-    You will not be able to add and extra inputs once a pipeline has been run on
+    You will not be able to add any extra inputs once a pipeline has been run on
     the project. However, you still can add and run extra pipelines as needed!
 
 Within each project, you can view your project details, review the results of

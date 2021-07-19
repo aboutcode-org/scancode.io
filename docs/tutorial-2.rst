@@ -15,7 +15,7 @@ Requirements
 Before you follow the instructions in this tutorial, you need to:
 
 - Install **ScanCode.io** locally
-- Download the following **package archive** and save it to your home directory:`asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
+- Download the following **package archive** and save it to your home directory: `asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
 - Have **Shell access** on the machine where ScanCode.io is installed
 
 Instructions
@@ -47,15 +47,14 @@ Instructions
 
 .. code-block:: bash
 
-    $ scanpipe add-input --project asgiref\
-      --input-file ~/asgiref-3.3.0-py3-none-any.whl
+    $ scanpipe add-input --project asgiref --input-file ~/asgiref-3.3.0-py3-none-any.whl
 
 .. code-block:: console
 
     >> File(s) copied to the project inputs directory:
       - asgiref-3.3.0-py3-none-any.whl
 
-- Add the scan_codebase pipeline to your project:
+- Add the ``scan_codebase`` pipeline to your project:
 
 .. code-block:: console
 
@@ -73,7 +72,7 @@ Instructions
     :guilabel:`codebase/` directory in which case the ``--input`` option can be
     omitted.
 
-- Run the scan_codebase pipeline on your project. The pipeline execution
+- Run the ``scan_codebase`` pipeline on your project. The pipeline execution
   progress is shown within the following command's output:
 
 .. code-block:: bash
