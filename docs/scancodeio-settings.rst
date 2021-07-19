@@ -78,7 +78,7 @@ SCANCODEIO_PIPELINES_DIRS
 -------------------------
 
 This setting defines the additional locations ScanCode.io will search for pipelines.
-This should be set to a list of strings that contain full paths to your additional
+This should be set to a list of comma-separated strings that contain full paths to your additional
 pipelines directories::
 
     SCANCODEIO_PIPELINES_DIRS=/var/scancodeio/pipelines/,/home/user/pipelines/
