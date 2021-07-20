@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import inspect
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from django.apps import AppConfig
@@ -55,7 +57,8 @@ class ScanPipeConfig(AppConfig):
 
     def load_pipelines(self):
         """
-        Load Pipelines from the "scancodeio_pipelines" entry point group.
+        Load Pipelines from the "scancodeio_pipelines" entry point group and from the
+        pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
 
@@ -63,9 +66,23 @@ class ScanPipeConfig(AppConfig):
         pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
 
         for entry_point in sorted(pipeline_entry_points):
-            pipeline_class = entry_point.load()
-            pipeline_name = entry_point.name
-            self.register_pipeline(pipeline_name, pipeline_class)
+            self.register_pipeline(name=entry_point.name, cls=entry_point.load())
+
+        # Register user provided pipelines
+        pipelines_dirs = getattr(settings, "SCANCODEIO_PIPELINES_DIRS", [])
+
+        for pipelines_dir in pipelines_dirs:
+            pipelines_path = Path(pipelines_dir)
+
+            if not pipelines_path.is_dir():
+                raise ImproperlyConfigured(
+                    f'The provided pipelines directory "{pipelines_dir}" in '
+                    f"the SCANCODEIO_PIPELINES_DIRS setting is not available."
+                )
+
+            python_files = pipelines_path.rglob("*.py")
+            for path in python_files:
+                self.register_pipeline_from_file(path)
 
     def register_pipeline(self, name, cls):
         """
@@ -82,6 +99,24 @@ class ScanPipeConfig(AppConfig):
             )
 
         self._pipelines[name] = cls
+
+    def register_pipeline_from_file(self, path):
+        """
+        Search for a Pipeline subclass in the provided file `path` and register it
+        when found.
+        """
+        module_name = path.stem
+        module = SourceFileLoader(module_name, str(path)).load_module()
+        pipeline_classes = inspect.getmembers(module, is_pipeline)
+
+        if len(pipeline_classes) > 1:
+            raise ImproperlyConfigured(
+                f"Only one Pipeline class allowed per pipeline file: {path}."
+            )
+
+        elif pipeline_classes:
+            pipeline_class = pipeline_classes[0][1]
+            self.register_pipeline(name=module_name, cls=pipeline_class)
 
     @property
     def pipelines(self):

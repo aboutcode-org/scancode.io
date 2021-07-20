@@ -53,6 +53,11 @@ SCANCODEIO_PROCESSES = env.int("SCANCODEIO_PROCESSES", default=None)
 
 SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies.yml")
 
+# This setting defines the additional locations ScanCode.io will search for pipelines.
+# This should be set to a list of strings that contain full paths to your additional
+# pipelines directories.
+SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
+
 # Application definition
 
 INSTALLED_APPS = (

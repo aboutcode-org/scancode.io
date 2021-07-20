@@ -33,7 +33,6 @@ from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
-from scanpipe.pipelines import scan_package
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
