@@ -1,7 +1,7 @@
 .. _scanpipe_output:
 
-Output
-======
+Output Files
+============
 
 Whether you use the command line or the web application to run your
 scans, the generated results are available for review or export in

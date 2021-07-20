@@ -1,7 +1,8 @@
 .. _tutorial_2:
 
-Scan Codebase (command line)
-============================
+Analyze Codebase (command line)
+===============================
+
 The focus of this tutorial is to guide you through scanning a codebase package
 using ScanCode.io.
 

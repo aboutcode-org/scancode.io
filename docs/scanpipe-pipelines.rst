@@ -27,3 +27,8 @@ Scan Codebase
 -------------
 .. autoclass:: scanpipe.pipelines.scan_codebase.ScanCodebase()
     :members:
+
+Scan Package
+------------
+.. autoclass:: scanpipe.pipelines.scan_package.ScanPackage()
+    :members:

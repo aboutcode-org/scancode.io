@@ -27,8 +27,8 @@ create an environment file, and build the Docker image::
     docker-compose build
 
 .. note::
-    The image will need to be re-build when the ScanCode.io app source code if
-    modified or updated.
+    The image will need to be re-build when the ScanCode.io source code is modified or
+    updated.
 
 Run the Image
 -------------
