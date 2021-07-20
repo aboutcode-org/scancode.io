@@ -37,6 +37,7 @@ The following directories exists under this workspace directory:
   scan results, etc.
 - :guilabel:`tmp/` is a scratch pad for temporary files generated during the pipelines runs.
 
+.. _pipelines_concept:
 
 Pipelines
 ---------

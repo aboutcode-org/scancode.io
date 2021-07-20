@@ -31,7 +31,7 @@ you’ll find information on:
     :caption: Reference Documentation
 
     scanpipe-concepts
-    scanpipe-pipelines
+    built-in-pipelines
     custom-pipelines
     scanpipe-pipes
     scanpipe-output

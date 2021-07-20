@@ -74,6 +74,8 @@ of parallel processes to 4::
 
     SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 120
 
+.. _scancodeio_settings_pipelines_dirs:
+
 SCANCODEIO_PIPELINES_DIRS
 -------------------------
 

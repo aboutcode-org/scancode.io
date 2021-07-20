@@ -1,7 +1,7 @@
-.. _scanpipe_pipelines:
+.. _built_in_pipelines:
 
-Pipelines
-=========
+Built-in Pipelines
+==================
 
 .. _pipeline_base_class:
 
@@ -24,6 +24,8 @@ Root Filesystem Analysis
 ------------------------
 .. autoclass:: scanpipe.pipelines.root_filesystems.RootFS()
     :members:
+
+.. _pipeline_scan_codebase:
 
 Scan Codebase
 -------------
