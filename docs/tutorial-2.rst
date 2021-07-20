@@ -1,37 +1,69 @@
 .. _tutorial_2:
 
-Scan Codebase (command line)
-============================
+Analyze Codebase (command line)
+===============================
+
+The focus of this tutorial is to guide you through scanning a codebase package
+using ScanCode.io.
+
+.. note::
+    This tutorial assumes you have a current version of ScanCode.io installed
+    locally on your machine. If you do not have it installed,
+    see our :ref:`installation` guide for instructions.
 
 Requirements
 ------------
+Before you follow the instructions in this tutorial, you need to:
 
-- **ScanCode.io is installed**, see :ref:`installation`
-- **Shell access** on the machine where ScanCode.io is installed
+- Install **ScanCode.io** locally
+- Download the following **package archive** and save it to your home directory: `asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
+- Have **Shell access** on the machine where ScanCode.io is installed
 
-
-Before you start
-----------------
-
-Download the following package archive save this in your home directory:
-`asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
-
-
-Step-by-step
+Instructions
 ------------
 
-- Open a shell in the ScanCode.io installation directory and activate the virtualenv::
+- Open a shell in the ScanCode.io installation directory and activate the
+  virtual environment - **virtualenv**:
+
+.. code-block:: console
 
     $ source bin/activate
 
-- The following command will create a new project named ``asgiref``,
-  add the archive as an input for the project,
-  add the ``scan_codebase`` pipeline, and execute it::
+.. code-block:: console
 
-    $ scanpipe create-project asgiref \
-        --input-file ~/asgiref-3.3.0-py3-none-any.whl \
-        --pipeline scan_codebase \
-        --execute
+    >> (scancodeio) $
+
+- Create a new project named ``asgiref``:
+
+.. code-block:: console
+
+    $ scanpipe create-project asgiref
+
+.. code-block:: console
+
+    >> Project asgiref created with work directory projects/asgiref-072c89db
+
+- Add the package archive to the project workspace's :guilabel:`input/`
+  directory:
+
+.. code-block:: bash
+
+    $ scanpipe add-input --project asgiref --input-file ~/asgiref-3.3.0-py3-none-any.whl
+
+.. code-block:: console
+
+    >> File(s) copied to the project inputs directory:
+      - asgiref-3.3.0-py3-none-any.whl
+
+- Add the ``scan_codebase`` pipeline to your project:
+
+.. code-block:: console
+
+    $ scanpipe add-pipeline --project asgiref scan_codebase
+
+.. code-block:: console
+
+    >> Pipeline(s) added to the project
 
 .. note::
     The content of the :guilabel:`input/` directory will be copied in the
@@ -41,5 +73,36 @@ Step-by-step
     :guilabel:`codebase/` directory in which case the ``--input`` option can be
     omitted.
 
-- The scan results as JSON and CSV will be available in the project
-  :guilabel:`output/` directory.
+- Run the ``scan_codebase`` pipeline on your project. The pipeline execution
+  progress is shown within the following command's output:
+
+.. code-block:: bash
+
+    $ scanpipe execute --project asgiref
+
+.. code-block:: console
+
+    >> Pipeline scan_codebase run in progress..
+       2021-07-12 17:45:53.85 Pipeline [scan_codebase] starting
+       2021-07-12 17:45:53.85 Step [copy_inputs_to_codebase_directory] starting
+       2021-07-12 17:45:53.86 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds
+       2021-07-12 17:45:53.86 Step [run_extractcode] starting
+       [...]
+       2021-07-12 17:46:01.61 Pipeline completed
+
+- Finally, you can view your scan results in JSON or CSV file formats inside
+  the project's :guilabel:`output/` directory.
+
+.. tip::
+    The ``inputs`` and ``pipelines`` can be provided at the same time when
+    calling the ``create-project`` command. For instance, the following command
+    will create a new project named ``asgiref``, add the package archive as the
+    project input, add the ``scan_codebase`` pipeline to the project, and
+    execute it:
+
+.. code-block:: bash
+
+    $ scanpipe create-project asgiref \
+        --input-file ~/asgiref-3.3.0-py3-none-any.whl \
+        --pipeline scan_codebase \
+        --execute

@@ -32,16 +32,16 @@ that are adapted to a software project's unique context and technology platform
 can be difficult. This will require deploying and running multiple specialized
 tools and merge their results with a consistent workflow. Moreover,
 when reusing thousands of open source packages is becoming commonplace,
-code scans pipelines need to be scripted as code and running on servers backed
+code scans pipelines need to be scripted as code is running on servers backed
 by a shared database, not on a laptop.
 
 For instance, when you analyze Docker container images, there could be hundreds
 to thousands of system packages, such as Debian, RPM, Alpine, and application
 packages, including npm, PyPI, Rubygems, Maven, installed in an image
-side-by-side with your own code. Taking care of all these can be
+side-by-side with your own code. Taking care of all this can be
 an extremely hard task, and that's when **ScanCode.io** comes into play to help
 organizing these complex code analysis as scripted pipelines and store their
-results in a uniform database for automated code analysis.
+results in a database for automated code analysis.
 
 
 What is ScanPipe?
@@ -73,9 +73,10 @@ are planning to start a new one, consider the following questions:
 2. **Complexity**: Does the project use many third-party components or technologies?
 3. **Reproducibility**: Is it important that the results are reproducible, traceable, and auditable?
 
-If you answered "yes" to any of the above, keep reading - ScanPipe can help you.
-If the answer is "no" to all of the above, which is a valid scenario, e.g., when you
-are doing small-scale analysis, ScanPipe may provide only limited benefit for you.
+If you answered **"yes"** to any of the above, keep reading - ScanPipe can help
+you. If the answer is **"no"** to all of the above, which is a valid scenario,
+e.g., when you are doing small-scale analysis, ScanPipe may provide only limited
+benefit for you.
 
 The first set of available pipelines helps automate the analysis of Docker
 container images and virtual machine (VM) disk images that often harbor
