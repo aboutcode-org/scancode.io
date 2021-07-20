@@ -105,9 +105,13 @@ class ScanPipeConfig(AppConfig):
         Search for a Pipeline subclass in the provided file `path` and register it
         when found.
         """
-        module_name = path.stem
+        module_name = inspect.getmodulename(path)
         module = SourceFileLoader(module_name, str(path)).load_module()
-        pipeline_classes = inspect.getmembers(module, is_pipeline)
+
+        def is_local_module_pipeline(obj):
+            return is_pipeline(obj) and obj.__module__ == module_name
+
+        pipeline_classes = inspect.getmembers(module, is_local_module_pipeline)
 
         if len(pipeline_classes) > 1:
             raise ImproperlyConfigured(

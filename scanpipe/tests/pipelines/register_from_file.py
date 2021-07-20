@@ -20,10 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines import Pipeline
+from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 
-class RegisterFromFile(Pipeline):
+class RegisterFromFile(DoNothing):
     """
     A pipeline to be registered from its file path.
     """

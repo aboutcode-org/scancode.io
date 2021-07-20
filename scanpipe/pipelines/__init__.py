@@ -63,8 +63,8 @@ class Pipeline:
             return cls.steps()
 
         warnings.warn(
-            "Defining ``steps`` as a tuple is deprecated. "
-            "Use a ``steps(cls)`` classmethod instead."
+            f"Defining ``steps`` as a tuple is deprecated in {cls} "
+            f"Use a ``steps(cls)`` classmethod instead."
         )
         return cls.steps
 

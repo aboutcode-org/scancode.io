@@ -28,6 +28,7 @@ from django.test import TestCase
 from django.test import override_settings
 
 from scanpipe.apps import ScanPipeConfig
+from scanpipe.models import Project
 from scanpipe.tests import license_policies
 from scanpipe.tests import license_policies_index
 from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
@@ -86,3 +87,10 @@ class ScanPipeAppsTest(TestCase):
             RegisterFromFile.__name__,
             scanpipe_app.pipelines.get("register_from_file").__name__,
         )
+
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("register_from_file")
+        pipeline_instance = run.make_pipeline_instance()
+
+        exitcode, output = pipeline_instance.execute()
+        self.assertEqual(0, exitcode)
