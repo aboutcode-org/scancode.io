@@ -18,6 +18,9 @@
   calling XlsxWriter and report and error if the truncated can be truncated.
   https://github.com/nexB/scancode.io/issues/206
 
+- Add support for VMWare Photon-based Docker images and rootfs. This is an RPM-based
+  Linux distribution
+
 ### v21.6.10
 
 - Add support for VM image formats extraction such as VMDK, VDI and QCOW.
