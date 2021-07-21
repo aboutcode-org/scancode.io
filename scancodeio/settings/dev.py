@@ -39,8 +39,3 @@ if IS_TESTS:
     LOGGING["loggers"]["scanner.tasks"]["handlers"] = None
     # Do not pollute the workspace during testing
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
-else:
-    # No API Key needed in dev mode.
-    REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (
-        "rest_framework.permissions.AllowAny",
-    )
