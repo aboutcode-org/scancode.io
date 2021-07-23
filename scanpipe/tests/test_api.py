@@ -44,6 +44,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import package_data1
@@ -346,6 +347,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertIsNone(response.data["task_end_date"])
         self.assertEqual("", response.data["task_output"])
         self.assertIsNone(response.data["execution_time"])
+        self.assertEqual(Run.Status.NOT_STARTED, response.data["status"])
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):

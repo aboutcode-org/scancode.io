@@ -73,6 +73,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
         fields = [
             "url",
             "pipeline_name",
+            "status",
             "description",
             "project",
             "uuid",
