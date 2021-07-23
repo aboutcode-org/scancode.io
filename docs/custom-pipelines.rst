@@ -97,8 +97,8 @@ ones, or remove any of them.
 Custom Pipeline example
 -----------------------
 
-The example below shows a custom pipeline that is based on the built-in :ref:`pipeline_scan_codebase`
-pipeline with an extra reporting step.
+The example below shows a custom pipeline that is based on the built-in
+:ref:`pipeline_scan_codebase` pipeline with an extra reporting step.
 
 Add the following code snippet to a Python file and register the path of
 the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
