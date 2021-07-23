@@ -13,7 +13,7 @@ A **project** encapsulates the analysis of software code:
 - It makes use of one or more **code analysis pipelines** scripts to automate
   the code analysis process.
 - It tracks ``Codebase Resources``, i.e. its **code files and directories**
-- It tracks ``Discovered Packages`` i.e. **system and application packages**
+- It tracks ``Discovered Packages``, i.e. **system and application packages**
   origin and license discovered in the codebase.
 
 In the database, **a project is identified by its unique name**.
@@ -54,15 +54,18 @@ accordingly.
 Those resources can then be **analyzed, scanned, and matched** as needed.
 Analysis results and reports are eventually posted at the end of a pipeline run.
 
-All pipelines are located in the ``scanpipe.pipelines`` module.
-Each pipeline consists of a Python script and includes one subclass of the ``Pipeline`` class.
+All :ref:`built_in_pipelines` are located in the ``scanpipe.pipelines`` module.
+Each pipeline consists of a Python script and includes one subclass of the
+``Pipeline`` class.
 Each step is a method of the ``Pipeline`` class.
 The execution order of the steps - or the sequence of steps execution - is
 declared through the ``steps`` class attribute.
 
+.. tip::
+    Refer to :ref:`custom_pipelines` for adding pipelines to ScanCode.io.
+
 .. note::
     One or more pipelines can be assigned to a project as a sequence.
-
 
 Codebase Resources
 ------------------
@@ -81,7 +84,6 @@ The following are some of the ``CodebaseResource`` attributes:
 .. note::
     Please note that `ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_
     use the same attributes and attribute names for files.
-
 
 Discovered Packages
 -------------------
