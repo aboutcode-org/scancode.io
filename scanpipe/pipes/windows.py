@@ -51,20 +51,31 @@ def tag_uninteresting_windows_codebase_resources(project):
         'System_Delta',
         'NTUSER.DAT',
         'desktop.ini',
+        'BBI',
+        'BCD-Template',
+        'DEFAULT',
+        'DRIVERS',
+        'ELAM',
+        'SAM',
+        'SECURITY',
+        'SOFTWARE',
+        'SYSTEM',
     )
 
     uninteresting_file_extensions = (
         '.lnk',
         '.library-ms',
-        '.LOG1',
-        '.LOG2',
+        '.LOG',
+        '.mui',
+        '.inf_loc',
+        '.NLS',
     )
 
     lookups = Q()
     for file_name in uninteresting_files:
-        lookups |= Q(path__endswith=file_name)
+        lookups |= Q(path__iendswith=file_name)
     for file_extension in uninteresting_file_extensions:
-        lookups |= Q(path__endswith=file_extension)
+        lookups |= Q(path__icontains=file_extension)
 
     qs = project.codebaseresources.no_status()
     qs.filter(lookups).update(status="ignored-not-interesting")
@@ -175,8 +186,6 @@ def tag_known_software(project):
 
 PROGRAM_FILES_DIRS_TO_IGNORE = (
     "Common Files",
-    "Common_Files",
-    "common_files",
     "Microsoft",
 )
 
@@ -188,17 +197,17 @@ def tag_program_files(project):
     """
     qs = project.codebaseresources.no_status()
     # Get all files from Program_Files and Program_Files_(x86)
-    program_files_one_directory_below_pattern = r"(/Files/Program_Files(_\(x86\))?/([^/]+))"
+    program_files_one_directory_below_pattern = r"(/Files/Program Files( \(x86\))?/([^/]+))"
     program_files_one_directory_below_pattern_compiled = re.compile(program_files_one_directory_below_pattern)
     program_files_dirname_by_path = {}
-    lookup = Q(rootfs_path__startswith="/Files/Program_Files") | Q(rootfs_path__startswith="/Files/Program_Files_(x86)")
+    lookup = Q(rootfs_path__startswith="/Files/Program Files") | Q(rootfs_path__startswith="/Files/Program Files (x86)")
     for program_file in qs.filter(lookup):
         _, program_files_subdir, _, dirname, _ = re.split(
             program_files_one_directory_below_pattern_compiled,
             program_file.rootfs_path
         )
         if (program_files_subdir in program_files_dirname_by_path
-                or dirname in PROGRAM_FILES_DIRS_TO_IGNORE):
+                or dirname.lower() in map(str.lower, PROGRAM_FILES_DIRS_TO_IGNORE)):
             continue
         program_files_dirname_by_path[program_files_subdir] = dirname
 
