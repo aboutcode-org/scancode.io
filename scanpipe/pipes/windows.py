@@ -66,7 +66,6 @@ def tag_uninteresting_windows_codebase_resources(project):
         '.lnk',
         '.library-ms',
         '.LOG',
-        '.mui',
         '.inf_loc',
         '.NLS',
     )
