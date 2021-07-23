@@ -3,11 +3,16 @@
 Custom Pipelines
 ================
 
-- A pipeline is a **Python class** that lives in a Python module as a ``.py`` **file**.
+A Pipeline is a Python script that performs code analysis by executing a
+sequence of steps.
+
+- A pipeline is a **Python class** that lives in a Python module as a ``.py``
+  **file**.
 - A pipeline class **always inherits** from the ``Pipeline`` base class
-  :ref:`pipeline_base_class`, or from another existing pipeline class, such as the
-  :ref:`built_in_pipelines`.
-- It **defines steps** using the ``steps`` classmethod.
+  :ref:`pipeline_base_class`, or from other existing pipeline classes, such as
+  the :ref:`built_in_pipelines`.
+- It **defines steps** - execution order of the steps - using the ``steps``
+  classmethod.
 
 See :ref:`pipelines_concept` for more details.
 
@@ -15,17 +20,18 @@ Pipeline registration
 ---------------------
 
 Built-in pipelines are located in :guilabel:`scanpipe/pipelines/` directory and
-registered during the ScanCode.io installation.
+are registered during the ScanCode.io installation.
 
-Custom pipelines can be added as Python files ``.py`` in the directories defined in
-the :ref:`scancodeio_settings_pipelines_dirs` setting and will be automatically
-registered at runtime.
+Whereas custom pipelines are added as Python files ``.py`` in the directories
+defined in the :ref:`scancodeio_settings_pipelines_dirs` setting. Custom
+pipelines are registered at runtime.
 
 Create a Pipeline
 -----------------
 
-Create a new Python file ``my_pipeline.py`` in the and make sure the directory is
-registered in the :ref:`scancodeio_settings_pipelines_dirs` setting.
+Create a new Python file ``my_pipeline.py``, and make sure to include the full
+path of the new pipeline directory in the :ref:`scancodeio_settings_pipelines_dirs`
+setting.
 
 .. code-block:: python
 
@@ -48,14 +54,15 @@ registered in the :ref:`scancodeio_settings_pipelines_dirs` setting.
 
 
 .. tip::
-    Have a look in the :guilabel:`scanpipe/pipelines/` directory for more pipeline
+    You can view the :guilabel:`scanpipe/pipelines/` directory for more pipeline
     examples.
 
 Modify existing Pipelines
 -------------------------
 
-Any existing pipeline can be reused as a base and customized.
-You may want to override existing steps, add new ones, and remove some.
+Existing pipelines are flexible and can be reused as a base for custom pipelines
+, i.e. be customized. For instance, you can override existing steps, add new
+ones, or remove any of them.
 
 .. code-block:: python
 
@@ -87,14 +94,14 @@ You may want to override existing steps, add new ones, and remove some.
             pass
 
 
-Report step example
--------------------
+Custom Pipeline example
+-----------------------
 
-Example of a custom pipeline based on the built-in :ref:`pipeline_scan_codebase` one
-with an extra reporting step.
+The example below shows a custom pipeline that is based on the built-in
+:ref:`pipeline_scan_codebase` pipeline with an extra reporting step.
 
-Add the following content to a Python file and register its directory in the
-:ref:`scancodeio_settings_pipelines_dirs`.
+Add the following code snippet to a Python file and register the path of
+the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
 
 .. code-block:: python
 

@@ -1,7 +1,7 @@
 .. _scanpipe_command_line:
 
-Management Commands
-===================
+Command Line Interface
+======================
 
 The main entry point is the :guilabel:`scanpipe` command which is available
 directly when you are in the activated virtualenv or at this path:
