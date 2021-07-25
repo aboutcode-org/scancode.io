@@ -41,7 +41,7 @@ def scan_directory(location):
     return result
 
 
-def scan_file(classifier, location) -> dict:
+def scan_file(classifier, location):
     """
     Run a license and copyright scan on file at `location`,
     using golicense-classifier.
@@ -60,7 +60,7 @@ def scan_file(classifier, location) -> dict:
 
 def scan_and_update_codebase_resources(project, scan_threshold=0.8):
     """
-    Run Golicense-Classifier on `project` and save results in CodebaseResources model
+    Run Golicense-classifier on `project` and save results in CodebaseResources model
 
     Parameter
     ----------
@@ -68,7 +68,8 @@ def scan_and_update_codebase_resources(project, scan_threshold=0.8):
             Instance of `Project` to scan
 
     scan_threshold : float
-            Threshold for license scan results. `0 < scan_threshold <= 1.0`
+            Threshold for license scan results `0 < scan_threshold <= 1.0`.
+            Higher threshold gives more accurate results but takes more time in return.
     """
     classifier = LicenseClassifier(threshold=scan_threshold)
 
