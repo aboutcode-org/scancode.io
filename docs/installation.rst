@@ -16,11 +16,11 @@ Supported Platforms
     #. **Debian-based** Linux distributions
     #. **MacOS** 10.14 and up
 
-In addition, ScanCode.io can also be run through **Docker**; this is the preferred
-approach **on Windows**. Refer to the :ref:`docker_image` chapter for details.
+In addition, ScanCode.io can also be run with **Docker**; this is the preferred
+approach **on Windows**. Refer to the :ref:`run_docker` chapter for details.
 
 .. warning::
-   ScanCode.io can **Only** be run on Windows through `Docker <https://www.docker.com/>`_ or
+   ScanCode.io can **only** be run on Windows through `Docker <https://www.docker.com/>`_ or
    `Virtual Machines <https://www.virtualbox.org/>`_.
    However, to avoid any installation issues, it is **Not recommended** to run ScanCode.io on
    Windows machines.
@@ -67,7 +67,6 @@ latest/getting-started/install.html#prerequisites>`_ for more details.
 
     make dev
 
-
  .. note::
     You can specify the Python version during the ``make dev`` step using the following command::
 
@@ -105,7 +104,6 @@ You can validate the ScanCode.io installation by running the tests suite::
 
     make test
 
-
 Web Application
 ---------------
 
@@ -116,9 +114,11 @@ local webserver and access the app with::
 
 Then open your web browser and visit: http://127.0.0.1:8001/ to access the web application.
 
+:ref:`user_interface`
+
 .. note::
    Congratulations, you are now ready to use ScanCode.io, and you can move onto the **Tutorials**
-   section starting with the :ref:`scanpipe_tutorial_1` tutorial.
+   section starting with the :ref:`tutorial_1` tutorial.
 
 Upgrading
 ---------
@@ -129,3 +129,4 @@ If you already have the ScanCode.io repo cloned, you can upgrade to the latest v
     git pull
     make dev
     make migrate
+

@@ -1,6 +1,6 @@
 .. _scancodeio_settings:
 
-ScanCode.io Settings
+Application Settings
 ====================
 
 The ``.env`` file is created at the root of the ScanCode.io codebase during its
@@ -73,6 +73,17 @@ The following example explicitly define a value for timeout and set the number
 of parallel processes to 4::
 
     SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 120
+
+.. _scancodeio_settings_pipelines_dirs:
+
+SCANCODEIO_PIPELINES_DIRS
+-------------------------
+
+This setting defines the additional locations ScanCode.io will search for pipelines.
+This should be set to a list of comma-separated strings that contain full paths to your additional
+pipelines directories::
+
+    SCANCODEIO_PIPELINES_DIRS=/var/scancodeio/pipelines/,/home/user/pipelines/
 
 SCANCODEIO_POLICIES_FILE
 ------------------------

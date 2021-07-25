@@ -20,22 +20,17 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import tempfile
-from pathlib import Path
-
-# Using exec() instead of "import *" to avoid any side effects
-with Path(__file__).resolve().parent.joinpath("base.py").open() as parent_config:
-    exec(parent_config.read())
+from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-TEMPLATES[0]["OPTIONS"]["debug"] = True
+class RegisterFromFile(DoNothing):
+    """
+    A pipeline to be registered from its file path.
+    """
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    @classmethod
+    def steps(cls):
+        return (cls.step1,)
 
-# The following loggers will be output to the console, except if running the tests.
-if IS_TESTS:
-    LOGGING["loggers"]["scanner.tasks"]["handlers"] = None
-    # Do not pollute the workspace during testing
-    SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
+    def step1(self):
+        pass

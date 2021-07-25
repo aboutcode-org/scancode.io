@@ -1,6 +1,6 @@
 .. _scanpipe_command_line:
 
-ScanPipe Commands Help
+Command Line Interface
 ======================
 
 The main entry point is the :guilabel:`scanpipe` command which is available

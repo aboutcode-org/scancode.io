@@ -3,6 +3,10 @@
 
 ### unreleased
 
+- Add ability to register custom pipelines through a new SCANCODEIO_PIPELINES_DIRS
+  setting.
+  https://github.com/nexB/scancode.io/issues/237
+
 - Add a pipeline `scan_package.ScanPackage` to scan a single package archive with
   ScanCode-toolkit.
   https://github.com/nexB/scancode.io/issues/25
@@ -17,6 +21,9 @@
 - Improve XLSX creation. We now check that the content is correctly added before
   calling XlsxWriter and report and error if the truncated can be truncated.
   https://github.com/nexB/scancode.io/issues/206
+
+- Add support for VMWare Photon-based Docker images and rootfs. This is an RPM-based
+  Linux distribution
 
 ### v21.6.10
 

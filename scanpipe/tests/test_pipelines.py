@@ -33,7 +33,6 @@ from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
-from scanpipe.pipelines import scan_package
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
@@ -122,6 +121,11 @@ class ScanPipePipelinesTest(TestCase):
         self.assertFalse(is_pipeline(Pipeline))
         self.assertTrue(is_pipeline(DoNothing))
 
+        class SubSubClass(DoNothing):
+            pass
+
+        self.assertTrue(is_pipeline(SubSubClass))
+
     def test_scanpipe_pipelines_class_get_graph(self):
         expected = [
             {"doc": "Step1 doc.", "name": "step1"},
@@ -160,8 +164,8 @@ class ScanPipePipelinesTest(TestCase):
             caught_warning = caught_warnings[0]
 
         expected = (
-            "Defining ``steps`` as a tuple is deprecated. "
-            "Use a ``steps(cls)`` classmethod instead."
+            f"Defining ``steps`` as a tuple is deprecated in {StepsAsAttribute} "
+            f"Use a ``steps(cls)`` classmethod instead."
         )
         self.assertEqual(expected, str(caught_warning.message))
 

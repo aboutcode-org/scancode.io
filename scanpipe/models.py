@@ -35,6 +35,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models import TextField
 from django.db.models.functions import Cast
+from django.db.models.functions import Lower
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
@@ -848,6 +849,13 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_no_licenses(self):
         return self.filter(licenses=[])
 
+    def licenses_categories(self, categories):
+        return self.json_list_contains(
+            field_name="licenses",
+            key="category",
+            values=categories,
+        )
+
     def unknown_license(self):
         return self.json_field_contains("license_expressions", "unknown")
 
@@ -862,6 +870,19 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             .annotate(**{f"{field_name}_as_text": Cast(field_name, TextField())})
             .filter(**{f"{field_name}_as_text__contains": value})
         )
+
+    def json_list_contains(self, field_name, key, values):
+        """
+        Filter on a JSONField `field_name` that stores a list of dictionaries.
+
+        json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
+        """
+        lookups = Q()
+
+        for value in values:
+            lookups |= Q(**{f"{field_name}__contains": [{key: value}]})
+
+        return self.filter(lookups)
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -1140,12 +1161,35 @@ class CodebaseResource(
         Return a QuerySet of direct children CodebaseResource objects using a
         Database query on this CodebaseResource `path`.
 
+        Paths are returned in lower-cased sorted path order to reflect the
+        behavior of `commoncode.resource.Resource.children()`
+        https://github.com/nexB/commoncode/blob/76a03d9c1cd2a582dcec4351c768c3ef646e1b31/src/commoncode/resource.py#L1199
+
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.VirtualCodebase class API.
         """
         exactly_one_sub_directory = "[^/]+$"
         children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
-        return self.descendants().filter(path__regex=children_regex)
+        return (
+            self.descendants()
+            .filter(path__regex=children_regex)
+            .order_by(Lower("path"))
+        )
+
+    def walk(self, topdown=True):
+        """
+        Yield all descendant Resources of this Resource. Does not include self.
+
+        Walk the tree top-down, depth-first if `topdown` is True, otherwise walk
+        bottom-up.
+        """
+        for child in self.children().iterator():
+            if topdown:
+                yield child
+            for subchild in child.walk(topdown=topdown):
+                yield subchild
+            if not topdown:
+                yield child
 
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project_id, self.pk])

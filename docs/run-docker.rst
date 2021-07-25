@@ -1,7 +1,10 @@
-.. _docker_image:
+.. _run_docker:
 
-Docker image
-============
+Run with Docker
+===============
+
+Running ScanCode.io with Docker containers is the preferred setup and ensure that all
+the features are available and working properly.
 
 Get Docker
 ----------
@@ -23,10 +26,9 @@ create an environment file, and build the Docker image::
     make envfile
     docker-compose build
 
-
 .. note::
-    The image will need to be re-build when the ScanCode.io app source code if
-    modified or updated.
+    The image will need to be re-build when the ScanCode.io source code is modified or
+    updated.
 
 Run the Image
 -------------
@@ -34,7 +36,6 @@ Run the Image
 Run your image as a container::
 
     docker-compose up
-
 
 At this point, the ScanCode.io app should be running at port 80 on your Docker host.
 Go to http://localhost/ on a web browser to access the web UI.
@@ -53,7 +54,6 @@ You can also execute a one-off ``scanpipe`` command through the Docker command l
 interface, for example::
 
     docker-compose run web ./manage.py create-project project_name
-
 
 .. note::
     Refer to :ref:`scanpipe_command_line` for the full list of commands.
