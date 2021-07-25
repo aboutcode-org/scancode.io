@@ -803,7 +803,7 @@ class ScanPipePipesTest(TestCase):
             "files",
         ]
         self.assertEqual(sorted(expected_keys), sorted(scan_results.keys()))
-        self.assertEqual(10, len(scan_results.get("files", [])))
+        self.assertEqual(11, len(scan_results.get("files", [])))
 
     def test_scanpipe_pipes_glc_scan_and_update_codebase_resources(self):
         project1 = Project.objects.create(name="Analysis")
