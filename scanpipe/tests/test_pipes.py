@@ -762,7 +762,8 @@ class ScanPipePipesTest(TestCase):
         resource1 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/example.lnk",
-            rootfs_path="/Files/example.lnk"
+            rootfs_path="/Files/example.lnk",
+            extension=".lnk"
         )
         resource2 = CodebaseResource.objects.create(
             project=p1,
@@ -772,12 +773,14 @@ class ScanPipePipesTest(TestCase):
         resource3 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/example.dat",
-            rootfs_path="/Files/example.dat"
+            rootfs_path="/Files/example.dat",
+            extension=".dat"
         )
         resource4 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/User/Test/foo.dat",
-            rootfs_path="/Files/User/Test/foo.dat"
+            rootfs_path="/Files/User/Test/foo.dat",
+            extension=".dat"
         )
 
         windows.tag_uninteresting_windows_codebase_resources(p1)

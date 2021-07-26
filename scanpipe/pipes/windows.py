@@ -74,7 +74,7 @@ def tag_uninteresting_windows_codebase_resources(project):
     for file_name in uninteresting_files:
         lookups |= Q(path__iendswith=file_name)
     for file_extension in uninteresting_file_extensions:
-        lookups |= Q(path__icontains=file_extension)
+        lookups |= Q(extension__icontains=file_extension)
 
     qs = project.codebaseresources.no_status()
     qs.filter(lookups).update(status="ignored-not-interesting")
