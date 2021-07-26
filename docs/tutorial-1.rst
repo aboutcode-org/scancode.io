@@ -1,10 +1,10 @@
 .. _tutorial_1:
 
-Analyze Docker Image (command line)
+Analyze Docker Image (Command Line)
 ===================================
 
 In this tutorial, you will learn by example how to use ScanCode.io to analyze
-a test Docker image by following the given steps and, along the way,
+a test Docker image by following the steps below and, along the way,
 learn some of the ScanCode.io basic commands.
 
 .. note::

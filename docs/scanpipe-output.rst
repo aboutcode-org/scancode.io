@@ -32,6 +32,11 @@ project in your preferred output format within the project page.
 
 .. image:: images/output-download-results.png
 
+You can also download the generated results—for any existing project—from the
+ScanCode.io home screen.
+
+.. image:: images/output-UI.png
+
 Understanding Output Files
 --------------------------
 As previously mentioned, the output file format is set using the ``–-format``
@@ -235,6 +240,7 @@ The **Discovered Packages** data sheet includes details about all packages found
 
 .. image:: images/output-xlsx-packages.png
 
-while the **Codebase Resources** sheet includes information about each individual files:
+while the **Codebase Resources** sheet includes information about each
+individual file:
 
 .. image:: images/output-xlsx-resources.png

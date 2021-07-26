@@ -25,6 +25,8 @@ you’ll find information on:
 
     tutorial-1
     tutorial-2
+    tutorial-3
+    tutorial-4
 
 .. toctree::
     :maxdepth: 2

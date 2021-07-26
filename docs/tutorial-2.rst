@@ -1,6 +1,6 @@
 .. _tutorial_2:
 
-Analyze Codebase (command line)
+Analyze Codebase (Command Line)
 ===============================
 
 The focus of this tutorial is to guide you through scanning a codebase package
