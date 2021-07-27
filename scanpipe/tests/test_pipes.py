@@ -872,6 +872,45 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("", resource5.status)
         self.assertEqual("", resource6.status)
 
+    def test_scanpipe_pipes_rootfs_tag_ignorable_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/cmake_install.cmake",
+            rootfs_path="/user/cmake_install.cmake"
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/example.pot",
+            rootfs_path="/user/example.pot"
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/__pycache__/foo.pyc",
+            rootfs_path="/user/__pycache__/foo.pyc"
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/foo.css.map",
+            rootfs_path="/user/foo.css.map"
+        )
+        resource5 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/should-not-be-ignored.txt",
+            rootfs_path="/user/should-not-be-ignored.txt"
+        )
+        rootfs.tag_ignorable_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        resource5.refresh_from_db()
+        self.assertEqual("ignored-default-ignores", resource1.status)
+        self.assertEqual("ignored-default-ignores", resource2.status)
+        self.assertEqual("ignored-default-ignores", resource3.status)
+        self.assertEqual("ignored-default-ignores", resource4.status)
+        self.assertEqual("", resource5.status)
+
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
     """

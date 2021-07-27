@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import fnmatch
 import logging
 import os
 from functools import partial
@@ -28,6 +29,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 import attr
+from commoncode.ignore import default_ignores
 from container_inspector.distro import Distro
 
 from scanpipe import pipes
@@ -338,3 +340,21 @@ def tag_uninteresting_codebase_resources(project):
 
     qs = project.codebaseresources.no_status()
     qs.filter(lookups).update(status="ignored-not-interesting")
+
+
+def tag_ignorable_codebase_resources(project):
+    """
+    Using the glob patterns from commoncode.ignore of ignorable files/directories,
+    tag codebase resources from `project` if their paths match an ignorable pattern.
+    """
+    lookups = Q()
+    for pattern in default_ignores.keys():
+        # Translate glob pattern to regex
+        translated_pattern = fnmatch.translate(pattern)
+        # postgresql does not like parts of Python regex
+        if translated_pattern.startswith("(?s"):
+            translated_pattern = translated_pattern.replace("(?s", "(?")
+        lookups |= Q(rootfs_path__icontains=pattern)
+        lookups |= Q(rootfs_path__iregex=translated_pattern)
+    qs = project.codebaseresources.no_status()
+    qs.filter(lookups).update(status='ignored-default-ignores')
