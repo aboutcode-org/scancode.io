@@ -5,7 +5,7 @@ Built-in Pipelines
 
 As you may already know that pipelines are Python scripts that perform code
 analysis by executing a sequence of steps. ScanCode.io offers the following
-built-in—available—pipelines: 
+built-in—available—pipelines:
 
 .. _pipeline_base_class:
 

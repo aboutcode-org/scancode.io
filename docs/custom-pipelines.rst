@@ -3,7 +3,7 @@
 Custom Pipelines
 ================
 
-Pipelines are Python scripts; each contains a set of instructions that have to 
+Pipelines are Python scripts; each contains a set of instructions that have to
 be executed in an orderly manner—pipe-like nature—to perform a code analysis.
 
 - A pipeline is a **Python class** that lives in a Python module as a ``.py``

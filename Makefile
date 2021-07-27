@@ -25,7 +25,7 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude="migrations|data|docs" .
+BLACK_ARGS=--exclude="migrations|data" .
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -59,16 +59,6 @@ envfile:
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 
-check:
-	@echo "-> Run pycodestyle (PEP8) validation"
-	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings,data,pipelines,var .
-	@echo "-> Run isort imports ordering validation"
-	@${ACTIVATE} isort --check-only .
-	@echo "-> Run black validation"
-	@${ACTIVATE} black --check ${BLACK_ARGS}
-	@echo "-> Run doc8 validation"
-	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
-
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"
 	bin/isort .
@@ -77,7 +67,19 @@ black:
 	@echo "-> Apply black code formatter"
 	bin/black ${BLACK_ARGS}
 
-valid: isort black
+doc8:
+	@echo "-> Run doc8 validation"
+	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
+
+valid: isort black doc8
+
+check: doc8
+	@echo "-> Run pycodestyle (PEP8) validation"
+	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings,data,pipelines,var .
+	@echo "-> Run isort imports ordering validation"
+	@${ACTIVATE} isort --check-only .
+	@echo "-> Run black validation"
+	@${ACTIVATE} black --check ${BLACK_ARGS}
 
 clean:
 	@echo "-> Clean the Python env"
