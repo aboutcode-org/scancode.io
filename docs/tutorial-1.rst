@@ -138,7 +138,7 @@ Instructions
   text editor/file viewer.
 
 .. note::
-    To understand the output of the pipeline execution, see our :ref:`scanpipe_output`
+    To understand the output of the pipeline execution, see our :ref:`output_files`
     section for details.
 
 .. tip::

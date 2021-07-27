@@ -36,7 +36,7 @@ you’ll find information on:
     built-in-pipelines
     custom-pipelines
     scanpipe-pipes
-    scanpipe-output
+    output-files
     scanpipe-command-line
     scanpipe-api
     scancodeio-settings
