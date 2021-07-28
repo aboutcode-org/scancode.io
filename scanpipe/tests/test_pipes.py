@@ -763,24 +763,24 @@ class ScanPipePipesTest(TestCase):
             project=p1,
             path="root/Files/example.lnk",
             rootfs_path="/Files/example.lnk",
-            extension=".lnk"
+            extension=".lnk",
         )
         resource2 = CodebaseResource.objects.create(
             project=p1,
             path="root/Hives/Software_Delta",
-            rootfs_path="/Hives/Software_Delta"
+            rootfs_path="/Hives/Software_Delta",
         )
         resource3 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/example.dat",
             rootfs_path="/Files/example.dat",
-            extension=".dat"
+            extension=".dat",
         )
         resource4 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/User/Test/foo.dat",
             rootfs_path="/Files/User/Test/foo.dat",
-            extension=".dat"
+            extension=".dat",
         )
 
         windows.tag_uninteresting_windows_codebase_resources(p1)
@@ -798,22 +798,22 @@ class ScanPipePipesTest(TestCase):
         resource1 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Python/py.exe",
-            rootfs_path="/Files/Python/py.exe"
+            rootfs_path="/Files/Python/py.exe",
         )
         resource2 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Python27/python2.exe",
-            rootfs_path="/Files/Python27/python2.exe"
+            rootfs_path="/Files/Python27/python2.exe",
         )
         resource3 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Python3/python3.exe",
-            rootfs_path="/Files/Python3/python3.exe"
+            rootfs_path="/Files/Python3/python3.exe",
         )
         resource4 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Python39/python3.9",
-            rootfs_path="/Files/Python39/python3.9.exe"
+            rootfs_path="/Files/Python39/python3.9.exe",
         )
 
         windows.tag_known_software(p1)
@@ -831,32 +831,32 @@ class ScanPipePipesTest(TestCase):
         resource1 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Program Files (x86)/Microsoft/example.exe",
-            rootfs_path="/Files/Program Files (x86)/Microsoft/example.exe"
+            rootfs_path="/Files/Program Files (x86)/Microsoft/example.exe",
         )
         resource2 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Program Files/Microsoft/example.exe",
-            rootfs_path="/Files/Program Files/Microsoft/example.exe"
+            rootfs_path="/Files/Program Files/Microsoft/example.exe",
         )
         resource3 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Program Files (x86)/7Zip/7z.exe",
-            rootfs_path="/Files/Program Files (x86)/7Zip/7z.exe"
+            rootfs_path="/Files/Program Files (x86)/7Zip/7z.exe",
         )
         resource4 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Program Files/7Zip/7z.exe",
-            rootfs_path="/Files/Program Files/7Zip/7z.exe"
+            rootfs_path="/Files/Program Files/7Zip/7z.exe",
         )
         resource5 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Program Files (x86)/common files/sample.dat",
-            rootfs_path="/Files/Program Files (x86)/common files/sample.dat"
+            rootfs_path="/Files/Program Files (x86)/common files/sample.dat",
         )
         resource6 = CodebaseResource.objects.create(
             project=p1,
             path="root/Files/Program Files/common files/sample.dat",
-            rootfs_path="/Files/Program Files/common files/sample.dat"
+            rootfs_path="/Files/Program Files/common files/sample.dat",
         )
         windows.tag_program_files(p1)
         resource1.refresh_from_db()
@@ -877,27 +877,23 @@ class ScanPipePipesTest(TestCase):
         resource1 = CodebaseResource.objects.create(
             project=p1,
             path="root/user/cmake_install.cmake",
-            rootfs_path="/user/cmake_install.cmake"
+            rootfs_path="/user/cmake_install.cmake",
         )
         resource2 = CodebaseResource.objects.create(
-            project=p1,
-            path="root/user/example.pot",
-            rootfs_path="/user/example.pot"
+            project=p1, path="root/user/example.pot", rootfs_path="/user/example.pot"
         )
         resource3 = CodebaseResource.objects.create(
             project=p1,
             path="root/user/__pycache__/foo.pyc",
-            rootfs_path="/user/__pycache__/foo.pyc"
+            rootfs_path="/user/__pycache__/foo.pyc",
         )
         resource4 = CodebaseResource.objects.create(
-            project=p1,
-            path="root/user/foo.css.map",
-            rootfs_path="/user/foo.css.map"
+            project=p1, path="root/user/foo.css.map", rootfs_path="/user/foo.css.map"
         )
         resource5 = CodebaseResource.objects.create(
             project=p1,
             path="root/user/should-not-be-ignored.txt",
-            rootfs_path="/user/should-not-be-ignored.txt"
+            rootfs_path="/user/should-not-be-ignored.txt",
         )
         rootfs.tag_ignorable_codebase_resources(p1)
         resource1.refresh_from_db()

@@ -24,10 +24,10 @@ import re
 
 from django.db.models import Q
 
-from scanpipe import pipes
-
 from packagedcode import win_reg
 from packagedcode.models import Package
+
+from scanpipe import pipes
 
 
 def package_getter(root_dir, **kwargs):
@@ -44,30 +44,30 @@ def tag_uninteresting_windows_codebase_resources(project):
     Tag known uninteresting files as uninteresting
     """
     uninteresting_files = (
-        'DefaultUser_Delta',
-        'Sam_Delta',
-        'Security_Delta',
-        'Software_Delta',
-        'System_Delta',
-        'NTUSER.DAT',
-        'desktop.ini',
-        'BBI',
-        'BCD-Template',
-        'DEFAULT',
-        'DRIVERS',
-        'ELAM',
-        'SAM',
-        'SECURITY',
-        'SOFTWARE',
-        'SYSTEM',
+        "DefaultUser_Delta",
+        "Sam_Delta",
+        "Security_Delta",
+        "Software_Delta",
+        "System_Delta",
+        "NTUSER.DAT",
+        "desktop.ini",
+        "BBI",
+        "BCD-Template",
+        "DEFAULT",
+        "DRIVERS",
+        "ELAM",
+        "SAM",
+        "SECURITY",
+        "SOFTWARE",
+        "SYSTEM",
     )
 
     uninteresting_file_extensions = (
-        '.lnk',
-        '.library-ms',
-        '.LOG',
-        '.inf_loc',
-        '.NLS',
+        ".lnk",
+        ".library-ms",
+        ".LOG",
+        ".inf_loc",
+        ".NLS",
     )
 
     lookups = Q()
@@ -92,7 +92,9 @@ def tag_installed_package_files(project, root_dir_pattern, package):
     # these files to be part of the Package `package` and tag these files as
     # such
     if installed_package_files:
-        created_package = pipes.update_or_create_package(project=project, package_data=package.to_dict())
+        created_package = pipes.update_or_create_package(
+            project=project, package_data=package.to_dict()
+        )
         for installed_package_file in installed_package_files:
             installed_package_file.discovered_packages.add(created_package)
             installed_package_file.status = "installed-package"
@@ -114,57 +116,63 @@ def tag_known_software(project):
     """
     qs = project.codebaseresources.no_status()
     python_root_directory_name_pattern = r"/Files/Python(\d*)"
-    python_root_directory_name_pattern_compiled = re.compile(python_root_directory_name_pattern)
+    python_root_directory_name_pattern_compiled = re.compile(
+        python_root_directory_name_pattern
+    )
     python_paths_by_versions = {}
-    for python_codebase_resource in qs.filter(rootfs_path__regex=python_root_directory_name_pattern):
+    for python_codebase_resource in qs.filter(
+        rootfs_path__regex=python_root_directory_name_pattern
+    ):
         _, version, _ = re.split(
             python_root_directory_name_pattern_compiled,
-            python_codebase_resource.rootfs_path
+            python_codebase_resource.rootfs_path,
         )
         if not version:
-            version = 'nv'
+            version = "nv"
         if version in python_paths_by_versions:
             continue
-        if version != 'nv':
-            version_with_dots = '.'.join(digit for digit in version)
-            python_paths_by_versions[version_with_dots] = f'/Files/Python{version}'
+        if version != "nv":
+            version_with_dots = ".".join(digit for digit in version)
+            python_paths_by_versions[version_with_dots] = f"/Files/Python{version}"
         else:
-            python_paths_by_versions[version] = '/Files/Python'
+            python_paths_by_versions[version] = "/Files/Python"
 
     for python_version, python_path in python_paths_by_versions.items():
         python_package = Package(
-                type="windows-program",
-                name="Python",
-                version=python_version,
-                license_expression="python",
-                copyright="Copyright (c) Python Software Foundation",
-                homepage_url="https://www.python.org/"
+            type="windows-program",
+            name="Python",
+            version=python_version,
+            license_expression="python",
+            copyright="Copyright (c) Python Software Foundation",
+            homepage_url="https://www.python.org/",
         )
         tag_installed_package_files(
-            project=project,
-            root_dir_pattern=python_path,
-            package=python_package
+            project=project, root_dir_pattern=python_path, package=python_package
         )
 
     qs = project.codebaseresources.no_status()
     openjdk_root_directory_name_pattern = r"/Files/(open)?jdk(-((\d*)(\.\d+)*))*"
-    openjdk_root_directory_name_pattern_compiled = re.compile(openjdk_root_directory_name_pattern)
+    openjdk_root_directory_name_pattern_compiled = re.compile(
+        openjdk_root_directory_name_pattern
+    )
     openjdk_paths_by_versions = {}
-    for openjdk_codebase_resource in qs.filter(rootfs_path__regex=openjdk_root_directory_name_pattern):
+    for openjdk_codebase_resource in qs.filter(
+        rootfs_path__regex=openjdk_root_directory_name_pattern
+    ):
         _, open_prefix, _, openjdk_version, _, _, _ = re.split(
             openjdk_root_directory_name_pattern_compiled,
-            openjdk_codebase_resource.rootfs_path
+            openjdk_codebase_resource.rootfs_path,
         )
         if not openjdk_version:
-            openjdk_version = 'nv'
+            openjdk_version = "nv"
         if not open_prefix:
-            open_prefix = ''
+            open_prefix = ""
         if openjdk_version in openjdk_paths_by_versions:
             continue
-        if openjdk_version != 'nv':
-            openjdk_path = f'/Files/{open_prefix}jdk-{openjdk_version}'
+        if openjdk_version != "nv":
+            openjdk_path = f"/Files/{open_prefix}jdk-{openjdk_version}"
         else:
-            openjdk_path = f'/Files/{open_prefix}jdk'
+            openjdk_path = f"/Files/{open_prefix}jdk"
         openjdk_paths_by_versions[openjdk_version] = openjdk_path
 
     for openjdk_version, openjdk_path in openjdk_paths_by_versions.items():
@@ -177,9 +185,7 @@ def tag_known_software(project):
             homepage_url="http://openjdk.java.net/",
         )
         tag_installed_package_files(
-            project=project,
-            root_dir_pattern=openjdk_path,
-            package=openjdk_package
+            project=project, root_dir_pattern=openjdk_path, package=openjdk_package
         )
 
 
@@ -196,28 +202,36 @@ def tag_program_files(project):
     """
     qs = project.codebaseresources.no_status()
     # Get all files from Program_Files and Program_Files_(x86)
-    program_files_one_directory_below_pattern = r"(/Files/Program Files( \(x86\))?/([^/]+))"
-    program_files_one_directory_below_pattern_compiled = re.compile(program_files_one_directory_below_pattern)
+    program_files_one_directory_below_pattern = (
+        r"(/Files/Program Files( \(x86\))?/([^/]+))"
+    )
+    program_files_one_directory_below_pattern_compiled = re.compile(
+        program_files_one_directory_below_pattern
+    )
     program_files_dirname_by_path = {}
-    lookup = Q(rootfs_path__startswith="/Files/Program Files") | Q(rootfs_path__startswith="/Files/Program Files (x86)")
+    lookup = Q(rootfs_path__startswith="/Files/Program Files") | Q(
+        rootfs_path__startswith="/Files/Program Files (x86)"
+    )
     for program_file in qs.filter(lookup):
         _, program_files_subdir, _, dirname, _ = re.split(
-            program_files_one_directory_below_pattern_compiled,
-            program_file.rootfs_path
+            program_files_one_directory_below_pattern_compiled, program_file.rootfs_path
         )
-        if (program_files_subdir in program_files_dirname_by_path
-                or dirname.lower() in map(str.lower, PROGRAM_FILES_DIRS_TO_IGNORE)):
+        if (
+            program_files_subdir in program_files_dirname_by_path
+            or dirname.lower() in map(str.lower, PROGRAM_FILES_DIRS_TO_IGNORE)
+        ):
             continue
         program_files_dirname_by_path[program_files_subdir] = dirname
 
-    for program_root_dir, program_root_dir_name in program_files_dirname_by_path.items():
+    for (
+        program_root_dir,
+        program_root_dir_name,
+    ) in program_files_dirname_by_path.items():
         package = Package(
             type="windows-program",
             name=program_root_dir_name,
             version="nv",
         )
         tag_installed_package_files(
-            project=project,
-            root_dir_pattern=program_root_dir,
-            package=package
+            project=project, root_dir_pattern=program_root_dir, package=package
         )

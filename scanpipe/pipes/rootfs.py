@@ -357,4 +357,4 @@ def tag_ignorable_codebase_resources(project):
         lookups |= Q(rootfs_path__icontains=pattern)
         lookups |= Q(rootfs_path__iregex=translated_pattern)
     qs = project.codebaseresources.no_status()
-    qs.filter(lookups).update(status='ignored-default-ignores')
+    qs.filter(lookups).update(status="ignored-default-ignores")
