@@ -33,7 +33,7 @@ Instructions
 ------------
 
 - From the homepage, click on the **"New Project"** button to create a new
-  project named ``alpine``. You will be directed to the **"Create a Project"**
+  project named ``alpine-httpie``. You will be directed to the **"Create a Project"**
   page where you need to fill in the new project's details.
 - Paste the input Docker image's URL,
   `docker://alpine/httpie <https://hub.docker.com/r/alpine/httpie/>`_,
@@ -58,11 +58,11 @@ Instructions
     pipeline in one operation, the process may take few minutes before it
     completes.
 
-The previous screenshot shows the ScanCode.io home screen with the new "alpine"
-project and other existing projects. The home screen also shows a summary of
-the number of **Packages**, **Code Resources**, and **Errors**—if any—discovered
-during the scan process. It also contains any **Pipelines** used and their
-execution status, i.e.:
+The previous screenshot shows the ScanCode.io home screen with the new
+"alpine-httpie" project and other existing projects. The home screen also shows
+a summary of the number of **Packages**, **Code Resources**, and
+**Errors**—if any—discovered during the scan process. It also contains any
+**Pipelines** used and their execution status, i.e.:
 
  - **Not started**
  - **Queued**
@@ -70,8 +70,8 @@ execution status, i.e.:
  - **Success**
  - **Failure**
 
-Plus, the ability to download the generated results in **JSON** and **Excel (XLSX)**
-file formats, covered in :ref:`output_files`.
+Plus, the ability to download the generated results in **JSON** and
+**Excel (XLSX)** file formats, covered in :ref:`output_files`.
 
 .. tip::
     Refer to the complementary :ref:`tutorial_4` page, to understand this

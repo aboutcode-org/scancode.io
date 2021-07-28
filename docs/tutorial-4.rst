@@ -4,13 +4,13 @@ Review Scan Results (Web UI)
 ============================
 
 This chapter is complementary to the :ref:`tutorial_3` tutorial, and the output
-shown here is the generated results of that tutorial's pipeline run.
+shown here is the generated results of the tutorial's pipeline run.
 The goal here is to guide you on how to understand and review your scan
 results using the ScanCode.io web interface.
 
 .. tip::
     As a perquisite, follow the :ref:`tutorial_3` tutorial to have a better
-    understanding of the results included here.
+    understanding of the information included here.
 
 .. image:: images/tutorial-4-project-list.png
 
@@ -51,8 +51,8 @@ on the **Packages** number field.
 Resources
 ---------
 Similar to **Packages**, the total number of discovered **Codebase Resources**
-is shown on both ScanCode.io homepage and the "alpine" project page. Clicking on
-this number reveals a detailed table for all found code resources.
+is shown on both ScanCode.io homepage and the "alpine-httpie" project page.
+Clicking on this number reveals a detailed table for all found code resources.
 
 Further, the project page offers a group of Doughnut charts that filter code
 resources by **Programming Language**, **Mime Type**, **Holder**, **Copyright**,

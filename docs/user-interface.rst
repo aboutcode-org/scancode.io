@@ -53,6 +53,9 @@ Name
 
 To create a project, you must provide a unique name for the new project.
 
+.. warning::
+    A project name can't be changed or edited once the project has been created.
+
 Inputs
 ^^^^^^
 
@@ -99,3 +102,18 @@ the pipeline execution, or download the output files.
 .. note::
     Please refer to the :ref:`output_files` page for more details about your
     scan results.
+
+Deleting a Project
+------------------
+
+If any of your projects is no longer needed, you can delete it from the
+project's details page. Deleting old projects also makes navigating existing
+projects easier. Simply to delete any project, click on the trash icon under
+the project's name.
+
+.. image:: images/user-interface-5.png
+
+.. warning::
+    Projects get permanently deleted and cannot be restored.
+
+.. image:: images/user-interface-6.png
