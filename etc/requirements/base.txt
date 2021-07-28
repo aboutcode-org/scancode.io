@@ -15,7 +15,7 @@ psycopg2==2.9.1; sys_platform == "linux"
 psycopg2-binary==2.9.1; sys_platform != "linux"
 
 # HTTP
-requests==2.25.1
+requests==2.26.0
 
 # Task queue
 celery==5.1.2
