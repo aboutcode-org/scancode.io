@@ -29,8 +29,8 @@ container_inspector==21.6.10
 
 # ScanCode-toolkit
 scancode-toolkit[packages]==21.6.7
-extractcode[full]==21.6.2
-commoncode==21.6.11
+extractcode[full]==21.7.23
+commoncode==21.7.23
 
 # FetchCode
 fetchcode-container==1.2.3.210512; sys_platform == "linux"
