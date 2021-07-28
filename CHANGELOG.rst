@@ -3,6 +3,9 @@
 
 ### unreleased
 
+- Add new documentation chapters and tutorials on the usage of the Web User Interface.
+  https://github.com/nexB/scancode.io/issues/241
+
 - Add ability to register custom pipelines through a new SCANCODEIO_PIPELINES_DIRS
   setting.
   https://github.com/nexB/scancode.io/issues/237

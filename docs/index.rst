@@ -25,6 +25,8 @@ you’ll find information on:
 
     tutorial-1
     tutorial-2
+    tutorial-3
+    tutorial-4
 
 .. toctree::
     :maxdepth: 2
@@ -34,7 +36,7 @@ you’ll find information on:
     built-in-pipelines
     custom-pipelines
     scanpipe-pipes
-    scanpipe-output
+    output-files
     scanpipe-command-line
     scanpipe-api
     scancodeio-settings

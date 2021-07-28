@@ -32,7 +32,7 @@ time, the home screen will appear. From this screen, you'll be able to
 create a new project, search your existing projects, view or download scan
 results, access documentation, and more.
 
-.. image:: images/UI-1.png
+.. image:: images/user-interface-1.png
 
 Creating a New Project
 ----------------------
@@ -43,7 +43,7 @@ home screen, as shown in the previous screenshot. To create a new project,
 click on either button, and you will be directed to the **"Create a Project"**
 page.
 
-.. image:: images/UI-2.png
+.. image:: images/user-interface-2.png
 
 As shown above, creating a project involves filling in the following input
 fields:
@@ -52,6 +52,9 @@ Name
 ^^^^
 
 To create a project, you must provide a unique name for the new project.
+
+.. warning::
+    A project name can't be changed or edited once the project has been created.
 
 Inputs
 ^^^^^^
@@ -82,12 +85,12 @@ pipeline in one operation.
 You can still create a new project while leaving the **Inputs** and **Pipeline**
 fields blank; however, it's mandatory to provide a project **Name**!
 
-.. image:: images/UI-3.png
+.. image:: images/user-interface-3.png
 
 Once successfully created, you can later add any needed inputs and pipelines
 to your project by clicking the **"Add inputs"** and **"Add pipeline"** buttons.
 
-.. image:: images/UI-4-new.png
+.. image:: images/user-interface-4.png
 
 .. warning::
     You will not be able to add any extra inputs once a pipeline has been run on
@@ -97,5 +100,20 @@ Within each project, you can view your project details, review the results of
 the pipeline execution, or download the output files.
 
 .. note::
-    Please refer to the :ref:`scanpipe_output` page for more details about your
+    Please refer to the :ref:`output_files` page for more details about your
     scan results.
+
+Deleting a Project
+------------------
+
+If any of your projects is no longer needed, you can delete it from the
+project's details page. Deleting old projects also makes navigating existing
+projects easier. Simply to delete any project, click on the trash icon under
+the project's name.
+
+.. image:: images/user-interface-5.png
+
+.. warning::
+    Projects get permanently deleted and cannot be restored.
+
+.. image:: images/user-interface-6.png

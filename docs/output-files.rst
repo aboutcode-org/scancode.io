@@ -1,4 +1,4 @@
-.. _scanpipe_output:
+.. _output_files:
 
 Output Files
 ============
@@ -30,7 +30,12 @@ Web UI
 When using the ScanCode.io web application, you can download the results of your
 project in your preferred output format within the project page.
 
-.. image:: images/output-download-results.png
+.. image:: images/output-files-download-results.png
+
+You can also download the generated results—for any existing project—from the
+ScanCode.io home screen.
+
+.. image:: images/output-files-projects-list.png
 
 Understanding Output Files
 --------------------------
@@ -233,8 +238,9 @@ include two Excel sheets for the Discovered Packages and the Codebase Resources.
 
 The **Discovered Packages** data sheet includes details about all packages found:
 
-.. image:: images/output-xlsx-packages.png
+.. image:: images/output-files-xlsx-packages.png
 
-while the **Codebase Resources** sheet includes information about each individual files:
+while the **Codebase Resources** sheet includes information about each
+individual file:
 
-.. image:: images/output-xlsx-resources.png
+.. image:: images/output-files-xlsx-resources.png

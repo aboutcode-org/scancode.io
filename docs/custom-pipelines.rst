@@ -3,16 +3,16 @@
 Custom Pipelines
 ================
 
-A Pipeline is a Python script that performs code analysis by executing a
-sequence of steps.
+Pipelines are Python scripts; each contains a set of instructions that have to
+be executed in an orderly manner—pipe-like nature—to perform a code analysis.
 
 - A pipeline is a **Python class** that lives in a Python module as a ``.py``
   **file**.
 - A pipeline class **always inherits** from the ``Pipeline`` base class
   :ref:`pipeline_base_class`, or from other existing pipeline classes, such as
   the :ref:`built_in_pipelines`.
-- It **defines steps** - execution order of the steps - using the ``steps``
-  classmethod.
+- A pipeline **defines sequence of steps**—execution order of the steps—using
+  the ``steps`` classmethod.
 
 See :ref:`pipelines_concept` for more details.
 
