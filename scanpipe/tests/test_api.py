@@ -340,7 +340,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertIn(self.project1_detail_url, response.data["project"])
         self.assertEqual("docker", response.data["pipeline_name"])
         self.assertEqual(
-            "A pipeline to analyze a Docker image.", response.data["description"]
+            "A pipeline to analyze Docker images.", response.data["description"]
         )
         self.assertIsNone(response.data["task_id"])
         self.assertIsNone(response.data["task_start_date"])
