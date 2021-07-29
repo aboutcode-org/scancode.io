@@ -80,14 +80,21 @@ def tag_uninteresting_windows_codebase_resources(project):
     qs.filter(lookups).update(status="ignored-not-interesting")
 
 
-def tag_installed_package_files(project, root_dir_pattern, package):
+def tag_installed_package_files(project, root_dir_pattern, package, q_objects=[]):
     """
     For all CodebaseResources from `project` whose `rootfs_path` starts with
     `root_dir_pattern`, add `package` to the discovered_packages of each
-    CodebaseResource and set the status
+    CodebaseResource and set the status.
+
+    If there are Q() objects in `q_objects`, then those Q() objects are chained
+    to the initial query (`lookup`) using AND to allow a more specific query for
+    package files.
     """
     qs = project.codebaseresources.no_status()
-    installed_package_files = qs.filter(rootfs_path__startswith=root_dir_pattern)
+    lookup = Q(rootfs_path__startswith=root_dir_pattern)
+    for q_object in q_objects:
+        lookup &= q_object
+    installed_package_files = qs.filter(lookup)
     # If we find files whose names start with `root_dir_pattern`, we consider
     # these files to be part of the Package `package` and tag these files as
     # such
@@ -115,15 +122,14 @@ def tag_known_software(project):
     image layers.
     """
     qs = project.codebaseresources.no_status()
-    python_root_directory_name_pattern = r"/Files/Python(\d*)"
+    python_root_directory_name_pattern = r"(^.*Python(\d*))/.*$"
     python_root_directory_name_pattern_compiled = re.compile(
         python_root_directory_name_pattern
     )
     python_paths_by_versions = {}
-    for python_codebase_resource in qs.filter(
-        rootfs_path__regex=python_root_directory_name_pattern
-    ):
-        _, version, _ = re.split(
+    lookup = Q(rootfs_path__regex=python_root_directory_name_pattern)
+    for python_codebase_resource in qs.filter(lookup):
+        _, python_root_dir, version, _ = re.split(
             python_root_directory_name_pattern_compiled,
             python_codebase_resource.rootfs_path,
         )
@@ -132,11 +138,13 @@ def tag_known_software(project):
         if version in python_paths_by_versions:
             continue
         if version != "nv":
-            version_with_dots = ".".join(digit for digit in version)
-            python_paths_by_versions[version_with_dots] = f"/Files/Python{version}"
-        else:
-            python_paths_by_versions[version] = "/Files/Python"
+            version = ".".join(digit for digit in version)
+        python_paths_by_versions[version] = python_root_dir
 
+    # We do not want to tag the files in the `site-packages` directory as being
+    # from Python proper. The packages found here are oftentime third-party
+    # packages from outside the Python foundation
+    q_objects = [~Q(rootfs_path__icontains='site-packages')]
     for python_version, python_path in python_paths_by_versions.items():
         python_package = Package(
             type="windows-program",
@@ -147,11 +155,11 @@ def tag_known_software(project):
             homepage_url="https://www.python.org/",
         )
         tag_installed_package_files(
-            project=project, root_dir_pattern=python_path, package=python_package
+            project=project, root_dir_pattern=python_path, package=python_package, q_objects=q_objects
         )
 
     qs = project.codebaseresources.no_status()
-    openjdk_root_directory_name_pattern = r"/Files/(open)?jdk(-((\d*)(\.\d+)*))*"
+    openjdk_root_directory_name_pattern = r"(^.*/(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
     openjdk_root_directory_name_pattern_compiled = re.compile(
         openjdk_root_directory_name_pattern
     )
@@ -159,7 +167,7 @@ def tag_known_software(project):
     for openjdk_codebase_resource in qs.filter(
         rootfs_path__regex=openjdk_root_directory_name_pattern
     ):
-        _, open_prefix, _, openjdk_version, _, _, _ = re.split(
+        _, openjdk_root_path, open_prefix, _, openjdk_version, _, _, _ = re.split(
             openjdk_root_directory_name_pattern_compiled,
             openjdk_codebase_resource.rootfs_path,
         )
@@ -169,11 +177,7 @@ def tag_known_software(project):
             open_prefix = ""
         if openjdk_version in openjdk_paths_by_versions:
             continue
-        if openjdk_version != "nv":
-            openjdk_path = f"/Files/{open_prefix}jdk-{openjdk_version}"
-        else:
-            openjdk_path = f"/Files/{open_prefix}jdk"
-        openjdk_paths_by_versions[openjdk_version] = openjdk_path
+        openjdk_paths_by_versions[openjdk_version] = openjdk_root_path
 
     for openjdk_version, openjdk_path in openjdk_paths_by_versions.items():
         openjdk_package = Package(
@@ -198,21 +202,22 @@ PROGRAM_FILES_DIRS_TO_IGNORE = (
 def tag_program_files(project):
     """
     Report all subdirectories of Program Files and Program Files (x86) as
-    packages
+    Packages
+
+    If a Package is detected in this manner, then we will attempt to determine
+    the version from the path. If a version cannot be determined, a version of
+    `nr` will be set for the Package.
     """
     qs = project.codebaseresources.no_status()
-    # Get all files from Program_Files and Program_Files_(x86)
+    # Get all files from Program Files and Program Files (x86)
     program_files_one_directory_below_pattern = (
-        r"(/Files/Program Files( \(x86\))?/([^/]+))"
+        r"(^.*Program Files( \(x86\))?/([^/]+))"
     )
     program_files_one_directory_below_pattern_compiled = re.compile(
         program_files_one_directory_below_pattern
     )
     program_files_dirname_by_path = {}
-    lookup = Q(rootfs_path__startswith="/Files/Program Files") | Q(
-        rootfs_path__startswith="/Files/Program Files (x86)"
-    )
-    for program_file in qs.filter(lookup):
+    for program_file in qs.filter(rootfs_path__regex="^.*/Program Files( \(x86\))?"):
         _, program_files_subdir, _, dirname, _ = re.split(
             program_files_one_directory_below_pattern_compiled, program_file.rootfs_path
         )

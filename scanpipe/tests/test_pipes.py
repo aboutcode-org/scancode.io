@@ -815,16 +815,23 @@ class ScanPipePipesTest(TestCase):
             path="root/Files/Python39/python3.9",
             rootfs_path="/Files/Python39/python3.9.exe",
         )
+        resource5 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+            rootfs_path="/Files/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+        )
 
         windows.tag_known_software(p1)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         resource3.refresh_from_db()
         resource4.refresh_from_db()
+        resource5.refresh_from_db()
         self.assertEqual("installed-package", resource1.status)
         self.assertEqual("installed-package", resource2.status)
         self.assertEqual("installed-package", resource3.status)
         self.assertEqual("installed-package", resource4.status)
+        self.assertEqual("", resource5.status)
 
     def test_scanpipe_pipes_windows_tag_program_files(self):
         p1 = Project.objects.create(name="Analysis")
