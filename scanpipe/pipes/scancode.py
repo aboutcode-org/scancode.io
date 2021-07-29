@@ -413,7 +413,8 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
 
 def _get_license_matches_grouped(project):
     """
-    Returns a dictionary of all license_matches of a project grouped by license_expression.
+    Returns a dictionary of all license_matches of a given `project` grouped by
+    license_expression.
     """
     license_matches = defaultdict(list)
 
