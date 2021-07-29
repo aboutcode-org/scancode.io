@@ -60,6 +60,7 @@ def tag_uninteresting_windows_codebase_resources(project):
         "SECURITY",
         "SOFTWARE",
         "SYSTEM",
+        "system.ini",
     )
 
     uninteresting_file_extensions = (
@@ -68,11 +69,13 @@ def tag_uninteresting_windows_codebase_resources(project):
         ".LOG",
         ".inf_loc",
         ".NLS",
+        ".dat",
+        ".pem",
     )
 
     lookups = Q()
     for file_name in uninteresting_files:
-        lookups |= Q(path__iendswith=file_name)
+        lookups |= Q(rootfs_path__iendswith=file_name)
     for file_extension in uninteresting_file_extensions:
         lookups |= Q(extension__icontains=file_extension)
 
@@ -144,7 +147,7 @@ def tag_known_software(project):
     # We do not want to tag the files in the `site-packages` directory as being
     # from Python proper. The packages found here are oftentime third-party
     # packages from outside the Python foundation
-    q_objects = [~Q(rootfs_path__icontains='site-packages')]
+    q_objects = [~Q(rootfs_path__icontains="site-packages")]
     for python_version, python_path in python_paths_by_versions.items():
         python_package = Package(
             type="windows-program",
@@ -155,7 +158,10 @@ def tag_known_software(project):
             homepage_url="https://www.python.org/",
         )
         tag_installed_package_files(
-            project=project, root_dir_pattern=python_path, package=python_package, q_objects=q_objects
+            project=project,
+            root_dir_pattern=python_path,
+            package=python_package,
+            q_objects=q_objects,
         )
 
     qs = project.codebaseresources.no_status()
@@ -210,9 +216,7 @@ def tag_program_files(project):
     """
     qs = project.codebaseresources.no_status()
     # Get all files from Program Files and Program Files (x86)
-    program_files_one_directory_below_pattern = (
-        r"(^.*Program Files( \(x86\))?/([^/]+))"
-    )
+    program_files_one_directory_below_pattern = r"(^.*Program Files( \(x86\))?/([^/]+))"
     program_files_one_directory_below_pattern_compiled = re.compile(
         program_files_one_directory_below_pattern
     )

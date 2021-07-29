@@ -778,9 +778,9 @@ class ScanPipePipesTest(TestCase):
         )
         resource4 = CodebaseResource.objects.create(
             project=p1,
-            path="root/Files/User/Test/foo.dat",
-            rootfs_path="/Files/User/Test/foo.dat",
-            extension=".dat",
+            path="root/Files/should-not-be-ignored.txt",
+            rootfs_path="/Files/should-not-be-ignored.txt",
+            extension=".txt",
         )
 
         windows.tag_uninteresting_windows_codebase_resources(p1)
@@ -790,7 +790,7 @@ class ScanPipePipesTest(TestCase):
         resource4.refresh_from_db()
         self.assertEqual("ignored-not-interesting", resource1.status)
         self.assertEqual("ignored-not-interesting", resource2.status)
-        self.assertEqual("", resource3.status)
+        self.assertEqual("ignored-not-interesting", resource3.status)
         self.assertEqual("", resource4.status)
 
     def test_scanpipe_pipes_windows_tag_known_software(self):
@@ -913,6 +913,49 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("ignored-default-ignores", resource3.status)
         self.assertEqual("ignored-default-ignores", resource4.status)
         self.assertEqual("", resource5.status)
+
+    def test_scanpipe_pipes_rootfs_tag_data_files_with_no_clues(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/foo.data",
+            rootfs_path="/user/foo.data",
+            file_type="data",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/bar.data",
+            rootfs_path="/user/bar.data",
+            file_type="data",
+            license_expressions=["apache-2.0"],
+        )
+        rootfs.tag_data_files_with_no_clues(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("ignored-data-file-no-clues", resource1.status)
+        self.assertEqual("", resource2.status)
+
+    def test_scanpipe_pipes_rootfs_tag_media_files_as_uninteresting(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/foo.png",
+            rootfs_path="/user/foo.png",
+            mime_type="image/png",
+            file_type="image/png",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/bar.jpg",
+            rootfs_path="/user/bar.jpg",
+            mime_type="image/jpeg",
+            file_type="JPEG image data",
+        )
+        rootfs.tag_media_files_as_uninteresting(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("ignored-media-file", resource1.status)
+        self.assertEqual("ignored-media-file", resource2.status)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

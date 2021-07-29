@@ -358,3 +358,68 @@ def tag_ignorable_codebase_resources(project):
         lookups |= Q(rootfs_path__iregex=translated_pattern)
     qs = project.codebaseresources.no_status()
     qs.filter(lookups).update(status="ignored-default-ignores")
+
+
+def tag_data_files_with_no_clues(project):
+    """
+    Tag CodebaseResources that have a file type of `data` and no detected clues to be uninteresting.
+    """
+    lookup = Q(
+        file_type="data",
+        copyrights=[],
+        holders=[],
+        authors=[],
+        licenses=[],
+        license_expressions=[],
+        emails=[],
+        urls=[],
+    )
+    project.codebaseresources.filter(lookup).update(status="ignored-data-file-no-clues")
+
+
+def tag_media_files_as_uninteresting(project):
+    """
+    Tag CodebaseResources that are media files to be uninteresting.
+    """
+    # `mimes` and `types` were taken from TypeCode
+    # https://github.com/nexB/typecode/blob/c38f6831c59acae02a34a1288b9ce16e2e1f1733/src/typecode/contenttype.py#L528
+    mimes = (
+        "image",
+        "picture",
+        "audio",
+        "video",
+        "graphic",
+        "sound",
+    )
+    types = (
+        "image data",
+        "graphics image",
+        "ms-windows metafont .wmf",
+        "windows enhanced metafile",
+        "png image",
+        "interleaved image",
+        "microsoft asf",
+        "image text",
+        "photoshop image",
+        "shop pro image",
+        "ogg data",
+        "vorbis",
+        "mpeg",
+        "theora",
+        "bitmap",
+        "audio",
+        "video",
+        "sound",
+        "riff",
+        "icon",
+        "pc bitmap",
+        "image data",
+        "netpbm",
+    )
+    lookup = Q()
+    for m in mimes:
+        lookup |= Q(mime_type__icontains=m)
+    for t in types:
+        lookup |= Q(file_type__icontains=t)
+    qs = project.codebaseresources.no_status()
+    qs.filter(lookup).update(status="ignored-media-file")

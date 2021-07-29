@@ -22,6 +22,7 @@
 
 from scanpipe.pipelines.docker import Docker
 from scanpipe.pipes import docker
+from scanpipe.pipes import rootfs
 from scanpipe.pipes import windows
 
 
@@ -46,6 +47,7 @@ class WindowsDocker(Docker):
             cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
+            cls.tag_data_files_with_no_clues,
             cls.tag_not_analyzed_codebase_resources,
         )
 
@@ -58,10 +60,12 @@ class WindowsDocker(Docker):
 
     def tag_uninteresting_codebase_resources(self):
         """
-        Flag remaining files not from a system package.
+        Flag files that are known to be uninteresting
         """
         docker.tag_whiteout_codebase_resources(self.project)
         windows.tag_uninteresting_windows_codebase_resources(self.project)
+        rootfs.tag_ignorable_codebase_resources(self.project)
+        rootfs.tag_media_files_as_uninteresting(self.project)
 
     def tag_program_files_dirs_as_packages(self):
         """
@@ -69,3 +73,10 @@ class WindowsDocker(Docker):
         Files (x86)` as packages
         """
         windows.tag_program_files(self.project)
+
+    def tag_data_files_with_no_clues(self):
+        """
+        If a file is a data file and has no clues towards its origin, mark as
+        uninteresting.
+        """
+        rootfs.tag_data_files_with_no_clues(self.project)
