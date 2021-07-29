@@ -36,7 +36,7 @@ from scanpipe.pipes import scancode
 
 def make_codebase_resource(project, location, rootfs_path=None):
     """
-    Create a CodebaseResource with the `location` absolute path for the `project`.
+    Creates a CodebaseResource with the `location` absolute path for the `project`.
 
     The `location` of this Resource must be rooted in `project.codebase_path`.
 
@@ -45,7 +45,7 @@ def make_codebase_resource(project, location, rootfs_path=None):
 
     All paths use the POSIX separators.
 
-    If a CodebaseResource already exists in the `project` for with the same path,
+    If a CodebaseResource already exists in the `project` with the same path,
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """
@@ -71,8 +71,8 @@ def make_codebase_resource(project, location, rootfs_path=None):
 
 def update_or_create_package(project, package_data):
     """
-    Get and update or create a DiscoveredPackage then return it.
-    Use the `project` and `package_data` mapping to lookup and create the
+    Gets, updates or creates a DiscoveredPackage then returns it.
+    Uses the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL as a unique key.
     """
     # make a copy
@@ -131,7 +131,7 @@ def update_or_create_package(project, package_data):
 
 def analyze_scanned_files(project):
     """
-    Set the status for CodebaseResource with unknown or no licenses.
+    Sets the status for CodebaseResource to unknown or no license.
     """
     scanned_files = project.codebaseresources.files().status("scanned")
 
@@ -141,28 +141,28 @@ def analyze_scanned_files(project):
 
 def tag_not_analyzed_codebase_resources(project):
     """
-    Flag as "not-analyzed" the `CodebaseResource` without a status of the `project`.
+    Flags any of the `project`'s '`CodebaseResource` without a status as "not-analyzed".
     """
     project.codebaseresources.no_status().update(status="not-analyzed")
 
 
 def normalize_path(path):
     """
-    Return a normalized path from a `path` string.
+    Returns a normalized path from a `path` string.
     """
     return "/" + path.strip("/")
 
 
 def strip_root(location):
     """
-    Return the provided `location` without the root directory.
+    Returns the provided `location` without the root directory.
     """
     return "/".join(str(location).strip("/").split("/")[1:])
 
 
 def filename_now(sep="-"):
     """
-    Return the current date and time as iso format suitable for filename.
+    Returns the current date and time in iso format suitable for filename.
     """
     now = datetime.now().isoformat(sep=sep, timespec="seconds")
     return now.replace(":", sep)
@@ -170,8 +170,8 @@ def filename_now(sep="-"):
 
 def count_group_by(queryset, field_name):
     """
-    Return a summary of all existing values for the provided `field_name` on the
-    `queryset`, including the count of each entry, as a dict.
+    Returns a summary of all existing values for the provided `field_name` on the
+    `queryset`, including the count of each entry, as a dictionary.
     """
     counts = (
         queryset.values(field_name)
@@ -184,14 +184,14 @@ def count_group_by(queryset, field_name):
 
 def get_bin_executable(filename):
     """
-    Return the location of the `filename` executable binary.
+    Returns the location of the `filename` executable binary.
     """
     return str(Path(sys.executable).parent / filename)
 
 
 def run_command(cmd):
     """
-    Return (exitcode, output) of executing the provided `cmd` in a shell.
+    Returns (exitcode, output) of executing the provided `cmd` in a shell.
     `cmd` can be provided as a string or as a list of arguments.
     """
     if isinstance(cmd, list):
@@ -203,7 +203,7 @@ def run_command(cmd):
 
 def remove_prefix(text, prefix):
     """
-    Remove the `prefix` from `text`.
+    Removes the `prefix` from `text`.
     """
     if text.startswith(prefix):
         prefix_len = len(prefix)

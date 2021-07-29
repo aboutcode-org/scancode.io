@@ -25,7 +25,7 @@ from packagedcode import rpm
 
 def package_getter(root_dir, detect_licenses=True, **kwargs):
     """
-    Yield installed package objects.
+    Returns installed package objects.
     """
     packages = rpm.get_installed_packages(root_dir, detect_licenses=detect_licenses)
     for package in packages:

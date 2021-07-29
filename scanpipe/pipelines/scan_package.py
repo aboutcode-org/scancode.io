@@ -33,7 +33,7 @@ from scanpipe.pipes import scancode
 class ScanPackage(ScanCodebase):
     """
     A pipeline to scan a single package archive with ScanCode-toolkit.
-    The output is a summary of scan results as a JSON file.
+    The output is a summary of the scan results in JSON format.
     """
 
     @classmethod
@@ -58,7 +58,7 @@ class ScanPackage(ScanCodebase):
 
     def get_package_archive_input(self):
         """
-        Locate the package archive in the project input/ directory.
+        Locates the input package archive in the project's input/ directory.
         """
         input_files = self.project.input_files
         inputs = list(self.project.inputs())
@@ -70,7 +70,7 @@ class ScanPackage(ScanCodebase):
 
     def collect_archive_information(self):
         """
-        Collect information about the input archive and store the data on project.
+        Collects and store information about the input archive in the project.
         """
         self.project.update_extra_data(
             {
@@ -82,7 +82,7 @@ class ScanPackage(ScanCodebase):
 
     def extract_archive_to_codebase_directory(self):
         """
-        Extract package archive with extractcode.
+        Extracts package archive with extractcode.
         """
         extract_errors = scancode.extract(self.archive_path, self.project.codebase_path)
 
@@ -91,7 +91,7 @@ class ScanPackage(ScanCodebase):
 
     def make_summary_from_scan_results(self):
         """
-        Build a summary from the JSON scan results.
+        Builds a summary in JSON format from the generated scan results.
         """
         summary = scancode.make_results_summary(self.project, str(self.scan_output))
         output_file = self.project.get_output_file_path("summary", "json")

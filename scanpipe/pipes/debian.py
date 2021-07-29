@@ -25,7 +25,7 @@ from packagedcode import debian
 
 def package_getter(root_dir, distro="debian", detect_licenses=True, **kwargs):
     """
-    Yield installed package objects. Optionally detect licenses in a Debian
+    Returns installed package objects. Optionally detect licenses in a Debian
     copyright file for each package.
     """
     packages = debian.get_installed_packages(

@@ -37,9 +37,9 @@ logger = logging.getLogger(__name__)
 
 def extract_images_from_inputs(project):
     """
-    Collect all the tarballs from the `project` input/ work directory, extract each
-    tarball to the tmp/ work directory and collect the images.
-    Return the `images` and `errors` that may have happen during the extraction.
+    Collects all the tarballs from the `project` input/ work directory, extracts each
+    tarball to the tmp/ work directory and collects the images.
+    Returns the `images` and `errors` that may have happen during the extraction.
     """
     target_path = project.tmp_path
     images = []
@@ -56,9 +56,9 @@ def extract_images_from_inputs(project):
 
 def extract_layers_from_images(project, images):
     """
-    Extract all the layers from provided `images` into the `project` codebase/ work
+    Extracts all layers from the provided `images` into the `project` codebase/ work
     directory.
-    Return the `errors` that may have happen during the extraction.
+    Returns the `errors` that may happen during the extraction.
     """
     errors = []
 
@@ -75,7 +75,7 @@ def extract_layers_from_images(project, images):
 
 def get_image_data(image):
     """
-    Return a mapping of Image-related data given an `image`.
+    Returns a mapping of image-related data given an `image`.
     """
     exclude = ["extracted_location", "archive_location", "layers"]
     image_data = {
@@ -86,7 +86,7 @@ def get_image_data(image):
 
 def create_codebase_resources(project, image):
     """
-    Create the CodebaseResource for an `image` in `project`.
+    Creates the CodebaseResource for an `image` in a `project`.
     """
     for layer_resource in image.get_layers_resources():
         pipes.make_codebase_resource(
@@ -98,12 +98,12 @@ def create_codebase_resources(project, image):
 
 def scan_image_for_system_packages(project, image, detect_licenses=True):
     """
-    Given a `project` and an `image`, scan the `image` layer by layer for
-    installed system packages. Create a DiscoveredPackage for each.
+    Given a `project` and an `image` - this scans the `image` layer by layer for
+    installed system packages and creates a DiscoveredPackage for each.
 
-    Then for each installed DiscoveredPackage installed file, check if it exists
-    as a CodebaseResource and relate that CodebaseResource to its
-    DiscoveredPackage or keep that as a missing file.
+    Then for each installed DiscoveredPackage file, check if it exists
+    as a CodebaseResource. If exists, relate that CodebaseResource to its
+    DiscoveredPackage; otherwise, keep that as a missing file.
     """
     if not image.distro:
         raise rootfs.DistroNotFound(f"Distro not found.")
@@ -170,7 +170,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
 
 def tag_whiteout_codebase_resources(project):
     """
-    Mark overlayfs/AUFS whiteout special files CodebaseResource as "ignored-whiteout".
+    Marks overlayfs/AUFS whiteout special files CodebaseResource as "ignored-whiteout".
     See https://github.com/opencontainers/image-spec/blob/master/layer.md#whiteouts
     for details.
     """
