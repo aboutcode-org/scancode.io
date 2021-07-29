@@ -44,7 +44,7 @@ Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 
 def fetch_http(uri, to=None):
     """
-    Downloads the given `uri` in a temporary directory and returns that directory path.
+    Downloads a given `uri` in a temporary directory and return the directory's path.
     """
     response = requests.get(uri)
 
@@ -91,11 +91,11 @@ FETCHCODE_SKOPEO_PATH_ENVVAR = "FETCHCODE_SKOPEO_PATH"
 
 def _get_skopeo_location(_cache=[]):
     """
-    Return the Path to the skopeo command line executable, trying:
+    Returns the path to the skopeo command line executable, trying:
     - an environment variable ``FETCHCODE_SKOPEO_PATH``,
     - a plugin-provided path,
     - the system PATH.
-    Raise an Exception if the skopeo binary cannot be found.
+    Raises an Exception if the skopeo binary cannot be found.
     """
     if _cache:
         return _cache[0]
@@ -131,8 +131,8 @@ def _get_skopeo_location(_cache=[]):
 
 def get_docker_image_platform(docker_reference):
     """
-    Return a platform mapping of a docker reference.
-    If there are more than one, return the first one default.
+    Returns a platform mapping of a docker reference.
+    If there are more than one, return the first one by default.
     """
     skopeo_executable = _get_skopeo_location()
     cmd = (
@@ -180,10 +180,10 @@ def get_docker_image_platform(docker_reference):
 
 def fetch_docker_image(docker_reference, to=None):
     """
-    Fetch a docker image from the provided Docker image `docker_reference`
-    docker:// reference URL. Return a Download object.
+    Fetches a docker image from the provided Docker image `docker_reference`
+    docker:// reference URL. Return a `download` object.
 
-    The docker references are documented here:
+    Docker references are documented here:
     https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
     """
     name = python_safe_name(docker_reference.replace("docker://", ""))
@@ -230,7 +230,7 @@ def fetch_docker_image(docker_reference, to=None):
 
 def _get_fetcher(url):
     """
-    Return the fetcher function based on the provided `url`.
+    Returns the fetcher function based on the provided `url`.
     """
     if url.startswith("docker://"):
         return fetch_docker_image
@@ -239,9 +239,9 @@ def _get_fetcher(url):
 
 def fetch_urls(urls):
     """
-    Fetch provided `urls` list.
+    Fetches provided `urls` list.
     The `urls` can also be provided as a string containing one URL per line.
-    Return the fetched URLs as `downloads` objects and a list of `errors`.
+    Returns the fetched URLs as `downloads` objects and a list of `errors`.
     """
     downloads = []
     errors = []

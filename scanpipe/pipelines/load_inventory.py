@@ -26,8 +26,8 @@ from scanpipe.pipes import scancode
 
 class LoadInventory(Pipeline):
     """
-    A pipeline to load a files and packages inventory from a ScanCode JSON scan.
-    (assumed to contain file information and package scan data).
+    A pipeline to load an inventory of files and packages from a ScanCode JSON scan.
+    (Presumably containing file information and package scan data).
     """
 
     @classmethod
@@ -39,7 +39,7 @@ class LoadInventory(Pipeline):
 
     def get_scan_json_input(self):
         """
-        Locate the JSON scan input from the project input/ directory.
+        Locates a JSON scan input from a project's input/ directory.
         """
         inputs = list(self.project.inputs(pattern="*.json"))
         if len(inputs) != 1:
@@ -48,7 +48,7 @@ class LoadInventory(Pipeline):
 
     def build_inventory_from_scan(self):
         """
-        Process the JSON scan to populate resources and packages.
+        Processes a given JSON scan input to populate codebase resources and packages.
         """
         project = self.project
         scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
