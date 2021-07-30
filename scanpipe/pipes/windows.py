@@ -71,6 +71,17 @@ def tag_uninteresting_windows_codebase_resources(project):
         ".NLS",
         ".dat",
         ".pem",
+        ".xrm-ms",
+        ".sql",
+        ".mof",
+        ".mfl",
+        ".manifest",
+        ".inf",
+        ".cat",
+        ".efi",
+        ".evtx",
+        ".cat",
+        ".pnf",
     )
 
     lookups = Q()
