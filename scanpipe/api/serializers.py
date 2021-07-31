@@ -39,7 +39,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 class SerializerExcludeFieldsMixin:
     """
     A Serializer mixin that takes an additional `exclude_fields` argument to
-    exclude provided fields from the serialized content.
+    exclude specific fields from the serialized content.
 
     Inspired by https://www.django-rest-framework.org/api-guide/serializers/#example
     """
@@ -56,8 +56,8 @@ class SerializerExcludeFieldsMixin:
 class PipelineChoicesMixin:
     def __init__(self, *args, **kwargs):
         """
-        Load the pipeline field choices on class init instead of on module import to
-        ensure that all the pipelines where properly loaded first.
+        Loads the pipeline field choices on the init class instead of the module
+        import, which ensures all pipelines are first properly loaded.
         """
         super().__init__(*args, **kwargs)
         self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices()
@@ -161,8 +161,8 @@ class ProjectSerializer(
 
     def create(self, validated_data):
         """
-        Create a new `project` with optionally provided `upload_file` and `pipeline`.
-        The `execute_now` parameter can be provided to execute the Pipeline on creation.
+        Creates a new `project` with `upload_file` and `pipeline` as optional.
+        The `execute_now` parameter can be set to execute the Pipeline on creation.
         """
         upload_file = validated_data.pop("upload_file", None)
         input_urls = validated_data.pop("input_urls", [])
@@ -244,7 +244,7 @@ class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
 
 def get_model_serializer(model_class):
     """
-    Return the Serializer class related to the provided `model_class`.
+    Returns a Serializer class that ia related to a given `model_class`.
     """
     serializer = {
         DiscoveredPackage: DiscoveredPackageSerializer,
@@ -259,8 +259,8 @@ def get_model_serializer(model_class):
 
 def get_serializer_fields(model_class):
     """
-    Return the list of fields declared on the Serializer related to the
-    provided `model_class`.
+    Returns a list of fields declared on the Serializer that are related to the
+    a given `model_class`.
     """
     serializer = get_model_serializer(model_class)
     fields = list(serializer().get_fields().keys())

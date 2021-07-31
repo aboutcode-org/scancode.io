@@ -36,9 +36,9 @@ class FilterSetUtilsMixin:
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
         """
-        Returns an encoded URL without the value for given `field_name`.
+        For given `field_name`, returns an encoded URL without the value.
         For multi-value filters, a single value can be removed using `remove_value`.
-        This URL can be used to remove a filter value from the active filters.
+        This URL can be used to remove a filter value from active filters.
         """
         if not query_dict:
             return ""
@@ -55,7 +55,7 @@ class FilterSetUtilsMixin:
 
     def is_active(self):
         """
-        Returns True if any of the filter is active, except the 'sort' filter.
+        Returns True, if any of the filters is active, except for the 'sort' filter.
         """
         return bool(
             [
@@ -96,10 +96,10 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 class JSONContainsFilter(django_filters.CharFilter):
     """
-    Allow "contains" lookup on a JSONField converted to text.
-    This is useful for datastructures stored as list of dictionaries, where  Django's
-    default lookups are not available.
-    Require the implementation of "json_field_contains" method on the QuerySet.
+    Allows "contains" lookup on a JSONField converted to text.
+    This is useful for data structures stored as a list of dictionaries, where
+    Django's default lookups are not available.
+    Requires the implementation of "json_field_contains" method on the QuerySet.
     """
 
     def filter(self, qs, value):
@@ -160,7 +160,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
         """
-        Add support for JSONField storing "list" using the JSONListFilter.
+        Adds support for JSONField storing "list" using the JSONListFilter.
         """
         if isinstance(field, models.JSONField) and field.default == list:
             return JSONContainsFilter, {}

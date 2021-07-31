@@ -71,8 +71,8 @@ class ProjectViewMixin:
 
 class PaginatedFilterView(FilterView):
     """
-    Add a `url_params_without_page` value in the template context to include current
-    filtering in the pagination.
+    Adds a `url_params_without_page` value in the template context to include the
+    current filtering in the pagination.
     """
 
     def get_context_data(self, **kwargs):
@@ -283,7 +283,7 @@ def execute_pipeline_view(request, uuid, run_uuid):
 
 def project_results_json_response(project, as_attachment=False):
     """
-    Return the results as JSON compatible with ScanCode data format.
+    Returns the results as JSON compatible with ScanCode data format.
     The content is returned as a stream of JSON content using the JSONResultsGenerator
     class.
     If `as_attachment` is True, the response will force the download of the file.
@@ -381,8 +381,8 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
     @staticmethod
     def get_annotation_text(entry, field_name, value_key):
         """
-        Workaround to get the license_expression until the data structure is updated
-        on the ScanCode-toolkit side.
+        A workaround to get the license_expression until the data structure is
+        updated on the ScanCode-toolkit side.
         https://github.com/nexB/scancode-results-analyzer/blob/6c132bc20153d5c96929c
         f378bd0f06d83db9005/src/results_analyze/analyzer_plugin.py#L131-L198
         """
