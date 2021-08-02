@@ -3,7 +3,7 @@
 importlib_metadata==3.10.0; python_version < "3.8"
 
 # Django related
-Django==3.2.5
+Django==3.2.6
 django-environ==0.4.5
 django-crispy-forms==1.12.0
 pytz==2021.1
@@ -28,7 +28,7 @@ gunicorn==20.1.0
 container_inspector==21.6.10
 
 # ScanCode-toolkit
-scancode-toolkit[packages]==21.6.7
+scancode-toolkit[packages]==21.7.30
 extractcode[full]==21.7.23
 commoncode==21.7.23
 
@@ -36,7 +36,7 @@ commoncode==21.7.23
 fetchcode-container==1.2.3.210512; sys_platform == "linux"
 
 # Utilities
-XlsxWriter==1.4.4
+XlsxWriter==1.4.5
 
 # Profiling
 pyinstrument==3.4.2

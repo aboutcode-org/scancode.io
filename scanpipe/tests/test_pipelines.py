@@ -199,6 +199,7 @@ class ScanPackagePipelineTest(TestCase):
         "input",
         "compliance_alert",
         "policy",
+        "tool_version",
         "--json-pp",
         "--processes",
     ]
