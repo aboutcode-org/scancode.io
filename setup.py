@@ -26,7 +26,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-__version__ = "21.6.10"
+__version__ = "21.8.2"
 
 requirement_files = ["etc/requirements/base.txt"]
 
