@@ -442,7 +442,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def add_input_source(self, filename, source, save=False):
         """
-        Adds given `filename` and `source` to the current project's `input_sources` field.
+        Adds given `filename` and `source` to the current project's `input_sources`
+        field.
         """
         self.input_sources[filename] = source
         if save:
@@ -497,12 +498,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
-        Creates a new "Run" instance with the provided `pipeline` on the current project.
+        Creates a new "Run" instance with the provided `pipeline` on the current
+        project.
 
         If `execute_now` is True, the pipeline task is created.
         The on_commit() is used to postpone the task creation after the transaction is
         successfully committed.
-        If there isn’t any active transactions, the callback will be executed immediately.
+        If there isn’t any active transactions, the callback will be executed
+        immediately.
         """
         pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
         run = Run.objects.create(
@@ -727,7 +730,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def init_task_id(self, task_id):
         """
-        Sets the provided `task_id` on the "Run" instance if not already stored in the DB.
+        Sets the provided `task_id` on the "Run" instance if not already stored in the
+        database.
         Uses the QuerySet `update` method instead of `save` to prevent overriding
         any fields that were set but not saved yet in the DB, which may occur when
         CELERY_TASK_ALWAYS_EAGER is True.
@@ -953,7 +957,8 @@ class ScanFieldsModelMixin(models.Model):
 
     def copy_scan_results(self, from_instance, save=False):
         """
-        Copies the scan-related fields values from `from_instance`to the current instance.
+        Copies the scan-related fields values from `from_instance`to the current
+        instance.
         """
         for field_name in self.scan_fields():
             value_from_instance = getattr(from_instance, field_name)
