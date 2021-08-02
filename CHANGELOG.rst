@@ -3,6 +3,8 @@
 
 ### unreleased
 
+- Upgrade ScanCode-toolkit to version 21.7.30
+
 - Add new documentation chapters and tutorials on the usage of the Web User Interface.
   https://github.com/nexB/scancode.io/issues/241
 
