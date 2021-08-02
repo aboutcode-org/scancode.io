@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### unreleased
+### v21.8.2
 
 - Upgrade ScanCode-toolkit to version 21.7.30
 
