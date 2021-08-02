@@ -25,7 +25,6 @@ import re
 from django.db.models import Q
 
 from packagedcode import win_reg
-from packagedcode.models import Package
 
 from scanpipe import pipes
 
@@ -134,6 +133,9 @@ def tag_known_software(project):
 
     Currently, we are only checking for Python and openjdk in Windows Docker
     image layers.
+
+    If a version number cannot be determined for an installed software Package,
+    then a version number of "nv" will be set.
     """
     qs = project.codebaseresources.no_status()
     python_root_directory_name_pattern = r"(^.*Python(\d*))/.*$"
@@ -160,8 +162,7 @@ def tag_known_software(project):
     # packages from outside the Python foundation
     q_objects = [~Q(rootfs_path__icontains="site-packages")]
     for python_version, python_path in python_paths_by_versions.items():
-        python_package = Package(
-            type="windows-program",
+        python_package = win_reg.InstalledWindowsProgram(
             name="Python",
             version=python_version,
             license_expression="python",
@@ -197,8 +198,7 @@ def tag_known_software(project):
         openjdk_paths_by_versions[openjdk_version] = openjdk_root_path
 
     for openjdk_version, openjdk_path in openjdk_paths_by_versions.items():
-        openjdk_package = Package(
-            type="windows-program",
+        openjdk_package = win_reg.InstalledWindowsProgram(
             name="OpenJDK",
             version=openjdk_version,
             license_expression="gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0",
@@ -223,7 +223,7 @@ def tag_program_files(project):
 
     If a Package is detected in this manner, then we will attempt to determine
     the version from the path. If a version cannot be determined, a version of
-    `nr` will be set for the Package.
+    `nv` will be set for the Package.
     """
     qs = project.codebaseresources.no_status()
     # Get all files from Program Files and Program Files (x86)
@@ -247,8 +247,7 @@ def tag_program_files(project):
         program_root_dir,
         program_root_dir_name,
     ) in program_files_dirname_by_path.items():
-        package = Package(
-            type="windows-program",
+        package = win_reg.InstalledWindowsProgram(
             name=program_root_dir_name,
             version="nv",
         )
