@@ -3,13 +3,6 @@
 User Interface
 ==============
 
-As you may have noticed reading through the documentation, the focus is mainly
-on installing, running, and using ScanCode.io through the command line.
-However, this is not the only way to interact with ScanCode.io, especially when
-creating and managing projects. For some tasks, viewing a visual representation
-of given scan results is preferable to textual output files, especially for
-users who are more comfortable using a user interface.
-
 As mentioned in the installation guide, ScanCode.io offers a web application to
 create and manage your projects from a browser. You’ll get access to this
 visual interface when you successfully install ScanCode.io locally.
