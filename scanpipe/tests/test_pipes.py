@@ -820,18 +820,124 @@ class ScanPipePipesTest(TestCase):
             path="root/Files/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
             rootfs_path="/Files/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
         )
+        resource6 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/jdk-11.0.1/readme.txt",
+            rootfs_path="/Files/jdk-11.0.1/readme.txt",
+        )
+        resource7 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/openjdk-11.0.1/readme.txt",
+            rootfs_path="/Files/openjdk-11.0.1/readme.txt",
+        )
+        resource8 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/jdk/readme.txt",
+            rootfs_path="/Files/jdk/readme.txt",
+        )
+        resource9 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/openjdk/readme.txt",
+            rootfs_path="/Files/openjdk/readme.txt",
+        )
+        resource10 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files/something-else/jdk/readme.txt",
+            rootfs_path="/Files/Program Files/something-else/jdk/readme.txt",
+        )
+        resource11 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python/py.exe",
+            rootfs_path="/Python/py.exe",
+        )
+        resource12 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python27/python2.exe",
+            rootfs_path="/Python27/python2.exe",
+        )
+        resource13 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python3/python3.exe",
+            rootfs_path="/Python3/python3.exe",
+        )
+        resource14 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python39/python3.9",
+            rootfs_path="/Python39/python3.9.exe",
+        )
+        resource15 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+            rootfs_path="/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+        )
+        resource16 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/jdk-11.0.1/readme.txt",
+            rootfs_path="/jdk-11.0.1/readme.txt",
+        )
+        resource17 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/openjdk-11.0.1/readme.txt",
+            rootfs_path="/openjdk-11.0.1/readme.txt",
+        )
+        resource18 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/jdk/readme.txt",
+            rootfs_path="/jdk/readme.txt",
+        )
+        resource19 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/openjdk/readme.txt",
+            rootfs_path="/openjdk/readme.txt",
+        )
+        resource20 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Program Files/something-else/jdk/readme.txt",
+            rootfs_path="/Program Files/something-else/jdk/readme.txt",
+        )
 
         windows.tag_known_software(p1)
+        resource11.refresh_from_db()
+        resource12.refresh_from_db()
+        resource13.refresh_from_db()
+        resource14.refresh_from_db()
+        resource15.refresh_from_db()
+        resource16.refresh_from_db()
+        resource17.refresh_from_db()
+        resource18.refresh_from_db()
+        resource19.refresh_from_db()
+        resource20.refresh_from_db()
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         resource3.refresh_from_db()
         resource4.refresh_from_db()
         resource5.refresh_from_db()
+        resource6.refresh_from_db()
+        resource7.refresh_from_db()
+        resource8.refresh_from_db()
+        resource9.refresh_from_db()
+        resource10.refresh_from_db()
+
         self.assertEqual("installed-package", resource1.status)
         self.assertEqual("installed-package", resource2.status)
         self.assertEqual("installed-package", resource3.status)
         self.assertEqual("installed-package", resource4.status)
         self.assertEqual("", resource5.status)
+        self.assertEqual("installed-package", resource6.status)
+        self.assertEqual("installed-package", resource7.status)
+        self.assertEqual("installed-package", resource8.status)
+        self.assertEqual("installed-package", resource9.status)
+        self.assertEqual("", resource10.status)
+        self.assertEqual("installed-package", resource11.status)
+        self.assertEqual("installed-package", resource12.status)
+        self.assertEqual("installed-package", resource13.status)
+        self.assertEqual("installed-package", resource14.status)
+        self.assertEqual("", resource15.status)
+        self.assertEqual("installed-package", resource16.status)
+        self.assertEqual("installed-package", resource17.status)
+        self.assertEqual("installed-package", resource18.status)
+        self.assertEqual("installed-package", resource19.status)
+        self.assertEqual("", resource20.status)
 
     def test_scanpipe_pipes_windows_tag_program_files(self):
         p1 = Project.objects.create(name="Analysis")

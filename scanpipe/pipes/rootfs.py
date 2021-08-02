@@ -362,7 +362,8 @@ def tag_ignorable_codebase_resources(project):
 
 def tag_data_files_with_no_clues(project):
     """
-    Tag CodebaseResources that have a file type of `data` and no detected clues to be uninteresting.
+    Tag CodebaseResources that have a file type of `data` and no detected clues
+    to be uninteresting.
     """
     lookup = Q(
         file_type="data",

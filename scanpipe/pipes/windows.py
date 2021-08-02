@@ -138,30 +138,31 @@ def tag_known_software(project):
     then a version number of "nv" will be set.
     """
     qs = project.codebaseresources.no_status()
-    python_root_directory_name_pattern = r"(^.*Python(\d*))/.*$"
+    python_root_directory_name_pattern = r"(^/(Files/)?Python(\d+)?)/.*$"
     python_root_directory_name_pattern_compiled = re.compile(
         python_root_directory_name_pattern
     )
-    python_paths_by_versions = {}
-    lookup = Q(rootfs_path__regex=python_root_directory_name_pattern)
-    for python_codebase_resource in qs.filter(lookup):
-        _, python_root_dir, version, _ = re.split(
+    python_versions_by_path = {}
+    for python_codebase_resource in qs.filter(
+        rootfs_path__regex=python_root_directory_name_pattern
+    ):
+        _, python_root_dir, _, version, _ = re.split(
             python_root_directory_name_pattern_compiled,
             python_codebase_resource.rootfs_path,
         )
+        if python_root_dir in python_versions_by_path:
+            continue
         if not version:
             version = "nv"
-        if version in python_paths_by_versions:
-            continue
         if version != "nv":
             version = ".".join(digit for digit in version)
-        python_paths_by_versions[version] = python_root_dir
+        python_versions_by_path[python_root_dir] = version
 
     # We do not want to tag the files in the `site-packages` directory as being
     # from Python proper. The packages found here are oftentime third-party
     # packages from outside the Python foundation
     q_objects = [~Q(rootfs_path__icontains="site-packages")]
-    for python_version, python_path in python_paths_by_versions.items():
+    for python_path, python_version in python_versions_by_path.items():
         python_package = win_reg.InstalledWindowsProgram(
             name="Python",
             version=python_version,
@@ -177,27 +178,27 @@ def tag_known_software(project):
         )
 
     qs = project.codebaseresources.no_status()
-    openjdk_root_directory_name_pattern = r"(^.*/(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
+    openjdk_root_directory_name_pattern = (
+        r"^(/(Files/)?(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
+    )
     openjdk_root_directory_name_pattern_compiled = re.compile(
         openjdk_root_directory_name_pattern
     )
-    openjdk_paths_by_versions = {}
+    openjdk_versions_by_path = {}
     for openjdk_codebase_resource in qs.filter(
         rootfs_path__regex=openjdk_root_directory_name_pattern
     ):
-        _, openjdk_root_path, open_prefix, _, openjdk_version, _, _, _ = re.split(
+        _, openjdk_root_path, _, _, _, openjdk_version, _, _, _ = re.split(
             openjdk_root_directory_name_pattern_compiled,
             openjdk_codebase_resource.rootfs_path,
         )
+        if openjdk_root_path in openjdk_versions_by_path:
+            continue
         if not openjdk_version:
             openjdk_version = "nv"
-        if not open_prefix:
-            open_prefix = ""
-        if openjdk_version in openjdk_paths_by_versions:
-            continue
-        openjdk_paths_by_versions[openjdk_version] = openjdk_root_path
+        openjdk_versions_by_path[openjdk_root_path] = openjdk_version
 
-    for openjdk_version, openjdk_path in openjdk_paths_by_versions.items():
+    for openjdk_path, openjdk_version in openjdk_versions_by_path.items():
         openjdk_package = win_reg.InstalledWindowsProgram(
             name="OpenJDK",
             version=openjdk_version,
@@ -232,7 +233,7 @@ def tag_program_files(project):
         program_files_one_directory_below_pattern
     )
     program_files_dirname_by_path = {}
-    for program_file in qs.filter(rootfs_path__regex="^.*/Program Files( \(x86\))?"):
+    for program_file in qs.filter(rootfs_path__regex=r"^.*/Program Files( \(x86\))?"):
         _, program_files_subdir, _, dirname, _ = re.split(
             program_files_one_directory_below_pattern_compiled, program_file.rootfs_path
         )
