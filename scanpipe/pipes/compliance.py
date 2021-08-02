@@ -24,8 +24,8 @@ from scanpipe.pipes import scancode
 
 """
 A common compliance pattern for images is to store known licenses in a /licenses
-directory and the corresponding source code archives for packages that are
-redistributable in source form in a /sourcemirror directory, both at the root of
+directory and the corresponding source code archives, for packages that are
+redistributable in source form, in a /sourcemirror directory; both at the root of
 an image (VM or container image).
 
 Usage example within a Pipeline:
@@ -38,7 +38,7 @@ def analyze_licenses_and_sources(self):
 
 def tag_compliance_files(project):
     """
-    Tag compliance files status for the provided `project`.
+    Tags compliance files status for the provided `project`.
     """
     compliance_dirs = {
         "/licenses": "compliance-licenses",
@@ -53,7 +53,7 @@ def tag_compliance_files(project):
 
 def analyze_compliance_licenses(project):
     """
-    Scan compliance licenses status for the provided `project`.
+    Scans compliance licenses status for the provided `project`.
     """
     qs = project.codebaseresources.status("compliance-licenses")
 

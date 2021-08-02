@@ -31,7 +31,7 @@ def sort_by_lower_name(resource):
 
 def get_tree(resource, fields, codebase=None):
     """
-    Return a tree as a dict structure starting from the provided `resource`.
+    Returns a tree as a dictionary structure starting from the provided `resource`.
 
     The following classes are supported for the input `resource` object:
      - scanpipe.models.CodebaseResource
@@ -55,7 +55,7 @@ def get_tree(resource, fields, codebase=None):
 
 class ProjectCodebase:
     """
-    Represent the Codebase of a Project stored in the Database.
+    Represents the codebase of a project stored in the database.
     A Codebase is a tree of Resources.
     """
 

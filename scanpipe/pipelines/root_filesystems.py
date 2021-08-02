@@ -30,7 +30,7 @@ from scanpipe.pipes import scancode
 
 class RootFS(Pipeline):
     """
-    A pipeline to analyze a Linux root filesystem aka. rootfs.
+    A pipeline to analyze a Linux root filesystem, aka rootfs.
     """
 
     @classmethod
@@ -52,7 +52,7 @@ class RootFS(Pipeline):
 
     def extract_input_files_to_codebase_directory(self):
         """
-        Extract root filesystem input archives with extractcode.
+        Extracts root filesystem input archives with extractcode.
         """
         input_files = self.project.inputs("*")
         target_path = self.project.codebase_path
@@ -68,13 +68,13 @@ class RootFS(Pipeline):
 
     def find_root_filesystems(self):
         """
-        Find the root filesystems in project codebase/.
+        Finds root filesystems in the project's codebase/.
         """
         self.root_filesystems = list(rootfs.RootFs.from_project_codebase(self.project))
 
     def collect_rootfs_information(self):
         """
-        Collect rootfs information and store on project.
+        Collects and stores rootfs information in the project.
         """
         rootfs_data = {}
         for rfs in self.root_filesystems:
@@ -85,14 +85,14 @@ class RootFS(Pipeline):
 
     def collect_and_create_codebase_resources(self):
         """
-        Collect and create all image files as CodebaseResource.
+        Collects and labels all image files as CodebaseResource.
         """
         for rfs in self.root_filesystems:
             rootfs.create_codebase_resources(self.project, rfs)
 
     def collect_and_create_system_packages(self):
         """
-        Collect installed system packages for each rootfs based on the distro.
+        Collects installed system packages for each rootfs based on the distro.
         The collection of system packages is only available for known distros.
         """
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
@@ -101,25 +101,25 @@ class RootFS(Pipeline):
 
     def tag_uninteresting_codebase_resources(self):
         """
-        Flag remaining files not from a system package if they are not worth tracking.
+        Flags files—not worth tracking—that don’t belong to any system packages.
         """
         rootfs.tag_uninteresting_codebase_resources(self.project)
 
     def tag_empty_files(self):
         """
-        Flag empty files.
+        Flags empty files.
         """
         rootfs.tag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """
-        Scan unknown resources for packages infos.
+        Scans unknown resources for packages information.
         """
         scancode.scan_for_application_packages(self.project)
 
     def match_not_analyzed_to_system_packages(self):
         """
-        Match not-yet-analyzed files to files already related to system packages.
+        Matches "not-yet-analyzed" files to files already belong to system packages.
         """
         rootfs.match_not_analyzed(
             self.project,
@@ -129,7 +129,7 @@ class RootFS(Pipeline):
 
     def match_not_analyzed_to_application_packages(self):
         """
-        Match not-yet-analyzed files to files already related to application packages.
+        Matches "not-yet-analyzed" files to files already belong to application packages.
         """
         # TODO: do it one rootfs at a time e.g. for rfs in self.root_filesystems:
         rootfs.match_not_analyzed(
@@ -140,18 +140,18 @@ class RootFS(Pipeline):
 
     def scan_for_files(self):
         """
-        Scan unknown resources for copyrights, licenses, emails, and urls.
+        Scans unknown resources for copyrights, licenses, emails, and urls.
         """
         scancode.scan_for_files(self.project)
 
     def analyze_scanned_files(self):
         """
-        Analyze single file scan results for completeness.
+        Analyzes single file scan results for completeness.
         """
         pipes.analyze_scanned_files(self.project)
 
     def tag_not_analyzed_codebase_resources(self):
         """
-        Check for leftover files for sanity. We should have none.
+        Checks for any leftover files for sanity; there should be none.
         """
         pipes.tag_not_analyzed_codebase_resources(self.project)
