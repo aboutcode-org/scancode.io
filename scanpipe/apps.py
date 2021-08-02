@@ -57,7 +57,7 @@ class ScanPipeConfig(AppConfig):
 
     def load_pipelines(self):
         """
-        Load Pipelines from the "scancodeio_pipelines" entry point group and from the
+        Loads pipelines from the "scancodeio_pipelines" entry point group and from the
         pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
@@ -86,7 +86,7 @@ class ScanPipeConfig(AppConfig):
 
     def register_pipeline(self, name, cls):
         """
-        Register the provided `name` and `cls` as a valid pipeline.
+        Registers the provided `name` and `cls` as a valid pipeline.
         """
         if not is_pipeline(cls):
             raise ImproperlyConfigured(
@@ -102,8 +102,8 @@ class ScanPipeConfig(AppConfig):
 
     def register_pipeline_from_file(self, path):
         """
-        Search for a Pipeline subclass in the provided file `path` and register it
-        when found.
+        Searches for a pipeline subclass in a given file `path` and registers it
+        after being found.
         """
         module_name = inspect.getmodulename(path)
         module = SourceFileLoader(module_name, str(path)).load_module()
@@ -128,7 +128,7 @@ class ScanPipeConfig(AppConfig):
 
     def get_pipeline_choices(self, include_blank=True):
         """
-        Return a `choices` list of tuple suitable for a Django ChoiceField.
+        Returns a `choices` list of tuple suitable for a Django ChoiceField.
         """
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
         choices.extend([(name, name) for name in self.pipelines.keys()])
@@ -136,11 +136,11 @@ class ScanPipeConfig(AppConfig):
 
     def set_policies(self):
         """
-        Compute and set the `license_policies` on the app instance.
+        Computes and sets the `license_policies` on the app instance.
 
-        If a policies file is available but not under the proper format, or not
-        including the proper content, we want to let an exception to be raised
-        during the app loading to warn the sysadmin about the issue.
+        If the policies file is available but formatted properly or doesn't
+        include the proper content, we want to raise an exception while the app
+        is loading to warn sysadmins about the issue.
         """
         policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
         if policies_file_location:
@@ -156,13 +156,13 @@ class ScanPipeConfig(AppConfig):
     @staticmethod
     def get_policies_index(policies_list, key):
         """
-        Return an inverted index by `key` of the `policies_list`.
+        Returns an inverted index by `key` of the `policies_list`.
         """
         return {policy.get(key): policy for policy in policies_list}
 
     @property
     def policies_enabled(self):
         """
-        Return True if the policies where provided and properly loaded.
+        Returns True if the policies were provided and loaded properly.
         """
         return bool(self.license_policies_index)

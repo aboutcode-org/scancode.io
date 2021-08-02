@@ -49,7 +49,7 @@ from scanpipe.pipes.output import queryset_to_csv_stream
 
 class ListDisplayField:
     """
-    Base class for `list_display` fields customization.
+    A base class for the `list_display` fields customization.
     """
 
     def __init__(self, name, **kwargs):
@@ -74,7 +74,7 @@ class ListDisplayField:
 
 class FilterLink(ListDisplayField):
     """
-    Return the field as a link to filter by its value.
+    Returns a given field as a link to filter by its value.
     """
 
     def __init__(self, name, filter_lookup=None, **kwargs):
@@ -95,7 +95,7 @@ class FilterLink(ListDisplayField):
 
 class JoinList(ListDisplayField):
     """
-    Return the field value as joined list by provided `sep`.
+    Returns field values as a list joined by the provided separator—`sep`.
     """
 
     def __init__(self, name, sep="<br>", **kwargs):
@@ -110,7 +110,7 @@ class JoinList(ListDisplayField):
 class InjectRequestChangeList(ChangeList):
     def get_results(self, request):
         """
-        Inject the `request` on each object of the results_list.
+        Injects the `request` on each object of the results_list.
         """
         super().get_results(request)
         for obj in self.result_list:
@@ -119,7 +119,7 @@ class InjectRequestChangeList(ChangeList):
 
 class PathListFilter(admin.SimpleListFilter):
     """
-    Filter by `path` using the `startswith` lookup.
+    Filters by `path` using the `startswith` lookup.
     Only the provided value is displayed as a choice for visual clue on filter
     activity.
     """
@@ -143,19 +143,19 @@ class PathListFilter(admin.SimpleListFilter):
 
 class Echo:
     """
-    An object that implements just the write method of the file-like interface.
+    An object that only implements the write method of the file-like interface.
     """
 
     def write(self, value):
         """
-        Write the value by returning it, instead of storing in a buffer.
+        Writes a given value by returning it instead of storing it in a buffer.
         """
         return value
 
 
 class ExportConfigurationForm(forms.Form):
     """
-    Configuration form for exporting data including selected fields.
+    A configuration form for exporting data, including selected fields.
     """
 
     include_fields = forms.MultipleChoiceField(
@@ -174,7 +174,7 @@ class ExportConfigurationForm(forms.Form):
 
 class AdminExportView(FormView):
     """
-    A view to configure an export and download the data.
+    A view to configure data export and download.
     """
 
     template_name = "admin/export.html"
@@ -221,7 +221,7 @@ class AdminExportView(FormView):
 
 class ProjectRelatedModelAdmin(admin.ModelAdmin):
     """
-    Regroup the common ModelAdmin values for Project related models.
+    Regroups the common ModelAdmin values for Project related models.
     """
 
     list_select_related = True
@@ -287,7 +287,7 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
 
 def get_admin_url(obj, view="change"):
     """
-    Return an admin URL for the provided `obj`.
+    Returns an admin URL for a provided `obj` object.
     """
     opts = obj._meta
     viewname = f"admin:{opts.app_label}_{opts.model_name}_{view}"
@@ -321,9 +321,9 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
     @admin.display(ordering="path", description="Path")
     def path_filter(self, obj):
         """
-        Split the `obj.path` into clickable segments.
-        Each segments link to a filter by itself.
-        The last segment link target the object form view.
+        Splits the `obj.path` into clickable segments.
+        Each segment links to a filter by itself.
+        The last segment links the target object form view.
         """
         links = []
         segments = obj.path.split("/")
