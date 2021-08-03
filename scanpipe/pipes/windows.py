@@ -93,7 +93,7 @@ def tag_uninteresting_windows_codebase_resources(project):
     qs.filter(lookups).update(status="ignored-not-interesting")
 
 
-def tag_installed_package_files(project, root_dir_pattern, package, q_objects=[]):
+def tag_installed_package_files(project, root_dir_pattern, package, q_objects=()):
     """
     For all CodebaseResources from `project` whose `rootfs_path` starts with
     `root_dir_pattern`, add `package` to the discovered_packages of each
@@ -122,27 +122,33 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=[]
 
 def _tag_python_software(project):
     qs = project.codebaseresources.no_status()
-    python_root_pattern = r"(^/(Files/)?Python(\d+)?)/.*$"
+    python_root_pattern = r"(?P<root_path>^/(Files/)?Python(?P<version>\d+)?)/.*$"
     python_root_pattern_compiled = re.compile(python_root_pattern)
 
     python_versions_by_path = {}
-    for python_resource in qs.filter(rootfs_path__regex=python_root_pattern):
-        _, python_root_dir, _, version, _ = re.split(
-            python_root_pattern_compiled,
-            python_resource.rootfs_path,
+    for python_resource in qs.filter(rootfs_path__regex=r"(^/(Files/)?Python(\d+)?)/.*$"):
+        match = python_root_pattern_compiled.match(
+            python_resource.rootfs_path
         )
-        if python_root_dir in python_versions_by_path:
+        if not match:
             continue
+
+        python_root_path = match.group("root_path")
+        if python_root_path in python_versions_by_path:
+            continue
+
+        version = match.group("version")
         if not version:
             version = "nv"
         if version != "nv":
             version = ".".join(digit for digit in version)
-        python_versions_by_path[python_root_dir] = version
+
+        python_versions_by_path[python_root_path] = version
 
     # We do not want to tag the files in the `site-packages` directory as being
     # from Python proper. The packages found here are oftentime third-party
     # packages from outside the Python foundation
-    q_objects = [~Q(rootfs_path__icontains="site-packages")]
+    q_objects = (~Q(rootfs_path__icontains="site-packages"),)
     for python_path, python_version in python_versions_by_path.items():
         python_package = win_reg.InstalledWindowsProgram(
             name="Python",
@@ -161,19 +167,27 @@ def _tag_python_software(project):
 
 def _tag_openjdk_software(project):
     qs = project.codebaseresources.no_status()
-    openjdk_root_pattern = r"^(/(Files/)?(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
+    openjdk_root_pattern = r"^(?P<root_path>/(Files/)?(open)?jdk(-(?P<version>(\d*)(\.\d+)*))*)/.*$"
     openjdk_root_pattern_compiled = re.compile(openjdk_root_pattern)
 
     openjdk_versions_by_path = {}
-    for openjdk_codebase_resource in qs.filter(rootfs_path__regex=openjdk_root_pattern):
-        _, openjdk_root_path, _, _, _, openjdk_version, _, _, _ = re.split(
-            openjdk_root_pattern_compiled,
-            openjdk_codebase_resource.rootfs_path,
+    for openjdk_codebase_resource in qs.filter(
+        rootfs_path__regex=r"^(/(Files/)?(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
+    ):
+        match = openjdk_root_pattern_compiled.match(
+            openjdk_codebase_resource.rootfs_path
         )
+        if not match:
+            continue
+
+        openjdk_root_path = match.group("root_path")
         if openjdk_root_path in openjdk_versions_by_path:
             continue
+
+        openjdk_version = match.group("version")
         if not openjdk_version:
             openjdk_version = "nv"
+
         openjdk_versions_by_path[openjdk_root_path] = openjdk_version
 
     for openjdk_path, openjdk_version in openjdk_versions_by_path.items():
@@ -226,19 +240,27 @@ def tag_program_files(project):
     """
     qs = project.codebaseresources.no_status()
     # Get all files from Program Files and Program Files (x86)
-    program_files_subdir_pattern = r"(^.*Program Files( \(x86\))?/([^/]+))"
+    program_files_subdir_pattern = (
+        r"(?P<program_files_subdir>^.*Program Files( \(x86\))?/(?P<dirname>[^/]+))"
+    )
     program_files_subdir_pattern_compiled = re.compile(program_files_subdir_pattern)
 
     program_files_dirname_by_path = {}
     for program_file in qs.filter(rootfs_path__regex=r"^.*/Program Files( \(x86\))?"):
-        _, program_files_subdir, _, dirname, _ = re.split(
-            program_files_subdir_pattern_compiled, program_file.rootfs_path
+        match = program_files_subdir_pattern_compiled.match(
+            program_file.rootfs_path
         )
+        if not match:
+            continue
+
+        program_files_subdir = match.group("program_files_subdir")
+        dirname = match.group("dirname")
         if (
             program_files_subdir in program_files_dirname_by_path
             or dirname.lower() in map(str.lower, PROGRAM_FILES_DIRS_TO_IGNORE)
         ):
             continue
+
         program_files_dirname_by_path[program_files_subdir] = dirname
 
     for root_dir, root_dir_name in program_files_dirname_by_path.items():

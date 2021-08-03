@@ -26,7 +26,7 @@ from scanpipe.pipes import rootfs
 from scanpipe.pipes import windows
 
 
-class WindowsDocker(Docker):
+class DockerWindows(Docker):
     """
     A pipeline to analyze Windows Docker images.
     """
