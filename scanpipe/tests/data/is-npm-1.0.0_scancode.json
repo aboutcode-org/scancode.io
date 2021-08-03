@@ -2,10 +2,10 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "21.6.7",
+      "tool_version": "21.7.30",
       "options": {
         "input": [
-          "/Volumes/nexB/var/projects/wdsdadsadasd-bc9f8ade/codebase"
+          "/tmp/tmpkzp1f_pw/projects/analysis-03087122/codebase"
         ],
         "--classify": true,
         "--consolidate": true,
@@ -13,20 +13,19 @@
         "--email": true,
         "--info": true,
         "--is-license-text": true,
-        "--json-pp": "/Volumes/nexB/var/projects/wdsdadsadasd-bc9f8ade/output/scancode-2021-07-07-11-18-49.json",
+        "--json-pp": "/tmp/tmpkzp1f_pw/projects/analysis-03087122/output/scancode-2021-08-03-19-09-26.json",
         "--license": true,
         "--license-clarity-score": true,
         "--license-text": true,
         "--package": true,
-        "--processes": "4",
         "--summary": true,
         "--summary-key-files": true,
         "--url": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2021-07-07T111850.232385",
-      "end_timestamp": "2021-07-07T111856.279366",
-      "duration": 6.047006845474243,
+      "start_timestamp": "2021-08-03T190927.407466",
+      "end_timestamp": "2021-08-03T190932.182255",
+      "duration": 4.774801015853882,
       "message": null,
       "errors": [],
       "extra_data": {

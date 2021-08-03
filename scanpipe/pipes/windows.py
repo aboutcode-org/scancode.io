@@ -126,10 +126,10 @@ def _tag_python_software(project):
     python_root_pattern_compiled = re.compile(python_root_pattern)
 
     python_versions_by_path = {}
-    for python_resource in qs.filter(rootfs_path__regex=r"(^/(Files/)?Python(\d+)?)/.*$"):
-        match = python_root_pattern_compiled.match(
-            python_resource.rootfs_path
-        )
+    for python_resource in qs.filter(
+        rootfs_path__regex=r"(^/(Files/)?Python(\d+)?)/.*$"
+    ):
+        match = python_root_pattern_compiled.match(python_resource.rootfs_path)
         if not match:
             continue
 
@@ -167,7 +167,9 @@ def _tag_python_software(project):
 
 def _tag_openjdk_software(project):
     qs = project.codebaseresources.no_status()
-    openjdk_root_pattern = r"^(?P<root_path>/(Files/)?(open)?jdk(-(?P<version>(\d*)(\.\d+)*))*)/.*$"
+    openjdk_root_pattern = (
+        r"^(?P<root_path>/(Files/)?(open)?jdk(-(?P<version>(\d*)(\.\d+)*))*)/.*$"
+    )
     openjdk_root_pattern_compiled = re.compile(openjdk_root_pattern)
 
     openjdk_versions_by_path = {}
@@ -247,9 +249,7 @@ def tag_program_files(project):
 
     program_files_dirname_by_path = {}
     for program_file in qs.filter(rootfs_path__regex=r"^.*/Program Files( \(x86\))?"):
-        match = program_files_subdir_pattern_compiled.match(
-            program_file.rootfs_path
-        )
+        match = program_files_subdir_pattern_compiled.match(program_file.rootfs_path)
         if not match:
             continue
 

@@ -104,7 +104,6 @@ def get_resource_info(location):
 
     # Missing fields on CodebaseResource model returned by `get_file_info`.
     unsupported_fields = [
-        "is_media",
         "is_source",
         "is_script",
         "date",

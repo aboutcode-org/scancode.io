@@ -1036,6 +1036,7 @@ class CodebaseResource(
     is_text = models.BooleanField(default=False)
     is_archive = models.BooleanField(default=False)
     is_key_file = models.BooleanField(default=False)
+    is_media = models.BooleanField(default=False)
 
     class Compliance(models.TextChoices):
         OK = "ok"
