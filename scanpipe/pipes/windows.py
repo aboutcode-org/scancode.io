@@ -98,23 +98,21 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=[]
     For all CodebaseResources from `project` whose `rootfs_path` starts with
     `root_dir_pattern`, add `package` to the discovered_packages of each
     CodebaseResource and set the status.
-
-    If there are Q() objects in `q_objects`, then those Q() objects are chained
-    to the initial query (`lookup`) using AND to allow a more specific query for
-    package files.
     """
     qs = project.codebaseresources.no_status()
     lookup = Q(rootfs_path__startswith=root_dir_pattern)
+
+    # If there are Q() objects in `q_objects`, then those Q() objects are chained
+    # to the initial query `lookup` using AND to allow a more specific query for
+    # package files.
     for q_object in q_objects:
         lookup &= q_object
+
     installed_package_files = qs.filter(lookup)
     # If we find files whose names start with `root_dir_pattern`, we consider
-    # these files to be part of the Package `package` and tag these files as
-    # such
+    # these files to be part of the Package `package` and tag these files as such.
     if installed_package_files:
-        created_package = pipes.update_or_create_package(
-            project=project, package_data=package.to_dict()
-        )
+        created_package = pipes.update_or_create_package(project, package.to_dict())
         for installed_package_file in installed_package_files:
             installed_package_file.discovered_packages.add(created_package)
             installed_package_file.status = "installed-package"
@@ -122,33 +120,16 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=[]
         created_package.save()
 
 
-def tag_known_software(project):
-    """
-    Find Windows software in `project` by checking `project`s CodebaseResources
-    to see if their rootfs_path is is under a known software root directory. If
-    there are CodebaseResources that are under a known software root directory,
-    a DiscoveredPackage is created for that software package and all files under
-    that software package's root directory are considered installed files for
-    that package.
-
-    Currently, we are only checking for Python and openjdk in Windows Docker
-    image layers.
-
-    If a version number cannot be determined for an installed software Package,
-    then a version number of "nv" will be set.
-    """
+def _tag_python_software(project):
     qs = project.codebaseresources.no_status()
-    python_root_directory_name_pattern = r"(^/(Files/)?Python(\d+)?)/.*$"
-    python_root_directory_name_pattern_compiled = re.compile(
-        python_root_directory_name_pattern
-    )
+    python_root_pattern = r"(^/(Files/)?Python(\d+)?)/.*$"
+    python_root_pattern_compiled = re.compile(python_root_pattern)
+
     python_versions_by_path = {}
-    for python_codebase_resource in qs.filter(
-        rootfs_path__regex=python_root_directory_name_pattern
-    ):
+    for python_resource in qs.filter(rootfs_path__regex=python_root_pattern):
         _, python_root_dir, _, version, _ = re.split(
-            python_root_directory_name_pattern_compiled,
-            python_codebase_resource.rootfs_path,
+            python_root_pattern_compiled,
+            python_resource.rootfs_path,
         )
         if python_root_dir in python_versions_by_path:
             continue
@@ -177,19 +158,16 @@ def tag_known_software(project):
             q_objects=q_objects,
         )
 
+
+def _tag_openjdk_software(project):
     qs = project.codebaseresources.no_status()
-    openjdk_root_directory_name_pattern = (
-        r"^(/(Files/)?(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
-    )
-    openjdk_root_directory_name_pattern_compiled = re.compile(
-        openjdk_root_directory_name_pattern
-    )
+    openjdk_root_pattern = r"^(/(Files/)?(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
+    openjdk_root_pattern_compiled = re.compile(openjdk_root_pattern)
+
     openjdk_versions_by_path = {}
-    for openjdk_codebase_resource in qs.filter(
-        rootfs_path__regex=openjdk_root_directory_name_pattern
-    ):
+    for openjdk_codebase_resource in qs.filter(rootfs_path__regex=openjdk_root_pattern):
         _, openjdk_root_path, _, _, _, openjdk_version, _, _, _ = re.split(
-            openjdk_root_directory_name_pattern_compiled,
+            openjdk_root_pattern_compiled,
             openjdk_codebase_resource.rootfs_path,
         )
         if openjdk_root_path in openjdk_versions_by_path:
@@ -207,8 +185,29 @@ def tag_known_software(project):
             homepage_url="http://openjdk.java.net/",
         )
         tag_installed_package_files(
-            project=project, root_dir_pattern=openjdk_path, package=openjdk_package
+            project=project,
+            root_dir_pattern=openjdk_path,
+            package=openjdk_package,
         )
+
+
+def tag_known_software(project):
+    """
+    Find Windows software in `project` by checking `project`s CodebaseResources
+    to see if their rootfs_path is is under a known software root directory. If
+    there are CodebaseResources that are under a known software root directory,
+    a DiscoveredPackage is created for that software package and all files under
+    that software package's root directory are considered installed files for
+    that package.
+
+    Currently, we are only checking for Python and openjdk in Windows Docker
+    image layers.
+
+    If a version number cannot be determined for an installed software Package,
+    then a version number of "nv" will be set.
+    """
+    _tag_python_software(project)
+    _tag_openjdk_software(project)
 
 
 PROGRAM_FILES_DIRS_TO_IGNORE = (
@@ -219,8 +218,7 @@ PROGRAM_FILES_DIRS_TO_IGNORE = (
 
 def tag_program_files(project):
     """
-    Report all subdirectories of Program Files and Program Files (x86) as
-    Packages
+    Report all subdirectories of Program Files and Program Files (x86) as Packages.
 
     If a Package is detected in this manner, then we will attempt to determine
     the version from the path. If a version cannot be determined, a version of
@@ -228,14 +226,13 @@ def tag_program_files(project):
     """
     qs = project.codebaseresources.no_status()
     # Get all files from Program Files and Program Files (x86)
-    program_files_one_directory_below_pattern = r"(^.*Program Files( \(x86\))?/([^/]+))"
-    program_files_one_directory_below_pattern_compiled = re.compile(
-        program_files_one_directory_below_pattern
-    )
+    program_files_subdir_pattern = r"(^.*Program Files( \(x86\))?/([^/]+))"
+    program_files_subdir_pattern_compiled = re.compile(program_files_subdir_pattern)
+
     program_files_dirname_by_path = {}
     for program_file in qs.filter(rootfs_path__regex=r"^.*/Program Files( \(x86\))?"):
         _, program_files_subdir, _, dirname, _ = re.split(
-            program_files_one_directory_below_pattern_compiled, program_file.rootfs_path
+            program_files_subdir_pattern_compiled, program_file.rootfs_path
         )
         if (
             program_files_subdir in program_files_dirname_by_path
@@ -244,14 +241,10 @@ def tag_program_files(project):
             continue
         program_files_dirname_by_path[program_files_subdir] = dirname
 
-    for (
-        program_root_dir,
-        program_root_dir_name,
-    ) in program_files_dirname_by_path.items():
-        package = win_reg.InstalledWindowsProgram(
-            name=program_root_dir_name,
-            version="nv",
-        )
+    for root_dir, root_dir_name in program_files_dirname_by_path.items():
+        package = win_reg.InstalledWindowsProgram(name=root_dir_name, version="nv")
         tag_installed_package_files(
-            project=project, root_dir_pattern=program_root_dir, package=package
+            project=project,
+            root_dir_pattern=root_dir,
+            package=package,
         )

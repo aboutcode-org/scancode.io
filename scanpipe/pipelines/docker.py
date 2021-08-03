@@ -65,7 +65,7 @@ class Docker(root_filesystems.RootFS):
 
     def find_images_os_and_distro(self):
         """
-        Find the operating system and distro of the images.
+        Finds the operating system and distro of input images.
         """
         for image in self.images:
             image.get_and_set_distro()

@@ -57,11 +57,11 @@ setup(
         ],
         "scancodeio_pipelines": [
             "docker = scanpipe.pipelines.docker:Docker",
-            "windows_docker = scanpipe.pipelines.windows_docker:WindowsDocker",
             "load_inventory = scanpipe.pipelines.load_inventory:LoadInventory",
             "root_filesystems = scanpipe.pipelines.root_filesystems:RootFS",
             "scan_codebase = scanpipe.pipelines.scan_codebase:ScanCodebase",
             "scan_package = scanpipe.pipelines.scan_package:ScanPackage",
+            "windows_docker = scanpipe.pipelines.windows_docker:WindowsDocker",
         ],
     },
     classifiers=[

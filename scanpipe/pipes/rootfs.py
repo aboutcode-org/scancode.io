@@ -351,18 +351,19 @@ def tag_ignorable_codebase_resources(project):
     for pattern in default_ignores.keys():
         # Translate glob pattern to regex
         translated_pattern = fnmatch.translate(pattern)
-        # postgresql does not like parts of Python regex
+        # PostgreSQL does not like parts of Python regex
         if translated_pattern.startswith("(?s"):
             translated_pattern = translated_pattern.replace("(?s", "(?")
         lookups |= Q(rootfs_path__icontains=pattern)
         lookups |= Q(rootfs_path__iregex=translated_pattern)
+
     qs = project.codebaseresources.no_status()
     qs.filter(lookups).update(status="ignored-default-ignores")
 
 
 def tag_data_files_with_no_clues(project):
     """
-    Tag CodebaseResources that have a file type of `data` and no detected clues
+    Tags CodebaseResources that have a file type of `data` and no detected clues
     to be uninteresting.
     """
     lookup = Q(
@@ -375,15 +376,18 @@ def tag_data_files_with_no_clues(project):
         emails=[],
         urls=[],
     )
-    project.codebaseresources.filter(lookup).update(status="ignored-data-file-no-clues")
+
+    qs = project.codebaseresources
+    qs.filter(lookup).update(status="ignored-data-file-no-clues")
 
 
 def tag_media_files_as_uninteresting(project):
     """
-    Tag CodebaseResources that are media files to be uninteresting.
+    Tags CodebaseResources that are media files to be uninteresting.
+
+    `mimes` and `types` are taken from TypeCode:
+    https://github.com/nexB/typecode/blob/main/src/typecode/contenttype.py#L528
     """
-    # `mimes` and `types` were taken from TypeCode
-    # https://github.com/nexB/typecode/blob/c38f6831c59acae02a34a1288b9ce16e2e1f1733/src/typecode/contenttype.py#L528
     mimes = (
         "image",
         "picture",
@@ -392,6 +396,7 @@ def tag_media_files_as_uninteresting(project):
         "graphic",
         "sound",
     )
+
     types = (
         "image data",
         "graphics image",
@@ -417,10 +422,12 @@ def tag_media_files_as_uninteresting(project):
         "image data",
         "netpbm",
     )
+
     lookup = Q()
-    for m in mimes:
-        lookup |= Q(mime_type__icontains=m)
-    for t in types:
-        lookup |= Q(file_type__icontains=t)
+    for mime_type in mimes:
+        lookup |= Q(mime_type__icontains=mime_type)
+    for file_type in types:
+        lookup |= Q(file_type__icontains=file_type)
+
     qs = project.codebaseresources.no_status()
     qs.filter(lookup).update(status="ignored-media-file")
