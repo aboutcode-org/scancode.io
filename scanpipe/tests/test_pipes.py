@@ -1049,6 +1049,7 @@ class ScanPipePipesTest(TestCase):
             rootfs_path="/user/foo.png",
             mime_type="image/png",
             file_type="image/png",
+            is_media=True,
         )
         resource2 = CodebaseResource.objects.create(
             project=p1,
@@ -1056,12 +1057,21 @@ class ScanPipePipesTest(TestCase):
             rootfs_path="/user/bar.jpg",
             mime_type="image/jpeg",
             file_type="JPEG image data",
+            is_media=True,
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/baz.txt",
+            rootfs_path="/user/baz.txt",
+            is_media=False,
         )
         rootfs.tag_media_files_as_uninteresting(p1)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
+        resource3.refresh_from_db()
         self.assertEqual("ignored-media-file", resource1.status)
         self.assertEqual("ignored-media-file", resource2.status)
+        self.assertEqual("", resource3.status)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

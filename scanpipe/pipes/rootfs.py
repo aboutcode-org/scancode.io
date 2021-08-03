@@ -384,50 +384,6 @@ def tag_data_files_with_no_clues(project):
 def tag_media_files_as_uninteresting(project):
     """
     Tags CodebaseResources that are media files to be uninteresting.
-
-    `mimes` and `types` are taken from TypeCode:
-    https://github.com/nexB/typecode/blob/main/src/typecode/contenttype.py#L528
     """
-    mimes = (
-        "image",
-        "picture",
-        "audio",
-        "video",
-        "graphic",
-        "sound",
-    )
-
-    types = (
-        "image data",
-        "graphics image",
-        "ms-windows metafont .wmf",
-        "windows enhanced metafile",
-        "png image",
-        "interleaved image",
-        "microsoft asf",
-        "image text",
-        "photoshop image",
-        "shop pro image",
-        "ogg data",
-        "vorbis",
-        "mpeg",
-        "theora",
-        "bitmap",
-        "audio",
-        "video",
-        "sound",
-        "riff",
-        "icon",
-        "pc bitmap",
-        "image data",
-        "netpbm",
-    )
-
-    lookup = Q()
-    for mime_type in mimes:
-        lookup |= Q(mime_type__icontains=mime_type)
-    for file_type in types:
-        lookup |= Q(file_type__icontains=file_type)
-
     qs = project.codebaseresources.no_status()
-    qs.filter(lookup).update(status="ignored-media-file")
+    qs.filter(is_media=True).update(status="ignored-media-file")
