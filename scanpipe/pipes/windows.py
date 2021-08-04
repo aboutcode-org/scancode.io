@@ -93,7 +93,7 @@ def tag_uninteresting_windows_codebase_resources(project):
     qs.filter(lookups).update(status="ignored-not-interesting")
 
 
-def tag_installed_package_files(project, root_dir_pattern, package, q_objects=()):
+def tag_installed_package_files(project, root_dir_pattern, package, q_objects=None):
     """
     For all CodebaseResources from `project` whose `rootfs_path` starts with
     `root_dir_pattern`, add `package` to the discovered_packages of each
@@ -105,7 +105,7 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=()
     # If there are Q() objects in `q_objects`, then those Q() objects are chained
     # to the initial query `lookup` using AND to allow a more specific query for
     # package files.
-    for q_object in q_objects:
+    for q_object in q_objects or []:
         lookup &= q_object
 
     installed_package_files = qs.filter(lookup)
@@ -124,11 +124,10 @@ def _tag_python_software(project):
     qs = project.codebaseresources.no_status()
     python_root_pattern = r"(?P<root_path>^/(Files/)?Python(?P<version>\d+)?)/.*$"
     python_root_pattern_compiled = re.compile(python_root_pattern)
+    python_resources = qs.filter(rootfs_path__regex=r"(^/(Files/)?Python(\d+)?)/.*$")
 
     python_versions_by_path = {}
-    for python_resource in qs.filter(
-        rootfs_path__regex=r"(^/(Files/)?Python(\d+)?)/.*$"
-    ):
+    for python_resource in python_resources:
         match = python_root_pattern_compiled.match(python_resource.rootfs_path)
         if not match:
             continue
@@ -146,9 +145,10 @@ def _tag_python_software(project):
         python_versions_by_path[python_root_path] = version
 
     # We do not want to tag the files in the `site-packages` directory as being
-    # from Python proper. The packages found here are oftentime third-party
+    # from Python proper. The packages found here are oftentimes third-party
     # packages from outside the Python foundation
-    q_objects = (~Q(rootfs_path__icontains="site-packages"),)
+    q_objects = [~Q(rootfs_path__icontains="site-packages")]
+
     for python_path, python_version in python_versions_by_path.items():
         python_package = win_reg.InstalledWindowsProgram(
             name="Python",
@@ -171,11 +171,12 @@ def _tag_openjdk_software(project):
         r"^(?P<root_path>/(Files/)?(open)?jdk(-(?P<version>(\d*)(\.\d+)*))*)/.*$"
     )
     openjdk_root_pattern_compiled = re.compile(openjdk_root_pattern)
+    openjdk_resources = qs.filter(
+        rootfs_path__regex=r"^(/(Files/)?(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
+    )
 
     openjdk_versions_by_path = {}
-    for openjdk_codebase_resource in qs.filter(
-        rootfs_path__regex=r"^(/(Files/)?(open)?jdk(-((\d*)(\.\d+)*))*)/.*$"
-    ):
+    for openjdk_codebase_resource in openjdk_resources:
         match = openjdk_root_pattern_compiled.match(
             openjdk_codebase_resource.rootfs_path
         )
@@ -246,9 +247,12 @@ def tag_program_files(project):
         r"(?P<program_files_subdir>^.*Program Files( \(x86\))?/(?P<dirname>[^/]+))"
     )
     program_files_subdir_pattern_compiled = re.compile(program_files_subdir_pattern)
+    program_files_resources = qs.filter(
+        rootfs_path__regex=r"^.*/Program Files( \(x86\))?"
+    )
 
     program_files_dirname_by_path = {}
-    for program_file in qs.filter(rootfs_path__regex=r"^.*/Program Files( \(x86\))?"):
+    for program_file in program_files_resources:
         match = program_files_subdir_pattern_compiled.match(program_file.rootfs_path)
         if not match:
             continue
