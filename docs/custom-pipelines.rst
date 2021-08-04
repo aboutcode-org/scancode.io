@@ -114,7 +114,7 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
 
     class ScanAndReport(ScanCodebase):
         """
-        Run the ScanCodebase built-in pipeline steps and generate a licenses report.
+        Runs the ScanCodebase built-in pipeline steps and generate a licenses report.
         """
 
         @classmethod
@@ -137,8 +137,8 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
 
         def report_licenses_with_resources(self):
             """
-            Retrieve codebase resources filtered by license categories,
-            Generate a licenses report file from a template.
+            Retrieves codebase resources filtered by license categories,
+            Generates a licenses report file from a template.
             """
             categories = ["Commercial", "Copyleft"]
             resources = self.project.codebaseresources.licenses_categories(categories)

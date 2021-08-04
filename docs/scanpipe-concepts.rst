@@ -8,12 +8,12 @@ Project
 
 A **project** encapsulates the analysis of software code:
 
-- It has a **workspace**, which is a directory that contains the software code
-  files under analysis.
-- It makes use of one or more **code analysis pipelines** scripts to automate
-  the code analysis process.
-- It tracks ``Codebase Resources``, i.e. its **code files and directories**
-- It tracks ``Discovered Packages``, i.e. **system and application packages**
+- It has a :ref:`project_workspace`, which is a directory that contains the
+  software code files under analysis.
+- It makes use of one or more **code analysis** :ref:`pipelines_concept` scripts to
+  automate the code analysis process.
+- It tracks :ref:`codebase_resources`, i.e. its **code files and directories**
+- It tracks :ref:`discovered_packages`, i.e. **system and application packages**
   origin and license discovered in the codebase.
 
 In the database, **a project is identified by its unique name**.
@@ -21,7 +21,7 @@ In the database, **a project is identified by its unique name**.
 .. note::
     Multiple analysis pipelines can be run on a single project.
 
-.. _Project workspace:
+.. _project_workspace:
 
 Project workspace
 -----------------
@@ -62,10 +62,51 @@ The execution order of the steps - or the sequence of steps execution - is
 declared through the ``steps`` class attribute.
 
 .. tip::
-    Refer to :ref:`custom_pipelines` for adding pipelines to ScanCode.io.
+    Refer to :ref:`custom_pipelines` for details about adding custom pipelines
+    to ScanCode.io.
 
 .. note::
-    One or more pipelines can be assigned to a project as a sequence.
+    You can assign one or more pipelines to a project as a sequence.
+
+Pipes
+-----
+
+As mentioned above, pipelines include a group of operations—Pipes—that are
+combined in a chain-like fashion and executed in orderly manner.
+Pipes are simply the building blocks of a given pipeline.
+
+For example, the following operations—Steps—are included in the RootFS pipeline, and
+they are leveraging pipes to accomplish pre-defined tasks::
+
+    from scanpipe.pipelines import Pipeline
+    from scanpipe.pipes import rootfs
+    from scanpipe.pipes import scancode
+
+    class RootFS(Pipeline):
+        [...]
+
+        def tag_empty_files(self):
+            """
+            Flags empty files.
+            """
+            rootfs.tag_empty_codebase_resources(self.project)
+
+        def scan_for_application_packages(self):
+            """
+            Scans unknown resources for packages information.
+            """
+            scancode.scan_for_application_packages(self.project)
+
+
+.. note::
+    All **built-in pipes** are located in the ``scanpipe.pipes`` module.
+    Pipes are grouped by type in modules, e.g. ``codebase``, ``input``, ``output``,
+    ``scancode``.
+
+    Refer to our :ref:`scanpipe_pipes` section for information about available
+    pipes and their usage.
+
+.. _codebase_resources:
 
 Codebase Resources
 ------------------
@@ -85,11 +126,13 @@ The following are some of the ``CodebaseResource`` attributes:
     Please note that `ScanCode-toolkit <https://github.com/nexB/scancode-toolkit>`_
     use the same attributes and attribute names for files.
 
+.. _discovered_packages:
+
 Discovered Packages
 -------------------
 
 A project ``Discovered Packages`` are records of the **system and application packages**
-discovered in the code unedr analysis.
+discovered in the code under analysis.
 ``DiscoveredPackage`` is a database model and each record is identified by its ``Package URL``.
 ``Package URL`` is a fundamental effort to create informative identifiers for
 software packages, such as Debian, RPM, npm, Maven, or PyPI packages.
