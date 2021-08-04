@@ -62,10 +62,32 @@ The execution order of the steps - or the sequence of steps execution - is
 declared through the ``steps`` class attribute.
 
 .. tip::
-    Refer to :ref:`custom_pipelines` for adding pipelines to ScanCode.io.
+    Refer to :ref:`custom_pipelines` for details about adding custom pipelines
+    to ScanCode.io.
 
 .. note::
-    One or more pipelines can be assigned to a project as a sequence.
+    You can assign one or more pipelines to a project as a sequence.
+
+Pipes
+-----
+
+As mentioned above, pipelines include a group of operations—Pipes—that are
+combined in a chain-like fashion and executed in orderly manner.
+Pipes are simply the building blocks of a given pipeline. For example, the
+following operations—Steps—are included in the ScanCodebase pipeline, and they
+will run in a sequence to scan a codebase resource::
+
+    # Original steps from the ScanCodebase pipeline
+    cls.copy_inputs_to_codebase_directory,
+    cls.run_—extractcode,
+    cls.run_scancode,
+    cls.build_inventory_from_scan
+
+
+.. note::
+    Refer to our :ref:`scanpipe_pipes` section for information about available
+    pipes and their usage.
+
 
 Codebase Resources
 ------------------
@@ -89,7 +111,7 @@ Discovered Packages
 -------------------
 
 A project ``Discovered Packages`` are records of the **system and application packages**
-discovered in the code unedr analysis.
+discovered in the code under analysis.
 ``DiscoveredPackage`` is a database model and each record is identified by its ``Package URL``.
 ``Package URL`` is a fundamental effort to create informative identifiers for
 software packages, such as Debian, RPM, npm, Maven, or PyPI packages.
