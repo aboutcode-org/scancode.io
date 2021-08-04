@@ -40,7 +40,7 @@ codebase, and output files::
 
 Default to a :guilabel:`var/` directory in the local ScanCode.io codebase.
 
-See :ref:`Project workspace` for details.
+See :ref:`project_workspace` for details.
 
 SCANCODEIO_PROCESSES
 --------------------
