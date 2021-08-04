@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import fnmatch
 import logging
 import os
 from functools import partial
@@ -28,12 +29,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 import attr
+from commoncode.ignore import default_ignores
 from container_inspector.distro import Distro
 
 from scanpipe import pipes
 from scanpipe.pipes import alpine
 from scanpipe.pipes import debian
 from scanpipe.pipes import rpm
+from scanpipe.pipes import windows
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +51,7 @@ PACKAGE_GETTER_BY_DISTRO = {
     "opensuse": rpm.package_getter,
     "opensuse-tumbleweed": rpm.package_getter,
     "photon": rpm.package_getter,
+    "windows": windows.package_getter,
 }
 
 
@@ -188,7 +192,7 @@ def has_hash_diff(install_file, codebase_resource):
 
 def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     """
-    Given a `project` Project and an `rootfs` RootFs, scan the `rootfs` for
+    Given a `project` Project and a `rootfs` RootFs, scan the `rootfs` for
     installed system packages, and create a DiscoveredPackage for each.
 
     Then for each installed DiscoveredPackage file, check if it exists
@@ -336,3 +340,50 @@ def tag_uninteresting_codebase_resources(project):
 
     qs = project.codebaseresources.no_status()
     qs.filter(lookups).update(status="ignored-not-interesting")
+
+
+def tag_ignorable_codebase_resources(project):
+    """
+    Using the glob patterns from commoncode.ignore of ignorable files/directories,
+    tag codebase resources from `project` if their paths match an ignorable pattern.
+    """
+    lookups = Q()
+    for pattern in default_ignores.keys():
+        # Translate glob pattern to regex
+        translated_pattern = fnmatch.translate(pattern)
+        # PostgreSQL does not like parts of Python regex
+        if translated_pattern.startswith("(?s"):
+            translated_pattern = translated_pattern.replace("(?s", "(?")
+        lookups |= Q(rootfs_path__icontains=pattern)
+        lookups |= Q(rootfs_path__iregex=translated_pattern)
+
+    qs = project.codebaseresources.no_status()
+    qs.filter(lookups).update(status="ignored-default-ignores")
+
+
+def tag_data_files_with_no_clues(project):
+    """
+    Tags CodebaseResources that have a file type of `data` and no detected clues
+    to be uninteresting.
+    """
+    lookup = Q(
+        file_type="data",
+        copyrights=[],
+        holders=[],
+        authors=[],
+        licenses=[],
+        license_expressions=[],
+        emails=[],
+        urls=[],
+    )
+
+    qs = project.codebaseresources
+    qs.filter(lookup).update(status="ignored-data-file-no-clues")
+
+
+def tag_media_files_as_uninteresting(project):
+    """
+    Tags CodebaseResources that are media files to be uninteresting.
+    """
+    qs = project.codebaseresources.no_status()
+    qs.filter(is_media=True).update(status="ignored-media-file")

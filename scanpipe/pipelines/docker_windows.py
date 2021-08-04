@@ -20,14 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines import root_filesystems
+from scanpipe.pipelines.docker import Docker
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
+from scanpipe.pipes import windows
 
 
-class Docker(root_filesystems.RootFS):
+class DockerWindows(Docker):
     """
-    A pipeline to analyze Docker images.
+    A pipeline to analyze Windows Docker images.
     """
 
     @classmethod
@@ -39,62 +40,42 @@ class Docker(root_filesystems.RootFS):
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
+            cls.tag_known_software_packages,
             cls.tag_uninteresting_codebase_resources,
+            cls.tag_program_files_dirs_as_packages,
             cls.tag_empty_files,
             cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
+            cls.tag_data_files_with_no_clues,
             cls.tag_not_analyzed_codebase_resources,
         )
 
-    def extract_images(self):
+    def tag_known_software_packages(self):
         """
-        Extracts images from input tarballs.
+        Flag files from well-known software packages by checking common install paths.
         """
-        self.images, errors = docker.extract_images_from_inputs(self.project)
-        if errors:
-            self.add_error("\n".join(errors))
-
-    def extract_layers(self):
-        """
-        Extracts layers from input images.
-        """
-        errors = docker.extract_layers_from_images(self.project, self.images)
-        if errors:
-            self.add_error("\n".join(errors))
-
-    def find_images_os_and_distro(self):
-        """
-        Finds the operating system and distro of input images.
-        """
-        for image in self.images:
-            image.get_and_set_distro()
-
-    def collect_images_information(self):
-        """
-        Collects and stores image information in a project.
-        """
-        images_data = [docker.get_image_data(image) for image in self.images]
-        self.project.update_extra_data({"images": images_data})
-
-    def collect_and_create_codebase_resources(self):
-        """
-        Collects and labels all image files as CodebaseResources.
-        """
-        for image in self.images:
-            docker.create_codebase_resources(self.project, image)
-
-    def collect_and_create_system_packages(self):
-        """
-        Collects installed system packages for each layer based on the distro.
-        """
-        with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
-            for image in self.images:
-                docker.scan_image_for_system_packages(self.project, image)
+        windows.tag_known_software(self.project)
 
     def tag_uninteresting_codebase_resources(self):
         """
-        Flags files that don't belong to any system package.
+        Flag files that are known to be uninteresting.
         """
         docker.tag_whiteout_codebase_resources(self.project)
-        rootfs.tag_uninteresting_codebase_resources(self.project)
+        windows.tag_uninteresting_windows_codebase_resources(self.project)
+        rootfs.tag_ignorable_codebase_resources(self.project)
+        rootfs.tag_media_files_as_uninteresting(self.project)
+
+    def tag_program_files_dirs_as_packages(self):
+        """
+        Report the immediate subdirectories of `Program Files` and `Program
+        Files (x86)` as packages.
+        """
+        windows.tag_program_files(self.project)
+
+    def tag_data_files_with_no_clues(self):
+        """
+        If a file is a data file and has no clues towards its origin, mark as
+        uninteresting.
+        """
+        rootfs.tag_data_files_with_no_clues(self.project)

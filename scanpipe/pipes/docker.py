@@ -61,7 +61,6 @@ def extract_layers_from_images(project, images):
     Returns the `errors` that may happen during the extraction.
     """
     errors = []
-
     for image in images:
         image_dirname = Path(image.extracted_location).name
         target_path = project.codebase_path / image_dirname

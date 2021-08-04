@@ -57,6 +57,7 @@ setup(
         ],
         "scancodeio_pipelines": [
             "docker = scanpipe.pipelines.docker:Docker",
+            "docker_windows = scanpipe.pipelines.docker_windows:DockerWindows",
             "load_inventory = scanpipe.pipelines.load_inventory:LoadInventory",
             "root_filesystems = scanpipe.pipelines.root_filesystems:RootFS",
             "scan_codebase = scanpipe.pipelines.scan_codebase:ScanCodebase",
