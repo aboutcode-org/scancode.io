@@ -31,7 +31,7 @@ from scanpipe import pipes
 
 def package_getter(root_dir, **kwargs):
     """
-    Yield installed package objects.
+    Returns installed package objects.
     """
     packages = win_reg.get_installed_packages(root_dir)
     for package in packages:
@@ -40,7 +40,7 @@ def package_getter(root_dir, **kwargs):
 
 def tag_uninteresting_windows_codebase_resources(project):
     """
-    Tag known uninteresting files as uninteresting
+    Tags known uninteresting files as uninteresting
     """
     uninteresting_files = (
         "DefaultUser_Delta",
@@ -210,8 +210,8 @@ def _tag_openjdk_software(project):
 
 def tag_known_software(project):
     """
-    Find Windows software in `project` by checking `project`s CodebaseResources
-    to see if their rootfs_path is is under a known software root directory. If
+    Finds Windows software in `project` by checking CodebaseResources
+    to see if their rootfs_path is under a known software root directory. If
     there are CodebaseResources that are under a known software root directory,
     a DiscoveredPackage is created for that software package and all files under
     that software package's root directory are considered installed files for
@@ -235,7 +235,7 @@ PROGRAM_FILES_DIRS_TO_IGNORE = (
 
 def tag_program_files(project):
     """
-    Report all subdirectories of Program Files and Program Files (x86) as Packages.
+    Reports all subdirectories of Program Files and Program Files (x86) as Packages.
 
     If a Package is detected in this manner, then we will attempt to determine
     the version from the path. If a version cannot be determined, a version of

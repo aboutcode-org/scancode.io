@@ -183,7 +183,7 @@ class ProjectViewSet(
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
-    This viewset provides the `detail` action only.
+    This viewset only provides the `detail` action.
     """
 
     queryset = Run.objects.all()
