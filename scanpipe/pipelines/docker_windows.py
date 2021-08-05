@@ -75,6 +75,6 @@ class DockerWindows(Docker):
 
     def tag_data_files_with_no_clues(self):
         """
-        Lables data files that have no clues on their origin as uninteresting.
+        Flags data files that have no clues on their origin as uninteresting.
         """
         rootfs.tag_data_files_with_no_clues(self.project)

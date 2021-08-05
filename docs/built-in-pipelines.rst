@@ -19,7 +19,7 @@ Docker Image Analysis
 .. autoclass:: scanpipe.pipelines.docker.Docker()
     :members:
 
-Windows Docker Image Analysis
+Docker Windows Image Analysis
 -----------------------------
 .. autoclass:: scanpipe.pipelines.docker_windows.DockerWindows()
     :members:

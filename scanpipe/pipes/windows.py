@@ -210,7 +210,7 @@ def _tag_openjdk_software(project):
 
 def tag_known_software(project):
     """
-    Finds Windows software in `project` by checking `project`s CodebaseResources
+    Finds Windows software in `project` by checking CodebaseResources
     to see if their rootfs_path is under a known software root directory. If
     there are CodebaseResources that are under a known software root directory,
     a DiscoveredPackage is created for that software package and all files under

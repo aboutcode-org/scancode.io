@@ -33,8 +33,8 @@ Docker
 .. automodule:: scanpipe.pipes.docker
     :members:
 
-Windows Docker
---------------
+Windows
+-------
 .. automodule:: scanpipe.pipes.windows
     :members:
 
