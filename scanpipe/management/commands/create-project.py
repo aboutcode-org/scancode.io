@@ -43,14 +43,14 @@ class Command(AddInputCommandMixin, BaseCommand):
             dest="pipelines",
             default=list(),
             help=(
-                "Pipelines names to add on the project. "
-                "The pipelines are added and ran respecting this provided order."
+                "Pipelines names to add to the project."
+                "The pipelines are added and executed based on their given order."
             ),
         )
         parser.add_argument(
             "--execute",
             action="store_true",
-            help="Execute the pipelines right after project creation.",
+            help="Execute the pipelines right after the project creation.",
         )
 
     def handle(self, *args, **options):

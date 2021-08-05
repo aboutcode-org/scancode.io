@@ -28,7 +28,7 @@ from scanpipe.management.commands import ProjectCommand
 
 
 class Command(ProjectCommand):
-    help = "Run pipelines of a project."
+    help = "Run pipelines on a project."
 
     def handle(self, *args, **options):
         super().handle(*args, **options)

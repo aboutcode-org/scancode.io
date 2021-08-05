@@ -11,7 +11,7 @@ directly when you are in the activated virtualenv or at this path:
 `$ scanpipe --help`
 -------------------
 
-List all the sub-commands available (including Django built-in commands).
+Lists all sub-commands available, including Django built-in commands.
 ScanPipe's own commands are listed under the ``[scanpipe]`` section::
 
     $ scanpipe --help
@@ -29,7 +29,7 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
 `$ scanpipe <subcommand> --help`
 --------------------------------
 
-Display help for the provided subcommand.
+Displays help for the provided sub-command.
 
 For example::
 
@@ -46,8 +46,8 @@ For example::
 `$ scanpipe create-project <name>`
 ----------------------------------
 
-Create a ScanPipe project using ``<name>`` as a Project name. The name must
-be unique.
+Creates a ScanPipe project using ``<name>`` as a Project name. The project name
+must be unique.
 
 Optional arguments:
 
@@ -62,13 +62,13 @@ Optional arguments:
 - ``--execute`` Execute the pipelines right after project creation.
 
 .. warning::
-    The pipelines are added and will be executed in the order of the provided options.
+    Pipelines are added and are executed in order.
 
 
 `$ scanpipe add-input --project PROJECT [--input-file FILES] [--input-url URLS]`
 --------------------------------------------------------------------------------
 
-Add input files in a project work directory.
+Adds input files in the project's work directory.
 
 - ``--input-file INPUTS_FILES`` Input file locations to copy in the :guilabel:`input/`
   work directory.
@@ -81,29 +81,30 @@ copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` director
 
     $ scanpipe add-input --project foo --input-file ~/docker/alpine-base.tar
 
-You can also provide URLs of files to be downloaded to foo project :guilabel:`input/`
-directory::
+You can also provide URLs of files to be downloaded to the foo project
+:guilabel:`input/` directory::
 
     $ scanpipe add-input --project foo --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar
 
-.. note:: Docker images can be provided as input using their Docker reference with the
-  ``docker://docker-reference`` syntax. For example::
+.. note:: Docker images can be provided as input using their Docker reference
+    with the ``docker://docker-reference`` syntax. For example::
 
     $ [...] --input-url docker://redis
     $ [...] --input-url docker://postgres:13
     $ [...] --input-url docker://docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
 
-See https://docs.docker.com/engine/reference/builder/ for more details about references.
+See https://docs.docker.com/engine/reference/builder/ for more details about
+references.
 
 
 `$ scanpipe add-pipeline --project PROJECT PIPELINE_NAME [PIPELINE_NAME ...]`
 -----------------------------------------------------------------------------
 
-Add the ``PIPELINE_NAME`` to the provided ``PROJECT``.
+Adds the ``PIPELINE_NAME`` to a given ``PROJECT``.
 You can use more than one ``PIPELINE_NAME`` to add multiple pipelines at once.
 
 .. warning::
-    The pipelines are added and will be executed in the order of the provided options.
+    Pipelines are added and are executed in order.
 
 For example, assuming you have created beforehand a project named "foo", this will
 add the docker pipeline to your project::
@@ -114,19 +115,19 @@ add the docker pipeline to your project::
 `$ scanpipe execute --project PROJECT`
 --------------------------------------
 
-Execute the next pipeline of the project named ``PROJECT`` queue.
+Executes the next pipeline of the ``PROJECT`` project queue.
 
 
 `$ scanpipe show-pipeline --project PROJECT`
 --------------------------------------------
 
-List all the pipelines added of the project named ``PROJECT``.
+Lists all the pipelines added to the ``PROJECT`` project.
 
 
 `$ scanpipe status --project PROJECT`
 -------------------------------------
 
-Display status information about the provided ``PROJECT``.
+Displays status information about the ``PROJECT`` project.
 
 .. note::
     The full logs of each pipeline execution are displayed by default.
@@ -136,32 +137,32 @@ Display status information about the provided ``PROJECT``.
 `$ scanpipe output --project PROJECT --format {json,csv,xlsx}`
 --------------------------------------------------------------
 
-Output the ``PROJECT`` results as JSON, CSV or XLSX.
+Outputs the ``PROJECT`` results as JSON, CSV or XLSX.
 The output files are created in the ``PROJECT`` :guilabel:`output/` directory.
 
 
 `$ scanpipe graph [PIPELINE_NAME ...]`
 --------------------------------------
 
-Generate one or more pipeline graph image as PNG
-(using `Graphviz <https://graphviz.org/>`_).
-The output files are named using the pipeline name with a ``.png`` extension.
+Generates one or more pipeline graph image as PNG using
+`Graphviz <https://graphviz.org/>`_.
+The output images are named using the pipeline name with a ``.png`` extension.
 
 Optional arguments:
 
-- ``--list`` Display a list of all available pipelines.
+- ``--list`` Displays a list of all available pipelines.
 
-- ``--output OUTPUT`` Specifies directory to which the output is written.
+- ``--output OUTPUT`` Specifies the directory to which the output is written.
 
 .. note::
-    By default, the output files are created in the current working directory.
+    By default, output files are created in the current working directory.
 
 
 `$ scanpipe delete-project --project PROJECT`
 ---------------------------------------------
 
-Delete a project and its related work directory.
+Deletes a project and its related work directory.
 
 Optional arguments:
 
-- ``--no-input`` Do not prompt the user for input of any kind.
+- ``--no-input`` Does not prompt the user for input of any kind.

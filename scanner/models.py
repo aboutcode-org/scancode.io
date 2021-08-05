@@ -60,7 +60,7 @@ def load_json(file):
 
 def get_scan_work_directory(scan):
     """
-    Return the work directory location for the provided `scan`.
+    Returns the work directory location for the provided `scan`.
     """
     uuid_str = str(scan.uuid)
     return f"{WORKSPACE_LOCATION}/scans/{uuid_str[0:2]}/{uuid_str}"
@@ -179,7 +179,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
 
     def setup_work_directory(self):
         """
-        Create the work_directory structure, skip existing.
+        Creates the work_directory structure if not existing.
         """
         work_path = self.work_path
         if not work_path.exists():
@@ -187,7 +187,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
 
     def delete(self, *args, **kwargs):
         """
-        Remove the `self.output_path` directory from the filesystem
+        Removes the `self.output_path` directory from the filesystem
         after deleting the Scan object from the database.
         """
         deleted = super().delete(*args, **kwargs)
@@ -227,7 +227,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
     @property
     def output_path(self):
         """
-        Return the Scan output directory as a `Path` instance.
+        Returns the Scan output directory as a `Path` instance.
         """
         if self.has_output_file:
             return Path(self.output_file.name).parent
@@ -235,7 +235,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
     @property
     def has_output_file(self):
         """
-        Return True if the output_file field is defined on the model and
+        Returns True, if the output_file field is defined on the model and
         if the file path exists on the drive.
         """
         if self.output_file and Path(self.output_file.name).exists():
@@ -245,7 +245,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
     @property
     def data(self):
         """
-        Return the decoded Scan results data.
+        Returns the decoded Scan results data.
         """
         if not self.has_output_file:
             return
@@ -254,7 +254,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
 
     def get_summary_from_output(self):
         """
-        Extract selected sections of the Scan results, such as the `summary`
+        Extracts selected sections of the Scan results, such as the `summary`
         `license_clarity_score`, and `license_matches` related data.
         The `key_files` content is also collected and injected in the
         `summary` output.
@@ -289,7 +289,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
 
     def get_key_files_data(self):
         """
-        Return the data for all the files flagged as `is_key_file` from the
+        Returns the data for all the files flagged as `is_key_file` from the
         Scan results.
         `is_key_file` is True when a file is "top-level" file and either a
         legal, readme or manifest file.
@@ -310,8 +310,8 @@ class Scan(AbstractTaskFieldsModel, models.Model):
 
     def get_license_matches_data(self):
         """
-        Return the license matches from the Scan results grouped in a dict by
-        license key.
+        Returns the license matches from the Scan results grouped in a
+        dictionary by license key.
         """
         if not self.data:
             return
@@ -361,7 +361,7 @@ class Scan(AbstractTaskFieldsModel, models.Model):
 
     def rescan(self, queue="priority.low"):
         """
-        Re-run the Scan using the given `queue`, low priority by default.
+        Re-runs the Scan using the given `queue`, low priority by default.
         """
         return download_and_scan.apply_async(
             args=[self.pk],

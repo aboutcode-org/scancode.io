@@ -33,6 +33,11 @@ Docker
 .. automodule:: scanpipe.pipes.docker
     :members:
 
+Windows Docker
+--------------
+.. automodule:: scanpipe.pipes.windows
+    :members:
+
 Fetch
 -----
 .. automodule:: scanpipe.pipes.fetch

@@ -19,6 +19,11 @@ Docker Image Analysis
 .. autoclass:: scanpipe.pipelines.docker.Docker()
     :members:
 
+Windows Docker Image Analysis
+-----------------------------
+.. autoclass:: scanpipe.pipelines.docker_windows.DockerWindows()
+    :members:
+
 Load Inventory From Scan
 ------------------------
 .. autoclass:: scanpipe.pipelines.load_inventory.LoadInventory()

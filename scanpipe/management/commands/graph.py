@@ -40,7 +40,7 @@ def is_graphviz_installed():
 
 def pipeline_graph_dot(pipeline_name, pipeline_class):
     """
-    Return the pipeline graph as DOT format compatible with Graphviz.
+    Returns the pipeline graph as DOT format compatible with Graphviz.
     """
     fontname = "Helvetica"
     shape = "record"
