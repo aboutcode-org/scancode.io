@@ -122,6 +122,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
 
     for i, (purl, package, layer) in enumerate(installed_packages):
         logger.info(f"Creating package #{i}: {purl}")
+        package.extra_data = {"image_id": image.image_id}
         created_package = pipes.update_or_create_package(project, package.to_dict())
 
         # We have no files for this installed package, we cannot go further.

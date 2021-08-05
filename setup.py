@@ -61,6 +61,7 @@ setup(
             "root_filesystems = scanpipe.pipelines.root_filesystems:RootFS",
             "scan_codebase = scanpipe.pipelines.scan_codebase:ScanCodebase",
             "scan_package = scanpipe.pipelines.scan_package:ScanPackage",
+            "alpine_packages = scanpipe.pipelines.alpine_packages:AlpinePackages"
         ],
     },
     classifiers=[
