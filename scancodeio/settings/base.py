@@ -102,7 +102,7 @@ DATABASES = {
         "NAME": env.str("SCANCODEIO_DB_NAME", "scancodeio"),
         "USER": env.str("SCANCODEIO_DB_USER", "scancodeio"),
         "PASSWORD": env.str("SCANCODEIO_DB_PASSWORD", "scancodeio"),
-        "PORT": "5432",
+        "PORT": env.str("SCANCODEIO_DB_PORT", "5432"),
         "ATOMIC_REQUESTS": True,
     }
 }
