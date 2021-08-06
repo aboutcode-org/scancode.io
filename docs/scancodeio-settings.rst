@@ -11,8 +11,7 @@ You can configure your preferences using the following settings in the ``.env``
 file.
 
 .. note::
-    ScanCode.io is based on the Django web framework and inherits from its settings
-    system.
+    ScanCode.io is based on the Django web framework and its settings system.
     The list of settings available in Django is documented at
     `Django Settings <https://docs.djangoproject.com/en/dev/ref/settings/>`_.
 
