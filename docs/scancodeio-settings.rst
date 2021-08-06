@@ -3,20 +3,32 @@
 Application Settings
 ====================
 
+ScanCode.io is configured with environment variables stored in a ``.env`` file.
+
 The ``.env`` file is created at the root of the ScanCode.io codebase during its
 installation.
 You can configure your preferences using the following settings in the ``.env``
 file.
+
+.. note::
+    ScanCode.io is based on the Django web framework and inherits from its settings
+    system.
+    The list of settings available in Django is documented at
+    `Django Settings <https://docs.djangoproject.com/en/dev/ref/settings/>`_.
+
+.. tip::
+    Settings specific to ScanCode.io are all prefixed with ``SCANCODEIO_``.
 
 DATABASE
 --------
 
 The database can be configured using the following settings::
 
-    SCANCODEIO_DB_HOST
-    SCANCODEIO_DB_NAME
-    SCANCODEIO_DB_USER
-    SCANCODEIO_DB_PASSWORD
+    SCANCODEIO_DB_HOST=localhost
+    SCANCODEIO_DB_NAME=scancodeio
+    SCANCODEIO_DB_USER=user
+    SCANCODEIO_DB_PASSWORD=password
+    SCANCODEIO_DB_PORT=5432
 
 TIME_ZONE
 ---------
@@ -27,7 +39,8 @@ default the ``UTC`` time zone is used::
     TIME_ZONE=Europe/Paris
 
 .. note::
-    You can view a detailed list of time zones `here. <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
+    You can view a detailed list of time zones `here.
+    <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
 
 .. _scancodeio_settings_workspace_location:
 
