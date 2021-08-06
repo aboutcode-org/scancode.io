@@ -81,8 +81,16 @@ Using cURL:
 
 .. code-block:: console
 
-    curl -X POST  http://localhost/api/projects/ \
-         --data '{"name": "project_name", "input_urls": "https://download.url/package.archive", "pipeline": "scan_package", "execute_now": true}'
+    api_url="http://localhost/api/projects/"
+    content_type="Content-Type: application/json"
+    data='{
+        "name": "project_name",
+        "input_urls": "https://download.url/package.archive",
+        "pipeline": "scan_package",
+        "execute_now": true
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
 
 Using Python and the requests library:
 
@@ -120,7 +128,7 @@ Project details
 
 The project details view returns all information available about a project.
 
-``GET /api/projects/b0c92a72-6c01-461d-993a-5360c30d7937/``
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/``
 
 .. code-block:: json
 
@@ -129,6 +137,7 @@ The project details view returns all information available about a project.
         "url": "/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/",
         "uuid": "6461408c-726c-4b70-aa7a-c9cc9d1c9685",
         "created_date": "2021-07-27T08:43:06.058350+02:00",
+        "[...]": "[...]"
         "codebase_resources_summary": {
             "application-package": 1
         },
@@ -148,11 +157,49 @@ Add the selected ``pipeline`` to the ``project``.
 If the ``execute_now`` value is provided, the pipeline execution will start immediately
 on pipeline addition.
 
+``POST /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/add_pipeline/``
+
+Data:
+    - ``pipeline``: ``docker``
+    - ``execute_now``: ``true``
+
+Using cURL:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/add_pipeline/"
+    content_type="Content-Type: application/json"
+    data='{
+        "pipeline": "docker",
+        "execute_now": true
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
+.. code-block:: json
+
+    {
+        "status": "Pipeline added."
+    }
+
 Errors
 ^^^^^^
 
-List all the errors that were logged during Pipelines execution of this
-``project``.
+List all the errors that were logged during Pipelines execution of this ``project``.
+
+``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/errors/``
+
+.. code-block:: json
+
+    [
+        {
+            "uuid": "d4ed9405-5568-45ad-99f6-782a9b82d1d2",
+            "model": "CodebaseResource",
+            "[...]": "[...]"
+            "message": "ERROR: for scanner: packages:",
+            "created_date": "2021-04-27T22:38:30.762731+02:00"
+        }
+    ]
 
 File content
 ^^^^^^^^^^^^
@@ -160,22 +207,76 @@ File content
 Display the content of a ``project`` file resource provided using the
 ``?path=<resource_path>`` argument.
 
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/file_content/?path=setup.py``
+
+.. code-block:: json
+
+    {
+        "file_content": "#!/usr/bin/env python\n# -*- encoding: utf-8 -*-\n\n..."
+    }
+
 Packages
 ^^^^^^^^
 
 List all the ``packages`` of this ``project``.
+
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/packages/``
+
+.. code-block:: json
+
+    [
+        {
+            "purl": "pkg:deb/debian/libdb5.3@5.3.28%2Bdfsg1-0.5?arch=amd64",
+            "type": "deb",
+            "namespace": "debian",
+            "name": "libdb5.3",
+            "version": "5.3.28+dfsg1-0.5",
+            "[...]": "[...]"
+        }
+    ]
 
 Resources
 ^^^^^^^^^
 
 List all the ``resources`` of this ``project``.
 
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/resources/``
+
+.. code-block:: json
+
+    [
+        {
+            "for_packages": [
+                "pkg:deb/debian/bash@5.0-4?arch=amd64"
+            ],
+            "path": "/bin/bash",
+            "size": 1168776,
+            "[...]": "[...]"
+        }
+    ]
+
 Results
 ^^^^^^^
 
 Display the results as JSON content compatible with ScanCode data format.
 
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results/``
+
+.. code-block:: json
+
+    {
+        "headers": [
+            {
+                "tool_name": "scanpipe",
+                "tool_version": "21.8.2",
+                "[...]": "[...]"
+            }
+        ]
+    }
+
 Results (download)
 ^^^^^^^^^^^^^^^^^^
 
 Download the JSON results as an attachment.
+
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results_download/``
