@@ -1,4 +1,4 @@
-.. _scanpipe_command_line:
+.. _command_line_interface:
 
 Command Line Interface
 ======================

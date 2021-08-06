@@ -37,8 +37,8 @@ you’ll find information on:
     custom-pipelines
     scanpipe-pipes
     output-files
-    scanpipe-command-line
-    scanpipe-api
+    command-line-interface
+    rest-api
     scancodeio-settings
     offline-installation
 

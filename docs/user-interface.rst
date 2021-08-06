@@ -15,7 +15,7 @@ To access the web application, open your web browser and visit: http://127.0.0.1
 
 .. note::
     All the capabilities offered by the ScanCode.io Web Interface are also available as
-    :ref:`scanpipe_command_line` and in the :ref:`scanpipe_api`.
+    :ref:`command_line_interface` and in the :ref:`rest_api`.
 
 Home Screen
 -----------
