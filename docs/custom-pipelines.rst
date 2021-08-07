@@ -153,3 +153,21 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
             report_stream = template.stream(resources=resources_by_licenses)
             report_file = self.project.get_output_file_path("license-report", "txt")
             report_stream.dump(str(report_file))
+
+Pipeline Packaging
+------------------
+
+Now that we have a custom pipeline, we can package it as a Python module for distribution.
+Follow the standard packaging procedure for your pipeline as described by
+`PyPA <https://packaging.python.org/tutorials/packaging-projects/>`_.
+
+After the packaging is complete, specify the entry point of the pipeline in your
+:guilabel:`setup.cfg` file.
+
+.. code-block:: cfg
+
+    [options.entry_points]
+    scancodeio_pipelines =
+        pipeline_name = pipeline_module:Pipeline_class
+
+Replace ``pipeline_module`` with the name of the Python module containing the pipeline.
