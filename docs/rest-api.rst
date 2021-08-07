@@ -3,24 +3,24 @@
 REST API
 ========
 
-To get started locally with the API:
+To get started locally with REST API:
 
 1. **Run the webserver** with::
 
     make run
 
-2. Visit the **projects API endpoint** at http://127.0.0.1:8001/api/projects/ or
+2. Visit the **projects' API endpoint** at http://127.0.0.1:8001/api/projects/ or
    http://localhost/api/projects/ when running with Docker.
 
 Authentication
 --------------
 
-When the authentication system is enabled on a ScanCode.io instance (disabled by
-default) you will have to include an authentication token ``API key`` in the
+When the authentication setting is enabled on a ScanCode.io instance—disabled by
+default—you will have to include an authentication token ``API key`` in the
 Authorization HTTP header of each request.
 
-The key should be prefixed by the string literal "Token", with whitespace separating
-the two strings. For example::
+The key should be prefixed by the string literal "Token" with whitespace
+separating the two strings. For example::
 
     Authorization: Token abcdef123456
 
@@ -92,7 +92,7 @@ Using cURL:
 
     curl -X POST "$api_url" -H "$content_type" -d "$data"
 
-Using Python and the requests library:
+Using Python and the **"requests"** library:
 
 .. code-block:: python
 
@@ -109,10 +109,10 @@ Using Python and the requests library:
     response.json()
 
 
-When creating a project the response will provide the project details URL value in
-the returned data.
-You can make a GET request on this URL to get all the information available about a
-project, including the status of the pipeline run:
+When creating a project, the response will provide the project details URL value
+in the returned data.
+You can make a GET request to this URL, which returns all available information
+about the project, including the status of any pipeline run:
 
 .. code-block:: json
 
@@ -148,14 +148,17 @@ The project details view returns all information available about a project.
         }
     }
 
+Managing Projects
+-----------------
+
 Multiple **actions** are available to manage projects:
 
 Add pipeline
 ^^^^^^^^^^^^
 
-Add the selected ``pipeline`` to the ``project``.
-If the ``execute_now`` value is provided, the pipeline execution will start immediately
-on pipeline addition.
+This action adds a selected ``pipeline`` to the ``project``.
+If the ``execute_now`` value is True, the pipeline execution will start immediately
+during the pipeline addition.
 
 ``POST /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/add_pipeline/``
 
@@ -185,7 +188,8 @@ Using cURL:
 Errors
 ^^^^^^
 
-List all the errors that were logged during Pipelines execution of this ``project``.
+This action lists all errors that were logged during any pipeline(s) execution
+on a given ``project``.
 
 ``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/errors/``
 
@@ -204,7 +208,7 @@ List all the errors that were logged during Pipelines execution of this ``projec
 File content
 ^^^^^^^^^^^^
 
-Display the content of a ``project`` file resource provided using the
+This displays the content of a ``project`` file resource provided using the
 ``?path=<resource_path>`` argument.
 
 ``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/file_content/?path=setup.py``
@@ -218,7 +222,7 @@ Display the content of a ``project`` file resource provided using the
 Packages
 ^^^^^^^^
 
-List all the ``packages`` of this ``project``.
+Lists all ``packages`` of a given ``project``.
 
 ``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/packages/``
 
@@ -238,7 +242,7 @@ List all the ``packages`` of this ``project``.
 Resources
 ^^^^^^^^^
 
-List all the ``resources`` of this ``project``.
+This action lists all ``resources`` of a given ``project``.
 
 ``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/resources/``
 
@@ -258,7 +262,7 @@ List all the ``resources`` of this ``project``.
 Results
 ^^^^^^^
 
-Display the results as JSON content compatible with ScanCode data format.
+Displays the results as JSON content compatible with ScanCode data format.
 
 ``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results/``
 
@@ -277,6 +281,6 @@ Display the results as JSON content compatible with ScanCode data format.
 Results (download)
 ^^^^^^^^^^^^^^^^^^
 
-Download the JSON results as an attachment.
+Finally, this action downloads the JSON results as an attachment.
 
 ``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results_download/``
