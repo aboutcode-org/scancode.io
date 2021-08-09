@@ -56,7 +56,7 @@ interface, for example::
     docker-compose run web ./manage.py create-project project_name
 
 .. note::
-    Refer to :ref:`scanpipe_command_line` for the full list of commands.
+    Refer to :ref:`command_line_interface` for the full list of commands.
 
 Alternatively, you can connect to the Docker container ``bash`` and run commands
 from there::
