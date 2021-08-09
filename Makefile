@@ -49,9 +49,9 @@ conf: virtualenv
 	@echo "-> Install dependencies"
 	@${ACTIVATE} pip install -e .
 
-dev: conf
+dev: virtualenv
 	@echo "-> Configure and install development dependencies"
-	@${ACTIVATE} pip install -r etc/requirements/dev.txt
+	@${ACTIVATE} pip install -e .[dev]
 
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
