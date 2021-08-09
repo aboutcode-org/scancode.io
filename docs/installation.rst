@@ -3,7 +3,7 @@
 Installation
 ============
 
-Welcome to the **ScanCode.io** installation guide! This guide describes how to install
+Welcome to **ScanCode.io** installation guide! This guide describes how to install
 ScanCode.io on various platforms.
 Please read and follow the instructions carefully to ensure your installation is
 functional and smooth.
@@ -26,8 +26,8 @@ Get Docker
 ^^^^^^^^^^
 
 The first step is to download and **install Docker on your platform**.
-Refer to the following Docker documentation and choose the best installation
-path for you: `Get Docker <https://docs.docker.com/get-docker/>`_.
+Refer to Docker documentation and choose the best installation
+path for your system: `Get Docker <https://docs.docker.com/get-docker/>`_.
 
 Build the Image
 ^^^^^^^^^^^^^^^
@@ -43,8 +43,8 @@ create an **environment file**, and **build the Docker image**::
     docker-compose build
 
 .. note::
-    The image will need to be re-build when the ScanCode.io source code is modified or
-    updated.
+    You need to rebuild the image whenever ScanCode.io's source code has been
+    modified or updated.
 
 Run the Image
 ^^^^^^^^^^^^^
@@ -59,23 +59,23 @@ Go to http://localhost/ on a web browser to **access the web UI**.
 .. warning::
 
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
-    setting need to be provided in your ``.env`` file::
+    setting needs to be provided in your ``.env`` file::
 
         ALLOWED_HOSTS=.domain.com,127.0.0.1
 
     Refer to `Django ALLOWED_HOSTS settings <https://docs.djangoproject.com/
-    en/dev/ref/settings/#allowed-hosts>`_ for documentation.
+    en/dev/ref/settings/#allowed-hosts>`_ for more details.
 
 Execute a Command
 ^^^^^^^^^^^^^^^^^
 
-You can also execute a one-off ``scanpipe`` command through the Docker command line
+You can execute a one of ``scanpipe`` commands through the Docker command line
 interface, for example::
 
     docker-compose run web ./manage.py create-project project_name
 
 .. note::
-    Refer to :ref:`command_line_interface` for the full list of commands.
+    Refer to the :ref:`command_line_interface` section for the full list of commands.
 
 Alternatively, you can connect to the Docker container ``bash`` and run commands
 from there::
@@ -159,12 +159,12 @@ Database
 **PostgreSQL** is the preferred database backend and should always be used on
 production servers.
 
-Create the PostgreSQL user, database, and table with::
+* Create the PostgreSQL user, database, and table with::
 
     make postgres
 
 .. note::
-    You could also use a **SQLite** database for local development as a single user
+    You can also use a **SQLite** database for local development as a single user
     with::
 
         make sqlite
@@ -177,7 +177,7 @@ Create the PostgreSQL user, database, and table with::
 Tests
 ^^^^^
 
-You can validate the ScanCode.io installation by running the tests suite::
+You can validate your ScanCode.io installation by running the tests suite::
 
     make test
 
