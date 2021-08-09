@@ -16,7 +16,6 @@ you’ll find information on:
 
     introduction
     installation
-    run-docker
     user-interface
 
 .. toctree::
