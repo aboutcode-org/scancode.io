@@ -39,7 +39,6 @@ you’ll find information on:
     command-line-interface
     rest-api
     scancodeio-settings
-    offline-installation
 
 Indices and tables
 ==================
