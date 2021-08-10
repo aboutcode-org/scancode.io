@@ -35,6 +35,7 @@ you’ll find information on:
     built-in-pipelines
     custom-pipelines
     scanpipe-pipes
+    data-models
     output-files
     command-line-interface
     rest-api

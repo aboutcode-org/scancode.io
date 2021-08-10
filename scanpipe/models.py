@@ -253,7 +253,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Sets up the workspace directories on project creation.
+        Save this project instance.
+        The workspace directories are setup on project creation.
         """
         if not self.work_directory:
             self.work_directory = get_project_work_directory(self)
@@ -309,22 +310,37 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     @property
     def work_path(self):
+        """
+        Returns the `work_directory` as a Path instance.
+        """
         return Path(self.work_directory)
 
     @property
     def input_path(self):
+        """
+        Returns the `input` directory as a Path instance.
+        """
         return Path(self.work_path / "input")
 
     @property
     def output_path(self):
+        """
+        Returns the `output` directory as a Path instance.
+        """
         return Path(self.work_path / "output")
 
     @property
     def codebase_path(self):
+        """
+        Returns the `codebase` directory as a Path instance.
+        """
         return Path(self.work_path / "codebase")
 
     @property
     def tmp_path(self):
+        """
+        Returns the `tmp` directory as a Path instance.
+        """
         return Path(self.work_path / "tmp")
 
     def clear_tmp_directory(self):
@@ -341,9 +357,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         Returns all files and directories path of the input/ directory matching
         a given `pattern`.
-        The default "**/*" pattern means "this directory and all subdirectories,
+        The default `**/*` pattern means "this directory and all subdirectories,
         recursively".
-        Use the "*" pattern to only list the root content.
+        Use the `*` pattern to only list the root content.
         """
         return self.input_path.glob(pattern)
 
@@ -498,7 +514,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
-        Creates a new "Run" instance with the provided `pipeline` on the current
+        Creates a new Run instance with the provided `pipeline` on the current
         project.
 
         If `execute_now` is True, the pipeline task is created.
@@ -519,14 +535,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def get_next_run(self):
         """
-        Returns the next non-executed "Run" instance assigned to current project.
+        Returns the next non-executed Run instance assigned to current project.
         """
         with suppress(ObjectDoesNotExist):
             return self.runs.not_started().earliest("created_date")
 
     def get_latest_failed_run(self):
         """
-        Returns the latest failed "Run" instance of the current project.
+        Returns the latest failed Run instance of the current project.
         """
         with suppress(ObjectDoesNotExist):
             return self.runs.failed().latest("created_date")
@@ -549,30 +565,53 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         )
 
     def get_absolute_url(self):
+        """
+        Returns this project details URL.
+        """
         return reverse("project_detail", args=[self.uuid])
 
     @cached_property
     def resource_count(self):
+        """
+        Returns the number of resources related to this project.
+        """
         return self.codebaseresources.count()
 
     @cached_property
     def file_count(self):
+        """
+        Returns the number of **file** resources related to this project.
+        """
         return self.codebaseresources.files().count()
 
     @cached_property
     def file_in_package_count(self):
+        """
+        Returns the number of **file** resources **in a package** related to this
+        project.
+        """
         return self.codebaseresources.files().in_package().count()
 
     @cached_property
     def file_not_in_package_count(self):
+        """
+        Returns the number of **file** resources **not in a package** related to this
+        project.
+        """
         return self.codebaseresources.files().not_in_package().count()
 
     @cached_property
     def package_count(self):
+        """
+        Returns the number of packages related to this project.
+        """
         return self.discoveredpackages.count()
 
     @cached_property
     def error_count(self):
+        """
+        Returns the number of errors related to this project.
+        """
         return self.projecterrors.count()
 
 
@@ -602,7 +641,7 @@ class ProjectRelatedModel(models.Model):
 
 class ProjectError(UUIDPKModel, ProjectRelatedModel):
     """
-    Stores errors and exceptions raised during a pipeline run.
+    Stores errors and§ exceptions raised during a pipeline run.
     """
 
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
@@ -723,14 +762,14 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         Sends a message to the task manager to create an asynchronous pipeline
         execution task.
-        Stores the `task_id` of the current "Run" instance for a future use.
+        Stores the `task_id` of the current Run instance for a future use.
         """
         future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
         self.init_task_id(future.task_id)
 
     def init_task_id(self, task_id):
         """
-        Sets the provided `task_id` on the "Run" instance if not already stored in the
+        Sets the provided `task_id` on the Run instance if not already stored in the
         database.
         Uses the QuerySet `update` method instead of `save` to prevent overriding
         any fields that were set but not saved yet in the DB, which may occur when
@@ -741,9 +780,15 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     @property
     def pipeline_class(self):
+        """
+        Returns this Run pipeline_class.
+        """
         return scanpipe_app.pipelines.get(self.pipeline_name)
 
     def make_pipeline_instance(self):
+        """
+        Returns a pipelines instance using this Run pipeline_class.
+        """
         return self.pipeline_class(self)
 
     @property
@@ -754,6 +799,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return self.task_exitcode == 0
 
     class Status(models.TextChoices):
+        """
+        List of Run statuses.
+        """
+
         NOT_STARTED = "not_started"
         QUEUED = "queued"
         STARTED = "started"
@@ -763,6 +812,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     @property
     def status(self):
+        """
+        Returns the Run current status.
+        """
         status = self.Status
         if self.task_succeeded:
             return status.SUCCESS
@@ -776,7 +828,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def append_to_log(self, message, save=False):
         """
-        Appends the `message` string to the `log` field of this "Run" instance.
+        Appends the `message` string to the `log` field of this Run instance.
         """
         message = message.strip()
         if any(lf in message for lf in ("\n", "\r")):
@@ -788,7 +840,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def profile(self, print_results=False):
         """
-        Returns computed execution times for each step in the current "Run".
+        Returns computed execution times for each step in the current Run.
 
         If `print_results` is provided, the results are printed to stdout.
         """
@@ -975,6 +1027,11 @@ class CodebaseResource(
     SaveProjectErrorMixin,
     AbstractResource,
 ):
+    """
+    A project Codebase Resources are records of its code files and directories.
+    Each record is identified by its path under the project workspace.
+    """
+
     rootfs_path = models.CharField(
         max_length=2000,
         blank=True,
@@ -991,6 +1048,10 @@ class CodebaseResource(
     )
 
     class Type(models.TextChoices):
+        """
+        List of CodebaseResource types.
+        """
+
         FILE = "file"
         DIRECTORY = "directory"
         SYMLINK = "symlink"
@@ -1039,6 +1100,10 @@ class CodebaseResource(
     is_media = models.BooleanField(default=False)
 
     class Compliance(models.TextChoices):
+        """
+        List of compliance alert values.
+        """
+
         OK = "ok"
         WARNING = "warning"
         ERROR = "error"
@@ -1079,6 +1144,7 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         """
+        Save this resource instance.
         Injects policies if the feature is enabled when the `licenses` field value is
         changed.
         """
@@ -1100,28 +1166,46 @@ class CodebaseResource(
 
     @property
     def location_path(self):
+        """
+        Returns the location of the resource as a Path instance.
+        """
         # strip the leading / to allow joining this with the codebase_path
         path = Path(str(self.path).strip("/"))
         return self.project.codebase_path / path
 
     @property
     def location(self):
+        """
+        Returns the location of the resource as a string.
+        """
         return str(self.location_path)
 
     @property
     def filename(self):
+        """
+        Returns the resource filename.
+        """
         return f"{self.name}{self.extension}"
 
     @property
     def is_file(self):
+        """
+        Returns True if the resource is a file.
+        """
         return self.type == self.Type.FILE
 
     @property
     def is_dir(self):
+        """
+        Returns True if the resource is a directory.
+        """
         return self.type == self.Type.DIRECTORY
 
     @property
     def is_symlink(self):
+        """
+        Returns True if the resource is a symlink.
+        """
         return self.type == self.Type.SYMLINK
 
     def compute_compliance_alert(self):
@@ -1154,6 +1238,9 @@ class CodebaseResource(
 
     @property
     def unique_license_expressions(self):
+        """
+        Returns the sorted set of unique license_expressions.
+        """
         return sorted(set(self.license_expressions))
 
     def descendants(self):
@@ -1171,7 +1258,7 @@ class CodebaseResource(
 
         Paths are returned in lower-cased sorted path order to reflect the
         behavior of the `commoncode.resource.Resource.children()`
-        https://github.com/nexB/commoncode/blob/76a03d9c1cd2a582dcec4351c768c3ef646e1b31/src/commoncode/resource.py#L1199
+        https://github.com/nexB/commoncode/blob/main/src/commoncode/resource.py
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.VirtualCodebase class API.
@@ -1186,7 +1273,7 @@ class CodebaseResource(
 
     def walk(self, topdown=True):
         """
-        Return all descendant Resources of this Resource; does not include self.
+        Returns all descendant Resources of this Resource; does not include self.
 
         Traverses the tree top-down, depth-first if `topdown` is True; otherwise
         traverses the tree bottom-up.
@@ -1203,6 +1290,9 @@ class CodebaseResource(
         return reverse("resource_detail", args=[self.project_id, self.pk])
 
     def get_raw_url(self):
+        """
+        Returns the URL to access the RAW content of the resource.
+        """
         return reverse("resource_raw", args=[self.project_id, self.pk])
 
     @property
@@ -1233,6 +1323,9 @@ class CodebaseResource(
 
     @property
     def for_packages(self):
+        """
+        Returns the list of all discovered packages associated to this resource.
+        """
         return [str(package) for package in self.discovered_packages.all()]
 
 
@@ -1246,6 +1339,15 @@ class DiscoveredPackage(
     SaveProjectErrorMixin,
     AbstractPackage,
 ):
+    """
+    A project  Discovered Packages are records of the system and application packages
+    discovered in the code under analysis.
+    Each record is identified by its Package URL.
+    Package URL is a fundamental effort to create informative identifiers for software
+    packages, such as Debian, RPM, npm, Maven, or PyPI packages.
+    See https://github.com/package-url for more details.
+    """
+
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -1271,6 +1373,9 @@ class DiscoveredPackage(
 
     @property
     def purl(self):
+        """
+        Returns the Package URL.
+        """
         return self.package_url
 
     @classmethod
