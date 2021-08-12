@@ -53,10 +53,7 @@ from scanpipe.tests.pipelines.do_nothing import DoNothing
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-class ScanPipeModelsTest(TestCase):
-    data_location = Path(__file__).parent / "data"
-    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
-
+class BaseScanPipeModelsTest:
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
         self.project_asgiref = Project.objects.get(name="asgiref")
@@ -67,6 +64,11 @@ class ScanPipeModelsTest(TestCase):
             pipeline_name="pipeline",
             **kwargs,
         )
+
+
+class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
+    data_location = Path(__file__).parent / "data"
+    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
 
     def test_scanpipe_project_model_extra_data(self):
         self.assertEqual({}, self.project1.extra_data)
@@ -180,6 +182,22 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.work_path.exists())
         self.project1.get_output_file_path("file", "ext")
         self.assertTrue(self.project1.work_path.exists())
+
+    def test_scanpipe_project_model_get_latest_output(self):
+        scan1 = self.project1.get_output_file_path("scancode", "json")
+        scan1.write_text("")
+        scan2 = self.project1.get_output_file_path("scancode", "json")
+        scan2.write_text("")
+        summary1 = self.project1.get_output_file_path("summary", "json")
+        summary1.write_text("")
+        scan3 = self.project1.get_output_file_path("scancode", "json")
+        scan3.write_text("")
+        summary2 = self.project1.get_output_file_path("summary", "json")
+        summary2.write_text("")
+
+        self.assertIsNone(self.project1.get_latest_output("none"))
+        self.assertEqual(scan3, self.project1.get_latest_output("scancode"))
+        self.assertEqual(summary2, self.project1.get_latest_output("summary"))
 
     def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)
@@ -817,6 +835,38 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
+    def test_scanpipe_codebase_resource_queryset_licenses_categories(self):
+        CodebaseResource.objects.all().delete()
+
+        resource1 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="1",
+            licenses=[{"key": "gpl-3.0", "category": "Copyleft"}],
+        )
+
+        resource2 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="2",
+            licenses=[{"key": "lgpl-3.0-plus", "category": "Copyleft Limited"}],
+        )
+
+        resource_qs = self.project1.codebaseresources
+
+        categories = ["Permissive"]
+        self.assertQuerysetEqual([], resource_qs.licenses_categories(categories))
+
+        categories = ["Copyleft"]
+        expected = [resource1]
+        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+
+        categories = ["Copyleft Limited"]
+        expected = [resource2]
+        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+
+        categories = ["Copyleft", "Copyleft Limited"]
+        expected = [resource1, resource2]
+        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+
     def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
         resource1 = CodebaseResource.objects.create(project=self.project1, path="1")
         resource1.holders = [
@@ -1047,3 +1097,60 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(expected_message, error.message)
         self.assertEqual(bad_data["version"], error.details["version"])
         self.assertIn("in save", error.traceback)
+
+
+class ScanPipeWalkTest(BaseScanPipeModelsTest, TestCase):
+    data_location = Path(__file__).parent / "data"
+    fixtures = [data_location / "asgiref-3.3.0_walk_test_fixtures.json"]
+
+    def test_scanpipe_codebase_resource_walk(self):
+        fixtures = [self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"]
+        project = Project.objects.create(name="asgiref_walk_test")
+        project_asgiref = Project.objects.get(name="asgiref")
+        asgiref_root = self.project_asgiref.codebaseresources.get(path="codebase")
+
+        topdown_paths = list(r.path for r in asgiref_root.walk(topdown=True))
+        expected_topdown_paths = [
+            "codebase/asgiref-3.3.0.whl",
+            "codebase/asgiref-3.3.0.whl-extract",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+        ]
+        self.assertEqual(expected_topdown_paths, topdown_paths)
+
+        bottom_up_paths = list(r.path for r in asgiref_root.walk(topdown=False))
+        expected_bottom_up_paths = [
+            "codebase/asgiref-3.3.0.whl",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "codebase/asgiref-3.3.0.whl-extract",
+        ]
+        self.assertEqual(expected_bottom_up_paths, bottom_up_paths)

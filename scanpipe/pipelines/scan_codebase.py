@@ -28,9 +28,9 @@ from scanpipe.pipes.input import copy_inputs
 
 class ScanCodebase(Pipeline):
     """
-    A pipeline to scan a codebase with ScanCode-toolkit.
+    A pipeline to scan a codebase resource with ScanCode-toolkit.
 
-    The input files are copied to the project codebase/ directory and extracted
+    Input files are copied to the project's codebase/ directory and are extracted
     in place before running the scan.
     Alternatively, the code can be manually copied to the project codebase/
     directory.
@@ -62,14 +62,14 @@ class ScanCodebase(Pipeline):
 
     def copy_inputs_to_codebase_directory(self):
         """
-        Copy input files to the project codebase/ directory.
+        Copies input files to the project's codebase/ directory.
         The code can also be copied there prior to running the Pipeline.
         """
         copy_inputs(self.project.inputs(), self.project.codebase_path)
 
     def run_extractcode(self):
         """
-        Extract with extractcode.
+        Extracts with extractcode.
         """
         with self.save_errors(scancode.ScancodeError):
             scancode.run_extractcode(
@@ -80,7 +80,7 @@ class ScanCodebase(Pipeline):
 
     def run_scancode(self):
         """
-        Scan extracted codebase/ content.
+        Scans extracted codebase/ content.
         """
         self.scan_output = self.project.get_output_file_path("scancode", "json")
 
@@ -97,7 +97,7 @@ class ScanCodebase(Pipeline):
 
     def build_inventory_from_scan(self):
         """
-        Process the JSON scan results to populate resources and packages.
+        Processes the JSON scan results to determine resources and packages.
         """
         project = self.project
         scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
@@ -106,6 +106,6 @@ class ScanCodebase(Pipeline):
 
     def csv_output(self):
         """
-        Generate csv outputs.
+        Generates a .csv output.
         """
         output.to_csv(self.project)

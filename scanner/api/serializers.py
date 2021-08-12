@@ -90,8 +90,8 @@ class ScanSerializer(
 
     def create(self, validated_data):
         """
-        Trigger the task on Scan creation.
-        Also create Subscriptions if requested.
+        Triggers the task on Scan creation.
+        Also creates Subscriptions if requested.
         Note that Subscriptions have to be created before the `download_and_scan`
         task is triggered.
         """

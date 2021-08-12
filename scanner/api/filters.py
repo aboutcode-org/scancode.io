@@ -43,7 +43,7 @@ class CharMultipleWidget(widgets.TextInput):
 
     def format_value(self, value):
         """
-        Return a value as it should appear when rendered in a template.
+        Returns a value as it should appear when rendered in a template.
         """
         return ", ".join(value)
 

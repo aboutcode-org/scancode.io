@@ -24,18 +24,25 @@ import shutil
 from pathlib import Path
 
 
-def copy_inputs(inputs, dest_path):
+def copy_input(input_location, dest_path):
     """
-    Copy the provided `inputs` to the `dest_path`.
+    Copies the `input_location` to the `dest_path`.
     """
-    for input_location in inputs:
-        destination = dest_path / Path(input_location).name
-        shutil.copyfile(input_location, destination)
+    destination = dest_path / Path(input_location).name
+    shutil.copyfile(input_location, destination)
+
+
+def copy_inputs(input_locations, dest_path):
+    """
+    Copies the provided `input_locations` to the `dest_path`.
+    """
+    for input_location in input_locations:
+        copy_input(input_location, dest_path)
 
 
 def move_inputs(inputs, dest_path):
     """
-    Move the provided `inputs` to the `dest_path`.
+    Moves the provided `inputs` to the `dest_path`.
     """
     for input_location in inputs:
         destination = dest_path / Path(input_location).name

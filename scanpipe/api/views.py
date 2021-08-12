@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
+
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -59,7 +61,7 @@ class ProjectViewSet(
     viewsets.GenericViewSet,
 ):
     """
-    A viewset that provides ability to list, get, create, and destroy projects.
+    A viewset that provides the ability to list, get, create, and destroy projects.
     Multiple actions are available to manage project instances.
     """
 
@@ -69,7 +71,7 @@ class ProjectViewSet(
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):
         """
-        Return the results compatible with ScanCode data format.
+        Returns the results compatible with ScanCode data format.
         The content is returned as a stream of JSON content using the
         JSONResultsGenerator class.
         """
@@ -80,9 +82,25 @@ class ProjectViewSet(
     )
     def results_download(self, request, *args, **kwargs):
         """
-        Return the results as an attachment.
+        Returns the results as an attachment.
         """
         return project_results_json_response(self.get_object(), as_attachment=True)
+
+    @action(detail=True)
+    def summary(self, request, *args, **kwargs):
+        """
+        Returns a summary of the results from the latest summary file found in the
+        project's `output` directory.
+        """
+        project = self.get_object()
+        summary_file = project.get_latest_output(filename="summary")
+
+        if not summary_file:
+            message = {"error": "Summary file not available"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        summary_json = json.loads(summary_file.read_text())
+        return Response(summary_json)
 
     @action(detail=False)
     def pipelines(self, request, *args, **kwargs):
@@ -165,7 +183,7 @@ class ProjectViewSet(
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
-    This viewset provides the `detail` only action.
+    This viewset only provides the `detail` action.
     """
 
     queryset = Run.objects.all()

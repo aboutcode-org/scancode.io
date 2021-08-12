@@ -23,18 +23,22 @@
 from pathlib import Path
 
 from django.apps import apps
+from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.test import override_settings
 
 from scanpipe.apps import ScanPipeConfig
+from scanpipe.models import Project
 from scanpipe.tests import license_policies
 from scanpipe.tests import license_policies_index
+from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeAppsTest(TestCase):
     data_location = Path(__file__).parent / "data"
+    pipelines_location = Path(__file__).parent / "pipelines"
 
     def test_scanpipe_apps_get_policies_index(self):
         self.assertEqual({}, ScanPipeConfig.get_policies_index([], "license_key"))
@@ -70,3 +74,23 @@ class ScanPipeAppsTest(TestCase):
         self.assertFalse(scanpipe_app.policies_enabled)
         scanpipe_app.license_policies_index = {"key": "value"}
         self.assertTrue(scanpipe_app.policies_enabled)
+
+    def test_scanpipe_apps_register_pipeline_from_file(self):
+        path = self.pipelines_location / "do_nothing.py"
+        with self.assertRaises(ImproperlyConfigured):
+            scanpipe_app.register_pipeline_from_file(path)
+
+        path = self.pipelines_location / "register_from_file.py"
+        scanpipe_app.register_pipeline_from_file(path)
+
+        self.assertEqual(
+            RegisterFromFile.__name__,
+            scanpipe_app.pipelines.get("register_from_file").__name__,
+        )
+
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("register_from_file")
+        pipeline_instance = run.make_pipeline_instance()
+
+        exitcode, output = pipeline_instance.execute()
+        self.assertEqual(0, exitcode)

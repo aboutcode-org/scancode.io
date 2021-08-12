@@ -1,82 +1,109 @@
 .. _scancodeio_settings:
 
-ScanCode.io Settings
+Application Settings
 ====================
+
+ScanCode.io is configured with environment variables stored in a ``.env`` file.
 
 The ``.env`` file is created at the root of the ScanCode.io codebase during its
 installation.
-You can configure your preferences using the following settings in the ``.env`` file.
+You can configure your preferences using the following settings in the ``.env``
+file.
+
+.. note::
+    ScanCode.io is based on the Django web framework and its settings system.
+    The list of settings available in Django is documented at
+    `Django Settings <https://docs.djangoproject.com/en/dev/ref/settings/>`_.
+
+.. tip::
+    Settings specific to ScanCode.io are all prefixed with ``SCANCODEIO_``.
 
 DATABASE
 --------
 
 The database can be configured using the following settings::
 
-    SCANCODEIO_DB_HOST
-    SCANCODEIO_DB_NAME
-    SCANCODEIO_DB_USER
-    SCANCODEIO_DB_PASSWORD
+    SCANCODEIO_DB_HOST=localhost
+    SCANCODEIO_DB_NAME=scancodeio
+    SCANCODEIO_DB_USER=user
+    SCANCODEIO_DB_PASSWORD=password
+    SCANCODEIO_DB_PORT=5432
 
 TIME_ZONE
 ---------
 
-A string representing the time zone for this ScanCode.io installation.
-Default to ``UTC``::
+A string representing the time zone for the current ScanCode.io installation. By
+default the ``UTC`` time zone is used::
 
     TIME_ZONE=Europe/Paris
 
-`See the list of time zones <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
+.. note::
+    You can view a detailed list of time zones `here.
+    <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
+
+.. _scancodeio_settings_workspace_location:
 
 SCANCODEIO_WORKSPACE_LOCATION
 -----------------------------
 
-Define the workspace location.
-The workspace is the directory where **all the project files are stored**: input,
-codebase, and output files::
+This setting defines the workspace location of a given project.
+The **workspace** is the directory where **all of the project's files are stored**
+, such as input, codebase, and output files::
 
     SCANCODEIO_WORKSPACE_LOCATION=/var/scancodeio/workspace/
 
-Default to a :guilabel:`var/` directory in the local ScanCode.io codebase.
+It defaults to a :guilabel:`var/` directory in the local ScanCode.io codebase.
 
-See :ref:`Project workspace` for details.
+See :ref:`project_workspace` for more details.
 
 SCANCODEIO_PROCESSES
 --------------------
 
-By default, multiprocessing is enabled and setup to use the number of available CPUs on
-the machine, minus 1.
-
-You can control the number of parallel processes available to ScanCode.io using the
-SCANCODE_PROCESSES setting::
+By default, multiprocessing is enabled and configured to use the number of CPUs
+available on the machine minus 1. You can control the number of parallel
+processes available to ScanCode.io using the SCANCODE_PROCESSES setting::
 
     SCANCODE_PROCESSES=4
 
-Multiprocessing can be disable entirely using "0"::
+Multiprocessing can be disabled entirely using "0"::
 
     SCANCODE_PROCESSES=0
 
-To disable multiprocessing and threading use "-1"::
+To disable both multiprocessing and threading, use "-1"::
 
     SCANCODE_PROCESSES=-1
 
 SCANCODE_DEFAULT_OPTIONS
 ------------------------
 
-Use this settings to provide default options for running the scancode-toolkit.
+Use this setting to provide any default options for running Scancode-toolkit.
 
-Refer to `ScanCode-toolkit Available Options <https://scancode-toolkit.readthedocs.io/en/latest/cli-reference/list-options.html>`_
-for the full options list.
+.. note::
+    Refer to `ScanCode-toolkit Available Options <https://scancode-toolkit.readthedocs.io/en/latest/cli-reference/list-options.html>`_
+    for the full list of available options.
 
-The following example explicitly define a value for timeout and set the number
+The following example explicitly defines a timeout value of 120 and sets the number
 of parallel processes to 4::
 
     SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 120
 
+.. _scancodeio_settings_pipelines_dirs:
+
+SCANCODEIO_PIPELINES_DIRS
+-------------------------
+
+This setting defines any additional locations that ScanCode.io will search in
+for pipelines.
+It usually includes a list of comma-separated strings containing full paths
+of additional pipelines directories::
+
+    SCANCODEIO_PIPELINES_DIRS=/var/scancodeio/pipelines/,/home/user/pipelines/
+
 SCANCODEIO_POLICIES_FILE
 ------------------------
 
-Location of the policies file. Default: ``policies.yml``.
-A valid policies file is required to enable the compliance related features.
+This setting defines the location of the policies file, or ``policies.yml``.
+A valid policies file is required to enable compliance-related features.
 
 .. code-block:: yaml
 
@@ -91,9 +118,10 @@ A valid policies file is required to enable the compliance related features.
         label: Prohibited License
         compliance_alert: error
 
-Licenses are referenced by ``license_key``. The policy is defined with a ``label`` and
-a ``compliance_alert``.
-The ``compliance_alert`` accepts 3 values: "" (empty string), warning, and error.
+- Licenses are referenced by the ``license_key``.
+- A Policy is defined with ``label`` and ``compliance_alert``.
+- The ``compliance_alert`` accepts 3 values: "" for an empty string, warning, and error.
 
-When the policy feature is enabled, the ``compliance_alert`` values are displayed in
-the UI and returned in all the downloadable results.
+.. note::
+    When the policy feature is enabled, the ``compliance_alert`` values are
+    displayed in the UI and returned in all downloadable results.

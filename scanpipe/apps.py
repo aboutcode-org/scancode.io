@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import inspect
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from django.apps import AppConfig
@@ -55,7 +57,8 @@ class ScanPipeConfig(AppConfig):
 
     def load_pipelines(self):
         """
-        Load Pipelines from the "scancodeio_pipelines" entry point group.
+        Loads pipelines from the "scancodeio_pipelines" entry point group and from the
+        pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
 
@@ -63,13 +66,27 @@ class ScanPipeConfig(AppConfig):
         pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
 
         for entry_point in sorted(pipeline_entry_points):
-            pipeline_class = entry_point.load()
-            pipeline_name = entry_point.name
-            self.register_pipeline(pipeline_name, pipeline_class)
+            self.register_pipeline(name=entry_point.name, cls=entry_point.load())
+
+        # Register user provided pipelines
+        pipelines_dirs = getattr(settings, "SCANCODEIO_PIPELINES_DIRS", [])
+
+        for pipelines_dir in pipelines_dirs:
+            pipelines_path = Path(pipelines_dir)
+
+            if not pipelines_path.is_dir():
+                raise ImproperlyConfigured(
+                    f'The provided pipelines directory "{pipelines_dir}" in '
+                    f"the SCANCODEIO_PIPELINES_DIRS setting is not available."
+                )
+
+            python_files = pipelines_path.rglob("*.py")
+            for path in python_files:
+                self.register_pipeline_from_file(path)
 
     def register_pipeline(self, name, cls):
         """
-        Register the provided `name` and `cls` as a valid pipeline.
+        Registers the provided `name` and `cls` as a valid pipeline.
         """
         if not is_pipeline(cls):
             raise ImproperlyConfigured(
@@ -83,13 +100,35 @@ class ScanPipeConfig(AppConfig):
 
         self._pipelines[name] = cls
 
+    def register_pipeline_from_file(self, path):
+        """
+        Searches for a pipeline subclass in a given file `path` and registers it
+        after being found.
+        """
+        module_name = inspect.getmodulename(path)
+        module = SourceFileLoader(module_name, str(path)).load_module()
+
+        def is_local_module_pipeline(obj):
+            return is_pipeline(obj) and obj.__module__ == module_name
+
+        pipeline_classes = inspect.getmembers(module, is_local_module_pipeline)
+
+        if len(pipeline_classes) > 1:
+            raise ImproperlyConfigured(
+                f"Only one Pipeline class allowed per pipeline file: {path}."
+            )
+
+        elif pipeline_classes:
+            pipeline_class = pipeline_classes[0][1]
+            self.register_pipeline(name=module_name, cls=pipeline_class)
+
     @property
     def pipelines(self):
         return dict(self._pipelines)
 
     def get_pipeline_choices(self, include_blank=True):
         """
-        Return a `choices` list of tuple suitable for a Django ChoiceField.
+        Returns a `choices` list of tuple suitable for a Django ChoiceField.
         """
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
         choices.extend([(name, name) for name in self.pipelines.keys()])
@@ -97,11 +136,11 @@ class ScanPipeConfig(AppConfig):
 
     def set_policies(self):
         """
-        Compute and set the `license_policies` on the app instance.
+        Computes and sets the `license_policies` on the app instance.
 
-        If a policies file is available but not under the proper format, or not
-        including the proper content, we want to let an exception to be raised
-        during the app loading to warn the sysadmin about the issue.
+        If the policies file is available but formatted properly or doesn't
+        include the proper content, we want to raise an exception while the app
+        is loading to warn sysadmins about the issue.
         """
         policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
         if policies_file_location:
@@ -117,13 +156,13 @@ class ScanPipeConfig(AppConfig):
     @staticmethod
     def get_policies_index(policies_list, key):
         """
-        Return an inverted index by `key` of the `policies_list`.
+        Returns an inverted index by `key` of the `policies_list`.
         """
         return {policy.get(key): policy for policy in policies_list}
 
     @property
     def policies_enabled(self):
         """
-        Return True if the policies where provided and properly loaded.
+        Returns True if the policies were provided and loaded properly.
         """
         return bool(self.license_policies_index)

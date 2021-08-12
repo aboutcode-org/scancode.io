@@ -33,6 +33,22 @@ Docker
 .. automodule:: scanpipe.pipes.docker
     :members:
 
+Windows
+-------
+.. automodule:: scanpipe.pipes.windows
+    :members:
+
+Fetch
+-----
+.. automodule:: scanpipe.pipes.fetch
+    :members:
+    :exclude-members: Download
+
+Input
+-----
+.. automodule:: scanpipe.pipes.input
+    :members:
+
 Output
 ------
 .. automodule:: scanpipe.pipes.output
@@ -43,6 +59,11 @@ RootFS
 ------
 
 .. automodule:: scanpipe.pipes.rootfs
+    :members:
+
+RPM
+---
+.. automodule:: scanpipe.pipes.rpm
     :members:
 
 ScanCode

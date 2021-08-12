@@ -52,7 +52,7 @@ def log_info(message, scan_pk):
 
 def get_scan_input_location(download_location):
     """
-    Return the input location for the ScanCode process, based on the
+    Returns the input location for the ScanCode process, based on the
     given `download_location` directory content.
 
     If the `download_location` contains only a single downloaded file,
@@ -61,7 +61,7 @@ def get_scan_input_location(download_location):
     If the`download_location` contains the downloaded file and its related
     "-extract" directory, that directory is returned as the scan input location.
 
-    Any other cases will return False.
+    All other cases returns False.
     """
     path = Path(download_location)
     if not path.is_dir():
@@ -81,7 +81,7 @@ def get_scan_input_location(download_location):
 
 def get_scancode_compatible_content(location):
     """
-    Return the content of the file at `location` using the ScanCode functions
+    Returns the content of the file at a `location` using the ScanCode functions
     to ensure compatibility and consistency between outputs.
     """
     return "".join(line for _, line in numbered_text_lines(location))
@@ -89,7 +89,7 @@ def get_scancode_compatible_content(location):
 
 def dump_key_files_data(key_files, source_directory, output_location):
     """
-    Collect and inject the content of each key files and dump the data in
+    Collects and injects the content of each key files and dumps the data in
     the `output_location` file.
     """
     if not key_files:
@@ -112,7 +112,7 @@ def dump_key_files_data(key_files, source_directory, output_location):
 
 def run_scancode(download_location, output_file):
     """
-    Run the scanning task where `location` is the path containing the archive.
+    Runs the scanning task where `location` is the path containing the archive.
     """
     extractcode_args = [
         get_bin_executable("extractcode"),

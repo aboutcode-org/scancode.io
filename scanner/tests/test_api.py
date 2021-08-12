@@ -67,29 +67,6 @@ class ScannerAPITest(TestCase):
             **kwargs,
         )
 
-    def test_api_token_authentication(self):
-        # Reset the pre-set credentials
-        self.csrf_client.credentials()
-
-        response = self.client.get(self.scan_list_url)
-        self.assertEqual(status.HTTP_401_UNAUTHORIZED, response.status_code)
-
-        auth = ""
-        response = self.csrf_client.get(self.scan_list_url, HTTP_AUTHORIZATION=auth)
-        self.assertEqual(status.HTTP_401_UNAUTHORIZED, response.status_code)
-
-        auth = self.header_prefix
-        response = self.csrf_client.get(self.scan_list_url, HTTP_AUTHORIZATION=auth)
-        self.assertEqual(status.HTTP_401_UNAUTHORIZED, response.status_code)
-
-        auth = self.header_prefix + "bad_token"
-        response = self.csrf_client.get(self.scan_list_url, HTTP_AUTHORIZATION=auth)
-        self.assertEqual(status.HTTP_401_UNAUTHORIZED, response.status_code)
-
-        auth = self.header_prefix + self.token.key
-        response = self.csrf_client.get(self.scan_list_url, HTTP_AUTHORIZATION=auth)
-        self.assertEqual(status.HTTP_200_OK, response.status_code)
-
     def test_api_scan_list_endpoint_results(self):
         response = self.csrf_client.get(self.scan_list_url)
         self.assertContains(response, self.scan1_detail_url)

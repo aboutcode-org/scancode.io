@@ -23,6 +23,7 @@
 import io
 import json
 import uuid
+from pathlib import Path
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -43,6 +44,8 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
+from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import package_data1
 
@@ -50,6 +53,8 @@ from scanpipe.tests import package_data1
 # TransactionTestCase is required for the Run related actions that use
 # the transaction.on_commit() signal
 class ScanPipeAPITest(TransactionTestCase):
+    data_location = Path(__file__).parent / "data"
+
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
         self.resource1 = CodebaseResource.objects.create(
@@ -286,6 +291,20 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "File not available"}
         self.assertEqual(expected, response.data)
 
+    def test_scanpipe_api_project_action_summary(self):
+        url = reverse("project-summary", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"error": "Summary file not available"}
+        self.assertEqual(expected, response.data)
+
+        summary_file = self.data_location / "is-npm-1.0.0_summary.json"
+        copy_input(summary_file, self.project1.output_path)
+
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(10, len(response.data.keys()))
+
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_project_action_add_pipeline(self, mock_execute_pipeline_task):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])
@@ -321,13 +340,14 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertIn(self.project1_detail_url, response.data["project"])
         self.assertEqual("docker", response.data["pipeline_name"])
         self.assertEqual(
-            "A pipeline to analyze a Docker image.", response.data["description"]
+            "A pipeline to analyze Docker images.", response.data["description"]
         )
         self.assertIsNone(response.data["task_id"])
         self.assertIsNone(response.data["task_start_date"])
         self.assertIsNone(response.data["task_end_date"])
         self.assertEqual("", response.data["task_output"])
         self.assertIsNone(response.data["execution_time"])
+        self.assertEqual(Run.Status.NOT_STARTED, response.data["status"])
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):
@@ -370,7 +390,8 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(28, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(24, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(30, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(26, len(get_serializer_fields(CodebaseResource)))
+
         with self.assertRaises(LookupError):
             get_serializer_fields(None)

@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import fnmatch
 import logging
 import os
 from functools import partial
@@ -28,12 +29,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 import attr
+from commoncode.ignore import default_ignores
 from container_inspector.distro import Distro
 
 from scanpipe import pipes
 from scanpipe.pipes import alpine
 from scanpipe.pipes import debian
 from scanpipe.pipes import rpm
+from scanpipe.pipes import windows
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +50,8 @@ PACKAGE_GETTER_BY_DISTRO = {
     "sles": rpm.package_getter,
     "opensuse": rpm.package_getter,
     "opensuse-tumbleweed": rpm.package_getter,
+    "photon": rpm.package_getter,
+    "windows": windows.package_getter,
 }
 
 
@@ -90,7 +95,7 @@ class RootFs:
     @classmethod
     def from_project_codebase(cls, project):
         """
-        Yield RootFs objects collected from the project "codebase" directory.
+        Returns RootFs objects collected from the project's "codebase" directory.
         Each directory in the input/ is considered as the root of a root filesystem.
         """
         subdirs = [path for path in project.codebase_path.glob("*/") if path.is_dir()]
@@ -100,28 +105,28 @@ class RootFs:
 
     def get_resources(self, with_dir=False):
         """
-        Yield a Resource for each file in this rootfs.
+        Return a Resource for each file in this rootfs.
         """
         return get_resources(location=self.location, with_dir=with_dir)
 
     def get_installed_packages(self, packages_getter):
         """
-        Yield tuples of (package_url, package) for installed packages found in
+        Returns tuples of (package_url, package) for installed packages found in
         this rootfs layer using the `packages_getter` function or callable.
 
         The `packages_getter()` function should:
 
-        - accept a first argument string that is the root directory of
-          filesystem of this the rootfs
+        - Accept a first argument string that is the root directory of
+          filesystem of this rootfs
 
-        - yield tuples of (package_url, package) where package_url is a
-          package_url string that uniquely identifies the package  and `package`
-          is some object that represents the package (typically a scancode-
+        - Return tuples of (package_url, package) where package_url is a
+          package_url string that uniquely identifies a package; while, a `package`
+          is an object that represents a package (typically a scancode-
           toolkit packagedcode.models.Package class or some nested mapping with
           the same structure).
 
-        An `packages_getter` function would typically query the system packages
-        database (such as an RPM database or similar) to collect the list of
+        The `packages_getter` function would typically query the system packages
+        database, such as an RPM database or similar, to collect the list of
         installed system packages.
         """
         return packages_getter(self.location)
@@ -129,7 +134,7 @@ class RootFs:
 
 def get_resources(location, with_dir=False):
     """
-    Yield the Resource found in the `location` in root directory of a rootfs.
+    Returns the Resource found in the `location` in root directory of a rootfs.
     """
 
     def get_res(parent, fname):
@@ -150,7 +155,7 @@ def get_resources(location, with_dir=False):
 
 def create_codebase_resources(project, rootfs):
     """
-    Create the CodebaseResource for a `rootfs` in `project`.
+    Creates the CodebaseResource for a `rootfs` in `project`.
     """
     for resource in rootfs.get_resources():
         pipes.make_codebase_resource(
@@ -162,7 +167,7 @@ def create_codebase_resources(project, rootfs):
 
 def has_hash_diff(install_file, codebase_resource):
     """
-    Return True if the one of available hashes on both `install_file` and
+    Returns True if one of available hashes on both `install_file` and
     `codebase_resource`, by hash type, is different.
     For example: Alpine uses SHA1 while Debian uses MD5, we prefer the strongest hash
     that's present.
@@ -187,12 +192,12 @@ def has_hash_diff(install_file, codebase_resource):
 
 def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     """
-    Given a `project` Project and an `rootfs` RootFs, scan the `rootfs` for
-    installed system packages. Create a DiscoveredPackage for each.
+    Given a `project` Project and a `rootfs` RootFs, scan the `rootfs` for
+    installed system packages, and create a DiscoveredPackage for each.
 
-    Then for each installed DiscoveredPackage installed file, check if it exists
-    as a CodebaseResource and relate that CodebaseResource to its
-    DiscoveredPackage or keep that as a missing file.
+    Then for each installed DiscoveredPackage file, check if it exists
+    as a CodebaseResource. If exists, relate that CodebaseResource to its
+    DiscoveredPackage; otherwise, keep that as a missing file.
     """
     if not rootfs.distro:
         raise DistroNotFound(f"Distro not found.")
@@ -255,8 +260,8 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
 
 def get_resource_with_md5(project, status):
     """
-    Return a queryset of CodebaseResource from `project` that have `status` and
-    a non-empty size and md5.
+    Return a queryset of CodebaseResource from a `project` that has a `status`,
+    a non-empty size, and md5.
     """
     return (
         project.codebaseresources.status(status=status)
@@ -272,11 +277,11 @@ def match_not_analyzed(
 ):
     """
     Given a `project` Project :
-    1. build an MD5 index of files assigned to a package that have a status of
+    1. Build an MD5 index of files assigned to a package that has a status of
     `reference_status`
-    2. attempt to match resources with status `not_analyzed_status` to that
+    2. Attempt to match resources with status `not_analyzed_status` to that
     index
-    3. relate each matched CodebaseResource to matching DiscoveredPackage and
+    3. Relate each matched CodebaseResource to the matching DiscoveredPackage and
     set its status.
     """
     known_resources = get_resource_with_md5(project=project, status=reference_status)
@@ -306,7 +311,7 @@ def match_not_analyzed(
 
 def tag_empty_codebase_resources(project):
     """
-    Tag empty files as ignored.
+    Tags empty files as ignored.
     """
     qs = project.codebaseresources.files().empty()
     qs.filter(status__in=("", "not-analyzed")).update(status="ignored-empty-file")
@@ -314,10 +319,10 @@ def tag_empty_codebase_resources(project):
 
 def tag_uninteresting_codebase_resources(project):
     """
-    Check remaining files not from a system package and determine if this is:
-    - a temp file
-    - generated
-    - log file of sorts (such as var) using a few heuristics
+    Checks any file that doesn’t belong to any system package and determine if it's:
+    - A temp file
+    - Generated
+    - Log file of sorts (such as var) using few heuristics
     """
     uninteresting_and_transient = (
         "/tmp/",
@@ -335,3 +340,50 @@ def tag_uninteresting_codebase_resources(project):
 
     qs = project.codebaseresources.no_status()
     qs.filter(lookups).update(status="ignored-not-interesting")
+
+
+def tag_ignorable_codebase_resources(project):
+    """
+    Using the glob patterns from commoncode.ignore of ignorable files/directories,
+    tag codebase resources from `project` if their paths match an ignorable pattern.
+    """
+    lookups = Q()
+    for pattern in default_ignores.keys():
+        # Translate glob pattern to regex
+        translated_pattern = fnmatch.translate(pattern)
+        # PostgreSQL does not like parts of Python regex
+        if translated_pattern.startswith("(?s"):
+            translated_pattern = translated_pattern.replace("(?s", "(?")
+        lookups |= Q(rootfs_path__icontains=pattern)
+        lookups |= Q(rootfs_path__iregex=translated_pattern)
+
+    qs = project.codebaseresources.no_status()
+    qs.filter(lookups).update(status="ignored-default-ignores")
+
+
+def tag_data_files_with_no_clues(project):
+    """
+    Tags CodebaseResources that have a file type of `data` and no detected clues
+    to be uninteresting.
+    """
+    lookup = Q(
+        file_type="data",
+        copyrights=[],
+        holders=[],
+        authors=[],
+        licenses=[],
+        license_expressions=[],
+        emails=[],
+        urls=[],
+    )
+
+    qs = project.codebaseresources
+    qs.filter(lookup).update(status="ignored-data-file-no-clues")
+
+
+def tag_media_files_as_uninteresting(project):
+    """
+    Tags CodebaseResources that are media files to be uninteresting.
+    """
+    qs = project.codebaseresources.no_status()
+    qs.filter(is_media=True).update(status="ignored-media-file")

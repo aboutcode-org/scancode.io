@@ -35,6 +35,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models import TextField
 from django.db.models.functions import Cast
+from django.db.models.functions import Lower
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
@@ -115,13 +116,13 @@ class AbstractTaskFieldsModel(models.Model):
         - STARTED
             The task has been started.
         - RETRY
-            The task is to be retried, possibly because of failure.
+            The task is to be re-executed; possibly due to a failure.
         - FAILURE
-            The task raised an exception, or has exceeded the retry limit.
-            The result attribute then contains the exception raised by the task.
+            The task raised an exception or has exceeded the retry limit.
+            The result attribute would contain the exception raised by the task.
         - SUCCESS
-            The task executed successfully. The result attribute then contains
-            the tasks return value.
+            The task executed successfully. The result attribute would contain
+            the task's return value.
 
         Notes: All tasks are PENDING by default in Celery, so the state would’ve been
         better named "unknown". Celery doesn't update the state when a task is sent,
@@ -149,7 +150,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def reset_task_values(self):
         """
-        Reset all task related fields to their initial null value.
+        Resets all task-related fields to their initial null value.
         """
         self.task_id = None
         self.task_start_date = None
@@ -159,7 +160,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def set_task_started(self, task_id):
         """
-        Set the `task_id` and `task_start_date` before the task execution.
+        Sets the `task_id` and `task_start_date` fields before executing the task.
         """
         self.task_id = task_id
         self.task_start_date = timezone.now()
@@ -167,11 +168,11 @@ class AbstractTaskFieldsModel(models.Model):
 
     def set_task_ended(self, exitcode, output, refresh_first=True):
         """
-        Set the task related fields after the task execution.
+        Sets the task-related fields after the task execution.
 
-        An optional `refresh_first`, enabled by default, force the refresh of
+        An optional `refresh_first`—enabled by default—forces refreshing
         the instance with the latest data from the database before saving.
-        This prevent loosing values saved on the instance during the task
+        This prevents losing values saved on the instance during the task
         execution.
         """
         if refresh_first:
@@ -183,21 +184,46 @@ class AbstractTaskFieldsModel(models.Model):
         self.save()
 
 
+class ExtraDataFieldMixin(models.Model):
+    """
+    Adds the `extra_data` field and helper methods.
+    """
+
+    extra_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("Optional mapping of extra data key/values."),
+    )
+
+    def update_extra_data(self, data):
+        """
+        Updates the `extra_data` field with the provided `data` dict.
+        """
+        if type(data) != dict:
+            raise ValueError("Argument `data` value must be a dict()")
+
+        self.extra_data.update(data)
+        self.save()
+
+    class Meta:
+        abstract = True
+
+
 def get_project_work_directory(project):
     """
-    Return the work directory location for the provided `project`.
-    The `project` name is "slugified" to generate a nicer directory path, without any
-    whitespace or special characters.
-    A short version of the `project` uuid is added as suffix to ensure uniqueness of
-    the work directory location.
+    Returns the work directory location for a given `project`.
+    The `project` name is "slugified" to generate a nicer directory path without
+    any whitespace or special characters.
+    A short version of the `project` uuid is added as a suffix to ensure
+    uniqueness of the work directory location.
     """
     return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
 
 
-class Project(UUIDPKModel, models.Model):
+class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     """
-    The Project encapsulate all analysis processing.
-    Multiple analysis pipelines can be run on the project.
+    The Project encapsulates all analysis processing.
+    Multiple analysis pipelines can be run on the same project.
     """
 
     created_date = models.DateTimeField(
@@ -218,7 +244,6 @@ class Project(UUIDPKModel, models.Model):
         help_text=_("Project work directory location."),
     )
     input_sources = models.JSONField(default=dict, blank=True, editable=False)
-    extra_data = models.JSONField(default=dict, editable=False)
 
     class Meta:
         ordering = ["-created_date"]
@@ -228,7 +253,7 @@ class Project(UUIDPKModel, models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Setup the workspace directories on project creation.
+        Sets up the workspace directories on project creation.
         """
         if not self.work_directory:
             self.work_directory = get_project_work_directory(self)
@@ -237,15 +262,15 @@ class Project(UUIDPKModel, models.Model):
 
     def delete(self, *args, **kwargs):
         """
-        Delete the `work_directory` along all the project related data in the database.
+        Deletes the `work_directory` along all project-related data in the database.
         """
         shutil.rmtree(self.work_directory, ignore_errors=True)
         return super().delete(*args, **kwargs)
 
     def reset(self, keep_input=True):
         """
-        Reset the project by deleting all related database objects and all work
-        directories except the input directory when `keep_input` is True.
+        Resets the project by deleting all related database objects and all work
+        directories except the input directory, when `keep_input` is True.
         """
         relationships = [
             self.projecterrors,
@@ -275,19 +300,9 @@ class Project(UUIDPKModel, models.Model):
 
         self.setup_work_directory()
 
-    def update_extra_data(self, data):
-        """
-        Update the project `extra_data` field with the provide `data` dict.
-        """
-        if type(data) != dict:
-            raise ValueError("Argument `data` value must be a dict()")
-
-        self.extra_data.update(data)
-        self.save()
-
     def setup_work_directory(self):
         """
-        Create all the work_directory structure, skip existing.
+        Creates all of the work_directory structure and skips existing.
         """
         for subdirectory in self.WORK_DIRECTORIES:
             Path(self.work_directory, subdirectory).mkdir(parents=True, exist_ok=True)
@@ -314,27 +329,28 @@ class Project(UUIDPKModel, models.Model):
 
     def clear_tmp_directory(self):
         """
-        Delete the whole tmp/ directory content.
-        This is call at the end of each Pipelines Run, do not store content
-        that is needed for further processing in following Pipelines.
+        Deletes the whole content of the tmp/ directory.
+        This is called at the end of each Pipeline Run, and it doesn't store
+        any content that might be needed for further processing in following
+        Pipeline Run.
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.tmp_path.mkdir(exist_ok=True)
 
     def inputs(self, pattern="**/*"):
         """
-        Yield all the files and directories path of the input/ directory matching the
-        provided `pattern`.
-        The default "**/*" pattern means: "this directory and all subdirectories,
+        Returns all files and directories path of the input/ directory matching
+        a given `pattern`.
+        The default "**/*" pattern means "this directory and all subdirectories,
         recursively".
-        Use the "*" pattern to list the root content only.
+        Use the "*" pattern to only list the root content.
         """
         return self.input_path.glob(pattern)
 
     @property
     def input_files(self):
         """
-        Return the list of all files relative path in the input/ directory,
+        Returns a list of files' relative paths in the input/ directory
         recursively.
         """
         return [
@@ -346,26 +362,26 @@ class Project(UUIDPKModel, models.Model):
     @staticmethod
     def get_root_content(directory):
         """
-        Return the list of all files and directories of the `directory`.
-        Only the first level children are listed.
+        Returns a list of all files and directories of a given `directory`.
+        Only the first level children will be listed.
         """
         return [str(path.relative_to(directory)) for path in directory.glob("*")]
 
     @property
     def input_root(self):
         """
-        Return the list of all files and directories of the input/ directory.
-        Only the first level children are listed.
+        Returns a list of all files and directories of the input/ directory.
+        Only the first level children will be listed.
         """
         return self.get_root_content(self.input_path)
 
     @property
     def inputs_with_source(self):
         """
-        Return the list of inputs including the source, type, and size data.
-        Return the `missing_inputs` defined in the `input_sources` field but not
+        Returns a list of inputs including the source, type, and size data.
+        Returns the `missing_inputs` defined in the `input_sources` field but not
         available in the input/ directory.
-        Only the first level children are listed.
+        Only the first level children will be listed.
         """
         input_path = self.input_path
         input_sources = dict(self.input_sources)
@@ -387,19 +403,19 @@ class Project(UUIDPKModel, models.Model):
     @property
     def output_root(self):
         """
-        Return the list of all files and directories of the output/ directory.
-        Only the first level children are listed.
+        Returns a list of all files and directories of the output/ directory.
+        Only the first level children will be listed.
         """
         return self.get_root_content(self.output_path)
 
     def get_output_file_path(self, name, extension):
         """
-        Return a crafted file path in the project output/ directory using
-        the provided `name` and `extension`.
-        The current date and time string is added to the filename.
+        Returns a crafted file path in the project output/ directory using
+        given `name` and `extension`.
+        The current date and time strings are added to the filename.
 
-        This method ensure the work_directory is properly setup, in case of a manual
-        wipe, and re-create the missing pieces of the directory structure.
+        This method ensures the proper setup of the work_directory in case of
+        a manual wipe and re-creates the missing pieces of the directory structure.
         """
         from scanpipe.pipes import filename_now
 
@@ -408,16 +424,26 @@ class Project(UUIDPKModel, models.Model):
         filename = f"{name}-{filename_now()}.{extension}"
         return self.output_path / filename
 
+    def get_latest_output(self, filename):
+        """
+        Returns the latest output file with the "filename" prefix, for example
+        "scancode-<timestamp>.json".
+        """
+        output_files = sorted(self.output_path.glob(f"*{filename}*.json"))
+        if output_files:
+            return output_files[-1]
+
     @cached_property
     def can_add_input(self):
         """
-        Return True until one pipeline has started to execute on this project.
+        Returns True until one pipeline has started to execute on the current project.
         """
         return not self.runs.started().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
-        Add the provided `filename` and `source` on this project `input_sources` field.
+        Adds given `filename` and `source` to the current project's `input_sources`
+        field.
         """
         self.input_sources[filename] = source
         if save:
@@ -425,7 +451,7 @@ class Project(UUIDPKModel, models.Model):
 
     def write_input_file(self, file_object):
         """
-        Write the provided `file_object` to this project input/ directory.
+        Writes the provided `file_object` to the project's input/ directory.
         """
         filename = file_object.name
         file_path = Path(self.input_path / filename)
@@ -436,7 +462,7 @@ class Project(UUIDPKModel, models.Model):
 
     def copy_input_from(self, input_location):
         """
-        Copy the file at `input_location` to this project input/ directory.
+        Copies the file at `input_location` to the current project's input/ directory.
         """
         from scanpipe.pipes.input import copy_inputs
 
@@ -444,7 +470,7 @@ class Project(UUIDPKModel, models.Model):
 
     def move_input_from(self, input_location):
         """
-        Move the file at `input_location` to this project input/ directory.
+        Moves the file at `input_location` to the current project's input/ directory.
         """
         from scanpipe.pipes.input import move_inputs
 
@@ -452,8 +478,8 @@ class Project(UUIDPKModel, models.Model):
 
     def add_downloads(self, downloads):
         """
-        Move the provided `downloads` to this project input/ directory and add the
-        `input_source` for each entry.
+        Moves the given `downloads` to the current project's input/ directory and
+        adds the `input_source` for each entry.
         """
         for downloaded in downloads:
             self.move_input_from(downloaded.path)
@@ -462,8 +488,8 @@ class Project(UUIDPKModel, models.Model):
 
     def add_uploads(self, uploads):
         """
-        Write the provided `uploads` to this project input/ directory and add the
-        `input_source` for each entry.
+        Writes the given `uploads` to the current project's input/ directory and
+        adds the `input_source` for each entry.
         """
         for uploaded in uploads:
             self.write_input_file(uploaded)
@@ -472,12 +498,14 @@ class Project(UUIDPKModel, models.Model):
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
-        Create a new Run instance with the provided `pipeline` on this project.
+        Creates a new "Run" instance with the provided `pipeline` on the current
+        project.
 
         If `execute_now` is True, the pipeline task is created.
         The on_commit() is used to postpone the task creation after the transaction is
         successfully committed.
-        If there isn’t an active transaction, the callback will be executed immediately.
+        If there isn’t any active transactions, the callback will be executed
+        immediately.
         """
         pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
         run = Run.objects.create(
@@ -491,21 +519,21 @@ class Project(UUIDPKModel, models.Model):
 
     def get_next_run(self):
         """
-        Return the next non-executed Run instance assigned to this project.
+        Returns the next non-executed "Run" instance assigned to current project.
         """
         with suppress(ObjectDoesNotExist):
             return self.runs.not_started().earliest("created_date")
 
     def get_latest_failed_run(self):
         """
-        Return the latest failed Run instance of this project.
+        Returns the latest failed "Run" instance of the current project.
         """
         with suppress(ObjectDoesNotExist):
             return self.runs.failed().latest("created_date")
 
     def add_error(self, error, model, details=None):
         """
-        Create a ProjectError record from the provided `error` Exception for this
+        Creates a "ProjectError" record from the provided `error` Exception for this
         project.
         """
         traceback = ""
@@ -555,7 +583,7 @@ class ProjectRelatedQuerySet(models.QuerySet):
 
 class ProjectRelatedModel(models.Model):
     """
-    Base model for all models that are related to a Project.
+    A base model for all models that are related to a Project.
     """
 
     project = models.ForeignKey(
@@ -574,7 +602,7 @@ class ProjectRelatedModel(models.Model):
 
 class ProjectError(UUIDPKModel, ProjectRelatedModel):
     """
-    Store errors and exceptions raised during a pipeline run.
+    Stores errors and exceptions raised during a pipeline run.
     """
 
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
@@ -594,10 +622,10 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 
 class SaveProjectErrorMixin:
     """
-    Use `SaveProjectErrorMixin` on a model to create a ProjectError entry
-    from a raised exception during `save()` in place of stopping the analysis
+    Uses `SaveProjectErrorMixin` on a model to create a ProjectError entry
+    from a raised exception during `save()` instead of stopping the analysis
     process.
-    The creation of ProjectError can be skipped providing False for the `save_error`
+    The creation of a "ProjectError" can be skipped providing False for the `save_error`
     argument.
     """
 
@@ -617,7 +645,7 @@ class SaveProjectErrorMixin:
     @classmethod
     def _check_project_field(cls, **kwargs):
         """
-        Check if `project` field is declared on the model.
+        Checks if a `project` field is declared on the model.
         """
 
         fields = [f.name for f in cls._meta.local_fields]
@@ -634,7 +662,7 @@ class SaveProjectErrorMixin:
 
     def add_error(self, error):
         """
-        Create a ProjectError record from the provided `error` Exception instance.
+        Creates a "ProjectError" record from a given `error` Exception instance.
         """
         return self.project.add_error(
             error=error,
@@ -644,7 +672,7 @@ class SaveProjectErrorMixin:
 
     def add_errors(self, errors):
         """
-        Create ProjectError records from the provided `errors` Exception list.
+        Creates "ProjectError" records from a provided `errors` Exception list.
         """
         for error in errors:
             self.add_error(error)
@@ -693,18 +721,19 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def execute_task_async(self):
         """
-        Send the message to the task manager to create an asynchronous pipeline
+        Sends a message to the task manager to create an asynchronous pipeline
         execution task.
-        Store the `task_id` from the future to this Run instance.
+        Stores the `task_id` of the current "Run" instance for a future use.
         """
         future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
         self.init_task_id(future.task_id)
 
     def init_task_id(self, task_id):
         """
-        Set the provided `task_id` on the Run instance if not already stored in the DB.
-        Using the QuerySet `update` method instead of `save` to prevent from overriding
-        any fields that was set but not saved yet in the DB, this may occur when
+        Sets the provided `task_id` on the "Run" instance if not already stored in the
+        database.
+        Uses the QuerySet `update` method instead of `save` to prevent overriding
+        any fields that were set but not saved yet in the DB, which may occur when
         CELERY_TASK_ALWAYS_EAGER is True.
         """
         manager = self.__class__.objects
@@ -720,7 +749,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     @property
     def task_succeeded(self):
         """
-        Return True if the pipeline task was successfully executed.
+        Returns True, if a pipeline task was successfully executed.
         """
         return self.task_exitcode == 0
 
@@ -747,7 +776,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def append_to_log(self, message, save=False):
         """
-        Append the `message` string to the `log` field of this Run instance.
+        Appends the `message` string to the `log` field of this "Run" instance.
         """
         message = message.strip()
         if any(lf in message for lf in ("\n", "\r")):
@@ -759,7 +788,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def profile(self, print_results=False):
         """
-        Return computed execution times for each steps of this Run.
+        Returns computed execution times for each step in the current "Run".
 
         If `print_results` is provided, the results are printed to stdout.
         """
@@ -825,12 +854,19 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_no_licenses(self):
         return self.filter(licenses=[])
 
+    def licenses_categories(self, categories):
+        return self.json_list_contains(
+            field_name="licenses",
+            key="category",
+            values=categories,
+        )
+
     def unknown_license(self):
         return self.json_field_contains("license_expressions", "unknown")
 
     def json_field_contains(self, field_name, value):
         """
-        Filter the QuerySet looking for the `value` string in the `field_name` JSON
+        Filters the QuerySet looking for the `value` string in the `field_name` JSON
         field converted into text.
         Empty values are excluded as there's no need to cast those into text.
         """
@@ -840,10 +876,23 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             .filter(**{f"{field_name}_as_text__contains": value})
         )
 
+    def json_list_contains(self, field_name, key, values):
+        """
+        Filters on the JSONField `field_name` that stores a list of dictionaries.
+
+        json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
+        """
+        lookups = Q()
+
+        for value in values:
+            lookups |= Q(**{f"{field_name}__contains": [{key: value}]})
+
+        return self.filter(lookups)
+
 
 class ScanFieldsModelMixin(models.Model):
     """
-    Fields returned by ScanCode-toolkit scans.
+    Fields returned by the ScanCode-toolkit scans.
     """
 
     copyrights = models.JSONField(
@@ -895,7 +944,8 @@ class ScanFieldsModelMixin(models.Model):
 
     def set_scan_results(self, scan_results, save=False):
         """
-        Set the values from `scan_results` on this instance scan related fields.
+        Sets the values of the current instance's scan-related fields using
+        `scan_results`.
         """
         scan_fields = self.scan_fields()
         for field_name, value in scan_results.items():
@@ -907,7 +957,8 @@ class ScanFieldsModelMixin(models.Model):
 
     def copy_scan_results(self, from_instance, save=False):
         """
-        Copy the scan related fields values from `from_instance`to this instance.
+        Copies the scan-related fields values from `from_instance`to the current
+        instance.
         """
         for field_name in self.scan_fields():
             value_from_instance = getattr(from_instance, field_name)
@@ -918,7 +969,11 @@ class ScanFieldsModelMixin(models.Model):
 
 
 class CodebaseResource(
-    ProjectRelatedModel, ScanFieldsModelMixin, SaveProjectErrorMixin, AbstractResource
+    ProjectRelatedModel,
+    ScanFieldsModelMixin,
+    ExtraDataFieldMixin,
+    SaveProjectErrorMixin,
+    AbstractResource,
 ):
     rootfs_path = models.CharField(
         max_length=2000,
@@ -946,11 +1001,6 @@ class CodebaseResource(
         help_text=_(
             "Type of this resource as one of: {}".format(", ".join(Type.values))
         ),
-    )
-    extra_data = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text=_("Optional mapping of extra data key/values."),
     )
     name = models.CharField(
         max_length=255,
@@ -985,6 +1035,8 @@ class CodebaseResource(
     is_binary = models.BooleanField(default=False)
     is_text = models.BooleanField(default=False)
     is_archive = models.BooleanField(default=False)
+    is_key_file = models.BooleanField(default=False)
+    is_media = models.BooleanField(default=False)
 
     class Compliance(models.TextChoices):
         OK = "ok"
@@ -1015,8 +1067,8 @@ class CodebaseResource(
     @classmethod
     def from_db(cls, db, field_names, values):
         """
-        Store the `licenses` field on creating this instance from the database value.
-        The cached value is then used to detected changes on `save()`.
+        Stores the `licenses` field on creating this instance from the database value.
+        The cached value is then used to detect changes on `save()`.
         """
         new = super().from_db(db, field_names, values)
 
@@ -1027,7 +1079,7 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         """
-        Inject policies if the feature is enabled when the `licenses` field value is
+        Injects policies if the feature is enabled when the `licenses` field value is
         changed.
         """
         if scanpipe_app.policies_enabled:
@@ -1040,7 +1092,7 @@ class CodebaseResource(
 
     def inject_licenses_policy(self, policies_index):
         """
-        Inject license policies from the `policies_index` into the `licenses` field.
+        Injects license policies from the `policies_index` into the `licenses` field.
         """
         for license_data in self.licenses:
             key = license_data.get("key")
@@ -1074,7 +1126,7 @@ class CodebaseResource(
 
     def compute_compliance_alert(self):
         """
-        Compute and return the compliance_alert value from the `licenses` policies.
+        Computes and returns the compliance_alert value from the `licenses` policies.
         """
         if not self.licenses:
             return ""
@@ -1106,23 +1158,46 @@ class CodebaseResource(
 
     def descendants(self):
         """
-        Return a QuerySet of descendant CodebaseResource objects using a
-        Database query on this CodebaseResource `path`.
+        Returns a QuerySet of descendant CodebaseResource objects using a
+        database query on the current CodebaseResource `path`.
         The current CodebaseResource is not included.
         """
         return self.project.codebaseresources.filter(path__startswith=f"{self.path}/")
 
     def children(self, codebase=None):
         """
-        Return a QuerySet of direct children CodebaseResource objects using a
-        Database query on this CodebaseResource `path`.
+        Returns a QuerySet of direct children CodebaseResource objects using a
+        database query on the current CodebaseResource `path`.
+
+        Paths are returned in lower-cased sorted path order to reflect the
+        behavior of the `commoncode.resource.Resource.children()`
+        https://github.com/nexB/commoncode/blob/76a03d9c1cd2a582dcec4351c768c3ef646e1b31/src/commoncode/resource.py#L1199
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.VirtualCodebase class API.
         """
         exactly_one_sub_directory = "[^/]+$"
         children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
-        return self.descendants().filter(path__regex=children_regex)
+        return (
+            self.descendants()
+            .filter(path__regex=children_regex)
+            .order_by(Lower("path"))
+        )
+
+    def walk(self, topdown=True):
+        """
+        Return all descendant Resources of this Resource; does not include self.
+
+        Traverses the tree top-down, depth-first if `topdown` is True; otherwise
+        traverses the tree bottom-up.
+        """
+        for child in self.children().iterator():
+            if topdown:
+                yield child
+            for subchild in child.walk(topdown=topdown):
+                yield subchild
+            if not topdown:
+                yield child
 
     def get_absolute_url(self):
         return reverse("resource_detail", args=[self.project_id, self.pk])
@@ -1133,8 +1208,8 @@ class CodebaseResource(
     @property
     def file_content(self):
         """
-        Return the content of this Resource file using TextCode utilities for
-        optimal compatibility.
+        Returns the content of the current Resource file using TextCode utilities
+        for optimal compatibility.
         """
         from textcode.analysis import numbered_text_lines
 
@@ -1148,8 +1223,8 @@ class CodebaseResource(
 
     def create_and_add_package(self, package_data):
         """
-        Create a DiscoveredPackage instance using the `package_data` and assign
-        it to this CodebaseResource instance.
+        Creates a DiscoveredPackage instance using the `package_data` and assigns
+        it to the current CodebaseResource instance.
         """
         created_package = DiscoveredPackage.create_from_data(self.project, package_data)
         if created_package:
@@ -1165,14 +1240,24 @@ class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet)
     pass
 
 
-class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPackage):
+class DiscoveredPackage(
+    ProjectRelatedModel,
+    ExtraDataFieldMixin,
+    SaveProjectErrorMixin,
+    AbstractPackage,
+):
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
+    dependencies = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("A list of dependencies for this package."),
+    )
 
-    # AbstractPackage overrides:
+    # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
 
@@ -1191,9 +1276,9 @@ class DiscoveredPackage(ProjectRelatedModel, SaveProjectErrorMixin, AbstractPack
     @classmethod
     def create_from_data(cls, project, package_data):
         """
-        Create and return a DiscoveredPackage for `project` from the `package_data`.
-        If one of the required fields value is not available, a ProjectError is created
-        in place of a new DiscoveredPackage instance.
+        Creates and returns a DiscoveredPackage for a `project` from the `package_data`.
+        If one of the required fields values is not available, a "ProjectError"
+        is created instead of a new DiscoveredPackage instance.
         """
         required_fields = ["type", "name", "version"]
         required_values = [package_data.get(field) for field in required_fields]

@@ -27,7 +27,7 @@ from scanpipe.pipes import rootfs
 
 class Docker(root_filesystems.RootFS):
     """
-    A pipeline to analyze a Docker image.
+    A pipeline to analyze Docker images.
     """
 
     @classmethod
@@ -35,7 +35,7 @@ class Docker(root_filesystems.RootFS):
         return (
             cls.extract_images,
             cls.extract_layers,
-            cls.find_images_linux_distro,
+            cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
@@ -49,7 +49,7 @@ class Docker(root_filesystems.RootFS):
 
     def extract_images(self):
         """
-        Extract the images from tarballs.
+        Extracts images from input tarballs.
         """
         self.images, errors = docker.extract_images_from_inputs(self.project)
         if errors:
@@ -57,36 +57,36 @@ class Docker(root_filesystems.RootFS):
 
     def extract_layers(self):
         """
-        Extract layers from images.
+        Extracts layers from input images.
         """
         errors = docker.extract_layers_from_images(self.project, self.images)
         if errors:
             self.add_error("\n".join(errors))
 
-    def find_images_linux_distro(self):
+    def find_images_os_and_distro(self):
         """
-        Find the linux distro of the images.
+        Finds the operating system and distro of input images.
         """
         for image in self.images:
             image.get_and_set_distro()
 
     def collect_images_information(self):
         """
-        Collect images information and store on project.
+        Collects and stores image information in a project.
         """
         images_data = [docker.get_image_data(image) for image in self.images]
         self.project.update_extra_data({"images": images_data})
 
     def collect_and_create_codebase_resources(self):
         """
-        Collect and create all image files as CodebaseResource.
+        Collects and labels all image files as CodebaseResources.
         """
         for image in self.images:
             docker.create_codebase_resources(self.project, image)
 
     def collect_and_create_system_packages(self):
         """
-        Collect installed system packages for each layer based on the distro.
+        Collects installed system packages for each layer based on the distro.
         """
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
             for image in self.images:
@@ -94,7 +94,7 @@ class Docker(root_filesystems.RootFS):
 
     def tag_uninteresting_codebase_resources(self):
         """
-        Flag remaining files not from a system package.
+        Flags files that don't belong to any system package.
         """
         docker.tag_whiteout_codebase_resources(self.project)
         rootfs.tag_uninteresting_codebase_resources(self.project)

@@ -39,9 +39,9 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
     """
-    Output csv content generated from the provided `queryset` objects to the
+    Outputs csv content generated from the provided `queryset` objects to the
     `output_file`.
-    The fields to include as columns and their order are controlled by the
+    The fields to be included as columns and their order are controlled by the
     `fieldnames` list.
     """
     writer = csv.DictWriter(output_file, fieldnames)
@@ -54,9 +54,9 @@ def queryset_to_csv_file(queryset, fieldnames, output_file):
 
 def queryset_to_csv_stream(queryset, fieldnames, output_stream):
     """
-    Output csv content generated from the provided `queryset` objects to the
+    Outputs csv content generated from the provided `queryset` objects to the
     `output_stream`.
-    The fields to include as columns and their order are controlled by the
+    The fields to be included as columns and their order are controlled by the
     `fieldnames` list.
     """
     writer = csv.DictWriter(output_stream, fieldnames)
@@ -72,11 +72,11 @@ def queryset_to_csv_stream(queryset, fieldnames, output_stream):
 
 def to_csv(project):
     """
-    Generate results output for the provided `project` as csv format.
+    Generates output for the provided `project` in csv format.
     Since the csv format does not support multiple tabs, one file is created
     per object type.
     The output files are created in the `project` output/ directory.
-    Return the list of path of the generated output files.
+    Returns a list of paths of the generated output files.
     """
     from scanpipe.api.serializers import get_serializer_fields
 
@@ -103,18 +103,18 @@ def to_csv(project):
 
 class JSONResultsGenerator:
     """
-    Return the `project` JSON results as a Python generator.
+    Returns the `project` JSON results as a Python generator.
     Use this class to stream the results from the database to the client browser
     without having to load everything in memory first.
 
-    Note that the Django Serializer class can output to a stream but cannot be
+    Note that the Django Serializer class can output to a stream but can't be
     sent directly to a StreamingHttpResponse.
     The results would have to be streamed to a file first, then iterated by the
     StreamingHttpResponse, which do not work great in a HTTP request context as
     the request can timeout while the file is generated.
 
     This class re-use Serializers from the API to avoid code duplication.
-    We need to keep those imports internal to this class to prevent circular import
+    Those imports need to be kept internal to this class to prevent circular import
     issues.
     """
 
@@ -184,9 +184,9 @@ class JSONResultsGenerator:
 
 def to_json(project):
     """
-    Generate results output for the provided `project` as JSON format.
+    Generates output for the provided `project` in JSON format.
     The output file is created in the `project` output/ directory.
-    Return the path of the generated output file.
+    Returns the path of the generated output file.
     """
     results_generator = JSONResultsGenerator(project)
     output_file = project.get_output_file_path("results", "json")
@@ -200,13 +200,13 @@ def to_json(project):
 
 def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     """
-    Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
-    ``queryset``. The ``queryset`` "model_name" is use as aname for the
+    Adds a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
+    ``queryset``. The ``queryset`` "model_name" is used as a name for the
     "worksheet".
     Exclude fields listed in the ``exclude_fields`` sequence of field names.
 
-    Add an extra trailing "xlsx_errors" column with conversion error messages if
-    any. Return a number of conversion errors.
+    Adds an extra trailing "xlsx_errors" column with conversion error messages if
+    any. Returns a number of conversion errors.
     """
 
     from scanpipe.api.serializers import get_serializer_fields
@@ -228,11 +228,11 @@ def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
 def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
-    Add a new ``worksheet_name`` worksheet to the ``workbook``
+    Adds a new ``worksheet_name`` worksheet to the ``workbook``
     ``xlsxwriter.Workbook``. Write the iterable of ``rows`` objects using their
     attributes listed in the ``fields`` sequence of field names.
-    Add an "xlsx_errors" column with conversion error messages if any.
-    Return a number of conversion errors.
+    Adds an "xlsx_errors" column with conversion error messages if any.
+    Returns a number of conversion errors.
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
@@ -290,7 +290,7 @@ mappings_key_by_fieldname = {
 
 def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     """
-    Return a two tuple of:
+    Returns two tuples of:
     (``value`` adapted for use in an XLSX cell, error message or None)
 
     Convert the value to a string and perform these adaptations:
@@ -299,9 +299,9 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     - Truncate any field too long to fit in an XLSX cell and report error.
     - Create a combined license expression for expressions
     - Normalize line endings
-    - Truncating the value to a ``maximum_length`` supported by XLSX.
+    - Truncate the value to a ``maximum_length`` supported by XLSX.
 
-    Do nothing if "_adapt" is False (used for tests).
+    Does nothing if "_adapt" is False (used for tests).
     """
     error = None
     if not _adapt:
@@ -351,7 +351,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
 
 def to_xlsx(project):
     """
-    Generate results output for the provided ``project`` as XLSX format.
+    Generates output for the provided ``project`` in XLSX format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
 

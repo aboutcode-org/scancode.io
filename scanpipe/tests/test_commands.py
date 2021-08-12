@@ -78,7 +78,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn('"extract_images"[label=<<b>extract_images</b>>', output_dot)
         self.assertIn('"extract_layers"[label=<<b>extract_layers</b>>', output_dot)
         self.assertIn("extract_images -> extract_layers;", output_dot)
-        self.assertIn("extract_layers -> find_images_linux_distro;", output_dot)
+        self.assertIn("extract_layers -> find_images_os_and_distro;", output_dot)
 
     def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()

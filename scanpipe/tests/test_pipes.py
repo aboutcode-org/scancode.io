@@ -48,6 +48,7 @@ from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
+from scanpipe.pipes import windows
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
@@ -507,6 +508,13 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(0, exitcode)
         self.assertIn("Scanning done.", output)
 
+    def test_scanpipe_pipes_scancode_make_results_summary(self):
+        project = Project.objects.create(name="Analysis")
+        scan_results_location = self.data_location / "is-npm-1.0.0_scancode.json"
+
+        summary = scancode.make_results_summary(project, scan_results_location)
+        self.assertEqual(10, len(summary.keys()))
+
     def test_scanpipe_pipes_codebase_get_tree(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -536,7 +544,8 @@ class ScanPipePipesTest(TestCase):
             project_codebase.root
 
         self.assertEqual([], list(project_codebase.resources))
-        self.assertEqual([], list(project_codebase.walk()))
+        with self.assertRaises(AttributeError):
+            list(project_codebase.walk())
         with self.assertRaises(AttributeError):
             project_codebase.get_tree()
 
@@ -564,6 +573,61 @@ class ScanPipePipesTest(TestCase):
             expected = json.loads(f.read())
 
         self.assertEqual(expected, tree)
+
+    def test_scanpipe_pipes_codebase_project_codebase_class_walk(self):
+        fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+
+        project = Project.objects.get(name="asgiref")
+        project_codebase = codebase.ProjectCodebase(project)
+
+        topdown_paths = list(r.path for r in project_codebase.walk(topdown=True))
+        expected_topdown_paths = [
+            "codebase",
+            "codebase/asgiref-3.3.0.whl",
+            "codebase/asgiref-3.3.0.whl-extract",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+        ]
+        self.assertEqual(expected_topdown_paths, topdown_paths)
+
+        bottom_up_paths = list(r.path for r in project_codebase.walk(topdown=False))
+        expected_bottom_up_paths = [
+            "codebase/asgiref-3.3.0.whl",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "codebase/asgiref-3.3.0.whl-extract",
+            "codebase",
+        ]
+        self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
     @mock.patch("requests.get")
     def test_scanpipe_pipes_fetch_http(self, mock_get):
@@ -692,6 +756,322 @@ class ScanPipePipesTest(TestCase):
         install_file = mock.Mock(sha256="sha256", md5="md5")
         codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
         self.assertFalse(rootfs.has_hash_diff(install_file, codebase_resource))
+
+    def test_scanpipe_pipes_windows_tag_uninteresting_windows_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/example.lnk",
+            rootfs_path="/Files/example.lnk",
+            extension=".lnk",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Hives/Software_Delta",
+            rootfs_path="/Hives/Software_Delta",
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/example.dat",
+            rootfs_path="/Files/example.dat",
+            extension=".dat",
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/should-not-be-ignored.txt",
+            rootfs_path="/Files/should-not-be-ignored.txt",
+            extension=".txt",
+        )
+
+        windows.tag_uninteresting_windows_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        self.assertEqual("ignored-not-interesting", resource1.status)
+        self.assertEqual("ignored-not-interesting", resource2.status)
+        self.assertEqual("ignored-not-interesting", resource3.status)
+        self.assertEqual("", resource4.status)
+
+    def test_scanpipe_pipes_windows_tag_known_software(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python/py.exe",
+            rootfs_path="/Files/Python/py.exe",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python27/python2.exe",
+            rootfs_path="/Files/Python27/python2.exe",
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python3/python3.exe",
+            rootfs_path="/Files/Python3/python3.exe",
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python39/python3.9",
+            rootfs_path="/Files/Python39/python3.9.exe",
+        )
+        resource5 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+            rootfs_path="/Files/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+        )
+        resource6 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/jdk-11.0.1/readme.txt",
+            rootfs_path="/Files/jdk-11.0.1/readme.txt",
+        )
+        resource7 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/openjdk-11.0.1/readme.txt",
+            rootfs_path="/Files/openjdk-11.0.1/readme.txt",
+        )
+        resource8 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/jdk/readme.txt",
+            rootfs_path="/Files/jdk/readme.txt",
+        )
+        resource9 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/openjdk/readme.txt",
+            rootfs_path="/Files/openjdk/readme.txt",
+        )
+        resource10 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files/something-else/jdk/readme.txt",
+            rootfs_path="/Files/Program Files/something-else/jdk/readme.txt",
+        )
+        resource11 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python/py.exe",
+            rootfs_path="/Python/py.exe",
+        )
+        resource12 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python27/python2.exe",
+            rootfs_path="/Python27/python2.exe",
+        )
+        resource13 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python3/python3.exe",
+            rootfs_path="/Python3/python3.exe",
+        )
+        resource14 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python39/python3.9",
+            rootfs_path="/Python39/python3.9.exe",
+        )
+        resource15 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+            rootfs_path="/Python39/Lib/site-packages/pip-21.1.3.dist-info/WHEEL",
+        )
+        resource16 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/jdk-11.0.1/readme.txt",
+            rootfs_path="/jdk-11.0.1/readme.txt",
+        )
+        resource17 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/openjdk-11.0.1/readme.txt",
+            rootfs_path="/openjdk-11.0.1/readme.txt",
+        )
+        resource18 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/jdk/readme.txt",
+            rootfs_path="/jdk/readme.txt",
+        )
+        resource19 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/openjdk/readme.txt",
+            rootfs_path="/openjdk/readme.txt",
+        )
+        resource20 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Program Files/something-else/jdk/readme.txt",
+            rootfs_path="/Program Files/something-else/jdk/readme.txt",
+        )
+
+        windows.tag_known_software(p1)
+        resource11.refresh_from_db()
+        resource12.refresh_from_db()
+        resource13.refresh_from_db()
+        resource14.refresh_from_db()
+        resource15.refresh_from_db()
+        resource16.refresh_from_db()
+        resource17.refresh_from_db()
+        resource18.refresh_from_db()
+        resource19.refresh_from_db()
+        resource20.refresh_from_db()
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        resource5.refresh_from_db()
+        resource6.refresh_from_db()
+        resource7.refresh_from_db()
+        resource8.refresh_from_db()
+        resource9.refresh_from_db()
+        resource10.refresh_from_db()
+
+        self.assertEqual("installed-package", resource1.status)
+        self.assertEqual("installed-package", resource2.status)
+        self.assertEqual("installed-package", resource3.status)
+        self.assertEqual("installed-package", resource4.status)
+        self.assertEqual("", resource5.status)
+        self.assertEqual("installed-package", resource6.status)
+        self.assertEqual("installed-package", resource7.status)
+        self.assertEqual("installed-package", resource8.status)
+        self.assertEqual("installed-package", resource9.status)
+        self.assertEqual("", resource10.status)
+        self.assertEqual("installed-package", resource11.status)
+        self.assertEqual("installed-package", resource12.status)
+        self.assertEqual("installed-package", resource13.status)
+        self.assertEqual("installed-package", resource14.status)
+        self.assertEqual("", resource15.status)
+        self.assertEqual("installed-package", resource16.status)
+        self.assertEqual("installed-package", resource17.status)
+        self.assertEqual("installed-package", resource18.status)
+        self.assertEqual("installed-package", resource19.status)
+        self.assertEqual("", resource20.status)
+
+    def test_scanpipe_pipes_windows_tag_program_files(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files (x86)/Microsoft/example.exe",
+            rootfs_path="/Files/Program Files (x86)/Microsoft/example.exe",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files/Microsoft/example.exe",
+            rootfs_path="/Files/Program Files/Microsoft/example.exe",
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files (x86)/7Zip/7z.exe",
+            rootfs_path="/Files/Program Files (x86)/7Zip/7z.exe",
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files/7Zip/7z.exe",
+            rootfs_path="/Files/Program Files/7Zip/7z.exe",
+        )
+        resource5 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files (x86)/common files/sample.dat",
+            rootfs_path="/Files/Program Files (x86)/common files/sample.dat",
+        )
+        resource6 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/Files/Program Files/common files/sample.dat",
+            rootfs_path="/Files/Program Files/common files/sample.dat",
+        )
+        windows.tag_program_files(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        resource5.refresh_from_db()
+        resource6.refresh_from_db()
+        self.assertEqual("", resource1.status)
+        self.assertEqual("", resource2.status)
+        self.assertEqual("installed-package", resource3.status)
+        self.assertEqual("installed-package", resource4.status)
+        self.assertEqual("", resource5.status)
+        self.assertEqual("", resource6.status)
+
+    def test_scanpipe_pipes_rootfs_tag_ignorable_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/cmake_install.cmake",
+            rootfs_path="/user/cmake_install.cmake",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1, path="root/user/example.pot", rootfs_path="/user/example.pot"
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/__pycache__/foo.pyc",
+            rootfs_path="/user/__pycache__/foo.pyc",
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=p1, path="root/user/foo.css.map", rootfs_path="/user/foo.css.map"
+        )
+        resource5 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/should-not-be-ignored.txt",
+            rootfs_path="/user/should-not-be-ignored.txt",
+        )
+        rootfs.tag_ignorable_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        resource4.refresh_from_db()
+        resource5.refresh_from_db()
+        self.assertEqual("ignored-default-ignores", resource1.status)
+        self.assertEqual("ignored-default-ignores", resource2.status)
+        self.assertEqual("ignored-default-ignores", resource3.status)
+        self.assertEqual("ignored-default-ignores", resource4.status)
+        self.assertEqual("", resource5.status)
+
+    def test_scanpipe_pipes_rootfs_tag_data_files_with_no_clues(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/foo.data",
+            rootfs_path="/user/foo.data",
+            file_type="data",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/bar.data",
+            rootfs_path="/user/bar.data",
+            file_type="data",
+            license_expressions=["apache-2.0"],
+        )
+        rootfs.tag_data_files_with_no_clues(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("ignored-data-file-no-clues", resource1.status)
+        self.assertEqual("", resource2.status)
+
+    def test_scanpipe_pipes_rootfs_tag_media_files_as_uninteresting(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/foo.png",
+            rootfs_path="/user/foo.png",
+            mime_type="image/png",
+            file_type="image/png",
+            is_media=True,
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/bar.jpg",
+            rootfs_path="/user/bar.jpg",
+            mime_type="image/jpeg",
+            file_type="JPEG image data",
+            is_media=True,
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=p1,
+            path="root/user/baz.txt",
+            rootfs_path="/user/baz.txt",
+            is_media=False,
+        )
+        rootfs.tag_media_files_as_uninteresting(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        resource3.refresh_from_db()
+        self.assertEqual("ignored-media-file", resource1.status)
+        self.assertEqual("ignored-media-file", resource2.status)
+        self.assertEqual("", resource3.status)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

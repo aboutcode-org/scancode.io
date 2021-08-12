@@ -1,11 +1,34 @@
 // Release notes
 // -------------
 
-### unreleased
+### v21.8.2
+
+- Upgrade ScanCode-toolkit to version 21.7.30
+
+- Add new documentation chapters and tutorials on the usage of the Web User Interface.
+  https://github.com/nexB/scancode.io/issues/241
+
+- Add ability to register custom pipelines through a new SCANCODEIO_PIPELINES_DIRS
+  setting.
+  https://github.com/nexB/scancode.io/issues/237
+
+- Add a pipeline `scan_package.ScanPackage` to scan a single package archive with
+  ScanCode-toolkit.
+  https://github.com/nexB/scancode.io/issues/25
+
+- Detected Package dependencies are not created as Package instance anymore but stored
+  on the Package model itself in a new `dependencies` field.
+  https://github.com/nexB/scancode.io/issues/228
+
+- Add the extra_data field on the DiscoveredPackage model.
+  https://github.com/nexB/scancode.io/issues/191
 
 - Improve XLSX creation. We now check that the content is correctly added before
   calling XlsxWriter and report and error if the truncated can be truncated.
   https://github.com/nexB/scancode.io/issues/206
+
+- Add support for VMWare Photon-based Docker images and rootfs. This is an RPM-based
+  Linux distribution
 
 ### v21.6.10
 

@@ -58,8 +58,8 @@ class InputsBaseForm(forms.Form):
 
     def clean_input_urls(self):
         """
-        Fetch the `input_urls` and set the `downloads` objects in the cleaned_data.
-        A validation error is raised if at least one URL could not be fetched.
+        Fetches the `input_urls` and sets the `downloads` objects in the cleaned_data.
+        A validation error is raised, if at least one URL can't be fetched.
         """
         input_urls = self.cleaned_data.get("input_urls", [])
 
@@ -136,7 +136,7 @@ class AddInputsForm(InputsBaseForm, forms.Form):
 class AddPipelineForm(PipelineBaseForm):
     def __init__(self, *args, **kwargs):
         """
-        The `pipeline` field is required in the context of this form.
+        The `pipeline` field is required—mandatory—for this form.
         """
         super().__init__(*args, **kwargs)
         self.fields["pipeline"].required = True

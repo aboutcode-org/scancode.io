@@ -65,7 +65,7 @@ class Command(BaseCommand):
 
         confirm = input(
             f"{old_scan_results_len} scan results files found for deletion.\n"
-            f"Are you sure you want to do this? \n"
+            f"Are you sure you want to delete this? \n"
             f"Type 'yes' to continue, or 'no' to cancel: "
         )
         if confirm == "yes":

@@ -33,8 +33,8 @@ from licensedcode.models import load_licenses
 @lru_cache(maxsize=None)
 def get_licenses():
     """
-    Load the licenses from the ScanCode-toolkit `licensedcode` data and
-    return a mapping of `key` to `license` objects.
+    Loads licenses-related information from the ScanCode-toolkit `licensedcode` data and
+    returns a mapping of `key` to `license` objects.
     The result is cached in memory so the load_licenses() process is only
     executed once on the first `get_licenses()` call.
     """
@@ -43,7 +43,7 @@ def get_licenses():
 
 def license_list_view(request):
     """
-    Display a list of all the licenses linked to their details.
+    Displays a list of all licenses linked to their details.
     """
     licenses = get_licenses()
     license_links = [
@@ -55,8 +55,8 @@ def license_list_view(request):
 
 def license_details_view(request, key):
     """
-    Display all the information available about the provided license `key`
-    followed by the full license text.
+    Displays all available information about a given license `key` followed by
+    the full license text.
     """
     licenses = get_licenses()
     try:

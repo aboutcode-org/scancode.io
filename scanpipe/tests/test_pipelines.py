@@ -20,11 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 import tempfile
 import warnings
+from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
+from django.test import tag
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
@@ -118,6 +121,11 @@ class ScanPipePipelinesTest(TestCase):
         self.assertFalse(is_pipeline(Pipeline))
         self.assertTrue(is_pipeline(DoNothing))
 
+        class SubSubClass(DoNothing):
+            pass
+
+        self.assertTrue(is_pipeline(SubSubClass))
+
     def test_scanpipe_pipelines_class_get_graph(self):
         expected = [
             {"doc": "Step1 doc.", "name": "step1"},
@@ -156,8 +164,8 @@ class ScanPipePipelinesTest(TestCase):
             caught_warning = caught_warnings[0]
 
         expected = (
-            "Defining ``steps`` as a tuple is deprecated. "
-            "Use a ``steps(cls)`` classmethod instead."
+            f"Defining ``steps`` as a tuple is deprecated in {StepsAsAttribute} "
+            f"Use a ``steps(cls)`` classmethod instead."
         )
         self.assertEqual(expected, str(caught_warning.message))
 
@@ -179,3 +187,72 @@ class RootFSPipelineTest(TestCase):
 
         error = project1.projecterrors.get()
         self.assertEqual("Error\nError", error.message)
+
+
+class ScanPackagePipelineTest(TestCase):
+    maxDiff = None
+    data_location = Path(__file__).parent / "data"
+    exclude_from_diff = [
+        "start_timestamp",
+        "end_timestamp",
+        "duration",
+        "input",
+        "compliance_alert",
+        "policy",
+        "tool_version",
+        "--json-pp",
+        "--processes",
+    ]
+
+    def _without_keys(self, data, exclude_keys):
+        """
+        Returns the `data` excluding the provided `exclude_keys`.
+        """
+        if type(data) == list:
+            return [self._without_keys(entry, exclude_keys) for entry in data]
+
+        if type(data) == dict:
+            return {
+                key: self._without_keys(value, exclude_keys)
+                if type(value) in [list, dict]
+                else value
+                for key, value in data.items()
+                if key not in exclude_keys
+            }
+
+        return data
+
+    @tag("slow")
+    def test_scanpipe_scan_package_pipeline_integration_test(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline("scan_package")
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, _ = pipeline.execute()
+        self.assertEqual(0, exitcode)
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        scancode_json = json.loads(scancode_file.read_text())
+
+        expected_file = self.data_location / "is-npm-1.0.0_scancode.json"
+        expected_json = json.loads(expected_file.read_text())
+
+        scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
+        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+
+        self.assertEqual(expected_data, scancode_data)
+
+        summary_file = project1.get_latest_output(filename="summary")
+        summary_json = json.loads(summary_file.read_text())
+
+        expected_file = self.data_location / "is-npm-1.0.0_summary.json"
+        expected_json = json.loads(expected_file.read_text())
+
+        summary_data = self._without_keys(summary_json, self.exclude_from_diff)
+        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+
+        self.assertEqual(expected_data, summary_data)

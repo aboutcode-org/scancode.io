@@ -53,6 +53,11 @@ SCANCODEIO_PROCESSES = env.int("SCANCODEIO_PROCESSES", default=None)
 
 SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies.yml")
 
+# This setting defines the additional locations ScanCode.io will search for pipelines.
+# This should be set to a list of strings that contain full paths to your additional
+# pipelines directories.
+SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -97,7 +102,7 @@ DATABASES = {
         "NAME": env.str("SCANCODEIO_DB_NAME", "scancodeio"),
         "USER": env.str("SCANCODEIO_DB_USER", "scancodeio"),
         "PASSWORD": env.str("SCANCODEIO_DB_PASSWORD", "scancodeio"),
-        "PORT": "5432",
+        "PORT": env.str("SCANCODEIO_DB_PORT", "5432"),
         "ATOMIC_REQUESTS": True,
     }
 }
@@ -239,7 +244,10 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_PERMISSION_CLASSES": env.tuple(
+        "REST_FRAMEWORK_DEFAULT_PERMISSION_CLASSES",
+        default=("rest_framework.permissions.AllowAny",),
+    ),
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",

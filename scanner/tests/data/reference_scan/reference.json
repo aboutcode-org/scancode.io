@@ -2,10 +2,10 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "21.6.7",
+      "tool_version": "21.7.30",
       "options": {
         "input": [
-          "scanner/tests/data/reference_scan/code"
+          "/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmpzlf_0erz/reference_scan/code"
         ],
         "--classify": true,
         "--consolidate": true,
@@ -13,7 +13,7 @@
         "--email": true,
         "--info": true,
         "--is-license-text": true,
-        "--json-pp": "scanner/tests/data/reference_scan/reference.json",
+        "--json-pp": "/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmpzlf_0erz/output.json",
         "--license": true,
         "--license-clarity-score": true,
         "--license-text": true,
@@ -25,9 +25,9 @@
         "--url": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2021-06-08T102735.700911",
-      "end_timestamp": "2021-06-08T102754.339395",
-      "duration": 18.638532161712646,
+      "start_timestamp": "2021-08-02T105204.867585",
+      "end_timestamp": "2021-08-02T105207.769250",
+      "duration": 2.901686906814575,
       "message": null,
       "errors": [],
       "extra_data": {
@@ -929,7 +929,7 @@
         {
           "value": "name' Isaac Z.",
           "start_line": 9,
-          "end_line": 11
+          "end_line": 10
         }
       ],
       "packages": [],
@@ -1685,14 +1685,14 @@
         {
           "value": "Copyright (c) 1995-2011 Mark Adler",
           "start_line": 2,
-          "end_line": 3
+          "end_line": 2
         }
       ],
       "holders": [
         {
           "value": "Mark Adler",
           "start_line": 2,
-          "end_line": 3
+          "end_line": 2
         }
       ],
       "authors": [],
@@ -1778,15 +1778,15 @@
       "copyrights": [
         {
           "value": "Copyright (c) 1995-2011 Mark Adler",
-          "start_line": 2,
-          "end_line": 4
+          "start_line": 3,
+          "end_line": 3
         }
       ],
       "holders": [
         {
           "value": "Mark Adler",
-          "start_line": 2,
-          "end_line": 4
+          "start_line": 3,
+          "end_line": 3
         }
       ],
       "authors": [],
@@ -1873,14 +1873,14 @@
         {
           "value": "Copyright (c) 1995-2011 Mark Adler",
           "start_line": 2,
-          "end_line": 3
+          "end_line": 2
         }
       ],
       "holders": [
         {
           "value": "Mark Adler",
           "start_line": 2,
-          "end_line": 3
+          "end_line": 2
         }
       ],
       "authors": [],

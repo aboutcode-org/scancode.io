@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 class Pipeline:
     """
-    Base class for all Pipelines.
+    Base class for all pipelines.
     """
 
     def __init__(self, run):
@@ -56,29 +56,29 @@ class Pipeline:
     @classmethod
     def get_steps(cls):
         """
-        Raise a deprecation warning when the steps are defined as a tuple in place of
+        Raises a deprecation warning when the steps are defined as a tuple instead of
         a classmethod.
         """
         if callable(cls.steps):
             return cls.steps()
 
         warnings.warn(
-            "Defining ``steps`` as a tuple is deprecated. "
-            "Use a ``steps(cls)`` classmethod instead."
+            f"Defining ``steps`` as a tuple is deprecated in {cls} "
+            f"Use a ``steps(cls)`` classmethod instead."
         )
         return cls.steps
 
     @classmethod
     def get_doc(cls):
         """
-        Return the docstring.
+        Returns a docstring.
         """
         return getdoc(cls)
 
     @classmethod
     def get_graph(cls):
         """
-        Return the graph of steps.
+        Returns a graph of steps.
         """
         return [
             {"name": step.__name__, "doc": getdoc(step)} for step in cls.get_steps()
@@ -87,7 +87,7 @@ class Pipeline:
     @classmethod
     def get_info(cls):
         """
-        Return a dict of combined data about this Pipeline.
+        Returns a dictctionary of combined data about the current pipeline.
         """
         return {
             "description": cls.get_doc(),
@@ -96,7 +96,7 @@ class Pipeline:
 
     def log(self, message):
         """
-        Log the `message` to this module logger and to the Run instance.
+        Logs the given `message` to the current module logger and Run instance.
         """
         now_as_localtime = timezone.localtime(timezone.now())
         timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
@@ -146,7 +146,7 @@ class Pipeline:
 
 def is_pipeline(obj):
     """
-    Return True if the `obj` is a subclass of `Pipeline` except for the
+    Returns True if the `obj` is a subclass of `Pipeline` except for the
     `Pipeline` class itself.
     """
     return inspect.isclass(obj) and issubclass(obj, Pipeline) and obj is not Pipeline
@@ -154,7 +154,7 @@ def is_pipeline(obj):
 
 def profile(step):
     """
-    Profile a Pipeline step and save the results as HTML in the project output
+    Profiles a Pipeline step and save the results as HTML file in the project output
     directory.
 
     Usage:

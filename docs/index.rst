@@ -16,26 +16,29 @@ you’ll find information on:
 
     introduction
     installation
-    docker-image
+    user-interface
 
 .. toctree::
     :maxdepth: 2
     :caption: Tutorial
 
-    scanpipe-tutorial-1
-    scanpipe-tutorial-2
+    tutorial-1
+    tutorial-2
+    tutorial-3
+    tutorial-4
 
 .. toctree::
     :maxdepth: 2
     :caption: Reference Documentation
 
     scanpipe-concepts
-    scanpipe-pipelines
+    built-in-pipelines
+    custom-pipelines
     scanpipe-pipes
-    scanpipe-command-line
-    scanpipe-api
+    output-files
+    command-line-interface
+    rest-api
     scancodeio-settings
-    offline-installation
 
 Indices and tables
 ==================
