@@ -107,11 +107,22 @@ class ProjectCreateView(generic.CreateView):
         }
         return context
 
+    def is_xhr(self):
+        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
     def form_valid(self, form):
         response = super().form_valid(form)
 
-        if self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest":
-            return JsonResponse({"redirect_url": self.get_success_url()})
+        if self.is_xhr():
+            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+
+        if self.is_xhr():
+            return JsonResponse({"errors": str(form.errors)}, status=400)
 
         return response
 

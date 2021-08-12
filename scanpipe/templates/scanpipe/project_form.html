@@ -9,13 +9,11 @@
         Create a <strong>Project</strong>
       </h2>
 
-      {% if form.errors %}
-        <div class="notification is-danger">
-          {% for field_name, errors in form.errors.items %}
-            {{ errors }}
-          {% endfor %}
-        </div>
-      {% endif %}
+      <div id="form-errors" class="notification is-danger {% if not form.errors %}is-hidden{% endif %}">
+        {% for field_name, errors in form.errors.items %}
+          {{ errors }}
+        {% endfor %}
+      </div>
 
       <div class="columns">
         <div class="column is-three-fifths pr-5">
@@ -130,9 +128,12 @@
     let form = document.querySelector('form');
 
     form.addEventListener('submit', function(event) {
-      event.preventDefault();
-
       let background = displayOverlay();
+
+      // The upload progress is only added when input files are provided.
+      if (!form["input_files"].files.length) return false;
+
+      event.preventDefault();
 
       let progress_bar = document.createElement('progress');
       progress_bar.className = 'progress is-success is-medium file-upload';
@@ -144,8 +145,8 @@
       progress_container.appendChild(progress_bar)
       background.appendChild(progress_container);
 
-      // TODO: Only use the upload progress when there are files to upload
-      displayFormUploadProgress(form, progress_bar);
+      let form_errors = document.getElementById('form-errors');
+      displayFormUploadProgress(form, progress_bar, form_errors);
     });
   </script>
 {% endblock %}

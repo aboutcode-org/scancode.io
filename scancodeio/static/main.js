@@ -75,7 +75,7 @@ function displayOverlay() {
 }
 
 // Display and update the `$progress` object on `$form` submitted using XHR
-function displayFormUploadProgress($form, $progress) {
+function displayFormUploadProgress($form, $progress, $form_errors) {
 
  // Prepare an AJAX request to submit the form and track the progress
   let xhr = new XMLHttpRequest();
@@ -85,7 +85,7 @@ function displayFormUploadProgress($form, $progress) {
   xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
   xhr.upload.addEventListener('progress', function(event) {
-    console.log("progress fired");
+    console.log("XHR progress event fired");
     // Compute the progress percentage and set the value on the `progress` element
     if (event.lengthComputable) {
       let percent = (event.loaded / event.total * 100).toFixed();
@@ -93,23 +93,25 @@ function displayFormUploadProgress($form, $progress) {
     }
   }, false);
 
-  xhr.upload.addEventListener('load', function(event) {
-    console.log("load fired");
-  }, false);
-
   xhr.addEventListener('readystatechange', function(event) {
-    console.log("readystatechange fired");
     let target = event.target;
+    console.log("XHR readystatechange event fired");
 
     if (target.readyState === XMLHttpRequest.DONE) {
-      if (target.status === 200) {
+      if (target.status === 201) {
         let response_json = JSON.parse(target.response);
         window.location.replace(response_json['redirect_url']);
+      }
+      else if (target.status === 400) {
+        let response_json = JSON.parse(target.response);
+        $form_errors.innerHTML = response_json['errors'];
+        $form_errors.classList.remove("is-hidden");
+        // Remove the background
+        $progress.parentNode.parentNode.remove();
       }
       else {
         throw new Error('Error.');
       }
-
     }
   }, false);
 
