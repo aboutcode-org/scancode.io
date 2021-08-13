@@ -93,6 +93,7 @@ ones, or remove any of them.
         def extra_step2(self):
             pass
 
+.. _custom_pipeline_example:
 
 Custom Pipeline example
 -----------------------
@@ -171,3 +172,79 @@ After the packaging is complete, specify the entry point of the pipeline in your
         pipeline_name = pipeline_module:Pipeline_class
 
 Replace ``pipeline_module`` with the name of the Python module containing the pipeline.
+
+Pipeline Packaging example
+--------------------------
+The example below shows a standard pipeline packaging procedure for the custom pipeline
+created in :ref:`custom_pipeline_example`.
+
+A typical directory structure for the Python package would be:
+
+::
+
+    .
+    ├── CHANGELOG.rst
+    ├── LICENSE
+    ├── MANIFEST.in
+    ├── pyproject.toml
+    ├── README.rst
+    ├── setup.cfg
+    ├── setup.py
+    └── src
+        └── scancodeio_scan_and_report_pipeline
+            ├── __init__.py
+            └── pipelines
+                ├── __init__.py
+                └── scan_and_report.py
+
+Add the following code snippet to your :guilabel:`setup.cfg` file and specify the entry
+point to the pipeline under the ``[options.entry_points]`` section.
+
+.. code-block:: cfg
+
+    [metadata]
+    license_files =
+        LICENSE
+        CHANGELOG.rst
+
+    name = scancodeio_scan_and_report_pipeline
+    author = nexB. Inc. and others
+    author_email = info@aboutcode.org
+    license = Apache-2.0
+
+    # description must be on ONE line https://github.com/pypa/setuptools/issues/1390
+    description =  Generates a licenses report file from a template in ScanCode.io
+    long_description = file:README.rst
+    url = https://github.com/nexB/scancode.io
+    classifiers =
+        Development Status :: 4 - Beta
+        Intended Audience :: Developers
+        Programming Language :: Python :: 3
+        Programming Language :: Python :: 3 :: Only
+        Topic :: Software Development
+        Topic :: Utilities
+    keywords =
+        utilities
+        scancodeio
+        pipelines
+
+    [options]
+    package_dir=
+        =src
+    packages=find:
+    include_package_data = true
+    zip_safe = false
+    python_requires = >=3.6
+    setup_requires = setuptools_scm[toml] >= 4
+
+    [options.packages.find]
+    where=src
+
+    [options.entry_points]
+    scancodeio_pipelines =
+        pipeline_name = scancodeio_scan_and_report_pipeline.pipelines.scan_and_report:ScanAndReport
+
+.. tip::
+
+    Have a look at `Google LicenseClassifier pipeline for Scancode.io <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
+    for a complete example on packaging a custom tool as a pipeline.
