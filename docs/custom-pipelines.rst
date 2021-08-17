@@ -57,7 +57,7 @@ setting.
     You can view the :guilabel:`scanpipe/pipelines/` directory for more pipeline
     examples.
 
-Modify existing Pipelines
+Modify Existing Pipelines
 -------------------------
 
 Existing pipelines are flexible and can be reused as a base for custom pipelines
@@ -95,7 +95,7 @@ ones, or remove any of them.
 
 .. _custom_pipeline_example:
 
-Custom Pipeline example
+Custom Pipeline Example
 -----------------------
 
 The example below shows a custom pipeline that is based on the built-in
@@ -158,12 +158,14 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
 Pipeline Packaging
 ------------------
 
-Now that we have a custom pipeline, we can package it as a Python module for distribution.
-Follow the standard packaging procedure for your pipeline as described by
-`PyPA <https://packaging.python.org/tutorials/packaging-projects/>`_.
+Once you created a custom pipeline, you’ll want to package it as a Python module
+for easier distribution and reuse.
+You can check `the Packaging Python Project tutorial at
+PyPA <https://packaging.python.org/tutorials/packaging-projects/>`_, for
+standard packaging instructions.
 
-After the packaging is complete, specify the entry point of the pipeline in your
-:guilabel:`setup.cfg` file.
+After you have packaged your own custom pipeline successfully, you need to
+specify the entry point of the pipeline in the :guilabel:`setup.cfg` file.
 
 .. code-block:: cfg
 
@@ -171,12 +173,14 @@ After the packaging is complete, specify the entry point of the pipeline in your
     scancodeio_pipelines =
         pipeline_name = pipeline_module:Pipeline_class
 
-Replace ``pipeline_module`` with the name of the Python module containing the pipeline.
+.. note ::
+    Remember to replace ``pipeline_module`` with the name of the Python module
+    containing your custom pipeline.
 
-Pipeline Packaging example
+Pipeline Packaging Example
 --------------------------
-The example below shows a standard pipeline packaging procedure for the custom pipeline
-created in :ref:`custom_pipeline_example`.
+The example below shows a standard pipeline packaging procedure for the custom
+pipeline created in :ref:`custom_pipeline_example`.
 
 A typical directory structure for the Python package would be:
 
@@ -197,8 +201,8 @@ A typical directory structure for the Python package would be:
                 ├── __init__.py
                 └── scan_and_report.py
 
-Add the following code snippet to your :guilabel:`setup.cfg` file and specify the entry
-point to the pipeline under the ``[options.entry_points]`` section.
+Add the following code snippet to your :guilabel:`setup.cfg` file and specify
+the entry point to the pipeline under the ``[options.entry_points]`` section.
 
 .. code-block:: cfg
 
@@ -245,6 +249,5 @@ point to the pipeline under the ``[options.entry_points]`` section.
         pipeline_name = scancodeio_scan_and_report_pipeline.pipelines.scan_and_report:ScanAndReport
 
 .. tip::
-
-    Have a look at `Google LicenseClassifier pipeline for Scancode.io <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
+    Take a look at `Google LicenseClassifier pipeline for Scancode.io <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
     for a complete example on packaging a custom tool as a pipeline.
