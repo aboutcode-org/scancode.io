@@ -37,6 +37,7 @@ from django.test import TestCase
 from django.test import TransactionTestCase
 from django.utils import timezone
 
+from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -375,6 +376,17 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.assertEqual(0, run1.init_task_id(new_id))
         run1.refresh_from_db()
         self.assertEqual(task_id, run1.task_id)
+
+    def test_scanpipe_run_model_set_scancodeio_version(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual("", run1.scancodeio_version)
+
+        run1.set_scancodeio_version()
+        self.assertEqual(scancodeio_version, run1.scancodeio_version)
+
+        with self.assertRaises(ValueError) as cm:
+            run1.set_scancodeio_version()
+        self.assertIn("Field scancodeio_version already set to", str(cm.exception))
 
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")

@@ -78,6 +78,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "project",
             "uuid",
             "created_date",
+            "scancodeio_version",
             "task_id",
             "task_start_date",
             "task_end_date",

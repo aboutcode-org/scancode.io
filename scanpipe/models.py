@@ -48,6 +48,7 @@ from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 
 from scancodeio import WORKSPACE_LOCATION
+from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
@@ -708,6 +709,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         help_text=_("Identify a registered Pipeline class."),
     )
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
+    scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
     log = models.TextField(blank=True, editable=False)
 
@@ -738,6 +740,15 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         manager = self.__class__.objects
         return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=task_id)
+
+    def set_scancodeio_version(self):
+        """
+        Sets the current ScanCode.io version on the `Run.scancodeio_version` field.
+        """
+        if self.scancodeio_version:
+            msg = f"Field scancodeio_version already set to {self.scancodeio_version}"
+            raise ValueError(msg)
+        self.scancodeio_version = scancodeio_version
 
     @property
     def pipeline_class(self):
