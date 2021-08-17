@@ -14,11 +14,11 @@ Read more about ScanCode.io here: https://scancodeio.readthedocs.org/
 Build and tests status
 ----------------------
 
-+--------------+-------------------+
-| **CI Tests** | **Documentation** |
-+==============+===================+
-|  |ci-tests|  |    |docs-rtd|     |
-+--------------+-------------------+
++------------+-------------------+
+| **Tests**  | **Documentation** |
++============+===================+
+| |ci-tests| |    |docs-rtd|     |
++------------+-------------------+
 
 License
 -------
