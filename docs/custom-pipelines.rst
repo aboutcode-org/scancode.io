@@ -227,10 +227,7 @@ the entry point to the pipeline under the ``[options.entry_points]`` section.
         Intended Audience :: Developers
         Programming Language :: Python :: 3
         Programming Language :: Python :: 3 :: Only
-        Topic :: Software Development
-        Topic :: Utilities
     keywords =
-        utilities
         scancodeio
         pipelines
 
@@ -251,57 +248,62 @@ the entry point to the pipeline under the ``[options.entry_points]`` section.
         pipeline_name = scancodeio_scan_and_report_pipeline.pipelines.scan_and_report:ScanAndReport
 
 .. tip::
-    Take a look at `Google License Classifier pipeline for Scancode.io <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
+    Take a look at `Google License Classifier pipeline for Scancode.io
+    <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
     for a complete example on packaging a custom tool as a pipeline.
 
 Pipeline Publishing to PyPI
 ---------------------------
-After successfully packaging a pipeline, you may consider distributing it—as a plugin—via PyPI.
+After successfully packaging a pipeline, you may consider distributing it—as a
+plugin—via PyPI.
 Ensure a directory structure similar to the :ref:`pipeline_packaging_example` with all
 package files correctly configured.
 
 .. tip::
-    See the `Python packaging tutorial at PyPA <https://packaging.python.org/tutorials/packaging-projects/>`_
+    See the `Python packaging tutorial at PyPA
+    <https://packaging.python.org/tutorials/packaging-projects/>`_
     for a detailed setup guide.
 
-Next step involves generating the distribution archives for the package. Make sure you have the
-latest version of
-``build`` installed on your system
+Next step involves generating the distribution archives for the package.
+Make sure you have the latest version of ``build`` installed on your system.
 
 .. code-block:: bash
 
     pip install --upgrade build
 
-Now run the following command from within the same directory where the :guilabel:`pyproject.toml` is
-located:
+Now run the following command from within the same directory where the
+``pyproject.toml`` is located:
 
 .. code-block:: bash
 
     python -m build
 
-Once completed, you should have two files inside the ``dist`` directory with the
+Once completed, you should have two files inside the :guilabel:`dist/` directory with the
 ``.tar.gz`` and ``.whl`` extensions.
 
 .. note::
-    Remember to create an account on `PyPI <https://pypi.org/>`_ before uploading your distribution archive to PyPI.
+    Remember to create an account on `PyPI <https://pypi.org/>`_ before uploading your
+    distribution archive to PyPI.
 
-You can use ``twine`` to upload the package to PyPI. To install twine, run the following command:
+You can use ``twine`` to upload the package to PyPI. To install twine, run the
+following command:
 
 .. code-block:: bash
 
     pip install twine
 
-Finally, you can upload your package to PyPI with the next command
+Finally, you can upload your package to PyPI with the next command:
 
 .. code-block:: bash
 
     twine upload dist/*
 
-Once successfully uploaded, your pipeline package should be viewable on PyPI under the name
-specified in your manifest.
+Once successfully uploaded, your pipeline package should be viewable on PyPI under the
+name specified in your manifest.
 
-To make your pipeline available in ScanCode.io, you need to install the package from PyPI. For
-example, to download the package described in the :ref:`pipeline_packaging_example`, run
+To make your pipeline available in your instance of ScanCode.io, you need to install
+the package from PyPI. For example, to install the package described in the
+:ref:`pipeline_packaging_example`, run:
 
 .. code-block:: bash
 
