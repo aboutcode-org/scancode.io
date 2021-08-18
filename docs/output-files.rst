@@ -8,8 +8,8 @@ scans, the generated results are available for review or export in
 **JSON** and **Excel (XLSX)** file formats.
 
 .. tip::
-    The details for all fields included in the output files is available at
-    :ref:`data_model`.
+    Check the :ref:`data_model` section for more details about all 
+    fields included in the output files.
 
 Creating Output Files
 ---------------------

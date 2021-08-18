@@ -110,7 +110,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def task_state(self):
         """
-        Possible values includes:
+        Possible values include:
         - UNKNOWN (PENDING)
             No history about the task is available.
         - STARTED
@@ -124,9 +124,9 @@ class AbstractTaskFieldsModel(models.Model):
             The task executed successfully. The result attribute would contain
             the task's return value.
 
-        Notes: All tasks are PENDING by default in Celery, so the state would’ve been
-        better named "unknown". Celery doesn't update the state when a task is sent,
-        and any task with no history is assumed to be pending.
+        Notes: All tasks are PENDING by default in Celery, so it would make more
+        sense if the state was named "unknown". Celery doesn't update the state
+        when a task is sent, and any task with no history is assumed to be pending.
         """
         state = self.task_result.state
         return "UNKNOWN" if state == "PENDING" else state
@@ -253,8 +253,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Save this project instance.
-        The workspace directories are setup on project creation.
+        Saves this project instance.
+        The workspace directories are set up during project creation.
         """
         if not self.work_directory:
             self.work_directory = get_project_work_directory(self)
@@ -271,7 +271,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def reset(self, keep_input=True):
         """
         Resets the project by deleting all related database objects and all work
-        directories except the input directory, when `keep_input` is True.
+        directories except the input directory—when the `keep_input` option is True.
         """
         relationships = [
             self.projecterrors,
@@ -303,7 +303,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def setup_work_directory(self):
         """
-        Creates all of the work_directory structure and skips existing.
+        Creates all of the work_directory structure and skips if already existing.
         """
         for subdirectory in self.WORK_DIRECTORIES:
             Path(self.work_directory, subdirectory).mkdir(parents=True, exist_ok=True)
@@ -346,9 +346,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def clear_tmp_directory(self):
         """
         Deletes the whole content of the tmp/ directory.
-        This is called at the end of each Pipeline Run, and it doesn't store
+        This is called at the end of each pipeline Run, and it doesn't store
         any content that might be needed for further processing in following
-        Pipeline Run.
+        pipeline Run.
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.tmp_path.mkdir(exist_ok=True)
@@ -397,7 +397,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Returns a list of inputs including the source, type, and size data.
         Returns the `missing_inputs` defined in the `input_sources` field but not
         available in the input/ directory.
-        Only the first level children will be listed.
+        Only first level children will be listed.
         """
         input_path = self.input_path
         input_sources = dict(self.input_sources)
@@ -420,7 +420,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def output_root(self):
         """
         Returns a list of all files and directories of the output/ directory.
-        Only the first level children will be listed.
+        Only first level children will be listed.
         """
         return self.get_root_content(self.output_path)
 
@@ -452,7 +452,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @cached_property
     def can_add_input(self):
         """
-        Returns True until one pipeline has started to execute on the current project.
+        Returns True until a pipeline has started to execute on the current project.
         """
         return not self.runs.started().exists()
 
@@ -518,7 +518,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         project.
 
         If `execute_now` is True, the pipeline task is created.
-        The on_commit() is used to postpone the task creation after the transaction is
+        on_commit() is used to postpone the task creation after the transaction is
         successfully committed.
         If there isn’t any active transactions, the callback will be executed
         immediately.
@@ -566,7 +566,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def get_absolute_url(self):
         """
-        Returns this project details URL.
+        Returns this project's details URL.
         """
         return reverse("project_detail", args=[self.uuid])
 
@@ -661,7 +661,7 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 
 class SaveProjectErrorMixin:
     """
-    Uses `SaveProjectErrorMixin` on a model to create a ProjectError entry
+    Uses `SaveProjectErrorMixin` on a model to create a "ProjectError" entry
     from a raised exception during `save()` instead of stopping the analysis
     process.
     The creation of a "ProjectError" can be skipped providing False for the `save_error`
@@ -739,7 +739,7 @@ class RunQuerySet(ProjectRelatedQuerySet):
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     """
-    The Database representation of a Pipeline execution.
+    The Database representation of a pipeline execution.
     """
 
     pipeline_name = models.CharField(
@@ -800,7 +800,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     class Status(models.TextChoices):
         """
-        List of Run statuses.
+        List of Run status.
         """
 
         NOT_STARTED = "not_started"
@@ -1144,8 +1144,8 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         """
-        Save this resource instance.
-        Injects policies if the feature is enabled when the `licenses` field value is
+        Saves the current resource instance.
+        Injects policies—if the feature is enabled—when the `licenses` field value is
         changed.
         """
         if scanpipe_app.policies_enabled:
@@ -1190,21 +1190,21 @@ class CodebaseResource(
     @property
     def is_file(self):
         """
-        Returns True if the resource is a file.
+        Returns True, if the resource is a file.
         """
         return self.type == self.Type.FILE
 
     @property
     def is_dir(self):
         """
-        Returns True if the resource is a directory.
+        Returns True, if the resource is a directory.
         """
         return self.type == self.Type.DIRECTORY
 
     @property
     def is_symlink(self):
         """
-        Returns True if the resource is a symlink.
+        Returns True, if the resource is a symlink.
         """
         return self.type == self.Type.SYMLINK
 
@@ -1273,7 +1273,7 @@ class CodebaseResource(
 
     def walk(self, topdown=True):
         """
-        Returns all descendant Resources of this Resource; does not include self.
+        Returns all descendant Resources of the current Resource; does not include self.
 
         Traverses the tree top-down, depth-first if `topdown` is True; otherwise
         traverses the tree bottom-up.
@@ -1340,7 +1340,7 @@ class DiscoveredPackage(
     AbstractPackage,
 ):
     """
-    A project  Discovered Packages are records of the system and application packages
+    A project's Discovered Packages are records of the system and application packages
     discovered in the code under analysis.
     Each record is identified by its Package URL.
     Package URL is a fundamental effort to create informative identifiers for software
@@ -1382,7 +1382,7 @@ class DiscoveredPackage(
     def create_from_data(cls, project, package_data):
         """
         Creates and returns a DiscoveredPackage for a `project` from the `package_data`.
-        If one of the required fields values is not available, a "ProjectError"
+        If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
         required_fields = ["type", "name", "version"]
