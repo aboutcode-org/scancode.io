@@ -3,6 +3,10 @@
 Data Models
 ===========
 
+This section is a collection of concepts or notations for describing the
+structure of the ScanCode.io Data Model and providing details about all fields
+included in the output files.
+
 Project
 -------
 .. autoclass:: scanpipe.models.Project()
