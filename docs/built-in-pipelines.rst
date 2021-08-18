@@ -13,26 +13,31 @@ Pipeline Base Class
 -------------------
 .. autoclass:: scanpipe.pipelines.Pipeline()
     :members:
+    :member-order: bysource
 
 Docker Image Analysis
 ---------------------
 .. autoclass:: scanpipe.pipelines.docker.Docker()
     :members:
+    :member-order: bysource
 
 Docker Windows Image Analysis
 -----------------------------
 .. autoclass:: scanpipe.pipelines.docker_windows.DockerWindows()
     :members:
+    :member-order: bysource
 
 Load Inventory From Scan
 ------------------------
 .. autoclass:: scanpipe.pipelines.load_inventory.LoadInventory()
     :members:
+    :member-order: bysource
 
 Root Filesystem Analysis
 ------------------------
 .. autoclass:: scanpipe.pipelines.root_filesystems.RootFS()
     :members:
+    :member-order: bysource
 
 .. _pipeline_scan_codebase:
 
@@ -40,8 +45,10 @@ Scan Codebase
 -------------
 .. autoclass:: scanpipe.pipelines.scan_codebase.ScanCodebase()
     :members:
+    :member-order: bysource
 
 Scan Package
 ------------
 .. autoclass:: scanpipe.pipelines.scan_package.ScanPackage()
     :members:
+    :member-order: bysource

@@ -7,6 +7,9 @@ Whether you use the command line or the web application to run your
 scans, the generated results are available for review or export in
 **JSON** and **Excel (XLSX)** file formats.
 
+.. tip::
+    Check our :ref:`data_model` section for more details about all fields included in the output files.
+
 Creating Output Files
 ---------------------
 
