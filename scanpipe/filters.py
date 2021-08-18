@@ -126,6 +126,20 @@ class InPackageFilter(django_filters.ChoiceFilter):
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="path", lookup_expr="icontains")
+    programming_language = django_filters.CharFilter(
+        field_name="programming_language", method="custom_filter"
+    )
+    mime_type = django_filters.CharFilter(
+        field_name="mime_type", method="custom_filter"
+    )
+    copyrights = django_filters.CharFilter(
+        field_name="copyrights", method="custom_filter"
+    )
+    holders = django_filters.CharFilter(field_name="holders", method="custom_filter")
+    licenses = django_filters.CharFilter(field_name="licenses", method="custom_filter")
+    license_expressions = django_filters.CharFilter(
+        field_name="license_expressions", method="custom_filter"
+    )
     in_package = InPackageFilter(label="In a Package")
 
     class Meta:
@@ -166,6 +180,19 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             return JSONContainsFilter, {}
 
         return super().filter_for_lookup(field, lookup_type)
+
+    def custom_filter(self, queryset, name, value):
+        """
+        Custom filter method for handling "(No values detected)"
+        """
+        if value == "(No value detected)":
+            check_empty = "__".join([name, "exact"])
+            check_val = ""
+            if name in ["licenses", "license_expressions", "holders", "copyrights"]:
+                check_val = []
+            return queryset.filter(**{check_empty: check_val})
+
+        return queryset.filter(**{name: value})
 
 
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
