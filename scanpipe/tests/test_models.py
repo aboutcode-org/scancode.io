@@ -44,6 +44,7 @@ from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
+from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
@@ -582,6 +583,22 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
         self.assertEqual([str(package.uuid)], resource.for_packages)
+
+    def test_scanpipe_codebase_resource_model_file_content(self):
+        resource = self.project1.codebaseresources.create(path="filename.ext")
+
+        with open(resource.location, "w") as f:
+            f.write("content")
+        self.assertEqual("content\n", resource.file_content)
+
+        file_with_long_lines = self.data_location / "decompose_l_u_8hpp_source.html"
+        copy_input(file_with_long_lines, self.project1.codebase_path)
+
+        resource.path = "decompose_l_u_8hpp_source.html"
+        resource.save()
+
+        line_count = len(resource.file_content.split("\n"))
+        self.assertEqual(101, line_count)
 
     def test_scanpipe_codebase_resource_model_unique_license_expressions(self):
         resource = CodebaseResource(project=self.project1)

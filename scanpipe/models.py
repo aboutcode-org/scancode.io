@@ -24,6 +24,8 @@ import re
 import shutil
 import uuid
 from contextlib import suppress
+from itertools import groupby
+from operator import itemgetter
 from pathlib import Path
 from traceback import format_tb
 
@@ -1297,12 +1299,28 @@ class CodebaseResource(
         from textcode.analysis import numbered_text_lines
 
         numbered_lines = numbered_text_lines(self.location)
+        numbered_lines = self._regroup_numbered_lines(numbered_lines)
 
         # ScanCode-toolkit is not providing the "\n" suffix when reading binary files.
         # The following is a workaround until the issue is fixed in the toolkit.
-        lines = (l if l.endswith("\n") else l + "\n" for _, l in numbered_lines)
+        lines = (
+            line if line.endswith("\n") else line + "\n" for _, line in numbered_lines
+        )
 
         return "".join(lines)
+
+    @staticmethod
+    def _regroup_numbered_lines(numbered_lines):
+        """
+        Yields (line number, text) given an iterator of (line number, line) where
+        all text for the same line number is grouped and returned as a single text.
+
+        This is a workaround ScanCode-toolkit breaking down long lines and creating an
+        artificially higher number of lines, see:
+        https://github.com/nexB/scancode.io/issues/292#issuecomment-901766139
+        """
+        for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
+            yield line_number, "".join(line for _, line in lines_group)
 
     def create_and_add_package(self, package_data):
         """
