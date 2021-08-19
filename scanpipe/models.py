@@ -1181,13 +1181,6 @@ class CodebaseResource(
         return str(self.location_path)
 
     @property
-    def filename(self):
-        """
-        Returns the resource filename.
-        """
-        return f"{self.name}{self.extension}"
-
-    @property
     def is_file(self):
         """
         Returns True, if the resource is a file.
