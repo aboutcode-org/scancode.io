@@ -78,6 +78,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "project",
             "uuid",
             "created_date",
+            "scancodeio_version",
             "task_id",
             "task_start_date",
             "task_end_date",
@@ -129,14 +130,21 @@ class ProjectSerializer(
             "next_run",
             "runs",
             "extra_data",
+            "error_count",
+            "resource_count",
+            "package_count",
             "codebase_resources_summary",
             "discovered_package_summary",
         )
+
         exclude_from_list_view = [
             "input_sources",
             "input_root",
             "output_root",
             "extra_data",
+            "error_count",
+            "resource_count",
+            "package_count",
             "codebase_resources_summary",
             "discovered_package_summary",
         ]

@@ -81,6 +81,9 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertNotContains(response, "input_root")
         self.assertNotContains(response, "extra_data")
         self.assertNotContains(response, "input_sources")
+        self.assertNotContains(response, "error_count")
+        self.assertNotContains(response, "resource_count")
+        self.assertNotContains(response, "package_count")
 
     def test_scanpipe_api_project_detail(self):
         response = self.csrf_client.get(self.project1_detail_url)
@@ -90,6 +93,9 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual([], response.data["input_sources"])
         self.assertIn("input_root", response.data)
         self.assertIn("extra_data", response.data)
+        self.assertEqual(0, response.data["error_count"])
+        self.assertEqual(1, response.data["resource_count"])
+        self.assertEqual(1, response.data["package_count"])
 
         expected = {"": 1}
         self.assertEqual(expected, response.data["codebase_resources_summary"])
@@ -342,6 +348,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(
             "A pipeline to analyze Docker images.", response.data["description"]
         )
+        self.assertEqual("", response.data["scancodeio_version"])
         self.assertIsNone(response.data["task_id"])
         self.assertIsNone(response.data["task_start_date"])
         self.assertIsNone(response.data["task_end_date"])
