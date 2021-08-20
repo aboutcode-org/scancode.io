@@ -8,7 +8,11 @@
 
     <section class="section pt-0">
       <div class="is-flex is-justify-content-space-between mb-2">
-        {% include 'scanpipe/includes/breadcrumb.html' %}
+        <div>
+          {% include 'scanpipe/includes/breadcrumb.html' %}
+          <a href="?"><i class="fas fa-seedling"></i> 10 Active</a>
+          <a href="?is_archived=1" class="ml-3"><i class="fas fa-dice-d6"></i> 2 Archived</a>
+        </div>
         <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
       </div>
 

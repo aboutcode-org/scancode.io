@@ -93,6 +93,11 @@ class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
     prefetch_related = ["runs"]
     paginate_by = 10
 
+    def get_queryset(self):
+        # TODO: Move this filter logic to the ProjectFilterSet
+        is_archived = self.request.GET.get("is_archived", False)
+        return super().get_queryset().filter(is_archived=is_archived)
+
 
 class ProjectCreateView(generic.CreateView):
     model = Project
@@ -249,6 +254,30 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             messages.error(request, error_message)
 
         return redirect(project)
+
+
+# TODO: Add behavior for GET
+class ProjectArchiveView(ProjectViewMixin, generic.DetailView):
+    success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" has been archived.'
+
+    def archive(self, request, *args, **kwargs):
+        """
+        Calls the archive() method on the fetched object and then redirect to the
+        success URL.
+        """
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.archive()
+        messages.success(self.request, self.success_message.format(self.object.name))
+        return redirect(success_url)
+
+    def post(self, request, *args, **kwargs):
+        return self.archive(request, *args, **kwargs)
+
+    def get_success_url(self):
+        if self.success_url:
+            return self.success_url.format(**self.object.__dict__)
 
 
 class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):

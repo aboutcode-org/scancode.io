@@ -247,9 +247,27 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         help_text=_("Project work directory location."),
     )
     input_sources = models.JSONField(default=dict, blank=True, editable=False)
+    is_archived = models.BooleanField(
+        default=False,
+        editable=False,
+        help_text=_(
+            "Archived projects cannot be modified anymore and are not displayed by "
+            "default in project lists. Multiple levels of data cleanup may have "
+            "happened during the archive operation."
+        ),
+    )
 
     class Meta:
         ordering = ["-created_date"]
+
+    def archive(self):
+        """
+        TODO: Several level of data cleanup would be possible during the "archive"
+        operation: deletion of inputs, codebase, and database rows.
+        TODO: Ensure no Pipeline is running or queued (add for delete() too)
+        """
+        self.is_archived = True
+        self.save()
 
     def __str__(self):
         return self.name
