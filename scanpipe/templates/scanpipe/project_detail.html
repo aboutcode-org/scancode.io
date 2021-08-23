@@ -16,12 +16,11 @@
       {% include 'scanpipe/includes/breadcrumb.html' %}
       <div class="subtitle is-size-6">
         <span title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
-        <button class="button is-small is-white modal-button p-1 is-height-auto" data-target="modal-delete" aria-haspopup="true">
-          <i class="far fa-trash-alt"></i>
-        </button>
+        {% include "scanpipe/includes/project_actions_dropdown.html" %}
       </div>
     </section>
     {% include "scanpipe/includes/project_delete_modal.html" %}
+    {% include "scanpipe/includes/project_archive_modal.html" %}
 
     <div class="container mx-5 mb-5">
       <div class="field is-grouped is-grouped-multiline">
