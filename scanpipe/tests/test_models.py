@@ -60,10 +60,10 @@ class BaseScanPipeModelsTest:
         self.project1 = Project.objects.create(name="Analysis")
         self.project_asgiref = Project.objects.get(name="asgiref")
 
-    def create_run(self, **kwargs):
+    def create_run(self, pipeline="pipeline", **kwargs):
         return Run.objects.create(
             project=self.project1,
-            pipeline_name="pipeline",
+            pipeline_name=pipeline,
             **kwargs,
         )
 
@@ -472,45 +472,54 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
 
-        started = self.create_run(task_start_date=now)
-        not_started = self.create_run()
-        queued = self.create_run(task_id=uuid.uuid4())
-        executed = self.create_run(task_start_date=now, task_end_date=now)
-        succeed = self.create_run(task_start_date=now, task_exitcode=0)
-        failed = self.create_run(task_start_date=now, task_exitcode=1)
+        running = self.create_run(pipeline="running", task_start_date=now)
+        not_started = self.create_run(pipeline="not_started")
+        queued = self.create_run(pipeline="queued", task_id=uuid.uuid4())
+        executed = self.create_run(
+            pipeline="executed", task_start_date=now, task_end_date=now
+        )
+        succeed = self.create_run(
+            pipeline="succeed", task_start_date=now, task_end_date=now, task_exitcode=0
+        )
+        failed = self.create_run(
+            pipeline="failed", task_start_date=now, task_end_date=now, task_exitcode=1
+        )
 
-        qs = self.project1.runs.started()
-        self.assertEqual(4, len(qs))
-        self.assertIn(started, qs)
-        self.assertIn(executed, qs)
-        self.assertIn(succeed, qs)
-        self.assertIn(failed, qs)
+        qs = self.project1.runs.has_start_date()
+        self.assertQuerysetEqual(qs, [running, executed, succeed, failed])
 
         qs = self.project1.runs.not_started()
-        self.assertEqual([not_started], list(qs))
+        self.assertQuerysetEqual(qs, [not_started])
 
         qs = self.project1.runs.queued()
-        self.assertEqual([queued], list(qs))
+        self.assertQuerysetEqual(qs, [queued])
+
+        qs = self.project1.runs.running()
+        self.assertQuerysetEqual(qs, [running])
 
         qs = self.project1.runs.executed()
-        self.assertEqual([executed], list(qs))
+        self.assertQuerysetEqual(qs, [executed, succeed, failed])
 
         qs = self.project1.runs.succeed()
-        self.assertEqual([succeed], list(qs))
+        self.assertQuerysetEqual(qs, [succeed])
 
         qs = self.project1.runs.failed()
-        self.assertEqual([failed], list(qs))
+        self.assertQuerysetEqual(qs, [failed])
 
     def test_scanpipe_run_model_status_property(self):
         now = timezone.now()
 
-        started = self.create_run(task_start_date=now)
+        running = self.create_run(task_start_date=now)
         not_started = self.create_run()
         queued = self.create_run(task_id=uuid.uuid4())
-        succeed = self.create_run(task_start_date=now, task_exitcode=0)
-        failed = self.create_run(task_start_date=now, task_exitcode=1)
+        succeed = self.create_run(
+            task_start_date=now, task_end_date=now, task_exitcode=0
+        )
+        failed = self.create_run(
+            task_start_date=now, task_end_date=now, task_exitcode=1
+        )
 
-        self.assertEqual(Run.Status.RUNNING, started.status)
+        self.assertEqual(Run.Status.RUNNING, running.status)
         self.assertEqual(Run.Status.NOT_STARTED, not_started.status)
         self.assertEqual(Run.Status.QUEUED, queued.status)
         self.assertEqual(Run.Status.SUCCESS, succeed.status)

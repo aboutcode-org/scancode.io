@@ -473,9 +473,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @cached_property
     def can_add_input(self):
         """
-        Returns True until a pipeline has started to execute on the current project.
+        Returns True until one pipeline run has started to execute on the project.
         """
-        return not self.runs.started().exists()
+        return not self.runs.has_start_date().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
@@ -740,22 +740,46 @@ class SaveProjectErrorMixin:
 
 class RunQuerySet(ProjectRelatedQuerySet):
     def not_started(self):
+        """
+        Not in the execution queue, no `task_id` assigned.
+        """
         return self.filter(task_start_date__isnull=True, task_id__isnull=True)
 
     def queued(self):
+        """
+        In the execution queue with a `task_id` assigned but not running yet.
+        """
         return self.filter(task_start_date__isnull=True, task_id__isnull=False)
 
-    def started(self):
-        return self.filter(task_start_date__isnull=False)
+    def running(self):
+        """
+        Running the pipeline execution.
+        """
+        return self.has_start_date().filter(task_end_date__isnull=True)
 
     def executed(self):
+        """
+        Pipeline execution completed, includes both succeed and failed runs.
+        """
         return self.filter(task_end_date__isnull=False)
 
     def succeed(self):
+        """
+        Pipeline execution completed with success.
+        """
         return self.filter(task_exitcode=0)
 
     def failed(self):
+        """
+        Pipeline execution completed with failure.
+        """
         return self.filter(task_exitcode__gt=0)
+
+    def has_start_date(self):
+        """
+        Run has a `start_date` set. It can be running or executed.
+        """
+        return self.filter(task_start_date__isnull=False)
 
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
@@ -825,7 +849,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     @property
     def task_succeeded(self):
         """
-        Returns True, if a pipeline task was successfully executed.
+        Returns True, if a pipeline run was successfully executed.
         """
         return self.task_exitcode == 0
 
@@ -836,7 +860,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
         NOT_STARTED = "not_started"
         QUEUED = "queued"
-        STARTED = "started"
         RUNNING = "running"
         SUCCESS = "success"
         FAILURE = "failure"
@@ -847,14 +870,19 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Returns the Run current status.
         """
         status = self.Status
+
         if self.task_succeeded:
             return status.SUCCESS
+
         elif self.task_exitcode and self.task_exitcode > 0:
             return status.FAILURE
+
         elif self.task_start_date:
             return status.RUNNING
+
         elif self.task_id:
             return status.QUEUED
+
         return status.NOT_STARTED
 
     def append_to_log(self, message, save=False):
