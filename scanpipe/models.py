@@ -58,6 +58,10 @@ from scanpipe.packagedb_models import AbstractResource
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+class RunInProgress(Exception):
+    """Run are in progress or queued on this Project."""
+
+
 class UUIDPKModel(models.Model):
     uuid = models.UUIDField(
         verbose_name=_("UUID"),
@@ -260,15 +264,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     class Meta:
         ordering = ["-created_date"]
 
-    def archive(self):
-        """
-        TODO: Several level of data cleanup would be possible during the "archive"
-        operation: deletion of inputs, codebase, and database rows.
-        TODO: Ensure no Pipeline is running or queued (add for delete() too)
-        """
-        self.is_archived = True
-        self.save()
-
     def __str__(self):
         return self.name
 
@@ -282,10 +277,36 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             self.setup_work_directory()
         super().save(*args, **kwargs)
 
+    def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
+        """
+        Set the project `is_archived` field to True.
+
+        The project cannot be archived if one of its related run is queued or already
+        running.
+        """
+        self._raise_if_run_in_progress()
+
+        if remove_input:
+            shutil.rmtree(self.input_path, ignore_errors=True)
+
+        if remove_codebase:
+            shutil.rmtree(self.codebase_path, ignore_errors=True)
+
+        if remove_output:
+            shutil.rmtree(self.output_path, ignore_errors=True)
+
+        shutil.rmtree(self.tmp_path, ignore_errors=True)
+        self.setup_work_directory()
+
+        self.is_archived = True
+        self.save()
+
     def delete(self, *args, **kwargs):
         """
         Deletes the `work_directory` along all project-related data in the database.
         """
+        self._raise_if_run_in_progress()
+
         shutil.rmtree(self.work_directory, ignore_errors=True)
         return super().delete(*args, **kwargs)
 
@@ -294,6 +315,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Resets the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
+        self._raise_if_run_in_progress()
+
         relationships = [
             self.projecterrors,
             self.runs,
@@ -321,6 +344,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             shutil.rmtree(path, ignore_errors=True)
 
         self.setup_work_directory()
+
+    def _raise_if_run_in_progress(self):
+        """
+        Raises a `RunInProgress` exception if one of the project related run is queued
+        or running.
+        """
+        if self.runs.queued().exists() or self.runs.running().exists():
+            raise RunInProgress(
+                "Cannot execute this action until all associated pipeline runs are "
+                "completed."
+            )
 
     def setup_work_directory(self):
         """
