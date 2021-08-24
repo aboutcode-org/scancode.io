@@ -214,6 +214,10 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             )
             messages.error(self.request, message)
 
+        if project.is_archived:
+            message = "WARNING: This project is archived and read-only."
+            messages.warning(self.request, message)
+
         context.update(
             {
                 "inputs_with_source": inputs,
