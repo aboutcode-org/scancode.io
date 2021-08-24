@@ -10,8 +10,16 @@
       <div class="is-flex is-justify-content-space-between mb-2">
         <div>
           {% include 'scanpipe/includes/breadcrumb.html' %}
-          <a href="?"><i class="fas fa-seedling"></i> 10 Active</a>
-          <a href="?is_archived=1" class="ml-3"><i class="fas fa-dice-d6"></i> 2 Archived</a>
+          {% if archived_count > 0 %}
+            <a href="{% url 'project_list' %}">
+              <i class="fas fa-seedling"></i>
+              {{ active_count }} Active
+            </a>
+            <a href="{% url 'project_list' %}?is_archived=1" class="ml-4">
+              <i class="fas fa-dice-d6"></i>
+              {{ archived_count }} Archived
+            </a>
+          {% endif %}
         </div>
         <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
       </div>

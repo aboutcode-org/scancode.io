@@ -25,6 +25,7 @@ from collections import Counter
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Count
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -96,6 +97,12 @@ class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
     paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_count"] = Project.objects.filter(is_archived=False).count()
+        context["archived_count"] = Project.objects.filter(is_archived=True).count()
+        return context
 
     def get_queryset(self):
         # TODO: Move this filter logic to the ProjectFilterSet
