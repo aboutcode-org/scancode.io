@@ -1,23 +1,26 @@
 <div class="modal" id="modal-archive">
   <div class="modal-background"></div>
-  <div class="modal-card">
-    <header class="modal-card-head">
-      <p class="modal-card-title">Archive this project, are you sure?</p>
-      <button class="delete" aria-label="close"></button>
-    </header>
-    <section class="modal-card-body">
-      <div class="notification is-warning has-text-weight-semibold">
-        This action cannot be undone.
-      </div>s
-      <p class="mb-5">
-        Are you sure you want to do this?
-      </p>
-    </section>
-    <form action="{% url 'project_archive' project.uuid %}" method="post">{% csrf_token %}
+  <form action="{% url 'project_archive' project.uuid %}" method="post">{% csrf_token %}
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Archive this project, are you sure?</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="notification is-warning has-text-weight-semibold">
+          This action cannot be undone.
+        </div>
+        <p class="mb-5">
+          Are you sure you want to do this?
+        </p>
+        <ul>
+          {{ archive_form.as_ul }}
+        </ul>
+      </section>
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
         <button class="button is-warning is-no-close" type="submit">Yes, Archive Project</button>
       </footer>
-    </form>
-  </div>
+    </div>
+  </form>
 </div>

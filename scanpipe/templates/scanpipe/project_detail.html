@@ -20,7 +20,9 @@
       </div>
     </section>
     {% include "scanpipe/includes/project_delete_modal.html" %}
-    {% include "scanpipe/includes/project_archive_modal.html" %}
+    {% if not project.is_archived %}
+      {% include "scanpipe/includes/project_archive_modal.html" %}
+    {% endif %}
 
     <div class="container mx-5 mb-5">
       <div class="field is-grouped is-grouped-multiline">

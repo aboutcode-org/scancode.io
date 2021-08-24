@@ -9,9 +9,11 @@
       <span class="dropdown-item">
         Actions:
       </span>
-      <a href="#" class="modal-button dropdown-item" data-target="modal-archive" aria-haspopup="true">
-        <i class="fas fa-dice-d6 mr-2"></i>Archive
-      </a>
+      {% if not project.is_archived %}
+        <a href="#" class="modal-button dropdown-item" data-target="modal-archive" aria-haspopup="true">
+          <i class="fas fa-dice-d6 mr-2"></i>Archive
+        </a>
+      {% endif %}
       <a href="#" class="modal-button dropdown-item" data-target="modal-delete" aria-haspopup="true">
         <i class="far fa-trash-alt mr-2"></i>Delete
       </a>

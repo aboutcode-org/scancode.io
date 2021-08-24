@@ -33,6 +33,8 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
+from django.views.generic.detail import SingleObjectMixin
+from django.views.generic.edit import FormView
 
 import saneyaml
 from django_filters.views import FilterView
@@ -44,12 +46,14 @@ from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
+from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import RunInProgress
 from scanpipe.pipes import codebase
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
@@ -225,6 +229,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
+                "archive_form": ArchiveProjectForm(),
             }
         )
 
@@ -256,28 +261,28 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         return redirect(project)
 
 
-# TODO: Add behavior for GET
-class ProjectArchiveView(ProjectViewMixin, generic.DetailView):
+class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
+    http_method_names = ["post"]
+    form_class = ArchiveProjectForm
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" has been archived.'
 
-    def archive(self, request, *args, **kwargs):
-        """
-        Calls the archive() method on the fetched object and then redirect to the
-        success URL.
-        """
-        self.object = self.get_object()
-        success_url = self.get_success_url()
-        self.object.archive()
-        messages.success(self.request, self.success_message.format(self.object.name))
-        return redirect(success_url)
+    def form_valid(self, form):
+        response = super().form_valid(form)
 
-    def post(self, request, *args, **kwargs):
-        return self.archive(request, *args, **kwargs)
+        instance = self.get_object()
+        try:
+            instance.archive(
+                remove_input=form.cleaned_data["remove_input"],
+                remove_codebase=form.cleaned_data["remove_codebase"],
+                remove_output=form.cleaned_data["remove_output"],
+            )
+        except RunInProgress as error:
+            messages.error(self.request, error)
+        else:
+            messages.success(self.request, self.success_message.format(instance.name))
 
-    def get_success_url(self):
-        if self.success_url:
-            return self.success_url.format(**self.object.__dict__)
+        return response
 
 
 class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
