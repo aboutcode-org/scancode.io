@@ -11,11 +11,11 @@
         <div>
           {% include 'scanpipe/includes/breadcrumb.html' %}
           {% if archived_count > 0 %}
-            <a href="{% url 'project_list' %}">
+            <a href="{% url 'project_list' %}" class="{% if 'is_archived' in request.GET %}is-grey-link{% else %}is-black-link{% endif %}">
               <i class="fas fa-seedling"></i>
               {{ active_count }} Active
             </a>
-            <a href="{% url 'project_list' %}?is_archived=1" class="ml-4">
+            <a href="{% url 'project_list' %}?is_archived=1" class="ml-4 {% if 'is_archived' in request.GET %}is-black-link{% else %}is-grey-link{% endif %}">
               <i class="fas fa-dice-d6"></i>
               {{ archived_count }} Archived
             </a>
