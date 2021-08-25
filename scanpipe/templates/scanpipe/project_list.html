@@ -15,7 +15,7 @@
               <i class="fas fa-seedling"></i>
               {{ active_count }} Active
             </a>
-            <a href="{% url 'project_list' %}?is_archived=1" class="ml-4 {% if 'is_archived' in request.GET %}is-black-link{% else %}is-grey-link{% endif %}">
+            <a href="{% url 'project_list' %}?is_archived=true" class="ml-4 {% if 'is_archived' in request.GET %}is-black-link{% else %}is-grey-link{% endif %}">
               <i class="fas fa-dice-d6"></i>
               {{ archived_count }} Archived
             </a>

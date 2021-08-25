@@ -276,9 +276,9 @@ class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
     def form_valid(self, form):
         response = super().form_valid(form)
 
-        instance = self.get_object()
+        project = self.get_object()
         try:
-            instance.archive(
+            project.archive(
                 remove_input=form.cleaned_data["remove_input"],
                 remove_codebase=form.cleaned_data["remove_codebase"],
                 remove_output=form.cleaned_data["remove_output"],
@@ -286,7 +286,7 @@ class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
         except RunInProgress as error:
             messages.error(self.request, error)
         else:
-            messages.success(self.request, self.success_message.format(instance.name))
+            messages.success(self.request, self.success_message.format(project))
 
         return response
 
