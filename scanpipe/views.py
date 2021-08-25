@@ -104,11 +104,6 @@ class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
         context["archived_count"] = Project.objects.filter(is_archived=True).count()
         return context
 
-    def get_queryset(self):
-        # TODO: Move this filter logic to the ProjectFilterSet
-        is_archived = self.request.GET.get("is_archived", False)
-        return super().get_queryset().filter(is_archived=is_archived)
-
 
 class ProjectCreateView(generic.CreateView):
     model = Project

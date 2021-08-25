@@ -91,7 +91,16 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     class Meta:
         model = Project
-        fields = ["search"]
+        fields = ["search", "is_archived"]
+
+    def __init__(self, data=None, *args, **kwargs):
+        """
+        Filter out the archived projects by default.
+        """
+        super().__init__(data, *args, **kwargs)
+
+        if not data or "is_archived" not in data:
+            self.queryset = self.queryset.filter(is_archived=False)
 
 
 class JSONContainsFilter(django_filters.CharFilter):
