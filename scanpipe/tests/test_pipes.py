@@ -22,6 +22,7 @@
 
 import collections
 import json
+import os
 import shutil
 from pathlib import Path
 from unittest import mock
@@ -31,6 +32,7 @@ from django.apps import apps
 from django.core.management import call_command
 from django.test import TestCase
 from django.test import TransactionTestCase
+from django.test import override_settings
 
 from commoncode.archive import extract_tar
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
@@ -428,12 +430,12 @@ class ScanPipePipesTest(TestCase):
         scan_func = mock.Mock(return_value=(None, None))
         scan_func.__name__ = ""
 
-        with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", -1):
+        with override_settings(SCANCODEIO_PROCESSES=-1):
             scancode._scan_and_save(project1, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertFalse(with_threading)
 
-        with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", 0):
+        with override_settings(SCANCODEIO_PROCESSES=0):
             scancode._scan_and_save(project1, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
@@ -507,6 +509,23 @@ class ScanPipePipesTest(TestCase):
         )
         self.assertEqual(0, exitcode)
         self.assertIn("Scanning done.", output)
+
+    @mock.patch("scanpipe.pipes.run_command")
+    def test_scanpipe_pipes_scancode_run_scancode_cli_options(self, mock_run_command):
+        mock_run_command.return_value = 0, ""
+
+        with override_settings(SCANCODE_TOOLKIT_CLI_OPTIONS=["--timeout 60"]):
+            scancode.run_scancode(location=None, output_file=None, options=[])
+            self.assertIn("--timeout 60", mock_run_command.call_args[0][0])
+
+        with override_settings(SCANCODEIO_PROCESSES=None):
+            scancode.run_scancode(location=None, output_file=None, options=[])
+            expected = os.cpu_count() - 4
+            self.assertIn(f"--processes {expected}", mock_run_command.call_args[0][0])
+
+        with override_settings(SCANCODEIO_PROCESSES=10):
+            scancode.run_scancode(location=None, output_file=None, options=[])
+            self.assertIn("--processes 10", mock_run_command.call_args[0][0])
 
     def test_scanpipe_pipes_scancode_make_results_summary(self):
         project = Project.objects.create(name="Analysis")

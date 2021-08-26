@@ -1,6 +1,15 @@
 // Release notes
 // -------------
 
+### Unreleased
+
+- The `scancode.run_scancode` pipe now uses an optimal number of available CPUs for
+  multiprocessing by default.
+  The exact number of parallel processes available to ScanCode.io can be defined
+  using the SCANCODEIO_PROCESSES setting.
+
+- Renamed the SCANCODE_DEFAULT_OPTIONS setting to SCANCODE_TOOLKIT_CLI_OPTIONS.
+
 ### v21.8.2
 
 - Upgrade ScanCode-toolkit to version 21.7.30

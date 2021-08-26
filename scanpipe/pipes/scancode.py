@@ -54,10 +54,21 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
-# The maximum number of processes that can be used to execute multiprocessing calls.
-# If None or not given, then as many worker processes, minus one, will be created as the
-# machine has CPUs.
-SCANCODEIO_PROCESSES = getattr(settings, "SCANCODEIO_PROCESSES", None)
+
+def get_max_workers(keep_available=1):
+    """
+    Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
+    or returns a default value based on the number of available CPUs, minus the
+    provided `keep_available` value.
+    """
+    processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
+    if processes is not None:
+        return processes
+
+    max_workers = os.cpu_count() - keep_available
+    if max_workers < 1:
+        return 1
+    return max_workers
 
 
 def extract(location, target):
@@ -227,10 +238,7 @@ def _scan_and_save(project, scan_func, save_func):
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
     resource_iterator = codebase_resources.iterator(chunk_size=2000)
 
-    if SCANCODEIO_PROCESSES is None:
-        max_workers = os.cpu_count() - 1 or 1
-    else:
-        max_workers = SCANCODEIO_PROCESSES
+    max_workers = get_max_workers(keep_available=1)
 
     if max_workers <= 0:
         with_threading = True if max_workers == 0 else False
@@ -307,13 +315,15 @@ def run_scancode(location, output_file, options, raise_on_error=False):
     If `raise_on_error` is enabled, a ScancodeError will be raised if the
     exitcode is greater than 0.
     """
-    default_options = getattr(settings, "SCANCODE_DEFAULT_OPTIONS", [])
+    options_from_settings = getattr(settings, "SCANCODE_TOOLKIT_CLI_OPTIONS", [])
+    max_workers = get_max_workers(keep_available=4)
 
     scancode_args = [
         pipes.get_bin_executable("scancode"),
         shlex.quote(location),
-        *default_options,
+        *options_from_settings,
         *options,
+        f"--processes {max_workers}",
         f"--json-pp {shlex.quote(output_file)}",
     ]
 
