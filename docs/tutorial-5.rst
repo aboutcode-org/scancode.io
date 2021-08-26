@@ -10,8 +10,7 @@ show the API features while analyzing a package archive.
     As a perquisite, check our :ref:`rest_api` chapter for more details on REST
     API and how to get started.
 
-Instructions
-------------
+Instructions:
 
 - First, let's create a new project called ``boolean.py-3.8``.
 - We'll be using this `package <https://github.com/bastikr/boolean.py/archive/refs/tags/v3.8.zip>`_
@@ -23,11 +22,11 @@ Instructions
     Python script, the final results should be the same.
 
 Using cURL
-^^^^^^^^^^
+----------
 
 - In your terminal, insert the following:
 
-.. code-block:: console
+.. code-block:: bash
 
     api_url="http://127.0.0.1:8001/api/projects/"
     content_type="Content-Type: application/json"
@@ -45,8 +44,8 @@ Using cURL
     Docker.
 
 .. tip::
-    you can create a json file with the text below, which will be passed in the
-    -d parameter of the curl request:
+    You can provide the data using a json file with the text below, which will be
+    passed in the -d parameter of the curl request:
 
     .. code-block:: json
 
@@ -61,20 +60,19 @@ Using cURL
     ``boolean.py-3.8_cURL.json``, create your new project with the following
     curl request:
 
-    .. code-block:: console
+    .. code-block:: bash
 
         curl -X POST "http://127.0.0.1:8001/api/projects/" -H "Content-Type: application/json" -d @boolean.py-3.8_cURL.json
 
 If the new project has been successfully created, the response should include
 the project's details URL value among the returned data.
 
-.. code-block:: console
+.. code-block:: json
 
-    {"name":"boolean.py-3.8",
-     "url":"http://127.0.0.1:8001/api/projects/11de938f-fb86-4178-870c-99f4952b8881/",
-     .
-     .
-     .
+    {
+        "name": "boolean.py-3.8",
+        "url": "http://127.0.0.1:8001/api/projects/11de938f-fb86-4178-870c-99f4952b8881/",
+        "[...]": "[...]"
     }
 
 If you click on the project url, you'll be directed to the new project's
@@ -82,20 +80,17 @@ instance page that allows you to perform extra actions on the project including
 deleting it.
 
 .. note::
-    Refer to our :ref:`rest_api` section for more information about these extra
-    actions.
+    Refer to our :ref:`rest_api` section for more information about these extra actions.
 
 Using Python script
-^^^^^^^^^^^^^^^^^^^
-
+-------------------
 
 .. tip::
     To interact with REST APIs, we will be turning to the requests library.
 
 - To follow the above instructions and create a new project, start up the Python
-  interpreter—`Python REPL <https://realpython.com/interacting-with-python/>`_—by
-  typing python in your terminal.
-- If you are seeing the prompt ">>>", you can execute the following commands:
+  interpreter by typing ``python`` in your terminal.
+- If you are seeing the prompt ``>>>``, you can execute the following commands:
 
 .. code-block:: python
 
@@ -111,17 +106,15 @@ Using Python script
     response = requests.post(api_url, data=data)
     response.json()
 
-
-The JSON response includes a generated id for the new project.
+The JSON response includes a generated UUID for the new project.
 
 .. code-block:: python
 
-    >>> response.json()
-    {'name': 'boolean.py-3.8',
-     'url': 'http://127.0.0.1:8001/api/projects/eab7198c-c5c7-470c-bdb3-16909d4d875c/'
-     .
-     .
-     .
+    # print(response.json())
+    {
+        "name": "boolean.py-3.8",
+        "url": "http://127.0.0.1:8001/api/projects/11de938f-fb86-4178-870c-99f4952b8881/",
+        "[...]": "[...]",
     }
 
 .. note::

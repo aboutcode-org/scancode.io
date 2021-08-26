@@ -117,10 +117,10 @@ about the project, including the status of any pipeline run:
 .. code-block:: json
 
     {
-        "name":"project_name",
-        "url":"/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/",
-        "uuid":"6461408c-726c-4b70-aa7a-c9cc9d1c9685",
-        "created_date":"2021-07-21T16:06:29.132795+02:00"
+        "name": "project_name",
+        "url": "/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/",
+        "uuid": "6461408c-726c-4b70-aa7a-c9cc9d1c9685",
+        "created_date": "2021-07-21T16:06:29.132795+02:00"
     }
 
 Project details
