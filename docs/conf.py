@@ -32,7 +32,10 @@ author = "nexB Inc."
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named "sphinx.ext.*") or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinxcontrib_django2",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -49,10 +52,23 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # autodoc.
 autodoc_mock_imports = ["celery"]
 
-# Keep the source code order for the autodoc content, as we want to keep
-# the processing order for the Pipelines doc.
-autodoc_member_order = "bysource"
-
+# The default options for autodoc directives.
+# They are applied to all autodoc directives automatically.
+# It must be a dictionary which maps option names to the values.
+autodoc_default_options = {
+    # Keep the source code order for the autodoc content, as we want to keep
+    # the processing order for the Pipelines doc.
+    "member-order": "bysource",
+    "exclude-members": (
+        "DoesNotExist, "
+        "MultipleObjectsReturned, "
+        "objects, "
+        "from_db, "
+        "get_absolute_url, "
+        "get_next_by_created_date, "
+        "get_previous_by_created_date"
+    ),
+}
 
 # -- Options for HTML output -------------------------------------------------
 

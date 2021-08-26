@@ -24,6 +24,8 @@ import re
 import shutil
 import uuid
 from contextlib import suppress
+from itertools import groupby
+from operator import itemgetter
 from pathlib import Path
 from traceback import format_tb
 
@@ -48,6 +50,7 @@ from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 
 from scancodeio import WORKSPACE_LOCATION
+from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
@@ -110,7 +113,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def task_state(self):
         """
-        Possible values includes:
+        Possible values include:
         - UNKNOWN (PENDING)
             No history about the task is available.
         - STARTED
@@ -124,9 +127,9 @@ class AbstractTaskFieldsModel(models.Model):
             The task executed successfully. The result attribute would contain
             the task's return value.
 
-        Notes: All tasks are PENDING by default in Celery, so the state would’ve been
-        better named "unknown". Celery doesn't update the state when a task is sent,
-        and any task with no history is assumed to be pending.
+        Notes: All tasks are PENDING by default in Celery, so it would make more
+        sense if the state was named "unknown". Celery doesn't update the state
+        when a task is sent, and any task with no history is assumed to be pending.
         """
         state = self.task_result.state
         return "UNKNOWN" if state == "PENDING" else state
@@ -253,7 +256,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Sets up the workspace directories on project creation.
+        Saves this project instance.
+        The workspace directories are set up during project creation.
         """
         if not self.work_directory:
             self.work_directory = get_project_work_directory(self)
@@ -270,7 +274,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def reset(self, keep_input=True):
         """
         Resets the project by deleting all related database objects and all work
-        directories except the input directory, when `keep_input` is True.
+        directories except the input directory—when the `keep_input` option is True.
         """
         relationships = [
             self.projecterrors,
@@ -302,37 +306,52 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def setup_work_directory(self):
         """
-        Creates all of the work_directory structure and skips existing.
+        Creates all of the work_directory structure and skips if already existing.
         """
         for subdirectory in self.WORK_DIRECTORIES:
             Path(self.work_directory, subdirectory).mkdir(parents=True, exist_ok=True)
 
     @property
     def work_path(self):
+        """
+        Returns the `work_directory` as a Path instance.
+        """
         return Path(self.work_directory)
 
     @property
     def input_path(self):
+        """
+        Returns the `input` directory as a Path instance.
+        """
         return Path(self.work_path / "input")
 
     @property
     def output_path(self):
+        """
+        Returns the `output` directory as a Path instance.
+        """
         return Path(self.work_path / "output")
 
     @property
     def codebase_path(self):
+        """
+        Returns the `codebase` directory as a Path instance.
+        """
         return Path(self.work_path / "codebase")
 
     @property
     def tmp_path(self):
+        """
+        Returns the `tmp` directory as a Path instance.
+        """
         return Path(self.work_path / "tmp")
 
     def clear_tmp_directory(self):
         """
         Deletes the whole content of the tmp/ directory.
-        This is called at the end of each Pipeline Run, and it doesn't store
+        This is called at the end of each pipeline Run, and it doesn't store
         any content that might be needed for further processing in following
-        Pipeline Run.
+        pipeline Run.
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.tmp_path.mkdir(exist_ok=True)
@@ -341,9 +360,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         Returns all files and directories path of the input/ directory matching
         a given `pattern`.
-        The default "**/*" pattern means "this directory and all subdirectories,
+        The default `**/*` pattern means "this directory and all subdirectories,
         recursively".
-        Use the "*" pattern to only list the root content.
+        Use the `*` pattern to only list the root content.
         """
         return self.input_path.glob(pattern)
 
@@ -381,7 +400,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Returns a list of inputs including the source, type, and size data.
         Returns the `missing_inputs` defined in the `input_sources` field but not
         available in the input/ directory.
-        Only the first level children will be listed.
+        Only first level children will be listed.
         """
         input_path = self.input_path
         input_sources = dict(self.input_sources)
@@ -404,7 +423,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def output_root(self):
         """
         Returns a list of all files and directories of the output/ directory.
-        Only the first level children will be listed.
+        Only first level children will be listed.
         """
         return self.get_root_content(self.output_path)
 
@@ -436,7 +455,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @cached_property
     def can_add_input(self):
         """
-        Returns True until one pipeline has started to execute on the current project.
+        Returns True until a pipeline has started to execute on the current project.
         """
         return not self.runs.started().exists()
 
@@ -498,11 +517,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
-        Creates a new "Run" instance with the provided `pipeline` on the current
+        Creates a new Run instance with the provided `pipeline` on the current
         project.
 
         If `execute_now` is True, the pipeline task is created.
-        The on_commit() is used to postpone the task creation after the transaction is
+        on_commit() is used to postpone the task creation after the transaction is
         successfully committed.
         If there isn’t any active transactions, the callback will be executed
         immediately.
@@ -519,14 +538,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def get_next_run(self):
         """
-        Returns the next non-executed "Run" instance assigned to current project.
+        Returns the next non-executed Run instance assigned to current project.
         """
         with suppress(ObjectDoesNotExist):
             return self.runs.not_started().earliest("created_date")
 
     def get_latest_failed_run(self):
         """
-        Returns the latest failed "Run" instance of the current project.
+        Returns the latest failed Run instance of the current project.
         """
         with suppress(ObjectDoesNotExist):
             return self.runs.failed().latest("created_date")
@@ -549,30 +568,53 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         )
 
     def get_absolute_url(self):
+        """
+        Returns this project's details URL.
+        """
         return reverse("project_detail", args=[self.uuid])
 
     @cached_property
     def resource_count(self):
+        """
+        Returns the number of resources related to this project.
+        """
         return self.codebaseresources.count()
 
     @cached_property
     def file_count(self):
+        """
+        Returns the number of **file** resources related to this project.
+        """
         return self.codebaseresources.files().count()
 
     @cached_property
     def file_in_package_count(self):
+        """
+        Returns the number of **file** resources **in a package** related to this
+        project.
+        """
         return self.codebaseresources.files().in_package().count()
 
     @cached_property
     def file_not_in_package_count(self):
+        """
+        Returns the number of **file** resources **not in a package** related to this
+        project.
+        """
         return self.codebaseresources.files().not_in_package().count()
 
     @cached_property
     def package_count(self):
+        """
+        Returns the number of packages related to this project.
+        """
         return self.discoveredpackages.count()
 
     @cached_property
     def error_count(self):
+        """
+        Returns the number of errors related to this project.
+        """
         return self.projecterrors.count()
 
 
@@ -602,7 +644,7 @@ class ProjectRelatedModel(models.Model):
 
 class ProjectError(UUIDPKModel, ProjectRelatedModel):
     """
-    Stores errors and exceptions raised during a pipeline run.
+    Stores errors and§ exceptions raised during a pipeline run.
     """
 
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
@@ -622,7 +664,7 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 
 class SaveProjectErrorMixin:
     """
-    Uses `SaveProjectErrorMixin` on a model to create a ProjectError entry
+    Uses `SaveProjectErrorMixin` on a model to create a "ProjectError" entry
     from a raised exception during `save()` instead of stopping the analysis
     process.
     The creation of a "ProjectError" can be skipped providing False for the `save_error`
@@ -700,7 +742,7 @@ class RunQuerySet(ProjectRelatedQuerySet):
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     """
-    The Database representation of a Pipeline execution.
+    The Database representation of a pipeline execution.
     """
 
     pipeline_name = models.CharField(
@@ -708,6 +750,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         help_text=_("Identify a registered Pipeline class."),
     )
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
+    scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
     log = models.TextField(blank=True, editable=False)
 
@@ -723,14 +766,14 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         Sends a message to the task manager to create an asynchronous pipeline
         execution task.
-        Stores the `task_id` of the current "Run" instance for a future use.
+        Stores the `task_id` of the current Run instance for a future use.
         """
         future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
         self.init_task_id(future.task_id)
 
     def init_task_id(self, task_id):
         """
-        Sets the provided `task_id` on the "Run" instance if not already stored in the
+        Sets the provided `task_id` on the Run instance if not already stored in the
         database.
         Uses the QuerySet `update` method instead of `save` to prevent overriding
         any fields that were set but not saved yet in the DB, which may occur when
@@ -739,11 +782,26 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         manager = self.__class__.objects
         return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=task_id)
 
+    def set_scancodeio_version(self):
+        """
+        Sets the current ScanCode.io version on the `Run.scancodeio_version` field.
+        """
+        if self.scancodeio_version:
+            msg = f"Field scancodeio_version already set to {self.scancodeio_version}"
+            raise ValueError(msg)
+        self.scancodeio_version = scancodeio_version
+
     @property
     def pipeline_class(self):
+        """
+        Returns this Run pipeline_class.
+        """
         return scanpipe_app.pipelines.get(self.pipeline_name)
 
     def make_pipeline_instance(self):
+        """
+        Returns a pipelines instance using this Run pipeline_class.
+        """
         return self.pipeline_class(self)
 
     @property
@@ -754,6 +812,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return self.task_exitcode == 0
 
     class Status(models.TextChoices):
+        """
+        List of Run status.
+        """
+
         NOT_STARTED = "not_started"
         QUEUED = "queued"
         STARTED = "started"
@@ -763,6 +825,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     @property
     def status(self):
+        """
+        Returns the Run current status.
+        """
         status = self.Status
         if self.task_succeeded:
             return status.SUCCESS
@@ -776,7 +841,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def append_to_log(self, message, save=False):
         """
-        Appends the `message` string to the `log` field of this "Run" instance.
+        Appends the `message` string to the `log` field of this Run instance.
         """
         message = message.strip()
         if any(lf in message for lf in ("\n", "\r")):
@@ -788,7 +853,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def profile(self, print_results=False):
         """
-        Returns computed execution times for each step in the current "Run".
+        Returns computed execution times for each step in the current Run.
 
         If `print_results` is provided, the results are printed to stdout.
         """
@@ -975,6 +1040,11 @@ class CodebaseResource(
     SaveProjectErrorMixin,
     AbstractResource,
 ):
+    """
+    A project Codebase Resources are records of its code files and directories.
+    Each record is identified by its path under the project workspace.
+    """
+
     rootfs_path = models.CharField(
         max_length=2000,
         blank=True,
@@ -991,6 +1061,10 @@ class CodebaseResource(
     )
 
     class Type(models.TextChoices):
+        """
+        List of CodebaseResource types.
+        """
+
         FILE = "file"
         DIRECTORY = "directory"
         SYMLINK = "symlink"
@@ -1039,6 +1113,10 @@ class CodebaseResource(
     is_media = models.BooleanField(default=False)
 
     class Compliance(models.TextChoices):
+        """
+        List of compliance alert values.
+        """
+
         OK = "ok"
         WARNING = "warning"
         ERROR = "error"
@@ -1079,7 +1157,8 @@ class CodebaseResource(
 
     def save(self, *args, **kwargs):
         """
-        Injects policies if the feature is enabled when the `licenses` field value is
+        Saves the current resource instance.
+        Injects policies—if the feature is enabled—when the `licenses` field value is
         changed.
         """
         if scanpipe_app.policies_enabled:
@@ -1100,28 +1179,39 @@ class CodebaseResource(
 
     @property
     def location_path(self):
+        """
+        Returns the location of the resource as a Path instance.
+        """
         # strip the leading / to allow joining this with the codebase_path
         path = Path(str(self.path).strip("/"))
         return self.project.codebase_path / path
 
     @property
     def location(self):
+        """
+        Returns the location of the resource as a string.
+        """
         return str(self.location_path)
 
     @property
-    def filename(self):
-        return f"{self.name}{self.extension}"
-
-    @property
     def is_file(self):
+        """
+        Returns True, if the resource is a file.
+        """
         return self.type == self.Type.FILE
 
     @property
     def is_dir(self):
+        """
+        Returns True, if the resource is a directory.
+        """
         return self.type == self.Type.DIRECTORY
 
     @property
     def is_symlink(self):
+        """
+        Returns True, if the resource is a symlink.
+        """
         return self.type == self.Type.SYMLINK
 
     def compute_compliance_alert(self):
@@ -1154,6 +1244,9 @@ class CodebaseResource(
 
     @property
     def unique_license_expressions(self):
+        """
+        Returns the sorted set of unique license_expressions.
+        """
         return sorted(set(self.license_expressions))
 
     def descendants(self):
@@ -1171,7 +1264,7 @@ class CodebaseResource(
 
         Paths are returned in lower-cased sorted path order to reflect the
         behavior of the `commoncode.resource.Resource.children()`
-        https://github.com/nexB/commoncode/blob/76a03d9c1cd2a582dcec4351c768c3ef646e1b31/src/commoncode/resource.py#L1199
+        https://github.com/nexB/commoncode/blob/main/src/commoncode/resource.py
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.VirtualCodebase class API.
@@ -1186,7 +1279,7 @@ class CodebaseResource(
 
     def walk(self, topdown=True):
         """
-        Return all descendant Resources of this Resource; does not include self.
+        Returns all descendant Resources of the current Resource; does not include self.
 
         Traverses the tree top-down, depth-first if `topdown` is True; otherwise
         traverses the tree bottom-up.
@@ -1203,6 +1296,9 @@ class CodebaseResource(
         return reverse("resource_detail", args=[self.project_id, self.pk])
 
     def get_raw_url(self):
+        """
+        Returns the URL to access the RAW content of the resource.
+        """
         return reverse("resource_raw", args=[self.project_id, self.pk])
 
     @property
@@ -1214,12 +1310,28 @@ class CodebaseResource(
         from textcode.analysis import numbered_text_lines
 
         numbered_lines = numbered_text_lines(self.location)
+        numbered_lines = self._regroup_numbered_lines(numbered_lines)
 
         # ScanCode-toolkit is not providing the "\n" suffix when reading binary files.
         # The following is a workaround until the issue is fixed in the toolkit.
-        lines = (l if l.endswith("\n") else l + "\n" for _, l in numbered_lines)
+        lines = (
+            line if line.endswith("\n") else line + "\n" for _, line in numbered_lines
+        )
 
         return "".join(lines)
+
+    @staticmethod
+    def _regroup_numbered_lines(numbered_lines):
+        """
+        Yields (line number, text) given an iterator of (line number, line) where
+        all text for the same line number is grouped and returned as a single text.
+
+        This is a workaround ScanCode-toolkit breaking down long lines and creating an
+        artificially higher number of lines, see:
+        https://github.com/nexB/scancode.io/issues/292#issuecomment-901766139
+        """
+        for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
+            yield line_number, "".join(line for _, line in lines_group)
 
     def create_and_add_package(self, package_data):
         """
@@ -1233,6 +1345,9 @@ class CodebaseResource(
 
     @property
     def for_packages(self):
+        """
+        Returns the list of all discovered packages associated to this resource.
+        """
         return [str(package) for package in self.discovered_packages.all()]
 
 
@@ -1246,6 +1361,15 @@ class DiscoveredPackage(
     SaveProjectErrorMixin,
     AbstractPackage,
 ):
+    """
+    A project's Discovered Packages are records of the system and application packages
+    discovered in the code under analysis.
+    Each record is identified by its Package URL.
+    Package URL is a fundamental effort to create informative identifiers for software
+    packages, such as Debian, RPM, npm, Maven, or PyPI packages.
+    See https://github.com/package-url for more details.
+    """
+
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -1271,13 +1395,16 @@ class DiscoveredPackage(
 
     @property
     def purl(self):
+        """
+        Returns the Package URL.
+        """
         return self.package_url
 
     @classmethod
     def create_from_data(cls, project, package_data):
         """
         Creates and returns a DiscoveredPackage for a `project` from the `package_data`.
-        If one of the required fields values is not available, a "ProjectError"
+        If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
         required_fields = ["type", "name", "version"]

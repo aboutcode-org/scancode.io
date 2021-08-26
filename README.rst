@@ -6,10 +6,19 @@ with ScanPipe pipelines.
 
 First application is for Docker container and VM composition analysis.
 
-Getting Started
+Getting started
 ---------------
 
 Read more about ScanCode.io here: https://scancodeio.readthedocs.org/
+
+Build and tests status
+----------------------
+
++------------+-------------------+
+| **Tests**  | **Documentation** |
++============+===================+
+| |ci-tests| |    |docs-rtd|     |
++------------+-------------------+
 
 License
 -------
@@ -31,3 +40,12 @@ Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANT
 OR CONDITIONS OF ANY KIND, either express or implied. No content created from
 ScanCode.io should be considered or used as legal advice. Consult an Attorney
 for any legal advice.
+
+
+.. |ci-tests| image:: https://github.com/nexB/scancode.io/actions/workflows/ci.yml/badge.svg?branch=main
+    :target: https://github.com/nexB/scancode.io/actions/workflows/ci.yml
+    :alt: CI Tests Status
+
+.. |docs-rtd| image:: https://readthedocs.org/projects/scancodeio/badge/?version=latest
+    :target: https://scancodeio.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Build Status

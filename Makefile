@@ -121,18 +121,6 @@ worker:
                --events -Ofair --prefetch-multiplier=1 \
                --soft-time-limit=21600 --time-limit=22000
 
-package: conf
-	@echo "-> Create a scancode.io package for offline installation"
-	@echo "-> Fetch dependencies in thirdparty/ for offline installation"
-	rm -rf thirdparty && mkdir thirdparty
-	bin/pip download -r etc/requirements/base.txt --no-cache-dir --dest thirdparty
-	@echo "-> Create package in dist/ for offline installation"
-	bin/python setup.py sdist
-
-install: virtualenv
-	@echo "-> Install and configure the Python env with base dependencies, offline"
-	bin/pip install --upgrade --no-index --no-cache-dir --find-links=thirdparty -e .
-
 bump:
 	@echo "-> Bump the version"
 	bin/bumpver update --no-fetch
@@ -141,4 +129,4 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test package bump docs
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs

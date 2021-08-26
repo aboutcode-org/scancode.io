@@ -27,6 +27,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.http import FileResponse
 from django.http import Http404
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -105,6 +106,25 @@ class ProjectCreateView(generic.CreateView):
             for key, pipeline_class in scanpipe_app.pipelines.items()
         }
         return context
+
+    def is_xhr(self):
+        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        if self.is_xhr():
+            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+
+        if self.is_xhr():
+            return JsonResponse({"errors": str(form.errors)}, status=400)
+
+        return response
 
     def get_success_url(self):
         return reverse_lazy("project_detail", kwargs={"uuid": self.object.pk})

@@ -16,7 +16,6 @@ you’ll find information on:
 
     introduction
     installation
-    run-docker
     user-interface
 
 .. toctree::
@@ -27,6 +26,7 @@ you’ll find information on:
     tutorial-2
     tutorial-3
     tutorial-4
+    tutorial-5
 
 .. toctree::
     :maxdepth: 2
@@ -36,12 +36,12 @@ you’ll find information on:
     built-in-pipelines
     custom-pipelines
     scanpipe-pipes
+    data-models
     output-files
     command-line-interface
     rest-api
     scancodeio-settings
     recognized-distros-os-images
-    offline-installation
 
 Indices and tables
 ==================

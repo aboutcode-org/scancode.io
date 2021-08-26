@@ -50,6 +50,7 @@ def execute_pipeline_task(self, run_pk):
     project = run.project
 
     run.reset_task_values()
+    run.set_scancodeio_version()
     run.set_task_started(task_id)
 
     info(f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)

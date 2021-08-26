@@ -57,7 +57,7 @@ setting.
     You can view the :guilabel:`scanpipe/pipelines/` directory for more pipeline
     examples.
 
-Modify existing Pipelines
+Modify Existing Pipelines
 -------------------------
 
 Existing pipelines are flexible and can be reused as a base for custom pipelines
@@ -93,8 +93,9 @@ ones, or remove any of them.
         def extra_step2(self):
             pass
 
+.. _custom_pipeline_example:
 
-Custom Pipeline example
+Custom Pipeline Example
 -----------------------
 
 The example below shows a custom pipeline that is based on the built-in
@@ -153,3 +154,157 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
             report_stream = template.stream(resources=resources_by_licenses)
             report_file = self.project.get_output_file_path("license-report", "txt")
             report_stream.dump(str(report_file))
+
+Pipeline Packaging
+------------------
+
+Once you created a custom pipeline, you’ll want to package it as a Python module
+for easier distribution and reuse.
+You can check `the Packaging Python Project tutorial at
+PyPA <https://packaging.python.org/tutorials/packaging-projects/>`_, for
+standard packaging instructions.
+
+After you have packaged your own custom pipeline successfully, you need to
+specify the entry point of the pipeline in the :guilabel:`setup.cfg` file.
+
+.. code-block:: cfg
+
+    [options.entry_points]
+    scancodeio_pipelines =
+        pipeline_name = pipeline_module:Pipeline_class
+
+.. note ::
+    Remember to replace ``pipeline_module`` with the name of the Python module
+    containing your custom pipeline.
+
+.. _pipeline_packaging_example:
+
+Pipeline Packaging Example
+--------------------------
+The example below shows a standard pipeline packaging procedure for the custom
+pipeline created in :ref:`custom_pipeline_example`.
+
+A typical directory structure for the Python package would be:
+
+::
+
+    .
+    ├── CHANGELOG.rst
+    ├── LICENSE
+    ├── MANIFEST.in
+    ├── pyproject.toml
+    ├── README.rst
+    ├── setup.cfg
+    ├── setup.py
+    └── src
+        └── scancodeio_scan_and_report_pipeline
+            ├── __init__.py
+            └── pipelines
+                ├── __init__.py
+                └── scan_and_report.py
+
+Add the following code snippet to your :guilabel:`setup.cfg` file and specify
+the entry point to the pipeline under the ``[options.entry_points]`` section.
+
+.. code-block:: cfg
+
+    [metadata]
+    license_files =
+        LICENSE
+        CHANGELOG.rst
+
+    name = scancodeio_scan_and_report_pipeline
+    author = nexB. Inc. and others
+    author_email = info@aboutcode.org
+    license = Apache-2.0
+
+    # description must be on ONE line https://github.com/pypa/setuptools/issues/1390
+    description =  Generates a licenses report file from a template in ScanCode.io
+    long_description = file:README.rst
+    url = https://github.com/nexB/scancode.io
+    classifiers =
+        Development Status :: 4 - Beta
+        Intended Audience :: Developers
+        Programming Language :: Python :: 3
+        Programming Language :: Python :: 3 :: Only
+    keywords =
+        scancodeio
+        pipelines
+
+    [options]
+    package_dir=
+        =src
+    packages=find:
+    include_package_data = true
+    zip_safe = false
+    python_requires = >=3.6
+    setup_requires = setuptools_scm[toml] >= 4
+
+    [options.packages.find]
+    where=src
+
+    [options.entry_points]
+    scancodeio_pipelines =
+        pipeline_name = scancodeio_scan_and_report_pipeline.pipelines.scan_and_report:ScanAndReport
+
+.. tip::
+    Take a look at `Google License Classifier pipeline for Scancode.io
+    <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
+    for a complete example on packaging a custom tool as a pipeline.
+
+Pipeline Publishing to PyPI
+---------------------------
+After successfully packaging a pipeline, you may consider distributing it—as a
+plugin—via PyPI.
+Ensure a directory structure similar to the :ref:`pipeline_packaging_example` with all
+package files correctly configured.
+
+.. tip::
+    See the `Python packaging tutorial at PyPA
+    <https://packaging.python.org/tutorials/packaging-projects/>`_
+    for a detailed setup guide.
+
+Next step involves generating the distribution archives for the package.
+Make sure you have the latest version of ``build`` installed on your system.
+
+.. code-block:: bash
+
+    pip install --upgrade build
+
+Now run the following command from within the same directory where the
+``pyproject.toml`` is located:
+
+.. code-block:: bash
+
+    python -m build
+
+Once completed, you should have two files inside the :guilabel:`dist/` directory with the
+``.tar.gz`` and ``.whl`` extensions.
+
+.. note::
+    Remember to create an account on `PyPI <https://pypi.org/>`_ before uploading your
+    distribution archive to PyPI.
+
+You can use ``twine`` to upload the package to PyPI. To install twine, run the
+following command:
+
+.. code-block:: bash
+
+    pip install twine
+
+Finally, you can upload your package to PyPI with the next command:
+
+.. code-block:: bash
+
+    twine upload dist/*
+
+Once successfully uploaded, your pipeline package should be viewable on PyPI under the
+name specified in your manifest.
+
+To make your pipeline available in your instance of ScanCode.io, you need to install
+the package from PyPI. For example, to install the package described in the
+:ref:`pipeline_packaging_example`, run:
+
+.. code-block:: bash
+
+    bin/pip install scancodeio_scan_and_report_pipeline
