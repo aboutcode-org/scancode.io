@@ -4,7 +4,7 @@ Review Scan Results (Web UI)
 ============================
 
 This chapter is complementary to the :ref:`tutorial_3` tutorial, and the output
-shown here is the generated results of the tutorial's pipeline run.
+included here represents the generated results of the tutorial's pipeline run.
 The goal here is to guide you on how to understand and review your scan
 results using the ScanCode.io web interface.
 
