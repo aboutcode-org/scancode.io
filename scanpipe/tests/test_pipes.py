@@ -518,11 +518,6 @@ class ScanPipePipesTest(TestCase):
             scancode.run_scancode(location=None, output_file=None, options=[])
             self.assertIn("--timeout 60", mock_run_command.call_args[0][0])
 
-        with override_settings(SCANCODEIO_PROCESSES=None):
-            scancode.run_scancode(location=None, output_file=None, options=[])
-            expected = os.cpu_count() - 4
-            self.assertIn(f"--processes {expected}", mock_run_command.call_args[0][0])
-
         with override_settings(SCANCODEIO_PROCESSES=10):
             scancode.run_scancode(location=None, output_file=None, options=[])
             self.assertIn("--processes 10", mock_run_command.call_args[0][0])
