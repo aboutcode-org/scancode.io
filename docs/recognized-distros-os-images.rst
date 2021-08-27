@@ -6,25 +6,25 @@ Recognized Distros, OS, and Images
 Archives formats
 ~~~~~~~~~~~~~~~~~
 
-ScanCode.io can recognize and extracts most archive formats and has special
-support for VM and container image formats:
+ScanCode.io recognizes and can extract most archive formats; however, it offers
+special support for VM and container image formats:
 
-- docker image tarbal archives using a Docker image layout and 
-- virtual machine images using QCOW and VHDI image format
+- Docker image tarbal archives using a Docker image layout
+- Virtual machine images using QCOW and VHDI image format
 
 
 Operating systems detection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When scanning for Docker or virtual machine (VM) images, one of the first step
-of a pipeline after archive etxraction is to detect the operating system. 
-For Linux this means also detecting the installed Linux distribution. 
-This detection looks for certain files such as the /etc/os-release file on Linux.
-The detected OS or distro is then used to determine which system package types
-are likely installed such as RPM or Debian packages.
+When scanning for Docker or virtual machine (VM) images, one of the first tasks
+of a pipeline after extracting an archive is to detect the operating system.
+For Linux, this also includes detecting the installed Linux distribution, which
+checks for certain files such as ``/etc/os-release`` on Linux.
+The detected OS—distro—is then used to determine which system packages are
+likely installed, such as RPM or Debian packages.
 
 
-For each recognized OS a pipeline collects in general this information:
+For each recognized OS, a pipeline collects the following information:
 
 - OS and image details
 - Installed system packages metadata, license and their files
@@ -35,28 +35,31 @@ For each recognized OS a pipeline collects in general this information:
 Installed system packages
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ScanCode.io recognizes these OS technology combinations some of which may be only
-used for certain pipelines:
+ScanCode.io recognizes the following OS technology combinations; some of which
+may be only used for certain pipelines:
 
 - Debian-based Linux distros: Debian, Ubuntu and Debian-derivative.
 - RPM-based Linux distros RHEL, Fedora, openSUSE/SUSE
 - Alpine linux distro
 
-For these three flavors, the docker and root_filesystem pipelines support
-comprehensive detection of installed system packages, their provenance and
-license metadata and their installed files.
+For the above three flavors, the **docker** and **root_filesystem** pipelines
+support comprehensive detection of installed system packages, their provenance,
+their license metadata, and their installed files.
 
-- Windows: the docker_windows pipeline supports Windows Dcoker images with
-  extensive detection of installed Windows packages and programs and most
-  installed files.
+- For Windows, the docker_windows pipeline supports Windows Dcoker images with
+  extensive detection of installed Windows packages, programs, and the majority
+  of installed files.
 
-- Distroless Docker images system package are detected with the docker
-  pipeline and package and license metadata are detected.
-  A pending issue is in the way of comprehensive support and system packages do not
-  track their installed files details.: https://github.com/GoogleContainerTools/distroless/issues/741
+- Distroless Docker images system packages are detected with the docker
+  pipeline; package and license metadata are also detected.
+  However, some work needs to be done to achieve comprehensive support and fix
+  the issue of system packages ot tracking their installed files. Check `this
+  open GitHub issue <https://github.com/GoogleContainerTools/distroless/issues/741>`_
+  for more details.
 
-- Yocto and OpenWRT Linux VM images support is partial and support addition is in progress.
+- Yocto and OpenWRT Linux VM images are partially supported; adding more support
+  is currently in progress.
 
-- Other distros and OS will be scanned nbut we may not detect system installed
-  packages and may return a larger volume of file-level detections.
-
+- Other distros and OS will be scanned; howver, we might not be able to detect
+  system installed packages and may return a larger volume of file-level
+  detections.
