@@ -54,7 +54,8 @@ ways:
 .. note::
 
     Make sure to check existing `issues <https://github.com/nexB/scancode.io/issues>`_,
-    to confirm whether a given issue/bug has previously been discussed.
+    and :ref:`faq` to confirm whether a given issue or a question has
+    previously been discussed.
 
 Documentation Improvements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
