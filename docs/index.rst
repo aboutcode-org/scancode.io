@@ -17,8 +17,8 @@ you’ll find information on:
     introduction
     installation
     user-interface
-    contributing
     faq
+    contributing
 
 .. toctree::
     :maxdepth: 2
