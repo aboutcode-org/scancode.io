@@ -62,7 +62,7 @@ resources by **Programming Language**, **Mime Type**, **Holder**, **Copyright**,
 
 .. note::
     The charts above show all discovered Codebase files by default regardless of
-    their existance within a package. You can still only view a subset, i.e.,
+    their existence within a package. You can still only view a subset, i.e.,
     **In a Package** or **Not in a Package**
 
 .. image:: images/tutorial-4-resources-filter.png
