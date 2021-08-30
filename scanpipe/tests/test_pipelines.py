@@ -202,7 +202,6 @@ class ScanPackagePipelineTest(TestCase):
         "tool_version",
         "--json-pp",
         "--processes",
-        "--verbose",
     ]
 
     def _without_keys(self, data, exclude_keys):

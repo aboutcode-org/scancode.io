@@ -17,6 +17,8 @@ you’ll find information on:
     introduction
     installation
     user-interface
+    faq
+    contributing
 
 .. toctree::
     :maxdepth: 2
@@ -26,7 +28,6 @@ you’ll find information on:
     tutorial-2
     tutorial-3
     tutorial-4
-    tutorial-5
 
 .. toctree::
     :maxdepth: 2
@@ -41,7 +42,6 @@ you’ll find information on:
     command-line-interface
     rest-api
     scancodeio-settings
-    recognized-distros-os-images
 
 Indices and tables
 ==================

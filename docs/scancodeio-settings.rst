@@ -76,7 +76,7 @@ To disable both multiprocessing and threading, use "-1"::
 SCANCODE_DEFAULT_OPTIONS
 ------------------------
 
-Use this setting to provide any default options for running Scancode-toolkit.
+Use this setting to provide any default options for running ScanCode-toolkit.
 
 .. note::
     Refer to `ScanCode-toolkit Available Options <https://scancode-toolkit.readthedocs.io/en/latest/cli-reference/list-options.html>`_
