@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import logging
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from time import sleep
 
 from django.db.models import Count
 
@@ -32,6 +34,8 @@ from packageurl import normalize_qualifiers
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
+
+logger = logging.getLogger("scanpipe.pipes")
 
 
 def make_codebase_resource(project, location, rootfs_path=None):
@@ -189,16 +193,44 @@ def get_bin_executable(filename):
     return str(Path(sys.executable).parent / filename)
 
 
-def run_command(cmd):
+def _stream_process(process, stream_to=logger.info):
+    exitcode = process.poll()
+
+    for line in process.stdout:
+        stream_to(line.rstrip("\n"))
+
+    has_terminated = exitcode is not None
+    return has_terminated
+
+
+def run_command(cmd, log_output=False):
     """
     Returns (exitcode, output) of executing the provided `cmd` in a shell.
     `cmd` can be provided as a string or as a list of arguments.
+
+    If `log_output` is True, the stdout and stderr of the process will be captured
+    and streamed to the `logger`.
     """
     if isinstance(cmd, list):
         cmd = " ".join(cmd)
 
-    exitcode, output = subprocess.getstatusoutput(cmd)
-    return exitcode, output
+    if not log_output:
+        exitcode, output = subprocess.getstatusoutput(cmd)
+        return exitcode, output
+
+    process = subprocess.Popen(
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+    )
+
+    while _stream_process(process):
+        sleep(1)
+
+    exitcode = process.poll()
+    return exitcode, ""
 
 
 def remove_prefix(text, prefix):

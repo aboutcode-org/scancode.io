@@ -506,7 +506,7 @@ class ScanPipePipesTest(TestCase):
             options=["--info"],
         )
         self.assertEqual(0, exitcode)
-        self.assertIn("Scanning done.", output)
+        self.assertEqual("", output)
 
     def test_scanpipe_pipes_scancode_make_results_summary(self):
         project = Project.objects.create(name="Analysis")
