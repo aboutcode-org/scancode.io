@@ -240,16 +240,20 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.add_input_source(filename="missing.zip", source="uploaded")
 
         inputs, missing_inputs = self.project1.inputs_with_source
+        sha256_1 = "ed7002b439e9ac845f22357d822bac1444730fbdb6016d3ec9432297b9ec9f73"
+        sha256_2 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
         expected = [
             {
                 "is_file": True,
                 "name": "file.ext",
+                "sha256": sha256_1,
                 "size": 7,
                 "source": "uploaded",
             },
             {
                 "is_file": True,
                 "name": "notice.NOTICE",
+                "sha256": sha256_2,
                 "size": 1178,
                 "source": "not_found",
             },
@@ -299,10 +303,12 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.add_downloads([download])
 
         inputs, missing_inputs = self.project1.inputs_with_source
+        sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
         expected = [
             {
                 "is_file": True,
                 "name": "notice.NOTICE",
+                "sha256": sha256,
                 "size": 1178,
                 "source": "https://example.com/filename.zip",
             }
@@ -315,8 +321,15 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.add_uploads([uploaded_file])
 
         inputs, missing_inputs = self.project1.inputs_with_source
+        sha256 = "ed7002b439e9ac845f22357d822bac1444730fbdb6016d3ec9432297b9ec9f73"
         expected = [
-            {"name": "file.ext", "is_file": True, "size": 7, "source": "uploaded"}
+            {
+                "name": "file.ext",
+                "is_file": True,
+                "sha256": sha256,
+                "size": 7,
+                "source": "uploaded",
+            }
         ]
         self.assertEqual(expected, inputs)
         self.assertEqual({}, missing_inputs)

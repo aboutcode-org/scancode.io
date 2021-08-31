@@ -46,6 +46,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from celery.result import AsyncResult
+from commoncode.hash import multi_checksums
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 
@@ -397,7 +398,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @property
     def inputs_with_source(self):
         """
-        Returns a list of inputs including the source, type, and size data.
+        Returns a list of inputs including the source, type, sha256, and size data.
         Returns the `missing_inputs` defined in the `input_sources` field but not
         available in the input/ directory.
         Only first level children will be listed.
@@ -412,6 +413,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
                     "name": path.name,
                     "is_file": path.is_file(),
                     "size": path.stat().st_size,
+                    **multi_checksums(path, ["sha256"]),
                     "source": input_sources.pop(path.name, "not_found"),
                 }
             )
