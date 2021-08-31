@@ -3,6 +3,13 @@
 
 ### Unreleased
 
+- The `scancode.run_scancode` pipe now uses an optimal number of available CPUs for
+  multiprocessing by default.
+  The exact number of parallel processes available to ScanCode.io can be defined
+  using the SCANCODEIO_PROCESSES setting.
+
+- Renamed the SCANCODE_DEFAULT_OPTIONS setting to SCANCODE_TOOLKIT_CLI_OPTIONS.
+
 - Log the outputs of run_scancode as progress indication.
   https://github.com/nexB/scancode.io/issues/300
 
