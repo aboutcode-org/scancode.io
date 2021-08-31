@@ -10,6 +10,9 @@
 
 - Renamed the SCANCODE_DEFAULT_OPTIONS setting to SCANCODE_TOOLKIT_CLI_OPTIONS.
 
+- Log the outputs of run_scancode as progress indication.
+  https://github.com/nexB/scancode.io/issues/300
+
 ### v21.8.2
 
 - Upgrade ScanCode-toolkit to version 21.7.30

@@ -248,7 +248,7 @@ the entry point to the pipeline under the ``[options.entry_points]`` section.
         pipeline_name = scancodeio_scan_and_report_pipeline.pipelines.scan_and_report:ScanAndReport
 
 .. tip::
-    Take a look at `Google License Classifier pipeline for Scancode.io
+    Take a look at `Google License Classifier pipeline for ScanCode.io
     <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
     for a complete example on packaging a custom tool as a pipeline.
 

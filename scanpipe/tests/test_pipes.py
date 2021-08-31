@@ -508,7 +508,7 @@ class ScanPipePipesTest(TestCase):
             options=["--info"],
         )
         self.assertEqual(0, exitcode)
-        self.assertIn("Scanning done.", output)
+        self.assertEqual("", output)
 
     @mock.patch("scanpipe.pipes.run_command")
     def test_scanpipe_pipes_scancode_run_scancode_cli_options(self, mock_run_command):
