@@ -304,7 +304,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"error": "Summary file not available"}
         self.assertEqual(expected, response.data)
 
-        summary_file = self.data_location / "is-npm-1.0.0_summary.json"
+        summary_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
         copy_input(summary_file, self.project1.output_path)
 
         response = self.csrf_client.get(url)

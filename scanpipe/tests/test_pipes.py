@@ -524,7 +524,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_make_results_summary(self):
         project = Project.objects.create(name="Analysis")
-        scan_results_location = self.data_location / "is-npm-1.0.0_scancode.json"
+        scan_results_location = self.data_location / "is-npm-1.0.0_scan_package.json"
 
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
