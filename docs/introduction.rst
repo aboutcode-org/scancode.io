@@ -94,17 +94,17 @@ The **Django framework** is leveraged for many aspects of ScanCode.io:
     see the `setup.cfg <https://github.com/nexB/scancode.io/blob/main/setup.cfg>`_ file
     for an exhaustive list of dependencies.
 
-The second essential part of ScanCode.io is the **ScanCode Toolkit**, used for the
-extraction of archives and the scanning engine.
+The second essential part of ScanCode.io is the **ScanCode Toolkit**, which is used
+for archives extraction and as the scanning engine.
 
 The nexB `container-inspector <https://github.com/nexB/container-inspector>`_ library
-is also a key component of ScanCode.io as the tool used for the analysis of Docker
-images, containers, root filesystems and virtual machine images.
-
+is also a key component of ScanCode.io as this tool is used to analyse Docker
+images, containers, root filesystems, and virtual machine images.
 
 .. note::
-    Releases of ScanCode.io usually follow the releases of ScanCode Toolkit to ensure
-    the latest improvements of the scanning engines are available as soon as ready.
+    As a common practice, ScanCode.io releases usually follow ScanCode Toolkit releases
+    to ensure the latest improvements of the scanning engines are included in the
+    latest release of ScanCode.io.
 
 
 .. Some of this documentation is borrowed from the metaflow documentation and is also
