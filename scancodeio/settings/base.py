@@ -64,7 +64,6 @@ SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 INSTALLED_APPS = (
     # Local apps
     # Must come before Third-party apps for proper templates override
-    "scanner",
     "scanpipe",
     # Django built-in
     "django.contrib.auth",
@@ -183,10 +182,6 @@ LOGGING = {
         },
     },
     "loggers": {
-        "scanner.tasks": {
-            "handlers": ["null"] if IS_TESTS else ["console"],
-            "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
-        },
         "scanpipe.pipelines": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
