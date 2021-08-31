@@ -55,7 +55,7 @@ Utilities to deal with ScanCode objects, in particular Codebase and Package.
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-def get_max_workers(keep_available=1):
+def get_max_workers(keep_available):
     """
     Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
     or returns a default value based on the number of available CPUs, minus the
@@ -316,7 +316,7 @@ def run_scancode(location, output_file, options, raise_on_error=False):
     exitcode is greater than 0.
     """
     options_from_settings = getattr(settings, "SCANCODE_TOOLKIT_CLI_OPTIONS", [])
-    max_workers = get_max_workers(keep_available=4)
+    max_workers = get_max_workers(keep_available=1)
 
     scancode_args = [
         pipes.get_bin_executable("scancode"),
