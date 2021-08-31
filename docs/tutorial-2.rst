@@ -86,7 +86,7 @@ Instructions
        2021-07-12 17:45:53.85 Pipeline [scan_codebase] starting
        2021-07-12 17:45:53.85 Step [copy_inputs_to_codebase_directory] starting
        2021-07-12 17:45:53.86 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds
-       2021-07-12 17:45:53.86 Step [run_extractcode] starting
+       2021-07-12 17:45:53.86 Step [extract_archives] starting
        [...]
        2021-07-12 17:46:01.61 Pipeline completed
 

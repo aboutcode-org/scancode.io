@@ -40,16 +40,15 @@ class ScanCodebase(Pipeline):
     def steps(cls):
         return (
             cls.copy_inputs_to_codebase_directory,
-            cls.run_extractcode,
+            cls.extract_archives,
             cls.run_scancode,
             cls.build_inventory_from_scan,
             cls.csv_output,
         )
 
-    extractcode_options = [
-        "--shallow",
-        "--all-formats",
-    ]
+    # Set to True to extract recursively nested archives in archives.
+    extract_recursively = False
+
     scancode_options = [
         "--copyright",
         "--email",
@@ -67,16 +66,17 @@ class ScanCodebase(Pipeline):
         """
         copy_inputs(self.project.inputs(), self.project.codebase_path)
 
-    def run_extractcode(self):
+    def extract_archives(self):
         """
-        Extracts with extractcode.
+        Extracts archives with extractcode.
         """
-        with self.save_errors(scancode.ScancodeError):
-            scancode.run_extractcode(
-                location=str(self.project.codebase_path),
-                options=self.extractcode_options,
-                raise_on_error=True,
-            )
+        extract_errors = scancode.extract_archives(
+            location=self.project.codebase_path,
+            recurse=self.extract_recursively,
+        )
+
+        if extract_errors:
+            self.add_error("\n".join(extract_errors))
 
     def run_scancode(self):
         """
