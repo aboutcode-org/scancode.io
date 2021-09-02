@@ -37,6 +37,7 @@ import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from extractcode import all_kinds
+from extractcode import api as extractcode_api
 from extractcode.extract import extract_file
 from scancode import ScancodeError
 from scancode import Scanner
@@ -73,11 +74,36 @@ def get_max_workers(keep_available):
 
 def extract(location, target):
     """
-    Wraps the `extractcode.extract_file` to execute the extraction and return errors.
+    Extracts the file at `location` to the `target` and return errors.
+
+    Wraps the `extractcode.extract_file` function.
     """
     errors = []
 
     for event in extract_file(location, target, kinds=all_kinds):
+        if event.done:
+            errors.extend(event.errors)
+
+    return errors
+
+
+def extract_archives(location, recurse, all_formats=True):
+    """
+    Extracts all archives at `location` and return errors.
+
+    Wraps the `extractcode.api.extract_archives` function.
+
+    If `recurse` is True, extract nested archives-in-archives recursively.
+    If `all_formats` is True, extract all supported archives formats.
+    """
+    options = {
+        "recurse": recurse,
+        "replace_originals": False,
+        "all_formats": all_formats,
+    }
+
+    errors = []
+    for event in extractcode_api.extract_archives(location, **options):
         if event.done:
             errors.extend(event.errors)
 
@@ -283,29 +309,6 @@ def scan_for_application_packages(project):
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     _scan_and_save(project, scan_for_package_info, save_scan_package_results)
-
-
-def run_extractcode(location, options=None, raise_on_error=False):
-    """
-    Extracts content at `location` with extractcode.
-    Optional arguments for the `extractcode` executable can be provided with the
-    `options` list.
-    If `raise_on_error` is enabled, a ScancodeError will be raised if the
-    exitcode is greater than 0.
-    """
-    extractcode_args = [
-        pipes.get_bin_executable("extractcode"),
-        shlex.quote(location),
-    ]
-
-    if options:
-        extractcode_args.extend(options)
-
-    exitcode, output = pipes.run_command(extractcode_args)
-    if exitcode > 0 and raise_on_error:
-        raise ScancodeError(output)
-
-    return exitcode, output
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):

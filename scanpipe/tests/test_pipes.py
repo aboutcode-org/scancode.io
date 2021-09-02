@@ -494,12 +494,6 @@ class ScanPipePipesTest(TestCase):
         }
         self.assertEqual(expected, resource2.licenses[0]["policy"])
 
-    def test_scanpipe_pipes_scancode_run_extractcode(self):
-        project = Project.objects.create(name="name with space")
-        exitcode, output = scancode.run_extractcode(str(project.codebase_path))
-        self.assertEqual(0, exitcode)
-        self.assertIn("Extracting done.", output)
-
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")
         exitcode, output = scancode.run_scancode(

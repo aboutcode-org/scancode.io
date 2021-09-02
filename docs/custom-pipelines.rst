@@ -75,7 +75,7 @@ ones, or remove any of them.
             return (
                 # Original steps from the ScanCodebase pipeline
                 cls.copy_inputs_to_codebase_directory,
-                cls.run_extractcode,
+                cls.extract_archives,
                 cls.run_scancode,
                 cls.build_inventory_from_scan,
 

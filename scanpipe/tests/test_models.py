@@ -537,8 +537,8 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
             "2021-02-05 12:46:47.63 Step [copy_inputs_to_codebase_directory] starting\n"
             "2021-02-05 12:46:47.63 Step [copy_inputs_to_codebase_directory]"
             " completed in 0.00 seconds\n"
-            "2021-02-05 12:46:47.63 Step [run_extractcode] starting\n"
-            "2021-02-05 12:46:48.13 Step [run_extractcode] completed in 0.50 seconds\n"
+            "2021-02-05 12:46:47.63 Step [extract_archives] starting\n"
+            "2021-02-05 12:46:48.13 Step [extract_archives] completed in 0.50 seconds\n"
             "2021-02-05 12:46:48.14 Step [run_scancode] starting\n"
             "2021-02-05 12:46:52.59 Step [run_scancode] completed in 4.45 seconds\n"
             "2021-02-05 12:46:52.59 Step [build_inventory_from_scan] starting\n"
@@ -558,7 +558,7 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
             "build_inventory_from_scan": 0.16,
             "copy_inputs_to_codebase_directory": 0.0,
             "csv_output": 0.06,
-            "run_extractcode": 0.5,
+            "extract_archives": 0.5,
             "run_scancode": 4.45,
         }
         self.assertEqual(expected, run1.profile())
@@ -569,7 +569,7 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
 
         expected = (
             "copy_inputs_to_codebase_directory  0.0 seconds 0.0%\n"
-            "run_extractcode                    0.5 seconds 9.7%\n"
+            "extract_archives                   0.5 seconds 9.7%\n"
             "\x1b[41;37mrun_scancode                       4.45 seconds 86.1%\x1b[m\n"
             "build_inventory_from_scan          0.16 seconds 3.1%\n"
             "csv_output                         0.06 seconds 1.2%\n"
