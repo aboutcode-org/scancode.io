@@ -200,6 +200,7 @@ class PipelinesIntegrationTest(TestCase):
     exclude_from_diff = [
         "start_timestamp",
         "end_timestamp",
+        "date",
         "duration",
         "input",
         "compliance_alert",
