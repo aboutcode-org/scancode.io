@@ -29,8 +29,7 @@ from container_inspector.image import Image
 
 from scanpipe import pipes
 from scanpipe.pipes import rootfs
-from scanpipe.pipes import scancode
-from scanpipe.pipes.rootfs import has_hash_diff
+from scanpipe.pipes.scancode import extract_archive
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,7 @@ def extract_images_from_inputs(project):
 
     for input_tarball in project.inputs(pattern="*.tar*"):
         extract_target = target_path / f"{input_tarball.name}-extract"
-        extract_errors = scancode.extract(input_tarball, extract_target)
+        extract_errors = extract_archive(input_tarball, extract_target)
         images.extend(Image.get_images_from_dir(extract_target))
         errors.extend(extract_errors)
 
@@ -67,7 +66,7 @@ def extract_layers_from_images(project, images):
 
         for layer in image.layers:
             extract_target = target_path / layer.layer_id
-            extract_errors = scancode.extract(layer.archive_location, extract_target)
+            extract_errors = extract_archive(layer.archive_location, extract_target)
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
 
@@ -154,7 +153,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
                     logger.info(f"      added as system-package to: {purl}")
                     codebase_resource.save()
 
-                if has_hash_diff(install_file, codebase_resource):
+                if rootfs.has_hash_diff(install_file, codebase_resource):
                     if install_file.path not in modified_resources:
                         modified_resources.append(install_file.path)
 

@@ -36,9 +36,7 @@ from django.conf import settings
 import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
-from extractcode import all_kinds
 from extractcode import api as extractcode_api
-from extractcode.extract import extract_file
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
@@ -50,7 +48,7 @@ from scanpipe.models import CodebaseResource
 logger = logging.getLogger("scanpipe.pipes")
 
 """
-Utilities to deal with ScanCode objects, in particular Codebase and Package.
+Utilities to deal with ScanCode toolkit features and objects.
 """
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -59,8 +57,8 @@ scanpipe_app = apps.get_app_config("scanpipe")
 def get_max_workers(keep_available):
     """
     Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
-    or returns a default value based on the number of available CPUs, minus the
-    provided `keep_available` value.
+    or returns a default value based on the number of available CPUs,
+    minus the provided `keep_available` value.
     """
     processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
     if processes is not None:
@@ -72,34 +70,42 @@ def get_max_workers(keep_available):
     return max_workers
 
 
-def extract(location, target):
+def extract_archive(location, target):
     """
-    Extracts the file at `location` to the `target` and return errors.
+    Extracts a single archive or compressed file at `location` to the `target`
+    directory.
 
-    Wraps the `extractcode.extract_file` function.
+    Returns a list of extraction errors.
+
+    Wrapper of the `extractcode.api.extract_archive` function.
     """
     errors = []
 
-    for event in extract_file(location, target, kinds=all_kinds):
+    for event in extractcode_api.extract_archive(location, target):
         if event.done:
             errors.extend(event.errors)
 
     return errors
 
 
-def extract_archives(location, recurse, all_formats=True):
+def extract_archives(location, recurse=False):
     """
     Extracts all archives at `location` and return errors.
 
-    Wraps the `extractcode.api.extract_archives` function.
+    Archives and compressed files are extracted in a new directory named
+    "<file_name>-extract" created in the same directory as each extracted
+    archive.
 
     If `recurse` is True, extract nested archives-in-archives recursively.
-    If `all_formats` is True, extract all supported archives formats.
+
+    Returns a list of extraction errors.
+
+    Wrapper of the `extractcode.api.extract_archives` function.
     """
     options = {
         "recurse": recurse,
         "replace_originals": False,
-        "all_formats": all_formats,
+        "all_formats": True,
     }
 
     errors = []

@@ -181,8 +181,8 @@ class RootFSPipelineTest(TestCase):
         project1.move_input_from(tempfile.mkstemp()[1])
         self.assertEqual(2, len(project1.input_files))
 
-        with mock.patch("scanpipe.pipes.scancode.extract") as extract:
-            extract.return_value = ["Error"]
+        with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
+            extract_archive.return_value = ["Error"]
             pipeline_instance.extract_input_files_to_codebase_directory()
 
         error = project1.projecterrors.get()

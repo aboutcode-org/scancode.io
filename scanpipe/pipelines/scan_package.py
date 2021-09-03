@@ -27,7 +27,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 from commoncode.hash import multi_checksums
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
-from scanpipe.pipes import scancode
+from scanpipe.pipes.scancode import extract_archive
+from scanpipe.pipes.scancode import make_results_summary
 
 
 class ScanPackage(ScanCodebase):
@@ -84,7 +85,7 @@ class ScanPackage(ScanCodebase):
         """
         Extracts package archive with extractcode.
         """
-        extract_errors = scancode.extract(self.archive_path, self.project.codebase_path)
+        extract_errors = extract_archive(self.archive_path, self.project.codebase_path)
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
@@ -93,7 +94,7 @@ class ScanPackage(ScanCodebase):
         """
         Builds a summary in JSON format from the generated scan results.
         """
-        summary = scancode.make_results_summary(self.project, str(self.scan_output))
+        summary = make_results_summary(self.project, str(self.scan_output))
         output_file = self.project.get_output_file_path("summary", "json")
 
         with output_file.open("w") as summary_file:

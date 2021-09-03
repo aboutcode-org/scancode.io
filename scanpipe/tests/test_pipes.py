@@ -22,8 +22,8 @@
 
 import collections
 import json
-import os
 import shutil
+import tempfile
 from pathlib import Path
 from unittest import mock
 from unittest.case import expectedFailure
@@ -51,7 +51,7 @@ from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
 from scanpipe.pipes import windows
-from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.input import copy_input
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -229,6 +229,47 @@ class ScanPipePipesTest(TestCase):
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
 
+    def test_scanpipe_pipes_scancode_extract_archive(self):
+        target = tempfile.mkdtemp()
+        input_location = str(self.data_location / "archive.zip")
+
+        errors = scancode.extract_archive(input_location, target)
+        self.assertEqual([], errors)
+
+        results = [path.name for path in list(Path(target).glob("**/*"))]
+        expected = [
+            "c",
+            "a",
+            "c",
+            "b",
+            "a.txt",
+            "a.txt",
+            "a.txt",
+        ]
+        self.assertEqual(expected, results)
+
+    def test_scanpipe_pipes_scancode_extract_archives(self):
+        tempdir = Path(tempfile.mkdtemp())
+        input_location = str(self.data_location / "archive.zip")
+        copy_input(input_location, tempdir)
+
+        errors = scancode.extract_archives(tempdir)
+        self.assertEqual([], errors)
+
+        results = [path.name for path in list(tempdir.glob("**/*"))]
+        expected = [
+            "archive.zip-extract",
+            "archive.zip",
+            "c",
+            "a",
+            "c",
+            "b",
+            "a.txt",
+            "a.txt",
+            "a.txt",
+        ]
+        self.assertEqual(expected, results)
+
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
         sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
@@ -301,7 +342,7 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("scanned-with-error", codebase_resource1.status)
         self.assertEqual(4, project1.projecterrors.count())
 
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -319,7 +360,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -398,7 +439,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_scan_package_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -1101,7 +1142,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         self.assertIn("is not under project/codebase/", str(cm.exception))
 
-        copy_inputs([resource_location], p1.codebase_path)
+        copy_input(resource_location, p1.codebase_path)
         resource_location = str(p1.codebase_path / "notice.NOTICE")
         make_codebase_resource(p1, resource_location)
 
