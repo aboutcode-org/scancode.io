@@ -238,15 +238,14 @@ class ScanPipePipesTest(TestCase):
 
         results = [path.name for path in list(Path(target).glob("**/*"))]
         expected = [
-            "c",
             "a",
             "c",
             "b",
             "a.txt",
-            "a.txt",
-            "a.txt",
         ]
-        self.assertEqual(expected, results)
+        self.assertEqual(7, len(results))
+        for path in expected:
+            self.assertIn(path, results)
 
     def test_scanpipe_pipes_scancode_extract_archives(self):
         tempdir = Path(tempfile.mkdtemp())
@@ -257,18 +256,17 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual([], errors)
 
         results = [path.name for path in list(tempdir.glob("**/*"))]
+        self.assertEqual(9, len(results))
         expected = [
             "archive.zip-extract",
             "archive.zip",
-            "c",
             "a",
-            "c",
             "b",
-            "a.txt",
-            "a.txt",
+            "c",
             "a.txt",
         ]
-        self.assertEqual(expected, results)
+        for path in expected:
+            self.assertIn(path, results)
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
