@@ -243,9 +243,9 @@ def _log_progress(scan_func, resource, resource_count, index):
     logger.info(f"{scan_func.__name__} {progress} pk={resource.pk}")
 
 
-def _scan_and_save(project, scan_func, save_func):
+def _scan_and_save(resource_qs, scan_func, save_func):
     """
-    Runs the `scan_func` on files without status for a `project`.
+    Runs the `scan_func` on the codebase resources if the provided `resource_qs`.
     The `save_func` is called to save the results.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
@@ -259,10 +259,9 @@ def _scan_and_save(project, scan_func, save_func):
     Note that all database related actions are executed in this main process as the
     database connection does not always fork nicely in the pool processes.
     """
-    codebase_resources = project.codebaseresources.no_status()
-    resource_count = codebase_resources.count()
+    resource_count = resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = codebase_resources.iterator(chunk_size=2000)
+    resource_iterator = resource_qs.iterator(chunk_size=2000)
 
     max_workers = get_max_workers(keep_available=1)
 
@@ -298,7 +297,8 @@ def scan_for_files(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    _scan_and_save(project, scan_file, save_scan_file_results)
+    resource_qs = project.codebaseresources.no_status()
+    _scan_and_save(resource_qs, scan_file, save_scan_file_results)
 
 
 def scan_for_application_packages(project):
@@ -308,7 +308,8 @@ def scan_for_application_packages(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    _scan_and_save(project, scan_for_package_info, save_scan_package_results)
+    resource_qs = project.codebaseresources.no_status()
+    _scan_and_save(resource_qs, scan_for_package_info, save_scan_package_results)
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):

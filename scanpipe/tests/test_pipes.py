@@ -426,17 +426,18 @@ class ScanPipePipesTest(TestCase):
 
         project1 = Project.objects.create(name="Analysis")
         CodebaseResource.objects.create(project=project1, path="notice.NOTICE")
+        resource_qs = project1.codebaseresources.all()
 
         scan_func = mock.Mock(return_value=(None, None))
         scan_func.__name__ = ""
 
         with override_settings(SCANCODEIO_PROCESSES=-1):
-            scancode._scan_and_save(project1, scan_func, noop)
+            scancode._scan_and_save(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertFalse(with_threading)
 
         with override_settings(SCANCODEIO_PROCESSES=0):
-            scancode._scan_and_save(project1, scan_func, noop)
+            scancode._scan_and_save(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
 
