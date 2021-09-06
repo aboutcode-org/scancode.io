@@ -63,6 +63,19 @@ SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies
 # pipelines directories.
 SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 
+#Mozilla oidc settings
+OIDC_RP_CLIENT_ID = env.str("SCANCODEIO_OIDC_RP_CLIENT_ID", default="scancode.io-client")
+OIDC_RP_CLIENT_SECRET = env.str("SCANCODEIO_OIDC_RP_CLIENT_SECRET", default=None)
+OIDC_RP_SIGN_ALGO = env.str("SCANCODEIO_OIDC_RP_SIGN_ALGO", default="RS256")
+OIDC_OP_JWKS_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_JWKS_ENDPOINT", default=None)
+OIDC_OP_AUTHORIZATION_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_AUTHORIZATION_ENDPOINT", default=None)
+OIDC_OP_TOKEN_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_TOKEN_ENDPOINT", default=None)
+OIDC_OP_USER_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_USER_ENDPOINT", default=None)
+
+LOGOUT_REDIRECT_URL = "/"
+LOGIN_URL = 'oidc_authentication_init'
+LOGOUT_REDIRECT_URL = "/"
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -82,6 +95,7 @@ INSTALLED_APPS = (
     "django_filters",
     "rest_framework",
     "rest_framework.authtoken",
+    'mozilla_django_oidc',
 )
 
 MIDDLEWARE = (
@@ -91,6 +105,7 @@ MIDDLEWARE = (
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "mozilla_django_oidc.middleware.SessionRefresh",
 )
 
 ROOT_URLCONF = "scancodeio.urls"
@@ -200,6 +215,10 @@ LOGGING = {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
         },
+        'mozilla_django_oidc': {
+            'handlers': ['console'],
+            'level': 'DEBUG'
+        },
     },
 }
 
@@ -248,11 +267,12 @@ CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "mozilla_django_oidc.contrib.drf.OIDCAuthentication",
         "rest_framework.authentication.TokenAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": env.tuple(
         "REST_FRAMEWORK_DEFAULT_PERMISSION_CLASSES",
-        default=("rest_framework.permissions.AllowAny",),
+        default=("rest_framework.permissions.IsAuthenticated",),
     ),
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",
@@ -267,3 +287,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": env.int("SCANCODEIO_REST_API_PAGE_SIZE", default=50),
     "UPLOADED_FILES_USE_URL": False,
 }
+
+AUTHENTICATION_BACKENDS = (
+    'mozilla_django_oidc.auth.OIDCAuthenticationBackend',
+) 

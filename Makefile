@@ -108,7 +108,7 @@ sqlite:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001
+	${MANAGE} runserver 0.0.0.0:8001
 
 test:
 	@echo "-> Run the test suite"

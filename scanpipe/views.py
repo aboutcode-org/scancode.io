@@ -36,6 +36,8 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
+from django.contrib.auth.mixins import LoginRequiredMixin 
+
 
 import saneyaml
 from django_filters.views import FilterView
@@ -62,14 +64,14 @@ from scanpipe.pipes import output
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-class PrefetchRelatedViewMixin:
+class PrefetchRelatedViewMixin(LoginRequiredMixin):
     prefetch_related = None
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(*self.prefetch_related)
 
 
-class ProjectViewMixin:
+class ProjectViewMixin(LoginRequiredMixin):
     model = Project
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
@@ -105,7 +107,7 @@ class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
         return context
 
 
-class ProjectCreateView(generic.CreateView):
+class ProjectCreateView(LoginRequiredMixin, generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"

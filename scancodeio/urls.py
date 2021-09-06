@@ -41,4 +41,5 @@ urlpatterns = [
     path("license/", include(licenses.urls)),
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
+    path('oidc/', include('mozilla_django_oidc.urls')),
 ]
