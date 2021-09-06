@@ -16,12 +16,13 @@
       {% include 'scanpipe/includes/breadcrumb.html' %}
       <div class="subtitle is-size-6">
         <span title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
-        <button class="button is-small is-white modal-button p-1 is-height-auto" data-target="modal-delete" aria-haspopup="true">
-          <i class="far fa-trash-alt"></i>
-        </button>
+        {% include "scanpipe/includes/project_actions_dropdown.html" %}
       </div>
     </section>
     {% include "scanpipe/includes/project_delete_modal.html" %}
+    {% if not project.is_archived %}
+      {% include "scanpipe/includes/project_archive_modal.html" %}
+    {% endif %}
 
     <div class="container mx-5 mb-5">
       <div class="field is-grouped is-grouped-multiline">
@@ -74,24 +75,7 @@
           {% include "scanpipe/includes/project_inputs.html" %}
         </div>
         <div class="column">
-          <article class="panel is-info">
-            <p class="panel-heading py-2 is-size-6">
-              Pipelines
-            </p>
-            {% for run in project.runs.all %}
-              <a class="panel-block modal-button is-flex is-justify-content-space-between" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
-                <span class="mr-1">{{ run.pipeline_name }}</span>
-                {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
-              </a>
-            {% endfor %}
-            <div id="run-detail-modal" class="modal is-desktop-size"></div>
-            <div class="panel-block">
-              <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
-                Add pipeline
-              </button>
-              {% include "scanpipe/includes/add_pipeline_modal.html" %}
-            </div>
-          </article>
+          {% include "scanpipe/includes/project_pipelines.html" %}
         </div>
       </div>
     </section>

@@ -185,6 +185,24 @@ Using cURL:
         "status": "Pipeline added."
     }
 
+Archive
+^^^^^^^
+
+This action archive a project and remove selected work directories.
+
+``POST /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/archive/``
+
+Data:
+    - ``remove_input``: ``true``
+    - ``remove_codebase``: ``true``
+    - ``remove_output``: ``false``
+
+.. code-block:: json
+
+    {
+        "status": "The project project_name has been archived."
+    }
+
 Errors
 ^^^^^^
 

@@ -122,6 +122,7 @@ class ProjectSerializer(
             "upload_file",
             "input_urls",
             "created_date",
+            "is_archived",
             "pipeline",
             "execute_now",
             "input_sources",

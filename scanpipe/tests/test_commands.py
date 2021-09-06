@@ -364,3 +364,30 @@ class ScanPipeManagementCommandTest(TestCase):
 
         self.assertFalse(Project.objects.filter(name="my_project").exists())
         self.assertFalse(work_path.exists())
+
+    def test_scanpipe_management_command_archive_project(self):
+        project = Project.objects.create(name="my_project")
+        (project.input_path / "input_file").touch()
+        (project.codebase_path / "codebase_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(project.codebase_path)))
+
+        out = StringIO()
+        options = [
+            "--project",
+            project.name,
+            "--remove-codebase",
+            "--no-color",
+            "--no-input",
+        ]
+        call_command("archive-project", *options, stdout=out)
+        out_value = out.getvalue().strip()
+
+        project.refresh_from_db()
+        self.assertTrue(project.is_archived)
+
+        expected = "The my_project project has been archived."
+        self.assertEqual(expected, out_value)
+
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))

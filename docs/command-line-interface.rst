@@ -158,10 +158,23 @@ Optional arguments:
     By default, output files are created in the current working directory.
 
 
+`$ scanpipe archive-project --project PROJECT`
+----------------------------------------------
+
+Archives a project and remove selected work directories.
+
+Optional arguments:
+
+- ``--remove-input`` Remove the :guilabel:`input/` directory.
+- ``--remove-codebase`` Remove the :guilabel:`codebase/` directory.
+- ``--remove-output`` Remove the :guilabel:`output/` directory.
+- ``--no-input`` Does not prompt the user for input of any kind.
+
+
 `$ scanpipe delete-project --project PROJECT`
 ---------------------------------------------
 
-Deletes a project and its related work directory.
+Deletes a project and its related work directories.
 
 Optional arguments:
 

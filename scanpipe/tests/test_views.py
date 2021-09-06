@@ -25,6 +25,7 @@ from unittest import mock
 
 from django.apps import apps
 from django.test import TestCase
+from django.urls import reverse
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
@@ -38,6 +39,35 @@ class ScanPipeViewsTest(TestCase):
 
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+
+    def test_scanpipe_views_project_list_is_archived(self):
+        project2 = Project.objects.create(name="project2", is_archived=True)
+        url = reverse("project_list")
+        url_with_filter = url + "?is_archived=true"
+
+        response = self.client.get(url)
+        self.assertContains(response, self.project1.name)
+        self.assertNotContains(response, project2.name)
+        self.assertContains(response, url)
+        self.assertContains(response, url_with_filter)
+
+        response = self.client.get(url_with_filter)
+        self.assertNotContains(response, self.project1.name)
+        self.assertContains(response, project2.name)
+
+    def test_scanpipe_views_project_details_is_archived(self):
+        url = self.project1.get_absolute_url()
+        expected1 = "WARNING: This project is archived and read-only."
+        expected2 = 'id="modal-archive"'
+
+        response = self.client.get(url)
+        self.assertNotContains(response, expected1)
+        self.assertContains(response, expected2)
+
+        self.project1.archive()
+        response = self.client.get(url)
+        self.assertContains(response, expected1)
+        self.assertNotContains(response, expected2)
 
     @mock.patch("requests.get")
     def test_scanpipe_views_project_details_add_inputs(self, mock_get):

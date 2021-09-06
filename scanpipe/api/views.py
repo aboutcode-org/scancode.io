@@ -41,6 +41,7 @@ from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -179,6 +180,30 @@ class ProjectViewSet(
             "pipelines": list(scanpipe_app.pipelines.keys()),
         }
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["get", "post"])
+    def archive(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if self.request.method == "GET":
+            message = (
+                "POST on this URL to archive the project. "
+                "You can choose to remove workspace directories by providing the "
+                "following parameters: `remove_input=True`, `remove_codebase=True`, "
+                "`remove_output=True`."
+            )
+            return Response({"status": message})
+
+        try:
+            project.archive(
+                remove_input=request.data.get("remove_input"),
+                remove_codebase=request.data.get("remove_codebase"),
+                remove_output=request.data.get("remove_output"),
+            )
+        except RunInProgressError as error:
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"status": f"The project {project} has been archived."})
 
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):

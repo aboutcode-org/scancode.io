@@ -58,6 +58,10 @@ from scanpipe.packagedb_models import AbstractResource
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+class RunInProgressError(Exception):
+    """Run are in progress or queued on this project."""
+
+
 class UUIDPKModel(models.Model):
     uuid = models.UUIDField(
         verbose_name=_("UUID"),
@@ -247,6 +251,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         help_text=_("Project work directory location."),
     )
     input_sources = models.JSONField(default=dict, blank=True, editable=False)
+    is_archived = models.BooleanField(
+        default=False,
+        editable=False,
+        help_text=_(
+            "Archived projects cannot be modified anymore and are not displayed by "
+            "default in project lists. Multiple levels of data cleanup may have "
+            "happened during the archive operation."
+        ),
+    )
 
     class Meta:
         ordering = ["-created_date"]
@@ -264,10 +277,39 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             self.setup_work_directory()
         super().save(*args, **kwargs)
 
+    def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
+        """
+        Set the project `is_archived` field to True.
+
+        The `remove_input`, `remove_codebase`, and `remove_output` can be provided
+        during the archive operation to delete the related work directories.
+
+        The project cannot be archived if one of its related run is queued or already
+        running.
+        """
+        self._raise_if_run_in_progress()
+
+        if remove_input:
+            shutil.rmtree(self.input_path, ignore_errors=True)
+
+        if remove_codebase:
+            shutil.rmtree(self.codebase_path, ignore_errors=True)
+
+        if remove_output:
+            shutil.rmtree(self.output_path, ignore_errors=True)
+
+        shutil.rmtree(self.tmp_path, ignore_errors=True)
+        self.setup_work_directory()
+
+        self.is_archived = True
+        self.save()
+
     def delete(self, *args, **kwargs):
         """
         Deletes the `work_directory` along all project-related data in the database.
         """
+        self._raise_if_run_in_progress()
+
         shutil.rmtree(self.work_directory, ignore_errors=True)
         return super().delete(*args, **kwargs)
 
@@ -276,6 +318,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Resets the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
+        self._raise_if_run_in_progress()
+
         relationships = [
             self.projecterrors,
             self.runs,
@@ -303,6 +347,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             shutil.rmtree(path, ignore_errors=True)
 
         self.setup_work_directory()
+
+    def _raise_if_run_in_progress(self):
+        """
+        Raises a `RunInProgressError` exception if one of the project related run is
+        queued or running.
+        """
+        if self.runs.queued().exists() or self.runs.running().exists():
+            raise RunInProgressError(
+                "Cannot execute this action until all associated pipeline runs are "
+                "completed."
+            )
 
     def setup_work_directory(self):
         """
@@ -455,9 +510,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @cached_property
     def can_add_input(self):
         """
-        Returns True until a pipeline has started to execute on the current project.
+        Returns True until one pipeline run has started to execute on the project.
         """
-        return not self.runs.started().exists()
+        return not self.runs.has_start_date().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
@@ -722,22 +777,46 @@ class SaveProjectErrorMixin:
 
 class RunQuerySet(ProjectRelatedQuerySet):
     def not_started(self):
+        """
+        Not in the execution queue, no `task_id` assigned.
+        """
         return self.filter(task_start_date__isnull=True, task_id__isnull=True)
 
     def queued(self):
+        """
+        In the execution queue with a `task_id` assigned but not running yet.
+        """
         return self.filter(task_start_date__isnull=True, task_id__isnull=False)
 
-    def started(self):
-        return self.filter(task_start_date__isnull=False)
+    def running(self):
+        """
+        Running the pipeline execution.
+        """
+        return self.has_start_date().filter(task_end_date__isnull=True)
 
     def executed(self):
+        """
+        Pipeline execution completed, includes both succeed and failed runs.
+        """
         return self.filter(task_end_date__isnull=False)
 
     def succeed(self):
+        """
+        Pipeline execution completed with success.
+        """
         return self.filter(task_exitcode=0)
 
     def failed(self):
+        """
+        Pipeline execution completed with failure.
+        """
         return self.filter(task_exitcode__gt=0)
+
+    def has_start_date(self):
+        """
+        Run has a `start_date` set. It can be running or executed.
+        """
+        return self.filter(task_start_date__isnull=False)
 
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
@@ -807,7 +886,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     @property
     def task_succeeded(self):
         """
-        Returns True, if a pipeline task was successfully executed.
+        Returns True, if a pipeline run was successfully executed.
         """
         return self.task_exitcode == 0
 
@@ -818,7 +897,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
         NOT_STARTED = "not_started"
         QUEUED = "queued"
-        STARTED = "started"
         RUNNING = "running"
         SUCCESS = "success"
         FAILURE = "failure"
@@ -829,14 +907,19 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Returns the Run current status.
         """
         status = self.Status
+
         if self.task_succeeded:
             return status.SUCCESS
+
         elif self.task_exitcode and self.task_exitcode > 0:
             return status.FAILURE
+
         elif self.task_start_date:
             return status.RUNNING
+
         elif self.task_id:
             return status.QUEUED
+
         return status.NOT_STARTED
 
     def append_to_log(self, message, save=False):

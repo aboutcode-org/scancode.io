@@ -43,6 +43,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
@@ -60,10 +61,10 @@ class BaseScanPipeModelsTest:
         self.project1 = Project.objects.create(name="Analysis")
         self.project_asgiref = Project.objects.get(name="asgiref")
 
-    def create_run(self, **kwargs):
+    def create_run(self, pipeline="pipeline", **kwargs):
         return Run.objects.create(
             project=self.project1,
-            pipeline_name="pipeline",
+            pipeline_name=pipeline,
             **kwargs,
         )
 
@@ -100,6 +101,26 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.clear_tmp_directory()
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
+
+    def test_scanpipe_project_model_archive(self):
+        (self.project1.input_path / "input_file").touch()
+        (self.project1.codebase_path / "codebase_file").touch()
+        (self.project1.output_path / "output_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
+
+        self.project1.archive()
+        self.project1.refresh_from_db()
+        self.assertTrue(self.project1.is_archived)
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
+
+        self.project1.archive(remove_input=True, remove_codebase=True)
+        self.assertEqual(0, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
 
     def test_scanpipe_project_model_delete(self):
         work_path = self.project1.work_path
@@ -363,6 +384,23 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         run1.save()
         self.assertEqual(run2, self.project1.get_latest_failed_run())
 
+    def test_scanpipe_project_model_raise_if_run_in_progress(self):
+        run1 = self.create_run()
+        self.assertIsNone(self.project1._raise_if_run_in_progress())
+
+        run1.set_task_started(task_id=1)
+        with self.assertRaises(RunInProgressError):
+            self.project1._raise_if_run_in_progress()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.archive()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.delete()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.reset()
+
     def test_scanpipe_run_model_init_task_id(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertIsNone(run1.task_id)
@@ -472,45 +510,54 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
 
-        started = self.create_run(task_start_date=now)
-        not_started = self.create_run()
-        queued = self.create_run(task_id=uuid.uuid4())
-        executed = self.create_run(task_start_date=now, task_end_date=now)
-        succeed = self.create_run(task_start_date=now, task_exitcode=0)
-        failed = self.create_run(task_start_date=now, task_exitcode=1)
+        running = self.create_run(pipeline="running", task_start_date=now)
+        not_started = self.create_run(pipeline="not_started")
+        queued = self.create_run(pipeline="queued", task_id=uuid.uuid4())
+        executed = self.create_run(
+            pipeline="executed", task_start_date=now, task_end_date=now
+        )
+        succeed = self.create_run(
+            pipeline="succeed", task_start_date=now, task_end_date=now, task_exitcode=0
+        )
+        failed = self.create_run(
+            pipeline="failed", task_start_date=now, task_end_date=now, task_exitcode=1
+        )
 
-        qs = self.project1.runs.started()
-        self.assertEqual(4, len(qs))
-        self.assertIn(started, qs)
-        self.assertIn(executed, qs)
-        self.assertIn(succeed, qs)
-        self.assertIn(failed, qs)
+        qs = self.project1.runs.has_start_date()
+        self.assertQuerysetEqual(qs, [running, executed, succeed, failed])
 
         qs = self.project1.runs.not_started()
-        self.assertEqual([not_started], list(qs))
+        self.assertQuerysetEqual(qs, [not_started])
 
         qs = self.project1.runs.queued()
-        self.assertEqual([queued], list(qs))
+        self.assertQuerysetEqual(qs, [queued])
+
+        qs = self.project1.runs.running()
+        self.assertQuerysetEqual(qs, [running])
 
         qs = self.project1.runs.executed()
-        self.assertEqual([executed], list(qs))
+        self.assertQuerysetEqual(qs, [executed, succeed, failed])
 
         qs = self.project1.runs.succeed()
-        self.assertEqual([succeed], list(qs))
+        self.assertQuerysetEqual(qs, [succeed])
 
         qs = self.project1.runs.failed()
-        self.assertEqual([failed], list(qs))
+        self.assertQuerysetEqual(qs, [failed])
 
     def test_scanpipe_run_model_status_property(self):
         now = timezone.now()
 
-        started = self.create_run(task_start_date=now)
+        running = self.create_run(task_start_date=now)
         not_started = self.create_run()
         queued = self.create_run(task_id=uuid.uuid4())
-        succeed = self.create_run(task_start_date=now, task_exitcode=0)
-        failed = self.create_run(task_start_date=now, task_exitcode=1)
+        succeed = self.create_run(
+            task_start_date=now, task_end_date=now, task_exitcode=0
+        )
+        failed = self.create_run(
+            task_start_date=now, task_end_date=now, task_exitcode=1
+        )
 
-        self.assertEqual(Run.Status.RUNNING, started.status)
+        self.assertEqual(Run.Status.RUNNING, running.status)
         self.assertEqual(Run.Status.NOT_STARTED, not_started.status)
         self.assertEqual(Run.Status.QUEUED, queued.status)
         self.assertEqual(Run.Status.SUCCESS, succeed.status)

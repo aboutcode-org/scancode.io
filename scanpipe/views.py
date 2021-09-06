@@ -25,6 +25,7 @@ from collections import Counter
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Count
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -33,6 +34,8 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
+from django.views.generic.detail import SingleObjectMixin
+from django.views.generic.edit import FormView
 
 import saneyaml
 from django_filters.views import FilterView
@@ -44,12 +47,14 @@ from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
+from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
 from scanpipe.pipes import codebase
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
@@ -92,6 +97,12 @@ class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
     paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_count"] = Project.objects.filter(is_archived=False).count()
+        context["archived_count"] = Project.objects.filter(is_archived=True).count()
+        return context
 
 
 class ProjectCreateView(generic.CreateView):
@@ -205,6 +216,10 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             )
             messages.error(self.request, message)
 
+        if project.is_archived:
+            message = "WARNING: This project is archived and read-only."
+            messages.warning(self.request, message)
+
         context.update(
             {
                 "inputs_with_source": inputs,
@@ -220,6 +235,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
+                "archive_form": ArchiveProjectForm(),
             }
         )
 
@@ -249,6 +265,30 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
             messages.error(request, error_message)
 
         return redirect(project)
+
+
+class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
+    http_method_names = ["post"]
+    form_class = ArchiveProjectForm
+    success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" has been archived.'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        project = self.get_object()
+        try:
+            project.archive(
+                remove_input=form.cleaned_data["remove_input"],
+                remove_codebase=form.cleaned_data["remove_codebase"],
+                remove_output=form.cleaned_data["remove_output"],
+            )
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+        else:
+            messages.success(self.request, self.success_message.format(project))
+
+        return response
 
 
 class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
