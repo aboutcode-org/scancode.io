@@ -1,6 +1,23 @@
 // Release notes
 // -------------
 
+### Unreleased
+
+- Remove the run_extractcode pipe in favor of extractcode API.
+  https://github.com/nexB/scancode.io/issues/312
+
+- The `scancode.run_scancode` pipe now uses an optimal number of available CPUs for
+  multiprocessing by default.
+  The exact number of parallel processes available to ScanCode.io can be defined
+  using the SCANCODEIO_PROCESSES setting.
+  https://github.com/nexB/scancode.io/issues/302
+
+- Renamed the SCANCODE_DEFAULT_OPTIONS setting to SCANCODE_TOOLKIT_CLI_OPTIONS.
+  https://github.com/nexB/scancode.io/issues/302
+
+- Log the outputs of run_scancode as progress indication.
+  https://github.com/nexB/scancode.io/issues/300
+
 ### v21.8.2
 
 - Upgrade ScanCode-toolkit to version 21.7.30

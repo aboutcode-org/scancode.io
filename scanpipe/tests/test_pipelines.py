@@ -181,20 +181,26 @@ class RootFSPipelineTest(TestCase):
         project1.move_input_from(tempfile.mkstemp()[1])
         self.assertEqual(2, len(project1.input_files))
 
-        with mock.patch("scanpipe.pipes.scancode.extract") as extract:
-            extract.return_value = ["Error"]
+        with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
+            extract_archive.return_value = ["Error"]
             pipeline_instance.extract_input_files_to_codebase_directory()
 
         error = project1.projecterrors.get()
         self.assertEqual("Error\nError", error.message)
 
 
-class ScanPackagePipelineTest(TestCase):
+@tag("slow")
+class PipelinesIntegrationTest(TestCase):
+    """
+    Set of integration tests to ensure the proper output for each built-in Pipelines.
+    """
+
     maxDiff = None
     data_location = Path(__file__).parent / "data"
     exclude_from_diff = [
         "start_timestamp",
         "end_timestamp",
+        "date",
         "duration",
         "input",
         "compliance_alert",
@@ -202,6 +208,7 @@ class ScanPackagePipelineTest(TestCase):
         "tool_version",
         "--json-pp",
         "--processes",
+        "--verbose",
     ]
 
     def _without_keys(self, data, exclude_keys):
@@ -222,23 +229,26 @@ class ScanPackagePipelineTest(TestCase):
 
         return data
 
-    @tag("slow")
     def test_scanpipe_scan_package_pipeline_integration_test(self):
+        pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "is-npm-1.0.0.tgz"
         project1.copy_input_from(input_location)
 
-        run = project1.add_pipeline("scan_package")
+        run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
         exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
+        self.assertEqual(4, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+
         scancode_file = project1.get_latest_output(filename="scancode")
         scancode_json = json.loads(scancode_file.read_text())
 
-        expected_file = self.data_location / "is-npm-1.0.0_scancode.json"
+        expected_file = self.data_location / "is-npm-1.0.0_scan_package.json"
         expected_json = json.loads(expected_file.read_text())
 
         scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
@@ -249,10 +259,37 @@ class ScanPackagePipelineTest(TestCase):
         summary_file = project1.get_latest_output(filename="summary")
         summary_json = json.loads(summary_file.read_text())
 
-        expected_file = self.data_location / "is-npm-1.0.0_summary.json"
+        expected_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
         expected_json = json.loads(expected_file.read_text())
 
         summary_data = self._without_keys(summary_json, self.exclude_from_diff)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
 
         self.assertEqual(expected_data, summary_data)
+
+    def test_scanpipe_scan_codebase_pipeline_integration_test(self):
+        pipeline_name = "scan_codebase"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, _ = pipeline.execute()
+        self.assertEqual(0, exitcode)
+
+        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        scancode_json = json.loads(scancode_file.read_text())
+
+        expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
+        expected_json = json.loads(expected_file.read_text())
+
+        scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
+        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+
+        self.assertEqual(expected_data, scancode_data)

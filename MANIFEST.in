@@ -9,10 +9,8 @@ include setup.cfg
 
 graft scancodeio
 graft scanpipe
-graft scanner
 graft docs
 graft etc
-graft thirdparty
 
 prune scancodeio.egg-info
 prune bin

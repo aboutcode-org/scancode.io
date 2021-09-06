@@ -23,6 +23,7 @@
 import collections
 import json
 import shutil
+import tempfile
 from pathlib import Path
 from unittest import mock
 from unittest.case import expectedFailure
@@ -31,6 +32,7 @@ from django.apps import apps
 from django.core.management import call_command
 from django.test import TestCase
 from django.test import TransactionTestCase
+from django.test import override_settings
 
 from commoncode.archive import extract_tar
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
@@ -49,7 +51,7 @@ from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
 from scanpipe.pipes import windows
-from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.input import copy_input
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -227,6 +229,45 @@ class ScanPipePipesTest(TestCase):
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
 
+    def test_scanpipe_pipes_scancode_extract_archive(self):
+        target = tempfile.mkdtemp()
+        input_location = str(self.data_location / "archive.zip")
+
+        errors = scancode.extract_archive(input_location, target)
+        self.assertEqual([], errors)
+
+        results = [path.name for path in list(Path(target).glob("**/*"))]
+        expected = [
+            "a",
+            "c",
+            "b",
+            "a.txt",
+        ]
+        self.assertEqual(7, len(results))
+        for path in expected:
+            self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archives(self):
+        tempdir = Path(tempfile.mkdtemp())
+        input_location = str(self.data_location / "archive.zip")
+        copy_input(input_location, tempdir)
+
+        errors = scancode.extract_archives(tempdir)
+        self.assertEqual([], errors)
+
+        results = [path.name for path in list(tempdir.glob("**/*"))]
+        self.assertEqual(9, len(results))
+        expected = [
+            "archive.zip-extract",
+            "archive.zip",
+            "a",
+            "b",
+            "c",
+            "a.txt",
+        ]
+        for path in expected:
+            self.assertIn(path, results)
+
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
         sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
@@ -299,7 +340,7 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("scanned-with-error", codebase_resource1.status)
         self.assertEqual(4, project1.projecterrors.count())
 
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -317,7 +358,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -396,7 +437,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_scan_package_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -424,17 +465,18 @@ class ScanPipePipesTest(TestCase):
 
         project1 = Project.objects.create(name="Analysis")
         CodebaseResource.objects.create(project=project1, path="notice.NOTICE")
+        resource_qs = project1.codebaseresources.all()
 
         scan_func = mock.Mock(return_value=(None, None))
         scan_func.__name__ = ""
 
-        with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", -1):
-            scancode._scan_and_save(project1, scan_func, noop)
+        with override_settings(SCANCODEIO_PROCESSES=-1):
+            scancode._scan_and_save(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertFalse(with_threading)
 
-        with mock.patch("scanpipe.pipes.scancode.SCANCODEIO_PROCESSES", 0):
-            scancode._scan_and_save(project1, scan_func, noop)
+        with override_settings(SCANCODEIO_PROCESSES=0):
+            scancode._scan_and_save(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
 
@@ -492,12 +534,6 @@ class ScanPipePipesTest(TestCase):
         }
         self.assertEqual(expected, resource2.licenses[0]["policy"])
 
-    def test_scanpipe_pipes_scancode_run_extractcode(self):
-        project = Project.objects.create(name="name with space")
-        exitcode, output = scancode.run_extractcode(str(project.codebase_path))
-        self.assertEqual(0, exitcode)
-        self.assertIn("Extracting done.", output)
-
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")
         exitcode, output = scancode.run_scancode(
@@ -506,11 +542,23 @@ class ScanPipePipesTest(TestCase):
             options=["--info"],
         )
         self.assertEqual(0, exitcode)
-        self.assertIn("Scanning done.", output)
+        self.assertEqual("", output)
+
+    @mock.patch("scanpipe.pipes.run_command")
+    def test_scanpipe_pipes_scancode_run_scancode_cli_options(self, mock_run_command):
+        mock_run_command.return_value = 0, ""
+
+        with override_settings(SCANCODE_TOOLKIT_CLI_OPTIONS=["--timeout 60"]):
+            scancode.run_scancode(location=None, output_file=None, options=[])
+            self.assertIn("--timeout 60", mock_run_command.call_args[0][0])
+
+        with override_settings(SCANCODEIO_PROCESSES=10):
+            scancode.run_scancode(location=None, output_file=None, options=[])
+            self.assertIn("--processes 10", mock_run_command.call_args[0][0])
 
     def test_scanpipe_pipes_scancode_make_results_summary(self):
         project = Project.objects.create(name="Analysis")
-        scan_results_location = self.data_location / "is-npm-1.0.0_scancode.json"
+        scan_results_location = self.data_location / "is-npm-1.0.0_scan_package.json"
 
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
@@ -1092,7 +1140,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         self.assertIn("is not under project/codebase/", str(cm.exception))
 
-        copy_inputs([resource_location], p1.codebase_path)
+        copy_input(resource_location, p1.codebase_path)
         resource_location = str(p1.codebase_path / "notice.NOTICE")
         make_codebase_resource(p1, resource_location)
 

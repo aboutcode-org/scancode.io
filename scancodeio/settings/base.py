@@ -45,10 +45,11 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
 
-SCANCODE_DEFAULT_OPTIONS = env.list("SCANCODE_DEFAULT_OPTIONS", default=[])
+SCANCODE_TOOLKIT_CLI_OPTIONS = env.list("SCANCODE_TOOLKIT_CLI_OPTIONS", default=[])
 
 # Set the number of parallel processes to use for ScanCode related scan execution.
-# If the SCANCODE_PROCESSES argument is not set, defaults to the number of CPUs minus 1.
+# If the SCANCODEIO_PROCESSES argument is not set, defaults to an optimal number of CPUs
+# available on the machine.
 SCANCODEIO_PROCESSES = env.int("SCANCODEIO_PROCESSES", default=None)
 
 SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies.yml")
@@ -63,7 +64,6 @@ SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 INSTALLED_APPS = (
     # Local apps
     # Must come before Third-party apps for proper templates override
-    "scanner",
     "scanpipe",
     # Django built-in
     "django.contrib.auth",
@@ -182,10 +182,6 @@ LOGGING = {
         },
     },
     "loggers": {
-        "scanner.tasks": {
-            "handlers": ["null"] if IS_TESTS else ["console"],
-            "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
-        },
         "scanpipe.pipelines": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("DJANGO_LOG_LEVEL", "INFO"),

@@ -27,6 +27,8 @@ results, access documentation, and more.
 
 .. image:: images/user-interface-1.png
 
+.. _user_interface_create_new_project:
+
 Creating a New Project
 ----------------------
 

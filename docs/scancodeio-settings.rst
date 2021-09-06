@@ -59,33 +59,32 @@ See :ref:`project_workspace` for more details.
 SCANCODEIO_PROCESSES
 --------------------
 
-By default, multiprocessing is enabled and configured to use the number of CPUs
-available on the machine minus 1. You can control the number of parallel
-processes available to ScanCode.io using the SCANCODE_PROCESSES setting::
+By default, multiprocessing is enabled and configured to use an optimal number of CPUs
+available on the machine. You can control the number of parallel processes available
+to ScanCode.io using the SCANCODEIO_PROCESSES setting::
 
-    SCANCODE_PROCESSES=4
+    SCANCODEIO_PROCESSES=4
 
 Multiprocessing can be disabled entirely using "0"::
 
-    SCANCODE_PROCESSES=0
+    SCANCODEIO_PROCESSES=0
 
 To disable both multiprocessing and threading, use "-1"::
 
-    SCANCODE_PROCESSES=-1
+    SCANCODEIO_PROCESSES=-1
 
-SCANCODE_DEFAULT_OPTIONS
-------------------------
+SCANCODE_TOOLKIT_CLI_OPTIONS
+----------------------------
 
-Use this setting to provide any default options for running Scancode-toolkit.
+Use this setting to provide any default options for running ScanCode-toolkit.
 
 .. note::
     Refer to `ScanCode-toolkit Available Options <https://scancode-toolkit.readthedocs.io/en/latest/cli-reference/list-options.html>`_
     for the full list of available options.
 
-The following example explicitly defines a timeout value of 120 and sets the number
-of parallel processes to 4::
+The following example explicitly defines a timeout value of 60::
 
-    SCANCODE_DEFAULT_OPTIONS=--processes 4,--timeout 120
+    SCANCODE_TOOLKIT_CLI_OPTIONS=--timeout 60
 
 .. _scancodeio_settings_pipelines_dirs:
 

@@ -4,7 +4,7 @@ Review Scan Results (Web UI)
 ============================
 
 This chapter is complementary to the :ref:`tutorial_3` tutorial, and the output
-shown here is the generated results of the tutorial's pipeline run.
+included here represents the generated results of the tutorial's pipeline run.
 The goal here is to guide you on how to understand and review your scan
 results using the ScanCode.io web interface.
 
@@ -62,7 +62,7 @@ resources by **Programming Language**, **Mime Type**, **Holder**, **Copyright**,
 
 .. note::
     The charts above show all discovered Codebase files by default regardless of
-    their existance within a package. You can still only view a subset, i.e.,
+    their existence within a package. You can still only view a subset, i.e.,
     **In a Package** or **Not in a Package**
 
 .. image:: images/tutorial-4-resources-filter.png

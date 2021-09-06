@@ -34,8 +34,6 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# The following loggers will be output to the console, except if running the tests.
 if IS_TESTS:
-    LOGGING["loggers"]["scanner.tasks"]["handlers"] = None
     # Do not pollute the workspace during testing
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()

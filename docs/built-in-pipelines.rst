@@ -15,11 +15,15 @@ Pipeline Base Class
     :members:
     :member-order: bysource
 
+.. _pipeline_docker:
+
 Docker Image Analysis
 ---------------------
 .. autoclass:: scanpipe.pipelines.docker.Docker()
     :members:
     :member-order: bysource
+
+.. _pipeline_docker_windows:
 
 Docker Windows Image Analysis
 -----------------------------
@@ -32,6 +36,8 @@ Load Inventory From Scan
 .. autoclass:: scanpipe.pipelines.load_inventory.LoadInventory()
     :members:
     :member-order: bysource
+
+.. _pipeline_root_filesystems:
 
 Root Filesystem Analysis
 ------------------------
