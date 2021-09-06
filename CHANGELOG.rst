@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### Unreleased
+### v21.9.6
 
 - Add ability to "archive" projects, from the Web UI, API and command line interface.
   Data cleanup of the project's input, codebase, and output directories is available
