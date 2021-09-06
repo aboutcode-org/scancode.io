@@ -281,6 +281,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         Set the project `is_archived` field to True.
 
+        The `remove_input`, `remove_codebase`, and `remove_output` can be provided
+        during the archive operation to delete the related work directories.
+
         The project cannot be archived if one of its related run is queued or already
         running.
         """

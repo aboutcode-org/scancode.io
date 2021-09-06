@@ -3,6 +3,14 @@
 
 ### Unreleased
 
+- Add ability to "archive" projects, from the Web UI, API and command line interface.
+  Data cleanup of the project's input, codebase, and output directories is available
+  during the archive operation.
+  Archived projects cannot be modified anymore and are hidden by default from the
+  project list.
+  A project cannot be archived if one of its related run is queued or already running.
+  https://github.com/nexB/scancode.io/issues/312
+
 - Remove the run_extractcode pipe in favor of extractcode API.
   https://github.com/nexB/scancode.io/issues/312
 

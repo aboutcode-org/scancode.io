@@ -84,10 +84,10 @@ application wrapper around the
 
 The **Django framework** is leveraged for many aspects of ScanCode.io:
 
-- Database management
 - :ref:`user_interface`
 - :ref:`rest_api`
 - :ref:`command_line_interface`
+- :ref:`data_model`
 
 .. note::
     Multiple applications from the Django eco-system are also included,
