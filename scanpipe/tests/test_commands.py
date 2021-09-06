@@ -383,6 +383,9 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("archive-project", *options, stdout=out)
         out_value = out.getvalue().strip()
 
+        project.refresh_from_db()
+        self.assertTrue(project.is_archived)
+
         expected = "The my_project project has been archived."
         self.assertEqual(expected, out_value)
 

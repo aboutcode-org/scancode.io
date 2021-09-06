@@ -55,6 +55,20 @@ class ScanPipeViewsTest(TestCase):
         self.assertNotContains(response, self.project1.name)
         self.assertContains(response, project2.name)
 
+    def test_scanpipe_views_project_details_is_archived(self):
+        url = self.project1.get_absolute_url()
+        expected1 = "WARNING: This project is archived and read-only."
+        expected2 = 'id="modal-archive"'
+
+        response = self.client.get(url)
+        self.assertNotContains(response, expected1)
+        self.assertContains(response, expected2)
+
+        self.project1.archive()
+        response = self.client.get(url)
+        self.assertContains(response, expected1)
+        self.assertNotContains(response, expected2)
+
     @mock.patch("requests.get")
     def test_scanpipe_views_project_details_add_inputs(self, mock_get):
         url = self.project1.get_absolute_url()

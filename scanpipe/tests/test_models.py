@@ -43,6 +43,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
@@ -100,6 +101,26 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.clear_tmp_directory()
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
+
+    def test_scanpipe_project_model_archive(self):
+        (self.project1.input_path / "input_file").touch()
+        (self.project1.codebase_path / "codebase_file").touch()
+        (self.project1.output_path / "output_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
+
+        self.project1.archive()
+        self.project1.refresh_from_db()
+        self.assertTrue(self.project1.is_archived)
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
+
+        self.project1.archive(remove_input=True, remove_codebase=True)
+        self.assertEqual(0, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
 
     def test_scanpipe_project_model_delete(self):
         work_path = self.project1.work_path
@@ -362,6 +383,23 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         run1.task_exitcode = None
         run1.save()
         self.assertEqual(run2, self.project1.get_latest_failed_run())
+
+    def test_scanpipe_project_model_raise_if_run_in_progress(self):
+        run1 = self.create_run()
+        self.assertIsNone(self.project1._raise_if_run_in_progress())
+
+        run1.set_task_started(task_id=1)
+        with self.assertRaises(RunInProgressError):
+            self.project1._raise_if_run_in_progress()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.archive()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.delete()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.reset()
 
     def test_scanpipe_run_model_init_task_id(self):
         run1 = Run.objects.create(project=self.project1)

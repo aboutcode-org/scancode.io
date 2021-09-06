@@ -327,6 +327,8 @@ class ScanPipeAPITest(TransactionTestCase):
         data = {"remove_input": True}
         response = self.csrf_client.post(url, data=data)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.project1.refresh_from_db()
+        self.assertTrue(self.project1.is_archived)
         expected = {"status": "The project Analysis has been archived."}
         self.assertEqual(expected, response.data)
         self.assertEqual(0, len(Project.get_root_content(self.project1.input_path)))
