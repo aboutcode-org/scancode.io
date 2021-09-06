@@ -311,6 +311,27 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(10, len(response.data.keys()))
 
+    def test_scanpipe_api_project_action_archive(self):
+        (self.project1.input_path / "input_file").touch()
+        (self.project1.codebase_path / "codebase_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+
+        url = reverse("project-archive", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertIn(
+            "POST on this URL to archive the project.", response.data["status"]
+        )
+
+        data = {"remove_input": True}
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {"status": "The project Analysis has been archived."}
+        self.assertEqual(expected, response.data)
+        self.assertEqual(0, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_project_action_add_pipeline(self, mock_execute_pipeline_task):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])

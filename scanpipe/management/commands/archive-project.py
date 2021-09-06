@@ -25,7 +25,7 @@ import sys
 from django.core.management import CommandError
 
 from scanpipe.management.commands import ProjectCommand
-from scanpipe.models import RunInProgress
+from scanpipe.models import RunInProgressError
 
 
 class Command(ProjectCommand):
@@ -71,18 +71,13 @@ class Command(ProjectCommand):
                 self.stdout.write("Archive cancelled.")
                 sys.exit(0)
 
-        print(
-            options["remove_input"],
-            options["remove_codebase"],
-            options["remove_output"],
-        )
         try:
             self.project.archive(
                 remove_input=options["remove_input"],
                 remove_codebase=options["remove_codebase"],
                 remove_output=options["remove_output"],
             )
-        except RunInProgress as error:
+        except RunInProgressError as error:
             raise CommandError(error)
 
         msg = f"The {self.project} project has been archived."

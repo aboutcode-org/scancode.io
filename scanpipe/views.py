@@ -54,7 +54,7 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
-from scanpipe.models import RunInProgress
+from scanpipe.models import RunInProgressError
 from scanpipe.pipes import codebase
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
@@ -283,7 +283,7 @@ class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
                 remove_codebase=form.cleaned_data["remove_codebase"],
                 remove_output=form.cleaned_data["remove_output"],
             )
-        except RunInProgress as error:
+        except RunInProgressError as error:
             messages.error(self.request, error)
         else:
             messages.success(self.request, self.success_message.format(project))

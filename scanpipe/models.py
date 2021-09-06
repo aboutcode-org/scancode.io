@@ -58,8 +58,8 @@ from scanpipe.packagedb_models import AbstractResource
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-class RunInProgress(Exception):
-    """Run are in progress or queued on this Project."""
+class RunInProgressError(Exception):
+    """Run are in progress or queued on this project."""
 
 
 class UUIDPKModel(models.Model):
@@ -347,11 +347,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def _raise_if_run_in_progress(self):
         """
-        Raises a `RunInProgress` exception if one of the project related run is queued
-        or running.
+        Raises a `RunInProgressError` exception if one of the project related run is
+        queued or running.
         """
         if self.runs.queued().exists() or self.runs.running().exists():
-            raise RunInProgress(
+            raise RunInProgressError(
                 "Cannot execute this action until all associated pipeline runs are "
                 "completed."
             )

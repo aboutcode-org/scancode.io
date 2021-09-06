@@ -41,7 +41,7 @@ from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
 from scanpipe.models import Run
-from scanpipe.models import RunInProgress
+from scanpipe.models import RunInProgressError
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -200,7 +200,7 @@ class ProjectViewSet(
                 remove_codebase=request.data.get("remove_codebase"),
                 remove_output=request.data.get("remove_output"),
             )
-        except RunInProgress as error:
+        except RunInProgressError as error:
             return Response(error, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"status": f"The project {project} has been archived."})
