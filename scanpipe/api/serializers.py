@@ -136,6 +136,7 @@ class ProjectSerializer(
             "package_count",
             "codebase_resources_summary",
             "discovered_package_summary",
+            "notes",
         )
 
         exclude_from_list_view = [

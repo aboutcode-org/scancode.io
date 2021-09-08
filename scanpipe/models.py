@@ -260,6 +260,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             "happened during the archive operation."
         ),
     )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_("Notes for this project."),
+    )
 
     class Meta:
         ordering = ["-created_date"]

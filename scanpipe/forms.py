@@ -107,18 +107,25 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_urls",
             "pipeline",
             "execute_now",
+            "notes",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         name_field = self.fields["name"]
+        notes_field = self.fields["notes"]
         name_field.widget.attrs["class"] = "input"
         name_field.widget.attrs["autofocus"] = True
         name_field.help_text = "The unique name of your project."
+        notes_field.help_text = "Add notes for your project."
 
     def clean_name(self):
         name = self.cleaned_data["name"]
         return " ".join(name.split())
+
+    def clean_notes(self):
+        notes = self.cleaned_data["notes"]
+        return " ".join(notes.split())
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)

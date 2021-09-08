@@ -72,6 +72,14 @@
               </label>
             </div>
 
+            <div class="field">
+              <label class="label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+              <div class="control">
+                {{ form.notes }}
+                <p class="help">{{ form.notes.help_text }}</p>
+              </div>
+            </div>
+
             <div class="columns mt-6 is-variable is-1">
               <div class="column is-one-third">
                 <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
