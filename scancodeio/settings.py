@@ -21,11 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import sys
+import tempfile
 from pathlib import Path
 
 import environ
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
 
 # Environment
@@ -42,6 +43,9 @@ SECRET_KEY = env.str("SECRET_KEY")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
 
 # ScanCode.io
+
+# SECURITY WARNING: don't run with debug turned on in production
+DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
 
@@ -116,7 +120,7 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "APP_DIRS": True,
         "OPTIONS": {
-            "debug": False,
+            "debug": DEBUG,
             "context_processors": [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -147,8 +151,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Testing
+
 # True if running tests through `./manage test`
 IS_TESTS = "test" in sys.argv
+
+if IS_TESTS:
+    # Do not pollute the workspace while running the tests
+    SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
 
 # Cache
 
