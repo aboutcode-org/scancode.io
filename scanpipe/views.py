@@ -26,6 +26,8 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count
+from django.contrib.auth.mixins import LoginRequiredMixin 
+from django.contrib.auth.decorators import login_required
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -328,7 +330,7 @@ class ProjectTreeView(ProjectViewMixin, generic.DetailView):
 
         return context
 
-
+@login_required
 def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
@@ -379,7 +381,7 @@ class ProjectResultsView(ProjectViewMixin, generic.DetailView):
         raise Http404("Format not supported.")
 
 
-class ProjectRelatedViewMixin:
+class ProjectRelatedViewMixin(LoginRequiredMixin):
     def get_project(self):
         if not getattr(self, "project", None):
             project_uuid = self.kwargs["uuid"]
@@ -482,7 +484,7 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
 
         return context
 
-
+@login_required
 def run_detail_view(request, uuid):
     template = "scanpipe/includes/run_modal_content.html"
     run = get_object_or_404(Run, uuid=uuid)
@@ -516,7 +518,7 @@ class CodebaseResourceRawView(
         raise Http404
 
 
-class AppMonitorView(generic.TemplateView):
+class AppMonitorView(LoginRequiredMixin, generic.TemplateView):
     template_name = "scanpipe/app_monitoring.html"
 
     def get_context_data(self, **kwargs):

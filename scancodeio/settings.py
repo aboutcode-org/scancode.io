@@ -24,6 +24,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+
 import environ
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -63,18 +64,18 @@ SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies
 # pipelines directories.
 SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 
-#Mozilla oidc settings
-OIDC_RP_CLIENT_ID = env.str("SCANCODEIO_OIDC_RP_CLIENT_ID", default="scancode.io-client")
+#OIDC Integration
+OIDC_RP_CLIENT_ID = env.str("SCANCODEIO_OIDC_RP_CLIENT_ID", default=None)
 OIDC_RP_CLIENT_SECRET = env.str("SCANCODEIO_OIDC_RP_CLIENT_SECRET", default=None)
 OIDC_RP_SIGN_ALGO = env.str("SCANCODEIO_OIDC_RP_SIGN_ALGO", default="RS256")
 OIDC_OP_JWKS_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_JWKS_ENDPOINT", default=None)
 OIDC_OP_AUTHORIZATION_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_AUTHORIZATION_ENDPOINT", default=None)
 OIDC_OP_TOKEN_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_TOKEN_ENDPOINT", default=None)
 OIDC_OP_USER_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_USER_ENDPOINT", default=None)
-
-LOGOUT_REDIRECT_URL = "/"
+OIDC_OP_LOGOUT_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_LOGOUT_ENDPOINT", default=None)
 LOGIN_URL = 'oidc_authentication_init'
 LOGOUT_REDIRECT_URL = "/"
+OIDC_OP_LOGOUT_URL_METHOD = 'scancodeio.auth.provider_logout'
 
 # Application definition
 
@@ -216,8 +217,8 @@ LOGGING = {
             "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
         },
         'mozilla_django_oidc': {
-            'handlers': ['console'],
-            'level': 'DEBUG'
+            'handlers': ["null"] if IS_TESTS else ["console"],
+            'level': env.str("DJANGO_LOG_LEVEL", "INFO"),
         },
     },
 }
@@ -268,7 +269,7 @@ CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "mozilla_django_oidc.contrib.drf.OIDCAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": env.tuple(
         "REST_FRAMEWORK_DEFAULT_PERMISSION_CLASSES",
@@ -290,4 +291,5 @@ REST_FRAMEWORK = {
 
 AUTHENTICATION_BACKENDS = (
     'mozilla_django_oidc.auth.OIDCAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ) 

@@ -29,9 +29,9 @@
         </div>
       </div>
     </div>
-    <form class="navbar-item" action="{% url 'oidc_logout' %}" method="post">
-      {% csrf_token %}
-      <input class="button is-link" type="submit" value="logout">
+    <p class="navbar-item">Loged in as: {{ user.email }}</p>
+    <form class="navbar-item" action="{% url 'oidc_logout' %}" method="POST">{% csrf_token %}
+      <button class="button is-link" type="submit">Log out</button>
     </form>
   </div>
 </nav>
