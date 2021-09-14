@@ -56,6 +56,12 @@ Run the Image
 At this point, the ScanCode.io app should be running at port 80 on your Docker host.
 Go to http://localhost/ on a web browser to **access the web UI**.
 
+An overview of the web application usage is available at :ref:`user_interface`.
+
+.. note::
+    Congratulations, you are now ready to use ScanCode.io, and you can move onto the
+    **Tutorials** section starting with the :ref:`tutorial_1` tutorial.
+
 .. warning::
 
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
@@ -192,11 +198,18 @@ you can start the local webserver and access the app with::
 Then open your web browser and visit: http://127.0.0.1:8001/ to access the web
 application.
 
-An overview of the web application usage is available at :ref:`user_interface`.
+.. warning::
+    ``make run`` is provided as a simplified way to run the application with one
+    **major caveat88: pipeline runs will be **executed synchronously** on HTTP requests
+    and will leave your browser connection or API calls opened during the pipeline
+    execution.
+    This setup is **not suitable for deployments** and **only supported for local
+    development**.
+    It is highly recommended to use the :ref:`run_with_docker` setup to ensure the
+    availability of all the features and the benefits from asynchronous workers
+    for pipeline executions.
 
-.. note::
-    Congratulations, you are now ready to use ScanCode.io, and you can move onto the
-    **Tutorials** section starting with the :ref:`tutorial_1` tutorial.
+An overview of the web application usage is available at :ref:`user_interface`.
 
 Upgrading
 ^^^^^^^^^
