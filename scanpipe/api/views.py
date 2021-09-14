@@ -42,6 +42,7 @@ from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.pipes.fetch import fetch_urls
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -180,6 +181,36 @@ class ProjectViewSet(
             "pipelines": list(scanpipe_app.pipelines.keys()),
         }
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["get", "post"])
+    def add_input(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if not project.can_add_input:
+            message = {
+                "status": "Cannot add inputs once a pipeline has started to execute."
+            }
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        upload_file = request.data.get("upload_file")
+        input_urls = request.data.get("input_urls", [])
+
+        if not (upload_file or input_urls):
+            message = {"status": "upload_file or input_urls required."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        downloads, errors = fetch_urls(input_urls)
+        if errors:
+            message = {"status": ("Could not fetch: " + ", ".join(errors))}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        if upload_file:
+            project.add_uploads([upload_file])
+
+        if downloads:
+            project.add_downloads(downloads)
+
+        return Response({"status": "Input(s) added."})
 
     @action(detail=True, methods=["get", "post"])
     def archive(self, request, *args, **kwargs):

@@ -1,6 +1,11 @@
 // Release notes
 // -------------
 
+### Unreleased
+
+- Provide an "add input" action on the Project endpoint of the REST API.
+  https://github.com/nexB/scancode.io/issues/318
+
 ### v21.9.6
 
 - Add ability to "archive" projects, from the Web UI, API and command line interface.

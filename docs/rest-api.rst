@@ -153,6 +153,38 @@ Managing Projects
 
 Multiple **actions** are available to manage projects:
 
+Add input
+^^^^^^^^^
+
+This action adds a selected ``pipeline`` to the ``project``.
+If the ``execute_now`` value is True, the pipeline execution will start immediately
+during the pipeline addition.
+
+``POST /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/add_pipeline/``
+
+Data:
+    - ``pipeline``: ``docker``
+    - ``execute_now``: ``true``
+
+Using cURL:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/add_pipeline/"
+    content_type="Content-Type: application/json"
+    data='{
+        "pipeline": "docker",
+        "execute_now": true
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
+.. code-block:: json
+
+    {
+        "status": "Pipeline added."
+    }
+
 Add pipeline
 ^^^^^^^^^^^^
 

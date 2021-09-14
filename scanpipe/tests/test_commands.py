@@ -187,17 +187,29 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)
 
-    def test_scanpipe_management_command_add_input_url(self):
-        out = StringIO()
+    @mock.patch("requests.get")
+    def test_scanpipe_management_command_add_input_url(self, mock_get):
+        mock_get.side_effect = None
+        mock_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url="https://example.com/archive.zip",
+        )
 
         project = Project.objects.create(name="my_project")
-        parent_path = Path(__file__).parent
         options = [
-            "--input-file",
-            str(parent_path / "test_commands.py"),
-            "--input-file",
-            str(parent_path / "test_models.py"),
+            "--input-url",
+            "https://example.com/archive.zip",
+            "--project",
+            project.name,
         ]
+        out = StringIO()
+        call_command("add-input", *options, stdout=out)
+        expected = "File(s) downloaded to the project inputs directory"
+        self.assertIn(expected, out.getvalue())
+        self.assertIn("- archive.zip", out.getvalue())
+        self.assertEqual(["archive.zip"], project.input_root)
 
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
