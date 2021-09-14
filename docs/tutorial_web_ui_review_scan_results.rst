@@ -1,18 +1,19 @@
-.. _tutorial_4:
+.. _tutorial_web_ui_review_scan_results:
 
 Review Scan Results (Web UI)
 ============================
 
-This chapter is complementary to the :ref:`tutorial_3` tutorial, and the output
-included here represents the generated results of the tutorial's pipeline run.
+This chapter is complementary to the :ref:`tutorial_web_ui_analyze_docker_image`
+tutorial, and the output included here represents the generated results of the
+tutorial's pipeline run.
 The goal here is to guide you on how to understand and review your scan
 results using the ScanCode.io web interface.
 
 .. tip::
-    As a perquisite, follow the :ref:`tutorial_3` tutorial to have a better
-    understanding of the information included here.
+    As a perquisite, follow the :ref:`tutorial_web_ui_analyze_docker_image` tutorial
+    to have a better understanding of the information included here.
 
-.. image:: images/tutorial-4-project-list.png
+.. image:: images/tutorial-web-ui-project-list.png
 
 On the homepage, you can click on the project name in the summary table to
 access a detailed project output page. You can also click any of the numbers
@@ -25,7 +26,7 @@ Resources status, and Run log.
     You can also view output-related information, in graphical representation,
     in each project page. Plus, other project data and input details.
 
-    .. image:: images/tutorial-4-project-details.png
+    .. image:: images/tutorial-web-ui-project-details.png
 
 In general, the output of any pipeline run includes details about:
 
@@ -35,7 +36,7 @@ A summary of **Discovered Packages** in a graphical format is shown in the
 project page that includes two Pie/Doughnut charts, which filter all packages
 found by their **Type** and **License Expression**:
 
-.. image:: images/tutorial-4-packages-charts.png
+.. image:: images/tutorial-web-ui-packages-charts.png
 
 The two circular charts are interactive and can be filtered further by clicking
 any of the categories—**Type** and **License Expression**—on the right of each
@@ -46,7 +47,7 @@ In addition, there is also an overall detailed table that includes all packages
 found and code resources within each package, which can be accessed by clicking
 on the **Packages** number field.
 
-.. image:: images/tutorial-4-packages-list.png
+.. image:: images/tutorial-web-ui-packages-list.png
 
 Resources
 ---------
@@ -58,14 +59,14 @@ Further, the project page offers a group of Doughnut charts that filter code
 resources by **Programming Language**, **Mime Type**, **Holder**, **Copyright**,
 **License Key**, and **License Category**.
 
-.. image:: images/tutorial-4-resources-charts.png
+.. image:: images/tutorial-web-ui-resources-charts.png
 
 .. note::
     The charts above show all discovered Codebase files by default regardless of
     their existence within a package. You can still only view a subset, i.e.,
     **In a Package** or **Not in a Package**
 
-.. image:: images/tutorial-4-resources-filter.png
+.. image:: images/tutorial-web-ui-resources-filter.png
 
 Errors
 ------
@@ -73,7 +74,7 @@ In addition to discovered packages and codebase resources, the ScanCode.io
 homepage shows the number of existing errors, which you can click for detailed
 description of each error.
 
-.. image:: images/tutorial-4-errors-list.png
+.. image:: images/tutorial-web-ui-errors-list.png
 
 Other Information
 -----------------
@@ -81,4 +82,4 @@ Clicking on the pipeline's execution status —**Success** in this case— opens
 new window with some extra pipeline-specific details, such start and end date,
 launch, execution time and status, run log, etc.
 
-.. image:: images/tutorial-4-run-log-modal.png
+.. image:: images/tutorial-web-ui-run-log-modal.png

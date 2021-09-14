@@ -1,4 +1,4 @@
-.. _tutorial_5:
+.. _tutorial_api_analyze_package_archive:
 
 Analyse Package Archive (REST API)
 ==================================
@@ -28,7 +28,7 @@ Using cURL
 
 .. code-block:: bash
 
-    api_url="http://127.0.0.1:8001/api/projects/"
+    api_url="http://localhost/api/projects/"
     content_type="Content-Type: application/json"
     data='{
         "name": "boolean.py-3.8",
@@ -40,8 +40,8 @@ Using cURL
     curl -X POST "$api_url" -H "$content_type" -d "$data"
 
 .. note::
-    You can set the api_url to http://localhost/api/projects/ when running with
-    Docker.
+    You have to set the api_url to http://127.0.0.1:8001/api/projects/ if you run on a
+    local development setup.
 
 .. tip::
     You can provide the data using a json file with the text below, which will be
@@ -62,7 +62,7 @@ Using cURL
 
     .. code-block:: bash
 
-        curl -X POST "http://127.0.0.1:8001/api/projects/" -H "Content-Type: application/json" -d @boolean.py-3.8_cURL.json
+        curl -X POST "http://localhost/api/projects/" -H "Content-Type: application/json" -d @boolean.py-3.8_cURL.json
 
 If the new project has been successfully created, the response should include
 the project's details URL value among the returned data.
@@ -71,7 +71,7 @@ the project's details URL value among the returned data.
 
     {
         "name": "boolean.py-3.8",
-        "url": "http://127.0.0.1:8001/api/projects/11de938f-fb86-4178-870c-99f4952b8881/",
+        "url": "http://localhost/api/projects/11de938f-fb86-4178-870c-99f4952b8881/",
         "[...]": "[...]"
     }
 
@@ -96,7 +96,7 @@ Using Python script
 
     import requests
 
-    api_url = "http://127.0.0.1:8001/api/projects/"
+    api_url = "http://localhost/api/projects/"
     data = {
         "name": "boolean.py-3.8",
         "input_urls": "https://github.com/bastikr/boolean.py/archive/refs/tags/v3.8.zip",
@@ -113,7 +113,7 @@ The JSON response includes a generated UUID for the new project.
     # print(response.json())
     {
         "name": "boolean.py-3.8",
-        "url": "http://127.0.0.1:8001/api/projects/11de938f-fb86-4178-870c-99f4952b8881/",
+        "url": "http://localhost/api/projects/11de938f-fb86-4178-870c-99f4952b8881/",
         "[...]": "[...]",
     }
 

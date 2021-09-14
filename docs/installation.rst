@@ -60,7 +60,8 @@ An overview of the web application usage is available at :ref:`user_interface`.
 
 .. note::
     Congratulations, you are now ready to use ScanCode.io, and you can move onto the
-    **Tutorials** section starting with the :ref:`tutorial_1` tutorial.
+    **Tutorials** section starting with the :ref:`tutorial_web_ui_analyze_docker_image`
+    tutorial.
 
 .. warning::
 
@@ -200,9 +201,11 @@ application.
 
 .. warning::
     ``make run`` is provided as a simplified way to run the application with one
-    **major caveat88: pipeline runs will be **executed synchronously** on HTTP requests
+    **major caveat**: pipeline runs will be **executed synchronously** on HTTP requests
     and will leave your browser connection or API calls opened during the pipeline
     execution.
+
+.. warning::
     This setup is **not suitable for deployments** and **only supported for local
     development**.
     It is highly recommended to use the :ref:`run_with_docker` setup to ensure the
