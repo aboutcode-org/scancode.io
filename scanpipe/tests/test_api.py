@@ -360,6 +360,43 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
+    @mock.patch("requests.get")
+    def test_scanpipe_api_project_action_add_input(self, mock_get):
+        url = reverse("project-add-input", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        expected = "upload_file or input_urls required."
+        self.assertEqual(expected, response.data.get("status"))
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        mock_get.side_effect = None
+        mock_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url="https://example.com/archive.zip",
+        )
+        data = {
+            "input_urls": "https://example.com/archive.zip",
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        self.assertEqual(["archive.zip"], self.project1.input_root)
+
+        data = {
+            "upload_file": io.BytesIO(b"Content"),
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        expected = sorted(["upload_file", "archive.zip"])
+        self.assertEqual(expected, sorted(self.project1.input_root))
+
+        run = self.project1.add_pipeline("docker")
+        run.set_task_started(task_id=uuid.uuid4())
+        response = self.csrf_client.get(url)
+        expected = "Cannot add inputs once a pipeline has started to execute."
+        self.assertEqual(expected, response.data.get("status"))
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
     def test_scanpipe_api_run_detail(self):
         run1 = self.project1.add_pipeline("docker")
         url = reverse("run-detail", args=[run1.uuid])

@@ -153,6 +153,53 @@ Managing Projects
 
 Multiple **actions** are available to manage projects:
 
+Add input
+^^^^^^^^^
+
+This action adds provided ``input_urls`` or ``upload_file`` to the ``project``.
+
+``POST /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/add_input/``
+
+Data:
+    - ``input_urls``: A list of URLs to download
+    - ``upload_file``: A file to upload
+
+Using cURL to provide download URLs:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/add_input/"
+    content_type="Content-Type: application/json"
+    data='{
+        "input_urls": [
+            "https://github.com/nexB/debian-inspector/archive/refs/tags/v21.5.25.zip",
+            "https://github.com/package-url/packageurl-python/archive/refs/tags/0.9.4.tar.gz"
+       ]
+    }'
+
+    curl -X POST "$api_url" -H "$content_type" -d "$data"
+
+.. code-block:: json
+
+    {
+        "status": "Input(s) added."
+    }
+
+Using cURL to upload a local file:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/add_input/"
+    upload_file="/path/to/the/archive.zip"
+
+    curl -X POST "$api_url" -F "upload_file=@$upload_file"
+
+.. code-block:: json
+
+    {
+        "status": "Input(s) added."
+    }
+
 Add pipeline
 ^^^^^^^^^^^^
 
@@ -163,8 +210,8 @@ during the pipeline addition.
 ``POST /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/add_pipeline/``
 
 Data:
-    - ``pipeline``: ``docker``
-    - ``execute_now``: ``true``
+    - ``pipeline``: The pipeline name
+    - ``execute_now``: ``true`` or ``false``
 
 Using cURL:
 
