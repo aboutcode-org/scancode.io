@@ -40,7 +40,6 @@ from django.views.generic.edit import FormView
 import saneyaml
 from django_filters.views import FilterView
 
-from scancodeio.celery import app as celery_app
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -517,14 +516,13 @@ class CodebaseResourceRawView(
 class AppMonitorView(generic.TemplateView):
     template_name = "scanpipe/app_monitoring.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        always_eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", None)
-        if always_eager:
-            raise Http404(
-                "Celery monitoring not supported with CELERY_TASK_ALWAYS_EAGER=True"
-            )
-
-        context["inspector"] = celery_app.control.inspect()
-        return context
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #
+    #     always_eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", None)
+    #     if always_eager:
+    #         raise Http404(
+    #             "Celery monitoring not supported with CELERY_TASK_ALWAYS_EAGER=True"
+    #         )
+    #     context["inspector"] = celery_app.control.inspect()
+    #     return context

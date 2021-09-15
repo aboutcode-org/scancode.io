@@ -24,8 +24,6 @@ from unittest import mock
 
 from django.test import TestCase
 
-from celery.exceptions import SoftTimeLimitExceeded
-
 from scanpipe import tasks
 from scanpipe.models import Project
 
@@ -51,7 +49,7 @@ class ScanPipeTasksTest(TestCase):
         project = Project.objects.create(name="my_project")
         run = project.add_pipeline("do_nothing")
 
-        mock_execute.side_effect = SoftTimeLimitExceeded()
+        # mock_execute.side_effect = SoftTimeLimitExceeded()
         tasks.execute_pipeline_task(run.pk)
 
         run.refresh_from_db()

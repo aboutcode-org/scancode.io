@@ -20,17 +20,15 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import logging
+
 from django.apps import apps
 
-from celery import shared_task
-from celery.exceptions import SoftTimeLimitExceeded
-from celery.utils.log import get_task_logger
-
-tasks_logger = get_task_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def info(message, pk):
-    tasks_logger.info(f"Run[{pk}] {message}")
+    logger.info(f"Run[{pk}] {message}")
 
 
 def get_run_instance(run_pk):
@@ -41,27 +39,26 @@ def get_run_instance(run_pk):
     return run_model.objects.get(pk=run_pk)
 
 
-@shared_task(bind=True)
-def execute_pipeline_task(self, run_pk):
-    task_id = self.request.id
-    info(f"Enter `{self.name}` Task.id={task_id}", run_pk)
+def execute_pipeline_task(run_pk):
+    info(f"Enter `execute_pipeline_task` Run.pk/Task.id={run_pk}", run_pk)
 
     run = get_run_instance(run_pk)
     project = run.project
 
     run.reset_task_values()
     run.set_scancodeio_version()
-    run.set_task_started(task_id)
+    run.set_task_started(run_pk)
 
     info(f'Run pipeline: "{run.pipeline_name}" on project: "{project.name}"', run_pk)
 
     pipeline = run.make_pipeline_instance()
+    exitcode, output = pipeline.execute()
 
-    try:
-        exitcode, output = pipeline.execute()
-    except SoftTimeLimitExceeded:
-        info("SoftTimeLimitExceeded", run_pk)
-        exitcode, output = 1, "SoftTimeLimitExceeded"
+    # try:
+    #     exitcode, output = pipeline.execute()
+    # except SoftTimeLimitExceeded:
+    #     info("SoftTimeLimitExceeded", run_pk)
+    #     exitcode, output = 1, "SoftTimeLimitExceeded"
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
     run.set_task_ended(exitcode, output, refresh_first=True)

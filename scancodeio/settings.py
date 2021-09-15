@@ -82,6 +82,7 @@ INSTALLED_APPS = (
     "django_filters",
     "rest_framework",
     "rest_framework.authtoken",
+    "django_rq",
 )
 
 MIDDLEWARE = (
@@ -233,16 +234,20 @@ STATICFILES_DIRS = [
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
 
-# Celery
+# Job Queue
 
-CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://")
-CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", default="redis://")
-CELERY_TRACK_STARTED = env.bool("CELERY_TRACK_STARTED", default=True)
-CELERY_IGNORE_RESULT = env.bool("CELERY_IGNORE_RESULT", default=False)
-CELERY_TASK_DEFAULT_QUEUE = env.str("CELERY_RESULT_BACKEND", default="default")
-# When True, tasks will be executed immediately in the local thread instead of being
-# sent to the queue for execution by a worker.
-CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
+RQ_QUEUES = {
+    "default": {
+        "HOST": "localhost",
+        "PORT": 6379,
+        "DB": 0,
+        "DEFAULT_TIMEOUT": 360,
+    },
+}
+
+if DEBUG or IS_TESTS:
+    for queue_config in RQ_QUEUES.values():
+        queue_config["ASYNC"] = False
 
 # Django restframework
 

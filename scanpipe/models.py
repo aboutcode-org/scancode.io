@@ -45,11 +45,10 @@ from django.utils.functional import cached_property
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from celery.result import AsyncResult
+import django_rq
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 
-from scancodeio import WORKSPACE_LOCATION
 from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
@@ -111,32 +110,32 @@ class AbstractTaskFieldsModel(models.Model):
     class Meta:
         abstract = True
 
-    @property
-    def task_result(self):
-        return AsyncResult(str(self.task_id))
-
-    def task_state(self):
-        """
-        Possible values include:
-        - UNKNOWN (PENDING)
-            No history about the task is available.
-        - STARTED
-            The task has been started.
-        - RETRY
-            The task is to be re-executed; possibly due to a failure.
-        - FAILURE
-            The task raised an exception or has exceeded the retry limit.
-            The result attribute would contain the exception raised by the task.
-        - SUCCESS
-            The task executed successfully. The result attribute would contain
-            the task's return value.
-
-        Notes: All tasks are PENDING by default in Celery, so it would make more
-        sense if the state was named "unknown". Celery doesn't update the state
-        when a task is sent, and any task with no history is assumed to be pending.
-        """
-        state = self.task_result.state
-        return "UNKNOWN" if state == "PENDING" else state
+    # @property
+    # def task_result(self):
+    #     return AsyncResult(str(self.task_id))
+    #
+    # def task_state(self):
+    #     """
+    #     Possible values include:
+    #     - UNKNOWN (PENDING)
+    #         No history about the task is available.
+    #     - STARTED
+    #         The task has been started.
+    #     - RETRY
+    #         The task is to be re-executed; possibly due to a failure.
+    #     - FAILURE
+    #         The task raised an exception or has exceeded the retry limit.
+    #         The result attribute would contain the exception raised by the task.
+    #     - SUCCESS
+    #         The task executed successfully. The result attribute would contain
+    #         the task's return value.
+    #
+    #     Notes: All tasks are PENDING by default in Celery, so it would make more
+    #     sense if the state was named "unknown". Celery doesn't update the state
+    #     when a task is sent, and any task with no history is assumed to be pending.
+    #     """
+    #     state = self.task_result.state
+    #     return "UNKNOWN" if state == "PENDING" else state
 
     @property
     def execution_time(self):
@@ -224,7 +223,8 @@ def get_project_work_directory(project):
     A short version of the `project` uuid is added as a suffix to ensure
     uniqueness of the work directory location.
     """
-    return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
+    project_workspace_id = f"{slugify(project.name)}-{project.short_uuid}"
+    return f"{scanpipe_app.workspace}/projects/{project_workspace_id}"
 
 
 class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
@@ -843,12 +843,18 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def execute_task_async(self):
         """
-        Sends a message to the task manager to create an asynchronous pipeline
-        execution task.
+        Enqueues the pipeline execution task for an asynchronous execution.
         Stores the `task_id` of the current Run instance for a future use.
         """
-        future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
-        self.init_task_id(future.task_id)
+        run_pk = str(self.pk)
+        self.init_task_id(run_pk)
+
+        job = django_rq.enqueue(
+            tasks.execute_pipeline_task,
+            job_id=run_pk,
+            run_pk=run_pk,
+        )
+        return job
 
     def init_task_id(self, task_id):
         """
