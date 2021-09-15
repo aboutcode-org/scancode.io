@@ -50,7 +50,7 @@ jobs:
         run: make docs
 
       - name: Run tests
-        run: bin/python manage.py test --settings=scancodeio.settings.base --verbosity=2 --noinput
+        run: bin/python manage.py test --verbosity=2 --noinput
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
