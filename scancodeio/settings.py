@@ -240,12 +240,12 @@ RQ_QUEUES = {
     "default": {
         "HOST": env.str("SCANCODEIO_REDIS_HOST", default="localhost"),
         "PORT": 6379,
-        "DB": 0,
         "DEFAULT_TIMEOUT": 360,
     },
 }
 
-if env.bool("SCANCODEIO_ALWAYS_EAGER", default=False):
+SCANCODEIO_ASYNC = env.bool("SCANCODEIO_ASYNC", default=False)
+if not SCANCODEIO_ASYNC:
     for queue_config in RQ_QUEUES.values():
         queue_config["ASYNC"] = False
 

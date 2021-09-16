@@ -56,6 +56,24 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
+        if not settings.SCANCODEIO_ASYNC:
+            self.set_eager_mode()
+
+    @staticmethod
+    def set_eager_mode():
+        """
+        Removes the need for a running Redis server, required by RQ to store the
+        results, when the `SCANCODEIO_ASYNC` setting is set to False.
+        """
+        import django_rq.queues
+        from fakeredis import FakeRedis
+        from fakeredis import FakeStrictRedis
+
+        def patched_redis_connection(config, use_strict_redis=False):
+            return FakeStrictRedis() if use_strict_redis else FakeRedis()
+
+        django_rq.queues.get_redis_connection = patched_redis_connection
+
     def load_pipelines(self):
         """
         Loads pipelines from the "scancodeio_pipelines" entry point group and from the

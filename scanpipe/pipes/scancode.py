@@ -293,7 +293,6 @@ def _scan_and_save(resource_qs, scan_func, save_func):
 
         for index, future in enumerate(future_as_completed, start=1):
             resource = future_to_resource[future]
-            logger.info(f"Future for pk={resource.pk}: {future}")
             _log_progress(scan_func, resource, resource_count, index)
             scan_results, scan_errors = future.result()
             save_func(resource, scan_results, scan_errors)
