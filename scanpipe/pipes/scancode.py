@@ -248,7 +248,7 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 def _log_progress(scan_func, resource, resource_count, index):
     progress = f"{index / resource_count * 100:.1f}% ({index}/{resource_count})"
-    logger.info(f"{scan_func.__name__} {progress} pk={resource.pk}")
+    logger.info(f"{scan_func.__name__} {progress} completed pk={resource.pk}")
 
 
 def _scan_and_save(resource_qs, scan_func, save_func):
@@ -291,8 +291,9 @@ def _scan_and_save(resource_qs, scan_func, save_func):
         # Iterate over the Futures as they complete (finished or cancelled)
         future_as_completed = concurrent.futures.as_completed(future_to_resource)
 
-        for index, future in enumerate(future_as_completed):
+        for index, future in enumerate(future_as_completed, start=1):
             resource = future_to_resource[future]
+            logger.info(f"Future for pk={resource.pk}: {future}")
             _log_progress(scan_func, resource, resource_count, index)
             scan_results, scan_errors = future.result()
             save_func(resource, scan_results, scan_errors)
