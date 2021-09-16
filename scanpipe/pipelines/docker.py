@@ -38,7 +38,7 @@ class Docker(root_filesystems.RootFS):
             cls.find_images_os_and_distro,
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
-            cls.collect_and_create_system_packages,
+            # cls.collect_and_create_system_packages,
             cls.tag_uninteresting_codebase_resources,
             cls.tag_empty_files,
             cls.scan_for_application_packages,

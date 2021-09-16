@@ -245,7 +245,7 @@ RQ_QUEUES = {
     },
 }
 
-if DEBUG or IS_TESTS:
+if env.bool("SCANCODEIO_ALWAYS_EAGER", default=False):
     for queue_config in RQ_QUEUES.values():
         queue_config["ASYNC"] = False
 
