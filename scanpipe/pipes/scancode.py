@@ -195,7 +195,7 @@ def scan_file(location):
     """
     scanners = [
         Scanner("copyrights", scancode_api.get_copyrights),
-        # Scanner("licenses", partial(scancode_api.get_licenses, include_text=True)),
+        Scanner("licenses", partial(scancode_api.get_licenses, include_text=True)),
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
