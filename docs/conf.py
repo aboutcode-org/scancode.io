@@ -48,6 +48,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Autodoc -----------------------------------------------------------------
 
+# Mock Django related modules to avoid complex configuration in the context of
+# autodoc.
+autodoc_mock_imports = ["django"]
+
 # The default options for autodoc directives.
 # They are applied to all autodoc directives automatically.
 # It must be a dictionary which maps option names to the values.
