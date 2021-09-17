@@ -7,7 +7,9 @@
 {% elif run.status == run.Status.QUEUED %}
   <span class="tag is-info">Queued <i class="fas fa-clock ml-1"></i></span>
 {% elif run.status == run.Status.STALE %}
-  <span class="tag is-dark">Stale <i class="fas fa-skull-crossbones ml-1"></i></span>
+  <span class="tag is-dark">Stale</span>
+{% elif run.status == run.Status.STOPPED %}
+  <span class="tag is-danger">Stopped</span>
 {% else %}
   <span class="tag is-light">Not started</span>
 {% endif %}

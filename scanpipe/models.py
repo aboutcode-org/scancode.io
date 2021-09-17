@@ -48,6 +48,8 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
+from rq.command import send_stop_job_command
+from rq.job import Job
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
@@ -110,32 +112,13 @@ class AbstractTaskFieldsModel(models.Model):
     class Meta:
         abstract = True
 
-    # @property
-    # def task_result(self):
-    #     return AsyncResult(str(self.task_id))
-    #
-    # def task_state(self):
-    #     """
-    #     Possible values include:
-    #     - UNKNOWN (PENDING)
-    #         No history about the task is available.
-    #     - STARTED
-    #         The task has been started.
-    #     - RETRY
-    #         The task is to be re-executed; possibly due to a failure.
-    #     - FAILURE
-    #         The task raised an exception or has exceeded the retry limit.
-    #         The result attribute would contain the exception raised by the task.
-    #     - SUCCESS
-    #         The task executed successfully. The result attribute would contain
-    #         the task's return value.
-    #
-    #     Notes: All tasks are PENDING by default in Celery, so it would make more
-    #     sense if the state was named "unknown". Celery doesn't update the state
-    #     when a task is sent, and any task with no history is assumed to be pending.
-    #     """
-    #     state = self.task_result.state
-    #     return "UNKNOWN" if state == "PENDING" else state
+    @staticmethod
+    def get_job(job_id):
+        return Job.fetch(job_id, connection=django_rq.get_connection())
+
+    @property
+    def job(self):
+        return self.get_job(str(self.task_id))
 
     @property
     def task_succeeded(self):
@@ -151,6 +134,13 @@ class AbstractTaskFieldsModel(models.Model):
         """
         return self.task_exitcode == 99
 
+    @property
+    def task_stopped(self):
+        """
+        Returns True if the task was stopped.
+        """
+        return self.task_exitcode == 88
+
     class Status(models.TextChoices):
         """
         List of Run status.
@@ -161,6 +151,7 @@ class AbstractTaskFieldsModel(models.Model):
         RUNNING = "running"
         SUCCESS = "success"
         FAILURE = "failure"
+        STOPPED = "stopped"
         STALE = "stale"
 
     @property
@@ -175,6 +166,9 @@ class AbstractTaskFieldsModel(models.Model):
 
         elif self.task_staled:
             return status.STALE
+
+        elif self.task_stopped:
+            return status.STOPPED
 
         elif self.task_exitcode and self.task_exitcode > 0:
             return status.FAILURE
@@ -247,6 +241,15 @@ class AbstractTaskFieldsModel(models.Model):
         Sets the task as "stale" using a special "99" exitcode value.
         """
         self.set_task_ended(exitcode=99, output="")
+
+    def stop_task(self):
+        """
+        Stop a "running" task.
+        """
+        send_stop_job_command(
+            connection=django_rq.get_connection(), job_id=str(self.task_id)
+        )
+        self.set_task_ended(exitcode=88, output="Stopped")
 
 
 class ExtraDataFieldMixin(models.Model):
