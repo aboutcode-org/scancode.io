@@ -1,4 +1,4 @@
-.. _tutorial_1:
+.. _tutorial_cli_analyze_docker_image:
 
 Analyze Docker Image (Command Line)
 ===================================
@@ -14,6 +14,7 @@ learn some of the ScanCode.io basic commands.
 
 Requirements
 ------------
+
 To successfully complete this tutorial, you first need to:
 
 - Install **ScanCode.io** locally
