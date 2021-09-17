@@ -1,4 +1,4 @@
-.. _tutorial_2:
+.. _tutorial_cli_analyze_codebase:
 
 Analyze Codebase (Command Line)
 ===============================

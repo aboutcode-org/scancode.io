@@ -3,14 +3,9 @@
 REST API
 ========
 
-To get started locally with REST API:
-
-1. **Run the webserver** with::
-
-    make run
-
-2. Visit the **projects' API endpoint** at http://127.0.0.1:8001/api/projects/ or
-   http://localhost/api/projects/ when running with Docker.
+To get started with the REST API, visit the **projects' API endpoint** at
+http://localhost/api/projects/ or http://127.0.0.1:8001/api/projects/ if you run on a
+local development setup.
 
 Authentication
 --------------

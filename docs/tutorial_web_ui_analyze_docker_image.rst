@@ -1,4 +1,4 @@
-.. _tutorial_3:
+.. _tutorial_web_ui_analyze_docker_image:
 
 Analyze Docker Image (Web UI)
 =============================
@@ -9,7 +9,7 @@ ScanCode Web UI while introducing you to the interface's various features.
 .. tip::
     This tutorial is intended for anyone who prefers interacting with a visual
     interface when working with ScanCode.io. If you prefer using the command
-    line, you can check our command line tutorial: :ref:`tutorial_1`.
+    line, you can check our command line tutorial: :ref:`tutorial_cli_analyze_codebase`.
 
 .. note::
     This tutorial assumes you have a current version of ScanCode.io installed
@@ -22,8 +22,8 @@ Requirements
 We’ll assume that you have:
 
 - Installed **ScanCode.io** locally
-- Access to the web application from your preferred browser on http://127.0.0.1:8001/
-  or http://localhost/ if you run with Docker
+- Access to the web application from your preferred browser on http://localhost/ or
+  http://127.0.0.1:8001/ if you run on a local development setup.
 
 .. tip::
     You can view our :ref:`user_interface` section for general information about
@@ -42,7 +42,7 @@ Instructions
 - You can add and execute the docker pipeline in one operation by checking the
   **"Execute pipeline now"** checkbox.
 
-.. image:: images/tutorial-3-project-form.png
+.. image:: images/tutorial-web-ui-project-form.png
 
 .. note::
     You can create a new project while leaving the **Inputs** and
@@ -51,7 +51,7 @@ Instructions
 
 - Finally, click the **"Create"** button
 
-.. image:: images/tutorial-3-projects-list.png
+.. image:: images/tutorial-web-ui-projects-list.png
 
 .. note::
     Please note that when you choose to create a new project and execute the
@@ -74,5 +74,5 @@ Plus, the ability to download the generated results in **JSON** and
 **Excel (XLSX)** file formats, covered in :ref:`output_files`.
 
 .. tip::
-    Refer to the complementary :ref:`tutorial_4` page, to understand this
-    tutorial's scan results/output.
+    Refer to the complementary :ref:`tutorial_web_ui_review_scan_results` page, to
+    understand this tutorial's scan results/output.
