@@ -918,6 +918,11 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def __str__(self):
         return f"{self.pipeline_name}"
 
+    @staticmethod
+    def report_failure(job, connection, type, value, traceback):
+        run = Run.objects.get(pk=job.id)
+        run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
+
     def execute_task_async(self):
         """
         Enqueues the pipeline execution task for an asynchronous execution.
@@ -930,6 +935,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             tasks.execute_pipeline_task,
             job_id=run_pk,
             run_pk=run_pk,
+            on_failure=self.report_failure,
+            job_timeout=7200,  # 2hours
         )
         return job
 
