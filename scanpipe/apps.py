@@ -82,7 +82,9 @@ class ScanPipeConfig(AppConfig):
 
         TODO: This is executed when the worker is starting too.
         We may only want to run this when the webserver is started (runserver or
-        gunicorn wsgi)
+        gunicorn wsgi, warning on multiple gunicorn workers)
+        Another issue is that if the job process gets kill, but the server does not
+        restart, flag_stale_runs is not called.
         """
         import django_rq
         from django_rq.utils import get_jobs

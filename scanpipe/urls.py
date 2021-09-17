@@ -91,6 +91,11 @@ urlpatterns = [
         name="project_stop_pipeline",
     ),
     path(
+        "project/<uuid:uuid>/delete_pipeline/<uuid:run_uuid>/",
+        views.delete_pipeline_view,
+        name="project_delete_pipeline",
+    ),
+    path(
         "project/add/",
         views.ProjectCreateView.as_view(),
         name="project_add",

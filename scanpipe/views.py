@@ -352,6 +352,18 @@ def stop_pipeline_view(request, uuid, run_uuid):
     return redirect(project)
 
 
+def delete_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
+        raise Http404("Only non started or queued pipelines can be deleted.")
+
+    run.delete_task()
+    messages.success(request, f'Pipeline "{run.pipeline_name}" deleted.')
+    return redirect(project)
+
+
 def project_results_json_response(project, as_attachment=False):
     """
     Returns the results as JSON compatible with ScanCode data format.

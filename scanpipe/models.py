@@ -244,12 +244,21 @@ class AbstractTaskFieldsModel(models.Model):
 
     def stop_task(self):
         """
-        Stop a "running" task.
+        Stops a "running" task.
         """
         send_stop_job_command(
             connection=django_rq.get_connection(), job_id=str(self.task_id)
         )
         self.set_task_ended(exitcode=88, output="Stopped")
+
+    def delete_task(self):
+        """
+        Deletes a "not started" or "queued" task.
+        """
+        if self.task_id:
+            # Cancels the job and deletes the job hash from Redis.
+            self.job.delete()
+        self.delete()
 
 
 class ExtraDataFieldMixin(models.Model):
