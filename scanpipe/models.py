@@ -138,8 +138,61 @@ class AbstractTaskFieldsModel(models.Model):
     #     return "UNKNOWN" if state == "PENDING" else state
 
     @property
+    def task_succeeded(self):
+        """
+        Returns True if the task was successfully executed.
+        """
+        return self.task_exitcode == 0
+
+    @property
+    def task_staled(self):
+        """
+        Returns True if the task staled.
+        """
+        return self.task_exitcode == 99
+
+    class Status(models.TextChoices):
+        """
+        List of Run status.
+        """
+
+        NOT_STARTED = "not_started"
+        QUEUED = "queued"
+        RUNNING = "running"
+        SUCCESS = "success"
+        FAILURE = "failure"
+        STALE = "stale"
+
+    @property
+    def status(self):
+        """
+        Returns the task current status.
+        """
+        status = self.Status
+
+        if self.task_succeeded:
+            return status.SUCCESS
+
+        elif self.task_staled:
+            return status.STALE
+
+        elif self.task_exitcode and self.task_exitcode > 0:
+            return status.FAILURE
+
+        elif self.task_start_date:
+            return status.RUNNING
+
+        elif self.task_id:
+            return status.QUEUED
+
+        return status.NOT_STARTED
+
+    @property
     def execution_time(self):
-        if self.task_end_date and self.task_start_date:
+        if self.task_staled:
+            return
+
+        elif self.task_end_date and self.task_start_date:
             total_seconds = (self.task_end_date - self.task_start_date).total_seconds()
             return int(total_seconds)
 
@@ -188,6 +241,12 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_output = output
         self.task_end_date = timezone.now()
         self.save()
+
+    def set_task_staled(self):
+        """
+        Sets the task as "stale" using a special "99" exitcode value.
+        """
+        self.set_task_ended(exitcode=99, output="")
 
 
 class ExtraDataFieldMixin(models.Model):
@@ -353,7 +412,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Raises a `RunInProgressError` exception if one of the project related run is
         queued or running.
         """
-        if self.runs.queued().exists() or self.runs.running().exists():
+        if self.runs.queued_or_running().exists():
             raise RunInProgressError(
                 "Cannot execute this action until all associated pipeline runs are "
                 "completed."
@@ -818,6 +877,12 @@ class RunQuerySet(ProjectRelatedQuerySet):
         """
         return self.filter(task_start_date__isnull=False)
 
+    def queued_or_running(self):
+        """
+        Run is queued or currently running.
+        """
+        return self.filter(task_id__isnull=False, task_end_date__isnull=True)
+
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     """
@@ -888,45 +953,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Returns a pipelines instance using this Run pipeline_class.
         """
         return self.pipeline_class(self)
-
-    @property
-    def task_succeeded(self):
-        """
-        Returns True, if a pipeline run was successfully executed.
-        """
-        return self.task_exitcode == 0
-
-    class Status(models.TextChoices):
-        """
-        List of Run status.
-        """
-
-        NOT_STARTED = "not_started"
-        QUEUED = "queued"
-        RUNNING = "running"
-        SUCCESS = "success"
-        FAILURE = "failure"
-
-    @property
-    def status(self):
-        """
-        Returns the Run current status.
-        """
-        status = self.Status
-
-        if self.task_succeeded:
-            return status.SUCCESS
-
-        elif self.task_exitcode and self.task_exitcode > 0:
-            return status.FAILURE
-
-        elif self.task_start_date:
-            return status.RUNNING
-
-        elif self.task_id:
-            return status.QUEUED
-
-        return status.NOT_STARTED
 
     def append_to_log(self, message, save=False):
         """

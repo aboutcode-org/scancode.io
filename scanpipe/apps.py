@@ -59,6 +59,8 @@ class ScanPipeConfig(AppConfig):
         if not settings.SCANCODEIO_ASYNC:
             self.set_eager_mode()
 
+        self.flag_stale_runs()
+
     @staticmethod
     def set_eager_mode():
         """
@@ -73,6 +75,24 @@ class ScanPipeConfig(AppConfig):
             return FakeStrictRedis() if use_strict_redis else FakeRedis()
 
         django_rq.queues.get_redis_connection = patched_redis_connection
+
+    def flag_stale_runs(self):
+        """
+        Flags the "staled" Runs.
+
+        TODO: This is executed when the worker is starting too.
+        We may only want to run this when the webserver is started (runserver or
+        gunicorn wsgi)
+        """
+        import django_rq
+        from django_rq.utils import get_jobs
+
+        run_model = self.get_model("Run")
+
+        for run in run_model.objects.queued_or_running():
+            job = get_jobs(queue=django_rq.get_queue(), job_ids=[str(run.pk)])
+            if not job:
+                run.set_task_staled()
 
     def load_pipelines(self):
         """
