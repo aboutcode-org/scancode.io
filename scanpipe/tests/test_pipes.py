@@ -38,6 +38,7 @@ from scancode.interrupt import TimeoutError as InterruptTimeoutError
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipes import alpine
 from scanpipe.pipes import codebase
 from scanpipe.pipes import docker
 from scanpipe.pipes import fetch
@@ -755,6 +756,102 @@ class ScanPipePipesTest(TestCase):
         install_file = mock.Mock(sha256="sha256", md5="md5")
         codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
         self.assertFalse(rootfs.has_hash_diff(install_file, codebase_resource))
+
+    @mock.patch("scanpipe.pipes.alpine.fetch_via_git")
+    def test_scanpipe_pipes_alpine_download_or_checkout_aports(self, fetch_via_git):
+        example_path = Path()
+        aports_path = str(example_path / alpine.APORTS_DIR_NAME)
+
+        alpine.download_or_checkout_aports(
+            aports_dir_path=example_path, alpine_version="3.13.14"
+        )
+        fetch_via_git.assert_called_with(
+            url=f"git+{alpine.APORTS_URL}@3.13-stable", location=aports_path
+        )
+
+        alpine.download_or_checkout_aports(
+            aports_dir_path=example_path, alpine_version="3.13.14", commit_id="1"
+        )
+        fetch_via_git.assert_called_with(
+            url=f"git+{alpine.APORTS_URL}@1", location=aports_path
+        )
+
+    def test_scanpipe_pipes_alpine_get_unscanned_packages_from_db(self):
+        project = Project.objects.create(name="example")
+        alpine_versions = {"1": "3.12", "2": "3.13"}
+        package_field_names = (
+            "type",
+            "name",
+            "version",
+            "vcs_url",
+            "source_packages",
+            "extra_data",
+        )
+        package_data = [
+            ("debian",),
+            ("rpm",),
+            ("alpine", "A", "1.0", "id=A", [], {"image_id": "1"}),
+            ("alpine", "B", "1.0", "id=B", [], {"image_id": "2"}),
+        ]
+        # The test will get bigger (thus arrays and loops instead of consecutive function calls) - futher patches for this function expected
+        expected_package_tuples = [
+            (
+                "3.13",
+                "B",
+                project.tmp_path / "B_1.0",
+                project.output_path / "B_1.0.json",
+            ),
+        ]
+        (project.output_path / "A_1.0.json").touch()
+        for package_data_tuple in package_data:
+            DiscoveredPackage.objects.create(
+                project=project, **dict(zip(package_field_names, package_data_tuple))
+            )
+        yielded_package_tuples = alpine.get_unscanned_packages_from_db(
+            project=project, alpine_versions=alpine_versions
+        )
+        for i, package_tuple in enumerate(yielded_package_tuples):
+            self.assertEqual(expected_package_tuples[i], package_tuple[:4])
+
+    @mock.patch("scanpipe.pipes.alpine.alpine.parse_apkbuild")
+    @mock.patch("scanpipe.pipes.alpine.copytree")
+    def test_scanpipe_pipes_alpine_prepare_scan_dir(self, copytree, parse_apkbuild):
+        example_path = Path()
+
+        aports_path = self.data_location / alpine.APORTS_DIR_NAME
+        (aports_path / "main" / "A").mkdir(parents=True, exist_ok=True)
+        (aports_path / "non-free" / "A").mkdir(parents=True, exist_ok=True)
+        (aports_path / "community" / "B").mkdir(parents=True, exist_ok=True)
+
+        package_test_cases = [
+            ("A", None),
+            ("B", None),
+            ("C", None),
+            ("D", example_path),
+            ("E", example_path),
+        ]
+
+        for test_case in package_test_cases:
+            returned_value = alpine.prepare_scan_dir(
+                package_name=test_case[0],
+                scan_target_path=example_path,
+                aports_dir_path=self.data_location,
+            )
+            self.assertEqual(returned_value, test_case[1])
+
+    def test_scanpipe_pipes_alpine_extract_summary_fields(self):
+        returned_value = alpine.extract_summary_fields(
+            self.data_location / "example_scan_summary.json",
+            ["copyrights", "holders", "authors"],
+        )
+        self.assertEqual(
+            returned_value,
+            {
+                "copyrights": ["Copyright (c) A B", "Copyright (c) C D"],
+                "holders": ["A B", "C D"],
+                "authors": ["A B", "C D"],
+            },
+        )
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

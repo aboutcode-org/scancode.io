@@ -1,0 +1,34 @@
+{
+  "summary": {
+    "copyrights": [
+      {
+        "value": "Copyright (c) A B",
+        "count": 51
+      },
+      {
+        "value": "Copyright (c) C D",
+        "count": 8
+      }
+    ],
+    "holders": [
+      {
+        "value": "A B",
+        "count": 51
+      },
+      {
+        "value": "C D",
+        "count": 41
+      }
+    ],
+    "authors": [
+      {
+        "value": "A B",
+        "count": 2
+      },
+      {
+        "value": "C D",
+        "count": 1
+      }
+    ]
+  }
+}
