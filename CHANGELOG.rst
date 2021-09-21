@@ -3,6 +3,10 @@
 
 ### Unreleased
 
+- Add a SCANCODEIO_REST_API_PAGE_SIZE setting to control the number of objects
+  returned per page in the REST API.
+  https://github.com/nexB/scancode.io/issues/328
+
 - Provide an "add input" action on the Project endpoint of the REST API.
   https://github.com/nexB/scancode.io/issues/318
 
