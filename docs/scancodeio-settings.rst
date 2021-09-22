@@ -124,3 +124,15 @@ A valid policies file is required to enable compliance-related features.
 .. note::
     When the policy feature is enabled, the ``compliance_alert`` values are
     displayed in the UI and returned in all downloadable results.
+
+SCANCODEIO_REST_API_PAGE_SIZE
+-----------------------------
+
+A numeric value indicating the number of objects returned per page in the REST API::
+
+    SCANCODEIO_REST_API_PAGE_SIZE=100
+
+Default: ``50``
+
+.. warning::
+    Using a large page size may have an impact on performances.
