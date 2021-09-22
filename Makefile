@@ -33,6 +33,14 @@ ENV_FILE=.env
 # Customize with `$ make postgres SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
 SCANCODEIO_DB_PASSWORD=scancodeio
 
+#Keycloak container settings
+KEYCLOAK_USER=admin
+KEYCLOAK_PASSWORD=scancodeio
+KEYCLOAK_HTTPS_BIND_PORT=8443
+KEYCLOAK_REALM_NAME=scancode.io
+KEYCLOAK_CLIENT_ID=scancode.io-client
+KEYCLOAK_CLIENT_SECRET=''
+
 # Use sudo for postgres, but only on Linux
 UNAME := $(shell uname)
 ifeq ($(UNAME), Linux)
@@ -105,7 +113,7 @@ sqlite:
 	@echo "-> Configure SQLite database"
 	@echo SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\" >> ${ENV_FILE}
 	@echo SCANCODEIO_DB_NAME=\"sqlite3.db\" >> ${ENV_FILE}
-	@$(MAKE) migrate
+	# @$(MAKE) migrate
 
 run:
 	${MANAGE} runserver 0.0.0.0:8001
@@ -128,5 +136,22 @@ bump:
 docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
+
+keycloak:
+	@echo "-> Run Keycloak Identity provider"
+	docker run -dit --name scancodeio-keycloak \
+                    --env KEYCLOAK_USER=${KEYCLOAK_USER} \
+                    --env KEYCLOAK_PASSWORD=${KEYCLOAK_PASSWORD} \
+                    --publish ${KEYCLOAK_HTTPS_BIND_PORT}:8443 \
+                    jboss/keycloak
+	@echo "-> Keycloak launched. Please visit https://localhost:${KEYCLOAK_HTTPS_BIND_PORT} and configure realm"
+
+oidc:
+	@echo "-> Configure OIDC settings"
+	@echo "" >> ${ENV_FILE}
+	@echo OIDC_OP_REALM_ENDPOINT=\"https://keycloak:${KEYCLOAK_HTTPS_BIND_PORT}/auth/realms/${KEYCLOAK_REALM_NAME}/\" >> ${ENV_FILE}
+	@echo OIDC_RP_CLIENT_ID=\"${KEYCLOAK_CLIENT_ID}\" >> ${ENV_FILE}
+	@echo OIDC_RP_CLIENT_SECRET=\"${KEYCLOAK_CLIENT_SECRET}\" >> ${ENV_FILE}
+	@echo OIDC_RP_SIGN_ALGO=\"RS256\" >> ${ENV_FILE}
 
 .PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs

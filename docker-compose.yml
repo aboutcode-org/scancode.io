@@ -56,6 +56,15 @@ services:
       - static:/var/scancodeio/static/
     depends_on:
       - web
+  
+  keycloak:
+    image: jboss/keycloak
+    expose:
+      - 8443
+    env_file:
+      - docker.env
+    environment:
+      - PROXY_ADDRESS_FORWARDING=true
 
 volumes:
   db_data:

@@ -23,7 +23,7 @@
 import sys
 import tempfile
 from pathlib import Path
-
+from urllib.parse import urljoin
 
 import environ
 
@@ -63,19 +63,6 @@ SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies
 # This should be set to a list of strings that contain full paths to your additional
 # pipelines directories.
 SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
-
-#OIDC Integration
-OIDC_RP_CLIENT_ID = env.str("SCANCODEIO_OIDC_RP_CLIENT_ID", default=None)
-OIDC_RP_CLIENT_SECRET = env.str("SCANCODEIO_OIDC_RP_CLIENT_SECRET", default=None)
-OIDC_RP_SIGN_ALGO = env.str("SCANCODEIO_OIDC_RP_SIGN_ALGO", default="RS256")
-OIDC_OP_JWKS_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_JWKS_ENDPOINT", default=None)
-OIDC_OP_AUTHORIZATION_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_AUTHORIZATION_ENDPOINT", default=None)
-OIDC_OP_TOKEN_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_TOKEN_ENDPOINT", default=None)
-OIDC_OP_USER_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_USER_ENDPOINT", default=None)
-OIDC_OP_LOGOUT_ENDPOINT = env.str("SCANCODEIO_OIDC_OP_LOGOUT_ENDPOINT", default=None)
-LOGIN_URL = 'oidc_authentication_init'
-LOGOUT_REDIRECT_URL = "/"
-OIDC_OP_LOGOUT_URL_METHOD = 'scancodeio.auth.provider_logout'
 
 # Application definition
 
@@ -263,6 +250,21 @@ CELERY_TASK_DEFAULT_QUEUE = env.str("CELERY_RESULT_BACKEND", default="default")
 # When True, tasks will be executed immediately in the local thread instead of being
 # sent to the queue for execution by a worker.
 CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
+
+#OIDC Integration
+OIDC_RP_CLIENT_ID = env.str("OIDC_RP_CLIENT_ID", default=None)
+OIDC_RP_CLIENT_SECRET = env.str("OIDC_RP_CLIENT_SECRET", default=None)
+OIDC_RP_SIGN_ALGO = env.str("OIDC_RP_SIGN_ALGO", default="RS256")
+
+OIDC_OP_JWKS_ENDPOINT = urljoin(env.str("OIDC_OP_REALM_ENDPOINT"), "protocol/openid-connect/certs")
+OIDC_OP_AUTHORIZATION_ENDPOINT = urljoin(env.str("OIDC_OP_REALM_ENDPOINT"), "protocol/openid-connect/auth")
+OIDC_OP_TOKEN_ENDPOINT = urljoin(env.str("OIDC_OP_REALM_ENDPOINT"), "protocol/openid-connect/token")
+OIDC_OP_USER_ENDPOINT = urljoin(env.str("OIDC_OP_REALM_ENDPOINT"), "protocol/openid-connect/userinfo")
+OIDC_OP_LOGOUT_ENDPOINT = urljoin(env.str("OIDC_OP_REALM_ENDPOINT"), "protocol/openid-connect/logout")
+
+LOGIN_URL = 'oidc_authentication_init'
+LOGOUT_REDIRECT_URL = "/"
+OIDC_OP_LOGOUT_URL_METHOD = 'scancodeio.auth.provider_logout'
 
 # Django restframework
 
