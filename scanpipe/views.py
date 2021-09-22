@@ -25,9 +25,9 @@ from collections import Counter
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -38,8 +38,6 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
-from django.contrib.auth.mixins import LoginRequiredMixin 
-
 
 import saneyaml
 from django_filters.views import FilterView

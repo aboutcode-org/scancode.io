@@ -113,7 +113,7 @@ sqlite:
 	@echo "-> Configure SQLite database"
 	@echo SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\" >> ${ENV_FILE}
 	@echo SCANCODEIO_DB_NAME=\"sqlite3.db\" >> ${ENV_FILE}
-	# @$(MAKE) migrate
+	@$(MAKE) migrate
 
 run:
 	${MANAGE} runserver 0.0.0.0:8001
