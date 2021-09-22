@@ -41,6 +41,7 @@ from extractcode import api as extractcode_api
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
+from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
@@ -167,22 +168,39 @@ def get_resource_info(location):
     return file_info
 
 
-def _scan_resource(location, scanners):
+# def _scan_resource(location, scanners):
+#     """
+#     Runs provided `scanners` on the resource at `location`
+#     Returns a dictionary of scan `results` and a list of `errors`.
+#     """
+#     results = {}
+#     errors = []
+#
+#     for scanner in scanners:
+#         try:
+#             values_mapping = scanner.function(location)
+#             results.update(values_mapping)
+#         except Exception:
+#             msg = f"ERROR for scanner: {scanner.name}\n{traceback.format_exc()}"
+#             errors.append(msg)
+#
+#     return results, errors
+
+
+def _scan_resource(location, scanners, with_threading=True):
     """
-    Runs provided `scanners` on the resource at `location`
+    Wraps the scancode-toolkit `scan_resource` method to support timeout on direct
+    scanner functions calls.
     Returns a dictionary of scan `results` and a list of `errors`.
     """
-    results = {}
-    errors = []
-
-    for scanner in scanners:
-        try:
-            values_mapping = scanner.function(location)
-            results.update(values_mapping)
-        except Exception:
-            msg = f"ERROR for scanner: {scanner.name}\n{traceback.format_exc()}"
-            errors.append(msg)
-
+    # `rid` is not needed in this context, yet required in the scan_resource args
+    location_rid = location, 0
+    _, _, errors, _, results, _ = scancode_cli.scan_resource(
+        location_rid,
+        scanners,
+        timeout=2,
+        with_threading=True,  # required to have proper timeout
+    )
     return results, errors
 
 
@@ -306,7 +324,7 @@ def scan_for_files(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = project.codebaseresources.no_status()
+    resource_qs = project.codebaseresources.all()
     _scan_and_save(resource_qs, scan_file, save_scan_file_results)
 
 

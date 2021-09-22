@@ -936,7 +936,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             job_id=run_pk,
             run_pk=run_pk,
             on_failure=self.report_failure,
-            job_timeout=7200,  # 2hours
+            job_timeout=43200,  # 12hours TODO: Define this through a setting
         )
         return job
 

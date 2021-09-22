@@ -93,6 +93,7 @@ class ScanPipeConfig(AppConfig):
 
         for run in run_model.objects.queued_or_running():
             job = get_jobs(queue=django_rq.get_queue(), job_ids=[str(run.pk)])
+            # TODO: Check the job status and update when failed
             if not job:
                 run.set_task_staled()
 

@@ -23,9 +23,7 @@
 from collections import Counter
 
 from django.apps import apps
-from django.conf import settings
 from django.contrib import messages
-from django.db.models import Count
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -535,18 +533,3 @@ class CodebaseResourceRawView(
             )
 
         raise Http404
-
-
-class AppMonitorView(generic.TemplateView):
-    template_name = "scanpipe/app_monitoring.html"
-
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #
-    #     always_eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", None)
-    #     if always_eager:
-    #         raise Http404(
-    #             "Celery monitoring not supported with CELERY_TASK_ALWAYS_EAGER=True"
-    #         )
-    #     context["inspector"] = celery_app.control.inspect()
-    #     return context
