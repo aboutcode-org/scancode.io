@@ -50,6 +50,7 @@ import django_rq
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rq.command import send_stop_job_command
+from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
 
@@ -116,15 +117,21 @@ class AbstractTaskFieldsModel(models.Model):
 
     @staticmethod
     def get_job(job_id):
-        return Job.fetch(job_id, connection=django_rq.get_connection())
+        with suppress(NoSuchJobError):
+            return Job.fetch(job_id, connection=django_rq.get_connection())
 
     @property
     def job(self):
+        """
+        None if the job could not be found in the queues registries.
+        """
         return self.get_job(str(self.task_id))
 
     @property
     def job_status(self):
-        return self.job.get_status()
+        job = self.job
+        if job:
+            return self.job.get_status()
 
     @property
     def task_succeeded(self):
@@ -252,8 +259,12 @@ class AbstractTaskFieldsModel(models.Model):
         """
         Stops a "running" task.
         """
-        # Case where the job got killed by the OS without proper Run update
-        # TODO: Handle NoSuchJobError('No such job: {0}'.format(self.key))
+        job_status = self.job_status
+
+        if not job_status:
+            self.set_task_staled()
+            return
+
         if self.job_status == JobStatus.FAILED:
             self.set_task_ended(
                 exitcode=1, output=f"Killed from outside, exc_info={self.job.exc_info}"
