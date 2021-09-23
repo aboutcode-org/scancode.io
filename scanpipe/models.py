@@ -225,7 +225,7 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_start_date = timezone.now()
         self.save()
 
-    def set_task_ended(self, exitcode, output, refresh_first=True):
+    def set_task_ended(self, exitcode, output="", refresh_first=True):
         """
         Sets the task-related fields after the task execution.
 
@@ -246,7 +246,7 @@ class AbstractTaskFieldsModel(models.Model):
         """
         Sets the task as "stale" using a special "99" exitcode value.
         """
-        self.set_task_ended(exitcode=99, output="")
+        self.set_task_ended(exitcode=99)
 
     def stop_task(self):
         """
@@ -263,7 +263,7 @@ class AbstractTaskFieldsModel(models.Model):
         send_stop_job_command(
             connection=django_rq.get_connection(), job_id=str(self.task_id)
         )
-        self.set_task_ended(exitcode=88, output="")
+        self.set_task_ended(exitcode=88)
 
     def delete_task(self):
         """
@@ -955,7 +955,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         database.
         Uses the QuerySet `update` method instead of `save` to prevent overriding
         any fields that were set but not saved yet in the DB, which may occur when
-        CELERY_TASK_ALWAYS_EAGER is True.
+        SCANCODEIO_ASYNC is True.
         """
         manager = self.__class__.objects
         return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=task_id)
@@ -1558,7 +1558,9 @@ class DiscoveredPackage(
                 f"One or more of the required fields have no value: "
                 f"{', '.join(required_fields)}"
             )
-            project.add_error(error=message, model=cls.__name__, details=package_data)
+            # TODO: Turned off to keep only relevant errors. This is more a warning
+            # anyway.
+            # project.add_error(error=message, model=cls.__name__, details=package_data)
             return
 
         qualifiers = package_data.get("qualifiers")
