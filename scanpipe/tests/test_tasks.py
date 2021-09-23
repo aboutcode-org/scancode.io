@@ -43,17 +43,3 @@ class ScanPipeTasksTest(TestCase):
         self.assertEqual("", run.task_output)
         self.assertIsNotNone(run.task_start_date)
         self.assertIsNotNone(run.task_end_date)
-
-    @mock.patch("scanpipe.pipelines.Pipeline.execute")
-    def test_scanpipe_tasks_timeout_soft_time_limit_exceeded(self, mock_execute):
-        project = Project.objects.create(name="my_project")
-        run = project.add_pipeline("do_nothing")
-
-        # mock_execute.side_effect = SoftTimeLimitExceeded()
-        tasks.execute_pipeline_task(run.pk)
-
-        run.refresh_from_db()
-        self.assertTrue(run.task_start_date)
-        self.assertTrue(run.task_end_date)
-        self.assertEqual(1, run.task_exitcode)
-        self.assertEqual("SoftTimeLimitExceeded", run.task_output)

@@ -39,6 +39,17 @@ def get_run_instance(run_pk):
     return run_model.objects.get(pk=run_pk)
 
 
+def report_failure(job, connection, type, value, traceback):
+    """
+    This callback will be triggered when an exception is raised during the Job
+    execution but was not caught by the task itself.
+
+    Note that if the Job process was killed by the OS.
+    """
+    run = get_run_instance(run_pk=job.id)
+    run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
+
+
 def execute_pipeline_task(run_pk):
     info(f"Enter `execute_pipeline_task` Run.pk/Task.id={run_pk}", run_pk)
 
@@ -53,12 +64,6 @@ def execute_pipeline_task(run_pk):
 
     pipeline = run.make_pipeline_instance()
     exitcode, output = pipeline.execute()
-
-    # try:
-    #     exitcode, output = pipeline.execute()
-    # except SoftTimeLimitExceeded:
-    #     info("SoftTimeLimitExceeded", run_pk)
-    #     exitcode, output = 1, "SoftTimeLimitExceeded"
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
     run.set_task_ended(exitcode, output, refresh_first=True)

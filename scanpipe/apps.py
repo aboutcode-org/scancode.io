@@ -59,9 +59,6 @@ class ScanPipeConfig(AppConfig):
         if not settings.SCANCODEIO_ASYNC:
             self.set_eager_mode()
 
-        # Turned off until a better running location is found
-        # self.flag_stale_runs()
-
     @staticmethod
     def set_eager_mode():
         """

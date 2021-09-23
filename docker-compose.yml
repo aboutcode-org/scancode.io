@@ -15,7 +15,7 @@ services:
     build: .
     command: sh -c "
         ./manage.py migrate &&
-        ./manage.py collectstatic --no-input --clear &&
+        ./manage.py collectstatic --no-input --verbosity 0 --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8"
     env_file:
       - docker.env

@@ -26,7 +26,6 @@ import json
 import logging
 import os
 import shlex
-import traceback
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
@@ -168,43 +167,24 @@ def get_resource_info(location):
     return file_info
 
 
-# def _scan_resource(location, scanners):
-#     """
-#     Runs provided `scanners` on the resource at `location`
-#     Returns a dictionary of scan `results` and a list of `errors`.
-#     """
-#     results = {}
-#     errors = []
-#
-#     for scanner in scanners:
-#         try:
-#             values_mapping = scanner.function(location)
-#             results.update(values_mapping)
-#         except Exception:
-#             msg = f"ERROR for scanner: {scanner.name}\n{traceback.format_exc()}"
-#             errors.append(msg)
-#
-#     return results, errors
-
-
 def _scan_resource(location, scanners, with_threading=True):
     """
     Wraps the scancode-toolkit `scan_resource` method to support timeout on direct
     scanner functions calls.
     Returns a dictionary of scan `results` and a list of `errors`.
+    Note that the `with_threading` needs to be enable to support timeouts.
     """
     # `rid` is not needed in this context, yet required in the scan_resource args
     location_rid = location, 0
     _, _, errors, _, results, _ = scancode_cli.scan_resource(
         location_rid,
         scanners,
-        timeout=2,
-        with_threading=True,  # required to have proper timeout
+        with_threading=with_threading,
     )
     return results, errors
 
 
-def scan_file(location):
+def scan_file(location, with_threading=True):
     """
     Runs a license, copyright, email, and url scan on a provided `location`,
     using the scancode-toolkit direct API.
@@ -217,10 +197,10 @@ def scan_file(location):
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
-    return _scan_resource(location, scanners)
+    return _scan_resource(location, scanners, with_threading)
 
 
-def scan_for_package_info(location):
+def scan_for_package_info(location, with_threading=True):
     """
     Runs a package scan on provided `location` using the scancode-toolkit direct API.
 
@@ -229,7 +209,7 @@ def scan_for_package_info(location):
     scanners = [
         Scanner("packages", scancode_api.get_package_info),
     ]
-    return _scan_resource(location, scanners)
+    return _scan_resource(location, scanners, with_threading)
 
 
 def save_scan_file_results(codebase_resource, scan_results, scan_errors):
@@ -292,9 +272,10 @@ def _scan_and_save(resource_qs, scan_func, save_func):
     max_workers = get_max_workers(keep_available=1)
 
     if max_workers <= 0:
+        with_threading = False if max_workers == -1 else True
         for index, resource in enumerate(resource_iterator):
             _log_progress(scan_func, resource, resource_count, index)
-            scan_results, scan_errors = scan_func(resource.location)
+            scan_results, scan_errors = scan_func(resource.location, with_threading)
             save_func(resource, scan_results, scan_errors)
         return
 
@@ -324,7 +305,7 @@ def scan_for_files(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = project.codebaseresources.all()
+    resource_qs = project.codebaseresources.no_status()
     _scan_and_save(resource_qs, scan_file, save_scan_file_results)
 
 

@@ -30,6 +30,7 @@ from pathlib import Path
 from traceback import format_tb
 
 from django.apps import apps
+from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -50,6 +51,7 @@ from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rq.command import send_stop_job_command
 from rq.job import Job
+from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
@@ -119,6 +121,10 @@ class AbstractTaskFieldsModel(models.Model):
     @property
     def job(self):
         return self.get_job(str(self.task_id))
+
+    @property
+    def job_status(self):
+        return self.job.get_status()
 
     @property
     def task_succeeded(self):
@@ -246,10 +252,18 @@ class AbstractTaskFieldsModel(models.Model):
         """
         Stops a "running" task.
         """
+        # Case where the job got killed by the OS without proper Run update
+        # TODO: Handle NoSuchJobError('No such job: {0}'.format(self.key))
+        if self.job_status == JobStatus.FAILED:
+            self.set_task_ended(
+                exitcode=1, output=f"Killed from outside, exc_info={self.job.exc_info}"
+            )
+            return
+
         send_stop_job_command(
             connection=django_rq.get_connection(), job_id=str(self.task_id)
         )
-        self.set_task_ended(exitcode=88, output="Stopped")
+        self.set_task_ended(exitcode=88, output="")
 
     def delete_task(self):
         """
@@ -918,11 +932,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def __str__(self):
         return f"{self.pipeline_name}"
 
-    @staticmethod
-    def report_failure(job, connection, type, value, traceback):
-        run = Run.objects.get(pk=job.id)
-        run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
-
     def execute_task_async(self):
         """
         Enqueues the pipeline execution task for an asynchronous execution.
@@ -935,8 +944,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             tasks.execute_pipeline_task,
             job_id=run_pk,
             run_pk=run_pk,
-            on_failure=self.report_failure,
-            job_timeout=43200,  # 12hours TODO: Define this through a setting
+            on_failure=tasks.report_failure,
+            job_timeout=settings.SCANCODEIO_TASK_TIMEOUT,
         )
         return job
 
