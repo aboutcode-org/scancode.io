@@ -2,29 +2,30 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "21.8.4",
+      "tool_version": "30.0.0",
       "options": {
         "input": [
-          "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmpvmetnjpz/projects/analysis-e162d559/codebase"
+          "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmp4amsms81/projects/analysis-1bc069d1/codebase"
         ],
         "--copyright": true,
         "--email": true,
         "--info": true,
-        "--json-pp": "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmpvmetnjpz/projects/analysis-e162d559/output/scancode-2021-08-31-13-17-58.json",
+        "--json-pp": "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmp4amsms81/projects/analysis-1bc069d1/output/scancode-2021-09-24-07-35-06.json",
         "--license": true,
         "--license-text": true,
         "--package": true,
-        "--processes": "4",
         "--url": true,
         "--verbose": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2021-08-31T131759.285074",
-      "end_timestamp": "2021-08-31T131801.286781",
-      "duration": 2.001734972000122,
+      "start_timestamp": "2021-09-24T073507.973838",
+      "end_timestamp": "2021-09-24T073510.775932",
+      "output_format_version": "1.0.0",
+      "duration": 2.8021748065948486,
       "message": null,
       "errors": [],
       "extra_data": {
+        "spdx_license_list_version": "3.14",
         "files_count": 4
       }
     }
@@ -71,7 +72,7 @@
       "base_name": "is-npm-1.0.0",
       "extension": ".tgz",
       "size": 756,
-      "date": "2021-08-31",
+      "date": "2021-09-24",
       "sha1": "f2fb63a65e4905b406c86072765a1a4dc793b9f4",
       "md5": "effb58881c1aca12da9d3a18335bdc3f",
       "sha256": "89906b3f5e7c0bdc75d22ea509870f14b8164394e9e344f8c2ea8c590e550b14",
@@ -228,6 +229,7 @@
           "short_name": "MIT License",
           "category": "Permissive",
           "is_exception": false,
+          "is_unknown": false,
           "owner": "MIT",
           "homepage_url": "http://opensource.org/licenses/mit-license.php",
           "text_url": "http://opensource.org/licenses/mit-license.php",
@@ -244,11 +246,13 @@
             "licenses": [
               "mit"
             ],
+            "referenced_filenames": [],
             "is_license_text": false,
             "is_license_notice": false,
             "is_license_reference": false,
             "is_license_tag": true,
             "is_license_intro": false,
+            "has_unknown": false,
             "matcher": "2-aho",
             "rule_length": 2,
             "matched_length": 2,
@@ -376,6 +380,7 @@
           "short_name": "MIT License",
           "category": "Permissive",
           "is_exception": false,
+          "is_unknown": false,
           "owner": "MIT",
           "homepage_url": "http://opensource.org/licenses/mit-license.php",
           "text_url": "http://opensource.org/licenses/mit-license.php",
@@ -392,11 +397,13 @@
             "licenses": [
               "mit"
             ],
+            "referenced_filenames": [],
             "is_license_text": false,
             "is_license_notice": false,
             "is_license_reference": false,
             "is_license_tag": true,
             "is_license_intro": false,
+            "has_unknown": false,
             "matcher": "2-aho",
             "rule_length": 2,
             "matched_length": 2,

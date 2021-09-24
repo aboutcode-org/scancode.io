@@ -2,10 +2,10 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "21.7.30",
+      "tool_version": "30.0.0",
       "options": {
         "input": [
-          "/tmp/tmpkzp1f_pw/projects/analysis-03087122/codebase"
+          "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmp1o2wufp2/projects/analysis-4cdc385f/codebase"
         ],
         "--classify": true,
         "--consolidate": true,
@@ -13,22 +13,25 @@
         "--email": true,
         "--info": true,
         "--is-license-text": true,
-        "--json-pp": "/tmp/tmpkzp1f_pw/projects/analysis-03087122/output/scancode-2021-08-03-19-09-26.json",
+        "--json-pp": "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmp1o2wufp2/projects/analysis-4cdc385f/output/scancode-2021-09-24-07-37-34.json",
         "--license": true,
         "--license-clarity-score": true,
         "--license-text": true,
         "--package": true,
         "--summary": true,
         "--summary-key-files": true,
-        "--url": true
+        "--url": true,
+        "--verbose": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2021-08-03T190927.407466",
-      "end_timestamp": "2021-08-03T190932.182255",
-      "duration": 4.774801015853882,
+      "start_timestamp": "2021-09-24T073735.403595",
+      "end_timestamp": "2021-09-24T073737.651886",
+      "output_format_version": "1.0.0",
+      "duration": 2.248304843902588,
       "message": null,
       "errors": [],
       "extra_data": {
+        "spdx_license_list_version": "3.14",
         "files_count": 3
       }
     }
@@ -158,76 +161,7 @@
         "count": 1
       }
     ],
-    "packages": [
-      {
-        "type": "npm",
-        "namespace": null,
-        "name": "is-npm",
-        "version": "1.0.0",
-        "qualifiers": {},
-        "subpath": null,
-        "primary_language": "JavaScript",
-        "description": "Check if your code is running as an npm script",
-        "release_date": null,
-        "parties": [
-          {
-            "type": "person",
-            "role": "author",
-            "name": "Sindre Sorhus",
-            "email": "sindresorhus@gmail.com",
-            "url": "http://sindresorhus.com"
-          }
-        ],
-        "keywords": [
-          "npm",
-          "is",
-          "check",
-          "detect",
-          "env",
-          "environment"
-        ],
-        "homepage_url": null,
-        "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-        "size": null,
-        "sha1": null,
-        "md5": null,
-        "sha256": null,
-        "sha512": null,
-        "bug_tracking_url": null,
-        "code_view_url": null,
-        "vcs_url": "https://github.com/sindresorhus/is-npm",
-        "copyright": null,
-        "license_expression": "mit",
-        "declared_license": [
-          "MIT"
-        ],
-        "notice_text": null,
-        "root_path": "codebase/package",
-        "dependencies": [
-          {
-            "purl": "pkg:npm/ava",
-            "requirement": "0.0.3",
-            "scope": "devDependencies",
-            "is_runtime": false,
-            "is_optional": true,
-            "is_resolved": false
-          }
-        ],
-        "contains_source_code": null,
-        "source_packages": [],
-        "extra_data": {},
-        "purl": "pkg:npm/is-npm@1.0.0",
-        "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
-        "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-        "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
-        "files": [
-          {
-            "path": "codebase/package/package.json",
-            "type": "file"
-          }
-        ]
-      }
-    ]
+    "packages": []
   },
   "license_clarity_score": {
     "score": 30,
@@ -433,6 +367,7 @@
           "short_name": "MIT License",
           "category": "Permissive",
           "is_exception": false,
+          "is_unknown": false,
           "owner": "MIT",
           "homepage_url": "http://opensource.org/licenses/mit-license.php",
           "text_url": "http://opensource.org/licenses/mit-license.php",
@@ -449,11 +384,13 @@
             "licenses": [
               "mit"
             ],
+            "referenced_filenames": [],
             "is_license_text": false,
             "is_license_notice": false,
             "is_license_reference": false,
             "is_license_tag": true,
             "is_license_intro": false,
+            "has_unknown": false,
             "matcher": "2-aho",
             "rule_length": 2,
             "matched_length": 2,
@@ -596,6 +533,7 @@
           "short_name": "MIT License",
           "category": "Permissive",
           "is_exception": false,
+          "is_unknown": false,
           "owner": "MIT",
           "homepage_url": "http://opensource.org/licenses/mit-license.php",
           "text_url": "http://opensource.org/licenses/mit-license.php",
@@ -612,11 +550,13 @@
             "licenses": [
               "mit"
             ],
+            "referenced_filenames": [],
             "is_license_text": false,
             "is_license_notice": false,
             "is_license_reference": false,
             "is_license_tag": true,
             "is_license_intro": false,
+            "has_unknown": false,
             "matcher": "2-aho",
             "rule_length": 2,
             "matched_length": 2,
