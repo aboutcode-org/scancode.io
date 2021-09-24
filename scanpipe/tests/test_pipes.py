@@ -352,7 +352,7 @@ class ScanPipePipesTest(TestCase):
             "apache-2.0",
             "apache-2.0 AND scancode-acknowledgment",
             "apache-2.0",
-            "apache-2.0",
+            "warranty-disclaimer",
         ]
         self.assertEqual(expected, codebase_resource2.license_expressions)
 
