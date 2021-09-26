@@ -3,10 +3,6 @@
     {
       "value": "mit",
       "count": 2
-    },
-    {
-      "value": null,
-      "count": 1
     }
   ],
   "copyrights": [
@@ -37,15 +33,80 @@
   ],
   "programming_language": [
     {
-      "value": null,
-      "count": 2
-    },
-    {
       "value": "JavaScript",
       "count": 1
     }
   ],
-  "packages": [],
+  "packages": [
+    {
+      "type": "npm",
+      "namespace": null,
+      "name": "is-npm",
+      "version": "1.0.0",
+      "qualifiers": {},
+      "subpath": null,
+      "primary_language": "JavaScript",
+      "description": "Check if your code is running as an npm script",
+      "release_date": null,
+      "parties": [
+        {
+          "type": "person",
+          "role": "author",
+          "name": "Sindre Sorhus",
+          "email": "sindresorhus@gmail.com",
+          "url": "http://sindresorhus.com"
+        }
+      ],
+      "keywords": [
+        "npm",
+        "is",
+        "check",
+        "detect",
+        "env",
+        "environment"
+      ],
+      "homepage_url": null,
+      "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "size": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "sha512": null,
+      "bug_tracking_url": null,
+      "code_view_url": null,
+      "vcs_url": "https://github.com/sindresorhus/is-npm",
+      "copyright": null,
+      "license_expression": "mit",
+      "declared_license": [
+        "MIT"
+      ],
+      "notice_text": null,
+      "root_path": "codebase/package",
+      "dependencies": [
+        {
+          "purl": "pkg:npm/ava",
+          "requirement": "0.0.3",
+          "scope": "devDependencies",
+          "is_runtime": false,
+          "is_optional": true,
+          "is_resolved": false
+        }
+      ],
+      "contains_source_code": null,
+      "source_packages": [],
+      "extra_data": {},
+      "purl": "pkg:npm/is-npm@1.0.0",
+      "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
+      "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+      "files": [
+        {
+          "path": "codebase/package/package.json",
+          "type": "file"
+        }
+      ]
+    }
+  ],
   "license_clarity_score": {
     "score": 30,
     "declared": true,
@@ -71,7 +132,7 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0"
       ],
-      "compliance_alert": "ok",
+      "compliance_alert": "missing",
       "path": "package/package.json",
       "size": 563,
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
@@ -86,13 +147,7 @@
           "name": "MIT License",
           "owner": "MIT",
           "score": 100.0,
-          "policy": {
-            "icon": "far fa-thumbs-up",
-            "label": "Recommended License",
-            "color_code": "#002fff",
-            "license_key": "mit",
-            "compliance_alert": ""
-          },
+          "policy": null,
           "category": "Permissive",
           "end_line": 5,
           "spdx_url": "https://spdx.org/licenses/MIT",
@@ -161,7 +216,7 @@
     },
     {
       "for_packages": [],
-      "compliance_alert": "ok",
+      "compliance_alert": "missing",
       "path": "package/readme.md",
       "size": 477,
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
@@ -188,13 +243,7 @@
           "name": "MIT License",
           "owner": "MIT",
           "score": 100.0,
-          "policy": {
-            "icon": "far fa-thumbs-up",
-            "label": "Recommended License",
-            "color_code": "#002fff",
-            "license_key": "mit",
-            "compliance_alert": ""
-          },
+          "policy": null,
           "category": "Permissive",
           "end_line": 30,
           "spdx_url": "https://spdx.org/licenses/MIT",

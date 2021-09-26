@@ -38,6 +38,7 @@ from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
 
 class ScanPipePipelinesTest(TestCase):
+
     def test_scanpipe_pipeline_class_pipeline_name_attribute(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")
@@ -171,6 +172,7 @@ class ScanPipePipelinesTest(TestCase):
 
 
 class RootFSPipelineTest(TestCase):
+
     def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("root_filesystems")
@@ -229,7 +231,8 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
-    def test_scanpipe_scan_package_pipeline_integration_test(self):
+    # set regen to True to regenerate the expected results
+    def test_scanpipe_scan_package_pipeline_integration_test(self, regen=False):
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
@@ -249,8 +252,8 @@ class PipelinesIntegrationTest(TestCase):
         scancode_json = json.loads(scancode_file.read_text())
 
         expected_file = self.data_location / "is-npm-1.0.0_scan_package.json"
-        # Un-comment to regenerate the expected results
-        # expected_file.write_text(json.dumps(scancode_json, indent=2))
+        if regen:
+            expected_file.write_text(json.dumps(scancode_json, indent=2))
         expected_json = json.loads(expected_file.read_text())
 
         scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
@@ -262,8 +265,8 @@ class PipelinesIntegrationTest(TestCase):
         summary_json = json.loads(summary_file.read_text())
 
         expected_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
-        # Un-comment to regenerate the expected results
-        # expected_file.write_text(json.dumps(summary_json, indent=2))
+        if regen:
+            expected_file.write_text(json.dumps(summary_json, indent=2))
         expected_json = json.loads(expected_file.read_text())
 
         summary_data = self._without_keys(summary_json, self.exclude_from_diff)
@@ -271,7 +274,8 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(expected_data, summary_data)
 
-    def test_scanpipe_scan_codebase_pipeline_integration_test(self):
+    # set regen to True to regenerate the expected results
+    def test_scanpipe_scan_codebase_pipeline_integration_test(self, regen=False):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="Analysis")
 
@@ -291,8 +295,8 @@ class PipelinesIntegrationTest(TestCase):
         scancode_json = json.loads(scancode_file.read_text())
 
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
-        # Un-comment to regenerate the expected results
-        # expected_file.write_text(json.dumps(scancode_json, indent=2))
+        if regen:
+            expected_file.write_text(json.dumps(scancode_json, indent=2))
         expected_json = json.loads(expected_file.read_text())
 
         scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)

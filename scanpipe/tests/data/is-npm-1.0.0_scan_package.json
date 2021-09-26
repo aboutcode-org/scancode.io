@@ -2,10 +2,10 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "30.0.0",
+      "tool_version": "30.1.0",
       "options": {
         "input": [
-          "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmp1o2wufp2/projects/analysis-4cdc385f/codebase"
+          "/tmp/tmp9zcsy8i8/projects/analysis-97db36b0/codebase"
         ],
         "--classify": true,
         "--consolidate": true,
@@ -13,21 +13,22 @@
         "--email": true,
         "--info": true,
         "--is-license-text": true,
-        "--json-pp": "/private/var/folders/9g/tyhtzf892s7fz0slkrjr00y80000gn/T/tmp1o2wufp2/projects/analysis-4cdc385f/output/scancode-2021-09-24-07-37-34.json",
+        "--json-pp": "/tmp/tmp9zcsy8i8/projects/analysis-97db36b0/output/scancode-2021-09-25-12-04-14.json",
         "--license": true,
         "--license-clarity-score": true,
         "--license-text": true,
         "--package": true,
+        "--processes": "7",
         "--summary": true,
         "--summary-key-files": true,
         "--url": true,
         "--verbose": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2021-09-24T073735.403595",
-      "end_timestamp": "2021-09-24T073737.651886",
+      "start_timestamp": "2021-09-25T120415.382131",
+      "end_timestamp": "2021-09-25T120417.572376",
       "output_format_version": "1.0.0",
-      "duration": 2.248304843902588,
+      "duration": 2.1902544498443604,
       "message": null,
       "errors": [],
       "extra_data": {
@@ -119,10 +120,6 @@
       {
         "value": "mit",
         "count": 2
-      },
-      {
-        "value": null,
-        "count": 1
       }
     ],
     "copyrights": [
@@ -153,15 +150,80 @@
     ],
     "programming_language": [
       {
-        "value": null,
-        "count": 2
-      },
-      {
         "value": "JavaScript",
         "count": 1
       }
     ],
-    "packages": []
+    "packages": [
+      {
+        "type": "npm",
+        "namespace": null,
+        "name": "is-npm",
+        "version": "1.0.0",
+        "qualifiers": {},
+        "subpath": null,
+        "primary_language": "JavaScript",
+        "description": "Check if your code is running as an npm script",
+        "release_date": null,
+        "parties": [
+          {
+            "type": "person",
+            "role": "author",
+            "name": "Sindre Sorhus",
+            "email": "sindresorhus@gmail.com",
+            "url": "http://sindresorhus.com"
+          }
+        ],
+        "keywords": [
+          "npm",
+          "is",
+          "check",
+          "detect",
+          "env",
+          "environment"
+        ],
+        "homepage_url": null,
+        "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+        "size": null,
+        "sha1": null,
+        "md5": null,
+        "sha256": null,
+        "sha512": null,
+        "bug_tracking_url": null,
+        "code_view_url": null,
+        "vcs_url": "https://github.com/sindresorhus/is-npm",
+        "copyright": null,
+        "license_expression": "mit",
+        "declared_license": [
+          "MIT"
+        ],
+        "notice_text": null,
+        "root_path": "codebase/package",
+        "dependencies": [
+          {
+            "purl": "pkg:npm/ava",
+            "requirement": "0.0.3",
+            "scope": "devDependencies",
+            "is_runtime": false,
+            "is_optional": true,
+            "is_resolved": false
+          }
+        ],
+        "contains_source_code": null,
+        "source_packages": [],
+        "extra_data": {},
+        "purl": "pkg:npm/is-npm@1.0.0",
+        "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
+        "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+        "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+        "files": [
+          {
+            "path": "codebase/package/package.json",
+            "type": "file"
+          }
+        ]
+      }
+    ]
   },
   "license_clarity_score": {
     "score": 30,
@@ -180,36 +242,18 @@
     ],
     "copyrights": [
       {
-        "value": null,
-        "count": 1
-      },
-      {
         "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
         "count": 1
       }
     ],
     "holders": [
       {
-        "value": null,
-        "count": 1
-      },
-      {
         "value": "Sindre Sorhus",
         "count": 1
       }
     ],
-    "authors": [
-      {
-        "value": null,
-        "count": 2
-      }
-    ],
-    "programming_language": [
-      {
-        "value": null,
-        "count": 2
-      }
-    ]
+    "authors": [],
+    "programming_language": []
   },
   "files": [
     {
