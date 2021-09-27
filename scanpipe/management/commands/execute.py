@@ -24,6 +24,8 @@ import sys
 
 from django.core.management import CommandError
 
+import redis
+
 from scanpipe.management.commands import ProjectCommand
 
 
@@ -38,8 +40,22 @@ class Command(ProjectCommand):
         if not run:
             raise CommandError(f"No pipelines to run on project {self.project}")
 
-        self.stdout.write(f"Pipeline {run.pipeline_name} run in progress...")
-        run.execute_task_async()
+        self.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
+
+        try:
+            run.execute_task_async()
+        except KeyboardInterrupt:
+            run.set_task_ended(exitcode=88)
+            self.stderr.write(self.style.ERROR("Pipeline execution stopped."))
+            sys.exit(1)
+        except redis.exceptions.RedisError as e:
+            msg = f"Error raised by the Redis client:\n{e}"
+            self.stderr.write(self.style.ERROR(msg))
+            sys.exit(1)
+        except Exception as e:
+            self.stderr.write(self.style.ERROR(e))
+            sys.exit(1)
+
         run.refresh_from_db()
 
         if run.task_succeeded:
