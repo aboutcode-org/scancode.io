@@ -2,10 +2,10 @@
   "headers": [
     {
       "tool_name": "scancode-toolkit",
-      "tool_version": "21.7.30",
+      "tool_version": "30.1.0",
       "options": {
         "input": [
-          "/tmp/tmpkzp1f_pw/projects/analysis-03087122/codebase"
+          "/tmp/tmp9zcsy8i8/projects/analysis-97db36b0/codebase"
         ],
         "--classify": true,
         "--consolidate": true,
@@ -13,22 +13,26 @@
         "--email": true,
         "--info": true,
         "--is-license-text": true,
-        "--json-pp": "/tmp/tmpkzp1f_pw/projects/analysis-03087122/output/scancode-2021-08-03-19-09-26.json",
+        "--json-pp": "/tmp/tmp9zcsy8i8/projects/analysis-97db36b0/output/scancode-2021-09-25-12-04-14.json",
         "--license": true,
         "--license-clarity-score": true,
         "--license-text": true,
         "--package": true,
+        "--processes": "7",
         "--summary": true,
         "--summary-key-files": true,
-        "--url": true
+        "--url": true,
+        "--verbose": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "start_timestamp": "2021-08-03T190927.407466",
-      "end_timestamp": "2021-08-03T190932.182255",
-      "duration": 4.774801015853882,
+      "start_timestamp": "2021-09-25T120415.382131",
+      "end_timestamp": "2021-09-25T120417.572376",
+      "output_format_version": "1.0.0",
+      "duration": 2.1902544498443604,
       "message": null,
       "errors": [],
       "extra_data": {
+        "spdx_license_list_version": "3.14",
         "files_count": 3
       }
     }
@@ -116,10 +120,6 @@
       {
         "value": "mit",
         "count": 2
-      },
-      {
-        "value": null,
-        "count": 1
       }
     ],
     "copyrights": [
@@ -149,10 +149,6 @@
       }
     ],
     "programming_language": [
-      {
-        "value": null,
-        "count": 2
-      },
       {
         "value": "JavaScript",
         "count": 1
@@ -246,36 +242,18 @@
     ],
     "copyrights": [
       {
-        "value": null,
-        "count": 1
-      },
-      {
         "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
         "count": 1
       }
     ],
     "holders": [
       {
-        "value": null,
-        "count": 1
-      },
-      {
         "value": "Sindre Sorhus",
         "count": 1
       }
     ],
-    "authors": [
-      {
-        "value": null,
-        "count": 2
-      }
-    ],
-    "programming_language": [
-      {
-        "value": null,
-        "count": 2
-      }
-    ]
+    "authors": [],
+    "programming_language": []
   },
   "files": [
     {
@@ -433,6 +411,7 @@
           "short_name": "MIT License",
           "category": "Permissive",
           "is_exception": false,
+          "is_unknown": false,
           "owner": "MIT",
           "homepage_url": "http://opensource.org/licenses/mit-license.php",
           "text_url": "http://opensource.org/licenses/mit-license.php",
@@ -449,11 +428,13 @@
             "licenses": [
               "mit"
             ],
+            "referenced_filenames": [],
             "is_license_text": false,
             "is_license_notice": false,
             "is_license_reference": false,
             "is_license_tag": true,
             "is_license_intro": false,
+            "has_unknown": false,
             "matcher": "2-aho",
             "rule_length": 2,
             "matched_length": 2,
@@ -596,6 +577,7 @@
           "short_name": "MIT License",
           "category": "Permissive",
           "is_exception": false,
+          "is_unknown": false,
           "owner": "MIT",
           "homepage_url": "http://opensource.org/licenses/mit-license.php",
           "text_url": "http://opensource.org/licenses/mit-license.php",
@@ -612,11 +594,13 @@
             "licenses": [
               "mit"
             ],
+            "referenced_filenames": [],
             "is_license_text": false,
             "is_license_notice": false,
             "is_license_reference": false,
             "is_license_tag": true,
             "is_license_intro": false,
+            "has_unknown": false,
             "matcher": "2-aho",
             "rule_length": 2,
             "matched_length": 2,
