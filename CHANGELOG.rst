@@ -3,6 +3,8 @@
 
 ### Unreleased
 
+- Upgrade ScanCode-toolkit to version 30.1.0
+
 - Add a SCANCODEIO_REST_API_PAGE_SIZE setting to control the number of objects
   returned per page in the REST API.
   https://github.com/nexB/scancode.io/issues/328

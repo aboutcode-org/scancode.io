@@ -22,11 +22,16 @@
 
 import os
 import sys
+import warnings
 from pathlib import Path
 
 __version__ = "21.9.6"
 
 SCAN_NOTICE = Path(__file__).resolve().parent.joinpath("scan.NOTICE").read_text()
+
+
+# Turn off the warnings from the `parameter_expansion` module.
+warnings.filterwarnings("ignore", module="parameter_expansion")
 
 
 def command_line():
