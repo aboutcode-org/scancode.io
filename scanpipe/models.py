@@ -236,7 +236,7 @@ class AbstractTaskFieldsModel(models.Model):
         """
         Sets the task-related fields after the task execution.
 
-        An optional `refresh_first`—enabled by default—forces refreshing
+        An optional `refresh_first` —enabled by default— forces refreshing
         the instance with the latest data from the database before saving.
         This prevents losing values saved on the instance during the task
         execution.
@@ -248,6 +248,16 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_output = output
         self.task_end_date = timezone.now()
         self.save()
+
+    def set_task_queued(self):
+        """
+        Sets the task as "queued" by updating the `task_id` from None to this instance
+        `pk`.
+        Uses the QuerySet `update` method instead of `save` to prevent overriding
+        any fields that were set but not saved yet in the DB.
+        """
+        manager = self.__class__.objects
+        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=self.pk)
 
     def set_task_staled(self):
         """
@@ -946,10 +956,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def execute_task_async(self):
         """
         Enqueues the pipeline execution task for an asynchronous execution.
-        Stores the `task_id` of the current Run instance for a future use.
         """
         run_pk = str(self.pk)
-        self.init_task_id(run_pk)
 
         job = django_rq.enqueue(
             tasks.execute_pipeline_task,
@@ -958,6 +966,17 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             on_failure=tasks.report_failure,
             job_timeout=settings.SCANCODEIO_TASK_TIMEOUT,
         )
+
+        # In async mode, we want to set the status as "queued" **after** the job was
+        # properly "enqueued".
+        # In case the `django_rq.enqueue()` raise an exception (Redis server error),
+        # we want to keep the Run status as "not started" rather than "queued".
+        # Note that the Run is also set as "queued" at the start of
+        # `execute_pipeline_task()` by calling the `set_task_started()`.
+        # There's no need to call the following in synchronous single thread mode.
+        if settings.SCANCODEIO_ASYNC:
+            self.set_task_queued()
+
         return job
 
     def init_task_id(self, task_id):
