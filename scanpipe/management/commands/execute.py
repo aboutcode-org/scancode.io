@@ -22,15 +22,25 @@
 
 import sys
 
+from django.conf import settings
 from django.core.management import CommandError
 
-import redis
-
+from scanpipe import tasks
 from scanpipe.management.commands import ProjectCommand
 
 
 class Command(ProjectCommand):
     help = "Run pipelines on a project."
+
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--async",
+            action="store_true",
+            dest="async",
+            help="Add the pipeline run to the tasks queue for execution by a worker "
+            "instead of running in the current thread.",
+        )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -40,17 +50,23 @@ class Command(ProjectCommand):
         if not run:
             raise CommandError(f"No pipelines to run on project {self.project}")
 
+        if options["async"]:
+            if not settings.SCANCODEIO_ASYNC:
+                msg = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+                raise CommandError(msg)
+
+            run.execute_task_async()
+            msg = f"{run.pipeline_name} added to the tasks queue for execution."
+            self.stdout.write(self.style.SUCCESS(msg))
+            sys.exit(0)
+
         self.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
 
         try:
-            run.execute_task_async()
+            tasks.execute_pipeline_task(run.pk)
         except KeyboardInterrupt:
             run.set_task_ended(exitcode=88)
             self.stderr.write(self.style.ERROR("Pipeline execution stopped."))
-            sys.exit(1)
-        except redis.exceptions.RedisError as e:
-            msg = f"Error raised by the Redis client:\n{e}"
-            self.stderr.write(self.style.ERROR(msg))
             sys.exit(1)
         except Exception as e:
             self.stderr.write(self.style.ERROR(e))

@@ -979,17 +979,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
         return job
 
-    def init_task_id(self, task_id):
-        """
-        Sets the provided `task_id` on the Run instance if not already stored in the
-        database.
-        Uses the QuerySet `update` method instead of `save` to prevent overriding
-        any fields that were set but not saved yet in the DB, which may occur when
-        SCANCODEIO_ASYNC is True.
-        """
-        manager = self.__class__.objects
-        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=task_id)
-
     def set_scancodeio_version(self):
         """
         Sets the current ScanCode.io version on the `Run.scancodeio_version` field.
