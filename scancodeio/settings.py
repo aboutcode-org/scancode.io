@@ -242,8 +242,8 @@ CRISPY_TEMPLATE_PACK = "bootstrap3"
 RQ_QUEUES = {
     "default": {
         "HOST": env.str("SCANCODEIO_REDIS_HOST", default="localhost"),
-        "PORT": 6379,
-        "DEFAULT_TIMEOUT": 360,
+        "PORT": env.str("SCANCODEIO_REDIS_PORT", default="6379"),
+        "DEFAULT_TIMEOUT": env.int("SCANCODEIO_REDIS_DEFAULT_TIMEOUT", default=360),
     },
 }
 

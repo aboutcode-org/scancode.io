@@ -1147,20 +1147,22 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
         )
 
-        package_count = DiscoveredPackage.objects.count()
-        incomplete_data = dict(package_data1)
-        incomplete_data["name"] = ""
-        self.assertIsNone(DiscoveredPackage.create_from_data(project1, incomplete_data))
-        self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        error = project1.projecterrors.latest("created_date")
-        self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = (
-            "One or more of the required fields have no value: type, name, version"
-        )
-        self.assertEqual(expected_message, error.message)
-        self.assertEqual(package_data1["purl"], error.details["purl"])
-        self.assertEqual("", error.details["name"])
-        self.assertEqual("", error.traceback)
+        # TODO: Those errors are turned off for now
+        # package_count = DiscoveredPackage.objects.count()
+        # incomplete_data = dict(package_data1)
+        # incomplete_data["name"] = ""
+        # self.assertIsNone(DiscoveredPackage.create_from_data(
+        # project1, incomplete_data))
+        # self.assertEqual(package_count, DiscoveredPackage.objects.count())
+        # error = project1.projecterrors.latest("created_date")
+        # self.assertEqual("DiscoveredPackage", error.model)
+        # expected_message = (
+        #     "One or more of the required fields have no value: type, name, version"
+        # )
+        # self.assertEqual(expected_message, error.message)
+        # self.assertEqual(package_data1["purl"], error.details["purl"])
+        # self.assertEqual("", error.details["name"])
+        # self.assertEqual("", error.traceback)
 
         package_count = DiscoveredPackage.objects.count()
         bad_data = dict(package_data1)

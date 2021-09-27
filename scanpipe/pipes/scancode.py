@@ -172,7 +172,7 @@ def _scan_resource(location, scanners, with_threading=True):
     Wraps the scancode-toolkit `scan_resource` method to support timeout on direct
     scanner functions calls.
     Returns a dictionary of scan `results` and a list of `errors`.
-    Note that the `with_threading` needs to be enable to support timeouts.
+    The `with_threading` needs to be enabled for the timeouts support.
     """
     # `rid` is not needed in this context, yet required in the scan_resource args
     location_rid = location, 0
