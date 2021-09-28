@@ -36,16 +36,19 @@ from django.utils import timezone
 from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.management.commands.graph import pipeline_graph_dot
 from scanpipe.models import Project
+from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-def task_success(run):
+def task_success(run_pk):
+    run = Run.objects.get(pk=run_pk)
     run.task_exitcode = 0
     run.save()
 
 
-def task_failure(run):
+def task_failure(run_pk):
+    run = Run.objects.get(pk=run_pk)
     run.task_output = "Error log"
     run.task_exitcode = 1
     run.save()
@@ -153,11 +156,11 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("create-project", "my_project", *options, stdout=out)
 
         self.assertIn("Project my_project created", out.getvalue())
-        self.assertIn(f"Pipeline {pipeline} run in progress...", out.getvalue())
+        self.assertIn(f"Start the {pipeline} pipeline execution...", out.getvalue())
         self.assertIn("successfully executed on project my_project", out.getvalue())
 
     def test_scanpipe_management_command_add_input_file(self):
@@ -272,7 +275,7 @@ class ScanPipeManagementCommandTest(TestCase):
         project.add_pipeline(self.pipeline_name)
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("execute", *options, stdout=out)
         expected = "Start the docker pipeline execution..."
         self.assertIn(expected, out.getvalue())
@@ -281,7 +284,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         err = StringIO()
         project.add_pipeline(self.pipeline_name)
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_failure):
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
             with self.assertRaisesMessage(SystemExit, "1"):
                 call_command("execute", *options, stdout=out, stderr=err)
         expected = "Error during docker execution:"
