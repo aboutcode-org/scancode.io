@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import inspect
 import re
 import shutil
 import uuid
@@ -715,7 +716,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         Creates a "ProjectError" record from the provided `error` Exception for this
         project.
+        The `model` attribute can be provided as a string or as a Model class.
         """
+        if inspect.isclass(model):
+            model = model.__name__
+
         traceback = ""
         if hasattr(error, "__traceback__"):
             traceback = "".join(format_tb(error.__traceback__))
@@ -826,18 +831,20 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 class SaveProjectErrorMixin:
     """
     Uses `SaveProjectErrorMixin` on a model to create a "ProjectError" entry
-    from a raised exception during `save()` instead of stopping the analysis
-    process.
+    from a raised exception during `save()` instead of stopping the analysis process.
+
     The creation of a "ProjectError" can be skipped providing False for the `save_error`
-    argument.
+    argument. In that case, the error is not captured, it is re-raised.
     """
 
-    def save(self, *args, save_error=True, **kwargs):
+    def save(self, *args, save_error=True, capture_exception=True, **kwargs):
         try:
             super().save(*args, **kwargs)
         except Exception as error:
             if save_error:
                 self.add_error(error)
+            if not capture_exception:
+                raise
 
     @classmethod
     def check(cls, **kwargs):
@@ -869,7 +876,7 @@ class SaveProjectErrorMixin:
         """
         return self.project.add_error(
             error=error,
-            model=self.__class__.__name__,
+            model=self.__class__,
             details=model_to_dict(self),
         )
 
@@ -1499,11 +1506,28 @@ class CodebaseResource(
         """
         Creates a DiscoveredPackage instance using the `package_data` and assigns
         it to the current CodebaseResource instance.
+
+        Errors that may happen during the DiscoveredPackage creation are capture
+        at this level, rather that in the DiscoveredPackage.create_from_data level,
+        so resource data can be injected in the ProjectError record.
         """
-        created_package = DiscoveredPackage.create_from_data(self.project, package_data)
-        if created_package:
-            self.discovered_packages.add(created_package)
-            return created_package
+        try:
+            package = DiscoveredPackage.create_from_data(self.project, package_data)
+        except Exception as error:
+            self.project.add_error(
+                error=error,
+                model=DiscoveredPackage,
+                details={
+                    "codebase_resource_path": self.path,
+                    "codebase_resource_pk": self.pk,
+                    **package_data,
+                },
+            )
+            return
+
+        if package:
+            self.discovered_packages.add(package)
+            return package
 
     @property
     def for_packages(self):
@@ -1569,18 +1593,18 @@ class DiscoveredPackage(
         If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
-        required_fields = ["type", "name", "version"]
-        required_values = [package_data.get(field) for field in required_fields]
-
-        if not all(required_values):
-            message = (
-                f"One or more of the required fields have no value: "
-                f"{', '.join(required_fields)}"
-            )
-            # TODO: Turned off to keep only relevant errors. This is more a warning
-            # anyway.
-            # project.add_error(error=message, model=cls.__name__, details=package_data)
-            return
+        # TODO: Turned off to keep only relevant errors.
+        # required_fields = ["type", "name", "version"]
+        # required_values = [package_data.get(field) for field in required_fields]
+        #
+        # if not all(required_values):
+        #     message = (
+        #         f"One or more of the required fields have no value: "
+        #         f"{', '.join(required_fields)}"
+        #     )
+        #
+        #     project.add_error(error=message, model=cls, details=package_data)
+        #     return
 
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
@@ -1592,6 +1616,9 @@ class DiscoveredPackage(
             if field_name in DiscoveredPackage.model_fields() and value
         }
 
-        discovered_package = cls.objects.create(project=project, **cleaned_package_data)
-        if discovered_package.pk:
-            return discovered_package
+        discovered_package = cls(project=project, **cleaned_package_data)
+        # Using save_error=False to not capture potential errors at this level but
+        # rather in the CodebaseResource.create_and_add_package method so resource data
+        # can be injected in the ProjectError record.
+        discovered_package.save(save_error=False, capture_exception=False)
+        return discovered_package

@@ -20,6 +20,9 @@
 - Refactor the "execute" management command and add support for --async mode.
   https://github.com/nexB/scancode.io/issues/130
 
+- Include codebase resource data in the details of package creation project errors.
+  https://github.com/nexB/scancode.io/issues/208
+
 - Add a SCANCODEIO_REST_API_PAGE_SIZE setting to control the number of objects
   returned per page in the REST API.
   https://github.com/nexB/scancode.io/issues/328

@@ -274,7 +274,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
             call_command("execute", *options, stdout=out)
-        expected = "Pipeline docker run in progress..."
+        expected = "Start the docker pipeline execution..."
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
         self.assertIn(expected, out.getvalue())

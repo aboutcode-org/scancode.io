@@ -1176,6 +1176,27 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(bad_data["version"], error.details["version"])
         self.assertIn("in save", error.traceback)
 
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
+    def test_scanpipe_codebase_resource_create_and_add_package_errors(self):
+        project1 = Project.objects.create(name="Analysis")
+        resource = CodebaseResource.objects.create(project=project1, path="p")
+
+        package_count = DiscoveredPackage.objects.count()
+        bad_data = dict(package_data1)
+        bad_data["version"] = "a" * 200
+
+        package = resource.create_and_add_package(bad_data)
+        self.assertIsNone(package)
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("DiscoveredPackage", error.model)
+        expected_message = "value too long for type character varying(100)\n"
+        self.assertEqual(expected_message, error.message)
+        self.assertEqual(bad_data["version"], error.details["version"])
+        self.assertTrue(error.details["codebase_resource_pk"])
+        self.assertEqual(resource.path, error.details["codebase_resource_path"])
+        self.assertIn("in save", error.traceback)
+
 
 class ScanPipeWalkTest(BaseScanPipeModelsTest, TestCase):
     data_location = Path(__file__).parent / "data"
