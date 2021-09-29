@@ -37,6 +37,7 @@
                 <div style="max-height: 150px; overflow-y: scroll;">
                   {% if error.details.codebase_resource_pk and error.details.codebase_resource_path %}
                     <div>
+                      <strong>Codebase resource</strong>:
                       <a href="{% url 'resource_detail' project.pk error.details.codebase_resource_pk %}" target="_blank">
                         {{ error.details.codebase_resource_path }}
                       </a>
