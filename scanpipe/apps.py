@@ -72,7 +72,7 @@ class ScanPipeConfig(AppConfig):
         pipelines_dirs = getattr(settings, "SCANCODEIO_PIPELINES_DIRS", [])
 
         for pipelines_dir in pipelines_dirs:
-            pipelines_path = Path(pipelines_dir)
+            pipelines_path = Path(pipelines_dir).expanduser()
 
             if not pipelines_path.is_dir():
                 raise ImproperlyConfigured(
@@ -144,7 +144,7 @@ class ScanPipeConfig(AppConfig):
         """
         policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
         if policies_file_location:
-            policies_file = Path(policies_file_location)
+            policies_file = Path(policies_file_location).expanduser()
             if policies_file.exists():
                 policies = saneyaml.load(policies_file.read_text())
                 license_policies = policies.get("license_policies", [])
