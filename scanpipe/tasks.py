@@ -41,10 +41,8 @@ def get_run_instance(run_pk):
 
 def report_failure(job, connection, type, value, traceback):
     """
-    This callback will be triggered when an exception is raised during the Job
+    This callback will be called when an exception is raised during the Job
     execution but was not caught by the task itself.
-
-    Note that if the Job process was killed by the OS.
     """
     run = get_run_instance(run_pk=job.id)
     run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
