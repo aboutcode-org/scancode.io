@@ -270,6 +270,10 @@ class AbstractTaskFieldsModel(models.Model):
         """
         Stops a "running" task.
         """
+        if not settings.SCANCODEIO_ASYNC:
+            self.set_task_ended(exitcode=88)
+            return
+
         job_status = self.job_status
 
         if not job_status:
@@ -291,9 +295,10 @@ class AbstractTaskFieldsModel(models.Model):
         """
         Deletes a "not started" or "queued" task.
         """
-        if self.task_id:
+        if settings.SCANCODEIO_ASYNC and self.task_id:
             # Cancels the job and deletes the job hash from Redis.
             self.job.delete()
+
         self.delete()
 
 
@@ -966,6 +971,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         run_pk = str(self.pk)
 
+        # Bypass entirely the queue system and run the pipeline in the current thread.
+        if not settings.SCANCODEIO_ASYNC:
+            tasks.execute_pipeline_task(run_pk)
+
         job = django_rq.enqueue(
             tasks.execute_pipeline_task,
             job_id=run_pk,
@@ -978,11 +987,11 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         # properly "enqueued".
         # In case the `django_rq.enqueue()` raise an exception (Redis server error),
         # we want to keep the Run status as "not started" rather than "queued".
-        # Note that the Run is also set as "queued" at the start of
+        # Note that the Run will then be set as "running" at the start of
         # `execute_pipeline_task()` by calling the `set_task_started()`.
-        # There's no need to call the following in synchronous single thread mode.
-        if settings.SCANCODEIO_ASYNC:
-            self.set_task_queued()
+        # There's no need to call the following in synchronous single thread mode as
+        # the run will be directly set as "running".
+        self.set_task_queued()
 
         return job
 
