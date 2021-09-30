@@ -50,7 +50,9 @@ class ScanPipeConfig(AppConfig):
         # Mapping of registered pipeline names to pipeline classes.
         self._pipelines = {}
         self.license_policies_index = {}
-        self.workspace = str(Path(settings.SCANCODEIO_WORKSPACE_LOCATION).resolve())
+
+        workspace_location = settings.SCANCODEIO_WORKSPACE_LOCATION
+        self.workspace_path = Path(workspace_location).expanduser().resolve()
 
     def ready(self):
         self.load_pipelines()

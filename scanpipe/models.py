@@ -331,7 +331,7 @@ def get_project_work_directory(project):
     uniqueness of the work directory location.
     """
     project_workspace_id = f"{slugify(project.name)}-{project.short_uuid}"
-    return f"{scanpipe_app.workspace}/projects/{project_workspace_id}"
+    return f"{scanpipe_app.workspace_path}/projects/{project_workspace_id}"
 
 
 class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
@@ -380,7 +380,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         The workspace directories are set up during project creation.
         """
         if not self.work_directory:
-            self.work_directory = get_project_work_directory(self)
+            self.work_directory = get_project_work_directory(project=self)
             self.setup_work_directory()
         super().save(*args, **kwargs)
 
