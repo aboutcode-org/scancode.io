@@ -26,17 +26,17 @@ from pathlib import Path
 
 import environ
 
-PROJECT_DIR = Path(__file__).resolve().parent
-ROOT_DIR = PROJECT_DIR.parent
+PROJECT_DIR = environ.Path(__file__) - 1
+ROOT_DIR = PROJECT_DIR - 1
 
 # Environment
 
-env_file = "/etc/scancodeio/.env"
-if not Path(env_file).exists():
-    env_file = str(ROOT_DIR.joinpath(".env"))
+ENV_FILE = "/etc/scancodeio/.env"
+if not Path(ENV_FILE).exists():
+    ENV_FILE = ROOT_DIR(".env")
 
-environ.Env.read_env(env_file)
 env = environ.Env()
+environ.Env.read_env(ENV_FILE)
 
 # Security
 
@@ -231,7 +231,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = "/var/scancodeio/static/"
 
 STATICFILES_DIRS = [
-    str(PROJECT_DIR.joinpath("static")),
+    PROJECT_DIR("static"),
 ]
 
 # Third-party apps

@@ -57,6 +57,7 @@ class ScanPipeConfig(AppConfig):
         self.license_policies_index = {}
 
     def ready(self):
+        logger.debug(f"Read environment variables from {settings.ENV_FILE}")
         self.load_pipelines()
         self.set_policies()
 
