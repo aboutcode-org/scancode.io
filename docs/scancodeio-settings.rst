@@ -136,3 +136,29 @@ Default: ``50``
 
 .. warning::
     Using a large page size may have an impact on performances.
+
+SCANCODEIO_LOG_LEVEL
+--------------------
+
+By default, only a minimum of logging messages is displayed in the console, mostly
+to provide some progress about pipeline run execution.
+
+Default: ``INFO``
+
+The ``DEBUG`` value can be provided to this setting to see all ScanCode.io debug
+messages to help track down configuration issues for example.
+This mode can be enabled globally through the ``.env`` file::
+
+    SCANCODEIO_LOG_LEVEL=DEBUG
+
+Or, in the context of running a :ref:`scanpipe command <command_line_interface>`:
+
+.. code-block:: console
+
+    $ SCANCODEIO_LOG_LEVEL=DEBUG bin/scanpipe [command]
+
+The web server can be started in DEBUG mode with:
+
+.. code-block:: console
+
+    $ SCANCODEIO_LOG_LEVEL=DEBUG make run

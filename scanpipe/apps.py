@@ -21,12 +21,14 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import inspect
+import logging
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 from django.apps import AppConfig
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management.color import color_style
 from django.db.models import BLANK_CHOICE_DASH
 from django.utils.translation import gettext_lazy as _
 
@@ -38,6 +40,9 @@ except ImportError:
     import importlib_metadata
 
 from scanpipe.pipelines import is_pipeline
+
+logger = logging.getLogger(__name__)
+style = color_style()
 
 
 class ScanPipeConfig(AppConfig):
@@ -68,8 +73,8 @@ class ScanPipeConfig(AppConfig):
         for entry_point in sorted(pipeline_entry_points):
             self.register_pipeline(name=entry_point.name, cls=entry_point.load())
 
-        # Register user provided pipelines
         pipelines_dirs = getattr(settings, "SCANCODEIO_PIPELINES_DIRS", [])
+        logger.debug(f"Load user provided pipelines from {pipelines_dirs}")
 
         for pipelines_dir in pipelines_dirs:
             pipelines_path = Path(pipelines_dir).expanduser()
@@ -80,8 +85,10 @@ class ScanPipeConfig(AppConfig):
                     f"the SCANCODEIO_PIPELINES_DIRS setting is not available."
                 )
 
+            # Recursively yield all existing .py files from `pipelines_path`
             python_files = pipelines_path.rglob("*.py")
             for path in python_files:
+                logger.debug(f"Look for pipeline class in file {path}")
                 self.register_pipeline_from_file(path)
 
     def register_pipeline(self, name, cls):
@@ -115,12 +122,17 @@ class ScanPipeConfig(AppConfig):
 
         if len(pipeline_classes) > 1:
             raise ImproperlyConfigured(
-                f"Only one Pipeline class allowed per pipeline file: {path}."
+                f"Only one pipeline class allowed per pipeline file: {path}."
             )
 
         elif pipeline_classes:
             pipeline_class = pipeline_classes[0][1]
+            msg = f"Register pipeline {module_name}.{pipeline_class.__name__}"
+            logger.debug(style.SUCCESS(msg))
             self.register_pipeline(name=module_name, cls=pipeline_class)
+
+        else:
+            logger.debug(style.WARNING(f"No pipeline class found in {path}"))
 
     @property
     def pipelines(self):
@@ -143,15 +155,21 @@ class ScanPipeConfig(AppConfig):
         is loading to warn sysadmins about the issue.
         """
         policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
+
         if policies_file_location:
             policies_file = Path(policies_file_location).expanduser()
+
             if policies_file.exists():
+                logger.debug(style.SUCCESS(f"Load policies from {policies_file}"))
                 policies = saneyaml.load(policies_file.read_text())
                 license_policies = policies.get("license_policies", [])
                 self.license_policies_index = self.get_policies_index(
                     policies_list=license_policies,
                     key="license_key",
                 )
+
+            else:
+                logger.debug(style.WARNING(f"Policies file not found."))
 
     @staticmethod
     def get_policies_index(policies_list, key):
