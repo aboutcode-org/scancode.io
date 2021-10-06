@@ -1602,18 +1602,17 @@ class DiscoveredPackage(
         If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
-        # TODO: Turned off to keep only relevant errors.
-        # required_fields = ["type", "name", "version"]
-        # required_values = [package_data.get(field) for field in required_fields]
-        #
-        # if not all(required_values):
-        #     message = (
-        #         f"One or more of the required fields have no value: "
-        #         f"{', '.join(required_fields)}"
-        #     )
-        #
-        #     project.add_error(error=message, model=cls, details=package_data)
-        #     return
+        required_fields = ["type", "name", "version"]
+        required_values = [package_data.get(field) for field in required_fields]
+
+        if not all(required_values):
+            message = (
+                f"One or more of the required fields have no value: "
+                f"{', '.join(required_fields)}"
+            )
+
+            project.add_error(error=message, model=cls, details=package_data)
+            return
 
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
