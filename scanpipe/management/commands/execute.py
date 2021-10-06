@@ -65,7 +65,7 @@ class Command(ProjectCommand):
         try:
             tasks.execute_pipeline_task(run.pk)
         except KeyboardInterrupt:
-            run.set_task_ended(exitcode=88)
+            run.set_task_stopped()
             self.stderr.write(self.style.ERROR("Pipeline execution stopped."))
             sys.exit(1)
         except Exception as e:

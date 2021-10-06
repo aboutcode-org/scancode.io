@@ -64,27 +64,6 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
-    def flag_stale_runs(self):
-        """
-        Flags the "staled" Runs.
-
-        TODO: This is executed when the worker is starting too.
-        We may only want to run this when the webserver is started (runserver or
-        gunicorn wsgi, warning on multiple gunicorn workers)
-        Another issue is that if the job process gets kill, but the server does not
-        restart, flag_stale_runs is not called.
-        """
-        import django_rq
-        from django_rq.utils import get_jobs
-
-        run_model = self.get_model("Run")
-
-        for run in run_model.objects.queued_or_running():
-            job = get_jobs(queue=django_rq.get_queue(), job_ids=[str(run.pk)])
-            # TODO: Check the job status and update when failed
-            if not job:
-                run.set_task_staled()
-
     def load_pipelines(self):
         """
         Loads pipelines from the "scancodeio_pipelines" entry point group and from the

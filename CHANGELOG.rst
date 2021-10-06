@@ -14,9 +14,6 @@
 - Add ability to stop "running" pipeline tasks.
   https://github.com/nexB/scancode.io/issues/176
 
-- Detect and flag "stale" pipeline status.
-  https://github.com/nexB/scancode.io/issues/130
-
 - Refactor the "execute" management command and add support for --async mode.
   https://github.com/nexB/scancode.io/issues/130
 

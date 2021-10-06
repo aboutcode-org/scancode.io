@@ -146,14 +146,14 @@ class AbstractTaskFieldsModel(models.Model):
         """
         Returns True if the task staled.
         """
-        return self.task_exitcode == 99
+        return self.task_exitcode == 88
 
     @property
     def task_stopped(self):
         """
         Returns True if the task was stopped.
         """
-        return self.task_exitcode == 88
+        return self.task_exitcode == 99
 
     class Status(models.TextChoices):
         """
@@ -262,7 +262,13 @@ class AbstractTaskFieldsModel(models.Model):
 
     def set_task_staled(self):
         """
-        Sets the task as "stale" using a special "99" exitcode value.
+        Sets the task as "stale" using a special 88 exitcode value.
+        """
+        self.set_task_ended(exitcode=88)
+
+    def set_task_stopped(self):
+        """
+        Sets the task as "stopped" using a special 99 exitcode value.
         """
         self.set_task_ended(exitcode=99)
 
@@ -271,7 +277,7 @@ class AbstractTaskFieldsModel(models.Model):
         Stops a "running" task.
         """
         if not settings.SCANCODEIO_ASYNC:
-            self.set_task_ended(exitcode=88)
+            self.set_task_stopped()
             return
 
         job_status = self.job_status
@@ -289,7 +295,7 @@ class AbstractTaskFieldsModel(models.Model):
         send_stop_job_command(
             connection=django_rq.get_connection(), job_id=str(self.task_id)
         )
-        self.set_task_ended(exitcode=88)
+        self.set_task_stopped()
 
     def delete_task(self):
         """
