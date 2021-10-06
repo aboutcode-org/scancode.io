@@ -26,26 +26,28 @@ from pathlib import Path
 
 import environ
 
-PROJECT_DIR = Path(__file__).resolve().parent
-ROOT_DIR = PROJECT_DIR.parent
+PROJECT_DIR = environ.Path(__file__) - 1
+ROOT_DIR = PROJECT_DIR - 1
 
 # Environment
 
-env_file = "/etc/scancodeio/.env"
-if not Path(env_file).exists():
-    env_file = str(ROOT_DIR.joinpath(".env"))
+ENV_FILE = "/etc/scancodeio/.env"
+if not Path(ENV_FILE).exists():
+    ENV_FILE = ROOT_DIR(".env")
 
-environ.Env.read_env(env_file)
 env = environ.Env()
+environ.Env.read_env(ENV_FILE)
+
+# Security
 
 SECRET_KEY = env.str("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
 
-# ScanCode.io
-
 # SECURITY WARNING: don't run with debug turned on in production
 DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
+
+# ScanCode.io
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
 
@@ -187,22 +189,25 @@ CACHES = {
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
     "handlers": {
         "null": {
             "class": "logging.NullHandler",
         },
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "simple",
         },
     },
     "loggers": {
-        "scanpipe.pipelines": {
+        "scanpipe": {
             "handlers": ["null"] if IS_TESTS else ["console"],
-            "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
-        },
-        "scanpipe.pipes": {
-            "handlers": ["null"] if IS_TESTS else ["console"],
-            "level": env.str("DJANGO_LOG_LEVEL", "INFO"),
+            "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
         },
     },
 }
@@ -230,7 +235,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = "/var/scancodeio/static/"
 
 STATICFILES_DIRS = [
-    str(PROJECT_DIR.joinpath("static")),
+    PROJECT_DIR("static"),
 ]
 
 # Third-party apps
