@@ -44,9 +44,10 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir /opt/scancodeio/
-RUN mkdir -p /var/scancodeio/static/
-RUN mkdir -p /var/scancodeio/workspace/
+RUN mkdir /opt/scancodeio/ \
+ && mkdir -p /var/scancodeio/static/ \
+ && mkdir -p /var/scancodeio/workspace/
+
 COPY . /opt/scancodeio/
 WORKDIR /opt/scancodeio/
 RUN pip install .

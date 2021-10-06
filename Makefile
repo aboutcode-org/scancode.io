@@ -129,4 +129,11 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs
+docker-images:
+	@echo "-> Build Docker services"
+	docker-compose build
+	@echo "-> Save the service images to a tar archive in the dist/ directory"
+	@mkdir -p dist/
+	@docker save db redis celery web nginx -o dist/scancodeio-images-`git describe --tags`.tar
+
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs docker-images
