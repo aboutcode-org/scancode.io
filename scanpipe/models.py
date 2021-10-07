@@ -980,6 +980,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         # Bypass entirely the queue system and run the pipeline in the current thread.
         if not settings.SCANCODEIO_ASYNC:
             tasks.execute_pipeline_task(run_pk)
+            return
 
         job = django_rq.enqueue(
             tasks.execute_pipeline_task,

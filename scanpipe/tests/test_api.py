@@ -28,6 +28,7 @@ from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import TransactionTestCase
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -420,30 +421,90 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):
         run1 = self.project1.add_pipeline("docker")
         url = reverse("run-start-pipeline", args=[run1.uuid])
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         expected = {"status": "Pipeline docker started."}
         self.assertEqual(expected, response.data)
         mock_execute_task.assert_called_once()
 
         run1.task_id = uuid.uuid4()
         run1.save()
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Pipeline already queued."}
         self.assertEqual(expected, response.data)
 
         run1.task_start_date = timezone.now()
         run1.save()
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Pipeline already started."}
         self.assertEqual(expected, response.data)
 
         run1.task_end_date = timezone.now()
         run1.save()
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Pipeline already executed."}
+        self.assertEqual(expected, response.data)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_api_run_action_stop_pipeline(self):
+        run1 = self.project1.add_pipeline("docker")
+        url = reverse("run-stop-pipeline", args=[run1.uuid])
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Pipeline is not running."}
+        self.assertEqual(expected, response.data)
+
+        run1.set_task_started(run1.pk)
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {"status": "Pipeline docker stopped."}
+        self.assertEqual(expected, response.data)
+
+        run1.refresh_from_db()
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_api_run_action_delete_pipeline(self):
+        run1 = self.project1.add_pipeline("docker")
+        url = reverse("run-delete-pipeline", args=[run1.uuid])
+
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {"status": "Pipeline docker deleted."}
+        self.assertEqual(expected, response.data)
+        self.assertFalse(Run.objects.filter(pk=run1.pk).exists())
+
+        run2 = self.project1.add_pipeline("docker")
+        url = reverse("run-delete-pipeline", args=[run2.uuid])
+
+        run2.set_task_queued()
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {"status": "Pipeline docker deleted."}
+        self.assertEqual(expected, response.data)
+        self.assertFalse(Run.objects.filter(pk=run2.pk).exists())
+
+        run3 = self.project1.add_pipeline("docker")
+        url = reverse("run-delete-pipeline", args=[run3.uuid])
+
+        run3.set_task_started(run3.pk)
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Only non started or queued pipelines can be deleted."}
+        self.assertEqual(expected, response.data)
+
+        run3.set_task_ended(0)
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Only non started or queued pipelines can be deleted."}
+        self.assertEqual(expected, response.data)
+
+        run3.set_task_stopped()
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Only non started or queued pipelines can be deleted."}
         self.assertEqual(expected, response.data)
 
     def test_scanpipe_api_serializer_get_model_serializer(self):

@@ -69,6 +69,7 @@ class Command(ProjectCommand):
             self.stderr.write(self.style.ERROR("Pipeline execution stopped."))
             sys.exit(1)
         except Exception as e:
+            run.set_task_ended(exitcode=1, output=str(e))
             self.stderr.write(self.style.ERROR(e))
             sys.exit(1)
 

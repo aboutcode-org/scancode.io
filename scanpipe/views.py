@@ -334,7 +334,7 @@ def execute_pipeline_view(request, uuid, run_uuid):
         raise Http404("Pipeline already queued.")
 
     run.execute_task_async()
-    messages.success(request, f'Pipeline "{run.pipeline_name}" run started.')
+    messages.success(request, f"Pipeline {run.pipeline_name} run started.")
     return redirect(project)
 
 
@@ -346,7 +346,7 @@ def stop_pipeline_view(request, uuid, run_uuid):
         raise Http404("Pipeline is not running.")
 
     run.stop_task()
-    messages.success(request, f'Pipeline "{run.pipeline_name}" stopped.')
+    messages.success(request, f"Pipeline {run.pipeline_name} stopped.")
     return redirect(project)
 
 
@@ -358,7 +358,7 @@ def delete_pipeline_view(request, uuid, run_uuid):
         raise Http404("Only non started or queued pipelines can be deleted.")
 
     run.delete_task()
-    messages.success(request, f'Pipeline "{run.pipeline_name}" deleted.')
+    messages.success(request, f"Pipeline {run.pipeline_name} deleted.")
     return redirect(project)
 
 
