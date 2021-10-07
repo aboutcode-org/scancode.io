@@ -73,6 +73,29 @@ To disable both multiprocessing and threading, use "-1"::
 
     SCANCODEIO_PROCESSES=-1
 
+.. _scancodeio_settings_async:
+
+SCANCODEIO_ASYNC
+----------------
+
+When enabled, pipeline runs are **executed asynchronously**, meaning that users can
+continue using the app while the pipeline are run in the background.
+
+The ASYNC mode is **enabled by default in a "Run with Docker" configuration** but
+**disabled in a "Local development" setup**.
+
+It is possible to enable ASYNC mode in a "local development" setup with the following
+setting::
+
+    SCANCODEIO_ASYNC=True
+
+Once enabled, pipeline runs will be sent to a task queue instead of being executed
+synchronously in the web server process.
+
+.. warning::
+    The ASYNC mode required a **Redis server** and running a **tasks worker** using
+    ``$ make worker``.
+
 SCANCODE_TOOLKIT_CLI_OPTIONS
 ----------------------------
 

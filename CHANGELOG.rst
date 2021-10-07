@@ -5,6 +5,21 @@
 
 - Upgrade ScanCode-toolkit to version 30.1.0
 
+- Replace the task queue system, from Celery to RQ.
+  https://github.com/nexB/scancode.io/issues/176
+
+- Add ability to delete "not started" and "queued" pipeline tasks.
+  https://github.com/nexB/scancode.io/issues/176
+
+- Add ability to stop "running" pipeline tasks.
+  https://github.com/nexB/scancode.io/issues/176
+
+- Refactor the "execute" management command and add support for --async mode.
+  https://github.com/nexB/scancode.io/issues/130
+
+- Include codebase resource data in the details of package creation project errors.
+  https://github.com/nexB/scancode.io/issues/208
+
 - Add a SCANCODEIO_REST_API_PAGE_SIZE setting to control the number of objects
   returned per page in the REST API.
   https://github.com/nexB/scancode.io/issues/328

@@ -171,8 +171,8 @@ def _scan_resource(location, scanners, with_threading=True):
     """
     Wraps the scancode-toolkit `scan_resource` method to support timeout on direct
     scanner functions calls.
-
     Returns a dictionary of scan `results` and a list of `errors`.
+    The `with_threading` needs to be enabled for the timeouts support.
     """
     # `rid` is not needed in this context, yet required in the scan_resource args
     location_rid = location, 0
@@ -246,7 +246,7 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 def _log_progress(scan_func, resource, resource_count, index):
     progress = f"{index / resource_count * 100:.1f}% ({index}/{resource_count})"
-    logger.info(f"{scan_func.__name__} {progress} pk={resource.pk}")
+    logger.info(f"{scan_func.__name__} {progress} completed pk={resource.pk}")
 
 
 def _scan_and_save(resource_qs, scan_func, save_func):
@@ -272,12 +272,14 @@ def _scan_and_save(resource_qs, scan_func, save_func):
     max_workers = get_max_workers(keep_available=1)
 
     if max_workers <= 0:
-        with_threading = True if max_workers == 0 else False
+        with_threading = False if max_workers == -1 else True
         for index, resource in enumerate(resource_iterator):
             _log_progress(scan_func, resource, resource_count, index)
             scan_results, scan_errors = scan_func(resource.location, with_threading)
             save_func(resource, scan_results, scan_errors)
         return
+
+    logger.info(f"Starting ProcessPoolExecutor with {max_workers} max_workers")
 
     with concurrent.futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
@@ -288,7 +290,7 @@ def _scan_and_save(resource_qs, scan_func, save_func):
         # Iterate over the Futures as they complete (finished or cancelled)
         future_as_completed = concurrent.futures.as_completed(future_to_resource)
 
-        for index, future in enumerate(future_as_completed):
+        for index, future in enumerate(future_as_completed, start=1):
             resource = future_to_resource[future]
             _log_progress(scan_func, resource, resource_count, index)
             scan_results, scan_errors = future.result()

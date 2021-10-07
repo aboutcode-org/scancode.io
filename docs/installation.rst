@@ -63,6 +63,16 @@ An overview of the web application usage is available at :ref:`user_interface`.
     **Tutorials** section starting with the :ref:`tutorial_web_ui_analyze_docker_image`
     tutorial.
 
+.. tip::
+    ScanCode.io will take advantage of all the CPUs made available by your Docker
+    configuration for faster processing.
+
+    **Make sure to allow enough memory to support each CPU processes**.
+
+    A good rule of thumb is to allow **1 GB of memory per CPU**.
+    For example, if Docker is configured for 8 CPUs, a minimum of 8 GB of memory is
+    required.
+
 .. warning::
 
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
@@ -203,7 +213,7 @@ application.
     ``make run`` is provided as a simplified way to run the application with one
     **major caveat**: pipeline runs will be **executed synchronously** on HTTP requests
     and will leave your browser connection or API calls opened during the pipeline
-    execution.
+    execution. See also the :ref:`scancodeio_settings_async` setting.
 
 .. warning::
     This setup is **not suitable for deployments** and **only supported for local

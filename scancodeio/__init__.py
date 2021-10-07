@@ -25,12 +25,6 @@ import sys
 import warnings
 from pathlib import Path
 
-from django.conf import settings
-
-# This will make sure the app is always imported when
-# Django starts so that shared_task will use this app.
-from scancodeio.celery import app as celery_app
-
 __version__ = "21.9.6"
 
 SCAN_NOTICE = Path(__file__).resolve().parent.joinpath("scan.NOTICE").read_text()
@@ -38,10 +32,6 @@ SCAN_NOTICE = Path(__file__).resolve().parent.joinpath("scan.NOTICE").read_text(
 
 # Turn off the warnings from the `parameter_expansion` module.
 warnings.filterwarnings("ignore", module="parameter_expansion")
-
-
-# Resolve and set the workspace location from the settings.
-WORKSPACE_LOCATION = str(Path(settings.SCANCODEIO_WORKSPACE_LOCATION).resolve())
 
 
 def command_line():

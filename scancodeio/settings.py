@@ -65,6 +65,9 @@ SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies
 # pipelines directories.
 SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 
+# Default to 24 hours.
+SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -84,6 +87,7 @@ INSTALLED_APPS = (
     "django_filters",
     "rest_framework",
     "rest_framework.authtoken",
+    "django_rq",
 )
 
 MIDDLEWARE = (
@@ -238,16 +242,20 @@ STATICFILES_DIRS = [
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
 
-# Celery
+# Job Queue
 
-CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://")
-CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", default="redis://")
-CELERY_TRACK_STARTED = env.bool("CELERY_TRACK_STARTED", default=True)
-CELERY_IGNORE_RESULT = env.bool("CELERY_IGNORE_RESULT", default=False)
-CELERY_TASK_DEFAULT_QUEUE = env.str("CELERY_RESULT_BACKEND", default="default")
-# When True, tasks will be executed immediately in the local thread instead of being
-# sent to the queue for execution by a worker.
-CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
+RQ_QUEUES = {
+    "default": {
+        "HOST": env.str("SCANCODEIO_REDIS_HOST", default="localhost"),
+        "PORT": env.str("SCANCODEIO_REDIS_PORT", default="6379"),
+        "DEFAULT_TIMEOUT": env.int("SCANCODEIO_REDIS_DEFAULT_TIMEOUT", default=360),
+    },
+}
+
+SCANCODEIO_ASYNC = env.bool("SCANCODEIO_ASYNC", default=False)
+if not SCANCODEIO_ASYNC:
+    for queue_config in RQ_QUEUES.values():
+        queue_config["ASYNC"] = False
 
 # Django restframework
 

@@ -141,3 +141,53 @@ class ScanPipeViewsTest(TestCase):
         )
         response = self.client.get(url)
         self.assertContains(response, expected)
+
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
+        run = self.project1.add_pipeline("docker")
+        url = reverse("project_execute_pipeline", args=[self.project1.pk, run.uuid])
+
+        response = self.client.get(url, follow=True)
+        expected = f"Pipeline {run.pipeline_name} run started."
+        self.assertContains(response, expected)
+        mock_execute_task.assert_called_once()
+
+        run.set_task_queued()
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        run.set_task_started(run.pk)
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        run.set_task_stopped()
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+    @mock.patch("scanpipe.models.Run.stop_task")
+    def test_scanpipe_views_stop_pipeline_view(self, mock_stop_task):
+        run = self.project1.add_pipeline("docker")
+        url = reverse("project_stop_pipeline", args=[self.project1.pk, run.uuid])
+
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        run.set_task_started(run.pk)
+        response = self.client.get(url, follow=True)
+        expected = f"Pipeline {run.pipeline_name} stopped."
+        self.assertContains(response, expected)
+        mock_stop_task.assert_called_once()
+
+    @mock.patch("scanpipe.models.Run.delete_task")
+    def test_scanpipe_views_delete_pipeline_view(self, mock_delete_task):
+        run = self.project1.add_pipeline("docker")
+        url = reverse("project_delete_pipeline", args=[self.project1.pk, run.uuid])
+
+        response = self.client.get(url, follow=True)
+        expected = f"Pipeline {run.pipeline_name} deleted."
+        self.assertContains(response, expected)
+        mock_delete_task.assert_called_once()
+
+        run.set_task_stopped()
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)

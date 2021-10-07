@@ -56,6 +56,9 @@ class ScanPipeConfig(AppConfig):
         self._pipelines = {}
         self.license_policies_index = {}
 
+        workspace_location = settings.SCANCODEIO_WORKSPACE_LOCATION
+        self.workspace_path = Path(workspace_location).expanduser().resolve()
+
     def ready(self):
         logger.debug(f"Read environment variables from {settings.ENV_FILE}")
         self.load_pipelines()

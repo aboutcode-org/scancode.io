@@ -38,6 +38,7 @@ local
 /.pytest_cache/
 /scancodeio.egg-info/
 policies.yml
+*.rdb
 
 # This is only created when packaging for external redistribution
 /thirdparty/

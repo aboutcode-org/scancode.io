@@ -11,28 +11,11 @@ services:
   redis:
     image: redis
 
-  celery:
-    build: .
-    command: celery --app scancodeio worker
-                    --loglevel=INFO
-                    --concurrency 1 --pool threads
-                    --events -Ofair --prefetch-multiplier=1
-                    --soft-time-limit=21600 --time-limit=22000
-    env_file:
-      - docker.env
-    volumes:
-      - .:/opt/scancodeio/
-      - /etc/scancodeio/:/etc/scancodeio/
-      - workspace:/var/scancodeio/workspace/
-    depends_on:
-      - redis
-      - db
-
   web:
     build: .
     command: sh -c "
         ./manage.py migrate &&
-        ./manage.py collectstatic --no-input --clear &&
+        ./manage.py collectstatic --no-input --verbosity 0 --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8"
     env_file:
       - docker.env
@@ -45,6 +28,20 @@ services:
       - static:/var/scancodeio/static/
     depends_on:
       - db
+
+  worker:
+    build: .
+    command: ./manage.py rqworker
+    env_file:
+      - docker.env
+    volumes:
+      - .:/opt/scancodeio/
+      - /etc/scancodeio/:/etc/scancodeio/
+      - workspace:/var/scancodeio/workspace/
+    depends_on:
+      - redis
+      - db
+      - web # ensure that potential db migrations run first
 
   nginx:
     image: nginx

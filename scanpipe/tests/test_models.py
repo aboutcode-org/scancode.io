@@ -32,9 +32,11 @@ from unittest import skipIf
 
 from django.apps import apps
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import DataError
 from django.db import connection
 from django.test import TestCase
 from django.test import TransactionTestCase
+from django.test import override_settings
 from django.utils import timezone
 
 from scancodeio import __version__ as scancodeio_version
@@ -155,7 +157,6 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.add_pipeline("docker")
         CodebaseResource.objects.create(project=self.project1, path="path")
         DiscoveredPackage.objects.create(project=self.project1)
-        # + run + error
 
         self.project1.reset()
 
@@ -401,21 +402,6 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
 
-    def test_scanpipe_run_model_init_task_id(self):
-        run1 = Run.objects.create(project=self.project1)
-        self.assertIsNone(run1.task_id)
-
-        task_id = uuid.uuid4()
-        self.assertEqual(1, run1.init_task_id(task_id))
-        self.assertIsNone(run1.task_id)
-        run1.refresh_from_db()
-        self.assertEqual(task_id, run1.task_id)
-
-        new_id = uuid.uuid4()
-        self.assertEqual(0, run1.init_task_id(new_id))
-        run1.refresh_from_db()
-        self.assertEqual(task_id, run1.task_id)
-
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)
@@ -448,6 +434,10 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
         run1.save()
         self.assertEqual(25.0, run1.execution_time)
+
+        run1.set_task_staled()
+        run1.refresh_from_db()
+        self.assertIsNone(run1.execution_time)
 
     def test_scanpipe_run_model_execution_time_for_display_property(self):
         run1 = self.create_run()
@@ -506,6 +496,51 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
+
+    def test_scanpipe_run_model_set_task_methods(self):
+        run1 = self.create_run()
+        self.assertIsNone(run1.task_id)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+
+        run1.set_task_queued()
+        run1.refresh_from_db()
+        self.assertEqual(run1.pk, run1.task_id)
+        self.assertEqual(Run.Status.QUEUED, run1.status)
+
+        run1.set_task_started(run1.pk)
+        self.assertTrue(run1.task_start_date)
+        self.assertEqual(Run.Status.RUNNING, run1.status)
+
+        run1.set_task_ended(exitcode=0)
+        self.assertTrue(run1.task_end_date)
+        self.assertEqual(Run.Status.SUCCESS, run1.status)
+        self.assertTrue(run1.task_succeeded)
+
+        run1.set_task_ended(exitcode=1)
+        self.assertEqual(Run.Status.FAILURE, run1.status)
+        self.assertTrue(run1.task_failed)
+
+        run1.set_task_staled()
+        self.assertEqual(Run.Status.STALE, run1.status)
+        self.assertTrue(run1.task_staled)
+
+        run1.set_task_stopped()
+        self.assertEqual(Run.Status.STOPPED, run1.status)
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_run_model_stop_task_method(self):
+        run1 = self.create_run()
+        run1.stop_task()
+        self.assertEqual(Run.Status.STOPPED, run1.status)
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_run_model_delete_task_method(self):
+        run1 = self.create_run()
+        run1.delete_task()
+        self.assertFalse(Run.objects.filter(pk=run1.pk).exists())
+        self.assertFalse(self.project1.runs.exists())
 
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
@@ -1163,15 +1198,37 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("", error.traceback)
 
         package_count = DiscoveredPackage.objects.count()
+        project_error_count = ProjectError.objects.count()
         bad_data = dict(package_data1)
         bad_data["version"] = "a" * 200
-        self.assertIsNone(DiscoveredPackage.create_from_data(project1, bad_data))
+        # The exception are not capture at the DiscoveredPackage.create_from_data but
+        # rather in the CodebaseResource.create_and_add_package method so resource data
+        # can be injected in the ProjectError record.
+        with self.assertRaises(DataError):
+            DiscoveredPackage.create_from_data(project1, bad_data)
+
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
+        self.assertEqual(project_error_count, ProjectError.objects.count())
+
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
+    def test_scanpipe_codebase_resource_create_and_add_package_errors(self):
+        project1 = Project.objects.create(name="Analysis")
+        resource = CodebaseResource.objects.create(project=project1, path="p")
+
+        package_count = DiscoveredPackage.objects.count()
+        bad_data = dict(package_data1)
+        bad_data["version"] = "a" * 200
+
+        package = resource.create_and_add_package(bad_data)
+        self.assertIsNone(package)
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projecterrors.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
         expected_message = "value too long for type character varying(100)\n"
         self.assertEqual(expected_message, error.message)
         self.assertEqual(bad_data["version"], error.details["version"])
+        self.assertTrue(error.details["codebase_resource_pk"])
+        self.assertEqual(resource.path, error.details["codebase_resource_path"])
         self.assertIn("in save", error.traceback)
 
 

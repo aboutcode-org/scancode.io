@@ -36,19 +36,26 @@ from django.utils import timezone
 from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.management.commands.graph import pipeline_graph_dot
 from scanpipe.models import Project
+from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-def task_success(run):
+def task_success(run_pk):
+    run = Run.objects.get(pk=run_pk)
     run.task_exitcode = 0
     run.save()
 
 
-def task_failure(run):
+def task_failure(run_pk):
+    run = Run.objects.get(pk=run_pk)
     run.task_output = "Error log"
     run.task_exitcode = 1
     run.save()
+
+
+def raise_interrupt(run_pk):
+    raise KeyboardInterrupt
 
 
 class ScanPipeManagementCommandTest(TestCase):
@@ -153,11 +160,11 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("create-project", "my_project", *options, stdout=out)
 
         self.assertIn("Project my_project created", out.getvalue())
-        self.assertIn(f"Pipeline {pipeline} run in progress...", out.getvalue())
+        self.assertIn(f"Start the {pipeline} pipeline execution...", out.getvalue())
         self.assertIn("successfully executed on project my_project", out.getvalue())
 
     def test_scanpipe_management_command_add_input_file(self):
@@ -269,24 +276,42 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("execute", *options, stdout=out)
 
-        project.add_pipeline(self.pipeline_name)
-
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+        run1 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("execute", *options, stdout=out)
-        expected = "Pipeline docker run in progress..."
+        expected = "Start the docker pipeline execution..."
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
         self.assertIn(expected, out.getvalue())
+        run1.refresh_from_db()
+        self.assertTrue(run1.task_succeeded)
+        self.assertEqual("", run1.task_output)
+        run1.delete()
 
         err = StringIO()
-        project.add_pipeline(self.pipeline_name)
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_failure):
+        run2 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
             with self.assertRaisesMessage(SystemExit, "1"):
                 call_command("execute", *options, stdout=out, stderr=err)
         expected = "Error during docker execution:"
         self.assertIn(expected, err.getvalue())
         self.assertIn("Error log", err.getvalue())
+        run2.refresh_from_db()
+        self.assertTrue(run2.task_failed)
+        self.assertEqual("Error log", run2.task_output)
+        run2.delete()
+
+        err = StringIO()
+        run3 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", raise_interrupt):
+            with self.assertRaisesMessage(SystemExit, "1"):
+                call_command("execute", *options, stdout=out, stderr=err)
+        self.assertIn("Pipeline execution stopped.", err.getvalue())
+        run3.refresh_from_db()
+        run3 = Run.objects.get(pk=run3.pk)
+        self.assertTrue(run3.task_stopped)
+        self.assertEqual("", run3.task_output)
 
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")

@@ -23,9 +23,7 @@
 from collections import Counter
 
 from django.apps import apps
-from django.conf import settings
 from django.contrib import messages
-from django.db.models import Count
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -40,7 +38,6 @@ from django.views.generic.edit import FormView
 import saneyaml
 from django_filters.views import FilterView
 
-from scancodeio.celery import app as celery_app
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -331,13 +328,35 @@ def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
-    if run.status == run.Status.RUNNING:
-        raise Http404("Pipeline already started.")
-    elif run.status == run.Status.QUEUED:
-        raise Http404("Pipeline already queued.")
+    if run.status != run.Status.NOT_STARTED:
+        raise Http404("Pipeline already queued, started or completed.")
 
     run.execute_task_async()
-    messages.success(request, f'Pipeline "{run.pipeline_name}" run started.')
+    messages.success(request, f"Pipeline {run.pipeline_name} run started.")
+    return redirect(project)
+
+
+def stop_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.status != run.Status.RUNNING:
+        raise Http404("Pipeline is not running.")
+
+    run.stop_task()
+    messages.success(request, f"Pipeline {run.pipeline_name} stopped.")
+    return redirect(project)
+
+
+def delete_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
+        raise Http404("Only non started or queued pipelines can be deleted.")
+
+    run.delete_task()
+    messages.success(request, f"Pipeline {run.pipeline_name} deleted.")
     return redirect(project)
 
 
@@ -512,19 +531,3 @@ class CodebaseResourceRawView(
             )
 
         raise Http404
-
-
-class AppMonitorView(generic.TemplateView):
-    template_name = "scanpipe/app_monitoring.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        always_eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", None)
-        if always_eager:
-            raise Http404(
-                "Celery monitoring not supported with CELERY_TASK_ALWAYS_EAGER=True"
-            )
-
-        context["inspector"] = celery_app.control.inspect()
-        return context

@@ -245,7 +245,7 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Run.objects.all()
     serializer_class = RunSerializer
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def start_pipeline(self, request, *args, **kwargs):
         run = self.get_object()
         if run.task_end_date:
@@ -261,3 +261,25 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         transaction.on_commit(run.execute_task_async)
 
         return Response({"status": f"Pipeline {run.pipeline_name} started."})
+
+    @action(detail=True, methods=["post"])
+    def stop_pipeline(self, request, *args, **kwargs):
+        run = self.get_object()
+
+        if run.status != run.Status.RUNNING:
+            message = {"status": "Pipeline is not running."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        run.stop_task()
+        return Response({"status": f"Pipeline {run.pipeline_name} stopped."})
+
+    @action(detail=True, methods=["post"])
+    def delete_pipeline(self, request, *args, **kwargs):
+        run = self.get_object()
+
+        if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
+            message = {"status": "Only non started or queued pipelines can be deleted."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        run.delete_task()
+        return Response({"status": f"Pipeline {run.pipeline_name} deleted."})
