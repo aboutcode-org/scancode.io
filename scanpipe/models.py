@@ -142,11 +142,11 @@ class AbstractTaskFieldsModel(models.Model):
         return self.task_exitcode == 0
 
     @property
-    def task_staled(self):
+    def task_failed(self):
         """
-        Returns True if the task staled.
+        Returns True if the task failed.
         """
-        return self.task_exitcode == 88
+        return self.task_exitcode and self.task_exitcode > 0
 
     @property
     def task_stopped(self):
@@ -154,6 +154,13 @@ class AbstractTaskFieldsModel(models.Model):
         Returns True if the task was stopped.
         """
         return self.task_exitcode == 99
+
+    @property
+    def task_staled(self):
+        """
+        Returns True if the task staled.
+        """
+        return self.task_exitcode == 88
 
     class Status(models.TextChoices):
         """
@@ -184,7 +191,7 @@ class AbstractTaskFieldsModel(models.Model):
         elif self.task_stopped:
             return status.STOPPED
 
-        elif self.task_exitcode and self.task_exitcode > 0:
+        elif self.task_failed:
             return status.FAILURE
 
         elif self.task_start_date:

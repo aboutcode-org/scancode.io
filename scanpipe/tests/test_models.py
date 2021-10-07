@@ -36,6 +36,7 @@ from django.db import DataError
 from django.db import connection
 from django.test import TestCase
 from django.test import TransactionTestCase
+from django.test import override_settings
 from django.utils import timezone
 
 from scancodeio import __version__ as scancodeio_version
@@ -156,7 +157,6 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.add_pipeline("docker")
         CodebaseResource.objects.create(project=self.project1, path="path")
         DiscoveredPackage.objects.create(project=self.project1)
-        # + run + error
 
         self.project1.reset()
 
@@ -435,6 +435,10 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         run1.save()
         self.assertEqual(25.0, run1.execution_time)
 
+        run1.set_task_staled()
+        run1.refresh_from_db()
+        self.assertIsNone(run1.execution_time)
+
     def test_scanpipe_run_model_execution_time_for_display_property(self):
         run1 = self.create_run()
 
@@ -493,13 +497,50 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
 
-    def test_scanpipe_run_model_set_task_queue_method(self):
+    def test_scanpipe_run_model_set_task_methods(self):
         run1 = self.create_run()
         self.assertIsNone(run1.task_id)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
 
         run1.set_task_queued()
         run1.refresh_from_db()
         self.assertEqual(run1.pk, run1.task_id)
+        self.assertEqual(Run.Status.QUEUED, run1.status)
+
+        run1.set_task_started(run1.pk)
+        self.assertTrue(run1.task_start_date)
+        self.assertEqual(Run.Status.RUNNING, run1.status)
+
+        run1.set_task_ended(exitcode=0)
+        self.assertTrue(run1.task_end_date)
+        self.assertEqual(Run.Status.SUCCESS, run1.status)
+        self.assertTrue(run1.task_succeeded)
+
+        run1.set_task_ended(exitcode=1)
+        self.assertEqual(Run.Status.FAILURE, run1.status)
+        self.assertTrue(run1.task_failed)
+
+        run1.set_task_staled()
+        self.assertEqual(Run.Status.STALE, run1.status)
+        self.assertTrue(run1.task_staled)
+
+        run1.set_task_stopped()
+        self.assertEqual(Run.Status.STOPPED, run1.status)
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_run_model_stop_task_method(self):
+        run1 = self.create_run()
+        run1.stop_task()
+        self.assertEqual(Run.Status.STOPPED, run1.status)
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_run_model_delete_task_method(self):
+        run1 = self.create_run()
+        run1.delete_task()
+        self.assertFalse(Run.objects.filter(pk=run1.pk).exists())
+        self.assertFalse(self.project1.runs.exists())
 
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()

@@ -54,6 +54,10 @@ def task_failure(run_pk):
     run.save()
 
 
+def raise_interrupt(run_pk):
+    raise KeyboardInterrupt
+
+
 class ScanPipeManagementCommandTest(TestCase):
     pipeline_name = "docker"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
@@ -272,24 +276,42 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("execute", *options, stdout=out)
 
-        project.add_pipeline(self.pipeline_name)
-
         out = StringIO()
+        run1 = project.add_pipeline(self.pipeline_name)
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("execute", *options, stdout=out)
         expected = "Start the docker pipeline execution..."
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
         self.assertIn(expected, out.getvalue())
+        run1.refresh_from_db()
+        self.assertTrue(run1.task_succeeded)
+        self.assertEqual("", run1.task_output)
+        run1.delete()
 
         err = StringIO()
-        project.add_pipeline(self.pipeline_name)
+        run2 = project.add_pipeline(self.pipeline_name)
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
             with self.assertRaisesMessage(SystemExit, "1"):
                 call_command("execute", *options, stdout=out, stderr=err)
         expected = "Error during docker execution:"
         self.assertIn(expected, err.getvalue())
         self.assertIn("Error log", err.getvalue())
+        run2.refresh_from_db()
+        self.assertTrue(run2.task_failed)
+        self.assertEqual("Error log", run2.task_output)
+        run2.delete()
+
+        err = StringIO()
+        run3 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", raise_interrupt):
+            with self.assertRaisesMessage(SystemExit, "1"):
+                call_command("execute", *options, stdout=out, stderr=err)
+        self.assertIn("Pipeline execution stopped.", err.getvalue())
+        run3.refresh_from_db()
+        run3 = Run.objects.get(pk=run3.pk)
+        self.assertTrue(run3.task_stopped)
+        self.assertEqual("", run3.task_output)
 
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")
