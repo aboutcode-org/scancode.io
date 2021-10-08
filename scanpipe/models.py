@@ -48,6 +48,7 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 import django_rq
+import redis
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rq.command import send_stop_job_command
@@ -115,6 +116,24 @@ class AbstractTaskFieldsModel(models.Model):
 
     class Meta:
         abstract = True
+
+    def delete(self, *args, **kwargs):
+        """
+        Before deletion of the Run instance, try to stop the task if currently running
+        or to remove it from the queue if currently queued.
+
+        Note that projects with queued or running pipeline runs cannot be deleted.
+        See the `_raise_if_run_in_progress` method.
+        The following if statements should not be triggered unless the `.delete()`
+        method is directly call from a instance of this class.
+        """
+        with suppress(redis.exceptions.ConnectionError, AttributeError):
+            if self.status == self.Status.RUNNING:
+                self.stop_task()
+            elif self.status == self.Status.QUEUED:
+                self.delete_task(delete_self=False)
+
+        return super().delete(*args, **kwargs)
 
     @staticmethod
     def get_job(job_id):
@@ -304,7 +323,7 @@ class AbstractTaskFieldsModel(models.Model):
         )
         self.set_task_stopped()
 
-    def delete_task(self):
+    def delete_task(self, delete_self=True):
         """
         Deletes a "not started" or "queued" task.
         """
@@ -312,7 +331,8 @@ class AbstractTaskFieldsModel(models.Model):
             # Cancels the job and deletes the job hash from Redis.
             self.job.delete()
 
-        self.delete()
+        if delete_self:
+            self.delete()
 
 
 class ExtraDataFieldMixin(models.Model):
@@ -911,19 +931,19 @@ class RunQuerySet(ProjectRelatedQuerySet):
         """
         Not in the execution queue, no `task_id` assigned.
         """
-        return self.filter(task_start_date__isnull=True, task_id__isnull=True)
+        return self.no_exitcode().no_start_date().filter(task_id__isnull=True)
 
     def queued(self):
         """
         In the execution queue with a `task_id` assigned but not running yet.
         """
-        return self.filter(task_start_date__isnull=True, task_id__isnull=False)
+        return self.no_exitcode().no_start_date().filter(task_id__isnull=False)
 
     def running(self):
         """
         Running the pipeline execution.
         """
-        return self.has_start_date().filter(task_end_date__isnull=True)
+        return self.no_exitcode().has_start_date().filter(task_end_date__isnull=True)
 
     def executed(self):
         """
@@ -945,9 +965,21 @@ class RunQuerySet(ProjectRelatedQuerySet):
 
     def has_start_date(self):
         """
-        Run has a `start_date` set. It can be running or executed.
+        Run has a `task_start_date` set. It can be running or executed.
         """
         return self.filter(task_start_date__isnull=False)
+
+    def no_start_date(self):
+        """
+        Run has no `task_start_date` set.
+        """
+        return self.filter(task_start_date__isnull=True)
+
+    def no_exitcode(self):
+        """
+        Run has no `task_exitcode` set.
+        """
+        return self.filter(task_exitcode__isnull=True)
 
     def queued_or_running(self):
         """
