@@ -282,9 +282,9 @@ class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
             )
         except RunInProgressError as error:
             messages.error(self.request, error)
-        else:
-            messages.success(self.request, self.success_message.format(project))
+            return redirect(project)
 
+        messages.success(self.request, self.success_message.format(project))
         return response
 
 
@@ -293,8 +293,14 @@ class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
     success_message = 'The project "{}" and all its related data have been removed.'
 
     def delete(self, request, *args, **kwargs):
-        response_redirect = super().delete(request, *args, **kwargs)
-        messages.success(self.request, self.success_message.format(self.object.name))
+        project = self.get_object()
+        try:
+            response_redirect = super().delete(request, *args, **kwargs)
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+            return redirect(project)
+
+        messages.success(self.request, self.success_message.format(project.name))
         return response_redirect
 
 
@@ -305,10 +311,15 @@ class ProjectResetView(ProjectViewMixin, generic.DeleteView):
         """
         Call the reset() method on the project.
         """
-        self.object = self.get_object()
-        messages.success(self.request, self.success_message.format(self.object.name))
-        self.object.reset(keep_input=True)
-        return redirect(self.object)
+        project = self.get_object()
+        try:
+            project.reset(keep_input=True)
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+        else:
+            messages.success(self.request, self.success_message.format(project.name))
+
+        return redirect(project)
 
 
 class ProjectTreeView(ProjectViewMixin, generic.DetailView):
