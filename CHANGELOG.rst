@@ -1,7 +1,7 @@
 // Release notes
 // -------------
 
-### Unreleased
+### v30.0.0
 
 - Upgrade ScanCode-toolkit to version 30.1.0
 
