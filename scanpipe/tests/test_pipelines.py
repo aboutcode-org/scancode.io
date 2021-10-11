@@ -33,6 +33,7 @@ from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
+from scanpipe.pipes import output
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
@@ -289,15 +290,15 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
 
-        scancode_file = project1.get_latest_output(filename="scancode")
-        scancode_json = json.loads(scancode_file.read_text())
+        output_file = output.to_json(project1)
+        output_json = json.loads(Path(output_file).read_text())
 
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
         if regen:
-            expected_file.write_text(json.dumps(scancode_json, indent=2))
+            expected_file.write_text(json.dumps(output_json, indent=2))
         expected_json = json.loads(expected_file.read_text())
 
-        scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
+        output_data = self._without_keys(output_json, self.exclude_from_diff)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
 
-        self.assertEqual(expected_data, scancode_data)
+        self.assertEqual(expected_data, output_data)
