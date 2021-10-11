@@ -207,6 +207,9 @@ class PipelinesIntegrationTest(TestCase):
         "compliance_alert",
         "policy",
         "tool_version",
+        "created_date",
+        "log",
+        "uuid",
         "--json-pp",
         "--processes",
         "--verbose",
@@ -230,8 +233,22 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
-    # Set regen to True to regenerate the expected results
-    def test_scanpipe_scan_package_pipeline_integration_test(self, regen=False):
+    def assertPipelineResultEqual(self, expected_file, result_file, regen=False):
+        """
+        Set `regen` to True to regenerate the expected results.
+        """
+        result_json = json.loads(Path(result_file).read_text())
+        result_data = self._without_keys(result_json, self.exclude_from_diff)
+
+        if regen:
+            expected_file.write_text(json.dumps(result_data, indent=2))
+
+        expected_json = json.loads(expected_file.read_text())
+        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+
+        self.assertEqual(expected_data, result_data)
+
+    def test_scanpipe_scan_package_pipeline_integration_test(self):
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
@@ -248,33 +265,14 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.discoveredpackages.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
-        scancode_json = json.loads(scancode_file.read_text())
-
         expected_file = self.data_location / "is-npm-1.0.0_scan_package.json"
-        if regen:
-            expected_file.write_text(json.dumps(scancode_json, indent=2))
-        expected_json = json.loads(expected_file.read_text())
-
-        scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
-        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
-
-        self.assertEqual(expected_data, scancode_data)
+        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
 
         summary_file = project1.get_latest_output(filename="summary")
-        summary_json = json.loads(summary_file.read_text())
-
         expected_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
-        if regen:
-            expected_file.write_text(json.dumps(summary_json, indent=2))
-        expected_json = json.loads(expected_file.read_text())
+        self.assertPipelineResultEqual(expected_file, summary_file, regen=False)
 
-        summary_data = self._without_keys(summary_json, self.exclude_from_diff)
-        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
-
-        self.assertEqual(expected_data, summary_data)
-
-    # Set regen to True to regenerate the expected results
-    def test_scanpipe_scan_codebase_pipeline_integration_test(self, regen=False):
+    def test_scanpipe_scan_codebase_pipeline_integration_test(self):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="Analysis")
 
@@ -290,15 +288,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
 
-        output_file = output.to_json(project1)
-        output_json = json.loads(Path(output_file).read_text())
-
+        result_file = output.to_json(project1)
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
-        if regen:
-            expected_file.write_text(json.dumps(output_json, indent=2))
-        expected_json = json.loads(expected_file.read_text())
-
-        output_data = self._without_keys(output_json, self.exclude_from_diff)
-        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
-
-        self.assertEqual(expected_data, output_data)
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
