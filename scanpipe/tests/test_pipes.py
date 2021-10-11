@@ -1138,7 +1138,9 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         with self.assertRaises(ValueError) as cm:
             make_codebase_resource(p1, resource_location)
 
-        self.assertIn("does not start with", str(cm.exception))
+        self.assertIn("not", str(cm.exception))
+        self.assertIn(resource_location, str(cm.exception))
+        self.assertIn("/codebase", str(cm.exception))
 
         copy_input(resource_location, p1.codebase_path)
         resource_location = str(p1.codebase_path / "notice.NOTICE")
