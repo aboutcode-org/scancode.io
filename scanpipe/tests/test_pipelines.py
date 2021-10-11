@@ -210,6 +210,7 @@ class PipelinesIntegrationTest(TestCase):
         "created_date",
         "log",
         "uuid",
+        "size",  # directory sizes are OS dependant
         "--json-pp",
         "--processes",
         "--verbose",
