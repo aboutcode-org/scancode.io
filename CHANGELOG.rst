@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- Migrate the ScanCodebase pipeline from `scancode.run_scancode` subprocess to
+  `scancode.scan_for_application_packages` and `scancode.scan_for_files`.
+  https://github.com/nexB/scancode.io/issues/340
+
 v30.0.1 (2021-10-11)
 --------------------
 

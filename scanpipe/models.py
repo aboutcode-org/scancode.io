@@ -652,6 +652,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         if output_files:
             return output_files[-1]
 
+    def walk_codebase_path(self):
+        """
+        Returns all files and directories path of the codebase/ directory recursively.
+        """
+        return self.codebase_path.rglob("*")
+
     @cached_property
     def can_add_input(self):
         """

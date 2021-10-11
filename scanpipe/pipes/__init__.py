@@ -53,21 +53,15 @@ def make_codebase_resource(project, location, rootfs_path=None):
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """
-    resource_location = location.rstrip("/")
-    codebase_dir = str(project.codebase_path)
-
-    assert resource_location.startswith(
-        codebase_dir
-    ), f"Location: {resource_location} is not under project/codebase/: {codebase_dir}"
-
-    resource_data = scancode.get_resource_info(location=resource_location)
+    relative_path = Path(location).relative_to(project.codebase_path)
+    resource_data = scancode.get_resource_info(location=location)
 
     if rootfs_path:
         resource_data["rootfs_path"] = rootfs_path
 
     codebase_resource = CodebaseResource(
         project=project,
-        path=resource_location.replace(codebase_dir, ""),
+        path=relative_path,
         **resource_data,
     )
     codebase_resource.save(save_error=False)

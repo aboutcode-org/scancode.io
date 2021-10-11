@@ -20,8 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import output
+from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_inputs
 
@@ -41,23 +43,14 @@ class ScanCodebase(Pipeline):
         return (
             cls.copy_inputs_to_codebase_directory,
             cls.extract_archives,
-            cls.run_scancode,
-            cls.build_inventory_from_scan,
-            cls.csv_output,
+            cls.collect_and_create_codebase_resources,
+            cls.tag_empty_files,
+            cls.scan_for_application_packages,
+            cls.scan_for_files,
         )
 
     # Set to True to extract recursively nested archives in archives.
     extract_recursively = False
-
-    scancode_options = [
-        "--copyright",
-        "--email",
-        "--info",
-        "--license",
-        "--license-text",
-        "--package",
-        "--url",
-    ]
 
     def copy_inputs_to_codebase_directory(self):
         """
@@ -78,34 +71,30 @@ class ScanCodebase(Pipeline):
         if extract_errors:
             self.add_error("\n".join(extract_errors))
 
-    def run_scancode(self):
+    def collect_and_create_codebase_resources(self):
         """
-        Scans extracted codebase/ content.
+        Collects and create codebase resources.
         """
-        self.scan_output = self.project.get_output_file_path("scancode", "json")
-
-        with self.save_errors(scancode.ScancodeError):
-            scancode.run_scancode(
-                location=str(self.project.codebase_path),
-                output_file=str(self.scan_output),
-                options=self.scancode_options,
-                raise_on_error=True,
+        for resource_path in self.project.walk_codebase_path():
+            pipes.make_codebase_resource(
+                project=self.project,
+                location=str(resource_path),
             )
 
-        if not self.scan_output.exists():
-            raise FileNotFoundError("ScanCode output not available.")
+    def tag_empty_files(self):
+        """
+        Flags empty files.
+        """
+        rootfs.tag_empty_codebase_resources(self.project)
 
-    def build_inventory_from_scan(self):
+    def scan_for_application_packages(self):
         """
-        Processes the JSON scan results to determine resources and packages.
+        Scans unknown resources for packages information.
         """
-        project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
-        scancode.create_codebase_resources(project, scanned_codebase)
-        scancode.create_discovered_packages(project, scanned_codebase)
+        scancode.scan_for_application_packages(self.project)
 
-    def csv_output(self):
+    def scan_for_files(self):
         """
-        Generates a .csv output.
+        Scans unknown resources for copyrights, licenses, emails, and urls.
         """
-        output.to_csv(self.project)
+        scancode.scan_for_files(self.project)
