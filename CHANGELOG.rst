@@ -1,6 +1,12 @@
 // Release notes
 // -------------
 
+### unreleased
+
+- Migrate the ScanCodebase pipeline from `scancode.run_scancode` subprocess to
+  `scancode.scan_for_application_packages` and `scancode.scan_for_files`.
+  https://github.com/nexB/scancode.io/issues/340
+
 ### v30.0.0
 
 - Upgrade ScanCode-toolkit to version 30.1.0
