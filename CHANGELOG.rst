@@ -1,13 +1,21 @@
-// Release notes
-// -------------
+Changelog
+=========
 
-### unreleased
+Unreleased
+----------
 
 - Migrate the ScanCodebase pipeline from `scancode.run_scancode` subprocess to
   `scancode.scan_for_application_packages` and `scancode.scan_for_files`.
   https://github.com/nexB/scancode.io/issues/340
 
-### v30.0.0
+v30.0.1 (2021-10-11)
+--------------------
+
+- Fix a build failure related to dependency conflict.
+  https://github.com/nexB/scancode.io/issues/342
+
+v30.0.0 (2021-10-8)
+-------------------
 
 - Upgrade ScanCode-toolkit to version 30.1.0
 
@@ -33,7 +41,8 @@
 - Provide an "add input" action on the Project endpoint of the REST API.
   https://github.com/nexB/scancode.io/issues/318
 
-### v21.9.6
+v21.9.6
+-------
 
 - Add ability to "archive" projects, from the Web UI, API and command line interface.
   Data cleanup of the project's input, codebase, and output directories is available
@@ -58,7 +67,8 @@
 - Log the outputs of run_scancode as progress indication.
   https://github.com/nexB/scancode.io/issues/300
 
-### v21.8.2
+v21.8.2
+-------
 
 - Upgrade ScanCode-toolkit to version 21.7.30
 
@@ -87,7 +97,8 @@
 - Add support for VMWare Photon-based Docker images and rootfs. This is an RPM-based
   Linux distribution
 
-### v21.6.10
+v21.6.10
+--------
 
 - Add support for VM image formats extraction such as VMDK, VDI and QCOW.
   See https://github.com/nexB/extractcode#archive-format-kind-file_system for the full
@@ -112,7 +123,8 @@
 - Add the is_binary, is_text, and is_archive fields to the CodebaseResource model.
   https://github.com/nexB/scancode.io/issues/75
 
-### v21.5.12
+v21.5.12
+--------
 
 - Adds a new way to fetch docker images using skopeo provided as a
   plugin using docker:// reference URL-like pointers to a docker image.
@@ -128,7 +140,8 @@
   load_inventory pipelines.
   https://github.com/nexB/scancode.io/issues/147
 
-### v21.4.28
+v21.4.28
+--------
 
 - The installation local timezone can be configured using the TIME_ZONE setting.
   The current timezone in now included in the dates representation in the web UI.
@@ -161,7 +174,8 @@
 
 - Add links to codebase resource and to discovered packages in list views.
 
-### v21.4.14
+v21.4.14
+--------
 
 - Implement timeout on the scan functions, default to 120 seconds per resources.
   https://github.com/nexB/scancode.io/issues/135
@@ -170,7 +184,8 @@
   https://github.com/nexB/scancode.io/issues/116
   https://github.com/nexB/scancode.io/issues/141
 
-### v21.4.5
+v21.4.5
+-------
 
 - Add support for Docker and VM images using RPMs such as Fedora, CentOS, RHEL,
   and openSUSE linux distributions.
@@ -213,7 +228,8 @@
 
 - Consistent ordering for the pipelines, now sorted alphabetically.
 
-### v1.1.0 (2021-02-16)
+v1.1.0 (2021-02-16)
+-------------------
 
 - Display project extra data in the project details view.
   https://github.com/nexB/scancode.io/issues/88
@@ -252,7 +268,8 @@
   WARNING: The new Pipelines syntax is not backward compatible with v1.0.x
   https://github.com/nexB/scancode.io/issues/82
 
-### v1.0.7 (2021-02-01)
+v1.0.7 (2021-02-01)
+-------------------
 
 - Add user interface to manage Projects from a web browser
   All the command-line features are available
@@ -266,7 +283,8 @@
 - Add a profile() method on the Run model for profiling pipeline execution
   https://github.com/nexB/scancode.io/issues/73
 
-### v1.0.6 (2020-12-23)
+v1.0.6 (2020-12-23)
+-------------------
 
 - Add a management command to delete a Project and its related work directories
   https://github.com/nexB/scancode.io/issues/65
@@ -289,7 +307,8 @@
 - Install psycopg2-binary instead of psycopg2 on non-Linux platforms
   https://github.com/nexB/scancode.io/issues/64
 
-### v1.0.5 (2020-12-07)
+v1.0.5 (2020-12-07)
+-------------------
 
 - Add minimal license list and text views
   https://github.com/nexB/scancode.io/issues/32
@@ -314,7 +333,8 @@
 - Add support for Python 3.7, 3.8, and 3.9
   https://github.com/nexB/scancode.io/issues/54
 
-### v1.0.4 (2020-11-17)
+v1.0.4 (2020-11-17)
+-------------------
 
 - Add a to_json output pipe returning ScanCode compatible content
   https://github.com/nexB/scancode.io/issues/45
@@ -331,7 +351,8 @@
 
 - Upgrade Django, Metaflow, and ScanCode-toolkit to latest versions
 
-### v1.0.3 (2020-09-24)
+v1.0.3 (2020-09-24)
+-------------------
 
 - Add ability to resume a failed pipeline from the run management command
   Fix for https://github.com/nexB/scancode.io/issues/22
@@ -342,7 +363,8 @@
 - Add support for "failed" task_output in Run.get_run_id method
   Fix for https://github.com/nexB/scancode.io/issues/17
 
-### v1.0.2 (2020-09-18)
+v1.0.2 (2020-09-18)
+-------------------
 
 - Add documentation and tutorial
   For https://github.com/nexB/scancode.io/issues/8
@@ -354,13 +376,15 @@
 - Always return the Pipeline subclass/implementation from the module inspection
   Fix for https://github.com/nexB/scancode.io/issues/11
 
-### v1.0.1 (2020-09-12)
+v1.0.1 (2020-09-12)
+-------------------
 
 - Do not fail when collecting system packages in Ubuntu docker images for
   layers that do not install packages by updating to a newer version of
   ScanCode Toolkit
   Fix for https://github.com/nexB/scancode.io/issues/1
 
-### v1.0.0 (2020-09-09)
+v1.0.0 (2020-09-09)
+-------------------
 
 - Initial release
