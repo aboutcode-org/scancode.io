@@ -119,7 +119,7 @@ worker:
 
 bump:
 	@echo "-> Bump the version"
-	bin/bumpver update --no-fetch
+	bin/bumpver update --no-fetch --patch
 
 docs:
 	rm -rf docs/_build/

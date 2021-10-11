@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v30.0.1 (2021-10-11)
+--------------------
+
+- Fix a build failure related to dependency conflict.
+  https://github.com/nexB/scancode.io/issues/342
+
 v30.0.0 (2021-10-8)
 -------------------
 
