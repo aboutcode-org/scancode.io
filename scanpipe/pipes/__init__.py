@@ -40,9 +40,11 @@ logger = logging.getLogger("scanpipe.pipes")
 
 def make_codebase_resource(project, location, rootfs_path=None):
     """
-    Creates a CodebaseResource with the `location` absolute path for the `project`.
+    Creates a CodebaseResource instance in the database for the given `project`.
 
-    The `location` of this Resource must be rooted in `project.codebase_path`.
+    The provided `location` is the absolute path of this resource.
+    It must be rooted in `project.codebase_path` as only the relative path within the
+    project codebase/ directory is stored in the database.
 
     `rootfs_path` is an optional path relative to a rootfs root within an
     Image/VM filesystem context. e.g.: "/var/log/file.log"
