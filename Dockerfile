@@ -22,8 +22,8 @@
 
 FROM python:3.9
 
-# Force unbuffered stdout and stderr (e.g. they are flushed to terminal immediately)
 ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
 
 # Requirements as per https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
 RUN apt-get update \
