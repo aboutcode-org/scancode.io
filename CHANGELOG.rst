@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+- Fix a server error on resource details view when the compliance alert is "missing".
+  https://github.com/nexB/scancode.io/issues/344
+
 - Migrate the ScanCodebase pipeline from `scancode.run_scancode` subprocess to
   `scancode.scan_for_application_packages` and `scancode.scan_for_files`.
   https://github.com/nexB/scancode.io/issues/340
