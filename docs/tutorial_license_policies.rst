@@ -87,7 +87,7 @@ given resource or package and having ``error`` as the highest precedence and
 Example Output
 --------------
 
-We followed the :ref: `tutorial_cli_analyze_docker_image` tutorial to generate
+We followed the :ref:`tutorial_cli_analyze_docker_image` tutorial to generate
 scan results that show the ``""`` compliance alert for a given package.
 
 .. code-block:: json
