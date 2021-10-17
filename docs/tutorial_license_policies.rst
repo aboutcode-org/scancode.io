@@ -88,8 +88,7 @@ Example Output
 --------------
 
 We followed the :ref: `tutorial_cli_analyze_docker_image` tutorial to generate
-the scan results that show ``""`` compliance alert for a given package.  
-
+the scan results that show ``""`` compliance alert for a given package.
 
 .. code-block:: json
 
