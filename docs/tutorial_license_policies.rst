@@ -8,7 +8,8 @@ alert system and use the results of a pipeline run to demonstrate an example
 license and compliance alert output.
 
 .. note::
-    For example pipeline runs, you can view our ``Tutorial`` section.
+    For example tutorials and pipeline runs, you can view our ``Tutorial``
+    section.
 
 As already mentioned, ScanCode.io automates the process of Software Composition
 Analysis—SCA—to identify existing open source components and their license
@@ -21,7 +22,7 @@ Creating Policies Files
 -----------------------
 
 A valid policies file is required to enable compliance-related features. The
-policies file, by default``policies.yml``, is a YAML file with a format
+policies file, by default ``policies.yml``, is a YAML file with a format
 similar to the following,
 
 .. code-block:: yaml
