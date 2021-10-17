@@ -30,6 +30,7 @@ you’ll find information on:
     tutorial_cli_analyze_docker_image
     tutorial_cli_analyze_codebase
     tutorial_api_analyze_package_archive
+    tutorial_license_policies
 
 .. toctree::
     :maxdepth: 2
