@@ -86,3 +86,38 @@ given resource or package and having ``error`` as the highest precedence and
 
 Example Output
 --------------
+
+We followed the :ref: `tutorial_cli_analyze_docker_image` tutorial to generate
+the scan results that show ``""`` compliance alert for a given package.  
+
+
+.. code-block:: json
+
+    {
+      "for_packages": [
+        "pkg:alpine/busybox@1.31.1-r9?arch=x86_64"
+      ],
+      "compliance_alert": "",
+      "path": "30-alpine-nickolashkraus-staticbox-latest.tar-extract/5216338b40a7b96416b8b9858974bbe4acc3096ee60acbc4dfb1ee02aecceb10/bin/busybox",
+      "size": 841288,
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "system-package",
+      "type": "file",
+      "name": "busybox",
+      "extension": "",
+      "programming_language": "",
+      "mime_type": "application/x-pie-executable",
+      "file_type": "ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-musl-x86_64.so.1, stripped",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false
+    }
