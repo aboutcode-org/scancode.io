@@ -128,8 +128,10 @@ docs:
 docker-images:
 	@echo "-> Build Docker services"
 	docker-compose build
-	@echo "-> Save the service images to a tar archive in the dist/ directory"
+	@echo "-> Pull service images"
+	docker-compose pull
+	@echo "-> Save the service images to a compressed tar archive in the dist/ directory"
 	@mkdir -p dist/
-	@docker save db redis celery web nginx -o dist/scancodeio-images-`git describe --tags`.tar
+	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
 
 .PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs docker-images
