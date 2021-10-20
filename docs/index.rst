@@ -19,6 +19,7 @@ you’ll find information on:
     user-interface
     faq
     contributing
+    changelog
 
 .. toctree::
     :maxdepth: 2

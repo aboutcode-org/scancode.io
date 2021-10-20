@@ -108,22 +108,18 @@ sqlite:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001
+	${MANAGE} runserver 8001 --noreload
 
 test:
 	@echo "-> Run the test suite"
 	${MANAGE} test --noinput
 
 worker:
-	bin/celery --app scancodeio worker \
-               --loglevel=INFO \
-               --concurrency 1 --pool threads \
-               --events -Ofair --prefetch-multiplier=1 \
-               --soft-time-limit=21600 --time-limit=22000
+	${MANAGE} rqworker
 
 bump:
 	@echo "-> Bump the version"
-	bin/bumpver update --no-fetch
+	bin/bumpver update --no-fetch --patch
 
 docs:
 	rm -rf docs/_build/

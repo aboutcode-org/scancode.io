@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import inspect
 import re
 import shutil
 import uuid
@@ -30,6 +31,7 @@ from pathlib import Path
 from traceback import format_tb
 
 from django.apps import apps
+from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -45,11 +47,15 @@ from django.utils.functional import cached_property
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from celery.result import AsyncResult
+import django_rq
+import redis
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
+from rq.command import send_stop_job_command
+from rq.exceptions import NoSuchJobError
+from rq.job import Job
+from rq.job import JobStatus
 
-from scancodeio import WORKSPACE_LOCATION
 from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
@@ -111,36 +117,116 @@ class AbstractTaskFieldsModel(models.Model):
     class Meta:
         abstract = True
 
+    def delete(self, *args, **kwargs):
+        """
+        Before deletion of the Run instance, try to stop the task if currently running
+        or to remove it from the queue if currently queued.
+
+        Note that projects with queued or running pipeline runs cannot be deleted.
+        See the `_raise_if_run_in_progress` method.
+        The following if statements should not be triggered unless the `.delete()`
+        method is directly call from a instance of this class.
+        """
+        with suppress(redis.exceptions.ConnectionError, AttributeError):
+            if self.status == self.Status.RUNNING:
+                self.stop_task()
+            elif self.status == self.Status.QUEUED:
+                self.delete_task(delete_self=False)
+
+        return super().delete(*args, **kwargs)
+
+    @staticmethod
+    def get_job(job_id):
+        with suppress(NoSuchJobError):
+            return Job.fetch(job_id, connection=django_rq.get_connection())
+
     @property
-    def task_result(self):
-        return AsyncResult(str(self.task_id))
-
-    def task_state(self):
+    def job(self):
         """
-        Possible values include:
-        - UNKNOWN (PENDING)
-            No history about the task is available.
-        - STARTED
-            The task has been started.
-        - RETRY
-            The task is to be re-executed; possibly due to a failure.
-        - FAILURE
-            The task raised an exception or has exceeded the retry limit.
-            The result attribute would contain the exception raised by the task.
-        - SUCCESS
-            The task executed successfully. The result attribute would contain
-            the task's return value.
-
-        Notes: All tasks are PENDING by default in Celery, so it would make more
-        sense if the state was named "unknown". Celery doesn't update the state
-        when a task is sent, and any task with no history is assumed to be pending.
+        None if the job could not be found in the queues registries.
         """
-        state = self.task_result.state
-        return "UNKNOWN" if state == "PENDING" else state
+        return self.get_job(str(self.task_id))
+
+    @property
+    def job_status(self):
+        job = self.job
+        if job:
+            return self.job.get_status()
+
+    @property
+    def task_succeeded(self):
+        """
+        Returns True if the task was successfully executed.
+        """
+        return self.task_exitcode == 0
+
+    @property
+    def task_failed(self):
+        """
+        Returns True if the task failed.
+        """
+        return self.task_exitcode and self.task_exitcode > 0
+
+    @property
+    def task_stopped(self):
+        """
+        Returns True if the task was stopped.
+        """
+        return self.task_exitcode == 99
+
+    @property
+    def task_staled(self):
+        """
+        Returns True if the task staled.
+        """
+        return self.task_exitcode == 88
+
+    class Status(models.TextChoices):
+        """
+        List of Run status.
+        """
+
+        NOT_STARTED = "not_started"
+        QUEUED = "queued"
+        RUNNING = "running"
+        SUCCESS = "success"
+        FAILURE = "failure"
+        STOPPED = "stopped"
+        STALE = "stale"
+
+    @property
+    def status(self):
+        """
+        Returns the task current status.
+        """
+        status = self.Status
+
+        if self.task_succeeded:
+            return status.SUCCESS
+
+        elif self.task_staled:
+            return status.STALE
+
+        elif self.task_stopped:
+            return status.STOPPED
+
+        elif self.task_failed:
+            return status.FAILURE
+
+        elif self.task_start_date:
+            return status.RUNNING
+
+        elif self.task_id:
+            return status.QUEUED
+
+        return status.NOT_STARTED
 
     @property
     def execution_time(self):
-        if self.task_end_date and self.task_start_date:
+        if self.task_staled:
+            return
+
+        elif self.task_end_date and self.task_start_date:
             total_seconds = (self.task_end_date - self.task_start_date).total_seconds()
             return int(total_seconds)
 
@@ -173,11 +259,11 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_start_date = timezone.now()
         self.save()
 
-    def set_task_ended(self, exitcode, output, refresh_first=True):
+    def set_task_ended(self, exitcode, output="", refresh_first=True):
         """
         Sets the task-related fields after the task execution.
 
-        An optional `refresh_first`—enabled by default—forces refreshing
+        An optional `refresh_first` —enabled by default— forces refreshing
         the instance with the latest data from the database before saving.
         This prevents losing values saved on the instance during the task
         execution.
@@ -189,6 +275,64 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_output = output
         self.task_end_date = timezone.now()
         self.save()
+
+    def set_task_queued(self):
+        """
+        Sets the task as "queued" by updating the `task_id` from None to this instance
+        `pk`.
+        Uses the QuerySet `update` method instead of `save` to prevent overriding
+        any fields that were set but not saved yet in the DB.
+        """
+        manager = self.__class__.objects
+        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=self.pk)
+
+    def set_task_staled(self):
+        """
+        Sets the task as "stale" using a special 88 exitcode value.
+        """
+        self.set_task_ended(exitcode=88)
+
+    def set_task_stopped(self):
+        """
+        Sets the task as "stopped" using a special 99 exitcode value.
+        """
+        self.set_task_ended(exitcode=99)
+
+    def stop_task(self):
+        """
+        Stops a "running" task.
+        """
+        if not settings.SCANCODEIO_ASYNC:
+            self.set_task_stopped()
+            return
+
+        job_status = self.job_status
+
+        if not job_status:
+            self.set_task_staled()
+            return
+
+        if self.job_status == JobStatus.FAILED:
+            self.set_task_ended(
+                exitcode=1, output=f"Killed from outside, exc_info={self.job.exc_info}"
+            )
+            return
+
+        send_stop_job_command(
+            connection=django_rq.get_connection(), job_id=str(self.task_id)
+        )
+        self.set_task_stopped()
+
+    def delete_task(self, delete_self=True):
+        """
+        Deletes a "not started" or "queued" task.
+        """
+        if settings.SCANCODEIO_ASYNC and self.task_id:
+            # Cancels the job and deletes the job hash from Redis.
+            self.job.delete()
+
+        if delete_self:
+            self.delete()
 
 
 class ExtraDataFieldMixin(models.Model):
@@ -224,7 +368,8 @@ def get_project_work_directory(project):
     A short version of the `project` uuid is added as a suffix to ensure
     uniqueness of the work directory location.
     """
-    return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
+    project_workspace_id = f"{slugify(project.name)}-{project.short_uuid}"
+    return f"{scanpipe_app.workspace_path}/projects/{project_workspace_id}"
 
 
 class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
@@ -273,7 +418,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         The workspace directories are set up during project creation.
         """
         if not self.work_directory:
-            self.work_directory = get_project_work_directory(self)
+            self.work_directory = get_project_work_directory(project=self)
             self.setup_work_directory()
         super().save(*args, **kwargs)
 
@@ -353,7 +498,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Raises a `RunInProgressError` exception if one of the project related run is
         queued or running.
         """
-        if self.runs.queued().exists() or self.runs.running().exists():
+        if self.runs.queued_or_running().exists():
             raise RunInProgressError(
                 "Cannot execute this action until all associated pipeline runs are "
                 "completed."
@@ -507,6 +652,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         if output_files:
             return output_files[-1]
 
+    def walk_codebase_path(self):
+        """
+        Returns all files and directories path of the codebase/ directory recursively.
+        """
+        return self.codebase_path.rglob("*")
+
     @cached_property
     def can_add_input(self):
         """
@@ -609,7 +760,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         Creates a "ProjectError" record from the provided `error` Exception for this
         project.
+        The `model` attribute can be provided as a string or as a Model class.
         """
+        if inspect.isclass(model):
+            model = model.__name__
+
         traceback = ""
         if hasattr(error, "__traceback__"):
             traceback = "".join(format_tb(error.__traceback__))
@@ -720,18 +875,20 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 class SaveProjectErrorMixin:
     """
     Uses `SaveProjectErrorMixin` on a model to create a "ProjectError" entry
-    from a raised exception during `save()` instead of stopping the analysis
-    process.
+    from a raised exception during `save()` instead of stopping the analysis process.
+
     The creation of a "ProjectError" can be skipped providing False for the `save_error`
-    argument.
+    argument. In that case, the error is not captured, it is re-raised.
     """
 
-    def save(self, *args, save_error=True, **kwargs):
+    def save(self, *args, save_error=True, capture_exception=True, **kwargs):
         try:
             super().save(*args, **kwargs)
         except Exception as error:
             if save_error:
                 self.add_error(error)
+            if not capture_exception:
+                raise
 
     @classmethod
     def check(cls, **kwargs):
@@ -763,7 +920,7 @@ class SaveProjectErrorMixin:
         """
         return self.project.add_error(
             error=error,
-            model=self.__class__.__name__,
+            model=self.__class__,
             details=model_to_dict(self),
         )
 
@@ -780,19 +937,19 @@ class RunQuerySet(ProjectRelatedQuerySet):
         """
         Not in the execution queue, no `task_id` assigned.
         """
-        return self.filter(task_start_date__isnull=True, task_id__isnull=True)
+        return self.no_exitcode().no_start_date().filter(task_id__isnull=True)
 
     def queued(self):
         """
         In the execution queue with a `task_id` assigned but not running yet.
         """
-        return self.filter(task_start_date__isnull=True, task_id__isnull=False)
+        return self.no_exitcode().no_start_date().filter(task_id__isnull=False)
 
     def running(self):
         """
         Running the pipeline execution.
         """
-        return self.has_start_date().filter(task_end_date__isnull=True)
+        return self.no_exitcode().has_start_date().filter(task_end_date__isnull=True)
 
     def executed(self):
         """
@@ -814,9 +971,27 @@ class RunQuerySet(ProjectRelatedQuerySet):
 
     def has_start_date(self):
         """
-        Run has a `start_date` set. It can be running or executed.
+        Run has a `task_start_date` set. It can be running or executed.
         """
         return self.filter(task_start_date__isnull=False)
+
+    def no_start_date(self):
+        """
+        Run has no `task_start_date` set.
+        """
+        return self.filter(task_start_date__isnull=True)
+
+    def no_exitcode(self):
+        """
+        Run has no `task_exitcode` set.
+        """
+        return self.filter(task_exitcode__isnull=True)
+
+    def queued_or_running(self):
+        """
+        Run is queued or currently running.
+        """
+        return self.filter(task_id__isnull=False, task_end_date__isnull=True)
 
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
@@ -843,23 +1018,34 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def execute_task_async(self):
         """
-        Sends a message to the task manager to create an asynchronous pipeline
-        execution task.
-        Stores the `task_id` of the current Run instance for a future use.
+        Enqueues the pipeline execution task for an asynchronous execution.
         """
-        future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
-        self.init_task_id(future.task_id)
+        run_pk = str(self.pk)
 
-    def init_task_id(self, task_id):
-        """
-        Sets the provided `task_id` on the Run instance if not already stored in the
-        database.
-        Uses the QuerySet `update` method instead of `save` to prevent overriding
-        any fields that were set but not saved yet in the DB, which may occur when
-        CELERY_TASK_ALWAYS_EAGER is True.
-        """
-        manager = self.__class__.objects
-        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=task_id)
+        # Bypass entirely the queue system and run the pipeline in the current thread.
+        if not settings.SCANCODEIO_ASYNC:
+            tasks.execute_pipeline_task(run_pk)
+            return
+
+        job = django_rq.enqueue(
+            tasks.execute_pipeline_task,
+            job_id=run_pk,
+            run_pk=run_pk,
+            on_failure=tasks.report_failure,
+            job_timeout=settings.SCANCODEIO_TASK_TIMEOUT,
+        )
+
+        # In async mode, we want to set the status as "queued" **after** the job was
+        # properly "enqueued".
+        # In case the `django_rq.enqueue()` raise an exception (Redis server error),
+        # we want to keep the Run status as "not started" rather than "queued".
+        # Note that the Run will then be set as "running" at the start of
+        # `execute_pipeline_task()` by calling the `set_task_started()`.
+        # There's no need to call the following in synchronous single thread mode as
+        # the run will be directly set as "running".
+        self.set_task_queued()
+
+        return job
 
     def set_scancodeio_version(self):
         """
@@ -882,45 +1068,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         Returns a pipelines instance using this Run pipeline_class.
         """
         return self.pipeline_class(self)
-
-    @property
-    def task_succeeded(self):
-        """
-        Returns True, if a pipeline run was successfully executed.
-        """
-        return self.task_exitcode == 0
-
-    class Status(models.TextChoices):
-        """
-        List of Run status.
-        """
-
-        NOT_STARTED = "not_started"
-        QUEUED = "queued"
-        RUNNING = "running"
-        SUCCESS = "success"
-        FAILURE = "failure"
-
-    @property
-    def status(self):
-        """
-        Returns the Run current status.
-        """
-        status = self.Status
-
-        if self.task_succeeded:
-            return status.SUCCESS
-
-        elif self.task_exitcode and self.task_exitcode > 0:
-            return status.FAILURE
-
-        elif self.task_start_date:
-            return status.RUNNING
-
-        elif self.task_id:
-            return status.QUEUED
-
-        return status.NOT_STARTED
 
     def append_to_log(self, message, save=False):
         """
@@ -1420,11 +1567,28 @@ class CodebaseResource(
         """
         Creates a DiscoveredPackage instance using the `package_data` and assigns
         it to the current CodebaseResource instance.
+
+        Errors that may happen during the DiscoveredPackage creation are capture
+        at this level, rather that in the DiscoveredPackage.create_from_data level,
+        so resource data can be injected in the ProjectError record.
         """
-        created_package = DiscoveredPackage.create_from_data(self.project, package_data)
-        if created_package:
-            self.discovered_packages.add(created_package)
-            return created_package
+        try:
+            package = DiscoveredPackage.create_from_data(self.project, package_data)
+        except Exception as error:
+            self.project.add_error(
+                error=error,
+                model=DiscoveredPackage,
+                details={
+                    "codebase_resource_path": self.path,
+                    "codebase_resource_pk": self.pk,
+                    **package_data,
+                },
+            )
+            return
+
+        if package:
+            self.discovered_packages.add(package)
+            return package
 
     @property
     def for_packages(self):
@@ -1498,7 +1662,8 @@ class DiscoveredPackage(
                 f"One or more of the required fields have no value: "
                 f"{', '.join(required_fields)}"
             )
-            project.add_error(error=message, model=cls.__name__, details=package_data)
+
+            project.add_error(error=message, model=cls, details=package_data)
             return
 
         qualifiers = package_data.get("qualifiers")
@@ -1511,6 +1676,9 @@ class DiscoveredPackage(
             if field_name in DiscoveredPackage.model_fields() and value
         }
 
-        discovered_package = cls.objects.create(project=project, **cleaned_package_data)
-        if discovered_package.pk:
-            return discovered_package
+        discovered_package = cls(project=project, **cleaned_package_data)
+        # Using save_error=False to not capture potential errors at this level but
+        # rather in the CodebaseResource.create_and_add_package method so resource data
+        # can be injected in the ProjectError record.
+        discovered_package.save(save_error=False, capture_exception=False)
+        return discovered_package

@@ -23,9 +23,7 @@
 from collections import Counter
 
 from django.apps import apps
-from django.conf import settings
 from django.contrib import messages
-from django.db.models import Count
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -40,7 +38,6 @@ from django.views.generic.edit import FormView
 import saneyaml
 from django_filters.views import FilterView
 
-from scancodeio.celery import app as celery_app
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -285,9 +282,9 @@ class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
             )
         except RunInProgressError as error:
             messages.error(self.request, error)
-        else:
-            messages.success(self.request, self.success_message.format(project))
+            return redirect(project)
 
+        messages.success(self.request, self.success_message.format(project))
         return response
 
 
@@ -296,8 +293,14 @@ class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
     success_message = 'The project "{}" and all its related data have been removed.'
 
     def delete(self, request, *args, **kwargs):
-        response_redirect = super().delete(request, *args, **kwargs)
-        messages.success(self.request, self.success_message.format(self.object.name))
+        project = self.get_object()
+        try:
+            response_redirect = super().delete(request, *args, **kwargs)
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+            return redirect(project)
+
+        messages.success(self.request, self.success_message.format(project.name))
         return response_redirect
 
 
@@ -308,10 +311,15 @@ class ProjectResetView(ProjectViewMixin, generic.DeleteView):
         """
         Call the reset() method on the project.
         """
-        self.object = self.get_object()
-        messages.success(self.request, self.success_message.format(self.object.name))
-        self.object.reset(keep_input=True)
-        return redirect(self.object)
+        project = self.get_object()
+        try:
+            project.reset(keep_input=True)
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+        else:
+            messages.success(self.request, self.success_message.format(project.name))
+
+        return redirect(project)
 
 
 class ProjectTreeView(ProjectViewMixin, generic.DetailView):
@@ -331,13 +339,35 @@ def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
-    if run.status == run.Status.RUNNING:
-        raise Http404("Pipeline already started.")
-    elif run.status == run.Status.QUEUED:
-        raise Http404("Pipeline already queued.")
+    if run.status != run.Status.NOT_STARTED:
+        raise Http404("Pipeline already queued, started or completed.")
 
     run.execute_task_async()
-    messages.success(request, f'Pipeline "{run.pipeline_name}" run started.')
+    messages.success(request, f"Pipeline {run.pipeline_name} run started.")
+    return redirect(project)
+
+
+def stop_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.status != run.Status.RUNNING:
+        raise Http404("Pipeline is not running.")
+
+    run.stop_task()
+    messages.success(request, f"Pipeline {run.pipeline_name} stopped.")
+    return redirect(project)
+
+
+def delete_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
+        raise Http404("Only non started or queued pipelines can be deleted.")
+
+    run.delete_task()
+    messages.success(request, f"Pipeline {run.pipeline_name} deleted.")
     return redirect(project)
 
 
@@ -451,15 +481,26 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         return entry.get(value_key)
 
     def get_annotations(self, field_name, value_key="value"):
-        return [
-            {
-                "start_line": entry.get("start_line"),
-                "end_line": entry.get("end_line"),
-                "text": self.get_annotation_text(entry, field_name, value_key),
-                "type": entry.get("policy", {}).get("compliance_alert") or "info",
-            }
-            for entry in getattr(self.object, field_name)
-        ]
+        annotations = []
+
+        for entry in getattr(self.object, field_name):
+            annotation_type = "info"
+
+            # Customize the annotation icon based on the policy compliance_alert
+            policy = entry.get("policy")
+            if policy:
+                annotation_type = policy.get("compliance_alert")
+
+            annotations.append(
+                {
+                    "start_line": entry.get("start_line"),
+                    "end_line": entry.get("end_line"),
+                    "text": self.get_annotation_text(entry, field_name, value_key),
+                    "type": annotation_type,
+                }
+            )
+
+        return annotations
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -512,19 +553,3 @@ class CodebaseResourceRawView(
             )
 
         raise Http404
-
-
-class AppMonitorView(generic.TemplateView):
-    template_name = "scanpipe/app_monitoring.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        always_eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", None)
-        if always_eager:
-            raise Http404(
-                "Celery monitoring not supported with CELERY_TASK_ALWAYS_EAGER=True"
-            )
-
-        context["inspector"] = celery_app.control.inspect()
-        return context

@@ -40,9 +40,11 @@ logger = logging.getLogger("scanpipe.pipes")
 
 def make_codebase_resource(project, location, rootfs_path=None):
     """
-    Creates a CodebaseResource with the `location` absolute path for the `project`.
+    Creates a CodebaseResource instance in the database for the given `project`.
 
-    The `location` of this Resource must be rooted in `project.codebase_path`.
+    The provided `location` is the absolute path of this resource.
+    It must be rooted in `project.codebase_path` as only the relative path within the
+    project codebase/ directory is stored in the database.
 
     `rootfs_path` is an optional path relative to a rootfs root within an
     Image/VM filesystem context. e.g.: "/var/log/file.log"
@@ -53,21 +55,15 @@ def make_codebase_resource(project, location, rootfs_path=None):
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """
-    resource_location = location.rstrip("/")
-    codebase_dir = str(project.codebase_path)
-
-    assert resource_location.startswith(
-        codebase_dir
-    ), f"Location: {resource_location} is not under project/codebase/: {codebase_dir}"
-
-    resource_data = scancode.get_resource_info(location=resource_location)
+    relative_path = Path(location).relative_to(project.codebase_path)
+    resource_data = scancode.get_resource_info(location=location)
 
     if rootfs_path:
         resource_data["rootfs_path"] = rootfs_path
 
     codebase_resource = CodebaseResource(
         project=project,
-        path=resource_location.replace(codebase_dir, ""),
+        path=relative_path,
         **resource_data,
     )
     codebase_resource.save(save_error=False)

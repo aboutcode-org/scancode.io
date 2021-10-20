@@ -57,5 +57,3 @@ jobs:
           SCANCODEIO_DB_NAME: ${{ env.DB_NAME }}
           SCANCODEIO_DB_USER: ${{ env.DB_USER }}
           SCANCODEIO_DB_PASSWORD: ${{ env.DB_PASSWORD }}
-          # Run tasks in the current thread, no need for workers in CI mode
-          CELERY_TASK_ALWAYS_EAGER: True
