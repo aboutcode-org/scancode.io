@@ -47,11 +47,11 @@
             <h1 class="display-5 fw-bolder text-white mb-2">
               Scan and analyze your code for origin and license
             </h1>
-            <p class="lead fw-normal text-white-50 mb-4">An open source solution to design and
-              customize scripted pipelines based on <a
-                class="link-light" href="https://github.com/nexB/scancode-toolkit"
-                target="_blank">ScanCode-toolkit</a>, the world’s most popular open source
-              scanning engine!</p>
+            <p class="lead fw-normal text-white-50 mb-4">
+              An open-source solution to run and customize scripted pipelines based on
+              <a class="link-light" href="https://github.com/nexB/scancode-toolkit" target="_blank">ScanCode-toolkit</a>,
+              the world’s most popular open-source codebase scanning engine!
+            </p>
             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center justify-content-xl-start">
               <a class="btn btn-warning btn-lg px-4 me-sm-3"
                  href="https://scancodeio.readthedocs.io/en/latest/">Get Started</a>
@@ -61,7 +61,7 @@
           </div>
         </div>
         <div class="col-xl-5 col-xxl-6 d-none d-xl-block text-center"><img
-          alt="charts" class="img-fluid rounded-3 my-5" src="website/assets/charts1.jpg"/></div>
+          alt="charts" class="img-fluid rounded-3 my-5" src="https://dummyimage.com/600x350/adb5bd/495057"/></div>
       </div>
     </div>
   </header>
@@ -71,16 +71,15 @@
       <div class="row gx-5">
         <div class="col-lg-4 mb-3">
           <div class="card h-100 shadow border-0">
-            <img alt="..." class="card-img-top" src="https://dummyimage.com/600x350/ced4da/6c757d"/>
+            <img alt="..." class="card-img-top" src="https://dummyimage.com/600x350/adb5bd/495057"/>
             <div class="card-body p-4">
               <a class="text-decoration-none link-dark stretched-link" href="#!"><h5
-                class="card-title mb-3">Apache licensed</h5></a>
-              <p class="card-text mb-0">ScanCode.io is Apache-licensed and written in Python with
-                Django and DRF. It has an extensive <a
-                  href="https://scancodeio.readthedocs.io/">documentation</a>
-                to help get you started and is supported by an active <a
-                  href="https://gitter.im/aboutcode-org/discuss" target="_blank">community of
-                  users</a> and adopters.</p>
+                class="card-title mb-3">Persistent scan data</h5></a>
+              <p class="card-text mb-0">
+                Backed by a database, ScanCode.io persists and organizes all of your
+                scanning projects and make them accessible through a Web UI, a JSON REST API,
+                and a command-line interface.
+              </p>
             </div>
           </div>
         </div>
@@ -90,20 +89,26 @@
             <div class="card-body p-4">
               <a class="text-decoration-none link-dark stretched-link" href="#!"><h5
                 class="card-title mb-3">Made for customization</h5></a>
-              <p class="card-text mb-0">Scanning pipelines are designed to be easily extended and
-                remixed; they can integrate all and any tools in an elegant unified framework.</p>
+              <p class="card-text mb-0">
+                Scanning pipelines are designed to be easily extended and remixed;
+                they can integrate many tools in an elegant, unified framework.
+              </p>
             </div>
           </div>
         </div>
         <div class="col-lg-4 mb-3">
           <div class="card h-100 shadow border-0">
-            <img alt="..." class="card-img-top" src="https://dummyimage.com/600x350/6c757d/343a40"/>
+            <img alt="..." class="card-img-top" src="https://dummyimage.com/600x350/ced4da/6c757d"/>
             <div class="card-body p-4">
               <a class="text-decoration-none link-dark stretched-link" href="#!"><h5
-                class="card-title mb-3">Persistent scan data</h5></a>
-              <p class="card-text mb-0">Backed by a database, ScanCode.io will persist and organize
-                all your scanning projects and make them accessible through a web UI, a JSON REST
-                API or a command line interface.</p>
+                class="card-title mb-3">Apache licensed</h5></a>
+              <p class="card-text mb-0">
+                ScanCode.io is Apache-licensed that is written in Python with Django and
+                Django REST Framework (DRF). It has extensive <a href="https://scancodeio.readthedocs.io/">documentation</a>
+                to help get you started and is supported by an active
+                <a href="https://gitter.im/aboutcode-org/discuss" target="_blank">community of users</a>
+                and adopters.
+              </p>
             </div>
           </div>
         </div>
@@ -115,16 +120,29 @@
       <div class="row gx-5 justify-content-center">
         <div class="col-lg-10 col-xl-10">
           <div class="text-center fs-5">
-            <p>Because not one scan fits all the codebases, you can select a specific scanning
-              pipeline for each project.</p>
-            <p>For instance, ScanCode.io provides a best-in-class pipeline to analyse in details a
-              Docker container in a way that is deeply aware of the specific structure of a
-              container image with its layered file systems and combination of system and
-              application packages.</p>
-            <p>And this will handle equally well Debian, RPM and Alpine Linux distributions, each
-              with their own unique characteristics.</p>
-            <p>Or you can analyze a complete virtual machine image, or specifically a single
-              application package from Pypi, each with specialized pipelines.</p>
+            <p>
+              ScanCode.io is a server to script and automate the process of <strong>Software
+              Composition Analysis</strong> (SCA) to identify any <strong>open source components</strong> and
+              their <strong>license compliance</strong> data in an application’s codebase.
+            </p>
+            <p>
+              ScanCode.io integrates the <a href="https://github.com/nexB/scancode-toolkit" target="_blank">ScanCode-toolkit</a>
+              and other libraries to determine the <strong>origin and license</strong> —provenance— of open source and other third-party software using
+              scripted pipelines.
+              It has several applications, including <strong>Docker container and VM composition analyses</strong>, among other use cases.
+            </p>
+            <p>
+              Because there is no one fits all when scanning different codebases,
+              ScanCode.io lets you <strong>choose a scanning pipeline that fits your project needs</strong>.
+              For example, ScanCode.io provides a specific pipeline to <strong>analyze Docker
+              containers</strong> into its detailed file systems and application packages.
+              It also equally handles <strong>Debian, RPM, and Alpine Linux</strong>
+              distributions—each with its own unique characteristics—.
+            </p>
+            <p>
+              Further, ScanCode.io allows you to <strong>analyze a complete virtual machine image</strong>,
+              or specifically a <strong>single application package</strong>, each with specialized pipelines.
+            </p>
           </div>
         </div>
       </div>
