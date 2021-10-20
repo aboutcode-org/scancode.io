@@ -30,8 +30,9 @@ __version__ = "30.0.1"
 SCAN_NOTICE = Path(__file__).resolve().parent.joinpath("scan.NOTICE").read_text()
 
 
-# Turn off the warnings from the `parameter_expansion` module.
+# Turn off the warnings from the `parameter_expansion` and `cluecode` modules.
 warnings.filterwarnings("ignore", module="parameter_expansion")
+warnings.filterwarnings("ignore", module="cluecode")
 
 
 def command_line():
