@@ -22,7 +22,6 @@ services:
     expose:
       - 8000
     volumes:
-      - .:/opt/scancodeio/
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
@@ -35,7 +34,6 @@ services:
     env_file:
       - docker.env
     volumes:
-      - .:/opt/scancodeio/
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
     depends_on:
