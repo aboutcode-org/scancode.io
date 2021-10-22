@@ -75,7 +75,7 @@ def get_image_data(image):
     """
     Returns a mapping of image-related data given an `image`.
     """
-    exclude = ["extracted_location", "archive_location", "layers"]
+    exclude = ["extracted_location", "archive_location"]
     image_data = {
         key: value for key, value in image.to_dict().items() if key not in exclude
     }
