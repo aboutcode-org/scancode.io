@@ -31,7 +31,7 @@
     "distro": null,
     "layers": [
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/7cbcbac42c44c6c38559e5df3a494f44987333c8023a40fec48df2fce1fc146b",
         "archive_location": "d388bee71bbf28f77042d89b353bacd14506227a39b6b1098afe457f0a0b608e/layer.tar",
         "sha256": "7cbcbac42c44c6c38559e5df3a494f44987333c8023a40fec48df2fce1fc146b",
         "docker_version": null,
@@ -49,7 +49,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/d242f1731c55e0f057e183146de867e820dd2ef575125ec36b008340a3acc65e",
         "archive_location": "e439273044a3b34ba206c3598cd007dbba34db5af98d40718d585869af68602e/layer.tar",
         "sha256": "d242f1731c55e0f057e183146de867e820dd2ef575125ec36b008340a3acc65e",
         "docker_version": null,
@@ -67,7 +67,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/d43ffef6b2712ef8ecdd86866e543b21ef8843742bf7c73a308a973534fa6c3f",
         "archive_location": "ca473f7411dd74e2d4781fc552d75d3b63c830ff66a253eec6bf5a6261c031b2/layer.tar",
         "sha256": "d43ffef6b2712ef8ecdd86866e543b21ef8843742bf7c73a308a973534fa6c3f",
         "docker_version": null,
@@ -85,7 +85,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/76ad2c2330f19d6f16fdf86e7b10cc2c1a8160746ffa1c4e3e46c75661f4bdcd",
         "archive_location": "325919382e7b94a21ef80452c2fb599f5a03364e8559da0eca1359ad6ac394a0/layer.tar",
         "sha256": "76ad2c2330f19d6f16fdf86e7b10cc2c1a8160746ffa1c4e3e46c75661f4bdcd",
         "docker_version": null,
@@ -206,7 +206,7 @@
     "distro": null,
     "layers": [
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a",
         "archive_location": "2ba5d0825bcb0d843f975f7ba52db62531dbc73df083fae3d355c1a22d4a4bdc/layer.tar",
         "sha256": "3e207b409db364b595ba862cdc12be96dcdad8e36c59a03b7b3b61c946a5741a",
         "docker_version": null,
@@ -224,7 +224,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/09c52b6fbc483eb8e2d244a916da54fb3990cdaa575cab35edfbb27e132929cb",
         "archive_location": "c9d345514b7a7f4e4d14748c6a7a6cb408f117fccce87ef80bf72429b5360c44/layer.tar",
         "sha256": "09c52b6fbc483eb8e2d244a916da54fb3990cdaa575cab35edfbb27e132929cb",
         "docker_version": null,
@@ -242,7 +242,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/55141db9edb2a13ee593cff8c80e883e672e388c8686fd94a4f2518f21de1d32",
         "archive_location": "cbfc5b91e94f389bd405928c3be3367feea459d5917bde9d8b2792b96ae789ef/layer.tar",
         "sha256": "55141db9edb2a13ee593cff8c80e883e672e388c8686fd94a4f2518f21de1d32",
         "docker_version": null,
@@ -260,7 +260,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/01f37c950ed43fd0ecc47d0a72949201594f650bd63861cc6e6ac8097ca600bf",
         "archive_location": "bf1ad815335aca28dc1b64e4a9cad7f0bd9f7e9ee8162dce166150b4f1169b0e/layer.tar",
         "sha256": "01f37c950ed43fd0ecc47d0a72949201594f650bd63861cc6e6ac8097ca600bf",
         "docker_version": null,
@@ -278,7 +278,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/08dc907515cbda226cd872c2c79d087eb226fd27182b6b1315306aade51f963d",
         "archive_location": "5b2fc24305d353053e3a6aa7a613e75240e34cfede725f4bd4c466468cd3c48c/layer.tar",
         "sha256": "08dc907515cbda226cd872c2c79d087eb226fd27182b6b1315306aade51f963d",
         "docker_version": null,
@@ -296,7 +296,7 @@
         "comment": null
       },
       {
-        "extracted_location": null,
+        "extracted_location": "tempdir/5b4096031e4780d4c3010335ede79886786ec89d22c2bd85642a30beac682ec9",
         "archive_location": "ee512e2eb28e302e80a1e0bfad85ee3b18adc84a80e88ceac4325c13e3e083ec/layer.tar",
         "sha256": "5b4096031e4780d4c3010335ede79886786ec89d22c2bd85642a30beac682ec9",
         "docker_version": null,
