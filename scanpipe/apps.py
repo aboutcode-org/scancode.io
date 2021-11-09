@@ -64,6 +64,15 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
+        # Flag stale runs in SYNC mode.
+        # Note that it's not possible to catch a KeyboardInterrupt while running the
+        # `runserver` command to cleanup on "stopping" the process so we have to cleanup
+        # on starting the app.
+        if not settings.SCANCODEIO_ASYNC:
+            run_model = self.get_model("Run")
+            stale_runs = run_model.objects.queued_or_running()
+            stale_runs.update(task_exitcode=88)
+
     def load_pipelines(self):
         """
         Loads pipelines from the "scancodeio_pipelines" entry point group and from the
