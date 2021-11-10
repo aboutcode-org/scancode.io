@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import inspect
+import logging
 import re
 import shutil
 import uuid
@@ -61,6 +62,7 @@ from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
 
+logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
@@ -994,6 +996,19 @@ class RunQuerySet(ProjectRelatedQuerySet):
         """
         return self.filter(task_id__isnull=False, task_end_date__isnull=True)
 
+    def sync_with_jobs(self):
+        """
+        Calls the `sync_with_job` method for each Run instances of the QuerySet.
+        """
+        for run in self:
+            run.sync_with_job()
+
+    def set_task_staled(self):
+        """
+        Updates the status to STALE for each Run instances of the QuerySet.
+        """
+        self.update(task_exitcode=88, task_end_date=timezone.now())
+
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     """
@@ -1047,6 +1062,62 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         self.set_task_queued()
 
         return job
+
+    def sync_with_job(self):
+        """
+        Synchronise the `self` Run instance with its related RQ Job.
+
+        This is require when a Run gets out of sync with its Job, this can happen
+        when the worker or one of its processes is killed, the Run status is not
+        properly updated and may stay in a Queued or Running state forever.
+        """
+        if not settings.SCANCODEIO_ASYNC:
+            return
+
+        RunStatus = self.Status
+        job_status = self.job_status
+
+        if not job_status:
+            if self.status == RunStatus.QUEUED:
+                logger.info(
+                    f"No Job found for QUEUED Run={self.task_id}. "
+                    f"Enqueueing a new Job in the worker registery."
+                )
+                self.execute_task_async()
+
+            elif self.status == RunStatus.RUNNING:
+                logger.info(
+                    f"No Job found for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STALE."
+                )
+                self.set_task_staled()
+
+            return
+
+        if self.status == RunStatus.RUNNING and job_status != JobStatus.STARTED:
+            if job_status == JobStatus.STOPPED:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STOPPED."
+                )
+                self.set_task_stopped()
+
+            elif job_status == JobStatus.FAILED:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as FAILED."
+                )
+                self.set_task_ended(
+                    exitcode=1,
+                    output=f"Job was moved to the FailedJobRegistry during cleanup",
+                )
+
+            else:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STALE."
+                )
+                self.set_task_staled()
 
     def set_scancodeio_version(self):
         """
