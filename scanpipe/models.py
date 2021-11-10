@@ -328,8 +328,9 @@ class AbstractTaskFieldsModel(models.Model):
         Deletes a "not started" or "queued" task.
         """
         if settings.SCANCODEIO_ASYNC and self.task_id:
-            # Cancels the job and deletes the job hash from Redis.
-            self.job.delete()
+            job = self.job
+            if job:
+                self.job.delete()
 
         if delete_self:
             self.delete()
