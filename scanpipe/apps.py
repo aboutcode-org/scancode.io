@@ -22,6 +22,7 @@
 
 import inspect
 import logging
+import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
@@ -64,14 +65,8 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
-        # Flag stale runs in SYNC mode.
-        # Note that it's not possible to catch a KeyboardInterrupt while running the
-        # `runserver` command to cleanup on "stopping" the process so we have to cleanup
-        # on starting the app.
-        if not settings.SCANCODEIO_ASYNC:
-            run_model = self.get_model("Run")
-            stale_runs = run_model.objects.queued_or_running()
-            stale_runs.update(task_exitcode=88)
+        if "rqworker" in sys.argv or "runserver" in sys.argv:
+            self.sync_runs_and_jobs()
 
     def load_pipelines(self):
         """
@@ -197,3 +192,26 @@ class ScanPipeConfig(AppConfig):
         Returns True if the policies were provided and loaded properly.
         """
         return bool(self.license_policies_index)
+
+    def sync_runs_and_jobs(self):
+        """
+        Synchronizes QUEUED and RUNNING Runs with their related Jobs.
+        """
+        logger.info("Synchronizing QUEUED and RUNNING Runs with their related Jobs.")
+
+        run_model = self.get_model("Run")
+        queued_or_running = run_model.objects.queued_or_running()
+        if not queued_or_running:
+            logger.info("No Runs to synchronize.")
+            return
+
+        if settings.SCANCODEIO_ASYNC:
+            queued_or_running.sync_with_jobs()
+
+        # In SYNC mode, it's not possible to catch a KeyboardInterrupt while running the
+        # `runserver` command to cleanup on "stopping" the process, so we have to
+        # cleanup on starting the app.
+        else:
+            uuids = list(queued_or_running.values_list("uuid", flat=True))
+            logger.info(f"Flagging the following Runs as STALE: {uuids}")
+            queued_or_running.set_task_staled()
