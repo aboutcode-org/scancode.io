@@ -10,6 +10,11 @@ services:
 
   redis:
     image: redis
+    # Enable redis data persistence using the "Append Only File" with the
+    # default policy of fsync every second. See https://redis.io/topics/persistence
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
 
   web:
     build: .
@@ -39,7 +44,7 @@ services:
     depends_on:
       - redis
       - db
-      - web # ensure that potential db migrations run first
+      - web # Ensure that potential db migrations run first
 
   nginx:
     image: nginx
@@ -54,5 +59,6 @@ services:
 
 volumes:
   db_data:
+  redis_data:
   static:
   workspace:
