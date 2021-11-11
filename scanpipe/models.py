@@ -1094,7 +1094,14 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
             return
 
-        if self.status == RunStatus.RUNNING and job_status != JobStatus.STARTED:
+        job_is_out_of_sync = any(
+            [
+                self.status == RunStatus.RUNNING and job_status != JobStatus.STARTED,
+                self.status == RunStatus.QUEUED and job_status != JobStatus.QUEUED,
+            ]
+        )
+
+        if job_is_out_of_sync:
             if job_status == JobStatus.STOPPED:
                 logger.info(
                     f"Job found as {job_status} for RUNNING Run={self.task_id}. "
