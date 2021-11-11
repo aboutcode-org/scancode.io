@@ -65,7 +65,7 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
-        if "rqworker" in sys.argv or "runserver" in sys.argv:
+        if "runserver" in sys.argv:
             self.sync_runs_and_jobs()
 
     def load_pipelines(self):
