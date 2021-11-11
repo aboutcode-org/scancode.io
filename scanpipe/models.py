@@ -996,19 +996,6 @@ class RunQuerySet(ProjectRelatedQuerySet):
         """
         return self.filter(task_id__isnull=False, task_end_date__isnull=True)
 
-    def sync_with_jobs(self):
-        """
-        Calls the `sync_with_job` method for each Run instances of the QuerySet.
-        """
-        for run in self:
-            run.sync_with_job()
-
-    def set_task_staled(self):
-        """
-        Updates the status to STALE for each Run instances of the QuerySet.
-        """
-        self.update(task_exitcode=88, task_end_date=timezone.now())
-
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     """
@@ -1071,11 +1058,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         when the worker or one of its processes is killed, the Run status is not
         properly updated and may stay in a Queued or Running state forever.
         """
-        if not settings.SCANCODEIO_ASYNC:
-            return
-
         RunStatus = self.Status
-        job_status = self.job_status
+
+        if settings.SCANCODEIO_ASYNC:
+            job_status = self.job_status
+        else:
+            job_status = None
 
         if not job_status:
             if self.status == RunStatus.QUEUED:

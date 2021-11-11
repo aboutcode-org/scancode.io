@@ -586,12 +586,6 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         queued_or_running_qs = self.project1.runs.queued_or_running()
         self.assertQuerysetEqual(queued_or_running_qs, [running, queued])
 
-        queued_or_running_qs.set_task_staled()
-        running.refresh_from_db()
-        self.assertTrue(running.task_staled)
-        queued.refresh_from_db()
-        self.assertTrue(queued.task_staled)
-
     def test_scanpipe_run_model_status_property(self):
         now = timezone.now()
 

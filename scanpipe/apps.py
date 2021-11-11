@@ -65,7 +65,10 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
-        if "runserver" in sys.argv:
+        # In SYNC mode, the Run instances cleanup is triggered on app.ready() only
+        # when the app is started through "runserver"
+        # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
+        if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
             self.sync_runs_and_jobs()
 
     def load_pipelines(self):
@@ -197,21 +200,14 @@ class ScanPipeConfig(AppConfig):
         """
         Synchronizes QUEUED and RUNNING Runs with their related Jobs.
         """
-        logger.info("Synchronizing QUEUED and RUNNING Runs with their related Jobs.")
+        logger.info("Synchronizing QUEUED and RUNNING Runs with their related Jobs...")
 
         run_model = self.get_model("Run")
         queued_or_running = run_model.objects.queued_or_running()
-        if not queued_or_running:
-            logger.info("No Runs to synchronize.")
-            return
 
-        if settings.SCANCODEIO_ASYNC:
-            queued_or_running.sync_with_jobs()
-
-        # In SYNC mode, it's not possible to catch a KeyboardInterrupt while running the
-        # `runserver` command to cleanup on "stopping" the process, so we have to
-        # cleanup on starting the app.
+        if queued_or_running:
+            logger.info(f"{len(queued_or_running)} Runs to synchronize:")
+            for run in queued_or_running:
+                run.sync_with_job()
         else:
-            uuids = list(queued_or_running.values_list("uuid", flat=True))
-            logger.info(f"Flagging the following Runs as STALE: {uuids}")
-            queued_or_running.set_task_staled()
+            logger.info("No Runs to synchronize.")
