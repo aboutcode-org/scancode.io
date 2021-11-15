@@ -26,7 +26,6 @@ import shutil
 import tempfile
 from pathlib import Path
 from unittest import mock
-from unittest.case import expectedFailure
 
 from django.apps import apps
 from django.core.management import call_command
@@ -701,13 +700,16 @@ class ScanPipePipesTest(TestCase):
         downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
 
-    @expectedFailure
+    @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.run_command")
-    def test_scanpipe_pipes_fetch_docker_image(self, mock_run_command, mock_skopeo):
+    def test_scanpipe_pipes_fetch_docker_image(
+        self, mock_run_command, mock_skopeo, mock_platform
+    ):
         url = "docker://debian:10.9"
 
-        mock_skopeo.return_value = Path("")
+        mock_platform.return_value = "linux", "amd64", ""
+        mock_skopeo.return_value = "skopeo"
         mock_run_command.return_value = 1, "error"
 
         with self.assertRaises(fetch.FetchDockerImageError):
@@ -715,10 +717,10 @@ class ScanPipePipesTest(TestCase):
 
         mock_run_command.assert_called_once()
         cmd = mock_run_command.call_args[0][0]
-        expected = "skopeo copy docker://debian:10.9 docker-archive:/"
-        self.assertTrue(cmd.startswith(expected))
-        expected = "debian_10_9.tar --policy default-policy.json"
-        self.assertTrue(cmd.endswith(expected))
+        self.assertTrue(cmd.startswith("skopeo copy --insecure-policy"))
+        self.assertIn("docker://debian:10.9 docker-archive:/", cmd)
+        self.assertIn("--override-os=linux --override-arch=amd64", cmd)
+        self.assertTrue(cmd.endswith("debian_10_9.tar"))
 
     @mock.patch("requests.get")
     def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
