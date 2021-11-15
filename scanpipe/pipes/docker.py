@@ -36,9 +36,11 @@ logger = logging.getLogger(__name__)
 
 def extract_images_from_inputs(project):
     """
-    Collects all the tarballs from the `project` input/ work directory, extracts each
-    tarball to the tmp/ work directory and collects the images.
-    Returns the `images` and `errors` that may have happen during the extraction.
+    Collects all the tarballs from the `project` input/ work directory, extracts
+    each tarball to the tmp/ work directory and collects the images.
+
+    Returns the `images` and an `errors` list of error messages that may have
+    happen during the extraction.
     """
     target_path = project.tmp_path
     images = []
@@ -46,38 +48,81 @@ def extract_images_from_inputs(project):
 
     for input_tarball in project.inputs(pattern="*.tar*"):
         extract_target = target_path / f"{input_tarball.name}-extract"
-        extract_errors = extract_archive(input_tarball, extract_target)
-        images.extend(Image.get_images_from_dir(extract_target))
-        errors.extend(extract_errors)
+        imgs, errs = extract_image_from_tarball(input_tarball, extract_target)
+        images.extend(imgs)
+        errors.extend(errs)
 
+    return images, errors
+
+
+def extract_image_from_tarball(input_tarball, extract_target, verify=True):
+    """
+    Extract images from an ``input_tarball`` to an ``extract_target`` directory
+    Path object and collects the extracted images.
+
+    Returns the `images` and an `errors` list of error messages that may have
+    happen during the extraction.
+    """
+    errors = list(extract_archive(location=input_tarball, target=extract_target))
+    images = Image.get_images_from_dir(
+        extracted_location=str(extract_target),
+        verify=verify,
+    )
     return images, errors
 
 
 def extract_layers_from_images(project, images):
     """
-    Extracts all layers from the provided `images` into the `project` codebase/ work
+    Extracts all layers from the provided `images` into the `project` codebase
+    work directory.
+
+    Returns an `errors` list of error messages that may occur during the
+    extraction.
+    """
+    return extract_layers_from_images_to_base_path(
+        base_path=project.codebase_path,
+        images=images,
+    )
+
+
+def extract_layers_from_images_to_base_path(base_path, images):
+    """
+    Extracts all layers from the provided `images` into the `base_path` work
     directory.
-    Returns the `errors` that may happen during the extraction.
+
+    Returns an `errors` list of error messages that may occur during the
+    extraction.
     """
     errors = []
+    base_path = Path(base_path)
+
     for image in images:
         image_dirname = Path(image.extracted_location).name
-        target_path = project.codebase_path / image_dirname
+        target_path = base_path / image_dirname
 
         for layer in image.layers:
             extract_target = target_path / layer.layer_id
-            extract_errors = extract_archive(layer.archive_location, extract_target)
+            extract_errors = extract_archive(
+                location=layer.archive_location,
+                target=extract_target,
+            )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
 
+    return errors
 
-def get_image_data(image):
+
+def get_image_data(image, layer_path_segments=2):
     """
     Returns a mapping of image-related data given an `image`.
+    Keep only ``layer_path_segments`` trailing layer location segments (or keep
+    the locations unmodified if ``layer_path_segments`` is 0).
     """
-    exclude = ["extracted_location", "archive_location", "layers"]
+    exclude_from_img = ["extracted_location", "archive_location"]
     image_data = {
-        key: value for key, value in image.to_dict().items() if key not in exclude
+        key: value
+        for key, value in image.to_dict(layer_path_segments=layer_path_segments).items()
+        if key not in exclude_from_img
     }
     return image_data
 

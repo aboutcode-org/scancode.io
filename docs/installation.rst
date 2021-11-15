@@ -46,8 +46,8 @@ create an **environment file**, and **build the Docker image**::
     You need to rebuild the image whenever ScanCode.io's source code has been
     modified or updated.
 
-Run the Image
-^^^^^^^^^^^^^
+Run the App
+^^^^^^^^^^^
 
 **Run your image** as a container::
 
@@ -99,6 +99,53 @@ from there::
 
     docker-compose run web bash
     ./manage.py create-project project_name
+
+
+.. _offline_installation:
+
+Offline installation with Docker
+--------------------------------
+
+It is possible to install and run ScanCode.io on a server which is not connected to
+internet.
+
+The Docker images are build on a machine with internet access and copied to the server.
+
+.. note::
+    ``docker`` and ``docker-compose`` are required on both the local machine and the
+    server.
+
+Build the Images
+^^^^^^^^^^^^^^^^
+
+Build and save the docker images on your local machine::
+
+    make docker-images
+
+A compressed tarball ``scancodeio-images-VERSION.tar.gz`` containing all the docker
+images will be created in the :guilabel:`dist/` directory.
+
+Copy Images and docker-compose files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Copy the compressed tarball and the local ``docker-compose.yml`` file to the server.
+
+.. warning::
+    The ``docker-compose.yml`` file is required to run the application.
+
+Load the Images
+^^^^^^^^^^^^^^^
+
+Copy the tarball to the server and load the images::
+
+    docker load --input scancodeio-images-VERSION.tar.gz
+
+Run the App
+^^^^^^^^^^^
+
+Start the ScanCode.io services::
+
+    docker-compose --file docker-compose.yml up
 
 
 .. _local_development_installation:
