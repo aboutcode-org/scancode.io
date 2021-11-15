@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+- Include layers in docker image data.
+  https://github.com/nexB/scancode.io/issues/175
+
 - Fix a server error on resource details view when the compliance alert is "missing".
   https://github.com/nexB/scancode.io/issues/344
 

@@ -40,7 +40,6 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
-from scanpipe.pipes import docker
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import make_codebase_resource
@@ -743,17 +742,6 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(0, len(downloads))
         self.assertEqual(2, len(errors))
         self.assertEqual(urls, errors)
-
-    def test_scanpipe_pipes_docker_tag_whiteout_codebase_resources(self):
-        p1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
-        resource2 = CodebaseResource.objects.create(project=p1, name=".wh.filename2")
-
-        docker.tag_whiteout_codebase_resources(p1)
-        resource1.refresh_from_db()
-        resource2.refresh_from_db()
-        self.assertEqual("", resource1.status)
-        self.assertEqual("ignored-whiteout", resource2.status)
 
     def test_scanpipe_pipes_rootfs_from_project_codebase_class_method(self):
         p1 = Project.objects.create(name="Analysis")
