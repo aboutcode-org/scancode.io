@@ -101,7 +101,6 @@ def extract_layers_from_images_to_base_path(base_path, images):
         target_path = base_path / image_dirname
 
         for layer in image.layers:
-            # TODO: using the layer may be less useful than using the layer sha256
             extract_target = target_path / layer.layer_id
             extract_errors = extract_archive(
                 location=layer.archive_location,
