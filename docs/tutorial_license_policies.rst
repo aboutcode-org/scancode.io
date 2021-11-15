@@ -131,7 +131,7 @@ detected licenses, and computed at the codebase resource level, for example:
             "label": "Prohibited License",
             "compliance_alert": "error"
         },
-      ]
+      ],
       "license_expressions": [
         "mit OR gpl-3.0",
       ],
