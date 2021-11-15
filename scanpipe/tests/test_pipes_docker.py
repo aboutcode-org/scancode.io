@@ -27,67 +27,62 @@ from pathlib import Path
 from django.apps import apps
 from django.test import TestCase
 
+from scanpipe.models import CodebaseResource
+from scanpipe.models import Project
 from scanpipe.pipes import docker
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-class ScanPipeDcokerPipesTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+class ScanPipeDockerPipesTest(TestCase):
+    data_path = Path(__file__).parent / "data"
 
-    def test_docker__get_image_data_contains_layers__with_relative_paths(
-        self, regen=False
-    ):
+    def assertResultsEqual(self, expected_file, results, regen=False):
+        """
+        Set `regen` to True to regenerate the expected results.
+        """
+        if regen:
+            expected_file.write_text(results)
+
+        expected_data = expected_file.read_text()
+        self.assertEqual(expected_data, results)
+
+    def test_pipes_docker_get_image_data_contains_layers_with_relative_paths(self):
         extract_target = str(Path(tempfile.mkdtemp()) / "tempdir")
+        input_tarball = str(self.data_path / "docker-images.tar.gz")
 
-        input_tarball = str(self.data_location / "docker-images.tar.gz")
-
-        # extract the image first
+        # Extract the image first
         images, errors = docker.extract_image_from_tarball(
             input_tarball,
             extract_target,
             verify=False,
         )
-        assert not errors
+        self.assertEqual([], errors)
 
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
+        expected_location = self.data_path / "docker-images.tar.gz-expected-data-1.json"
+        self.assertResultsEqual(expected_location, results, regen=False)
 
-        expected_location = str(
-            self.data_location / "docker-images.tar.gz-expected-data-1.json"
-        )
-
-        if regen:
-            expected = results
-
-            with open(expected_location, "w") as out:
-                out.write(expected)
-        else:
-            with open(expected_location) as inp:
-                expected = inp.read()
-
-        self.assertEqual(results, expected)
-
-        # extract the layers second
+        # Extract the layers second
         errors = docker.extract_layers_from_images_to_base_path(
             base_path=extract_target,
             images=images,
         )
-        assert not errors
+        self.assertEqual([], errors)
 
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
+        expected_location = self.data_path / "docker-images.tar.gz-expected-data-2.json"
+        self.assertResultsEqual(expected_location, results, regen=False)
 
-        expected_location = str(
-            self.data_location / "docker-images.tar.gz-expected-data-2.json"
-        )
-        if regen:
-            expected = results
+    def test_pipes_docker_tag_whiteout_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource2 = CodebaseResource.objects.create(project=p1, name=".wh.filename2")
 
-            with open(expected_location, "w") as out:
-                out.write(expected)
-        else:
-            with open(expected_location) as inp:
-                expected = inp.read()
-
-        self.assertEqual(results, expected)
+        docker.tag_whiteout_codebase_resources(p1)
+        resource1.refresh_from_db()
+        resource2.refresh_from_db()
+        self.assertEqual("", resource1.status)
+        self.assertEqual("ignored-whiteout", resource2.status)

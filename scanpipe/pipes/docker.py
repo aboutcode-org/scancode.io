@@ -79,17 +79,13 @@ def extract_layers_from_images(project, images):
     Returns an `errors` list of error messages that may occur during the
     extraction.
     """
-
     return extract_layers_from_images_to_base_path(
         base_path=project.codebase_path,
         images=images,
     )
 
 
-def extract_layers_from_images_to_base_path(
-    base_path,
-    images,
-):
+def extract_layers_from_images_to_base_path(base_path, images):
     """
     Extracts all layers from the provided `images` into the `base_path` work
     directory.
@@ -99,6 +95,7 @@ def extract_layers_from_images_to_base_path(
     """
     errors = []
     base_path = Path(base_path)
+
     for image in images:
         image_dirname = Path(image.extracted_location).name
         target_path = base_path / image_dirname
@@ -112,6 +109,8 @@ def extract_layers_from_images_to_base_path(
             )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
+
+    return errors
 
 
 def get_image_data(image, layer_path_segments=2):
