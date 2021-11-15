@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+- Add a new tutorial chapter about license policies and compliance alerts.
+  https://github.com/nexB/scancode.io/issues/337
+
 - Include layers in docker image data.
   https://github.com/nexB/scancode.io/issues/175
 
