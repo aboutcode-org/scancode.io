@@ -115,7 +115,7 @@ test:
 	${MANAGE} test --noinput
 
 worker:
-	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
+	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
 
 bump:
 	@echo "-> Bump the version"
