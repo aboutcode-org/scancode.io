@@ -20,35 +20,43 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.contrib import admin
-from django.contrib.auth import views as auth_views
-from django.urls import include
-from django.urls import path
-from django.views.generic import RedirectView
+from django.conf import settings
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.mixins import UserPassesTestMixin
 
-from rest_framework.routers import DefaultRouter
 
-from scancodeio import licenses
-from scanpipe.api.views import ProjectViewSet
-from scanpipe.api.views import RunViewSet
+def is_authenticated_when_required(user):
+    """
+    Returns True if the `user` is authenticated when the
+    `SCANCODEIO_REQUIRE_AUTHENTICATION` setting is enabled.
 
-api_router = DefaultRouter()
-api_router.register(r"projects", ProjectViewSet)
-api_router.register(r"runs", RunViewSet)
+    Always True when the Authentication is not enabled.
+    """
+    if not settings.SCANCODEIO_REQUIRE_AUTHENTICATION:
+        return True
 
-auth_urlpatterns = [
-    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
-    path(
-        "accounts/logout/",
-        auth_views.LogoutView.as_view(next_page="login"),
-        name="logout",
-    ),
-]
+    if user.is_authenticated:
+        return True
 
-urlpatterns = auth_urlpatterns + [
-    path("admin/", admin.site.urls),
-    path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
-    path("", include("scanpipe.urls")),
-    path("", RedirectView.as_view(url="project/")),
-]
+    return False
+
+
+def conditional_login_required(function=None):
+    """
+    Decorator for views that checks that the current user is authenticated when
+    authentication is enabled.
+    """
+    actual_decorator = user_passes_test(is_authenticated_when_required)
+    if function:
+        return actual_decorator(function)
+    return actual_decorator
+
+
+class ConditionalLoginRequired(UserPassesTestMixin):
+    """
+    CBV mixin for views that checks that the current user is authenticated when
+    authentication is enabled.
+    """
+
+    def test_func(self):
+        return is_authenticated_when_required(self.request.user)

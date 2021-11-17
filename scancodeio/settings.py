@@ -47,6 +47,10 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[
 # SECURITY WARNING: don't run with debug turned on in production
 DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
 
+SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
+    "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
+)
+
 # ScanCode.io
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")

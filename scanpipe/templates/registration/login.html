@@ -1,0 +1,50 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  {% if form.errors %}
+    <p>Your username and password didn't match. Please try again.</p>
+  {% endif %}
+
+  {% if next %}
+    {% if user.is_authenticated %}
+      <p>
+        Your account doesn't have access to this page.
+        To proceed, please login with an account that has access.
+      </p>
+    {% else %}
+      <p>Please login to see this page.</p>
+    {% endif %}
+  {% endif %}
+
+  <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+
+    <div class="field">
+      <label class="label">Username</label>
+      <div class="control has-icons-left">
+        <!-- {{ form.username }}-->
+        <input class="input" type="text" name="username" autofocus autocomplete="username" maxlength="150" required id="id_username">
+        <span class="icon is-small is-left">
+          <i class="fas fa-user"></i>
+        </span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Passord</label>
+      <div class="control has-icons-left">
+        <!-- {{ form.password }}-->
+        <input class="input" type="password" name="password" autocomplete="current-password" required id="id_password">
+        <span class="icon is-small is-left">
+        <i class="fas fa-lock"></i>
+      </span>
+      </div>
+    </div>
+
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="control">
+      <input type="submit" class="button is-primary" value="Login">
+    </div>
+
+  </form>
+{% endblock %}

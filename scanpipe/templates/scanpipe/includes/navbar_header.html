@@ -14,20 +14,43 @@
       </a>
     </div>
   </div>
-  <div class="navbar-end">
-    <div class="navbar-item navbar-item mr-3 is-cursor-help">
-      <div class="dropdown is-right is-hoverable">
-        <div class="dropdown-trigger has-text-grey-light">
-          v{{ SCANCODEIO_VERSION }}
+  <div class="navbar-end mr-3">
+    {% if user.is_authenticated %}
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          {{ user.username }}
+        </a>
+        <div class="navbar-dropdown is-right">
+          <a class="navbar-item">
+            Settings
+          </a>
+          <a class="navbar-item" href="{% url 'logout' %}">
+            Sign out
+          </a>
+          <hr class="navbar-divider">
+          <div class="navbar-item">
+            Version {{ SCANCODEIO_VERSION }}
+          </div>
+          <div class="navbar-item">
+            ScanCode-toolkit {{ SCANCODE_TOOLKIT_VERSION }}
+          </div>
         </div>
-        <div class="dropdown-menu" role="menu" style="min-width: 13rem;">
-          <div class="dropdown-content">
-            <div class="dropdown-item">
-              ScanCode toolkit: v{{ SCANCODE_TOOLKIT_VERSION }}
+      </div>
+    {% else %}
+      <div class="navbar-item navbar-item is-cursor-help">
+        <div class="dropdown is-right is-hoverable">
+          <div class="dropdown-trigger has-text-grey-light">
+            v{{ SCANCODEIO_VERSION }}
+          </div>
+          <div class="dropdown-menu" role="menu" style="min-width: 13rem;">
+            <div class="dropdown-content">
+              <div class="dropdown-item">
+                ScanCode-toolkit: v{{ SCANCODE_TOOLKIT_VERSION }}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    {% endif %}
   </div>
 </nav>
