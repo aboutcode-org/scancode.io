@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
+from django.conf import settings
 
 from rq.queue import Queue
 from rq.worker import Worker
@@ -49,7 +50,7 @@ class ScanCodeIOQueue(Queue):
     Modified version of RQ Queue including ScanCode.io customizations.
     """
 
-    # Reduce the "cleaning lock" ttl from hardcoded 899 seconds to 60 seconds.
+    # Reduce the "cleaning lock" ttl from default hardcoded 899 seconds to 60 seconds.
     cleaning_lock_ttl = 60
 
     def acquire_cleaning_lock(self):

@@ -607,7 +607,9 @@ class ScanPipeModelsTest(TestCase):
     @override_settings(SCANCODEIO_ASYNC=True)
     @mock.patch("scanpipe.models.Run.execute_task_async")
     @mock.patch("scanpipe.models.Run.job_status", new_callable=mock.PropertyMock)
-    def test_scanpipe_run_model_sync_with_job(self, mock_job_status, mock_execute_task):
+    def test_scanpipe_run_model_sync_with_job_async_mode(
+        self, mock_job_status, mock_execute_task
+    ):
         queued = self.create_run(task_id=uuid.uuid4())
         self.assertEqual(Run.Status.QUEUED, queued.status)
         mock_job_status.return_value = None
@@ -637,6 +639,20 @@ class ScanPipeModelsTest(TestCase):
 
         running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
         mock_job_status.return_value = "Something else"
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_staled)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_run_model_sync_with_job_sync_mode(self, mock_execute_task):
+        queued = self.create_run(task_id=uuid.uuid4())
+        self.assertEqual(Run.Status.QUEUED, queued.status)
+        queued.sync_with_job()
+        mock_execute_task.assert_called_once()
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        self.assertEqual(Run.Status.RUNNING, running.status)
         running.sync_with_job()
         running.refresh_from_db()
         self.assertTrue(running.task_staled)

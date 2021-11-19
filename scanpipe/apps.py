@@ -65,8 +65,8 @@ class ScanPipeConfig(AppConfig):
         self.load_pipelines()
         self.set_policies()
 
-        # In SYNC mode, the Run instances cleanup is triggered on app.ready() only
-        # when the app is started through "runserver"
+        # In SYNC mode, the Run instances cleanup is triggered on app.ready()
+        # only when the app is started through "runserver".
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
         if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
             self.sync_runs_and_jobs()
