@@ -40,6 +40,8 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 from django.utils import timezone
 
+from rq.job import JobStatus
+
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -544,7 +546,9 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
 
-        running = self.create_run(pipeline="running", task_start_date=now)
+        running = self.create_run(
+            pipeline="running", task_start_date=now, task_id=uuid.uuid4()
+        )
         not_started = self.create_run(pipeline="not_started")
         queued = self.create_run(pipeline="queued", task_id=uuid.uuid4())
         executed = self.create_run(
@@ -578,6 +582,9 @@ class ScanPipeModelsTest(TestCase):
         qs = self.project1.runs.failed()
         self.assertQuerysetEqual(qs, [failed])
 
+        queued_or_running_qs = self.project1.runs.queued_or_running()
+        self.assertQuerysetEqual(queued_or_running_qs, [running, queued])
+
     def test_scanpipe_run_model_status_property(self):
         now = timezone.now()
 
@@ -596,6 +603,59 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.QUEUED, queued.status)
         self.assertEqual(Run.Status.SUCCESS, succeed.status)
         self.assertEqual(Run.Status.FAILURE, failed.status)
+
+    @override_settings(SCANCODEIO_ASYNC=True)
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    @mock.patch("scanpipe.models.Run.job_status", new_callable=mock.PropertyMock)
+    def test_scanpipe_run_model_sync_with_job_async_mode(
+        self, mock_job_status, mock_execute_task
+    ):
+        queued = self.create_run(task_id=uuid.uuid4())
+        self.assertEqual(Run.Status.QUEUED, queued.status)
+        mock_job_status.return_value = None
+        queued.sync_with_job()
+        mock_execute_task.assert_called_once()
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        self.assertEqual(Run.Status.RUNNING, running.status)
+        mock_job_status.return_value = None
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_staled)
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        mock_job_status.return_value = JobStatus.STOPPED
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_stopped)
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        mock_job_status.return_value = JobStatus.FAILED
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_failed)
+        expected = "Job was moved to the FailedJobRegistry during cleanup"
+        self.assertEqual(expected, running.task_output)
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        mock_job_status.return_value = "Something else"
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_staled)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_run_model_sync_with_job_sync_mode(self, mock_execute_task):
+        queued = self.create_run(task_id=uuid.uuid4())
+        self.assertEqual(Run.Status.QUEUED, queued.status)
+        queued.sync_with_job()
+        mock_execute_task.assert_called_once()
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        self.assertEqual(Run.Status.RUNNING, running.status)
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_staled)
 
     def test_scanpipe_run_model_append_to_log(self):
         run1 = self.create_run()

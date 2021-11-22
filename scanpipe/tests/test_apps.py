@@ -20,15 +20,19 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
 from pathlib import Path
+from unittest import mock
 
 from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 from django.test import override_settings
+from django.utils import timezone
 
 from scanpipe.apps import ScanPipeConfig
 from scanpipe.models import Project
+from scanpipe.models import Run
 from scanpipe.tests import license_policies
 from scanpipe.tests import license_policies_index
 from scanpipe.tests.pipelines.register_from_file import RegisterFromFile
@@ -94,3 +98,24 @@ class ScanPipeAppsTest(TestCase):
 
         exitcode, output = pipeline_instance.execute()
         self.assertEqual(0, exitcode)
+
+    @mock.patch("scanpipe.models.Run.sync_with_job")
+    def test_scanpipe_apps_sync_runs_and_jobs(self, mock_sync_with_job):
+        project1 = Project.objects.create(name="Analysis")
+        not_started = Run.objects.create(project=project1, pipeline_name="pipeline")
+        queued = Run.objects.create(
+            project=project1, pipeline_name="pipeline", task_id=uuid.uuid4()
+        )
+        running = Run.objects.create(
+            project=project1,
+            pipeline_name="pipeline",
+            task_id=uuid.uuid4(),
+            task_start_date=timezone.now(),
+        )
+
+        self.assertEqual(Run.Status.NOT_STARTED, not_started.status)
+        self.assertEqual(Run.Status.QUEUED, queued.status)
+        self.assertEqual(Run.Status.RUNNING, running.status)
+
+        scanpipe_app.sync_runs_and_jobs()
+        self.assertEqual(2, mock_sync_with_job.call_count)

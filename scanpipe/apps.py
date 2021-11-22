@@ -22,6 +22,7 @@
 
 import inspect
 import logging
+import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
@@ -63,6 +64,15 @@ class ScanPipeConfig(AppConfig):
         logger.debug(f"Read environment variables from {settings.ENV_FILE}")
         self.load_pipelines()
         self.set_policies()
+
+        # In SYNC mode, the Run instances cleanup is triggered on app.ready()
+        # only when the app is started through "runserver".
+        # This cleanup is required if the a running pipeline process gets killed and
+        # since KeyboardInterrupt cannot be captured to properly update the Run instance
+        # before its running process death.
+        # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
+        if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
+            self.sync_runs_and_jobs()
 
     def load_pipelines(self):
         """
@@ -188,3 +198,19 @@ class ScanPipeConfig(AppConfig):
         Returns True if the policies were provided and loaded properly.
         """
         return bool(self.license_policies_index)
+
+    def sync_runs_and_jobs(self):
+        """
+        Synchronizes QUEUED and RUNNING Runs with their related Jobs.
+        """
+        logger.info("Synchronizing QUEUED and RUNNING Runs with their related Jobs...")
+
+        run_model = self.get_model("Run")
+        queued_or_running = run_model.objects.queued_or_running()
+
+        if queued_or_running:
+            logger.info(f"{len(queued_or_running)} Runs to synchronize:")
+            for run in queued_or_running:
+                run.sync_with_job()
+        else:
+            logger.info("No Runs to synchronize.")

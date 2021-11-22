@@ -4,6 +4,25 @@ Changelog
 Unreleased
 ----------
 
+- Synchronize QUEUED and RUNNING pipeline runs with their related worker jobs during
+  worker maintenance tasks scheduled every 10 minutes.
+  If a container was taken down while a pipeline was running, or if pipeline process
+  was killed unexpectedly, that pipeline run status will be updated to a FAILED state
+  during the next maintenance tasks.
+  QUEUED pipeline will be restored in the queue as the worker redis cache backend data
+  is now persistent and reloaded on starting the image.
+  Note that internaly, a running job emits a "heartbeat" every 60 seconds to let all the
+  workers know that it is properly running.
+  After 90 seconds without any heartbeats, a worker will determine that the job is not
+  active anymore and that job will be moved to the failed registry during the worker
+  maintenance tasks. The pipeline run will be updated as well to reflect this failure
+  in the Web UI, the REST API, and the command line interface.
+  https://github.com/nexB/scancode.io/issues/130
+
+- Enable redis data persistence using the "Append Only File" with the default policy of
+  fsync every second in the docker-compose.
+  https://github.com/nexB/scancode.io/issues/130
+
 - Add a new tutorial chapter about license policies and compliance alerts.
   https://github.com/nexB/scancode.io/issues/337
 
