@@ -37,11 +37,23 @@ class ScanCodeIOWorker(Worker):
     def run_maintenance_tasks(self):
         """
         Add Runs and Jobs synchronization to the periodic maintenance tasks.
+        Maintenance tasks should run on first worker startup or every 10 minutes.
+
+        During the maintenance, one of the worker will acquire a "cleaning lock" and
+        will run the registries cleanup.
+        During that cleanup, started Jobs that haven't sent a heartbeat in the past 90
+        seconds (job_monitoring_interval + 60) will be considered failed and will be
+        moved to the FailedJobRegistry.
+        This happens when the Job process is killed (voluntary or not) and the heartbeat
+        is the RQ approach to determine if the job is stills active.
+        The `sync_runs_and_jobs` will see this Job as failed and will update its related
+        Run accordingly.
         """
         super().run_maintenance_tasks()
 
-        # The synchronization needs to be executed after the `self.clean_registries()`
-        # that takes place in the in the parent `super().run_maintenance_tasks()`.
+        # The Runs and Jobs synchronization needs to be executed after the
+        # `self.clean_registries()` that takes place in the in the parent
+        # `super().run_maintenance_tasks()`.
         scanpipe_app.sync_runs_and_jobs()
 
 

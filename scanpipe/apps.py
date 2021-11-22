@@ -67,6 +67,9 @@ class ScanPipeConfig(AppConfig):
 
         # In SYNC mode, the Run instances cleanup is triggered on app.ready()
         # only when the app is started through "runserver".
+        # This cleanup is required if the a running pipeline process gets killed and
+        # since KeyboardInterrupt cannot be captured to properly update the Run instance
+        # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
         if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
             self.sync_runs_and_jobs()

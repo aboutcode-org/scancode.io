@@ -1052,11 +1052,14 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def sync_with_job(self):
         """
-        Synchronise the `self` Run instance with its related RQ Job.
+        Synchronise this Run instance with its related RQ Job.
 
-        This is require when a Run gets out of sync with its Job, this can happen
+        This is required when a Run gets out of sync with its Job, this can happen
         when the worker or one of its processes is killed, the Run status is not
         properly updated and may stay in a Queued or Running state forever.
+
+        In case the Run is out of sync of its related Job, the Run status will be
+        updated accordingly. When the run was in the queue, it will be enqueued again.
         """
         RunStatus = self.Status
 
