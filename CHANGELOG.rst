@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Unreleased
-----------
+v30.1.0 (2021-11-22)
+--------------------
 
 - Synchronize QUEUED and RUNNING pipeline runs with their related worker jobs during
   worker maintenance tasks scheduled every 10 minutes.
