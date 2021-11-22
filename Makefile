@@ -75,7 +75,7 @@ valid: isort black doc8
 
 check: doc8
 	@echo "-> Run pycodestyle (PEP8) validation"
-	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var .
+	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var --ignore=W606 .
 	@echo "-> Run isort imports ordering validation"
 	@${ACTIVATE} isort --check-only .
 	@echo "-> Run black validation"

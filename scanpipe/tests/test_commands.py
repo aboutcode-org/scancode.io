@@ -31,6 +31,7 @@ from django.apps import apps
 from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
+from django.test import override_settings
 from django.utils import timezone
 
 from scanpipe.management.commands.graph import is_graphviz_installed
@@ -166,6 +167,16 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Project my_project created", out.getvalue())
         self.assertIn(f"Start the {pipeline} pipeline execution...", out.getvalue())
         self.assertIn("successfully executed on project my_project", out.getvalue())
+
+        options.append("--async")
+        out = StringIO()
+        expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+        with override_settings(SCANCODEIO_ASYNC=False):
+            with self.assertRaisesMessage(CommandError, expected):
+                call_command("create-project", "other_project", *options, stdout=out)
+        self.assertIn(
+            "Project other_project created with work directory", out.getvalue()
+        )
 
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
