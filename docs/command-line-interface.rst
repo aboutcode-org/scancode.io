@@ -35,7 +35,8 @@ For example::
 
     $ scanpipe create-project --help
     usage: scanpipe create-project [--input-file INPUTS_FILES]
-        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] name
+        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] [--async]
+        name
 
     Create a ScanPipe project.
 
@@ -60,6 +61,10 @@ Optional arguments:
   directory.
 
 - ``--execute`` Execute the pipelines right after project creation.
+
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
+  Applies only when --execute is provided.
 
 .. warning::
     Pipelines are added and are executed in order.
@@ -117,6 +122,10 @@ add the docker pipeline to your project::
 
 Executes the next pipeline of the ``PROJECT`` project queue.
 
+Optional arguments:
+
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
 
 `$ scanpipe show-pipeline --project PROJECT`
 --------------------------------------------
