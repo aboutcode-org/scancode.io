@@ -101,7 +101,7 @@ class Command(AddInputCommandMixin, BaseCommand):
             call_command(
                 "execute",
                 project=project,
-                async=options["async"],
                 stderr=self.stderr,
                 stdout=self.stdout,
+                **{"async": options["async"]},
             )
