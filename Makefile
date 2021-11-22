@@ -108,7 +108,7 @@ sqlite:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --noreload
+	${MANAGE} runserver 8001 --noreload --insecure
 
 test:
 	@echo "-> Run the test suite"
