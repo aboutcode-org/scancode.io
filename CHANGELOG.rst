@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v30.1.1 (2021-11-23)
+--------------------
+
+- Remove the --no-install-recommends in the Dockerfile apt-get install to include
+  required dependencies for proper VM extraction.
+  https://github.com/nexB/scancode.io/issues/367
+
 v30.1.0 (2021-11-22)
 --------------------
 
