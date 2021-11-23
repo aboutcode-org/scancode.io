@@ -38,8 +38,10 @@ class Command(ProjectCommand):
             "--async",
             action="store_true",
             dest="async",
-            help="Add the pipeline run to the tasks queue for execution by a worker "
-            "instead of running in the current thread.",
+            help=(
+                "Add the pipeline run to the tasks queue for execution by a worker "
+                "instead of running in the current thread."
+            ),
         )
 
     def handle(self, *args, **options):

@@ -211,9 +211,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
+            missing_files = "\n- ".join(missing_inputs.keys())
             message = (
-                "The following input files are not available on disk anymore:\n- "
-                + "\n- ".join(missing_inputs.keys())
+                f"The following input files are not available on disk anymore:\n"
+                f"- {missing_files}"
             )
             messages.error(self.request, message)
 
