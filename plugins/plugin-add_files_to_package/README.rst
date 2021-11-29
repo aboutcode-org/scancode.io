@@ -1,0 +1,1 @@
+A ScanCode.io pipeline plugin to relate installed files to their package. 

@@ -48,6 +48,8 @@ def add_pypi_packages_installed_files(project):
     for i, package in enumerate(packages):
         resources = package.codebase_resources.filter(name="METADATA")
 
+        missing_resources = package.missing_resources[:]
+
         for resource in resources:
             if not resources_by_path:
                 respath = Path(str(resource.path).strip("/"))
@@ -71,7 +73,9 @@ def add_pypi_packages_installed_files(project):
                 #     continue
                 installed_resource = resources_by_path.get(if_abspath)
                 if not installed_resource:
-                    assert str(if_abspath).endswith(".pyc"), f"PyPI package is missing path: {if_abspath}"
+                    # TODO: the path is not right
+                    missing_resources.append(if_abspath)
+                    logger.info(f"      PyPI installed file is missing: {if_abspath}")
                 else:
                     # update the model to relate this to it package AND update the status
                     if package not in installed_resource.discovered_packages.all():
