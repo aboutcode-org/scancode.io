@@ -36,9 +36,7 @@ class ReportDebianPrimaryLicense(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (
-            cls.do_something,
-        )
+        return (cls.do_something,)
 
     def do_something(self):
         """

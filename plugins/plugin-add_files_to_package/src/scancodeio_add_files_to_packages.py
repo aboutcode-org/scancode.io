@@ -96,9 +96,7 @@ class AddFilesToPackages(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (
-            cls.find_application_package_files,
-        )
+        return (cls.find_application_package_files,)
 
     def find_application_package_files(self):
         """
