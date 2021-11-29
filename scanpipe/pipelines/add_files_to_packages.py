@@ -21,11 +21,11 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import logging
+from pathlib import Path
 
+from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipelines import Pipeline
-from pathlib import Path
-from scanpipe.models import CodebaseResource
 
 logger = logging.getLogger(__name__)
 
@@ -46,70 +46,42 @@ def add_pypi_packages_installed_files(project):
     resources_by_path = {}
 
     for i, package in enumerate(packages):
-        resources = package.codebase_resources.all()
-        if len(resources) != 1:
-            continue
+        resources = package.codebase_resources.filter(name="METADATA")
 
-        resource = resources[0]
+        for resource in resources:
+            if not resources_by_path:
+                respath = Path(str(resource.path).strip("/"))
+                site_packages_path = respath.parent.parent
+                site_packages_res = project_resources.get(path=site_packages_path)
 
-        if resource.name != "METADATA":
-            continue
+                for sr in site_packages_res.walk():
+                    absloc = sr.location_path.resolve().absolute()
+                    resources_by_path[absloc] = sr
 
-        if not resources_by_path:
-            respath = Path(str(resource.path).strip("/"))
-            site_packages_path = respath.parent.parent
-            site_packages_res = project_resources.get(path=site_packages_path)
+            reslocpath = resource.location_path
+            dist_info_dir = reslocpath.parent
+            installed_dist = Distribution.at(dist_info_dir)
+            purl = package.purl
+            logger.info(f"Adding resources for package #{i}: {purl}")
 
-            for sr in site_packages_res.walk():
-                absloc = sr.location_path.resolve().absolute()
-                resources_by_path[absloc] = sr
+            for f, installed_file in enumerate(installed_dist.files, 1):
+                if_abspath = installed_file.locate().absolute()
+                # if_hash = installed_file.hash
+                # if not if_hash:
+                #     continue
+                installed_resource = resources_by_path.get(if_abspath)
+                if not installed_resource:
+                    assert str(if_abspath).endswith(".pyc"), f"PyPI package is missing path: {if_abspath}"
+                else:
+                    # update the model to relate this to it package AND update the status
+                    if package not in installed_resource.discovered_packages.all():
+                        installed_resource.discovered_packages.add(package)
+                        installed_resource.status = "application-package"
+                        logger.info(f"      added as application-package to: {purl}")
+                        installed_resource.save()
+                        package.save()
 
-        reslocpath = resource.location_path
-        dist_info_dir = reslocpath.parent
-        installed_dist = Distribution.at(dist_info_dir)
-        purl = package.purl
-        logger.info(f"Adding resources for package #{i}: {purl}")
-
-        for f, installed_file in enumerate(installed_dist.files, 1):
-            if_abspath = installed_file.locate().absolute()
-            # if_hash = installed_file.hash
-            # if not if_hash:
-            #     continue
-            installed_resource = resources_by_path.get(if_abspath)
-            if not installed_resource:
-                assert str(if_abspath).endswith(".pyc"), f"PyPI package is missing path: {if_abspath}"
-            else:
-                # update the model to relate this to it package AND update the status
-                if package not in installed_resource.discovered_packages.all():
-                    installed_resource.discovered_packages.add(package)
-                    installed_resource.status = "application-package"
-                    logger.info(f"      added as application-package to: {purl}")
-                    installed_resource.save()
-                    package.save()
-
-                    # rootfs_path = pipes.normalize_path(install_file.path)
-                    # logger.info(f"   installed file rootfs_path: {rootfs_path}")
-                    #
-                    # try:
-                    #     codebase_resource = codebase_resources.get(
-                    #         rootfs_path=rootfs_path,
-                    #     )
-                    # except ObjectDoesNotExist:
-                    #     if rootfs_path not in missing_resources:
-                    #         missing_resources.append(rootfs_path)
-                    #     logger.info(f"      installed file is missing: {rootfs_path}")
-                    #     continue
-                    #
-                    #
-                    # if has_hash_diff(install_file, codebase_resource):
-                    #     if install_file.path not in modified_resources:
-                    #         modified_resources.append(install_file.path)
-                    #
-                    # package.missing_resources = missing_resources
-                    # package.modified_resources = modified_resources
-                    # package.save()
-
-        logger.info(f"Added #{f} resources for package #{i}: {purl}")
+            logger.info(f"Added #{f} resources for package #{i}: {purl}")
 
 
 class AddFilesToPackages(Pipeline):
