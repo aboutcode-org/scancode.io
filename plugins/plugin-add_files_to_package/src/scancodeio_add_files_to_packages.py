@@ -56,9 +56,9 @@ def add_pypi_packages_installed_files(project):
             if not resources_by_path:
                 respath = Path(str(resource.path).strip("/"))
                 site_packages_path = respath.parent.parent
-                site_packages_res = project_resources.get(path=site_packages_path)
+                site_packages_res = project_resources.filter(path__startswith=site_packages_path)
 
-                for sr in site_packages_res.walk():
+                for sr in site_packages_res:
                     absloc = sr.location_path.resolve().absolute()
                     resources_by_path[absloc] = sr
 
