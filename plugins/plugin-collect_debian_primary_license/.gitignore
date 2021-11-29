@@ -1,0 +1,4 @@
+/build/
+/dist/
+/.pytest_cache/
+/tmp/
