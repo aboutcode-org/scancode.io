@@ -1549,6 +1549,17 @@ class CodebaseResource(
         """
         return sorted(set(self.license_expressions))
 
+    def parent(self):
+        """
+        Returns the parent CodebaseResource object of the current
+        CodebaseResource `path`.
+        """
+        try:
+            parent_path = str(Path(self.path).parent).rstrip("/")
+            return self.project.codebaseresources.get(path=f"{parent_path}/")
+        except ObjectDoesNotExist as e:
+            raise Exception(parent_path) from e
+
     def descendants(self):
         """
         Returns a QuerySet of descendant CodebaseResource objects using a
