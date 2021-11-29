@@ -51,6 +51,8 @@ def add_pypi_packages_installed_files(project):
         missing_resources = package.missing_resources[:]
 
         for resource in resources:
+            # terrible hack where we keep a mapping of all the resources under a
+            # site-packages directory keyed by absolute path
             if not resources_by_path:
                 respath = Path(str(resource.path).strip("/"))
                 site_packages_path = respath.parent.parent
@@ -60,6 +62,7 @@ def add_pypi_packages_installed_files(project):
                     absloc = sr.location_path.resolve().absolute()
                     resources_by_path[absloc] = sr
 
+            # location_path is a pathlib.Path
             reslocpath = resource.location_path
             dist_info_dir = reslocpath.parent
             installed_dist = Distribution.at(dist_info_dir)
@@ -67,15 +70,15 @@ def add_pypi_packages_installed_files(project):
             logger.info(f"Adding resources for package #{i}: {purl}")
 
             for f, installed_file in enumerate(installed_dist.files, 1):
-                if_abspath = installed_file.locate().absolute()
-                # if_hash = installed_file.hash
-                # if not if_hash:
+                installed_file_abspath = installed_file.locate().absolute()
+                # installed_file = installed_file.hash
+                # if not installed_file:
                 #     continue
-                installed_resource = resources_by_path.get(if_abspath)
+                installed_resource = resources_by_path.get(installed_file_abspath)
                 if not installed_resource:
                     # TODO: the path is not right
-                    missing_resources.append(if_abspath)
-                    logger.info(f"      PyPI installed file is missing: {if_abspath}")
+                    missing_resources.append(installed_file_abspath)
+                    logger.info(f"      PyPI installed file is missing: {installed_file_abspath}")
                 else:
                     # update the model to relate this to it package AND update the status
                     if package not in installed_resource.discovered_packages.all():
