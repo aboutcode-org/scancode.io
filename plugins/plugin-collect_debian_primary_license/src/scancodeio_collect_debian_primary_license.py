@@ -41,10 +41,11 @@ def re_qualify_debian_package_license(project):
 
     packages = DiscoveredPackage.objects.filter(project=project, type="deb")
     for i, package in enumerate(packages):
-        if (
-            not package.license_expression
-            or len(licensing.license_keys(package.license_expression)) == 1
-        ):
+        if not package.license_expression:
+            continue
+        primary, _, license_expression = package.license_expression.partition("  |")
+        license_expression = license_expression.strip()
+        if len(licensing.license_keys(license_expression)) == 1:
             continue
 
         copyright_resources = package.codebase_resources.filter(name="copyright")
@@ -85,9 +86,7 @@ class CollectDebianPrimaryLicense(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (
-            cls.collect_debian_primary_license,
-        )
+        return (cls.collect_debian_primary_license,)
 
     def collect_debian_primary_license(self):
         """
