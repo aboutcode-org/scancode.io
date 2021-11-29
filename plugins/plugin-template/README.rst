@@ -1,0 +1,1 @@
+A sample ScanCode.io plugin template
