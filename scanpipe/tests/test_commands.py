@@ -369,6 +369,35 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = f"[SUCCESS] docker (executed in {run.execution_time} seconds)"
         self.assertIn(expected, output)
 
+    def test_scanpipe_management_command_list_project(self):
+        project1 = Project.objects.create(name="project1")
+        project2 = Project.objects.create(name="project2")
+        project3 = Project.objects.create(name="archived", is_archived=True)
+
+        options = []
+        out = StringIO()
+        call_command("list-project", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn(project1.name, output)
+        self.assertIn(project2.name, output)
+        self.assertNotIn(project3.name, output)
+
+        options = ["--search", project2.name]
+        out = StringIO()
+        call_command("list-project", *options, stdout=out)
+        output = out.getvalue()
+        self.assertNotIn(project1.name, output)
+        self.assertIn(project2.name, output)
+        self.assertNotIn(project3.name, output)
+
+        options = ["--include-archived"]
+        out = StringIO()
+        call_command("list-project", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn(project1.name, output)
+        self.assertIn(project2.name, output)
+        self.assertIn(project3.name, output)
+
     def test_scanpipe_management_command_output(self):
         project = Project.objects.create(name="my_project")
 

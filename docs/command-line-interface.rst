@@ -19,11 +19,15 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
     [scanpipe]
         add-input
         add-pipeline
+        archive-project
         create-project
-        graph
-        output
+        delete-project
         execute
+        graph
+        list-project
+        output
         show-pipeline
+        status
 
 
 `$ scanpipe <subcommand> --help`
@@ -68,6 +72,23 @@ Optional arguments:
 
 .. warning::
     Pipelines are added and are executed in order.
+
+
+`$ scanpipe list-project [--search SEARCH] [--include-archived]`
+----------------------------------------------------------------
+
+Lists ScanPipe projects.
+
+Optional arguments:
+
+- ``--search SEARCH`` Limit the projects list to this search results.
+
+- ``--include-archived`` Include archived projects.
+
+.. tip::
+    Only the project names are listed by default. You can display more details
+    about each project by providing the ``--verbosity 2`` or ``--verbosity 3``
+    options.
 
 
 `$ scanpipe add-input --project PROJECT [--input-file FILES] [--input-url URLS]`

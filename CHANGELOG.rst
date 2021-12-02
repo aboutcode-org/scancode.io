@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- Add a new `list-project` CLI command to list projects.
+  https://github.com/nexB/scancode.io/issues/365
+
 v30.1.1 (2021-11-23)
 --------------------
 
