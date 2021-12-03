@@ -4,7 +4,7 @@ Changelog
 Unreleased
 ----------
 
-- Add a new GitHub action thats build the docker-compose images and run the test suite.
+- Add a new GitHub action that build the docker-compose images and run the test suite.
   This ensure that the app is properly working and tested when running with Docker.
   https://github.com/nexB/scancode.io/issues/367
 
