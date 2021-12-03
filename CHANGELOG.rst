@@ -4,6 +4,15 @@ Changelog
 Unreleased
 ----------
 
+- Add a new GitHub action thats build the docker-compose images and run the test suite.
+  This ensure that the app is properly working and tested when running with Docker.
+  https://github.com/nexB/scancode.io/issues/367
+
+- Add --no-install-recommends in the Dockerfile apt-get install and add the
+  `linux-image-amd64` package. This packages makes available the kernels
+  required by extractcode and libguestfs for proper VM images extraction.
+  https://github.com/nexB/scancode.io/issues/367
+
 - Add a new `list-project` CLI command to list projects.
   https://github.com/nexB/scancode.io/issues/365
 
