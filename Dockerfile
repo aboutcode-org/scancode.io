@@ -44,6 +44,7 @@ RUN apt-get update \
        libgpgme11 \
        libdevmapper1.02.1 \
        libguestfs-tools \
+       linux-image-amd64 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
