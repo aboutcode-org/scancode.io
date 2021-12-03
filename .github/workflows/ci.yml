@@ -40,6 +40,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install libguestfs
+        run: sudo apt-get install -y libguestfs
+
+      - name: Make kernel files executable (reuired for vmimage extraction)
+        run: sudo chmod 0644 /boot/vmlinuz-*
+
       - name: Install dependencies
         run: make dev envfile
 
@@ -48,9 +54,6 @@ jobs:
 
       - name: Build the documentation
         run: make docs
-
-      - name: Make kernel files executable (reuired for vmimage extraction)
-        run: sudo chmod 0644 /boot/vmlinuz-*
 
       - name: Run tests
         run: bin/python manage.py test --verbosity=2 --noinput
