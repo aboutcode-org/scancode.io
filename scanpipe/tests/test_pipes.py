@@ -34,6 +34,7 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 
 from commoncode.archive import extract_tar
+from commoncode.system import on_linux
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
@@ -265,6 +266,27 @@ class ScanPipePipesTest(TestCase):
         ]
         for path in expected:
             self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
+        target = tempfile.mkdtemp()
+        compressed_input_location = str(self.data_location / "foobar.qcow2.tar.gz")
+        extract_tar(compressed_input_location, target_dir=target)
+        input_location = Path(target) / "foobar.qcow2"
+
+        errors = scancode.extract_archive(input_location, target)
+
+        if on_linux:
+            self.assertEqual([], errors)
+            results = [path.name for path in list(Path(target).glob("**/*"))]
+            expected = [
+                "foobar.qcow2-extract/bin/busybox",
+                "foobar.qcow2-extract/tmp/log",
+            ]
+            for path in expected:
+                self.assertIn(path, results)
+
+        else:
+            self.assertEqual(["VM Image extraction only supported on Linux."], errors)
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
