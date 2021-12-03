@@ -1,6 +1,6 @@
-name: CI
+name: Tests CI
 
-on: [push, pull_request]
+on: [push]
 
 env:
   DB_NAME: scancodeio

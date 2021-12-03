@@ -10,8 +10,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Build the docker-compose stack
-        run: docker-compose build
+      - name: Build and run the docker-compose stack
+        run: docker-compose up -d
 
       - name: Run tests
-        run: docker exec worker bin/python manage.py test --verbosity=2 --noinput
+        run: docker-compose exec worker ./manage.py test --verbosity=2 --noinput
