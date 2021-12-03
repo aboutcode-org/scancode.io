@@ -211,9 +211,11 @@ def run_command(cmd, log_output=False):
         cmd = " ".join(cmd)
 
     if not log_output:
+        print("not log_output")
         exitcode, output = subprocess.getstatusoutput(cmd)
         return exitcode, output
 
+    print("before subprocess.Popen")
     process = subprocess.Popen(
         cmd,
         shell=True,
@@ -221,6 +223,7 @@ def run_command(cmd, log_output=False):
         stderr=subprocess.STDOUT,
         universal_newlines=True,
     )
+    print("after subprocess.Popen")
 
     while _stream_process(process):
         sleep(1)
