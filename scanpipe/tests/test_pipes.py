@@ -35,7 +35,6 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 
 from commoncode.archive import extract_tar
-from commoncode.system import on_linux
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
@@ -57,6 +56,7 @@ from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 scanpipe_app = apps.get_app_config("scanpipe")
+from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipesTest(TestCase):
@@ -275,7 +275,6 @@ class ScanPipePipesTest(TestCase):
         input_location = Path(target) / "foobar.qcow2"
 
         errors = scancode.extract_archive(input_location, target)
-        from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
         # The VM image extraction features are available in the Docker image context.
         if from_docker_image:
