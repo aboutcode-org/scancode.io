@@ -30,7 +30,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
 RUN apt-get update \
- && apt-get install -y \
+ && apt-get install -y --no-install-recommends \
        bzip2 \
        xz-utils \
        zlib1g \

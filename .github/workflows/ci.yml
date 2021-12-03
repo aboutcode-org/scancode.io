@@ -43,6 +43,9 @@ jobs:
       - name: Install libguestfs-tools
         run: sudo apt-get update && sudo apt-get install -y libguestfs-tools
 
+      - name: Make kernel files executable (reuired for vmimage extraction)
+        run: sudo chmod 0644 /boot/vmlinuz-*
+
       - name: Install dependencies
         run: make dev envfile
 
