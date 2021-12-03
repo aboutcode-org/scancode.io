@@ -22,6 +22,7 @@
 
 import collections
 import json
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -55,6 +56,7 @@ from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 scanpipe_app = apps.get_app_config("scanpipe")
+from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipesTest(TestCase):
@@ -265,6 +267,40 @@ class ScanPipePipesTest(TestCase):
         ]
         for path in expected:
             self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
+        target = tempfile.mkdtemp()
+        compressed_input_location = str(self.data_location / "foobar.qcow2.tar.gz")
+        extract_tar(compressed_input_location, target_dir=target)
+        input_location = Path(target) / "foobar.qcow2"
+
+        errors = scancode.extract_archive(input_location, target)
+
+        # The VM image extraction features are available in the Docker image context.
+        if from_docker_image:
+            self.assertEqual([], errors)
+            results = [path.name for path in list(Path(target).glob("**/*"))]
+            expected = [
+                "bin",
+                "busybox",
+                "dot",
+                "foobar.qcow2",
+                "log",
+                "lost+found",
+                "tmp",
+            ]
+            self.assertEqual(sorted(expected), sorted(results))
+
+        else:
+            error = errors[0]
+            self.assertTrue(
+                any(
+                    [
+                        "Unable to read kernel" in error,
+                        "VM Image extraction only supported on Linux." in error,
+                    ]
+                )
+            )
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
