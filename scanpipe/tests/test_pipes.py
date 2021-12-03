@@ -22,6 +22,7 @@
 
 import collections
 import json
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -274,8 +275,10 @@ class ScanPipePipesTest(TestCase):
         input_location = Path(target) / "foobar.qcow2"
 
         errors = scancode.extract_archive(input_location, target)
+        from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
-        if on_linux:
+        # The VM image extraction features are available in the Docker image context.
+        if from_docker_image:
             self.assertEqual([], errors)
             results = [path.name for path in list(Path(target).glob("**/*"))]
             expected = [
@@ -290,7 +293,15 @@ class ScanPipePipesTest(TestCase):
             self.assertEqual(sorted(expected), sorted(results))
 
         else:
-            self.assertEqual(["VM Image extraction only supported on Linux."], errors)
+            error = errors[0]
+            self.assertTrue(
+                any(
+                    [
+                        "Unable to read kernel" in error,
+                        "VM Image extraction only supported on Linux." in error,
+                    ]
+                )
+            )
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")

@@ -17,4 +17,4 @@ jobs:
         run: docker-compose up -d
 
       - name: Run tests
-        run: docker-compose run web python ./manage.py test --verbosity=2 --noinput
+        run: docker-compose run -e FROM_DOCKER_IMAGE=1 web python ./manage.py test --verbosity=2 --noinput
