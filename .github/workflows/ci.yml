@@ -50,7 +50,7 @@ jobs:
         run: make docs
 
       - name: Make kernel files executable (reuired for vmimage extraction)
-        run: chmod 0644 /boot/vmlinuz-*
+        run: sudo chmod 0644 /boot/vmlinuz-*
 
       - name: Run tests
         run: bin/python manage.py test --verbosity=2 --noinput
