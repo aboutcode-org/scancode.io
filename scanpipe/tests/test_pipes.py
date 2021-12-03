@@ -279,11 +279,15 @@ class ScanPipePipesTest(TestCase):
             self.assertEqual([], errors)
             results = [path.name for path in list(Path(target).glob("**/*"))]
             expected = [
-                "foobar.qcow2-extract/bin/busybox",
-                "foobar.qcow2-extract/tmp/log",
+                "bin",
+                "busybox",
+                "dot",
+                "foobar.qcow2",
+                "log",
+                "lost+found",
+                "tmp",
             ]
-            for path in expected:
-                self.assertIn(path, results)
+            self.assertEqual(sorted(expected), sorted(results))
 
         else:
             self.assertEqual(["VM Image extraction only supported on Linux."], errors)
