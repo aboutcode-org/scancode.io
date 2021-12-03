@@ -341,7 +341,6 @@ def run_scancode(location, output_file, options, raise_on_error=False):
     ]
 
     exitcode, output = pipes.run_command(scancode_args, log_output=True)
-    print("run_scancode", exitcode, output)
     if exitcode > 0 and raise_on_error:
         raise ScancodeError(output)
 
