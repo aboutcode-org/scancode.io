@@ -14,4 +14,4 @@ jobs:
         run: docker-compose up -d
 
       - name: Run tests
-        run: docker-compose exec worker ./manage.py test --verbosity=2 --noinput
+        run: docker-compose exec worker python ./manage.py test --verbosity=2 --noinput
