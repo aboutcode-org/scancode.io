@@ -20,17 +20,41 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.management.commands import ProjectCommand
+
+from django.core.management.base import BaseCommand
+
+from scanpipe.filters import ProjectFilterSet
 from scanpipe.management.commands import RunStatusCommandMixin
+from scanpipe.models import Project
 
 
-class Command(ProjectCommand, RunStatusCommandMixin):
-    help = "Display status information about the provided project."
+class Command(BaseCommand, RunStatusCommandMixin):
+    help = "Lists ScanPipe projects."
+    separator = "-" * 50
+
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--search", help="Limit the projects list to this search results."
+        )
+        parser.add_argument(
+            "--include-archived",
+            action="store_true",
+            help="Include archived projects.",
+        )
 
     def handle(self, *args, **options):
-        super().handle(*args, **options)
+        verbosity = options["verbosity"]
+        filter_data = {"search": options["search"]}
 
-        # The `status` command is very verbose by default compared to the
-        # `list-project` command.
-        verbosity = options["verbosity"] + 2
-        self.display_status(self.project, verbosity)
+        if options["include_archived"]:
+            filter_data["is_archived"] = None
+
+        projects = ProjectFilterSet(filter_data).qs
+        project_count = len(projects)
+
+        for index, project in enumerate(projects, start=1):
+            self.display_status(project, verbosity)
+
+            if index != project_count and verbosity > 1:
+                self.stdout.write(f"\n{self.separator}\n\n")

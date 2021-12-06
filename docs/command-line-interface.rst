@@ -19,11 +19,15 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
     [scanpipe]
         add-input
         add-pipeline
+        archive-project
         create-project
-        graph
-        output
+        delete-project
         execute
+        graph
+        list-project
+        output
         show-pipeline
+        status
 
 
 `$ scanpipe <subcommand> --help`
@@ -35,7 +39,8 @@ For example::
 
     $ scanpipe create-project --help
     usage: scanpipe create-project [--input-file INPUTS_FILES]
-        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] name
+        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] [--async]
+        name
 
     Create a ScanPipe project.
 
@@ -61,8 +66,29 @@ Optional arguments:
 
 - ``--execute`` Execute the pipelines right after project creation.
 
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
+  Applies only when --execute is provided.
+
 .. warning::
     Pipelines are added and are executed in order.
+
+
+`$ scanpipe list-project [--search SEARCH] [--include-archived]`
+----------------------------------------------------------------
+
+Lists ScanPipe projects.
+
+Optional arguments:
+
+- ``--search SEARCH`` Limit the projects list to this search results.
+
+- ``--include-archived`` Include archived projects.
+
+.. tip::
+    Only the project names are listed by default. You can display more details
+    about each project by providing the ``--verbosity 2`` or ``--verbosity 3``
+    options.
 
 
 `$ scanpipe add-input --project PROJECT [--input-file FILES] [--input-url URLS]`
@@ -117,6 +143,10 @@ add the docker pipeline to your project::
 
 Executes the next pipeline of the ``PROJECT`` project queue.
 
+Optional arguments:
+
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
 
 `$ scanpipe show-pipeline --project PROJECT`
 --------------------------------------------

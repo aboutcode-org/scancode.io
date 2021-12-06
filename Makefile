@@ -25,7 +25,7 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude="migrations|data" .
+BLACK_ARGS=--exclude="migrations|data|lib|bin|var" .
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -108,14 +108,14 @@ sqlite:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --noreload
+	${MANAGE} runserver 8001 --noreload --insecure
 
 test:
 	@echo "-> Run the test suite"
 	${MANAGE} test --noinput
 
 worker:
-	${MANAGE} rqworker
+	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
 
 bump:
 	@echo "-> Bump the version"
@@ -125,4 +125,13 @@ docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs
+docker-images:
+	@echo "-> Build Docker services"
+	docker-compose build
+	@echo "-> Pull service images"
+	docker-compose pull
+	@echo "-> Save the service images to a compressed tar archive in the dist/ directory"
+	@mkdir -p dist/
+	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
+
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs docker-images

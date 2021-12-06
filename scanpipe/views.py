@@ -207,9 +207,10 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
 
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
+            missing_files = "\n- ".join(missing_inputs.keys())
             message = (
-                "The following input files are not available on disk anymore:\n- "
-                + "\n- ".join(missing_inputs.keys())
+                f"The following input files are not available on disk anymore:\n"
+                f"- {missing_files}"
             )
             messages.error(self.request, message)
 
@@ -481,15 +482,26 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         return entry.get(value_key)
 
     def get_annotations(self, field_name, value_key="value"):
-        return [
-            {
-                "start_line": entry.get("start_line"),
-                "end_line": entry.get("end_line"),
-                "text": self.get_annotation_text(entry, field_name, value_key),
-                "type": entry.get("policy", {}).get("compliance_alert") or "info",
-            }
-            for entry in getattr(self.object, field_name)
-        ]
+        annotations = []
+
+        for entry in getattr(self.object, field_name):
+            annotation_type = "info"
+
+            # Customize the annotation icon based on the policy compliance_alert
+            policy = entry.get("policy")
+            if policy:
+                annotation_type = policy.get("compliance_alert")
+
+            annotations.append(
+                {
+                    "start_line": entry.get("start_line"),
+                    "end_line": entry.get("end_line"),
+                    "text": self.get_annotation_text(entry, field_name, value_key),
+                    "type": annotation_type,
+                }
+            )
+
+        return annotations
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

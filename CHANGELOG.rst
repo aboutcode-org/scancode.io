@@ -4,6 +4,56 @@ Changelog
 Unreleased
 ----------
 
+- Add a new GitHub action that build the docker-compose images and run the test suite.
+  This ensure that the app is properly working and tested when running with Docker.
+  https://github.com/nexB/scancode.io/issues/367
+
+- Add --no-install-recommends in the Dockerfile apt-get install and add the
+  `linux-image-amd64` package. This packages makes available the kernels
+  required by extractcode and libguestfs for proper VM images extraction.
+  https://github.com/nexB/scancode.io/issues/367
+
+- Add a new `list-project` CLI command to list projects.
+  https://github.com/nexB/scancode.io/issues/365
+
+v30.1.1 (2021-11-23)
+--------------------
+
+- Remove the --no-install-recommends in the Dockerfile apt-get install to include
+  required dependencies for proper VM extraction.
+  https://github.com/nexB/scancode.io/issues/367
+
+v30.1.0 (2021-11-22)
+--------------------
+
+- Synchronize QUEUED and RUNNING pipeline runs with their related worker jobs during
+  worker maintenance tasks scheduled every 10 minutes.
+  If a container was taken down while a pipeline was running, or if pipeline process
+  was killed unexpectedly, that pipeline run status will be updated to a FAILED state
+  during the next maintenance tasks.
+  QUEUED pipeline will be restored in the queue as the worker redis cache backend data
+  is now persistent and reloaded on starting the image.
+  Note that internaly, a running job emits a "heartbeat" every 60 seconds to let all the
+  workers know that it is properly running.
+  After 90 seconds without any heartbeats, a worker will determine that the job is not
+  active anymore and that job will be moved to the failed registry during the worker
+  maintenance tasks. The pipeline run will be updated as well to reflect this failure
+  in the Web UI, the REST API, and the command line interface.
+  https://github.com/nexB/scancode.io/issues/130
+
+- Enable redis data persistence using the "Append Only File" with the default policy of
+  fsync every second in the docker-compose.
+  https://github.com/nexB/scancode.io/issues/130
+
+- Add a new tutorial chapter about license policies and compliance alerts.
+  https://github.com/nexB/scancode.io/issues/337
+
+- Include layers in docker image data.
+  https://github.com/nexB/scancode.io/issues/175
+
+- Fix a server error on resource details view when the compliance alert is "missing".
+  https://github.com/nexB/scancode.io/issues/344
+
 - Migrate the ScanCodebase pipeline from `scancode.run_scancode` subprocess to
   `scancode.scan_for_application_packages` and `scancode.scan_for_files`.
   https://github.com/nexB/scancode.io/issues/340

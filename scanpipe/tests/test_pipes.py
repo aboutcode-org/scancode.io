@@ -22,11 +22,11 @@
 
 import collections
 import json
+import os
 import shutil
 import tempfile
 from pathlib import Path
 from unittest import mock
-from unittest.case import expectedFailure
 
 from django.apps import apps
 from django.core.management import call_command
@@ -41,7 +41,6 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
-from scanpipe.pipes import docker
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import make_codebase_resource
@@ -57,6 +56,7 @@ from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 scanpipe_app = apps.get_app_config("scanpipe")
+from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipesTest(TestCase):
@@ -267,6 +267,40 @@ class ScanPipePipesTest(TestCase):
         ]
         for path in expected:
             self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
+        target = tempfile.mkdtemp()
+        compressed_input_location = str(self.data_location / "foobar.qcow2.tar.gz")
+        extract_tar(compressed_input_location, target_dir=target)
+        input_location = Path(target) / "foobar.qcow2"
+
+        errors = scancode.extract_archive(input_location, target)
+
+        # The VM image extraction features are available in the Docker image context.
+        if from_docker_image:
+            self.assertEqual([], errors)
+            results = [path.name for path in list(Path(target).glob("**/*"))]
+            expected = [
+                "bin",
+                "busybox",
+                "dot",
+                "foobar.qcow2",
+                "log",
+                "lost+found",
+                "tmp",
+            ]
+            self.assertEqual(sorted(expected), sorted(results))
+
+        else:
+            error = errors[0]
+            self.assertTrue(
+                any(
+                    [
+                        "Unable to read kernel" in error,
+                        "VM Image extraction only supported on Linux." in error,
+                    ]
+                )
+            )
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
@@ -637,7 +671,6 @@ class ScanPipePipesTest(TestCase):
             "codebase/asgiref-3.3.0.whl-extract/asgiref",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -658,7 +691,6 @@ class ScanPipePipesTest(TestCase):
             "codebase/asgiref-3.3.0.whl",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -703,13 +735,16 @@ class ScanPipePipesTest(TestCase):
         downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
 
-    @expectedFailure
+    @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.run_command")
-    def test_scanpipe_pipes_fetch_docker_image(self, mock_run_command, mock_skopeo):
+    def test_scanpipe_pipes_fetch_docker_image(
+        self, mock_run_command, mock_skopeo, mock_platform
+    ):
         url = "docker://debian:10.9"
 
-        mock_skopeo.return_value = Path("")
+        mock_platform.return_value = "linux", "amd64", ""
+        mock_skopeo.return_value = "skopeo"
         mock_run_command.return_value = 1, "error"
 
         with self.assertRaises(fetch.FetchDockerImageError):
@@ -717,10 +752,10 @@ class ScanPipePipesTest(TestCase):
 
         mock_run_command.assert_called_once()
         cmd = mock_run_command.call_args[0][0]
-        expected = "skopeo copy docker://debian:10.9 docker-archive:/"
-        self.assertTrue(cmd.startswith(expected))
-        expected = "debian_10_9.tar --policy default-policy.json"
-        self.assertTrue(cmd.endswith(expected))
+        self.assertTrue(cmd.startswith("skopeo copy --insecure-policy"))
+        self.assertIn("docker://debian:10.9 docker-archive:/", cmd)
+        self.assertIn("--override-os=linux --override-arch=amd64", cmd)
+        self.assertTrue(cmd.endswith("debian_10_9.tar"))
 
     @mock.patch("requests.get")
     def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
@@ -743,17 +778,6 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(0, len(downloads))
         self.assertEqual(2, len(errors))
         self.assertEqual(urls, errors)
-
-    def test_scanpipe_pipes_docker_tag_whiteout_codebase_resources(self):
-        p1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
-        resource2 = CodebaseResource.objects.create(project=p1, name=".wh.filename2")
-
-        docker.tag_whiteout_codebase_resources(p1)
-        resource1.refresh_from_db()
-        resource2.refresh_from_db()
-        self.assertEqual("", resource1.status)
-        self.assertEqual("ignored-whiteout", resource2.status)
 
     def test_scanpipe_pipes_rootfs_from_project_codebase_class_method(self):
         p1 = Project.objects.create(name="Analysis")

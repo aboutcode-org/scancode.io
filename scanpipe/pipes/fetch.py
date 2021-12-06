@@ -139,12 +139,15 @@ def get_docker_image_platform(docker_reference):
         f"{skopeo_executable} inspect --insecure-policy --raw --no-creds "
         f"{docker_reference}"
     )
+
     logger.info(f"Fetching image os/arch data: {cmd}")
     exitcode, output = pipes.run_command(cmd)
     logger.info(output)
     if exitcode != 0:
         raise FetchDockerImageError(output)
-    # data has this shape:
+
+    # Data has this shape:
+    #
     # "schemaVersion": 2,
     # "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
     # "manifests": [

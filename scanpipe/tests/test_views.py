@@ -191,3 +191,17 @@ class ScanPipeViewsTest(TestCase):
         run.set_task_stopped()
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
+
+    def test_scanpipe_views_codebase_resource_details_annotations_missing_policy(self):
+        resource1 = CodebaseResource.objects.create(
+            project=self.project1,
+            licenses=[{"key": "key", "policy": None, "start_line": 1, "end_line": 2}],
+        )
+        url = resource1.get_absolute_url()
+
+        response = self.client.get(url)
+        expected = (
+            '{"licenses": [{"start_line": 1, "end_line": 2, "text": null, '
+            '"type": "info"}]'
+        )
+        self.assertContains(response, expected)

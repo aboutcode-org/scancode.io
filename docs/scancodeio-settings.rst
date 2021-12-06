@@ -121,6 +121,8 @@ of additional pipelines directories::
 
     SCANCODEIO_PIPELINES_DIRS=/var/scancodeio/pipelines/,/home/user/pipelines/
 
+.. _scancodeio_settings_policies_file:
+
 SCANCODEIO_POLICIES_FILE
 ------------------------
 
@@ -142,11 +144,15 @@ A valid policies file is required to enable compliance-related features.
 
 - Licenses are referenced by the ``license_key``.
 - A Policy is defined with ``label`` and ``compliance_alert``.
-- The ``compliance_alert`` accepts 3 values: "" for an empty string, warning, and error.
+- The ``compliance_alert`` accepts 3 values: '' for an empty string, warning, and error.
 
 .. note::
     When the policy feature is enabled, the ``compliance_alert`` values are
     displayed in the UI and returned in all downloadable results.
+
+.. tip::
+    Check out the :ref:`tutorial_license_policies` tutorial for in-depth coverage of
+    this feature.
 
 SCANCODEIO_REST_API_PAGE_SIZE
 -----------------------------
