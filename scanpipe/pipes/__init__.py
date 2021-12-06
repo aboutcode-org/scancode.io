@@ -38,7 +38,9 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
-def make_codebase_resource(project, location, rootfs_path=None):
+def make_codebase_resource(
+    project, location, rootfs_path=None, relative_to_work_path=False
+):
     """
     Creates a CodebaseResource instance in the database for the given `project`.
 
@@ -54,9 +56,19 @@ def make_codebase_resource(project, location, rootfs_path=None):
     If a CodebaseResource already exists in the `project` with the same path,
     the error raised on save() is not stored in the database and the creation is
     skipped.
+
+    If `relative_to_work_path` is True, then the path of the created
+    CodebaseResource is set relative to `project.work_path`, rather than
+    `project.codebase_path`. This is used in the cases where we want to use the
+    project codebase/ directory as a root directory for use with
+    ProjectCodebase.
     """
-    relative_path = Path(location).relative_to(project.codebase_path)
     resource_data = scancode.get_resource_info(location=location)
+
+    if relative_to_work_path:
+        relative_path = Path(location).relative_to(project.work_path)
+    else:
+        relative_path = Path(location).relative_to(project.codebase_path)
 
     if rootfs_path:
         resource_data["rootfs_path"] = rootfs_path
