@@ -245,6 +245,20 @@ Data:
         "status": "The project project_name has been archived."
     }
 
+Reset
+^^^^^
+
+This action will delete all related database entrie and all data on disks except for
+the :guilabel:`input/` directory.
+
+``POST /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/reset/``
+
+.. code-block:: json
+
+    {
+        "status": "All data, except inputs, for the project_name project have been removed."
+    }
+
 Errors
 ^^^^^^
 

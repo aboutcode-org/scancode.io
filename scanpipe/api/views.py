@@ -236,6 +236,24 @@ class ProjectViewSet(
         else:
             return Response({"status": f"The project {project} has been archived."})
 
+    @action(detail=True, methods=["get", "post"])
+    def reset(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if self.request.method == "GET":
+            message = "POST on this URL to reset the project. " ""
+            return Response({"status": message})
+
+        try:
+            project.reset(keep_input=True)
+        except RunInProgressError as error:
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            message = (
+                f"All data, except inputs, for the {project} project have been removed."
+            )
+            return Response({"status": message})
+
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
