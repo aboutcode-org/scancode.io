@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+- Add the project "reset" feature in the UI, CLI, and REST API.
+  https://github.com/nexB/scancode.io/issues/375
+
 - Add a new GitHub action that build the docker-compose images and run the test suite.
   This ensure that the app is properly working and tested when running with Docker.
   https://github.com/nexB/scancode.io/issues/367

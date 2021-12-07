@@ -201,6 +201,17 @@ Optional arguments:
 - ``--no-input`` Does not prompt the user for input of any kind.
 
 
+`$ scanpipe reset-project --project PROJECT`
+--------------------------------------------
+
+Resets a project removing all database entrie and all data on disks except for
+the input/ directory.
+
+Optional arguments:
+
+- ``--no-input`` Does not prompt the user for input of any kind.
+
+
 `$ scanpipe delete-project --project PROJECT`
 ---------------------------------------------
 

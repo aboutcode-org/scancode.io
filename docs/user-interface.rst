@@ -95,8 +95,8 @@ the pipeline execution, or download the output files.
     Please refer to the :ref:`output_files` page for more details about your
     scan results.
 
-Archiving a Project
--------------------
+Archive a Project
+-----------------
 
 After a project is complete, you may want to archive it to prevent any further
 modification to that project.
@@ -120,9 +120,22 @@ Data cleanup of the project's :guilabel:`input/`, :guilabel:`codebase/`, and
 .. image:: images/user-interface-archive-modal.png
    :width: 500
 
+Reset a Project
+---------------
 
-Deleting a Project
-------------------
+The reset allows to wipe all database entrie and all data on disks related to a
+project while keeping the input files.
+It can be used to re-run pipelines on a clean slate of the project without having to
+re-upload input files.
+
+.. image:: images/user-interface-reset-action.png
+   :width: 300
+
+.. image:: images/user-interface-reset-modal.png
+   :width: 500
+
+Delete a Project
+----------------
 
 If any of your projects is no longer needed, you can delete it from the
 project's details page. Deleting old projects also makes navigating existing
