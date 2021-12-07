@@ -36,6 +36,8 @@ from django.utils import timezone
 
 from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.management.commands.graph import pipeline_graph_dot
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
 
@@ -466,5 +468,41 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = "The my_project project has been archived."
         self.assertEqual(expected, out_value)
 
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
+
+    def test_scanpipe_management_command_reset_project(self):
+        project = Project.objects.create(name="my_project")
+        project.add_pipeline("docker")
+        CodebaseResource.objects.create(project=project, path="filename.ext")
+        DiscoveredPackage.objects.create(project=project)
+
+        self.assertEqual(1, project.runs.count())
+        self.assertEqual(1, project.codebaseresources.count())
+        self.assertEqual(1, project.discoveredpackages.count())
+
+        (project.input_path / "input_file").touch()
+        (project.codebase_path / "codebase_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(project.codebase_path)))
+
+        out = StringIO()
+        options = [
+            "--project",
+            project.name,
+            "--no-color",
+            "--no-input",
+        ]
+        call_command("reset-project", *options, stdout=out)
+        out_value = out.getvalue().strip()
+
+        expected = (
+            "All data, except inputs, for the my_project project have been removed."
+        )
+        self.assertEqual(expected, out_value)
+
+        self.assertEqual(0, project.runs.count())
+        self.assertEqual(0, project.codebaseresources.count())
+        self.assertEqual(0, project.discoveredpackages.count())
         self.assertEqual(1, len(Project.get_root_content(project.input_path)))
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
