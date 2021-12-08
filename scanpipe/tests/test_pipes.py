@@ -1216,3 +1216,23 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projecterrors.count())
+
+    def test_scanpipe_pipes_make_codebase_resource_relative_to_work_path(self):
+        # Create test Project
+        p1 = Project.objects.create(name="Analysis")
+
+        # Create test CodebaseResource
+        test_resource_location = str(self.data_location / "notice.NOTICE")
+        copy_input(test_resource_location, p1.codebase_path)
+        resource_codebase_location = str(p1.codebase_path / "notice.NOTICE")
+        make_codebase_resource(
+            p1, resource_codebase_location, relative_to_work_path=True
+        )
+
+        # Ensure test CodebaseResource exists and that we only have one of them
+        self.assertEqual(1, p1.codebaseresources.count())
+
+        # Check to see if our test CodebaseResource has the `codebase` prefix in
+        # its name
+        cb = p1.codebaseresources.all()[0]
+        self.assertEqual("codebase/notice.NOTICE", cb.path)
