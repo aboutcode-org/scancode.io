@@ -1776,15 +1776,28 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     sent = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
 
+    def __str__(self):
+        return str(self.uuid)
+
     def send(self, pipeline_run):
         """
-        Triggers this WebhookSubscription by POSTing a HTTP request on the `target_url`.
+        Sends this WebhookSubscription by POSTing an HTTP request on the `target_url`.
         """
         payload = {
-            "project_uuid": self.uuid,
-            "run_status": pipeline_run.status,
+            "project": {
+                "uuid": self.project.uuid,
+                "name": self.project.name,
+                "input_sources": self.project.input_sources,
+            },
+            "run": {
+                "uuid": pipeline_run.uuid,
+                "pipeline_name": pipeline_run.pipeline_name,
+                "status": pipeline_run.status,
+                "scancodeio_version": pipeline_run.scancodeio_version,
+            },
         }
 
+        logger.info(f"Sending Webhook uuid={self.uuid}.")
         try:
             response = requests.post(
                 url=self.target_url,
@@ -1792,9 +1805,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
                 headers={"Content-Type": "application/json"},
                 timeout=10,
             )
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as exception:
+            logger.info(exception)
             return
 
         if response.status_code in (200, 201, 202):
+            logger.info(f"Webhook uuid={self.uuid} sent and received.")
             self.sent = True
             self.save()
+        else:
+            logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")
