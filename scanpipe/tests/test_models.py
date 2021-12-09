@@ -49,6 +49,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import WebhookSubscription
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
@@ -343,6 +344,11 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, inputs)
         self.assertEqual({}, missing_inputs)
+
+    def test_scanpipe_project_model_add_webhook_subscription(self):
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
+        self.project1.add_webhook_subscription("https://localhost")
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())
@@ -668,6 +674,13 @@ class ScanPipeModelsTest(TestCase):
 
         run1.refresh_from_db()
         self.assertEqual("line1\nline2\n", run1.log)
+
+    @mock.patch("scanpipe.models.WebhookSubscription.send")
+    def test_scanpipe_run_model_send_project_subscriptions(self, mock_send):
+        self.project1.add_webhook_subscription("https://localhost")
+        run1 = self.create_run()
+        run1.send_project_subscriptions()
+        mock_send.assert_called_once_with(pipeline_run=run1)
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
@@ -1169,6 +1182,22 @@ class ScanPipeModelsTest(TestCase):
             "codebase/asgiref-3.3.0.whl-extract",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
+
+    @mock.patch("requests.post")
+    def test_scanpipe_webhook_subscription_send_method(self, mock_post):
+        webhook = self.project1.add_webhook_subscription("https://localhost")
+        self.assertFalse(webhook.sent)
+        run1 = self.create_run()
+
+        mock_post.return_value = mock.Mock(status_code=404)
+        webhook.send(pipeline_run=run1)
+        webhook.refresh_from_db()
+        self.assertFalse(webhook.sent)
+
+        mock_post.return_value = mock.Mock(status_code=200)
+        webhook.send(pipeline_run=run1)
+        webhook.refresh_from_db()
+        self.assertTrue(webhook.sent)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

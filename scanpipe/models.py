@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import inspect
+import json
 import logging
 import re
 import shutil
@@ -35,6 +36,7 @@ from django.apps import apps
 from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.db.models import Q
@@ -50,6 +52,7 @@ from django.utils.translation import gettext_lazy as _
 
 import django_rq
 import redis
+import requests
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rq.command import send_stop_job_command
@@ -745,6 +748,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             transaction.on_commit(run.execute_task_async)
         return run
 
+    def add_webhook_subscription(self, target_url):
+        """
+        Creates a new WebhookSubscription instance with the provided `target_url` for
+        the current project.
+        """
+        return WebhookSubscription.objects.create(project=self, target_url=target_url)
+
     def get_next_run(self):
         """
         Returns the next non-executed Run instance assigned to current project.
@@ -1150,6 +1160,13 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         self.log = self.log + message + "\n"
         if save:
             self.save()
+
+    def send_project_subscriptions(self):
+        """
+        Triggers related project webhook subscriptions.
+        """
+        for subscription in self.project.webhooksubscriptions.all():
+            subscription.send(pipeline_run=self)
 
     def profile(self, print_results=False):
         """
@@ -1752,3 +1769,49 @@ class DiscoveredPackage(
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
+
+
+class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
+    target_url = models.URLField(_("Target URL"), max_length=1024)
+    sent = models.BooleanField(default=False)
+    created_date = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def __str__(self):
+        return str(self.uuid)
+
+    def send(self, pipeline_run):
+        """
+        Sends this WebhookSubscription by POSTing an HTTP request on the `target_url`.
+        """
+        payload = {
+            "project": {
+                "uuid": self.project.uuid,
+                "name": self.project.name,
+                "input_sources": self.project.input_sources,
+            },
+            "run": {
+                "uuid": pipeline_run.uuid,
+                "pipeline_name": pipeline_run.pipeline_name,
+                "status": pipeline_run.status,
+                "scancodeio_version": pipeline_run.scancodeio_version,
+            },
+        }
+
+        logger.info(f"Sending Webhook uuid={self.uuid}.")
+        try:
+            response = requests.post(
+                url=self.target_url,
+                data=json.dumps(payload, cls=DjangoJSONEncoder),
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+        except requests.exceptions.RequestException as exception:
+            logger.info(exception)
+            return
+
+        if response.status_code in (200, 201, 202):
+            logger.info(f"Webhook uuid={self.uuid} sent and received.")
+            self.sent = True
+            self.save()
+        else:
+            logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")

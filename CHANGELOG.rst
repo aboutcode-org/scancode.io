@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+- Add webhook subscription available when creating project from REST API.
+  https://github.com/nexB/scancode.io/issues/98
+
 - Add the project "reset" feature in the UI, CLI, and REST API.
   https://github.com/nexB/scancode.io/issues/375
 
