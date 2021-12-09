@@ -69,6 +69,7 @@ class ProjectViewSet(
 
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    filterset_fields = ["name", "uuid", "is_archived"]
 
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):

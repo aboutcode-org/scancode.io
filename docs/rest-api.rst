@@ -69,6 +69,17 @@ An API endpoint that provides the ability to list, get, and create projects.
         ]
     }
 
+The project list can be filtered by ``name``, ``uuid``, and ``is_archived`` fields.
+For example:
+
+.. code-block:: console
+
+    api_url="http://localhost/api/projects/"
+    content_type="Content-Type: application/json"
+    payload="name=project_name"
+
+    curl -X GET "$api_url?$payload" -H "$content_type"
+
 Create a project
 ----------------
 

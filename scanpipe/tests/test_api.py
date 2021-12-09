@@ -86,6 +86,32 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertNotContains(response, "resource_count")
         self.assertNotContains(response, "package_count")
 
+    def test_scanpipe_api_project_list_filters(self):
+        project2 = Project.objects.create(name="project2", is_archived=True)
+
+        response = self.csrf_client.get(self.project_list_url)
+        self.assertEqual(2, response.data["count"])
+        self.assertContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+
+        data = {"uuid": self.project1.uuid}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertContains(response, self.project1.uuid)
+        self.assertNotContains(response, project2.uuid)
+
+        data = {"name": project2.name}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+
+        data = {"is_archived": True}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+
     def test_scanpipe_api_project_detail(self):
         response = self.csrf_client.get(self.project1_detail_url)
         self.assertIn(self.project1_detail_url, response.data["url"])
