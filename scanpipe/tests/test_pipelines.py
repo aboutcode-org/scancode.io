@@ -265,7 +265,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline = run.make_pipeline_instance()
 
         exitcode, output = pipeline.execute()
-        self.assertEqual(1, exitcode, msg=output)
+        self.assertEqual(0, exitcode, msg=output)
 
         self.assertEqual(4, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
