@@ -81,7 +81,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["count"])
         self.assertNotContains(response, "input_root")
         self.assertNotContains(response, "extra_data")
-        self.assertNotContains(response, "input_sources")
         self.assertNotContains(response, "error_count")
         self.assertNotContains(response, "resource_count")
         self.assertNotContains(response, "package_count")

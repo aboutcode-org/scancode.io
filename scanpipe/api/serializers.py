@@ -141,7 +141,6 @@ class ProjectSerializer(
         )
 
         exclude_from_list_view = [
-            "input_sources",
             "input_root",
             "output_root",
             "extra_data",
