@@ -7,6 +7,19 @@ The main entry point is the :guilabel:`scanpipe` command which is available
 directly when you are in the activated virtualenv or at this path:
 ``<scancode.io_root_dir>/bin/scanpipe``
 
+.. warning::
+    In order to add local input files to a project using the Command Line Interface,
+    extra arguments need to be passed to the docker-compose command.
+
+    For instance ``--volume /path/on/host:/target/path/in/container:ro``
+    will mount and make available the host path inside the container (``:ro`` stands
+    for read only).
+
+    .. code-block:: bash
+
+        docker-compose run --volume /home/sources:/sources:ro \
+            web ./manage.py create-project my-project --input-file="/sources/image.tar"
+
 
 `$ scanpipe --help`
 -------------------
@@ -106,6 +119,11 @@ For example, assuming you have created beforehand a project named "foo", this wi
 copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` directory::
 
     $ scanpipe add-input --project foo --input-file ~/docker/alpine-base.tar
+
+.. warning::
+    Make sure to mount your local sources volume in the Docker setup:
+
+    ``--volume /host/sources:/sources:ro --input-file /sources/image.tar``
 
 You can also provide URLs of files to be downloaded to the foo project
 :guilabel:`input/` directory::
