@@ -1326,9 +1326,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projecterrors.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = (
-            "One or more of the required fields have no value: type, name, version"
-        )
+        expected_message = "No values for the following required fields: name"
         self.assertEqual(expected_message, error.message)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])

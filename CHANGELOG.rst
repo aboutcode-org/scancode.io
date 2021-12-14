@@ -4,6 +4,10 @@ Changelog
 Unreleased
 ----------
 
+- Refactor the update_or_create_package pipe to support the ProjectError system
+  and fix a database transaction error.
+  https://github.com/nexB/scancode.io/issues/381
+
 - Add webhook subscription available when creating project from REST API.
   https://github.com/nexB/scancode.io/issues/98
 
