@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import inspect
+import itertools
 import json
 import logging
 import re
@@ -672,9 +673,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def walk_codebase_path(self):
         """
-        Returns all files and directories path of the codebase/ directory recursively.
+        Returns all files and directories path of the codebase/ directory recursively,
+        including the codebase/ directory itself.
         """
-        return self.codebase_path.rglob("*")
+        return itertools.chain(
+            (self.codebase_path,),
+            self.codebase_path.rglob("*")
+        )
 
     @cached_property
     def can_add_input(self):

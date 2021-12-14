@@ -70,7 +70,7 @@ class ProjectCodebase:
     @property
     def root(self):
         try:
-            return self.project.codebaseresources.get(path="codebase")
+            return self.project.codebaseresources.get(path=".")
         except ObjectDoesNotExist:
             raise AttributeError("Codebase root cannot be determined.")
 

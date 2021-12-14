@@ -678,47 +678,47 @@ class ScanPipePipesTest(TestCase):
 
         topdown_paths = list(r.path for r in project_codebase.walk(topdown=True))
         expected_topdown_paths = [
-            "codebase",
-            "codebase/asgiref-3.3.0.whl",
-            "codebase/asgiref-3.3.0.whl-extract",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            ".",
+            "asgiref-3.3.0.whl",
+            "asgiref-3.3.0.whl-extract",
+            "asgiref-3.3.0.whl-extract/asgiref",
+            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
         ]
         self.assertEqual(expected_topdown_paths, topdown_paths)
 
         bottom_up_paths = list(r.path for r in project_codebase.walk(topdown=False))
         expected_bottom_up_paths = [
-            "codebase/asgiref-3.3.0.whl",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "codebase/asgiref-3.3.0.whl-extract",
-            "codebase",
+            "asgiref-3.3.0.whl",
+            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0.whl-extract/asgiref",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0.whl-extract",
+            ".",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
@@ -1216,23 +1216,3 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projecterrors.count())
-
-    def test_scanpipe_pipes_make_codebase_resource_relative_to_work_path(self):
-        # Create test Project
-        p1 = Project.objects.create(name="Analysis")
-
-        # Create test CodebaseResource
-        test_resource_location = str(self.data_location / "notice.NOTICE")
-        copy_input(test_resource_location, p1.codebase_path)
-        resource_codebase_location = str(p1.codebase_path / "notice.NOTICE")
-        make_codebase_resource(
-            p1, resource_codebase_location, relative_to_work_path=True
-        )
-
-        # Ensure test CodebaseResource exists and that we only have one of them
-        self.assertEqual(1, p1.codebaseresources.count())
-
-        # Check to see if our test CodebaseResource has the `codebase` prefix in
-        # its name
-        cb = p1.codebaseresources.all()[0]
-        self.assertEqual("codebase/notice.NOTICE", cb.path)

@@ -38,9 +38,7 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
-def make_codebase_resource(
-    project, location, rootfs_path=None, relative_to_work_path=False
-):
+def make_codebase_resource(project, location, rootfs_path=None):
     """
     Creates a CodebaseResource instance in the database for the given `project`.
 
@@ -57,18 +55,19 @@ def make_codebase_resource(
     the error raised on save() is not stored in the database and the creation is
     skipped.
 
-    If `relative_to_work_path` is True, then the path of the created
-    CodebaseResource is set relative to `project.work_path`, rather than
-    `project.codebase_path`. This is used in the cases where we want to use the
-    project codebase/ directory as a root directory for use with
-    ProjectCodebase.
+    If `location` is the same as `project.codebase_path`, then the CodebaseResource
+    created will have a name of ".", and a path of ".".
     """
+    location_path = Path(location)
+    relative_path = location_path.relative_to(project.codebase_path)
     resource_data = scancode.get_resource_info(location=location)
 
-    if relative_to_work_path:
-        relative_path = Path(location).relative_to(project.work_path)
-    else:
-        relative_path = Path(location).relative_to(project.codebase_path)
+    if location_path == project.codebase_path:
+        # If we are making a CodebaseResource for the project codebase/
+        # directory, `relative_path` will be ".". However, when we scan
+        # `location`, the `name` field will be "codebase". We have to overwrite
+        # the `name` field with "." to be consistant with `relative_path`
+        resource_data["name"] = "."
 
     if rootfs_path:
         resource_data["rootfs_path"] = rootfs_path
