@@ -404,7 +404,10 @@ def create_discovered_packages(project, scanned_codebase):
         cbr = CodebaseResource.objects.get(project=project, path=scanned_resource_path)
 
         for scan_data in scanned_packages:
-            discovered_package = pipes.update_or_create_package(project, scan_data)
+            discovered_package = pipes.update_or_create_package(project, scan_data, cbr)
+            if not discovered_package:
+                continue
+
             set_codebase_resource_for_package(
                 codebase_resource=cbr, discovered_package=discovered_package
             )

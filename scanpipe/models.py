@@ -53,6 +53,7 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rq.command import send_stop_job_command
@@ -1735,6 +1736,22 @@ class DiscoveredPackage(
         return self.package_url
 
     @classmethod
+    def purl_fields(cls):
+        return PackageURL._fields
+
+    @classmethod
+    def extract_purl_data(cls, package_data):
+        purl_data = {}
+
+        for field_name in cls.purl_fields():
+            value = package_data.get(field_name)
+            if field_name == "qualifiers":
+                value = normalize_qualifiers(value, encode=True)
+            purl_data[field_name] = value or ""
+
+        return purl_data
+
+    @classmethod
     def create_from_data(cls, project, package_data):
         """
         Creates and returns a DiscoveredPackage for a `project` from the `package_data`.
@@ -1742,12 +1759,16 @@ class DiscoveredPackage(
         is created instead of a new DiscoveredPackage instance.
         """
         required_fields = ["type", "name", "version"]
-        required_values = [package_data.get(field) for field in required_fields]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not package_data.get(field_name)
+        ]
 
-        if not all(required_values):
+        if missing_values:
             message = (
-                f"One or more of the required fields have no value: "
-                f"{', '.join(required_fields)}"
+                f"No values for the following required fields: "
+                f"{', '.join(missing_values)}"
             )
 
             project.add_error(error=message, model=cls, details=package_data)
@@ -1769,6 +1790,35 @@ class DiscoveredPackage(
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
+
+    def update_from_data(self, package_data):
+        """
+        Update this discovered package instance with the provided `package_data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = DiscoveredPackage.model_fields()
+        updated_fields = []
+
+        for field_name, value in package_data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+                field_name in self.purl_fields(),
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if not current_value:
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+            elif current_value != value:
+                pass  # TODO: handle this case
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):

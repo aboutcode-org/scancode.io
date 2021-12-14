@@ -69,64 +69,29 @@ def make_codebase_resource(project, location, rootfs_path=None):
     codebase_resource.save(save_error=False)
 
 
-def update_or_create_package(project, package_data):
+def update_or_create_package(project, package_data, codebase_resource=None):
     """
     Gets, updates or creates a DiscoveredPackage then returns it.
     Uses the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL as a unique key.
     """
-    # make a copy
-    package_data = dict(package_data or {})
-    if not package_data:
-        return
+    purl_data = DiscoveredPackage.extract_purl_data(package_data)
 
-    # keep only known fields with values
-    package_data = {
-        field_name: value
-        for field_name, value in package_data.items()
-        if field_name in DiscoveredPackage.model_fields() and value
-    }
+    try:
+        package = DiscoveredPackage.objects.get(project=project, **purl_data)
+    except DiscoveredPackage.DoesNotExist:
+        package = None
 
-    purl_fields = ("type", "namespace", "name", "version", "qualifiers", "subpath")
-    purl_data = {}
-    for k in purl_fields:
-        # get and remove
-        v = package_data.pop(k, "")
-        if k == "qualifiers":
-            v = normalize_qualifiers(v, encode=True)
-        purl_data[k] = v or ""
+    if package:
+        package.update_from_data(package_data)
 
-    if not purl_data:
-        raise Exception(f"Package without any Package URL fields: {package_data}")
+    else:
+        if codebase_resource:
+            package = codebase_resource.create_and_add_package(package_data)
+        else:
+            package = DiscoveredPackage.create_from_data(project, package_data)
 
-    # if 'type' not in purl_data and 'name' not in purl_data:
-    #     raise Exception(
-    #         f'Package missing type and name Package URL fields: {package_data}')
-
-    # FIXME: we should also consider the download URL as part of the key
-    # Ensure a purl is treated like if this is the UNIQUE key to a package.
-    dp, created = DiscoveredPackage.objects.get_or_create(
-        project=project, **purl_data, defaults=package_data
-    )
-
-    if not created:
-        # update/merge records since we have an existing record
-        dp_fields = DiscoveredPackage.model_fields()
-        has_updates = False
-        for field_name, value in package_data.items():
-            if field_name not in dp_fields or not value:
-                continue
-            existing_value = getattr(dp, field_name, "")
-            if not existing_value:
-                setattr(dp, field_name, value)
-                has_updates = True
-            elif existing_value != value:
-                # TODO: handle this case
-                pass
-        if has_updates:
-            dp.save()
-
-    return dp
+    return package
 
 
 def analyze_scanned_files(project):
