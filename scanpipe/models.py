@@ -1749,9 +1749,6 @@ class DiscoveredPackage(
                 value = normalize_qualifiers(value, encode=True)
             purl_data[field_name] = value or ""
 
-        if not purl_data:
-            raise Exception(f"Package without any Package URL fields: {package_data}")
-
         return purl_data
 
     @classmethod
@@ -1800,13 +1797,13 @@ class DiscoveredPackage(
         The `save()` is called only if at least one field was modified.
         """
         model_fields = DiscoveredPackage.model_fields()
-        has_updates = False
+        updated_fields = []
 
         for field_name, value in package_data.items():
             skip_reasons = [
                 not value,
                 field_name not in model_fields,
-                field_name not in self.purl_fields(),
+                field_name in self.purl_fields(),
             ]
             if any(skip_reasons):
                 continue
@@ -1814,12 +1811,14 @@ class DiscoveredPackage(
             current_value = getattr(self, field_name, None)
             if not current_value:
                 setattr(self, field_name, value)
-                has_updates = True
+                updated_fields.append(field_name)
             elif current_value != value:
                 pass  # TODO: handle this case
 
-        if has_updates:
+        if updated_fields:
             self.save()
+
+        return updated_fields
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):

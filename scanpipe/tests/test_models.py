@@ -1199,6 +1199,53 @@ class ScanPipeModelsTest(TestCase):
         webhook.refresh_from_db()
         self.assertTrue(webhook.sent)
 
+    def test_scanpipe_discovered_package_model_purl_fields(self):
+        expected = ("type", "namespace", "name", "version", "qualifiers", "subpath")
+        self.assertEqual(expected, DiscoveredPackage.purl_fields())
+
+    def test_scanpipe_discovered_package_model_extract_purl_data(self):
+        package_data = {}
+        expected = {
+            "type": "",
+            "namespace": "",
+            "name": "",
+            "version": "",
+            "qualifiers": "",
+            "subpath": "",
+        }
+        purl_data = DiscoveredPackage.extract_purl_data(package_data)
+        self.assertEqual(expected, purl_data)
+
+        expected = {
+            "name": "adduser",
+            "namespace": "debian",
+            "qualifiers": "arch=all",
+            "subpath": "",
+            "type": "deb",
+            "version": "3.118",
+        }
+        purl_data = DiscoveredPackage.extract_purl_data(package_data1)
+        self.assertEqual(expected, purl_data)
+
+    def test_scanpipe_discovered_package_model_update_from_data(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        new_data = {
+            "name": "new name",
+            "notice_text": "NOTICE",
+            "description": "new description",
+            "unknown_field": "value",
+        }
+        updated_fields = package.update_from_data(new_data)
+        self.assertEqual(["notice_text"], updated_fields)
+
+        package.refresh_from_db()
+        # PURL field, not updated
+        self.assertEqual(package_data1["name"], package.name)
+        # Empty field, updated
+        self.assertEqual(new_data["notice_text"], package.notice_text)
+        # Already a value, not updated
+        self.assertEqual(package_data1["description"], package.description)
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """

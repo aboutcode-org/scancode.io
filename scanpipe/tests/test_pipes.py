@@ -49,6 +49,7 @@ from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
+from scanpipe.pipes import update_or_create_package
 from scanpipe.pipes import windows
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import license_policies_index
@@ -1144,6 +1145,26 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("ignored-media-file", resource1.status)
         self.assertEqual("ignored-media-file", resource2.status)
         self.assertEqual("", resource3.status)
+
+    def test_scanpipe_pipes_update_or_create_package(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = update_or_create_package(p1, package_data1)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.purl)
+        self.assertEqual("", package.primary_language)
+
+        updated_data = dict(package_data1)
+        updated_data["primary_language"] = "Python"
+        updated_package = update_or_create_package(p1, updated_data)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", updated_package.purl)
+        self.assertEqual("Python", updated_package.primary_language)
+        self.assertEqual(package.pk, updated_package.pk)
+
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        package_data2 = dict(package_data1)
+        package_data2["name"] = "new name"
+        package2 = update_or_create_package(p1, package_data2, resource1)
+        self.assertNotEqual(package.pk, package2.pk)
+        self.assertIn(resource1, package2.codebase_resources.all())
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
