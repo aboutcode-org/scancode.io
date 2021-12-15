@@ -141,6 +141,10 @@ TEMPLATES = [
     },
 ]
 
+# Login
+
+LOGIN_REDIRECT_URL = "project_list"
+
 # Passwords
 
 AUTH_PASSWORD_VALIDATORS = [
