@@ -381,7 +381,6 @@ def delete_pipeline_view(request, uuid, run_uuid):
     return redirect(project)
 
 
-@conditional_login_required
 def project_results_json_response(project, as_attachment=False):
     """
     Returns the results as JSON compatible with ScanCode data format.
