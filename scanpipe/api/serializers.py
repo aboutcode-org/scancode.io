@@ -110,7 +110,7 @@ class ProjectSerializer(
     webhook_url = serializers.CharField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
-    input_sources = serializers.SerializerMethodField()
+    input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_package_summary = serializers.SerializerMethodField()
 
@@ -149,12 +149,6 @@ class ProjectSerializer(
             "package_count",
             "codebase_resources_summary",
             "discovered_package_summary",
-        ]
-
-    def get_input_sources(self, project):
-        return [
-            {"filename": filename, "source": source}
-            for filename, source in project.input_sources.items()
         ]
 
     def get_codebase_resources_summary(self, project):
@@ -230,7 +224,7 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectError
-        fields = ["uuid", "model", "details", "message", "traceback", "created_date"]
+        fields = ["uuid", "model", "message", "details", "traceback", "created_date"]
 
     def get_traceback(self, project_error):
         return project_error.traceback.split("\n")
@@ -261,8 +255,9 @@ def get_model_serializer(model_class):
     Returns a Serializer class that ia related to a given `model_class`.
     """
     serializer = {
-        DiscoveredPackage: DiscoveredPackageSerializer,
         CodebaseResource: CodebaseResourceSerializer,
+        DiscoveredPackage: DiscoveredPackageSerializer,
+        ProjectError: ProjectErrorSerializer,
     }.get(model_class, None)
 
     if not serializer:

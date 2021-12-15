@@ -175,6 +175,16 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.codebase_path.exists())
         self.assertTrue(self.project1.tmp_path.exists())
 
+    def test_scanpipe_project_model_input_sources_list_property(self):
+        self.project1.add_input_source(filename="file1", source="uploaded")
+        self.project1.add_input_source(filename="file2", source="https://download.url")
+
+        expected = [
+            {"filename": "file1", "source": "uploaded"},
+            {"filename": "file2", "source": "https://download.url"},
+        ]
+        self.assertEqual(expected, self.project1.input_sources_list)
+
     def test_scanpipe_project_model_inputs_and_input_files_and_input_root(self):
         self.assertEqual([], list(self.project1.inputs()))
         self.assertEqual([], self.project1.input_files)

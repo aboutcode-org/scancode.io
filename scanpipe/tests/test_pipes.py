@@ -40,6 +40,7 @@ from scancode.interrupt import TimeoutError as InterruptTimeoutError
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectError
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
@@ -221,6 +222,9 @@ class ScanPipePipesTest(TestCase):
             path="filename.ext",
         )
         codebase_resource.create_and_add_package(package_data1)
+        ProjectError.objects.create(
+            project=project1, model="Model", details={}, message="Error"
+        )
 
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)

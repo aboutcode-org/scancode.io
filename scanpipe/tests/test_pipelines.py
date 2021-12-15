@@ -282,8 +282,10 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="Analysis")
 
+        filename = "is-npm-1.0.0.tgz"
         input_location = self.data_location / "is-npm-1.0.0.tgz"
         project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
