@@ -650,7 +650,7 @@ class ScanPipePipesTest(TestCase):
         project = Project.objects.get(name="asgiref")
         project_codebase = codebase.ProjectCodebase(project)
 
-        expected_root = project.codebaseresources.get(path="codebase")
+        expected_root = project.codebaseresources.get(path=".")
         self.assertTrue(isinstance(project_codebase.root, CodebaseResource))
         self.assertEqual(expected_root, project_codebase.root)
 
@@ -659,7 +659,7 @@ class ScanPipePipesTest(TestCase):
 
         walk_gen = project_codebase.walk()
         self.assertEqual(expected_root, next(walk_gen))
-        expected = "codebase/asgiref-3.3.0-py3-none-any.whl"
+        expected = "asgiref-3.3.0-py3-none-any.whl"
         self.assertEqual(expected, next(walk_gen).path)
 
         tree = project_codebase.get_tree()

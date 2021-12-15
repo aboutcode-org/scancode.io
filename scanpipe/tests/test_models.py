@@ -1114,6 +1114,16 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, sorted([resource.path for resource in descendants]))
 
     def test_scanpipe_codebase_resource_children(self):
+        resource = self.project_asgiref.codebaseresources.get(path=".")
+        children = list(resource.children())
+        self.assertEqual(2, len(children))
+        self.assertNotIn(resource.path, children)
+        expected = [
+            "asgiref-3.3.0-py3-none-any.whl",
+            "asgiref-3.3.0-py3-none-any.whl-extract",
+        ]
+        self.assertEqual(expected, [resource.path for resource in children])
+
         path = "asgiref-3.3.0-py3-none-any.whl-extract"
         resource = self.project_asgiref.codebaseresources.get(path=path)
         children = list(resource.children())
@@ -1152,16 +1162,15 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_codebase_resource_model_walk_method(self):
         fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
-        asgiref_root = self.project_asgiref.codebaseresources.get(
-            path="asgiref-3.3.0.whl-extract"
-        )
+        asgiref_root = self.project_asgiref.codebaseresources.get(path=".")
 
         topdown_paths = list(r.path for r in asgiref_root.walk(topdown=True))
         expected_topdown_paths = [
+            "asgiref-3.3.0.whl",
+            "asgiref-3.3.0.whl-extract",
             "asgiref-3.3.0.whl-extract/asgiref",
             "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/local.py",
             "asgiref-3.3.0.whl-extract/asgiref/server.py",
             "asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -1179,9 +1188,9 @@ class ScanPipeModelsTest(TestCase):
 
         bottom_up_paths = list(r.path for r in asgiref_root.walk(topdown=False))
         expected_bottom_up_paths = [
+            "asgiref-3.3.0.whl",
             "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/local.py",
             "asgiref-3.3.0.whl-extract/asgiref/server.py",
             "asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -1195,6 +1204,7 @@ class ScanPipeModelsTest(TestCase):
             "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
             "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
             "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0.whl-extract",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
