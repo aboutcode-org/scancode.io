@@ -1,6 +1,38 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- Refactor the update_or_create_package pipe to support the ProjectError system
+  and fix a database transaction error.
+  https://github.com/nexB/scancode.io/issues/381
+
+- Add webhook subscription available when creating project from REST API.
+  https://github.com/nexB/scancode.io/issues/98
+
+- Add the project "reset" feature in the UI, CLI, and REST API.
+  https://github.com/nexB/scancode.io/issues/375
+
+- Add a new GitHub action that build the docker-compose images and run the test suite.
+  This ensure that the app is properly working and tested when running with Docker.
+  https://github.com/nexB/scancode.io/issues/367
+
+- Add --no-install-recommends in the Dockerfile apt-get install and add the
+  `linux-image-amd64` package. This packages makes available the kernels
+  required by extractcode and libguestfs for proper VM images extraction.
+  https://github.com/nexB/scancode.io/issues/367
+
+- Add a new `list-project` CLI command to list projects.
+  https://github.com/nexB/scancode.io/issues/365
+
+v30.1.1 (2021-11-23)
+--------------------
+
+- Remove the --no-install-recommends in the Dockerfile apt-get install to include
+  required dependencies for proper VM extraction.
+  https://github.com/nexB/scancode.io/issues/367
+
 v30.1.0 (2021-11-22)
 --------------------
 

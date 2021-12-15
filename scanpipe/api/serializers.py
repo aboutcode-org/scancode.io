@@ -107,6 +107,7 @@ class ProjectSerializer(
         required=False,
         style={"base_template": "textarea.html"},
     )
+    webhook_url = serializers.CharField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
     input_sources = serializers.SerializerMethodField()
@@ -121,6 +122,7 @@ class ProjectSerializer(
             "uuid",
             "upload_file",
             "input_urls",
+            "webhook_url",
             "created_date",
             "is_archived",
             "pipeline",
@@ -139,7 +141,6 @@ class ProjectSerializer(
         )
 
         exclude_from_list_view = [
-            "input_sources",
             "input_root",
             "output_root",
             "extra_data",
@@ -177,6 +178,7 @@ class ProjectSerializer(
         input_urls = validated_data.pop("input_urls", [])
         pipeline = validated_data.pop("pipeline", None)
         execute_now = validated_data.pop("execute_now", False)
+        webhook_url = validated_data.pop("webhook_url", None)
 
         downloads, errors = fetch_urls(input_urls)
         if errors:
@@ -192,6 +194,9 @@ class ProjectSerializer(
 
         if pipeline:
             project.add_pipeline(pipeline, execute_now)
+
+        if webhook_url:
+            project.add_webhook_subscription(webhook_url)
 
         return project
 

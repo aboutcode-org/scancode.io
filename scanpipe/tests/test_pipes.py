@@ -22,6 +22,7 @@
 
 import collections
 import json
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -48,6 +49,7 @@ from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
+from scanpipe.pipes import update_or_create_package
 from scanpipe.pipes import windows
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import license_policies_index
@@ -55,6 +57,7 @@ from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 scanpipe_app = apps.get_app_config("scanpipe")
+from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipesTest(TestCase):
@@ -265,6 +268,40 @@ class ScanPipePipesTest(TestCase):
         ]
         for path in expected:
             self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
+        target = tempfile.mkdtemp()
+        compressed_input_location = str(self.data_location / "foobar.qcow2.tar.gz")
+        extract_tar(compressed_input_location, target_dir=target)
+        input_location = Path(target) / "foobar.qcow2"
+
+        errors = scancode.extract_archive(input_location, target)
+
+        # The VM image extraction features are available in the Docker image context.
+        if from_docker_image:
+            self.assertEqual([], errors)
+            results = [path.name for path in list(Path(target).glob("**/*"))]
+            expected = [
+                "bin",
+                "busybox",
+                "dot",
+                "foobar.qcow2",
+                "log",
+                "lost+found",
+                "tmp",
+            ]
+            self.assertEqual(sorted(expected), sorted(results))
+
+        else:
+            error = errors[0]
+            self.assertTrue(
+                any(
+                    [
+                        "Unable to read kernel" in error,
+                        "VM Image extraction only supported on Linux." in error,
+                    ]
+                )
+            )
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
@@ -1108,6 +1145,26 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("ignored-media-file", resource1.status)
         self.assertEqual("ignored-media-file", resource2.status)
         self.assertEqual("", resource3.status)
+
+    def test_scanpipe_pipes_update_or_create_package(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = update_or_create_package(p1, package_data1)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.purl)
+        self.assertEqual("", package.primary_language)
+
+        updated_data = dict(package_data1)
+        updated_data["primary_language"] = "Python"
+        updated_package = update_or_create_package(p1, updated_data)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", updated_package.purl)
+        self.assertEqual("Python", updated_package.primary_language)
+        self.assertEqual(package.pk, updated_package.pk)
+
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        package_data2 = dict(package_data1)
+        package_data2["name"] = "new name"
+        package2 = update_or_create_package(p1, package_data2, resource1)
+        self.assertNotEqual(package.pk, package2.pk)
+        self.assertIn(resource1, package2.codebase_resources.all())
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

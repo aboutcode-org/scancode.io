@@ -49,6 +49,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import WebhookSubscription
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
@@ -343,6 +344,11 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, inputs)
         self.assertEqual({}, missing_inputs)
+
+    def test_scanpipe_project_model_add_webhook_subscription(self):
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
+        self.project1.add_webhook_subscription("https://localhost")
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
 
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())
@@ -668,6 +674,13 @@ class ScanPipeModelsTest(TestCase):
 
         run1.refresh_from_db()
         self.assertEqual("line1\nline2\n", run1.log)
+
+    @mock.patch("scanpipe.models.WebhookSubscription.send")
+    def test_scanpipe_run_model_send_project_subscriptions(self, mock_send):
+        self.project1.add_webhook_subscription("https://localhost")
+        run1 = self.create_run()
+        run1.send_project_subscriptions()
+        mock_send.assert_called_once_with(pipeline_run=run1)
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
@@ -1170,6 +1183,69 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
+    @mock.patch("requests.post")
+    def test_scanpipe_webhook_subscription_send_method(self, mock_post):
+        webhook = self.project1.add_webhook_subscription("https://localhost")
+        self.assertFalse(webhook.sent)
+        run1 = self.create_run()
+
+        mock_post.return_value = mock.Mock(status_code=404)
+        webhook.send(pipeline_run=run1)
+        webhook.refresh_from_db()
+        self.assertFalse(webhook.sent)
+
+        mock_post.return_value = mock.Mock(status_code=200)
+        webhook.send(pipeline_run=run1)
+        webhook.refresh_from_db()
+        self.assertTrue(webhook.sent)
+
+    def test_scanpipe_discovered_package_model_purl_fields(self):
+        expected = ("type", "namespace", "name", "version", "qualifiers", "subpath")
+        self.assertEqual(expected, DiscoveredPackage.purl_fields())
+
+    def test_scanpipe_discovered_package_model_extract_purl_data(self):
+        package_data = {}
+        expected = {
+            "type": "",
+            "namespace": "",
+            "name": "",
+            "version": "",
+            "qualifiers": "",
+            "subpath": "",
+        }
+        purl_data = DiscoveredPackage.extract_purl_data(package_data)
+        self.assertEqual(expected, purl_data)
+
+        expected = {
+            "name": "adduser",
+            "namespace": "debian",
+            "qualifiers": "arch=all",
+            "subpath": "",
+            "type": "deb",
+            "version": "3.118",
+        }
+        purl_data = DiscoveredPackage.extract_purl_data(package_data1)
+        self.assertEqual(expected, purl_data)
+
+    def test_scanpipe_discovered_package_model_update_from_data(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        new_data = {
+            "name": "new name",
+            "notice_text": "NOTICE",
+            "description": "new description",
+            "unknown_field": "value",
+        }
+        updated_fields = package.update_from_data(new_data)
+        self.assertEqual(["notice_text"], updated_fields)
+
+        package.refresh_from_db()
+        # PURL field, not updated
+        self.assertEqual(package_data1["name"], package.name)
+        # Empty field, updated
+        self.assertEqual(new_data["notice_text"], package.notice_text)
+        # Already a value, not updated
+        self.assertEqual(package_data1["description"], package.description)
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
@@ -1297,9 +1373,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projecterrors.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = (
-            "One or more of the required fields have no value: type, name, version"
-        )
+        expected_message = "No values for the following required fields: name"
         self.assertEqual(expected_message, error.message)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])

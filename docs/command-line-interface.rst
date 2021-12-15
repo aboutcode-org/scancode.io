@@ -7,6 +7,19 @@ The main entry point is the :guilabel:`scanpipe` command which is available
 directly when you are in the activated virtualenv or at this path:
 ``<scancode.io_root_dir>/bin/scanpipe``
 
+.. warning::
+    In order to add local input files to a project using the Command Line Interface,
+    extra arguments need to be passed to the docker-compose command.
+
+    For instance ``--volume /path/on/host:/target/path/in/container:ro``
+    will mount and make available the host path inside the container (``:ro`` stands
+    for read only).
+
+    .. code-block:: bash
+
+        docker-compose run --volume /home/sources:/sources:ro \
+            web ./manage.py create-project my-project --input-file="/sources/image.tar"
+
 
 `$ scanpipe --help`
 -------------------
@@ -19,11 +32,15 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
     [scanpipe]
         add-input
         add-pipeline
+        archive-project
         create-project
-        graph
-        output
+        delete-project
         execute
+        graph
+        list-project
+        output
         show-pipeline
+        status
 
 
 `$ scanpipe <subcommand> --help`
@@ -70,6 +87,23 @@ Optional arguments:
     Pipelines are added and are executed in order.
 
 
+`$ scanpipe list-project [--search SEARCH] [--include-archived]`
+----------------------------------------------------------------
+
+Lists ScanPipe projects.
+
+Optional arguments:
+
+- ``--search SEARCH`` Limit the projects list to this search results.
+
+- ``--include-archived`` Include archived projects.
+
+.. tip::
+    Only the project names are listed by default. You can display more details
+    about each project by providing the ``--verbosity 2`` or ``--verbosity 3``
+    options.
+
+
 `$ scanpipe add-input --project PROJECT [--input-file FILES] [--input-url URLS]`
 --------------------------------------------------------------------------------
 
@@ -85,6 +119,11 @@ For example, assuming you have created beforehand a project named "foo", this wi
 copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` directory::
 
     $ scanpipe add-input --project foo --input-file ~/docker/alpine-base.tar
+
+.. warning::
+    Make sure to mount your local sources volume in the Docker setup:
+
+    ``--volume /host/sources:/sources:ro --input-file /sources/image.tar``
 
 You can also provide URLs of files to be downloaded to the foo project
 :guilabel:`input/` directory::
@@ -177,6 +216,17 @@ Optional arguments:
 - ``--remove-input`` Remove the :guilabel:`input/` directory.
 - ``--remove-codebase`` Remove the :guilabel:`codebase/` directory.
 - ``--remove-output`` Remove the :guilabel:`output/` directory.
+- ``--no-input`` Does not prompt the user for input of any kind.
+
+
+`$ scanpipe reset-project --project PROJECT`
+--------------------------------------------
+
+Resets a project removing all database entrie and all data on disks except for
+the input/ directory.
+
+Optional arguments:
+
 - ``--no-input`` Does not prompt the user for input of any kind.
 
 
