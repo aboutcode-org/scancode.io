@@ -1592,7 +1592,10 @@ class CodebaseResource(
         database query on the current CodebaseResource `path`.
         The current CodebaseResource is not included.
         """
-        return self.project.codebaseresources.filter(path__startswith=f"{self.path}/")
+        if self.path == ".":
+            return self.project.codebaseresources.exclude(path=".")
+        else:
+            return self.project.codebaseresources.filter(path__startswith=f"{self.path}/")
 
     def children(self, codebase=None):
         """
@@ -1607,7 +1610,10 @@ class CodebaseResource(
         with the commoncode.resource.Codebase class API.
         """
         exactly_one_sub_directory = "[^/]+$"
-        children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
+        if self.path == ".":
+            children_regex = rf"{exactly_one_sub_directory}"
+        else:
+            children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
         return (
             self.descendants()
             .filter(path__regex=children_regex)
