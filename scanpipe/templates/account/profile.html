@@ -1,0 +1,35 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+<div class="container is-max-desktop">
+  {% include 'scanpipe/includes/navbar_header.html' %}
+  <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+  <section class="section pt-0">
+    <div class="is-flex is-justify-content-space-between mb-2">
+      <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
+        <ul>
+          <li class="is-active"><a href="#" aria-current="page">Profile settings</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <article class="message is-warning">
+      <div class="message-body">
+        <strong>An API key is like a password and should be treated with the same care.</strong>
+      </div>
+    </article>
+
+    <div class="field">
+      <label class="label">API Key</label>
+      <div class="control has-icons-left">
+        <input class="input" type="text" value="{{ request.user.auth_token.key|default:'Not available' }}" readonly>
+        <span class="icon is-small is-left">
+          <i class="fas fa-key"></i>
+        </span>
+      </div>
+    </div>
+
+  </section>
+</div>
+{% endblock %}

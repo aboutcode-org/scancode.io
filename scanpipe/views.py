@@ -24,6 +24,7 @@ from collections import Counter
 
 from django.apps import apps
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -88,6 +89,10 @@ class PaginatedFilterView(FilterView):
         context["url_params_without_page"] = query_dict.urlencode()
 
         return context
+
+
+class AccountProfileView(LoginRequiredMixin, generic.TemplateView):
+    template_name = "account/profile.html"
 
 
 class ProjectListView(

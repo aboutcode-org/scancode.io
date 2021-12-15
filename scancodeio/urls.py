@@ -31,18 +31,20 @@ from rest_framework.routers import DefaultRouter
 from scancodeio import licenses
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
+from scanpipe.views import AccountProfileView
 
 api_router = DefaultRouter()
 api_router.register(r"projects", ProjectViewSet)
 api_router.register(r"runs", RunViewSet)
 
 auth_urlpatterns = [
-    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
+    path("account/login/", auth_views.LoginView.as_view(), name="login"),
     path(
-        "accounts/logout/",
+        "account/logout/",
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
+    path("account/profile/", AccountProfileView.as_view(), name="account_profile"),
 ]
 
 urlpatterns = auth_urlpatterns + [
