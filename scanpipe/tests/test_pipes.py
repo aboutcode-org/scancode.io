@@ -611,31 +611,17 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(10, len(summary.keys()))
 
     def test_scanpipe_pipes_scancode_replace_root_path_and_name(self):
-        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        input_location = self.data_location / "is-npm-1.0.0_scancode_scan.json"
         virtual_codebase = VirtualCodebase(location=input_location)
         virtual_codebase_root_replaced = scancode.replace_root_path_and_name(
             virtual_codebase
         )
         expected_topdown_paths = [
             ".",
-            "asgiref-3.3.0-py3-none-any.whl",
-            "asgiref-3.3.0-py3-none-any.whl-extract",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "package",
+            "package/index.js",
+            "package/package.json",
+            "package/readme.md",
         ]
         results = [
             resource.path
