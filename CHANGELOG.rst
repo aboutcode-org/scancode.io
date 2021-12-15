@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+- Include project errors in XLSX results output.
+  https://github.com/nexB/scancode.io/issues/364
+
 - Refactor the update_or_create_package pipe to support the ProjectError system
   and fix a database transaction error.
   https://github.com/nexB/scancode.io/issues/381

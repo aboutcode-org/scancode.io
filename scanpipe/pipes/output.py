@@ -368,6 +368,7 @@ def to_xlsx(project):
     querysets = [
         project.discoveredpackages.all(),
         project.codebaseresources.without_symlinks(),
+        project.projecterrors.all(),
     ]
 
     with xlsxwriter.Workbook(output_file) as workbook:

@@ -230,7 +230,7 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectError
-        fields = ["uuid", "model", "details", "message", "traceback", "created_date"]
+        fields = ["uuid", "model", "message", "details", "traceback", "created_date"]
 
     def get_traceback(self, project_error):
         return project_error.traceback.split("\n")
@@ -261,8 +261,9 @@ def get_model_serializer(model_class):
     Returns a Serializer class that ia related to a given `model_class`.
     """
     serializer = {
-        DiscoveredPackage: DiscoveredPackageSerializer,
         CodebaseResource: CodebaseResourceSerializer,
+        DiscoveredPackage: DiscoveredPackageSerializer,
+        ProjectError: ProjectErrorSerializer,
     }.get(model_class, None)
 
     if not serializer:
