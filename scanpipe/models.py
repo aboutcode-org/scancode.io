@@ -1374,6 +1374,9 @@ class CodebaseResource(
     """
     A project Codebase Resources are records of its code files and directories.
     Each record is identified by its path under the project workspace.
+
+    If a CodebaseResource has a path of ".", then it is considered the root
+    CodebaseResource of a codebase.
     """
 
     rootfs_path = models.CharField(
