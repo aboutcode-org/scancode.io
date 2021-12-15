@@ -132,9 +132,14 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data["discovered_package_summary"])
 
-        self.project1.add_input_source(filename="file", source="uploaded", save=True)
+        self.project1.add_input_source(filename="file1", source="uploaded")
+        self.project1.add_input_source(filename="file2", source="https://download.url")
+        self.project1.save()
         response = self.csrf_client.get(self.project1_detail_url)
-        expected = [{"filename": "file", "source": "uploaded"}]
+        expected = [
+            {"filename": "file1", "source": "uploaded"},
+            {"filename": "file2", "source": "https://download.url"},
+        ]
         self.assertEqual(expected, response.data["input_sources"])
 
     @mock.patch("requests.get")

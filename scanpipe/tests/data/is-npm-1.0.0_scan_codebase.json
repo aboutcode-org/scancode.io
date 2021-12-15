@@ -3,8 +3,11 @@
     {
       "tool_name": "scanpipe",
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "input_files": [
-        "is-npm-1.0.0.tgz"
+      "input_sources": [
+        {
+          "filename": "is-npm-1.0.0.tgz",
+          "source": "https://download.url"
+        }
       ],
       "runs": [
         {
@@ -37,7 +40,6 @@
       "release_date": null,
       "homepage_url": "",
       "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-      "size": null,
       "sha1": "",
       "md5": "",
       "bug_tracking_url": "",
@@ -77,7 +79,6 @@
     {
       "for_packages": [],
       "path": "is-npm-1.0.0.tgz",
-      "size": 756,
       "sha1": "f2fb63a65e4905b406c86072765a1a4dc793b9f4",
       "md5": "effb58881c1aca12da9d3a18335bdc3f",
       "extra_data": {},
@@ -104,7 +105,6 @@
     {
       "for_packages": [],
       "path": "is-npm-1.0.0.tgz-extract",
-      "size": 96,
       "sha1": "",
       "md5": "",
       "extra_data": {},
@@ -131,7 +131,6 @@
     {
       "for_packages": [],
       "path": "is-npm-1.0.0.tgz-extract/package",
-      "size": 160,
       "sha1": "",
       "md5": "",
       "extra_data": {},
@@ -158,7 +157,6 @@
     {
       "for_packages": [],
       "path": "is-npm-1.0.0.tgz-extract/package/index.js",
-      "size": 147,
       "sha1": "ecce1fc677fa7d20fc5593b63db45e45c5e8768a",
       "md5": "bc4b18b0c8c32b94883d6fc1d675e919",
       "extra_data": {},
@@ -187,7 +185,6 @@
         "pkg:npm/is-npm@1.0.0"
       ],
       "path": "is-npm-1.0.0.tgz-extract/package/package.json",
-      "size": 563,
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
       "extra_data": {},
@@ -214,7 +211,6 @@
     {
       "for_packages": [],
       "path": "is-npm-1.0.0.tgz-extract/package/readme.md",
-      "size": 477,
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
       "extra_data": {},
