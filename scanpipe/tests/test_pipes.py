@@ -36,6 +36,7 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 
 from commoncode.archive import extract_tar
+from commoncode.resource import VirtualCodebase
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
@@ -529,9 +530,11 @@ class ScanPipePipesTest(TestCase):
         scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
 
-        self.assertEqual(18, CodebaseResource.objects.count())
+        self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
-        # Make sure the root is not created as a CodebaseResource, walk(skip_root=True)
+        # Make sure the root CodebaseResource has been created as "."
+        self.assertTrue(CodebaseResource.objects.filter(path=".", name=".").exists())
+        # Make sure that the root was not created with a path of "codebase"
         self.assertFalse(CodebaseResource.objects.filter(path="codebase").exists())
 
         # Make sure the root is properly stripped, see `.get_path(strip_root=True)`
@@ -547,7 +550,7 @@ class ScanPipePipesTest(TestCase):
         # The functions can be called again and existing objects are skipped
         scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
-        self.assertEqual(18, CodebaseResource.objects.count())
+        self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
@@ -607,7 +610,39 @@ class ScanPipePipesTest(TestCase):
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
 
-    @expectedFailure
+    def test_scanpipe_pipes_scancode_replace_root_path_and_name(self):
+        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        virtual_codebase = VirtualCodebase(location=input_location)
+        virtual_codebase_root_replaced = scancode.replace_root_path_and_name(
+            virtual_codebase
+        )
+        expected_topdown_paths = [
+            ".",
+            "asgiref-3.3.0-py3-none-any.whl",
+            "asgiref-3.3.0-py3-none-any.whl-extract",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+        ]
+        results = [
+            resource.path
+            for resource in virtual_codebase_root_replaced.walk(topdown=True)
+        ]
+        self.assertEqual(expected_topdown_paths, results)
+
     def test_scanpipe_pipes_codebase_get_tree(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -615,11 +650,17 @@ class ScanPipePipesTest(TestCase):
 
         scan_results = self.data_location / "asgiref-3.3.0_scan.json"
         virtual_codebase = scancode.get_virtual_codebase(project, scan_results)
+        # Rename the root Resource to "." and remove the root prefix from the
+        # paths of the remaining Resources to mirror how ScanCode.io creates
+        # Resources.
+        virtual_codebase_root_replaced = scancode.replace_root_path_and_name(
+            virtual_codebase
+        )
         project_codebase = codebase.ProjectCodebase(project)
 
         fields = ["name", "path"]
         virtual_tree = codebase.get_tree(
-            virtual_codebase.root, fields, codebase=virtual_codebase
+            virtual_codebase.root, fields, codebase=virtual_codebase_root_replaced
         )
         project_tree = codebase.get_tree(project_codebase.root, fields)
 

@@ -497,3 +497,18 @@ def make_results_summary(project, scan_results_location):
     summary["key_files_packages"] = key_files_packages
 
     return summary
+
+
+def replace_root_path_and_name(scanned_codebase):
+    """
+    Set the name and path of the root Resource of `scanned_codebase` to "."
+    and strip the root prefix from the paths of the remaining Resources.
+    """
+    for scanned_resource in scanned_codebase.walk():
+        if scanned_resource.is_root:
+            scanned_resource.path = "."
+            scanned_resource.name = "."
+        else:
+            scanned_resource.path = scanned_resource.get_path(strip_root=True)
+        scanned_resource.save(scanned_codebase)
+    return scanned_codebase

@@ -276,7 +276,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, output = pipeline.execute()
         self.assertEqual(0, exitcode, msg=output)
 
-        self.assertEqual(4, project1.codebaseresources.count())
+        self.assertEqual(5, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
