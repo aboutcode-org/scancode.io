@@ -366,7 +366,7 @@ def create_codebase_resources(project, scanned_codebase):
     CodebaseResource objects as the existing objects (based on the `path`) will be
     skipped.
     """
-    for scanned_resource in scanned_codebase.walk(skip_root=True):
+    for scanned_resource in scanned_codebase.walk():
         resource_data = {}
 
         for field in CodebaseResource._meta.fields:
@@ -380,7 +380,14 @@ def create_codebase_resources(project, scanned_codebase):
 
         resource_type = "FILE" if scanned_resource.is_file else "DIRECTORY"
         resource_data["type"] = CodebaseResource.Type[resource_type]
-        resource_path = scanned_resource.get_path(strip_root=True)
+
+        if scanned_resource.is_root:
+            # In ScanCode.io, we represent the root CodebaseResource using "."
+            # as its name and path
+            resource_path = "."
+            resource_data["name"] = "."
+        else:
+            resource_path = scanned_resource.get_path(strip_root=True)
 
         cbr, _ = CodebaseResource.objects.get_or_create(
             project=project,
