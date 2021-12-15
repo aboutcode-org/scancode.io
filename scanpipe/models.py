@@ -563,6 +563,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.tmp_path.mkdir(exist_ok=True)
 
+    @property
+    def input_sources_list(self):
+        return [
+            {"filename": filename, "source": source}
+            for filename, source in self.input_sources.items()
+        ]
+
     def inputs(self, pattern="**/*"):
         """
         Returns all files and directories path of the input/ directory matching

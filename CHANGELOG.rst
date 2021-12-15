@@ -4,6 +4,9 @@ Changelog
 Unreleased
 ----------
 
+- Add input_sources used to fetch inputs to JSON results output.
+  https://github.com/nexB/scancode.io/issues/351
+
 - Refactor the update_or_create_package pipe to support the ProjectError system
   and fix a database transaction error.
   https://github.com/nexB/scancode.io/issues/381
