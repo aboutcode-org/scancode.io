@@ -1882,4 +1882,4 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     Creates an API key token on user creation, using the signal system.
     """
     if created:
-        Token.objects.create(user=instance)
+        Token.objects.create(user_id=instance.pk)

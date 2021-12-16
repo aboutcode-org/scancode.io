@@ -67,9 +67,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
 
         self.user = User.objects.create_user("username", "e@mail.com", "secret")
-        self.header_prefix = "Token "
-        self.token = Token.objects.create(user=self.user)
-        self.auth = self.header_prefix + self.token.key
+        self.auth = f"Token {self.user.auth_token.key}"
 
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)
