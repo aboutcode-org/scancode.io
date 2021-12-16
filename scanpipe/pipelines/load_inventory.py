@@ -39,18 +39,26 @@ class LoadInventory(Pipeline):
 
     def get_scan_json_input(self):
         """
-        Locates a JSON scan input from a project's input/ directory.
+        Locates all the ScanCode JSON scan inputs from a project's input/
+        directory. This includes all files with a .json extension.
         """
         inputs = list(self.project.inputs(pattern="*.json"))
-        if len(inputs) != 1:
-            raise Exception("Only 1 JSON input file supported")
-        self.input_location = str(inputs[0].absolute())
+        self.input_locations = [str(i.absolute()) for i in inputs]
 
     def build_inventory_from_scan(self):
         """
-        Processes a given JSON scan input to populate codebase resources and packages.
+        Processes JSON scan inputs to populate codebase resources and packages.
         """
-        project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
-        scancode.create_codebase_resources(project, scanned_codebase)
-        scancode.create_discovered_packages(project, scanned_codebase)
+        for input_location in self.input_locations:
+            load_inventory_from_scan(self.project, input_location)
+
+
+def load_inventory_from_scan(project, input_location):
+    """
+    Processes a given JSON scan input at ``input_location`` to populate codebase
+    resources and packages in ``project``.
+    """
+    project = project
+    scanned_codebase = scancode.get_virtual_codebase(project, input_location)
+    scancode.create_codebase_resources(project, scanned_codebase)
+    scancode.create_discovered_packages(project, scanned_codebase)
