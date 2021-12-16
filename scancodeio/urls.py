@@ -38,13 +38,13 @@ api_router.register(r"projects", ProjectViewSet)
 api_router.register(r"runs", RunViewSet)
 
 auth_urlpatterns = [
-    path("account/login/", auth_views.LoginView.as_view(), name="login"),
+    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
     path(
-        "account/logout/",
+        "accounts/logout/",
         auth_views.LogoutView.as_view(next_page="login"),
         name="logout",
     ),
-    path("account/profile/", AccountProfileView.as_view(), name="account_profile"),
+    path("accounts/profile/", AccountProfileView.as_view(), name="account_profile"),
 ]
 
 urlpatterns = auth_urlpatterns + [
