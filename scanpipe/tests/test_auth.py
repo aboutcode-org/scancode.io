@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
+
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -113,3 +115,42 @@ class ScanCodeIOAuthTest(TestCase):
         self.assertContains(response, expected, html=True)
         expected = '<label class="label">API Key</label>'
         self.assertContains(response, self.basic_user.auth_token.key)
+
+    def test_scancodeio_auth_views_are_protected(self):
+        a_uuid = uuid.uuid4()
+        a_int = 1
+        a_path = "path"
+
+        views = [
+            ("account_profile", None),
+            ("project_add", None),
+            ("project_list", None),
+            ("project_resources", [a_uuid]),
+            ("project_packages", [a_uuid]),
+            ("project_errors", [a_uuid]),
+            ("project_tree", [a_uuid]),
+            ("project_archive", [a_uuid]),
+            ("project_delete", [a_uuid]),
+            ("project_reset", [a_uuid]),
+            ("project_detail", [a_uuid]),
+            ("project_results", [a_uuid, a_path]),
+            ("resource_raw", [a_uuid, a_int]),
+            ("resource_detail", [a_uuid, a_int]),
+            ("project_execute_pipeline", [a_uuid, a_uuid]),
+            ("project_stop_pipeline", [a_uuid, a_uuid]),
+            ("project_delete_pipeline", [a_uuid, a_uuid]),
+            ("run_detail", [a_uuid]),
+            ("admin:index", None),
+            ("rq_home", None),
+            ("license_app:license_list", None),
+            ("license_app:license_details", [a_path]),
+        ]
+
+        for viewname, args in views:
+            url = reverse(viewname, args=args)
+            response = self.client.get(url)
+            self.assertEqual(302, response.status_code, msg=viewname)
+
+        api_project_list_url = reverse("project-list")
+        response = self.client.get(api_project_list_url)
+        self.assertEqual(401, response.status_code)
