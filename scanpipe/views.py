@@ -24,6 +24,7 @@ from collections import Counter
 
 from django.apps import apps
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -38,6 +39,8 @@ from django.views.generic.edit import FormView
 import saneyaml
 from django_filters.views import FilterView
 
+from scancodeio.auth import ConditionalLoginRequired
+from scancodeio.auth import conditional_login_required
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -88,7 +91,13 @@ class PaginatedFilterView(FilterView):
         return context
 
 
-class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
+class AccountProfileView(LoginRequiredMixin, generic.TemplateView):
+    template_name = "account/profile.html"
+
+
+class ProjectListView(
+    ConditionalLoginRequired, PrefetchRelatedViewMixin, PaginatedFilterView
+):
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
@@ -102,7 +111,7 @@ class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
         return context
 
 
-class ProjectCreateView(generic.CreateView):
+class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
@@ -138,7 +147,7 @@ class ProjectCreateView(generic.CreateView):
         return reverse_lazy("project_detail", kwargs={"uuid": self.object.pk})
 
 
-class ProjectDetailView(ProjectViewMixin, generic.DetailView):
+class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_detail.html"
 
     @staticmethod
@@ -265,7 +274,9 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         return redirect(project)
 
 
-class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
+class ProjectArchiveView(
+    ConditionalLoginRequired, ProjectViewMixin, SingleObjectMixin, FormView
+):
     http_method_names = ["post"]
     form_class = ArchiveProjectForm
     success_url = reverse_lazy("project_list")
@@ -289,7 +300,7 @@ class ProjectArchiveView(ProjectViewMixin, SingleObjectMixin, FormView):
         return response
 
 
-class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
+class ProjectDeleteView(ConditionalLoginRequired, ProjectViewMixin, generic.DeleteView):
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" and all its related data have been removed.'
 
@@ -305,7 +316,7 @@ class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
         return response_redirect
 
 
-class ProjectResetView(ProjectViewMixin, generic.DeleteView):
+class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.DeleteView):
     success_message = 'All data, except inputs, for the "{}" project have been removed.'
 
     def delete(self, request, *args, **kwargs):
@@ -323,7 +334,7 @@ class ProjectResetView(ProjectViewMixin, generic.DeleteView):
         return redirect(project)
 
 
-class ProjectTreeView(ProjectViewMixin, generic.DetailView):
+class ProjectTreeView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_tree.html"
 
     def get_context_data(self, **kwargs):
@@ -336,6 +347,7 @@ class ProjectTreeView(ProjectViewMixin, generic.DetailView):
         return context
 
 
+@conditional_login_required
 def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
@@ -348,6 +360,7 @@ def execute_pipeline_view(request, uuid, run_uuid):
     return redirect(project)
 
 
+@conditional_login_required
 def stop_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
@@ -360,6 +373,7 @@ def stop_pipeline_view(request, uuid, run_uuid):
     return redirect(project)
 
 
+@conditional_login_required
 def delete_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
@@ -391,7 +405,9 @@ def project_results_json_response(project, as_attachment=False):
     return response
 
 
-class ProjectResultsView(ProjectViewMixin, generic.DetailView):
+class ProjectResultsView(
+    ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
+):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         project = self.object
@@ -425,6 +441,7 @@ class ProjectRelatedViewMixin:
 
 
 class CodebaseResourceListView(
+    ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
     PaginatedFilterView,
@@ -447,6 +464,7 @@ class CodebaseResourceListView(
 
 
 class DiscoveredPackageListView(
+    ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
     PaginatedFilterView,
@@ -458,14 +476,18 @@ class DiscoveredPackageListView(
     prefetch_related = ["codebase_resources"]
 
 
-class ProjectErrorListView(ProjectRelatedViewMixin, FilterView):
+class ProjectErrorListView(
+    ConditionalLoginRequired, ProjectRelatedViewMixin, FilterView
+):
     model = ProjectError
     filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
 
 
-class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
+class CodebaseResourceDetailsView(
+    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+):
     model = CodebaseResource
     template_name = "scanpipe/resource_detail.html"
 
@@ -523,6 +545,7 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         return context
 
 
+@conditional_login_required
 def run_detail_view(request, uuid):
     template = "scanpipe/includes/run_modal_content.html"
     run = get_object_or_404(Run, uuid=uuid)
@@ -537,6 +560,7 @@ def run_detail_view(request, uuid):
 
 
 class CodebaseResourceRawView(
+    ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     generic.detail.SingleObjectMixin,
     generic.base.View,

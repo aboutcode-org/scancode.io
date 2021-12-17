@@ -25,7 +25,9 @@ import json
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Q
 
+import django_filters
 from rest_framework import mixins
 from rest_framework import renderers
 from rest_framework import status
@@ -55,6 +57,52 @@ class PassThroughRenderer(renderers.BaseRenderer):
         return data
 
 
+class ProjectFilterSet(django_filters.FilterSet):
+    name = django_filters.CharFilter()
+    name__contains = django_filters.CharFilter(
+        field_name="name",
+        lookup_expr="contains",
+    )
+    name__startswith = django_filters.CharFilter(
+        field_name="name",
+        lookup_expr="startswith",
+    )
+    name__endswith = django_filters.CharFilter(
+        field_name="name",
+        lookup_expr="endswith",
+    )
+    names = django_filters.filters.CharFilter(
+        label="Names (multi-values)",
+        field_name="name",
+        method="filter_names",
+    )
+    uuid = django_filters.CharFilter()
+    is_archived = django_filters.CharFilter()
+
+    class Meta:
+        model = Project
+        fields = [
+            "name",
+            "name__contains",
+            "name__startswith",
+            "name__endswith",
+            "names",
+            "uuid",
+            "is_archived",
+        ]
+
+    def filter_names(self, qs, name, value):
+        names = value.split(",")
+
+        lookups = Q()
+        for name in names:
+            name = name.strip()
+            if name:
+                lookups |= Q(name__contains=name)
+
+        return qs.filter(lookups)
+
+
 class ProjectViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
@@ -69,7 +117,7 @@ class ProjectViewSet(
 
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    filterset_fields = ["name", "uuid", "is_archived"]
+    filterset_class = ProjectFilterSet
 
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):

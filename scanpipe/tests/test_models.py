@@ -31,6 +31,7 @@ from unittest import mock
 from unittest import skipIf
 
 from django.apps import apps
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DataError
@@ -60,6 +61,7 @@ from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app = apps.get_app_config("scanpipe")
+User = get_user_model()
 
 
 class ScanPipeModelsTest(TestCase):
@@ -1268,6 +1270,11 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(new_data["notice_text"], package.notice_text)
         # Already a value, not updated
         self.assertEqual(package_data1["description"], package.description)
+
+    def test_scanpipe_model_create_user_creates_auth_token(self):
+        basic_user = User.objects.create_user(username="basic_user")
+        self.assertTrue(basic_user.auth_token.key)
+        self.assertEqual(40, len(basic_user.auth_token.key))
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

@@ -47,6 +47,10 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[
 # SECURITY WARNING: don't run with debug turned on in production
 DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
 
+SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
+    "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
+)
+
 # ScanCode.io
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
@@ -137,6 +141,10 @@ TEMPLATES = [
     },
 ]
 
+# Login
+
+LOGIN_REDIRECT_URL = "project_list"
+
 # Passwords
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -165,6 +173,7 @@ IS_TESTS = "test" in sys.argv
 if IS_TESTS:
     # Do not pollute the workspace while running the tests
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
+    SCANCODEIO_REQUIRE_AUTHENTICATION = True
 
 # Cache
 
@@ -263,10 +272,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": env.tuple(
-        "REST_FRAMEWORK_DEFAULT_PERMISSION_CLASSES",
-        default=("rest_framework.permissions.AllowAny",),
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
@@ -280,3 +286,8 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": env.int("SCANCODEIO_REST_API_PAGE_SIZE", default=50),
     "UPLOADED_FILES_USE_URL": False,
 }
+
+if not SCANCODEIO_REQUIRE_AUTHENTICATION:
+    REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (
+        "rest_framework.permissions.AllowAny",
+    )

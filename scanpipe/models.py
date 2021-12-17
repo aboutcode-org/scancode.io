@@ -43,6 +43,7 @@ from django.db.models import Q
 from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
+from django.dispatch import receiver
 from django.forms import model_to_dict
 from django.urls import reverse
 from django.utils import timezone
@@ -57,6 +58,7 @@ from commoncode.hash import multi_checksums
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
+from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
@@ -1874,3 +1876,12 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             self.save()
         else:
             logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")
+
+
+@receiver(models.signals.post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    """
+    Creates an API key token on user creation, using the signal system.
+    """
+    if created:
+        Token.objects.create(user_id=instance.pk)

@@ -25,6 +25,7 @@ from unittest import mock
 
 from django.apps import apps
 from django.test import TestCase
+from django.test import override_settings
 from django.urls import reverse
 
 from scanpipe.models import CodebaseResource
@@ -34,6 +35,7 @@ from scanpipe.tests import license_policies_index
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+@override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False)
 class ScanPipeViewsTest(TestCase):
     data_location = Path(__file__).parent / "data"
 

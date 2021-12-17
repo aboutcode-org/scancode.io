@@ -1,0 +1,52 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    {% if form.errors %}
+      <article class="message is-danger">
+        <div class="message-body">
+          Your username and password didn't match. Please try again.
+        </div>
+      </article>
+    {% endif %}
+
+    <section class="section mt-6 pt-0 columns is-mobile">
+      <div class="column is-half is-offset-one-quarter">
+        <form class="box" method="post" action="{% url 'login' %}">
+          {% csrf_token %}
+
+          <div class="field">
+            <label class="label">Username</label>
+            <div class="control has-icons-left">
+              <!-- {{ form.username }}-->
+              <input class="input" type="text" name="username" autofocus autocomplete="username" maxlength="150" required id="id_username">
+              <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="field mb-5">
+            <label class="label">Password</label>
+            <div class="control has-icons-left">
+              <!-- {{ form.password }}-->
+              <input class="input" type="password" name="password" autocomplete="current-password" required id="id_password">
+              <span class="icon is-small is-left">
+              <i class="fas fa-lock"></i>
+            </span>
+            </div>
+          </div>
+
+          <input type="hidden" name="next" value="{{ next }}">
+          <div class="control">
+            <input type="submit" class="button is-link is-fullwidth has-text-weight-bold" value="Sign in">
+          </div>
+        </form>
+      </div>
+
+    </section>
+  </div>
+{% endblock %}

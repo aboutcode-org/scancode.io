@@ -7,6 +7,8 @@ To get started with the REST API, visit the **projects' API endpoint** at
 http://localhost/api/projects/ or http://127.0.0.1:8001/api/projects/ if you run on a
 local development setup.
 
+.. _rest_api_authentication:
+
 Authentication
 --------------
 
