@@ -153,4 +153,7 @@ class ScanCodeIOAuthTest(TestCase):
 
         api_project_list_url = reverse("project-list")
         response = self.client.get(api_project_list_url)
+        print(response.content.decode())
+        expected = {"detail": "Authentication credentials were not provided."}
+        self.assertEqual(expected, response.json())
         self.assertEqual(401, response.status_code)
