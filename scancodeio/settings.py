@@ -173,6 +173,7 @@ IS_TESTS = "test" in sys.argv
 if IS_TESTS:
     # Do not pollute the workspace while running the tests
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
+    SCANCODEIO_REQUIRE_AUTHENTICATION = True
 
 # Cache
 

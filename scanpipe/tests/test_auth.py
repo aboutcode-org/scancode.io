@@ -43,7 +43,6 @@ profile_url = reverse("account_profile")
 login_redirect_url = reverse(settings.LOGIN_REDIRECT_URL)
 
 
-@override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=True)
 class ScanCodeIOAuthTest(TestCase):
     def setUp(self):
         self.anonymous_user = AnonymousUser()
@@ -151,9 +150,9 @@ class ScanCodeIOAuthTest(TestCase):
             response = self.client.get(url)
             self.assertEqual(302, response.status_code, msg=viewname)
 
+    def test_scancodeio_auth_api_required_authentication(self):
         api_project_list_url = reverse("project-list")
         response = self.client.get(api_project_list_url)
-        print(response.content.decode())
         expected = {"detail": "Authentication credentials were not provided."}
         self.assertEqual(expected, response.json())
         self.assertEqual(401, response.status_code)
