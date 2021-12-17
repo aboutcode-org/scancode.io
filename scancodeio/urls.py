@@ -28,12 +28,10 @@ from django.views.generic import RedirectView
 from rest_framework.routers import DefaultRouter
 
 from scancodeio import licenses
-from scanner.api.views import ScanViewSet
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
 
 api_router = DefaultRouter()
-api_router.register(r"scans", ScanViewSet)
 api_router.register(r"projects", ProjectViewSet)
 api_router.register(r"runs", RunViewSet)
 

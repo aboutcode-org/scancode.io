@@ -19,16 +19,18 @@ you’ll find information on:
     user-interface
     faq
     contributing
+    changelog
 
 .. toctree::
     :maxdepth: 2
     :caption: Tutorial
 
-    tutorial-1
-    tutorial-2
-    tutorial-3
-    tutorial-4
-    tutorial-5
+    tutorial_web_ui_analyze_docker_image
+    tutorial_web_ui_review_scan_results
+    tutorial_cli_analyze_docker_image
+    tutorial_cli_analyze_codebase
+    tutorial_api_analyze_package_archive
+    tutorial_license_policies
 
 .. toctree::
     :maxdepth: 2

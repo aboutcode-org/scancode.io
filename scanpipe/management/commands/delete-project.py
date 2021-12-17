@@ -48,7 +48,7 @@ class Command(ProjectCommand):
                 f"Type 'yes' to continue, or 'no' to cancel: "
             )
             if confirm != "yes":
-                self.stdout.write("Flush cancelled.")
+                self.stdout.write("Deletion cancelled.")
                 sys.exit(0)
 
         self.project.delete()

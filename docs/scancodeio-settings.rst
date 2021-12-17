@@ -73,6 +73,29 @@ To disable both multiprocessing and threading, use "-1"::
 
     SCANCODEIO_PROCESSES=-1
 
+.. _scancodeio_settings_async:
+
+SCANCODEIO_ASYNC
+----------------
+
+When enabled, pipeline runs are **executed asynchronously**, meaning that users can
+continue using the app while the pipeline are run in the background.
+
+The ASYNC mode is **enabled by default in a "Run with Docker" configuration** but
+**disabled in a "Local development" setup**.
+
+It is possible to enable ASYNC mode in a "local development" setup with the following
+setting::
+
+    SCANCODEIO_ASYNC=True
+
+Once enabled, pipeline runs will be sent to a task queue instead of being executed
+synchronously in the web server process.
+
+.. warning::
+    The ASYNC mode required a **Redis server** and running a **tasks worker** using
+    ``$ make worker``.
+
 SCANCODE_TOOLKIT_CLI_OPTIONS
 ----------------------------
 
@@ -98,6 +121,8 @@ of additional pipelines directories::
 
     SCANCODEIO_PIPELINES_DIRS=/var/scancodeio/pipelines/,/home/user/pipelines/
 
+.. _scancodeio_settings_policies_file:
+
 SCANCODEIO_POLICIES_FILE
 ------------------------
 
@@ -119,8 +144,50 @@ A valid policies file is required to enable compliance-related features.
 
 - Licenses are referenced by the ``license_key``.
 - A Policy is defined with ``label`` and ``compliance_alert``.
-- The ``compliance_alert`` accepts 3 values: "" for an empty string, warning, and error.
+- The ``compliance_alert`` accepts 3 values: '' for an empty string, warning, and error.
 
 .. note::
     When the policy feature is enabled, the ``compliance_alert`` values are
     displayed in the UI and returned in all downloadable results.
+
+.. tip::
+    Check out the :ref:`tutorial_license_policies` tutorial for in-depth coverage of
+    this feature.
+
+SCANCODEIO_REST_API_PAGE_SIZE
+-----------------------------
+
+A numeric value indicating the number of objects returned per page in the REST API::
+
+    SCANCODEIO_REST_API_PAGE_SIZE=100
+
+Default: ``50``
+
+.. warning::
+    Using a large page size may have an impact on performances.
+
+SCANCODEIO_LOG_LEVEL
+--------------------
+
+By default, only a minimum of logging messages is displayed in the console, mostly
+to provide some progress about pipeline run execution.
+
+Default: ``INFO``
+
+The ``DEBUG`` value can be provided to this setting to see all ScanCode.io debug
+messages to help track down configuration issues for example.
+This mode can be enabled globally through the ``.env`` file::
+
+    SCANCODEIO_LOG_LEVEL=DEBUG
+
+Or, in the context of running a :ref:`scanpipe command <command_line_interface>`:
+
+.. code-block:: console
+
+    $ SCANCODEIO_LOG_LEVEL=DEBUG bin/scanpipe [command]
+
+The web server can be started in DEBUG mode with:
+
+.. code-block:: console
+
+    $ SCANCODEIO_LOG_LEVEL=DEBUG make run

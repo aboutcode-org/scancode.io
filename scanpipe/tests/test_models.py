@@ -32,10 +32,15 @@ from unittest import skipIf
 
 from django.apps import apps
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
+from django.db import DataError
 from django.db import connection
 from django.test import TestCase
 from django.test import TransactionTestCase
+from django.test import override_settings
 from django.utils import timezone
+
+from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseResource
@@ -43,6 +48,8 @@ from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
+from scanpipe.models import WebhookSubscription
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
@@ -55,22 +62,20 @@ from scanpipe.tests.pipelines.do_nothing import DoNothing
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-class BaseScanPipeModelsTest:
+class ScanPipeModelsTest(TestCase):
+    data_location = Path(__file__).parent / "data"
+    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
+
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
         self.project_asgiref = Project.objects.get(name="asgiref")
 
-    def create_run(self, **kwargs):
+    def create_run(self, pipeline="pipeline", **kwargs):
         return Run.objects.create(
             project=self.project1,
-            pipeline_name="pipeline",
+            pipeline_name=pipeline,
             **kwargs,
         )
-
-
-class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
-    data_location = Path(__file__).parent / "data"
-    fixtures = [data_location / "asgiref-3.3.0_fixtures.json"]
 
     def test_scanpipe_project_model_extra_data(self):
         self.assertEqual({}, self.project1.extra_data)
@@ -100,6 +105,26 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.clear_tmp_directory()
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
+
+    def test_scanpipe_project_model_archive(self):
+        (self.project1.input_path / "input_file").touch()
+        (self.project1.codebase_path / "codebase_file").touch()
+        (self.project1.output_path / "output_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
+
+        self.project1.archive()
+        self.project1.refresh_from_db()
+        self.assertTrue(self.project1.is_archived)
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
+
+        self.project1.archive(remove_input=True, remove_codebase=True)
+        self.assertEqual(0, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(self.project1.codebase_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
 
     def test_scanpipe_project_model_delete(self):
         work_path = self.project1.work_path
@@ -134,7 +159,6 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.project1.add_pipeline("docker")
         CodebaseResource.objects.create(project=self.project1, path="path")
         DiscoveredPackage.objects.create(project=self.project1)
-        # + run + error
 
         self.project1.reset()
 
@@ -150,6 +174,16 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.assertTrue(self.project1.output_path.exists())
         self.assertTrue(self.project1.codebase_path.exists())
         self.assertTrue(self.project1.tmp_path.exists())
+
+    def test_scanpipe_project_model_input_sources_list_property(self):
+        self.project1.add_input_source(filename="file1", source="uploaded")
+        self.project1.add_input_source(filename="file2", source="https://download.url")
+
+        expected = [
+            {"filename": "file1", "source": "uploaded"},
+            {"filename": "file2", "source": "https://download.url"},
+        ]
+        self.assertEqual(expected, self.project1.input_sources_list)
 
     def test_scanpipe_project_model_inputs_and_input_files_and_input_root(self):
         self.assertEqual([], list(self.project1.inputs()))
@@ -334,6 +368,11 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.assertEqual(expected, inputs)
         self.assertEqual({}, missing_inputs)
 
+    def test_scanpipe_project_model_add_webhook_subscription(self):
+        self.assertEqual(0, self.project1.webhooksubscriptions.count())
+        self.project1.add_webhook_subscription("https://localhost")
+        self.assertEqual(1, self.project1.webhooksubscriptions.count())
+
     def test_scanpipe_project_model_get_next_run(self):
         self.assertEqual(None, self.project1.get_next_run())
 
@@ -376,20 +415,22 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         run1.save()
         self.assertEqual(run2, self.project1.get_latest_failed_run())
 
-    def test_scanpipe_run_model_init_task_id(self):
-        run1 = Run.objects.create(project=self.project1)
-        self.assertIsNone(run1.task_id)
+    def test_scanpipe_project_model_raise_if_run_in_progress(self):
+        run1 = self.create_run()
+        self.assertIsNone(self.project1._raise_if_run_in_progress())
 
-        task_id = uuid.uuid4()
-        self.assertEqual(1, run1.init_task_id(task_id))
-        self.assertIsNone(run1.task_id)
-        run1.refresh_from_db()
-        self.assertEqual(task_id, run1.task_id)
+        run1.set_task_started(task_id=1)
+        with self.assertRaises(RunInProgressError):
+            self.project1._raise_if_run_in_progress()
 
-        new_id = uuid.uuid4()
-        self.assertEqual(0, run1.init_task_id(new_id))
-        run1.refresh_from_db()
-        self.assertEqual(task_id, run1.task_id)
+        with self.assertRaises(RunInProgressError):
+            self.project1.archive()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.delete()
+
+        with self.assertRaises(RunInProgressError):
+            self.project1.reset()
 
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
@@ -423,6 +464,10 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
         run1.save()
         self.assertEqual(25.0, run1.execution_time)
+
+        run1.set_task_staled()
+        run1.refresh_from_db()
+        self.assertIsNone(run1.execution_time)
 
     def test_scanpipe_run_model_execution_time_for_display_property(self):
         run1 = self.create_run()
@@ -482,52 +527,164 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
 
+    def test_scanpipe_run_model_set_task_methods(self):
+        run1 = self.create_run()
+        self.assertIsNone(run1.task_id)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+
+        run1.set_task_queued()
+        run1.refresh_from_db()
+        self.assertEqual(run1.pk, run1.task_id)
+        self.assertEqual(Run.Status.QUEUED, run1.status)
+
+        run1.set_task_started(run1.pk)
+        self.assertTrue(run1.task_start_date)
+        self.assertEqual(Run.Status.RUNNING, run1.status)
+
+        run1.set_task_ended(exitcode=0)
+        self.assertTrue(run1.task_end_date)
+        self.assertEqual(Run.Status.SUCCESS, run1.status)
+        self.assertTrue(run1.task_succeeded)
+
+        run1.set_task_ended(exitcode=1)
+        self.assertEqual(Run.Status.FAILURE, run1.status)
+        self.assertTrue(run1.task_failed)
+
+        run1.set_task_staled()
+        self.assertEqual(Run.Status.STALE, run1.status)
+        self.assertTrue(run1.task_staled)
+
+        run1.set_task_stopped()
+        self.assertEqual(Run.Status.STOPPED, run1.status)
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_run_model_stop_task_method(self):
+        run1 = self.create_run()
+        run1.stop_task()
+        self.assertEqual(Run.Status.STOPPED, run1.status)
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_run_model_delete_task_method(self):
+        run1 = self.create_run()
+        run1.delete_task()
+        self.assertFalse(Run.objects.filter(pk=run1.pk).exists())
+        self.assertFalse(self.project1.runs.exists())
+
     def test_scanpipe_run_model_queryset_methods(self):
         now = timezone.now()
 
-        started = self.create_run(task_start_date=now)
-        not_started = self.create_run()
-        queued = self.create_run(task_id=uuid.uuid4())
-        executed = self.create_run(task_start_date=now, task_end_date=now)
-        succeed = self.create_run(task_start_date=now, task_exitcode=0)
-        failed = self.create_run(task_start_date=now, task_exitcode=1)
+        running = self.create_run(
+            pipeline="running", task_start_date=now, task_id=uuid.uuid4()
+        )
+        not_started = self.create_run(pipeline="not_started")
+        queued = self.create_run(pipeline="queued", task_id=uuid.uuid4())
+        executed = self.create_run(
+            pipeline="executed", task_start_date=now, task_end_date=now
+        )
+        succeed = self.create_run(
+            pipeline="succeed", task_start_date=now, task_end_date=now, task_exitcode=0
+        )
+        failed = self.create_run(
+            pipeline="failed", task_start_date=now, task_end_date=now, task_exitcode=1
+        )
 
-        qs = self.project1.runs.started()
-        self.assertEqual(4, len(qs))
-        self.assertIn(started, qs)
-        self.assertIn(executed, qs)
-        self.assertIn(succeed, qs)
-        self.assertIn(failed, qs)
+        qs = self.project1.runs.has_start_date()
+        self.assertQuerysetEqual(qs, [running, executed, succeed, failed])
 
         qs = self.project1.runs.not_started()
-        self.assertEqual([not_started], list(qs))
+        self.assertQuerysetEqual(qs, [not_started])
 
         qs = self.project1.runs.queued()
-        self.assertEqual([queued], list(qs))
+        self.assertQuerysetEqual(qs, [queued])
+
+        qs = self.project1.runs.running()
+        self.assertQuerysetEqual(qs, [running])
 
         qs = self.project1.runs.executed()
-        self.assertEqual([executed], list(qs))
+        self.assertQuerysetEqual(qs, [executed, succeed, failed])
 
         qs = self.project1.runs.succeed()
-        self.assertEqual([succeed], list(qs))
+        self.assertQuerysetEqual(qs, [succeed])
 
         qs = self.project1.runs.failed()
-        self.assertEqual([failed], list(qs))
+        self.assertQuerysetEqual(qs, [failed])
+
+        queued_or_running_qs = self.project1.runs.queued_or_running()
+        self.assertQuerysetEqual(queued_or_running_qs, [running, queued])
 
     def test_scanpipe_run_model_status_property(self):
         now = timezone.now()
 
-        started = self.create_run(task_start_date=now)
+        running = self.create_run(task_start_date=now)
         not_started = self.create_run()
         queued = self.create_run(task_id=uuid.uuid4())
-        succeed = self.create_run(task_start_date=now, task_exitcode=0)
-        failed = self.create_run(task_start_date=now, task_exitcode=1)
+        succeed = self.create_run(
+            task_start_date=now, task_end_date=now, task_exitcode=0
+        )
+        failed = self.create_run(
+            task_start_date=now, task_end_date=now, task_exitcode=1
+        )
 
-        self.assertEqual(Run.Status.RUNNING, started.status)
+        self.assertEqual(Run.Status.RUNNING, running.status)
         self.assertEqual(Run.Status.NOT_STARTED, not_started.status)
         self.assertEqual(Run.Status.QUEUED, queued.status)
         self.assertEqual(Run.Status.SUCCESS, succeed.status)
         self.assertEqual(Run.Status.FAILURE, failed.status)
+
+    @override_settings(SCANCODEIO_ASYNC=True)
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    @mock.patch("scanpipe.models.Run.job_status", new_callable=mock.PropertyMock)
+    def test_scanpipe_run_model_sync_with_job_async_mode(
+        self, mock_job_status, mock_execute_task
+    ):
+        queued = self.create_run(task_id=uuid.uuid4())
+        self.assertEqual(Run.Status.QUEUED, queued.status)
+        mock_job_status.return_value = None
+        queued.sync_with_job()
+        mock_execute_task.assert_called_once()
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        self.assertEqual(Run.Status.RUNNING, running.status)
+        mock_job_status.return_value = None
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_staled)
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        mock_job_status.return_value = JobStatus.STOPPED
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_stopped)
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        mock_job_status.return_value = JobStatus.FAILED
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_failed)
+        expected = "Job was moved to the FailedJobRegistry during cleanup"
+        self.assertEqual(expected, running.task_output)
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        mock_job_status.return_value = "Something else"
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_staled)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_run_model_sync_with_job_sync_mode(self, mock_execute_task):
+        queued = self.create_run(task_id=uuid.uuid4())
+        self.assertEqual(Run.Status.QUEUED, queued.status)
+        queued.sync_with_job()
+        mock_execute_task.assert_called_once()
+
+        running = self.create_run(task_id=uuid.uuid4(), task_start_date=timezone.now())
+        self.assertEqual(Run.Status.RUNNING, running.status)
+        running.sync_with_job()
+        running.refresh_from_db()
+        self.assertTrue(running.task_staled)
 
     def test_scanpipe_run_model_append_to_log(self):
         run1 = self.create_run()
@@ -541,6 +698,13 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
         run1.refresh_from_db()
         self.assertEqual("line1\nline2\n", run1.log)
 
+    @mock.patch("scanpipe.models.WebhookSubscription.send")
+    def test_scanpipe_run_model_send_project_subscriptions(self, mock_send):
+        self.project1.add_webhook_subscription("https://localhost")
+        run1 = self.create_run()
+        run1.send_project_subscriptions()
+        mock_send.assert_called_once_with(pipeline_run=run1)
+
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
         self.assertIsNone(run1.profile())
@@ -550,8 +714,8 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
             "2021-02-05 12:46:47.63 Step [copy_inputs_to_codebase_directory] starting\n"
             "2021-02-05 12:46:47.63 Step [copy_inputs_to_codebase_directory]"
             " completed in 0.00 seconds\n"
-            "2021-02-05 12:46:47.63 Step [run_extractcode] starting\n"
-            "2021-02-05 12:46:48.13 Step [run_extractcode] completed in 0.50 seconds\n"
+            "2021-02-05 12:46:47.63 Step [extract_archives] starting\n"
+            "2021-02-05 12:46:48.13 Step [extract_archives] completed in 0.50 seconds\n"
             "2021-02-05 12:46:48.14 Step [run_scancode] starting\n"
             "2021-02-05 12:46:52.59 Step [run_scancode] completed in 4.45 seconds\n"
             "2021-02-05 12:46:52.59 Step [build_inventory_from_scan] starting\n"
@@ -571,7 +735,7 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
             "build_inventory_from_scan": 0.16,
             "copy_inputs_to_codebase_directory": 0.0,
             "csv_output": 0.06,
-            "run_extractcode": 0.5,
+            "extract_archives": 0.5,
             "run_scancode": 4.45,
         }
         self.assertEqual(expected, run1.profile())
@@ -582,7 +746,7 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
 
         expected = (
             "copy_inputs_to_codebase_directory  0.0 seconds 0.0%\n"
-            "run_extractcode                    0.5 seconds 9.7%\n"
+            "extract_archives                   0.5 seconds 9.7%\n"
             "\x1b[41;37mrun_scancode                       4.45 seconds 86.1%\x1b[m\n"
             "build_inventory_from_scan          0.16 seconds 3.1%\n"
             "csv_output                         0.06 seconds 1.2%\n"
@@ -993,6 +1157,118 @@ class ScanPipeModelsTest(BaseScanPipeModelsTest, TestCase):
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
 
+    def test_scanpipe_codebase_resource_model_walk_method(self):
+        fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        asgiref_root = self.project_asgiref.codebaseresources.get(path="codebase")
+
+        topdown_paths = list(r.path for r in asgiref_root.walk(topdown=True))
+        expected_topdown_paths = [
+            "codebase/asgiref-3.3.0.whl",
+            "codebase/asgiref-3.3.0.whl-extract",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+        ]
+        self.assertEqual(expected_topdown_paths, topdown_paths)
+
+        bottom_up_paths = list(r.path for r in asgiref_root.walk(topdown=False))
+        expected_bottom_up_paths = [
+            "codebase/asgiref-3.3.0.whl",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
+            "codebase/asgiref-3.3.0.whl-extract",
+        ]
+        self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
+
+    @mock.patch("requests.post")
+    def test_scanpipe_webhook_subscription_send_method(self, mock_post):
+        webhook = self.project1.add_webhook_subscription("https://localhost")
+        self.assertFalse(webhook.sent)
+        run1 = self.create_run()
+
+        mock_post.return_value = mock.Mock(status_code=404)
+        webhook.send(pipeline_run=run1)
+        webhook.refresh_from_db()
+        self.assertFalse(webhook.sent)
+
+        mock_post.return_value = mock.Mock(status_code=200)
+        webhook.send(pipeline_run=run1)
+        webhook.refresh_from_db()
+        self.assertTrue(webhook.sent)
+
+    def test_scanpipe_discovered_package_model_purl_fields(self):
+        expected = ("type", "namespace", "name", "version", "qualifiers", "subpath")
+        self.assertEqual(expected, DiscoveredPackage.purl_fields())
+
+    def test_scanpipe_discovered_package_model_extract_purl_data(self):
+        package_data = {}
+        expected = {
+            "type": "",
+            "namespace": "",
+            "name": "",
+            "version": "",
+            "qualifiers": "",
+            "subpath": "",
+        }
+        purl_data = DiscoveredPackage.extract_purl_data(package_data)
+        self.assertEqual(expected, purl_data)
+
+        expected = {
+            "name": "adduser",
+            "namespace": "debian",
+            "qualifiers": "arch=all",
+            "subpath": "",
+            "type": "deb",
+            "version": "3.118",
+        }
+        purl_data = DiscoveredPackage.extract_purl_data(package_data1)
+        self.assertEqual(expected, purl_data)
+
+    def test_scanpipe_discovered_package_model_update_from_data(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        new_data = {
+            "name": "new name",
+            "notice_text": "NOTICE",
+            "description": "new description",
+            "unknown_field": "value",
+        }
+        updated_fields = package.update_from_data(new_data)
+        self.assertEqual(["notice_text"], updated_fields)
+
+        package.refresh_from_db()
+        # PURL field, not updated
+        self.assertEqual(package_data1["name"], package.name)
+        # Empty field, updated
+        self.assertEqual(new_data["notice_text"], package.notice_text)
+        # Already a value, not updated
+        self.assertEqual(package_data1["description"], package.description)
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
@@ -1120,79 +1396,42 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projecterrors.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = (
-            "One or more of the required fields have no value: type, name, version"
-        )
+        expected_message = "No values for the following required fields: name"
         self.assertEqual(expected_message, error.message)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])
         self.assertEqual("", error.traceback)
 
         package_count = DiscoveredPackage.objects.count()
+        project_error_count = ProjectError.objects.count()
         bad_data = dict(package_data1)
         bad_data["version"] = "a" * 200
-        self.assertIsNone(DiscoveredPackage.create_from_data(project1, bad_data))
+        # The exception are not capture at the DiscoveredPackage.create_from_data but
+        # rather in the CodebaseResource.create_and_add_package method so resource data
+        # can be injected in the ProjectError record.
+        with self.assertRaises(DataError):
+            DiscoveredPackage.create_from_data(project1, bad_data)
+
+        self.assertEqual(package_count, DiscoveredPackage.objects.count())
+        self.assertEqual(project_error_count, ProjectError.objects.count())
+
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
+    def test_scanpipe_codebase_resource_create_and_add_package_errors(self):
+        project1 = Project.objects.create(name="Analysis")
+        resource = CodebaseResource.objects.create(project=project1, path="p")
+
+        package_count = DiscoveredPackage.objects.count()
+        bad_data = dict(package_data1)
+        bad_data["version"] = "a" * 200
+
+        package = resource.create_and_add_package(bad_data)
+        self.assertIsNone(package)
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projecterrors.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
         expected_message = "value too long for type character varying(100)\n"
         self.assertEqual(expected_message, error.message)
         self.assertEqual(bad_data["version"], error.details["version"])
+        self.assertTrue(error.details["codebase_resource_pk"])
+        self.assertEqual(resource.path, error.details["codebase_resource_path"])
         self.assertIn("in save", error.traceback)
-
-
-class ScanPipeWalkTest(BaseScanPipeModelsTest, TestCase):
-    data_location = Path(__file__).parent / "data"
-    fixtures = [data_location / "asgiref-3.3.0_walk_test_fixtures.json"]
-
-    def test_scanpipe_codebase_resource_walk(self):
-        fixtures = [self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"]
-        project = Project.objects.create(name="asgiref_walk_test")
-        project_asgiref = Project.objects.get(name="asgiref")
-        asgiref_root = self.project_asgiref.codebaseresources.get(path="codebase")
-
-        topdown_paths = list(r.path for r in asgiref_root.walk(topdown=True))
-        expected_topdown_paths = [
-            "codebase/asgiref-3.3.0.whl",
-            "codebase/asgiref-3.3.0.whl-extract",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
-        ]
-        self.assertEqual(expected_topdown_paths, topdown_paths)
-
-        bottom_up_paths = list(r.path for r in asgiref_root.walk(topdown=False))
-        expected_bottom_up_paths = [
-            "codebase/asgiref-3.3.0.whl",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "codebase/asgiref-3.3.0.whl-extract",
-        ]
-        self.assertEqual(expected_bottom_up_paths, bottom_up_paths)

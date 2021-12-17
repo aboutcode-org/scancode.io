@@ -21,10 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import os
 import tempfile
 import warnings
 from pathlib import Path
 from unittest import mock
+from unittest import skipIf
 
 from django.test import TestCase
 from django.test import tag
@@ -33,8 +35,11 @@ from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
+from scanpipe.pipes import output
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
+
+from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipelinesTest(TestCase):
@@ -181,25 +186,35 @@ class RootFSPipelineTest(TestCase):
         project1.move_input_from(tempfile.mkstemp()[1])
         self.assertEqual(2, len(project1.input_files))
 
-        with mock.patch("scanpipe.pipes.scancode.extract") as extract:
-            extract.return_value = ["Error"]
+        with mock.patch("scanpipe.pipes.scancode.extract_archive") as extract_archive:
+            extract_archive.return_value = ["Error"]
             pipeline_instance.extract_input_files_to_codebase_directory()
 
         error = project1.projecterrors.get()
         self.assertEqual("Error\nError", error.message)
 
 
-class ScanPackagePipelineTest(TestCase):
+@tag("slow")
+class PipelinesIntegrationTest(TestCase):
+    """
+    Set of integration tests to ensure the proper output for each built-in Pipelines.
+    """
+
     maxDiff = None
     data_location = Path(__file__).parent / "data"
     exclude_from_diff = [
         "start_timestamp",
         "end_timestamp",
+        "date",
         "duration",
         "input",
         "compliance_alert",
         "policy",
         "tool_version",
+        "created_date",
+        "log",
+        "uuid",
+        "size",  # directory sizes are OS dependant
         "--json-pp",
         "--processes",
         "--verbose",
@@ -223,37 +238,64 @@ class ScanPackagePipelineTest(TestCase):
 
         return data
 
-    @tag("slow")
+    def assertPipelineResultEqual(self, expected_file, result_file, regen=False):
+        """
+        Set `regen` to True to regenerate the expected results.
+        """
+        result_json = json.loads(Path(result_file).read_text())
+        result_data = self._without_keys(result_json, self.exclude_from_diff)
+
+        if regen:
+            expected_file.write_text(json.dumps(result_data, indent=2))
+
+        expected_json = json.loads(expected_file.read_text())
+        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+
+        self.assertEqual(expected_data, result_data)
+
+    @skipIf(from_docker_image, "Random failure in the Docker context.")
     def test_scanpipe_scan_package_pipeline_integration_test(self):
+        pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "is-npm-1.0.0.tgz"
         project1.copy_input_from(input_location)
 
-        run = project1.add_pipeline("scan_package")
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, output = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=output)
+
+        self.assertEqual(4, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        expected_file = self.data_location / "is-npm-1.0.0_scan_package.json"
+        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
+
+        summary_file = project1.get_latest_output(filename="summary")
+        expected_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        self.assertPipelineResultEqual(expected_file, summary_file, regen=False)
+
+    def test_scanpipe_scan_codebase_pipeline_integration_test(self):
+        pipeline_name = "scan_codebase"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "is-npm-1.0.0.tgz"
+        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
+
+        run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
         exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
-        scancode_file = project1.get_latest_output(filename="scancode")
-        scancode_json = json.loads(scancode_file.read_text())
+        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
 
-        expected_file = self.data_location / "is-npm-1.0.0_scancode.json"
-        expected_json = json.loads(expected_file.read_text())
-
-        scancode_data = self._without_keys(scancode_json, self.exclude_from_diff)
-        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
-
-        self.assertEqual(expected_data, scancode_data)
-
-        summary_file = project1.get_latest_output(filename="summary")
-        summary_json = json.loads(summary_file.read_text())
-
-        expected_file = self.data_location / "is-npm-1.0.0_summary.json"
-        expected_json = json.loads(expected_file.read_text())
-
-        summary_data = self._without_keys(summary_json, self.exclude_from_diff)
-        expected_data = self._without_keys(expected_json, self.exclude_from_diff)
-
-        self.assertEqual(expected_data, summary_data)
+        result_file = output.to_json(project1)
+        expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)

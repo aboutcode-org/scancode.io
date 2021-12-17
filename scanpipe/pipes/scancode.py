@@ -36,8 +36,7 @@ from django.conf import settings
 import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
-from extractcode import all_kinds
-from extractcode.extract import extract_file
+from extractcode import api as extractcode_api
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
@@ -49,7 +48,7 @@ from scanpipe.models import CodebaseResource
 logger = logging.getLogger("scanpipe.pipes")
 
 """
-Utilities to deal with ScanCode objects, in particular Codebase and Package.
+Utilities to deal with ScanCode toolkit features and objects.
 """
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -58,8 +57,8 @@ scanpipe_app = apps.get_app_config("scanpipe")
 def get_max_workers(keep_available):
     """
     Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
-    or returns a default value based on the number of available CPUs, minus the
-    provided `keep_available` value.
+    or returns a default value based on the number of available CPUs,
+    minus the provided `keep_available` value.
     """
     processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
     if processes is not None:
@@ -71,13 +70,46 @@ def get_max_workers(keep_available):
     return max_workers
 
 
-def extract(location, target):
+def extract_archive(location, target):
     """
-    Wraps the `extractcode.extract_file` to execute the extraction and return errors.
+    Extracts a single archive or compressed file at `location` to the `target`
+    directory.
+
+    Returns a list of extraction errors.
+
+    Wrapper of the `extractcode.api.extract_archive` function.
     """
     errors = []
 
-    for event in extract_file(location, target, kinds=all_kinds):
+    for event in extractcode_api.extract_archive(location, target):
+        if event.done:
+            errors.extend(event.errors)
+
+    return errors
+
+
+def extract_archives(location, recurse=False):
+    """
+    Extracts all archives at `location` and return errors.
+
+    Archives and compressed files are extracted in a new directory named
+    "<file_name>-extract" created in the same directory as each extracted
+    archive.
+
+    If `recurse` is True, extract nested archives-in-archives recursively.
+
+    Returns a list of extraction errors.
+
+    Wrapper of the `extractcode.api.extract_archives` function.
+    """
+    options = {
+        "recurse": recurse,
+        "replace_originals": False,
+        "all_formats": True,
+    }
+
+    errors = []
+    for event in extractcode_api.extract_archives(location, **options):
         if event.done:
             errors.extend(event.errors)
 
@@ -139,8 +171,8 @@ def _scan_resource(location, scanners, with_threading=True):
     """
     Wraps the scancode-toolkit `scan_resource` method to support timeout on direct
     scanner functions calls.
-
     Returns a dictionary of scan `results` and a list of `errors`.
+    The `with_threading` needs to be enabled for the timeouts support.
     """
     # `rid` is not needed in this context, yet required in the scan_resource args
     location_rid = location, 0
@@ -214,12 +246,12 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 def _log_progress(scan_func, resource, resource_count, index):
     progress = f"{index / resource_count * 100:.1f}% ({index}/{resource_count})"
-    logger.info(f"{scan_func.__name__} {progress} pk={resource.pk}")
+    logger.info(f"{scan_func.__name__} {progress} completed pk={resource.pk}")
 
 
-def _scan_and_save(project, scan_func, save_func):
+def _scan_and_save(resource_qs, scan_func, save_func):
     """
-    Runs the `scan_func` on files without status for a `project`.
+    Runs the `scan_func` on the codebase resources if the provided `resource_qs`.
     The `save_func` is called to save the results.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
@@ -233,20 +265,21 @@ def _scan_and_save(project, scan_func, save_func):
     Note that all database related actions are executed in this main process as the
     database connection does not always fork nicely in the pool processes.
     """
-    codebase_resources = project.codebaseresources.no_status()
-    resource_count = codebase_resources.count()
+    resource_count = resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = codebase_resources.iterator(chunk_size=2000)
+    resource_iterator = resource_qs.iterator(chunk_size=2000)
 
     max_workers = get_max_workers(keep_available=1)
 
     if max_workers <= 0:
-        with_threading = True if max_workers == 0 else False
+        with_threading = False if max_workers == -1 else True
         for index, resource in enumerate(resource_iterator):
             _log_progress(scan_func, resource, resource_count, index)
             scan_results, scan_errors = scan_func(resource.location, with_threading)
             save_func(resource, scan_results, scan_errors)
         return
+
+    logger.info(f"Starting ProcessPoolExecutor with {max_workers} max_workers")
 
     with concurrent.futures.ProcessPoolExecutor(max_workers) as executor:
         future_to_resource = {
@@ -257,7 +290,7 @@ def _scan_and_save(project, scan_func, save_func):
         # Iterate over the Futures as they complete (finished or cancelled)
         future_as_completed = concurrent.futures.as_completed(future_to_resource)
 
-        for index, future in enumerate(future_as_completed):
+        for index, future in enumerate(future_as_completed, start=1):
             resource = future_to_resource[future]
             _log_progress(scan_func, resource, resource_count, index)
             scan_results, scan_errors = future.result()
@@ -272,7 +305,8 @@ def scan_for_files(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    _scan_and_save(project, scan_file, save_scan_file_results)
+    resource_qs = project.codebaseresources.no_status()
+    _scan_and_save(resource_qs, scan_file, save_scan_file_results)
 
 
 def scan_for_application_packages(project):
@@ -282,30 +316,8 @@ def scan_for_application_packages(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    _scan_and_save(project, scan_for_package_info, save_scan_package_results)
-
-
-def run_extractcode(location, options=None, raise_on_error=False):
-    """
-    Extracts content at `location` with extractcode.
-    Optional arguments for the `extractcode` executable can be provided with the
-    `options` list.
-    If `raise_on_error` is enabled, a ScancodeError will be raised if the
-    exitcode is greater than 0.
-    """
-    extractcode_args = [
-        pipes.get_bin_executable("extractcode"),
-        shlex.quote(location),
-    ]
-
-    if options:
-        extractcode_args.extend(options)
-
-    exitcode, output = pipes.run_command(extractcode_args)
-    if exitcode > 0 and raise_on_error:
-        raise ScancodeError(output)
-
-    return exitcode, output
+    resource_qs = project.codebaseresources.no_status()
+    _scan_and_save(resource_qs, scan_for_package_info, save_scan_package_results)
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):
@@ -392,7 +404,10 @@ def create_discovered_packages(project, scanned_codebase):
         cbr = CodebaseResource.objects.get(project=project, path=scanned_resource_path)
 
         for scan_data in scanned_packages:
-            discovered_package = pipes.update_or_create_package(project, scan_data)
+            discovered_package = pipes.update_or_create_package(project, scan_data, cbr)
+            if not discovered_package:
+                continue
+
             set_codebase_resource_for_package(
                 codebase_resource=cbr, discovered_package=discovered_package
             )

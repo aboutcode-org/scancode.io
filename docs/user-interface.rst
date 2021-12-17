@@ -7,11 +7,8 @@ As mentioned in the installation guide, ScanCode.io offers a web application to
 create and manage your projects from a browser. You’ll get access to this
 visual interface when you successfully install ScanCode.io locally.
 
-You can start the local web server and access the app with::
-
-    make run
-
-To access the web application, open your web browser and visit: http://127.0.0.1:8001/
+To access the web application, open your web browser and visit http://localhost/ or
+http://127.0.0.1:8001/ if you run on a local development setup.
 
 .. note::
     All the capabilities offered by the ScanCode.io Web Interface are also available as
@@ -25,7 +22,7 @@ time, the home screen will appear. From this screen, you'll be able to
 create a new project, search your existing projects, view or download scan
 results, access documentation, and more.
 
-.. image:: images/user-interface-1.png
+.. image:: images/user-interface-project-list-empty.png
 
 .. _user_interface_create_new_project:
 
@@ -38,7 +35,7 @@ home screen, as shown in the previous screenshot. To create a new project,
 click on either button, and you will be directed to the **"Create a Project"**
 page.
 
-.. image:: images/user-interface-2.png
+.. image:: images/user-interface-create-project.png
 
 As shown above, creating a project involves filling in the following input
 fields:
@@ -80,12 +77,12 @@ pipeline in one operation.
 You can still create a new project while leaving the **Inputs** and **Pipeline**
 fields blank; however, it's mandatory to provide a project **Name**!
 
-.. image:: images/user-interface-3.png
+.. image:: images/user-interface-project-list.png
 
 Once successfully created, you can later add any needed inputs and pipelines
 to your project by clicking the **"Add inputs"** and **"Add pipeline"** buttons.
 
-.. image:: images/user-interface-4.png
+.. image:: images/user-interface-project-details.png
 
 .. warning::
     You will not be able to add any extra inputs once a pipeline has been run on
@@ -98,17 +95,58 @@ the pipeline execution, or download the output files.
     Please refer to the :ref:`output_files` page for more details about your
     scan results.
 
-Deleting a Project
-------------------
+Archive a Project
+-----------------
+
+After a project is complete, you may want to archive it to prevent any further
+modification to that project.
+
+Archiving projects also makes navigating existing projects easier as the archived
+projects are hidden by default from the project list.
+
+Data cleanup of the project's :guilabel:`input/`, :guilabel:`codebase/`, and
+:guilabel:`output/` directories is available during the archive operation.
+
+.. tip::
+    The project results are stored in the database and available to generate outputs
+    at any time.
+
+.. note::
+    A project cannot be archived if one of its related run is queued or already running.
+
+.. image:: images/user-interface-archive-action.png
+   :width: 300
+
+.. image:: images/user-interface-archive-modal.png
+   :width: 500
+
+Reset a Project
+---------------
+
+The reset allows to wipe all database entrie and all data on disks related to a
+project while keeping the input files.
+It can be used to re-run pipelines on a clean slate of the project without having to
+re-upload input files.
+
+.. image:: images/user-interface-reset-action.png
+   :width: 300
+
+.. image:: images/user-interface-reset-modal.png
+   :width: 500
+
+Delete a Project
+----------------
 
 If any of your projects is no longer needed, you can delete it from the
 project's details page. Deleting old projects also makes navigating existing
 projects easier. Simply to delete any project, click on the trash icon under
 the project's name.
 
-.. image:: images/user-interface-5.png
+.. image:: images/user-interface-delete-action.png
+   :width: 300
 
 .. warning::
     Projects get permanently deleted and cannot be restored.
 
-.. image:: images/user-interface-6.png
+.. image:: images/user-interface-delete-modal.png
+   :width: 500

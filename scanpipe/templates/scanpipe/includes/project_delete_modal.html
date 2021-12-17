@@ -16,11 +16,10 @@
       <p class="mb-5">
         Are you sure you want to do this?
       </p>
-      <form class="is-size-7 has-text-grey" action="{% url 'project_reset' project.uuid %}" method="post">{% csrf_token %}
-        Alternatively, you can "reset" the project data. This will delete all
+      <p>
+        Alternatively, you can <strong>"reset"</strong> the project data. This will delete all
         related database entries and all data on disk except for the input/ directory.
-        <button class="button has-text-grey is-text is-no-close as-link p-0" type="submit">Reset Project</button>
-      </form>
+      </p>
     </section>
     <form action="{% url 'project_delete' project.uuid %}" method="post">{% csrf_token %}
       <footer class="modal-card-foot is-flex is-justify-content-space-between">

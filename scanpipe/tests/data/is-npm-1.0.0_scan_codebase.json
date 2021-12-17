@@ -1,0 +1,313 @@
+{
+  "headers": [
+    {
+      "tool_name": "scanpipe",
+      "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
+      "input_sources": [
+        {
+          "filename": "is-npm-1.0.0.tgz",
+          "source": "https://download.url"
+        }
+      ],
+      "runs": [
+        {
+          "pipeline_name": "scan_codebase",
+          "status": "not_started",
+          "description": "A pipeline to scan a codebase resource with ScanCode-toolkit.\n\nInput files are copied to the project's codebase/ directory and are extracted\nin place before running the scan.\nAlternatively, the code can be manually copied to the project codebase/\ndirectory.",
+          "scancodeio_version": "",
+          "task_id": null,
+          "task_start_date": null,
+          "task_end_date": null,
+          "task_exitcode": null,
+          "task_output": "",
+          "execution_time": null
+        }
+      ],
+      "extra_data": {}
+    }
+  ],
+  "packages": [
+    {
+      "purl": "pkg:npm/is-npm@1.0.0",
+      "type": "npm",
+      "namespace": "",
+      "name": "is-npm",
+      "version": "1.0.0",
+      "qualifiers": "",
+      "subpath": "",
+      "primary_language": "JavaScript",
+      "description": "Check if your code is running as an npm script",
+      "release_date": null,
+      "homepage_url": "",
+      "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "https://github.com/sindresorhus/is-npm",
+      "copyright": "",
+      "license_expression": "mit",
+      "declared_license": "['MIT']",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [
+        {
+          "purl": "pkg:npm/ava",
+          "scope": "devDependencies",
+          "is_runtime": false,
+          "is_optional": true,
+          "is_resolved": false,
+          "requirement": "0.0.3"
+        }
+      ],
+      "keywords": [
+        "npm",
+        "is",
+        "check",
+        "detect",
+        "env",
+        "environment"
+      ],
+      "source_packages": []
+    }
+  ],
+  "files": [
+    {
+      "for_packages": [],
+      "path": "is-npm-1.0.0.tgz",
+      "sha1": "f2fb63a65e4905b406c86072765a1a4dc793b9f4",
+      "md5": "effb58881c1aca12da9d3a18335bdc3f",
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "scanned",
+      "type": "file",
+      "name": "is-npm-1.0.0",
+      "extension": ".tgz",
+      "programming_language": "",
+      "mime_type": "application/gzip",
+      "file_type": "gzip compressed data, from Unix, original size modulo 2^32 4608",
+      "is_binary": true,
+      "is_text": false,
+      "is_archive": true,
+      "is_key_file": false,
+      "is_media": false
+    },
+    {
+      "for_packages": [],
+      "path": "is-npm-1.0.0.tgz-extract",
+      "sha1": "",
+      "md5": "",
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "scanned",
+      "type": "directory",
+      "name": "is-npm-1.0.0",
+      "extension": ".tgz-extract",
+      "programming_language": "",
+      "mime_type": "",
+      "file_type": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false
+    },
+    {
+      "for_packages": [],
+      "path": "is-npm-1.0.0.tgz-extract/package",
+      "sha1": "",
+      "md5": "",
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "scanned",
+      "type": "directory",
+      "name": "package",
+      "extension": "",
+      "programming_language": "",
+      "mime_type": "",
+      "file_type": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false
+    },
+    {
+      "for_packages": [],
+      "path": "is-npm-1.0.0.tgz-extract/package/index.js",
+      "sha1": "ecce1fc677fa7d20fc5593b63db45e45c5e8768a",
+      "md5": "bc4b18b0c8c32b94883d6fc1d675e919",
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "scanned",
+      "type": "file",
+      "name": "index",
+      "extension": ".js",
+      "programming_language": "JavaScript",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false
+    },
+    {
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0"
+      ],
+      "path": "is-npm-1.0.0.tgz-extract/package/package.json",
+      "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
+      "md5": "c843e88ecb274d5d573c71be330bff8b",
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "application-package",
+      "type": "file",
+      "name": "package",
+      "extension": ".json",
+      "programming_language": "",
+      "mime_type": "application/json",
+      "file_type": "JSON data",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false
+    },
+    {
+      "for_packages": [],
+      "path": "is-npm-1.0.0.tgz-extract/package/readme.md",
+      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
+      "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
+      "extra_data": {},
+      "copyrights": [
+        {
+          "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
+          "end_line": 30,
+          "start_line": 30
+        }
+      ],
+      "holders": [
+        {
+          "value": "Sindre Sorhus",
+          "end_line": 30,
+          "start_line": 30
+        }
+      ],
+      "authors": [],
+      "licenses": [
+        {
+          "key": "mit",
+          "name": "MIT License",
+          "owner": "MIT",
+          "score": 100.0,
+          "category": "Permissive",
+          "end_line": 30,
+          "spdx_url": "https://spdx.org/licenses/MIT",
+          "text_url": "http://opensource.org/licenses/mit-license.php",
+          "is_unknown": false,
+          "short_name": "MIT License",
+          "start_line": 28,
+          "homepage_url": "http://opensource.org/licenses/mit-license.php",
+          "is_exception": false,
+          "matched_rule": {
+            "matcher": "2-aho",
+            "licenses": [
+              "mit"
+            ],
+            "identifier": "mit_30.RULE",
+            "has_unknown": false,
+            "rule_length": 2,
+            "is_license_tag": true,
+            "match_coverage": 100.0,
+            "matched_length": 2,
+            "rule_relevance": 100,
+            "is_license_text": false,
+            "is_license_intro": false,
+            "is_license_notice": false,
+            "license_expression": "mit",
+            "is_license_reference": false,
+            "referenced_filenames": []
+          },
+          "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
+          "reference_url": "https://scancode-licensedb.aboutcode.org/mit",
+          "spdx_license_key": "MIT",
+          "scancode_data_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.yml",
+          "scancode_text_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.LICENSE"
+        }
+      ],
+      "license_expressions": [
+        "mit"
+      ],
+      "emails": [],
+      "urls": [
+        {
+          "url": "https://travis-ci.org/sindresorhus/is-npm.svg?branch=master",
+          "end_line": 1,
+          "start_line": 1
+        },
+        {
+          "url": "https://travis-ci.org/sindresorhus/is-npm",
+          "end_line": 1,
+          "start_line": 1
+        },
+        {
+          "url": "https://www.npmjs.org/doc/misc/npm-scripts.html",
+          "end_line": 3,
+          "start_line": 3
+        },
+        {
+          "url": "http://sindresorhus.com/",
+          "end_line": 30,
+          "start_line": 30
+        }
+      ],
+      "status": "scanned",
+      "type": "file",
+      "name": "readme",
+      "extension": ".md",
+      "programming_language": "",
+      "mime_type": "text/plain",
+      "file_type": "UTF-8 Unicode text",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false
+    }
+  ]
+}

@@ -24,9 +24,9 @@ import collections
 import json
 import os
 import shutil
+import tempfile
 from pathlib import Path
 from unittest import mock
-from unittest.case import expectedFailure
 
 from django.apps import apps
 from django.core.management import call_command
@@ -40,8 +40,8 @@ from scancode.interrupt import TimeoutError as InterruptTimeoutError
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectError
 from scanpipe.pipes import codebase
-from scanpipe.pipes import docker
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import make_codebase_resource
@@ -50,13 +50,15 @@ from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
 from scanpipe.pipes import tag_not_analyzed_codebase_resources
+from scanpipe.pipes import update_or_create_package
 from scanpipe.pipes import windows
-from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.input import copy_input
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 scanpipe_app = apps.get_app_config("scanpipe")
+from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
 
 class ScanPipePipesTest(TestCase):
@@ -220,6 +222,9 @@ class ScanPipePipesTest(TestCase):
             path="filename.ext",
         )
         codebase_resource.create_and_add_package(package_data1)
+        ProjectError.objects.create(
+            project=project1, model="Model", details={}, message="Error"
+        )
 
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
@@ -228,6 +233,79 @@ class ScanPipePipesTest(TestCase):
         shutil.rmtree(project1.work_directory)
         output_file = output.to_xlsx(project=project1)
         self.assertEqual([output_file.name], project1.output_root)
+
+    def test_scanpipe_pipes_scancode_extract_archive(self):
+        target = tempfile.mkdtemp()
+        input_location = str(self.data_location / "archive.zip")
+
+        errors = scancode.extract_archive(input_location, target)
+        self.assertEqual([], errors)
+
+        results = [path.name for path in list(Path(target).glob("**/*"))]
+        expected = [
+            "a",
+            "c",
+            "b",
+            "a.txt",
+        ]
+        self.assertEqual(7, len(results))
+        for path in expected:
+            self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archives(self):
+        tempdir = Path(tempfile.mkdtemp())
+        input_location = str(self.data_location / "archive.zip")
+        copy_input(input_location, tempdir)
+
+        errors = scancode.extract_archives(tempdir)
+        self.assertEqual([], errors)
+
+        results = [path.name for path in list(tempdir.glob("**/*"))]
+        self.assertEqual(9, len(results))
+        expected = [
+            "archive.zip-extract",
+            "archive.zip",
+            "a",
+            "b",
+            "c",
+            "a.txt",
+        ]
+        for path in expected:
+            self.assertIn(path, results)
+
+    def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
+        target = tempfile.mkdtemp()
+        compressed_input_location = str(self.data_location / "foobar.qcow2.tar.gz")
+        extract_tar(compressed_input_location, target_dir=target)
+        input_location = Path(target) / "foobar.qcow2"
+
+        errors = scancode.extract_archive(input_location, target)
+
+        # The VM image extraction features are available in the Docker image context.
+        if from_docker_image:
+            self.assertEqual([], errors)
+            results = [path.name for path in list(Path(target).glob("**/*"))]
+            expected = [
+                "bin",
+                "busybox",
+                "dot",
+                "foobar.qcow2",
+                "log",
+                "lost+found",
+                "tmp",
+            ]
+            self.assertEqual(sorted(expected), sorted(results))
+
+        else:
+            error = errors[0]
+            self.assertTrue(
+                any(
+                    [
+                        "Unable to read kernel" in error,
+                        "VM Image extraction only supported on Linux." in error,
+                    ]
+                )
+            )
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
@@ -301,7 +379,7 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("scanned-with-error", codebase_resource1.status)
         self.assertEqual(4, project1.projecterrors.count())
 
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -313,13 +391,13 @@ class ScanPipePipesTest(TestCase):
             "apache-2.0",
             "apache-2.0 AND scancode-acknowledgment",
             "apache-2.0",
-            "apache-2.0",
+            "warranty-disclaimer",
         ]
         self.assertEqual(expected, codebase_resource2.license_expressions)
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -398,7 +476,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_scan_package_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
-        copy_inputs([self.data_location / "notice.NOTICE"], project1.codebase_path)
+        copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource = CodebaseResource.objects.create(
             project=project1, path="notice.NOTICE"
         )
@@ -426,17 +504,18 @@ class ScanPipePipesTest(TestCase):
 
         project1 = Project.objects.create(name="Analysis")
         CodebaseResource.objects.create(project=project1, path="notice.NOTICE")
+        resource_qs = project1.codebaseresources.all()
 
         scan_func = mock.Mock(return_value=(None, None))
         scan_func.__name__ = ""
 
         with override_settings(SCANCODEIO_PROCESSES=-1):
-            scancode._scan_and_save(project1, scan_func, noop)
+            scancode._scan_and_save(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertFalse(with_threading)
 
         with override_settings(SCANCODEIO_PROCESSES=0):
-            scancode._scan_and_save(project1, scan_func, noop)
+            scancode._scan_and_save(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
 
@@ -494,12 +573,6 @@ class ScanPipePipesTest(TestCase):
         }
         self.assertEqual(expected, resource2.licenses[0]["policy"])
 
-    def test_scanpipe_pipes_scancode_run_extractcode(self):
-        project = Project.objects.create(name="name with space")
-        exitcode, output = scancode.run_extractcode(str(project.codebase_path))
-        self.assertEqual(0, exitcode)
-        self.assertIn("Extracting done.", output)
-
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")
         exitcode, output = scancode.run_scancode(
@@ -524,7 +597,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_make_results_summary(self):
         project = Project.objects.create(name="Analysis")
-        scan_results_location = self.data_location / "is-npm-1.0.0_scancode.json"
+        scan_results_location = self.data_location / "is-npm-1.0.0_scan_package.json"
 
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
@@ -603,7 +676,6 @@ class ScanPipePipesTest(TestCase):
             "codebase/asgiref-3.3.0.whl-extract/asgiref",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -624,7 +696,6 @@ class ScanPipePipesTest(TestCase):
             "codebase/asgiref-3.3.0.whl",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
             "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -669,13 +740,16 @@ class ScanPipePipesTest(TestCase):
         downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "another_name.zip").exists())
 
-    @expectedFailure
+    @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
     @mock.patch("scanpipe.pipes.run_command")
-    def test_scanpipe_pipes_fetch_docker_image(self, mock_run_command, mock_skopeo):
+    def test_scanpipe_pipes_fetch_docker_image(
+        self, mock_run_command, mock_skopeo, mock_platform
+    ):
         url = "docker://debian:10.9"
 
-        mock_skopeo.return_value = Path("")
+        mock_platform.return_value = "linux", "amd64", ""
+        mock_skopeo.return_value = "skopeo"
         mock_run_command.return_value = 1, "error"
 
         with self.assertRaises(fetch.FetchDockerImageError):
@@ -683,10 +757,10 @@ class ScanPipePipesTest(TestCase):
 
         mock_run_command.assert_called_once()
         cmd = mock_run_command.call_args[0][0]
-        expected = "skopeo copy docker://debian:10.9 docker-archive:/"
-        self.assertTrue(cmd.startswith(expected))
-        expected = "debian_10_9.tar --policy default-policy.json"
-        self.assertTrue(cmd.endswith(expected))
+        self.assertTrue(cmd.startswith("skopeo copy --insecure-policy"))
+        self.assertIn("docker://debian:10.9 docker-archive:/", cmd)
+        self.assertIn("--override-os=linux --override-arch=amd64", cmd)
+        self.assertTrue(cmd.endswith("debian_10_9.tar"))
 
     @mock.patch("requests.get")
     def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
@@ -709,17 +783,6 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(0, len(downloads))
         self.assertEqual(2, len(errors))
         self.assertEqual(urls, errors)
-
-    def test_scanpipe_pipes_docker_tag_whiteout_codebase_resources(self):
-        p1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
-        resource2 = CodebaseResource.objects.create(project=p1, name=".wh.filename2")
-
-        docker.tag_whiteout_codebase_resources(p1)
-        resource1.refresh_from_db()
-        resource2.refresh_from_db()
-        self.assertEqual("", resource1.status)
-        self.assertEqual("ignored-whiteout", resource2.status)
 
     def test_scanpipe_pipes_rootfs_from_project_codebase_class_method(self):
         p1 = Project.objects.create(name="Analysis")
@@ -1087,6 +1150,26 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("ignored-media-file", resource2.status)
         self.assertEqual("", resource3.status)
 
+    def test_scanpipe_pipes_update_or_create_package(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = update_or_create_package(p1, package_data1)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.purl)
+        self.assertEqual("", package.primary_language)
+
+        updated_data = dict(package_data1)
+        updated_data["primary_language"] = "Python"
+        updated_package = update_or_create_package(p1, updated_data)
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", updated_package.purl)
+        self.assertEqual("Python", updated_package.primary_language)
+        self.assertEqual(package.pk, updated_package.pk)
+
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        package_data2 = dict(package_data1)
+        package_data2["name"] = "new name"
+        package2 = update_or_create_package(p1, package_data2, resource1)
+        self.assertNotEqual(package.pk, package2.pk)
+        self.assertIn(resource1, package2.codebase_resources.all())
+
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
     """
@@ -1101,12 +1184,14 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         p1 = Project.objects.create(name="Analysis")
         resource_location = str(self.data_location / "notice.NOTICE")
 
-        with self.assertRaises(AssertionError) as cm:
+        with self.assertRaises(ValueError) as cm:
             make_codebase_resource(p1, resource_location)
 
-        self.assertIn("is not under project/codebase/", str(cm.exception))
+        self.assertIn("not", str(cm.exception))
+        self.assertIn(resource_location, str(cm.exception))
+        self.assertIn("/codebase", str(cm.exception))
 
-        copy_inputs([resource_location], p1.codebase_path)
+        copy_input(resource_location, p1.codebase_path)
         resource_location = str(p1.codebase_path / "notice.NOTICE")
         make_codebase_resource(p1, resource_location)
 

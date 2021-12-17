@@ -135,8 +135,8 @@ class Pipeline:
 
         Example in a Pipeline step:
 
-        with self.save_errors(ScancodeError):
-            run_scancode()
+        with self.save_errors(rootfs.DistroNotFound):
+            rootfs.scan_rootfs_for_system_packages(self.project, rfs)
         """
         try:
             yield

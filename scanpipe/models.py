@@ -20,6 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import inspect
+import json
+import logging
 import re
 import shutil
 import uuid
@@ -30,8 +33,10 @@ from pathlib import Path
 from traceback import format_tb
 
 from django.apps import apps
+from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.db.models import Q
@@ -45,18 +50,29 @@ from django.utils.functional import cached_property
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from celery.result import AsyncResult
+import django_rq
+import redis
+import requests
 from commoncode.hash import multi_checksums
+from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
+from rq.command import send_stop_job_command
+from rq.exceptions import NoSuchJobError
+from rq.job import Job
+from rq.job import JobStatus
 
-from scancodeio import WORKSPACE_LOCATION
 from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
 
+logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
+
+
+class RunInProgressError(Exception):
+    """Run are in progress or queued on this project."""
 
 
 class UUIDPKModel(models.Model):
@@ -108,36 +124,116 @@ class AbstractTaskFieldsModel(models.Model):
     class Meta:
         abstract = True
 
+    def delete(self, *args, **kwargs):
+        """
+        Before deletion of the Run instance, try to stop the task if currently running
+        or to remove it from the queue if currently queued.
+
+        Note that projects with queued or running pipeline runs cannot be deleted.
+        See the `_raise_if_run_in_progress` method.
+        The following if statements should not be triggered unless the `.delete()`
+        method is directly call from a instance of this class.
+        """
+        with suppress(redis.exceptions.ConnectionError, AttributeError):
+            if self.status == self.Status.RUNNING:
+                self.stop_task()
+            elif self.status == self.Status.QUEUED:
+                self.delete_task(delete_self=False)
+
+        return super().delete(*args, **kwargs)
+
+    @staticmethod
+    def get_job(job_id):
+        with suppress(NoSuchJobError):
+            return Job.fetch(job_id, connection=django_rq.get_connection())
+
     @property
-    def task_result(self):
-        return AsyncResult(str(self.task_id))
-
-    def task_state(self):
+    def job(self):
         """
-        Possible values include:
-        - UNKNOWN (PENDING)
-            No history about the task is available.
-        - STARTED
-            The task has been started.
-        - RETRY
-            The task is to be re-executed; possibly due to a failure.
-        - FAILURE
-            The task raised an exception or has exceeded the retry limit.
-            The result attribute would contain the exception raised by the task.
-        - SUCCESS
-            The task executed successfully. The result attribute would contain
-            the task's return value.
-
-        Notes: All tasks are PENDING by default in Celery, so it would make more
-        sense if the state was named "unknown". Celery doesn't update the state
-        when a task is sent, and any task with no history is assumed to be pending.
+        None if the job could not be found in the queues registries.
         """
-        state = self.task_result.state
-        return "UNKNOWN" if state == "PENDING" else state
+        return self.get_job(str(self.task_id))
+
+    @property
+    def job_status(self):
+        job = self.job
+        if job:
+            return self.job.get_status()
+
+    @property
+    def task_succeeded(self):
+        """
+        Returns True if the task was successfully executed.
+        """
+        return self.task_exitcode == 0
+
+    @property
+    def task_failed(self):
+        """
+        Returns True if the task failed.
+        """
+        return self.task_exitcode and self.task_exitcode > 0
+
+    @property
+    def task_stopped(self):
+        """
+        Returns True if the task was stopped.
+        """
+        return self.task_exitcode == 99
+
+    @property
+    def task_staled(self):
+        """
+        Returns True if the task staled.
+        """
+        return self.task_exitcode == 88
+
+    class Status(models.TextChoices):
+        """
+        List of Run status.
+        """
+
+        NOT_STARTED = "not_started"
+        QUEUED = "queued"
+        RUNNING = "running"
+        SUCCESS = "success"
+        FAILURE = "failure"
+        STOPPED = "stopped"
+        STALE = "stale"
+
+    @property
+    def status(self):
+        """
+        Returns the task current status.
+        """
+        status = self.Status
+
+        if self.task_succeeded:
+            return status.SUCCESS
+
+        elif self.task_staled:
+            return status.STALE
+
+        elif self.task_stopped:
+            return status.STOPPED
+
+        elif self.task_failed:
+            return status.FAILURE
+
+        elif self.task_start_date:
+            return status.RUNNING
+
+        elif self.task_id:
+            return status.QUEUED
+
+        return status.NOT_STARTED
 
     @property
     def execution_time(self):
-        if self.task_end_date and self.task_start_date:
+        if self.task_staled:
+            return
+
+        elif self.task_end_date and self.task_start_date:
             total_seconds = (self.task_end_date - self.task_start_date).total_seconds()
             return int(total_seconds)
 
@@ -170,11 +266,11 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_start_date = timezone.now()
         self.save()
 
-    def set_task_ended(self, exitcode, output, refresh_first=True):
+    def set_task_ended(self, exitcode, output="", refresh_first=True):
         """
         Sets the task-related fields after the task execution.
 
-        An optional `refresh_first`—enabled by default—forces refreshing
+        An optional `refresh_first` —enabled by default— forces refreshing
         the instance with the latest data from the database before saving.
         This prevents losing values saved on the instance during the task
         execution.
@@ -186,6 +282,65 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_output = output
         self.task_end_date = timezone.now()
         self.save()
+
+    def set_task_queued(self):
+        """
+        Sets the task as "queued" by updating the `task_id` from None to this instance
+        `pk`.
+        Uses the QuerySet `update` method instead of `save` to prevent overriding
+        any fields that were set but not saved yet in the DB.
+        """
+        manager = self.__class__.objects
+        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=self.pk)
+
+    def set_task_staled(self):
+        """
+        Sets the task as "stale" using a special 88 exitcode value.
+        """
+        self.set_task_ended(exitcode=88)
+
+    def set_task_stopped(self):
+        """
+        Sets the task as "stopped" using a special 99 exitcode value.
+        """
+        self.set_task_ended(exitcode=99)
+
+    def stop_task(self):
+        """
+        Stops a "running" task.
+        """
+        if not settings.SCANCODEIO_ASYNC:
+            self.set_task_stopped()
+            return
+
+        job_status = self.job_status
+
+        if not job_status:
+            self.set_task_staled()
+            return
+
+        if self.job_status == JobStatus.FAILED:
+            self.set_task_ended(
+                exitcode=1, output=f"Killed from outside, exc_info={self.job.exc_info}"
+            )
+            return
+
+        send_stop_job_command(
+            connection=django_rq.get_connection(), job_id=str(self.task_id)
+        )
+        self.set_task_stopped()
+
+    def delete_task(self, delete_self=True):
+        """
+        Deletes a "not started" or "queued" task.
+        """
+        if settings.SCANCODEIO_ASYNC and self.task_id:
+            job = self.job
+            if job:
+                self.job.delete()
+
+        if delete_self:
+            self.delete()
 
 
 class ExtraDataFieldMixin(models.Model):
@@ -221,7 +376,8 @@ def get_project_work_directory(project):
     A short version of the `project` uuid is added as a suffix to ensure
     uniqueness of the work directory location.
     """
-    return f"{WORKSPACE_LOCATION}/projects/{slugify(project.name)}-{project.short_uuid}"
+    project_workspace_id = f"{slugify(project.name)}-{project.short_uuid}"
+    return f"{scanpipe_app.workspace_path}/projects/{project_workspace_id}"
 
 
 class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
@@ -248,6 +404,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         help_text=_("Project work directory location."),
     )
     input_sources = models.JSONField(default=dict, blank=True, editable=False)
+    is_archived = models.BooleanField(
+        default=False,
+        editable=False,
+        help_text=_(
+            "Archived projects cannot be modified anymore and are not displayed by "
+            "default in project lists. Multiple levels of data cleanup may have "
+            "happened during the archive operation."
+        ),
+    )
 
     class Meta:
         ordering = ["-created_date"]
@@ -261,14 +426,43 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         The workspace directories are set up during project creation.
         """
         if not self.work_directory:
-            self.work_directory = get_project_work_directory(self)
+            self.work_directory = get_project_work_directory(project=self)
             self.setup_work_directory()
         super().save(*args, **kwargs)
+
+    def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
+        """
+        Set the project `is_archived` field to True.
+
+        The `remove_input`, `remove_codebase`, and `remove_output` can be provided
+        during the archive operation to delete the related work directories.
+
+        The project cannot be archived if one of its related run is queued or already
+        running.
+        """
+        self._raise_if_run_in_progress()
+
+        if remove_input:
+            shutil.rmtree(self.input_path, ignore_errors=True)
+
+        if remove_codebase:
+            shutil.rmtree(self.codebase_path, ignore_errors=True)
+
+        if remove_output:
+            shutil.rmtree(self.output_path, ignore_errors=True)
+
+        shutil.rmtree(self.tmp_path, ignore_errors=True)
+        self.setup_work_directory()
+
+        self.is_archived = True
+        self.save()
 
     def delete(self, *args, **kwargs):
         """
         Deletes the `work_directory` along all project-related data in the database.
         """
+        self._raise_if_run_in_progress()
+
         shutil.rmtree(self.work_directory, ignore_errors=True)
         return super().delete(*args, **kwargs)
 
@@ -277,6 +471,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Resets the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
+        self._raise_if_run_in_progress()
+
         relationships = [
             self.projecterrors,
             self.runs,
@@ -304,6 +500,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             shutil.rmtree(path, ignore_errors=True)
 
         self.setup_work_directory()
+
+    def _raise_if_run_in_progress(self):
+        """
+        Raises a `RunInProgressError` exception if one of the project related run is
+        queued or running.
+        """
+        if self.runs.queued_or_running().exists():
+            raise RunInProgressError(
+                "Cannot execute this action until all associated pipeline runs are "
+                "completed."
+            )
 
     def setup_work_directory(self):
         """
@@ -356,6 +563,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.tmp_path.mkdir(exist_ok=True)
+
+    @property
+    def input_sources_list(self):
+        return [
+            {"filename": filename, "source": source}
+            for filename, source in self.input_sources.items()
+        ]
 
     def inputs(self, pattern="**/*"):
         """
@@ -454,12 +668,18 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         if output_files:
             return output_files[-1]
 
+    def walk_codebase_path(self):
+        """
+        Returns all files and directories path of the codebase/ directory recursively.
+        """
+        return self.codebase_path.rglob("*")
+
     @cached_property
     def can_add_input(self):
         """
-        Returns True until a pipeline has started to execute on the current project.
+        Returns True until one pipeline run has started to execute on the project.
         """
-        return not self.runs.started().exists()
+        return not self.runs.has_start_date().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
@@ -538,6 +758,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             transaction.on_commit(run.execute_task_async)
         return run
 
+    def add_webhook_subscription(self, target_url):
+        """
+        Creates a new WebhookSubscription instance with the provided `target_url` for
+        the current project.
+        """
+        return WebhookSubscription.objects.create(project=self, target_url=target_url)
+
     def get_next_run(self):
         """
         Returns the next non-executed Run instance assigned to current project.
@@ -556,7 +783,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         Creates a "ProjectError" record from the provided `error` Exception for this
         project.
+        The `model` attribute can be provided as a string or as a Model class.
         """
+        if inspect.isclass(model):
+            model = model.__name__
+
         traceback = ""
         if hasattr(error, "__traceback__"):
             traceback = "".join(format_tb(error.__traceback__))
@@ -667,18 +898,20 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 class SaveProjectErrorMixin:
     """
     Uses `SaveProjectErrorMixin` on a model to create a "ProjectError" entry
-    from a raised exception during `save()` instead of stopping the analysis
-    process.
+    from a raised exception during `save()` instead of stopping the analysis process.
+
     The creation of a "ProjectError" can be skipped providing False for the `save_error`
-    argument.
+    argument. In that case, the error is not captured, it is re-raised.
     """
 
-    def save(self, *args, save_error=True, **kwargs):
+    def save(self, *args, save_error=True, capture_exception=True, **kwargs):
         try:
             super().save(*args, **kwargs)
         except Exception as error:
             if save_error:
                 self.add_error(error)
+            if not capture_exception:
+                raise
 
     @classmethod
     def check(cls, **kwargs):
@@ -710,7 +943,7 @@ class SaveProjectErrorMixin:
         """
         return self.project.add_error(
             error=error,
-            model=self.__class__.__name__,
+            model=self.__class__,
             details=model_to_dict(self),
         )
 
@@ -724,22 +957,64 @@ class SaveProjectErrorMixin:
 
 class RunQuerySet(ProjectRelatedQuerySet):
     def not_started(self):
-        return self.filter(task_start_date__isnull=True, task_id__isnull=True)
+        """
+        Not in the execution queue, no `task_id` assigned.
+        """
+        return self.no_exitcode().no_start_date().filter(task_id__isnull=True)
 
     def queued(self):
-        return self.filter(task_start_date__isnull=True, task_id__isnull=False)
+        """
+        In the execution queue with a `task_id` assigned but not running yet.
+        """
+        return self.no_exitcode().no_start_date().filter(task_id__isnull=False)
 
-    def started(self):
-        return self.filter(task_start_date__isnull=False)
+    def running(self):
+        """
+        Running the pipeline execution.
+        """
+        return self.no_exitcode().has_start_date().filter(task_end_date__isnull=True)
 
     def executed(self):
+        """
+        Pipeline execution completed, includes both succeed and failed runs.
+        """
         return self.filter(task_end_date__isnull=False)
 
     def succeed(self):
+        """
+        Pipeline execution completed with success.
+        """
         return self.filter(task_exitcode=0)
 
     def failed(self):
+        """
+        Pipeline execution completed with failure.
+        """
         return self.filter(task_exitcode__gt=0)
+
+    def has_start_date(self):
+        """
+        Run has a `task_start_date` set. It can be running or executed.
+        """
+        return self.filter(task_start_date__isnull=False)
+
+    def no_start_date(self):
+        """
+        Run has no `task_start_date` set.
+        """
+        return self.filter(task_start_date__isnull=True)
+
+    def no_exitcode(self):
+        """
+        Run has no `task_exitcode` set.
+        """
+        return self.filter(task_exitcode__isnull=True)
+
+    def queued_or_running(self):
+        """
+        Run is queued or currently running.
+        """
+        return self.filter(task_id__isnull=False, task_end_date__isnull=True)
 
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
@@ -766,23 +1041,101 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def execute_task_async(self):
         """
-        Sends a message to the task manager to create an asynchronous pipeline
-        execution task.
-        Stores the `task_id` of the current Run instance for a future use.
+        Enqueues the pipeline execution task for an asynchronous execution.
         """
-        future = tasks.execute_pipeline_task.apply_async(args=[self.pk])
-        self.init_task_id(future.task_id)
+        run_pk = str(self.pk)
 
-    def init_task_id(self, task_id):
+        # Bypass entirely the queue system and run the pipeline in the current thread.
+        if not settings.SCANCODEIO_ASYNC:
+            tasks.execute_pipeline_task(run_pk)
+            return
+
+        job = django_rq.enqueue(
+            tasks.execute_pipeline_task,
+            job_id=run_pk,
+            run_pk=run_pk,
+            on_failure=tasks.report_failure,
+            job_timeout=settings.SCANCODEIO_TASK_TIMEOUT,
+        )
+
+        # In async mode, we want to set the status as "queued" **after** the job was
+        # properly "enqueued".
+        # In case the `django_rq.enqueue()` raise an exception (Redis server error),
+        # we want to keep the Run status as "not started" rather than "queued".
+        # Note that the Run will then be set as "running" at the start of
+        # `execute_pipeline_task()` by calling the `set_task_started()`.
+        # There's no need to call the following in synchronous single thread mode as
+        # the run will be directly set as "running".
+        self.set_task_queued()
+
+        return job
+
+    def sync_with_job(self):
         """
-        Sets the provided `task_id` on the Run instance if not already stored in the
-        database.
-        Uses the QuerySet `update` method instead of `save` to prevent overriding
-        any fields that were set but not saved yet in the DB, which may occur when
-        CELERY_TASK_ALWAYS_EAGER is True.
+        Synchronise this Run instance with its related RQ Job.
+
+        This is required when a Run gets out of sync with its Job, this can happen
+        when the worker or one of its processes is killed, the Run status is not
+        properly updated and may stay in a Queued or Running state forever.
+
+        In case the Run is out of sync of its related Job, the Run status will be
+        updated accordingly. When the run was in the queue, it will be enqueued again.
         """
-        manager = self.__class__.objects
-        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=task_id)
+        RunStatus = self.Status
+
+        if settings.SCANCODEIO_ASYNC:
+            job_status = self.job_status
+        else:
+            job_status = None
+
+        if not job_status:
+            if self.status == RunStatus.QUEUED:
+                logger.info(
+                    f"No Job found for QUEUED Run={self.task_id}. "
+                    f"Enqueueing a new Job in the worker registery."
+                )
+                self.execute_task_async()
+
+            elif self.status == RunStatus.RUNNING:
+                logger.info(
+                    f"No Job found for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STALE."
+                )
+                self.set_task_staled()
+
+            return
+
+        job_is_out_of_sync = any(
+            [
+                self.status == RunStatus.RUNNING and job_status != JobStatus.STARTED,
+                self.status == RunStatus.QUEUED and job_status != JobStatus.QUEUED,
+            ]
+        )
+
+        if job_is_out_of_sync:
+            if job_status == JobStatus.STOPPED:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STOPPED."
+                )
+                self.set_task_stopped()
+
+            elif job_status == JobStatus.FAILED:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as FAILED."
+                )
+                self.set_task_ended(
+                    exitcode=1,
+                    output=f"Job was moved to the FailedJobRegistry during cleanup",
+                )
+
+            else:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STALE."
+                )
+                self.set_task_staled()
 
     def set_scancodeio_version(self):
         """
@@ -806,41 +1159,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         """
         return self.pipeline_class(self)
 
-    @property
-    def task_succeeded(self):
-        """
-        Returns True, if a pipeline task was successfully executed.
-        """
-        return self.task_exitcode == 0
-
-    class Status(models.TextChoices):
-        """
-        List of Run status.
-        """
-
-        NOT_STARTED = "not_started"
-        QUEUED = "queued"
-        STARTED = "started"
-        RUNNING = "running"
-        SUCCESS = "success"
-        FAILURE = "failure"
-
-    @property
-    def status(self):
-        """
-        Returns the Run current status.
-        """
-        status = self.Status
-        if self.task_succeeded:
-            return status.SUCCESS
-        elif self.task_exitcode and self.task_exitcode > 0:
-            return status.FAILURE
-        elif self.task_start_date:
-            return status.RUNNING
-        elif self.task_id:
-            return status.QUEUED
-        return status.NOT_STARTED
-
     def append_to_log(self, message, save=False):
         """
         Appends the `message` string to the `log` field of this Run instance.
@@ -852,6 +1170,13 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         self.log = self.log + message + "\n"
         if save:
             self.save()
+
+    def send_project_subscriptions(self):
+        """
+        Triggers related project webhook subscriptions.
+        """
+        for subscription in self.project.webhooksubscriptions.all():
+            subscription.send(pipeline_run=self)
 
     def profile(self, print_results=False):
         """
@@ -1339,11 +1664,28 @@ class CodebaseResource(
         """
         Creates a DiscoveredPackage instance using the `package_data` and assigns
         it to the current CodebaseResource instance.
+
+        Errors that may happen during the DiscoveredPackage creation are capture
+        at this level, rather that in the DiscoveredPackage.create_from_data level,
+        so resource data can be injected in the ProjectError record.
         """
-        created_package = DiscoveredPackage.create_from_data(self.project, package_data)
-        if created_package:
-            self.discovered_packages.add(created_package)
-            return created_package
+        try:
+            package = DiscoveredPackage.create_from_data(self.project, package_data)
+        except Exception as error:
+            self.project.add_error(
+                error=error,
+                model=DiscoveredPackage,
+                details={
+                    "codebase_resource_path": self.path,
+                    "codebase_resource_pk": self.pk,
+                    **package_data,
+                },
+            )
+            return
+
+        if package:
+            self.discovered_packages.add(package)
+            return package
 
     @property
     def for_packages(self):
@@ -1403,6 +1745,22 @@ class DiscoveredPackage(
         return self.package_url
 
     @classmethod
+    def purl_fields(cls):
+        return PackageURL._fields
+
+    @classmethod
+    def extract_purl_data(cls, package_data):
+        purl_data = {}
+
+        for field_name in cls.purl_fields():
+            value = package_data.get(field_name)
+            if field_name == "qualifiers":
+                value = normalize_qualifiers(value, encode=True)
+            purl_data[field_name] = value or ""
+
+        return purl_data
+
+    @classmethod
     def create_from_data(cls, project, package_data):
         """
         Creates and returns a DiscoveredPackage for a `project` from the `package_data`.
@@ -1410,14 +1768,19 @@ class DiscoveredPackage(
         is created instead of a new DiscoveredPackage instance.
         """
         required_fields = ["type", "name", "version"]
-        required_values = [package_data.get(field) for field in required_fields]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not package_data.get(field_name)
+        ]
 
-        if not all(required_values):
+        if missing_values:
             message = (
-                f"One or more of the required fields have no value: "
-                f"{', '.join(required_fields)}"
+                f"No values for the following required fields: "
+                f"{', '.join(missing_values)}"
             )
-            project.add_error(error=message, model=cls.__name__, details=package_data)
+
+            project.add_error(error=message, model=cls, details=package_data)
             return
 
         qualifiers = package_data.get("qualifiers")
@@ -1430,6 +1793,84 @@ class DiscoveredPackage(
             if field_name in DiscoveredPackage.model_fields() and value
         }
 
-        discovered_package = cls.objects.create(project=project, **cleaned_package_data)
-        if discovered_package.pk:
-            return discovered_package
+        discovered_package = cls(project=project, **cleaned_package_data)
+        # Using save_error=False to not capture potential errors at this level but
+        # rather in the CodebaseResource.create_and_add_package method so resource data
+        # can be injected in the ProjectError record.
+        discovered_package.save(save_error=False, capture_exception=False)
+        return discovered_package
+
+    def update_from_data(self, package_data):
+        """
+        Update this discovered package instance with the provided `package_data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = DiscoveredPackage.model_fields()
+        updated_fields = []
+
+        for field_name, value in package_data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+                field_name in self.purl_fields(),
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if not current_value:
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+            elif current_value != value:
+                pass  # TODO: handle this case
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
+
+
+class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
+    target_url = models.URLField(_("Target URL"), max_length=1024)
+    sent = models.BooleanField(default=False)
+    created_date = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def __str__(self):
+        return str(self.uuid)
+
+    def send(self, pipeline_run):
+        """
+        Sends this WebhookSubscription by POSTing an HTTP request on the `target_url`.
+        """
+        payload = {
+            "project": {
+                "uuid": self.project.uuid,
+                "name": self.project.name,
+                "input_sources": self.project.input_sources,
+            },
+            "run": {
+                "uuid": pipeline_run.uuid,
+                "pipeline_name": pipeline_run.pipeline_name,
+                "status": pipeline_run.status,
+                "scancodeio_version": pipeline_run.scancodeio_version,
+            },
+        }
+
+        logger.info(f"Sending Webhook uuid={self.uuid}.")
+        try:
+            response = requests.post(
+                url=self.target_url,
+                data=json.dumps(payload, cls=DjangoJSONEncoder),
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+        except requests.exceptions.RequestException as exception:
+            logger.info(exception)
+            return
+
+        if response.status_code in (200, 201, 202):
+            logger.info(f"Webhook uuid={self.uuid} sent and received.")
+            self.sent = True
+            self.save()
+        else:
+            logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")

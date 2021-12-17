@@ -144,3 +144,21 @@ class AddPipelineForm(PipelineBaseForm):
     def save(self, project):
         self.handle_pipeline(project)
         return project
+
+
+class ArchiveProjectForm(forms.Form):
+    remove_input = forms.BooleanField(
+        label="Remove inputs",
+        initial=True,
+        required=False,
+    )
+    remove_codebase = forms.BooleanField(
+        label="Remove codebase",
+        initial=True,
+        required=False,
+    )
+    remove_output = forms.BooleanField(
+        label="Remove outputs",
+        initial=False,
+        required=False,
+    )

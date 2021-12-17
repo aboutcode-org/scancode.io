@@ -7,6 +7,19 @@ The main entry point is the :guilabel:`scanpipe` command which is available
 directly when you are in the activated virtualenv or at this path:
 ``<scancode.io_root_dir>/bin/scanpipe``
 
+.. warning::
+    In order to add local input files to a project using the Command Line Interface,
+    extra arguments need to be passed to the docker-compose command.
+
+    For instance ``--volume /path/on/host:/target/path/in/container:ro``
+    will mount and make available the host path inside the container (``:ro`` stands
+    for read only).
+
+    .. code-block:: bash
+
+        docker-compose run --volume /home/sources:/sources:ro \
+            web ./manage.py create-project my-project --input-file="/sources/image.tar"
+
 
 `$ scanpipe --help`
 -------------------
@@ -19,11 +32,15 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
     [scanpipe]
         add-input
         add-pipeline
+        archive-project
         create-project
-        graph
-        output
+        delete-project
         execute
+        graph
+        list-project
+        output
         show-pipeline
+        status
 
 
 `$ scanpipe <subcommand> --help`
@@ -35,7 +52,8 @@ For example::
 
     $ scanpipe create-project --help
     usage: scanpipe create-project [--input-file INPUTS_FILES]
-        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] name
+        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] [--async]
+        name
 
     Create a ScanPipe project.
 
@@ -61,8 +79,29 @@ Optional arguments:
 
 - ``--execute`` Execute the pipelines right after project creation.
 
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
+  Applies only when --execute is provided.
+
 .. warning::
     Pipelines are added and are executed in order.
+
+
+`$ scanpipe list-project [--search SEARCH] [--include-archived]`
+----------------------------------------------------------------
+
+Lists ScanPipe projects.
+
+Optional arguments:
+
+- ``--search SEARCH`` Limit the projects list to this search results.
+
+- ``--include-archived`` Include archived projects.
+
+.. tip::
+    Only the project names are listed by default. You can display more details
+    about each project by providing the ``--verbosity 2`` or ``--verbosity 3``
+    options.
 
 
 `$ scanpipe add-input --project PROJECT [--input-file FILES] [--input-url URLS]`
@@ -80,6 +119,11 @@ For example, assuming you have created beforehand a project named "foo", this wi
 copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` directory::
 
     $ scanpipe add-input --project foo --input-file ~/docker/alpine-base.tar
+
+.. warning::
+    Make sure to mount your local sources volume in the Docker setup:
+
+    ``--volume /host/sources:/sources:ro --input-file /sources/image.tar``
 
 You can also provide URLs of files to be downloaded to the foo project
 :guilabel:`input/` directory::
@@ -117,6 +161,10 @@ add the docker pipeline to your project::
 
 Executes the next pipeline of the ``PROJECT`` project queue.
 
+Optional arguments:
+
+- ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
+  of running in the current thread.
 
 `$ scanpipe show-pipeline --project PROJECT`
 --------------------------------------------
@@ -158,10 +206,34 @@ Optional arguments:
     By default, output files are created in the current working directory.
 
 
+`$ scanpipe archive-project --project PROJECT`
+----------------------------------------------
+
+Archives a project and remove selected work directories.
+
+Optional arguments:
+
+- ``--remove-input`` Remove the :guilabel:`input/` directory.
+- ``--remove-codebase`` Remove the :guilabel:`codebase/` directory.
+- ``--remove-output`` Remove the :guilabel:`output/` directory.
+- ``--no-input`` Does not prompt the user for input of any kind.
+
+
+`$ scanpipe reset-project --project PROJECT`
+--------------------------------------------
+
+Resets a project removing all database entrie and all data on disks except for
+the input/ directory.
+
+Optional arguments:
+
+- ``--no-input`` Does not prompt the user for input of any kind.
+
+
 `$ scanpipe delete-project --project PROJECT`
 ---------------------------------------------
 
-Deletes a project and its related work directory.
+Deletes a project and its related work directories.
 
 Optional arguments:
 

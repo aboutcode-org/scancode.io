@@ -107,9 +107,10 @@ class ProjectSerializer(
         required=False,
         style={"base_template": "textarea.html"},
     )
+    webhook_url = serializers.CharField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
-    input_sources = serializers.SerializerMethodField()
+    input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_package_summary = serializers.SerializerMethodField()
 
@@ -121,7 +122,9 @@ class ProjectSerializer(
             "uuid",
             "upload_file",
             "input_urls",
+            "webhook_url",
             "created_date",
+            "is_archived",
             "pipeline",
             "execute_now",
             "input_sources",
@@ -138,7 +141,6 @@ class ProjectSerializer(
         )
 
         exclude_from_list_view = [
-            "input_sources",
             "input_root",
             "output_root",
             "extra_data",
@@ -147,12 +149,6 @@ class ProjectSerializer(
             "package_count",
             "codebase_resources_summary",
             "discovered_package_summary",
-        ]
-
-    def get_input_sources(self, project):
-        return [
-            {"filename": filename, "source": source}
-            for filename, source in project.input_sources.items()
         ]
 
     def get_codebase_resources_summary(self, project):
@@ -176,6 +172,7 @@ class ProjectSerializer(
         input_urls = validated_data.pop("input_urls", [])
         pipeline = validated_data.pop("pipeline", None)
         execute_now = validated_data.pop("execute_now", False)
+        webhook_url = validated_data.pop("webhook_url", None)
 
         downloads, errors = fetch_urls(input_urls)
         if errors:
@@ -191,6 +188,9 @@ class ProjectSerializer(
 
         if pipeline:
             project.add_pipeline(pipeline, execute_now)
+
+        if webhook_url:
+            project.add_webhook_subscription(webhook_url)
 
         return project
 
@@ -224,7 +224,7 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectError
-        fields = ["uuid", "model", "details", "message", "traceback", "created_date"]
+        fields = ["uuid", "model", "message", "details", "traceback", "created_date"]
 
     def get_traceback(self, project_error):
         return project_error.traceback.split("\n")
@@ -255,8 +255,9 @@ def get_model_serializer(model_class):
     Returns a Serializer class that ia related to a given `model_class`.
     """
     serializer = {
-        DiscoveredPackage: DiscoveredPackageSerializer,
         CodebaseResource: CodebaseResourceSerializer,
+        DiscoveredPackage: DiscoveredPackageSerializer,
+        ProjectError: ProjectErrorSerializer,
     }.get(model_class, None)
 
     if not serializer:

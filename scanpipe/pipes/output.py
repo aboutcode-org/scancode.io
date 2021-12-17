@@ -159,7 +159,7 @@ class JSONResultsGenerator:
             "notice": SCAN_NOTICE,
             "uuid": project.uuid,
             "created_date": project.created_date,
-            "input_files": project.input_files,
+            "input_sources": project.input_sources_list,
             "runs": runs.data,
             "extra_data": project.extra_data,
         }
@@ -368,6 +368,7 @@ def to_xlsx(project):
     querysets = [
         project.discoveredpackages.all(),
         project.codebaseresources.without_symlinks(),
+        project.projecterrors.all(),
     ]
 
     with xlsxwriter.Workbook(output_file) as workbook:

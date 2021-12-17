@@ -41,6 +41,8 @@ from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
+from scanpipe.pipes.fetch import fetch_urls
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -67,6 +69,7 @@ class ProjectViewSet(
 
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    filterset_fields = ["name", "uuid", "is_archived"]
 
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):
@@ -180,6 +183,78 @@ class ProjectViewSet(
         }
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=["get", "post"])
+    def add_input(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if not project.can_add_input:
+            message = {
+                "status": "Cannot add inputs once a pipeline has started to execute."
+            }
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        upload_file = request.data.get("upload_file")
+        input_urls = request.data.get("input_urls", [])
+
+        if not (upload_file or input_urls):
+            message = {"status": "upload_file or input_urls required."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        downloads, errors = fetch_urls(input_urls)
+        if errors:
+            message = {"status": ("Could not fetch: " + ", ".join(errors))}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        if upload_file:
+            project.add_uploads([upload_file])
+
+        if downloads:
+            project.add_downloads(downloads)
+
+        return Response({"status": "Input(s) added."})
+
+    @action(detail=True, methods=["get", "post"])
+    def archive(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if self.request.method == "GET":
+            message = (
+                "POST on this URL to archive the project. "
+                "You can choose to remove workspace directories by providing the "
+                "following parameters: `remove_input=True`, `remove_codebase=True`, "
+                "`remove_output=True`."
+            )
+            return Response({"status": message})
+
+        try:
+            project.archive(
+                remove_input=request.data.get("remove_input"),
+                remove_codebase=request.data.get("remove_codebase"),
+                remove_output=request.data.get("remove_output"),
+            )
+        except RunInProgressError as error:
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"status": f"The project {project} has been archived."})
+
+    @action(detail=True, methods=["get", "post"])
+    def reset(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if self.request.method == "GET":
+            message = "POST on this URL to reset the project. " ""
+            return Response({"status": message})
+
+        try:
+            project.reset(keep_input=True)
+        except RunInProgressError as error:
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            message = (
+                f"All data, except inputs, for the {project} project have been removed."
+            )
+            return Response({"status": message})
+
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
@@ -189,7 +264,7 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Run.objects.all()
     serializer_class = RunSerializer
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def start_pipeline(self, request, *args, **kwargs):
         run = self.get_object()
         if run.task_end_date:
@@ -205,3 +280,25 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         transaction.on_commit(run.execute_task_async)
 
         return Response({"status": f"Pipeline {run.pipeline_name} started."})
+
+    @action(detail=True, methods=["post"])
+    def stop_pipeline(self, request, *args, **kwargs):
+        run = self.get_object()
+
+        if run.status != run.Status.RUNNING:
+            message = {"status": "Pipeline is not running."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        run.stop_task()
+        return Response({"status": f"Pipeline {run.pipeline_name} stopped."})
+
+    @action(detail=True, methods=["post"])
+    def delete_pipeline(self, request, *args, **kwargs):
+        run = self.get_object()
+
+        if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
+            message = {"status": "Only non started or queued pipelines can be deleted."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        run.delete_task()
+        return Response({"status": f"Pipeline {run.pipeline_name} deleted."})
