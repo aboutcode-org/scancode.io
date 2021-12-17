@@ -60,21 +60,22 @@ class PassThroughRenderer(renderers.BaseRenderer):
 class ProjectFilterSet(django_filters.FilterSet):
     name = django_filters.CharFilter()
     name__contains = django_filters.CharFilter(
-        field_name="name", lookup_expr="contains"
+        field_name="name",
+        lookup_expr="contains",
     )
     name__startswith = django_filters.CharFilter(
-        field_name="name", lookup_expr="startswith"
+        field_name="name",
+        lookup_expr="startswith",
     )
     name__endswith = django_filters.CharFilter(
-        field_name="name", lookup_expr="endswith"
+        field_name="name",
+        lookup_expr="endswith",
     )
-
     names = django_filters.filters.CharFilter(
         label="Names (multi-values)",
         field_name="name",
         method="filter_names",
     )
-
     uuid = django_filters.CharFilter()
     is_archived = django_filters.CharFilter()
 
@@ -95,7 +96,9 @@ class ProjectFilterSet(django_filters.FilterSet):
 
         lookups = Q()
         for name in names:
-            lookups |= Q(name__contains=name)
+            name = name.strip()
+            if name:
+                lookups |= Q(name__contains=name)
 
         return qs.filter(lookups)
 
