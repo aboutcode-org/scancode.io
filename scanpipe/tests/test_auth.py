@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# http://nexb.com and https://github.com/nexB/scancode.io
+# The ScanCode.io software is licensed under the Apache License version 2.0.
+# Data generated with ScanCode.io is provided as-is without warranties.
+# ScanCode is a trademark of nexB Inc.
+#
+# You may not use this software except in compliance with the License.
+# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+# ScanCode.io should be considered or used as legal advice. Consult an Attorney
+# for any legal advice.
+#
+# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
+# Visit https://github.com/nexB/scancode.io for support and download.
+
+from django.apps import apps
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
+from django.test import TestCase
+from django.test import override_settings
+from django.urls import reverse
+
+from scancodeio.auth import is_authenticated_when_required
+
+User = get_user_model()
+
+TEST_PASSWORD = "secret"
+
+login_url = reverse("login")
+project_list_url = reverse("project_list")
+logout_url = reverse("logout")
+profile_url = reverse("account_profile")
+login_redirect_url = reverse(settings.LOGIN_REDIRECT_URL)
+
+
+@override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=True)
+class ScanCodeIOAuthTest(TestCase):
+    def setUp(self):
+        self.anonymous_user = AnonymousUser()
+        self.basic_user = User.objects.create_user(
+            username="basic_user", password=TEST_PASSWORD
+        )
+
+    def test_scancodeio_auth_is_authenticated_when_required(self):
+        self.assertFalse(self.anonymous_user.is_authenticated)
+        self.assertFalse(is_authenticated_when_required(user=self.anonymous_user))
+
+        self.assertTrue(self.basic_user.is_authenticated)
+        self.assertTrue(is_authenticated_when_required(user=self.basic_user))
+
+        with override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False):
+            self.assertTrue(is_authenticated_when_required(user=None))
+            self.assertTrue(is_authenticated_when_required(user=self.anonymous_user))
+            self.assertTrue(is_authenticated_when_required(user=self.basic_user))
+
+    def test_scancodeio_auth_login_view(self):
+        data = {"username": self.basic_user.username, "password": ""}
+        response = self.client.post(login_url, data)
+        form = response.context_data["form"]
+        expected_error = {"password": ["This field is required."]}
+        self.assertEqual(expected_error, form.errors)
+
+        data = {"username": self.basic_user.username, "password": "wrong"}
+        response = self.client.post(login_url, data)
+        form = response.context_data["form"]
+        expected_error = {
+            "__all__": [
+                "Please enter a correct username and password. "
+                "Note that both fields may be case-sensitive."
+            ]
+        }
+        self.assertEqual(expected_error, form.errors)
+
+        data = {"username": self.basic_user.username, "password": TEST_PASSWORD}
+        response = self.client.post(login_url, data, follow=True)
+        self.assertRedirects(response, login_redirect_url)
+        expected = '<a class="navbar-link">basic_user</a>'
+        self.assertContains(response, expected, html=True)
+
+    def test_scancodeio_auth_logged_in_navbar_header(self):
+        response = self.client.get(project_list_url)
+        self.assertRedirects(response, f"{login_url}?next={project_list_url}")
+
+        self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
+        response = self.client.get(project_list_url)
+        expected = '<a class="navbar-link">basic_user</a>'
+        self.assertContains(response, expected, html=True)
+        expected = f'<a class="navbar-item" href="{profile_url}">Profile settings</a>'
+        self.assertContains(response, expected, html=True)
+        eexpected = f'<a class="navbar-item" href="{logout_url}">Sign out</a>'
+        self.assertContains(response, expected, html=True)
+
+    def test_scancodeio_auth_logout_view(self):
+        response = self.client.get(logout_url)
+        self.assertRedirects(response, login_url)
+
+        self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
+        response = self.client.get(logout_url)
+        self.assertRedirects(response, login_url)
+
+    def test_scancodeio_account_profile_view(self):
+        self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
+        response = self.client.get(profile_url)
+        expected = '<label class="label">API Key</label>'
+        self.assertContains(response, expected, html=True)
+        expected = '<label class="label">API Key</label>'
+        self.assertContains(response, self.basic_user.auth_token.key)
