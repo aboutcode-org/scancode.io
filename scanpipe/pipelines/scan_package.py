@@ -119,10 +119,7 @@ class ScanPackage(Pipeline):
         """
         Processes the JSON scan results to determine resources and packages.
         """
-        project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
-        scancode.create_codebase_resources(project, scanned_codebase)
-        scancode.create_discovered_packages(project, scanned_codebase)
+        scancode.load_inventory_from_scan(self.project, str(self.scan_output))
 
     def make_summary_from_scan_results(self):
         """

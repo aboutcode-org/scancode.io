@@ -50,15 +50,4 @@ class LoadInventory(Pipeline):
         Processes JSON scan inputs to populate codebase resources and packages.
         """
         for input_location in self.input_locations:
-            load_inventory_from_scan(self.project, input_location)
-
-
-def load_inventory_from_scan(project, input_location):
-    """
-    Processes a given JSON scan input at ``input_location`` to populate codebase
-    resources and packages in ``project``.
-    """
-    project = project
-    scanned_codebase = scancode.get_virtual_codebase(project, input_location)
-    scancode.create_codebase_resources(project, scanned_codebase)
-    scancode.create_discovered_packages(project, scanned_codebase)
+            scancode.load_inventory_from_scan(self.project, input_location)

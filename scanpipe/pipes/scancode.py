@@ -507,3 +507,13 @@ def make_results_summary(project, scan_results_location):
     summary["key_files_packages"] = key_files_packages
 
     return summary
+
+
+def load_inventory_from_scan(project, input_location):
+    """
+    Processes a given JSON scan input at ``input_location`` to populate codebase
+    resources and packages in ``project``.
+    """
+    scanned_codebase = get_virtual_codebase(project, input_location)
+    create_codebase_resources(project, scanned_codebase)
+    create_discovered_packages(project, scanned_codebase)
