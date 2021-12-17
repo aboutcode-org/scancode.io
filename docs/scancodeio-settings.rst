@@ -29,17 +29,22 @@ The database can be configured using the following settings::
     SCANCODEIO_DB_PASSWORD=password
     SCANCODEIO_DB_PORT=5432
 
-TIME_ZONE
----------
+.. _scancodeio_settings_require_authentication:
 
-A string representing the time zone for the current ScanCode.io installation. By
-default the ``UTC`` time zone is used::
+SCANCODEIO_REQUIRE_AUTHENTICATION
+---------------------------------
 
-    TIME_ZONE=Europe/Paris
+By default, the ScanCode.io Web UI and REST API are available without any
+authentication.
 
-.. note::
-    You can view a detailed list of time zones `here.
-    <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
+The authentication system can be enable with this settings::
+
+    SCANCODEIO_REQUIRE_AUTHENTICATION=True
+
+Once enabled, all the Web UI views and REST API endpoints will force theuser to login
+to gain access.
+
+See :ref:`rest_api_authentication` for ``API key`` system with the REST API.
 
 .. _scancodeio_settings_workspace_location:
 
@@ -191,3 +196,15 @@ The web server can be started in DEBUG mode with:
 .. code-block:: console
 
     $ SCANCODEIO_LOG_LEVEL=DEBUG make run
+
+TIME_ZONE
+---------
+
+A string representing the time zone for the current ScanCode.io installation. By
+default the ``UTC`` time zone is used::
+
+    TIME_ZONE=Europe/Paris
+
+.. note::
+    You can view a detailed list of time zones `here.
+    <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_

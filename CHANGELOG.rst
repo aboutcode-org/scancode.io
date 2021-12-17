@@ -4,6 +4,15 @@ Changelog
 Unreleased
 ----------
 
+- Add authentication for the Web UI views and REST API endpoint.
+  The autentication is disabled by default and can be enabled using the
+  SCANCODEIO_REQUIRE_AUTHENTICATION settings.
+  When enabled, users have to authenticate through a login form in the Web UI, or using
+  their API Key in the REST API.
+  The API Key can be viewed in the Web UI "Profile settings" view ince logged-in.
+  Users can be created using the Django "createsuperuser" management command.
+  https://github.com/nexB/scancode.io/issues/359
+
 - Include project errors in XLSX results output.
   https://github.com/nexB/scancode.io/issues/364
 
