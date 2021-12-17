@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Unreleased
-----------
+v30.2.0 (2021-12-17)
+--------------------
 
 - Add authentication for the Web UI views and REST API endpoint.
   The autentication is disabled by default and can be enabled using the
