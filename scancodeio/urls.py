@@ -45,6 +45,7 @@ auth_urlpatterns = [
         name="logout",
     ),
     path("accounts/profile/", AccountProfileView.as_view(), name="account_profile"),
+    path('oidc/', include('mozilla_django_oidc.urls')),
 ]
 
 urlpatterns = auth_urlpatterns + [

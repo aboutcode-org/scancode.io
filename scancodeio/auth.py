@@ -23,7 +23,15 @@
 from django.conf import settings
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.utils.http import urlencode
+from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
+from scancodeio.settings import OIDC_OP_LOGOUT_ENDPOINT, LOGOUT_REDIRECT_URL
+
+def oidc_logout(request):
+    logout_url = OIDC_OP_LOGOUT_ENDPOINT
+    redirect_uri = request.build_absolute_uri(LOGOUT_REDIRECT_URL)
+    return logout_url + '?' + urlencode({'redirect_uri': redirect_uri})
 
 def is_authenticated_when_required(user):
     """
@@ -60,3 +68,24 @@ class ConditionalLoginRequired(UserPassesTestMixin):
 
     def test_func(self):
         return is_authenticated_when_required(self.request.user)
+
+class OIDCAuthBackend(OIDCAuthenticationBackend):
+    def create_user(self, claims):
+        user = super(OIDCAuthBackend, self).create_user(claims)
+        user.username = claims.get('preferred_username', '')
+        user.first_name = claims.get('given_name', '')
+        user.last_name = claims.get('family_name', '')
+        user.email = claims.get('email', '')
+        user.save()
+        return user
+
+    def update_user(self, user, claims):
+        user.username = claims.get('preferred_username', '')
+        user.first_name = claims.get('first_name', '')
+        user.last_name = claims.get('last_name', '')
+        user.email = claims.get('email', '')
+        user.save()
+        return user
+
+    def filter_users_by_claims(self, claims):
+        return super().filter_users_by_claims(claims)

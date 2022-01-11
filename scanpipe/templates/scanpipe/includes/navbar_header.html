@@ -15,42 +15,64 @@
     </div>
   </div>
   <div class="navbar-end mr-3">
-    {% if user.is_authenticated %}
-      <div class="navbar-item has-dropdown is-hoverable">
-        <a class="navbar-link">
-          {{ user.username }}
-        </a>
-        <div class="navbar-dropdown is-right">
-          <a class="navbar-item" href="{% url 'account_profile' %}">
-            Profile settings
-          </a>
-          <a class="navbar-item" href="{% url 'logout' %}">
-            Sign out
-          </a>
-          <hr class="navbar-divider">
-          <div class="navbar-item">
-            <i>ScanCode.io {{ SCANCODEIO_VERSION }}</i>
-          </div>
-          <div class="navbar-item">
-            <i>ScanCode-toolkit {{ SCANCODE_TOOLKIT_VERSION }}</i>
-          </div>
+    {% if not user.is_authenticated %}
+    <div class="navbar-item navbar-item is-cursor-help">
+      <div class="dropdown is-right is-hoverable">
+        <div class="dropdown-trigger has-text-grey-light">
+          v{{ SCANCODEIO_VERSION }}
         </div>
-      </div>
-    {% else %}
-      <div class="navbar-item navbar-item is-cursor-help">
-        <div class="dropdown is-right is-hoverable">
-          <div class="dropdown-trigger has-text-grey-light">
-            v{{ SCANCODEIO_VERSION }}
-          </div>
-          <div class="dropdown-menu" role="menu" style="min-width: 13rem;">
-            <div class="dropdown-content">
-              <div class="dropdown-item">
-                ScanCode-toolkit: v{{ SCANCODE_TOOLKIT_VERSION }}
-              </div>
+        <div class="dropdown-menu" role="menu" style="min-width: 13rem;">
+          <div class="dropdown-content">
+            <div class="dropdown-item">
+              ScanCode-toolkit: v{{ SCANCODE_TOOLKIT_VERSION }}
             </div>
           </div>
         </div>
       </div>
+    </div>
+    {% elif SCANCODEIO_AUTHENTICATION_METHOD == "OIDC" %}
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">
+            {{ user.email }}
+          </a>
+          <div class="navbar-dropdown is-right">
+            <a class="navbar-item" href="{% url 'account_profile' %}">
+              Profile settings
+            </a>
+            <form action="{% url 'oidc_logout' %}" method="post">
+              {% csrf_token %}
+              <input class="navbar-item" type="submit" value="Sign out">
+            </form>
+            <hr class="navbar-divider">
+            <div class="navbar-item">
+              <i>ScanCode.io {{ SCANCODEIO_VERSION }}</i>
+            </div>
+            <div class="navbar-item">
+              <i>ScanCode-toolkit {{ SCANCODE_TOOLKIT_VERSION }}</i>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">
+            {{ user.username }}
+          </a>
+          <div class="navbar-dropdown is-right">
+            <a class="navbar-item" href="{% url 'account_profile' %}">
+              Profile settings
+            </a>
+            <a class="navbar-item" href="{% url 'logout' %}">
+              Sign out
+            </a>
+            <hr class="navbar-divider">
+            <div class="navbar-item">
+              <i>ScanCode.io {{ SCANCODEIO_VERSION }}</i>
+            </div>
+            <div class="navbar-item">
+              <i>ScanCode-toolkit {{ SCANCODE_TOOLKIT_VERSION }}</i>
+            </div>
+          </div>
+        </div>
     {% endif %}
   </div>
 </nav>

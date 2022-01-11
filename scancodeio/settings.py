@@ -51,6 +51,8 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
 )
 
+SCANCODEIO_AUTHENTICATION_METHOD = env.str("SCANCODEIO_AUTHENTICATION_METHOD", default=None)
+
 # ScanCode.io
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
@@ -92,6 +94,7 @@ INSTALLED_APPS = (
     "rest_framework",
     "rest_framework.authtoken",
     "django_rq",
+    "mozilla_django_oidc"
 )
 
 MIDDLEWARE = (
@@ -101,6 +104,7 @@ MIDDLEWARE = (
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "mozilla_django_oidc.middleware.SessionRefresh"
 )
 
 ROOT_URLCONF = "scancodeio.urls"
@@ -136,6 +140,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.request",
                 "scancodeio.context_processors.versions",
+                "scancodeio.context_processors.auth",
             ],
         },
     },
@@ -144,6 +149,7 @@ TEMPLATES = [
 # Login
 
 LOGIN_REDIRECT_URL = "project_list"
+LOGOUT_REDIRECT_URL = "/"
 
 # Passwords
 
@@ -164,6 +170,19 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+# OIDC via mozilla-django-oidc
+
+OIDC_RP_CLIENT_ID = env.str("OIDC_RP_CLIENT_ID", default=None)
+OIDC_RP_CLIENT_SECRET = env.str("OIDC_RP_CLIENT_SECRET", default=None)
+OIDC_RP_SIGN_ALGO = env.str("OIDC_RP_SIGN_ALGO", default=None)
+OIDC_OP_JWKS_ENDPOINT = env.str("OIDC_OP_JWKS_ENDPOINT", default=None)
+OIDC_OP_AUTHORIZATION_ENDPOINT = env.str("OIDC_OP_AUTHORIZATION_ENDPOINT", default=None)
+OIDC_OP_TOKEN_ENDPOINT = env.str("OIDC_OP_TOKEN_ENDPOINT", default=None)
+OIDC_OP_USER_ENDPOINT = env.str("OIDC_OP_USER_ENDPOINT", default=None)
+OIDC_OP_LOGOUT_ENDPOINT = env.str("OIDC_OP_LOGOUT_ENDPOINT", default=None)
+OIDC_OP_LOGOUT_URL_METHOD = "scancodeio.auth.oidc_logout"
+OIDC_DRF_AUTH_BACKEND = 'scancodeio.auth.OIDCAuthBackend'
 
 # Testing
 
@@ -286,6 +305,17 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": env.int("SCANCODEIO_REST_API_PAGE_SIZE", default=50),
     "UPLOADED_FILES_USE_URL": False,
 }
+
+if SCANCODEIO_AUTHENTICATION_METHOD == "OIDC":
+    LOGIN_URL = 'oidc_authentication_init'
+    REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = (
+        "mozilla_django_oidc.contrib.drf.OIDCAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+        )
+    AUTHENTICATION_BACKENDS = (
+        "scancodeio.auth.OIDCAuthBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    )
 
 if not SCANCODEIO_REQUIRE_AUTHENTICATION:
     REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (

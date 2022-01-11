@@ -24,9 +24,14 @@ from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import __version__ as scancodeio_version
 
+from scancodeio.settings import SCANCODEIO_AUTHENTICATION_METHOD
+
 
 def versions(request):
     return {
         "SCANCODEIO_VERSION": scancodeio_version,
         "SCANCODE_TOOLKIT_VERSION": scancode_toolkit_version,
     }
+
+def auth(request):
+    return { "SCANCODEIO_AUTHENTICATION_METHOD": str(SCANCODEIO_AUTHENTICATION_METHOD) }
