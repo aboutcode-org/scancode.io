@@ -45,6 +45,7 @@ RUN apt-get update \
        libdevmapper1.02.1 \
        libguestfs-tools \
        linux-image-amd64 \
+       wait-for-it \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

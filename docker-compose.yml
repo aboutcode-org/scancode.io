@@ -35,7 +35,7 @@ services:
 
   worker:
     build: .
-    command: ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
+    command: wait-for-it web:8000 -- ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
     env_file:
       - docker.env
     volumes:
