@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-# import inspect
+ import inspect
 import logging
 import sys
 from importlib.machinery import SourceFileLoader
