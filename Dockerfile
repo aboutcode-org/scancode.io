@@ -22,7 +22,12 @@
 
 FROM --platform=linux/amd64 python:3.9
 
-WORKDIR /app
+ARG USERNAME=scancodeio
+ENV USERNAME=$USERNAME
+ARG UID=1001
+ENV UID=$UID
+ARG GID=1001
+ENV GID=$GID
 
 # Python settings: Force unbuffered stdout and stderr (i.e. they are flushed to terminal immediately)
 ENV PYTHONUNBUFFERED 1
@@ -51,11 +56,24 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir -p /var/scancodeio/static/ \
- && mkdir -p /var/scancodeio/workspace/
+RUN mkdir -p /opt/scancodeio/ \
+             /var/scancodeio/static/ \
+             /var/scancodeio/workspace/
 
+RUN groupadd --gid ${GID} --non-unique ${USERNAME} \
+ && useradd --uid ${UID} --gid ${GID} --no-create-home --home-dir=/opt/scancodeio --non-unique ${USERNAME} \
+ && chown -R ${UID}:${GID} /var/scancodeio /opt \
+ && chmod g+s /opt
+
+WORKDIR /opt/scancodeio/
 # Keep the dependencies installation before the COPY of the app/ for proper caching
-COPY setup.cfg setup.py /app/
-RUN pip install .
+COPY setup.cfg setup.py /opt/scancodeio/
 
-COPY . /app
+RUN python -m venv .
+ENV PATH="/opt/scancodeio/bin:$PATH"
+RUN export PIP_CACHE_DIR=/tmp \
+ && pip install --upgrade pip \
+ && pip install .
+
+COPY . /opt/scancodeio/
+USER ${USERNAME}
