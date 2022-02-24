@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v31.0.0 (next)
+---------------
+
+- Add new SCANCODEIO_REDIS_PASSWORD environment variable and setting
+  to optionally set Redis instance password
+
 v30.2.0 (2021-12-17)
 --------------------
 
