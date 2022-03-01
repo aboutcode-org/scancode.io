@@ -327,7 +327,6 @@ def tag_uninteresting_codebase_resources(project):
     uninteresting_and_transient = (
         "/tmp/",
         "/etc/",
-        "/var/",
         "/proc/",
         "/dev/",
         "/run/",
