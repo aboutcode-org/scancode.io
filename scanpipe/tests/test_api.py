@@ -28,6 +28,7 @@ from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import TransactionTestCase
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -66,9 +67,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
 
         self.user = User.objects.create_user("username", "e@mail.com", "secret")
-        self.header_prefix = "Token "
-        self.token = Token.objects.create(user=self.user)
-        self.auth = self.header_prefix + self.token.key
+        self.auth = f"Token {self.user.auth_token.key}"
 
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)
@@ -80,7 +79,68 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["count"])
         self.assertNotContains(response, "input_root")
         self.assertNotContains(response, "extra_data")
-        self.assertNotContains(response, "input_sources")
+        self.assertNotContains(response, "error_count")
+        self.assertNotContains(response, "resource_count")
+        self.assertNotContains(response, "package_count")
+
+    def test_scanpipe_api_project_list_filters(self):
+        project2 = Project.objects.create(name="pro2ject", is_archived=True)
+        project3 = Project.objects.create(name="3project", is_archived=True)
+
+        response = self.csrf_client.get(self.project_list_url)
+        self.assertEqual(3, response.data["count"])
+        self.assertContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+        self.assertContains(response, project3.uuid)
+
+        data = {"uuid": self.project1.uuid}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertContains(response, self.project1.uuid)
+        self.assertNotContains(response, project2.uuid)
+        self.assertNotContains(response, project3.uuid)
+
+        data = {"name": project2.name}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+        self.assertNotContains(response, project3.uuid)
+
+        data = {"name__contains": "2"}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+        self.assertNotContains(response, project3.uuid)
+
+        data = {"name__startswith": project3.name}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertNotContains(response, project2.uuid)
+        self.assertContains(response, project3.uuid)
+
+        data = {"name__endswith": self.project1.name[-3:]}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(1, response.data["count"])
+        self.assertContains(response, self.project1.uuid)
+        self.assertNotContains(response, project2.uuid)
+        self.assertNotContains(response, project3.uuid)
+
+        data = {"names": f"{self.project1.name[2:5]}, {project2.name}, "}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(2, response.data["count"])
+        self.assertContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+        self.assertNotContains(response, project3.uuid)
+
+        data = {"is_archived": True}
+        response = self.csrf_client.get(self.project_list_url, data=data)
+        self.assertEqual(2, response.data["count"])
+        self.assertNotContains(response, self.project1.uuid)
+        self.assertContains(response, project2.uuid)
+        self.assertContains(response, project3.uuid)
 
     def test_scanpipe_api_project_detail(self):
         response = self.csrf_client.get(self.project1_detail_url)
@@ -90,6 +150,9 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual([], response.data["input_sources"])
         self.assertIn("input_root", response.data)
         self.assertIn("extra_data", response.data)
+        self.assertEqual(0, response.data["error_count"])
+        self.assertEqual(1, response.data["resource_count"])
+        self.assertEqual(1, response.data["package_count"])
 
         expected = {"": 1}
         self.assertEqual(expected, response.data["codebase_resources_summary"])
@@ -100,9 +163,14 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data["discovered_package_summary"])
 
-        self.project1.add_input_source(filename="file", source="uploaded", save=True)
+        self.project1.add_input_source(filename="file1", source="uploaded")
+        self.project1.add_input_source(filename="file2", source="https://download.url")
+        self.project1.save()
         response = self.csrf_client.get(self.project1_detail_url)
-        expected = [{"filename": "file", "source": "uploaded"}]
+        expected = [
+            {"filename": "file1", "source": "uploaded"},
+            {"filename": "file2", "source": "https://download.url"},
+        ]
         self.assertEqual(expected, response.data["input_sources"])
 
     @mock.patch("requests.get")
@@ -298,12 +366,64 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"error": "Summary file not available"}
         self.assertEqual(expected, response.data)
 
-        summary_file = self.data_location / "is-npm-1.0.0_summary.json"
+        summary_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
         copy_input(summary_file, self.project1.output_path)
 
         response = self.csrf_client.get(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(10, len(response.data.keys()))
+
+    def test_scanpipe_api_project_action_archive(self):
+        (self.project1.input_path / "input_file").touch()
+        (self.project1.codebase_path / "codebase_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+
+        url = reverse("project-archive", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertIn(
+            "POST on this URL to archive the project.", response.data["status"]
+        )
+
+        data = {"remove_input": True}
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.project1.refresh_from_db()
+        self.assertTrue(self.project1.is_archived)
+        expected = {"status": "The project Analysis has been archived."}
+        self.assertEqual(expected, response.data)
+        self.assertEqual(0, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+
+    def test_scanpipe_api_project_action_reset(self):
+        self.project1.add_pipeline("docker")
+        self.assertEqual(1, self.project1.runs.count())
+        self.assertEqual(1, self.project1.codebaseresources.count())
+        self.assertEqual(1, self.project1.discoveredpackages.count())
+
+        (self.project1.input_path / "input_file").touch()
+        (self.project1.codebase_path / "codebase_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
+
+        url = reverse("project-reset", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertIn("POST on this URL to reset the project.", response.data["status"])
+
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {
+            "status": "All data, except inputs, for the Analysis project have been "
+            "removed."
+        }
+        self.assertEqual(expected, response.data)
+        self.assertEqual(0, self.project1.runs.count())
+        self.assertEqual(0, self.project1.codebaseresources.count())
+        self.assertEqual(0, self.project1.discoveredpackages.count())
+        self.assertEqual(1, len(Project.get_root_content(self.project1.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(self.project1.codebase_path)))
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_project_action_add_pipeline(self, mock_execute_pipeline_task):
@@ -331,6 +451,43 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
+    @mock.patch("requests.get")
+    def test_scanpipe_api_project_action_add_input(self, mock_get):
+        url = reverse("project-add-input", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        expected = "upload_file or input_urls required."
+        self.assertEqual(expected, response.data.get("status"))
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        mock_get.side_effect = None
+        mock_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url="https://example.com/archive.zip",
+        )
+        data = {
+            "input_urls": "https://example.com/archive.zip",
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        self.assertEqual(["archive.zip"], self.project1.input_root)
+
+        data = {
+            "upload_file": io.BytesIO(b"Content"),
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Input(s) added."}, response.data)
+        expected = sorted(["upload_file", "archive.zip"])
+        self.assertEqual(expected, sorted(self.project1.input_root))
+
+        run = self.project1.add_pipeline("docker")
+        run.set_task_started(task_id=uuid.uuid4())
+        response = self.csrf_client.get(url)
+        expected = "Cannot add inputs once a pipeline has started to execute."
+        self.assertEqual(expected, response.data.get("status"))
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
     def test_scanpipe_api_run_detail(self):
         run1 = self.project1.add_pipeline("docker")
         url = reverse("run-detail", args=[run1.uuid])
@@ -342,6 +499,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(
             "A pipeline to analyze Docker images.", response.data["description"]
         )
+        self.assertEqual("", response.data["scancodeio_version"])
         self.assertIsNone(response.data["task_id"])
         self.assertIsNone(response.data["task_start_date"])
         self.assertIsNone(response.data["task_end_date"])
@@ -353,30 +511,90 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):
         run1 = self.project1.add_pipeline("docker")
         url = reverse("run-start-pipeline", args=[run1.uuid])
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         expected = {"status": "Pipeline docker started."}
         self.assertEqual(expected, response.data)
         mock_execute_task.assert_called_once()
 
         run1.task_id = uuid.uuid4()
         run1.save()
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Pipeline already queued."}
         self.assertEqual(expected, response.data)
 
         run1.task_start_date = timezone.now()
         run1.save()
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Pipeline already started."}
         self.assertEqual(expected, response.data)
 
         run1.task_end_date = timezone.now()
         run1.save()
-        response = self.csrf_client.get(url)
+        response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Pipeline already executed."}
+        self.assertEqual(expected, response.data)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_api_run_action_stop_pipeline(self):
+        run1 = self.project1.add_pipeline("docker")
+        url = reverse("run-stop-pipeline", args=[run1.uuid])
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Pipeline is not running."}
+        self.assertEqual(expected, response.data)
+
+        run1.set_task_started(run1.pk)
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {"status": "Pipeline docker stopped."}
+        self.assertEqual(expected, response.data)
+
+        run1.refresh_from_db()
+        self.assertTrue(run1.task_stopped)
+
+    @override_settings(SCANCODEIO_ASYNC=False)
+    def test_scanpipe_api_run_action_delete_pipeline(self):
+        run1 = self.project1.add_pipeline("docker")
+        url = reverse("run-delete-pipeline", args=[run1.uuid])
+
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {"status": "Pipeline docker deleted."}
+        self.assertEqual(expected, response.data)
+        self.assertFalse(Run.objects.filter(pk=run1.pk).exists())
+
+        run2 = self.project1.add_pipeline("docker")
+        url = reverse("run-delete-pipeline", args=[run2.uuid])
+
+        run2.set_task_queued()
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        expected = {"status": "Pipeline docker deleted."}
+        self.assertEqual(expected, response.data)
+        self.assertFalse(Run.objects.filter(pk=run2.pk).exists())
+
+        run3 = self.project1.add_pipeline("docker")
+        url = reverse("run-delete-pipeline", args=[run3.uuid])
+
+        run3.set_task_started(run3.pk)
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Only non started or queued pipelines can be deleted."}
+        self.assertEqual(expected, response.data)
+
+        run3.set_task_ended(0)
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Only non started or queued pipelines can be deleted."}
+        self.assertEqual(expected, response.data)
+
+        run3.set_task_stopped()
+        response = self.csrf_client.post(url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Only non started or queued pipelines can be deleted."}
         self.assertEqual(expected, response.data)
 
     def test_scanpipe_api_serializer_get_model_serializer(self):

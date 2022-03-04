@@ -29,6 +29,8 @@ from django.urls import reverse
 import saneyaml
 from licensedcode.models import load_licenses
 
+from scancodeio.auth import conditional_login_required
+
 
 @lru_cache(maxsize=None)
 def get_licenses():
@@ -41,6 +43,7 @@ def get_licenses():
     return load_licenses()
 
 
+@conditional_login_required
 def license_list_view(request):
     """
     Displays a list of all licenses linked to their details.
@@ -53,6 +56,7 @@ def license_list_view(request):
     return HttpResponse("<br>".join(license_links))
 
 
+@conditional_login_required
 def license_details_view(request, key):
     """
     Displays all available information about a given license `key` followed by

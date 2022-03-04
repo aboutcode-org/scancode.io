@@ -46,8 +46,8 @@ create an **environment file**, and **build the Docker image**::
     You need to rebuild the image whenever ScanCode.io's source code has been
     modified or updated.
 
-Run the Image
-^^^^^^^^^^^^^
+Run the App
+^^^^^^^^^^^
 
 **Run your image** as a container::
 
@@ -55,6 +55,23 @@ Run the Image
 
 At this point, the ScanCode.io app should be running at port 80 on your Docker host.
 Go to http://localhost/ on a web browser to **access the web UI**.
+
+An overview of the web application usage is available at :ref:`user_interface`.
+
+.. note::
+    Congratulations, you are now ready to use ScanCode.io, and you can move onto the
+    **Tutorials** section starting with the :ref:`tutorial_web_ui_analyze_docker_image`
+    tutorial.
+
+.. tip::
+    ScanCode.io will take advantage of all the CPUs made available by your Docker
+    configuration for faster processing.
+
+    **Make sure to allow enough memory to support each CPU processes**.
+
+    A good rule of thumb is to allow **1 GB of memory per CPU**.
+    For example, if Docker is configured for 8 CPUs, a minimum of 8 GB of memory is
+    required.
 
 .. warning::
 
@@ -82,6 +99,53 @@ from there::
 
     docker-compose run web bash
     ./manage.py create-project project_name
+
+
+.. _offline_installation:
+
+Offline installation with Docker
+--------------------------------
+
+It is possible to install and run ScanCode.io on a server which is not connected to
+internet.
+
+The Docker images are build on a machine with internet access and copied to the server.
+
+.. note::
+    ``docker`` and ``docker-compose`` are required on both the local machine and the
+    server.
+
+Build the Images
+^^^^^^^^^^^^^^^^
+
+Build and save the docker images on your local machine::
+
+    make docker-images
+
+A compressed tarball ``scancodeio-images-VERSION.tar.gz`` containing all the docker
+images will be created in the :guilabel:`dist/` directory.
+
+Copy Images and docker-compose files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Copy the compressed tarball and the local ``docker-compose.yml`` file to the server.
+
+.. warning::
+    The ``docker-compose.yml`` file is required to run the application.
+
+Load the Images
+^^^^^^^^^^^^^^^
+
+Copy the tarball to the server and load the images::
+
+    docker load --input scancodeio-images-VERSION.tar.gz
+
+Run the App
+^^^^^^^^^^^
+
+Start the ScanCode.io services::
+
+    docker-compose --file docker-compose.yml up
 
 
 .. _local_development_installation:
@@ -192,11 +256,20 @@ you can start the local webserver and access the app with::
 Then open your web browser and visit: http://127.0.0.1:8001/ to access the web
 application.
 
-An overview of the web application usage is available at :ref:`user_interface`.
+.. warning::
+    ``make run`` is provided as a simplified way to run the application with one
+    **major caveat**: pipeline runs will be **executed synchronously** on HTTP requests
+    and will leave your browser connection or API calls opened during the pipeline
+    execution. See also the :ref:`scancodeio_settings_async` setting.
 
-.. note::
-    Congratulations, you are now ready to use ScanCode.io, and you can move onto the
-    **Tutorials** section starting with the :ref:`tutorial_1` tutorial.
+.. warning::
+    This setup is **not suitable for deployments** and **only supported for local
+    development**.
+    It is highly recommended to use the :ref:`run_with_docker` setup to ensure the
+    availability of all the features and the benefits from asynchronous workers
+    for pipeline executions.
+
+An overview of the web application usage is available at :ref:`user_interface`.
 
 Upgrading
 ^^^^^^^^^

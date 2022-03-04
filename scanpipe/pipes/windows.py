@@ -259,10 +259,12 @@ def tag_program_files(project):
 
         program_files_subdir = match.group("program_files_subdir")
         dirname = match.group("dirname")
-        if (
-            program_files_subdir in program_files_dirname_by_path
-            or dirname.lower() in map(str.lower, PROGRAM_FILES_DIRS_TO_IGNORE)
-        ):
+
+        skip_conditions = [
+            program_files_subdir in program_files_dirname_by_path,
+            dirname.lower() in map(str.lower, PROGRAM_FILES_DIRS_TO_IGNORE),
+        ]
+        if any(skip_conditions):
             continue
 
         program_files_dirname_by_path[program_files_subdir] = dirname

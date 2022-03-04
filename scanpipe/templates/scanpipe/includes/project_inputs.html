@@ -35,7 +35,7 @@
     </div>
   {% endfor %}
   <div class="panel-block">
-    {% if project.can_add_input %}
+    {% if project.can_add_input and not project.is_archived %}
       <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
       {% include "scanpipe/includes/add_inputs_modal.html" %}
     {% else %}

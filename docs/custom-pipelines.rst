@@ -75,7 +75,7 @@ ones, or remove any of them.
             return (
                 # Original steps from the ScanCodebase pipeline
                 cls.copy_inputs_to_codebase_directory,
-                cls.run_extractcode,
+                cls.extract_archives,
                 cls.run_scancode,
                 cls.build_inventory_from_scan,
 
@@ -123,6 +123,9 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
             return ScanCodebase.steps() + (
                 cls.report_licenses_with_resources,
             )
+
+        # Set to True to extract recursively nested archives in archives.
+        extract_recursively = False
 
         # See https://jinja.palletsprojects.com/en/3.0.x/templates/ for documentation
         report_template = """
@@ -248,7 +251,7 @@ the entry point to the pipeline under the ``[options.entry_points]`` section.
         pipeline_name = scancodeio_scan_and_report_pipeline.pipelines.scan_and_report:ScanAndReport
 
 .. tip::
-    Take a look at `Google License Classifier pipeline for Scancode.io
+    Take a look at `Google License Classifier pipeline for ScanCode.io
     <https://github.com/nexB/scancode.io-pipeline-glc_scan>`_
     for a complete example on packaging a custom tool as a pipeline.
 

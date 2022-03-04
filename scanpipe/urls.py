@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.urls import include
 from django.urls import path
 
 from scanpipe import views
@@ -56,6 +57,11 @@ urlpatterns = [
         name="project_tree",
     ),
     path(
+        "project/<uuid:uuid>/archive/",
+        views.ProjectArchiveView.as_view(),
+        name="project_archive",
+    ),
+    path(
         "project/<uuid:uuid>/delete/",
         views.ProjectDeleteView.as_view(),
         name="project_delete",
@@ -81,6 +87,16 @@ urlpatterns = [
         name="project_execute_pipeline",
     ),
     path(
+        "project/<uuid:uuid>/stop_pipeline/<uuid:run_uuid>/",
+        views.stop_pipeline_view,
+        name="project_stop_pipeline",
+    ),
+    path(
+        "project/<uuid:uuid>/delete_pipeline/<uuid:run_uuid>/",
+        views.delete_pipeline_view,
+        name="project_delete_pipeline",
+    ),
+    path(
         "project/add/",
         views.ProjectCreateView.as_view(),
         name="project_add",
@@ -95,9 +111,5 @@ urlpatterns = [
         views.ProjectListView.as_view(),
         name="project_list",
     ),
-    path(
-        "monitor/",
-        views.AppMonitorView.as_view(),
-        name="app_monitor",
-    ),
+    path("monitor/", include("django_rq.urls")),
 ]

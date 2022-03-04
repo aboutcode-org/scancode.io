@@ -33,11 +33,23 @@
               <td style="max-width: 150px;">
                 <a href="?message={{ error.message }}" class="is-black-link">{{ error.message }}</a>
               </td>
-              <td class="break-word" title="{{ error.details }}" style="max-width: 400px;">
-                {{ error.details|truncatechars:300 }}
+              <td class="break-all" style="max-width: 450px;">
+                <div style="max-height: 150px; overflow-y: scroll;">
+                  {% if error.details.codebase_resource_pk and error.details.codebase_resource_path %}
+                    <div>
+                      <strong>Codebase resource</strong>:
+                      <a href="{% url 'resource_detail' project.pk error.details.codebase_resource_pk %}" target="_blank">
+                        {{ error.details.codebase_resource_path }}
+                      </a>
+                    </div>
+                  {% endif %}
+                  {% for key, value in error.details.items %}
+                    <strong>{{ key }}</strong>: {{ value }}<br>
+                  {% endfor %}
+                </div>
               </td>
-              <td style="max-width: 600px;">
-                <pre class="log wrap p-0" style="max-height: 130px;"><code>{{ error.traceback }}</code></pre>
+              <td style="max-width: 550px;">
+                <pre class="log wrap p-0" style="max-height: 150px;"><code>{{ error.traceback }}</code></pre>
               </td>
             </tr>
           {% endfor %}

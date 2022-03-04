@@ -22,10 +22,6 @@
 
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.management.commands import RunStatusCommandMixin
-from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
-from scanpipe.models import ProjectError
-from scanpipe.pipes import count_group_by
 
 
 class Command(ProjectCommand, RunStatusCommandMixin):
@@ -34,38 +30,7 @@ class Command(ProjectCommand, RunStatusCommandMixin):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        message = [
-            f"Project: {self.project.name}",
-            f"Create date: {self.project.created_date.strftime('%b %d %Y %H:%M')}",
-            f"Work directory: {self.project.work_directory}",
-            "\n",
-            "Database:",
-        ]
-
-        for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
-            queryset = model_class.objects.project(self.project)
-            message.append(f" - {model_class.__name__}: {queryset.count()}")
-
-            if model_class == CodebaseResource:
-                status_summary = count_group_by(queryset, "status")
-                for status, count in status_summary.items():
-                    status = status or "(no status)"
-                    message.append(f"   - {status}: {count}")
-
-        display_runs_log = options["verbosity"] > 0
-        runs = self.project.runs.all()
-        if runs:
-            message.append("\nPipelines:")
-            for run in runs:
-                status_code = self.get_run_status_code(run)
-                msg = f" [{status_code}] {run.pipeline_name}"
-                execution_time = run.execution_time
-                if execution_time:
-                    msg += f" (executed in {execution_time} seconds)"
-                message.append(msg)
-                if display_runs_log and run.log:
-                    for line in run.log.split("\n"):
-                        message.append(3 * " " + line)
-
-        for line in message:
-            self.stdout.write(line)
+        # The `status` command is very verbose by default compared to the
+        # `list-project` command.
+        verbosity = options["verbosity"] + 2
+        self.display_status(self.project, verbosity)

@@ -11,14 +11,8 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import os
-import sys
 
-import django
-
-sys.path.insert(0, os.path.abspath(".."))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "scancodeio.settings")
-django.setup()
-
 
 # -- Project information -----------------------------------------------------
 
@@ -47,10 +41,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Autodoc -----------------------------------------------------------------
-
-# Mock Django related modules to avoid complex configuration in the context of
-# autodoc.
-autodoc_mock_imports = ["celery"]
 
 # The default options for autodoc directives.
 # They are applied to all autodoc directives automatically.

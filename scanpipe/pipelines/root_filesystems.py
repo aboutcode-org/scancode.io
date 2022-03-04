@@ -60,7 +60,7 @@ class RootFS(Pipeline):
 
         for input_file in input_files:
             extract_target = target_path / f"{input_file.name}-extract"
-            extract_errors = scancode.extract(input_file, extract_target)
+            extract_errors = scancode.extract_archive(input_file, extract_target)
             errors.extend(extract_errors)
 
         if errors:

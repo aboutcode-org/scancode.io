@@ -26,11 +26,12 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 from commoncode.hash import multi_checksums
 
-from scanpipe.pipelines.scan_codebase import ScanCodebase
+from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import scancode
+from scanpipe.pipes.scancode import extract_archive
 
 
-class ScanPackage(ScanCodebase):
+class ScanPackage(Pipeline):
     """
     A pipeline to scan a single package archive with ScanCode-toolkit.
     The output is a summary of the scan results in JSON format.
@@ -47,7 +48,15 @@ class ScanPackage(ScanCodebase):
             cls.make_summary_from_scan_results,
         )
 
-    scancode_options = ScanCodebase.scancode_options + [
+    scancode_options = [
+        "--copyright",
+        "--email",
+        "--info",
+        "--license",
+        "--license-text",
+        "--package",
+        "--url",
+    ] + [
         "--classify",
         "--consolidate",
         "--is-license-text",
@@ -84,10 +93,36 @@ class ScanPackage(ScanCodebase):
         """
         Extracts package archive with extractcode.
         """
-        extract_errors = scancode.extract(self.archive_path, self.project.codebase_path)
+        extract_errors = extract_archive(self.archive_path, self.project.codebase_path)
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
+
+    def run_scancode(self):
+        """
+        Scans extracted codebase/ content.
+        """
+        self.scan_output = self.project.get_output_file_path("scancode", "json")
+
+        with self.save_errors(scancode.ScancodeError):
+            scancode.run_scancode(
+                location=str(self.project.codebase_path),
+                output_file=str(self.scan_output),
+                options=self.scancode_options,
+                raise_on_error=True,
+            )
+
+        if not self.scan_output.exists():
+            raise FileNotFoundError("ScanCode output not available.")
+
+    def build_inventory_from_scan(self):
+        """
+        Processes the JSON scan results to determine resources and packages.
+        """
+        project = self.project
+        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
+        scancode.create_codebase_resources(project, scanned_codebase)
+        scancode.create_discovered_packages(project, scanned_codebase)
 
     def make_summary_from_scan_results(self):
         """

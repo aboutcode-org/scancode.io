@@ -6,6 +6,10 @@
   <span class="tag is-info">Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i></span>
 {% elif run.status == run.Status.QUEUED %}
   <span class="tag is-info">Queued <i class="fas fa-clock ml-1"></i></span>
+{% elif run.status == run.Status.STALE %}
+  <span class="tag is-dark">Stale</span>
+{% elif run.status == run.Status.STOPPED %}
+  <span class="tag is-danger">Stopped</span>
 {% else %}
   <span class="tag is-light">Not started</span>
 {% endif %}

@@ -22,12 +22,15 @@
 
 FROM python:3.9
 
-# Force unbuffered stdout and stderr (e.g. they are flushed to terminal immediately)
-ENV PYTHONUNBUFFERED 1
+WORKDIR /app
 
-# Requirements as per https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+
+# OS requirements as per
+# https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
 RUN apt-get update \
- && apt-get install -y \
+ && apt-get install -y --no-install-recommends \
        bzip2 \
        xz-utils \
        zlib1g \
@@ -41,12 +44,15 @@ RUN apt-get update \
        libgpgme11 \
        libdevmapper1.02.1 \
        libguestfs-tools \
+       linux-image-amd64 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir /opt/scancodeio/
-RUN mkdir -p /var/scancodeio/static/
-RUN mkdir -p /var/scancodeio/workspace/
-COPY . /opt/scancodeio/
-WORKDIR /opt/scancodeio/
+RUN mkdir -p /var/scancodeio/static/ \
+ && mkdir -p /var/scancodeio/workspace/
+
+# Keep the dependencies installation before the COPY of the app/ for proper caching
+COPY setup.cfg setup.py /app/
 RUN pip install .
+
+COPY . /app

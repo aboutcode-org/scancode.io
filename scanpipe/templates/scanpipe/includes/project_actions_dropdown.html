@@ -1,0 +1,25 @@
+<div class="dropdown is-hoverable">
+  <div class="dropdown-trigger">
+    <a class="px-1 is-black-link" aria-haspopup="true" aria-controls="dropdown-menu-action">
+      <i class="fas fa-sliders-h"></i>
+    </a>
+  </div>
+  <div class="dropdown-menu" id="dropdown-menu-action" role="menu">
+    <div class="dropdown-content">
+      <span class="dropdown-item">
+        Actions:
+      </span>
+      {% if not project.is_archived %}
+        <a href="#" class="modal-button dropdown-item" data-target="modal-archive" aria-haspopup="true">
+          <i class="fas fa-dice-d6 mr-2"></i>Archive
+        </a>
+      {% endif %}
+      <a href="#" class="modal-button dropdown-item" data-target="modal-reset" aria-haspopup="true">
+        <i class="fas fa-eraser mr-2"></i>Reset
+      </a>
+      <a href="#" class="modal-button dropdown-item" data-target="modal-delete" aria-haspopup="true">
+        <i class="far fa-trash-alt mr-2"></i>Delete
+      </a>
+    </div>
+  </div>
+</div>

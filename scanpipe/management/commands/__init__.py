@@ -27,7 +27,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import ProjectError
+from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -56,11 +60,64 @@ class ProjectCommand(BaseCommand):
 class RunStatusCommandMixin:
     def get_run_status_code(self, run):
         status = run.status
-        if status == run.Status.SUCCESS:
+        RunStatus = run.Status
+
+        if status == RunStatus.SUCCESS:
             return self.style.SUCCESS(status.upper())
-        elif status == run.Status.FAILURE:
+
+        elif status in [RunStatus.FAILURE, RunStatus.STOPPED, RunStatus.STALE]:
             return self.style.ERROR(status.upper())
+
         return status.upper()
+
+    def display_status(self, project, verbosity):
+        message = [
+            self.style.HTTP_INFO(f"Project: {project.name}"),
+        ]
+
+        if verbosity >= 2:
+            message.extend(
+                [
+                    f"Create date: {project.created_date.strftime('%b %d %Y %H:%M')}",
+                    f"Work directory: {project.work_directory}",
+                ]
+            )
+
+        if verbosity >= 3:
+            message.append("\nDatabase:")
+
+            for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
+                queryset = model_class.objects.project(project)
+                message.append(f" - {model_class.__name__}: {queryset.count()}")
+
+                if model_class == CodebaseResource:
+                    status_summary = count_group_by(queryset, "status")
+                    for status, count in status_summary.items():
+                        status = status or "(no status)"
+                        message.append(f"   - {status}: {count}")
+
+            inputs, missing_inputs = project.inputs_with_source
+            if inputs:
+                message.append("\nInputs:")
+                for input in inputs:
+                    message.append(f" - {input.get('name')} ({input.get('source')})")
+
+            runs = project.runs.all()
+            if runs:
+                message.append("\nPipelines:")
+                for run in runs:
+                    status_code = self.get_run_status_code(run)
+                    msg = f" [{status_code}] {run.pipeline_name}"
+                    execution_time = run.execution_time
+                    if execution_time:
+                        msg += f" (executed in {execution_time} seconds)"
+                    message.append(msg)
+                    if run.log:
+                        for line in run.log.rstrip("\n").split("\n"):
+                            message.append(3 * " " + line)
+
+        for line in message:
+            self.stdout.write(line)
 
 
 class AddInputCommandMixin:

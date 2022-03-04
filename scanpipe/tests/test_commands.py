@@ -31,24 +31,34 @@ from django.apps import apps
 from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
+from django.test import override_settings
 from django.utils import timezone
 
 from scanpipe.management.commands.graph import is_graphviz_installed
 from scanpipe.management.commands.graph import pipeline_graph_dot
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
-def task_success(run):
+def task_success(run_pk):
+    run = Run.objects.get(pk=run_pk)
     run.task_exitcode = 0
     run.save()
 
 
-def task_failure(run):
+def task_failure(run_pk):
+    run = Run.objects.get(pk=run_pk)
     run.task_output = "Error log"
     run.task_exitcode = 1
     run.save()
+
+
+def raise_interrupt(run_pk):
+    raise KeyboardInterrupt
 
 
 class ScanPipeManagementCommandTest(TestCase):
@@ -153,12 +163,22 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
 
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("create-project", "my_project", *options, stdout=out)
 
         self.assertIn("Project my_project created", out.getvalue())
-        self.assertIn(f"Pipeline {pipeline} run in progress...", out.getvalue())
+        self.assertIn(f"Start the {pipeline} pipeline execution...", out.getvalue())
         self.assertIn("successfully executed on project my_project", out.getvalue())
+
+        options.append("--async")
+        out = StringIO()
+        expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
+        with override_settings(SCANCODEIO_ASYNC=False):
+            with self.assertRaisesMessage(CommandError, expected):
+                call_command("create-project", "other_project", *options, stdout=out)
+        self.assertIn(
+            "Project other_project created with work directory", out.getvalue()
+        )
 
     def test_scanpipe_management_command_add_input_file(self):
         out = StringIO()
@@ -187,17 +207,29 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)
 
-    def test_scanpipe_management_command_add_input_url(self):
-        out = StringIO()
+    @mock.patch("requests.get")
+    def test_scanpipe_management_command_add_input_url(self, mock_get):
+        mock_get.side_effect = None
+        mock_get.return_value = mock.Mock(
+            content=b"\x00",
+            headers={},
+            status_code=200,
+            url="https://example.com/archive.zip",
+        )
 
         project = Project.objects.create(name="my_project")
-        parent_path = Path(__file__).parent
         options = [
-            "--input-file",
-            str(parent_path / "test_commands.py"),
-            "--input-file",
-            str(parent_path / "test_models.py"),
+            "--input-url",
+            "https://example.com/archive.zip",
+            "--project",
+            project.name,
         ]
+        out = StringIO()
+        call_command("add-input", *options, stdout=out)
+        expected = "File(s) downloaded to the project inputs directory"
+        self.assertIn(expected, out.getvalue())
+        self.assertIn("- archive.zip", out.getvalue())
+        self.assertEqual(["archive.zip"], project.input_root)
 
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
@@ -257,24 +289,42 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("execute", *options, stdout=out)
 
-        project.add_pipeline(self.pipeline_name)
-
         out = StringIO()
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_success):
+        run1 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("execute", *options, stdout=out)
-        expected = "Pipeline docker run in progress..."
+        expected = "Start the docker pipeline execution..."
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
         self.assertIn(expected, out.getvalue())
+        run1.refresh_from_db()
+        self.assertTrue(run1.task_succeeded)
+        self.assertEqual("", run1.task_output)
+        run1.delete()
 
         err = StringIO()
-        project.add_pipeline(self.pipeline_name)
-        with mock.patch("scanpipe.models.Run.execute_task_async", task_failure):
+        run2 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
             with self.assertRaisesMessage(SystemExit, "1"):
                 call_command("execute", *options, stdout=out, stderr=err)
         expected = "Error during docker execution:"
         self.assertIn(expected, err.getvalue())
         self.assertIn("Error log", err.getvalue())
+        run2.refresh_from_db()
+        self.assertTrue(run2.task_failed)
+        self.assertEqual("Error log", run2.task_output)
+        run2.delete()
+
+        err = StringIO()
+        run3 = project.add_pipeline(self.pipeline_name)
+        with mock.patch("scanpipe.tasks.execute_pipeline_task", raise_interrupt):
+            with self.assertRaisesMessage(SystemExit, "1"):
+                call_command("execute", *options, stdout=out, stderr=err)
+        self.assertIn("Pipeline execution stopped.", err.getvalue())
+        run3.refresh_from_db()
+        run3 = Run.objects.get(pk=run3.pk)
+        self.assertTrue(run3.task_stopped)
+        self.assertEqual("", run3.task_output)
 
     def test_scanpipe_management_command_status(self):
         project = Project.objects.create(name="my_project")
@@ -321,6 +371,35 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = f"[SUCCESS] docker (executed in {run.execution_time} seconds)"
         self.assertIn(expected, output)
 
+    def test_scanpipe_management_command_list_project(self):
+        project1 = Project.objects.create(name="project1")
+        project2 = Project.objects.create(name="project2")
+        project3 = Project.objects.create(name="archived", is_archived=True)
+
+        options = []
+        out = StringIO()
+        call_command("list-project", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn(project1.name, output)
+        self.assertIn(project2.name, output)
+        self.assertNotIn(project3.name, output)
+
+        options = ["--search", project2.name]
+        out = StringIO()
+        call_command("list-project", *options, stdout=out)
+        output = out.getvalue()
+        self.assertNotIn(project1.name, output)
+        self.assertIn(project2.name, output)
+        self.assertNotIn(project3.name, output)
+
+        options = ["--include-archived"]
+        out = StringIO()
+        call_command("list-project", *options, stdout=out)
+        output = out.getvalue()
+        self.assertIn(project1.name, output)
+        self.assertIn(project2.name, output)
+        self.assertIn(project3.name, output)
+
     def test_scanpipe_management_command_output(self):
         project = Project.objects.create(name="my_project")
 
@@ -364,3 +443,66 @@ class ScanPipeManagementCommandTest(TestCase):
 
         self.assertFalse(Project.objects.filter(name="my_project").exists())
         self.assertFalse(work_path.exists())
+
+    def test_scanpipe_management_command_archive_project(self):
+        project = Project.objects.create(name="my_project")
+        (project.input_path / "input_file").touch()
+        (project.codebase_path / "codebase_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(project.codebase_path)))
+
+        out = StringIO()
+        options = [
+            "--project",
+            project.name,
+            "--remove-codebase",
+            "--no-color",
+            "--no-input",
+        ]
+        call_command("archive-project", *options, stdout=out)
+        out_value = out.getvalue().strip()
+
+        project.refresh_from_db()
+        self.assertTrue(project.is_archived)
+
+        expected = "The my_project project has been archived."
+        self.assertEqual(expected, out_value)
+
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
+
+    def test_scanpipe_management_command_reset_project(self):
+        project = Project.objects.create(name="my_project")
+        project.add_pipeline("docker")
+        CodebaseResource.objects.create(project=project, path="filename.ext")
+        DiscoveredPackage.objects.create(project=project)
+
+        self.assertEqual(1, project.runs.count())
+        self.assertEqual(1, project.codebaseresources.count())
+        self.assertEqual(1, project.discoveredpackages.count())
+
+        (project.input_path / "input_file").touch()
+        (project.codebase_path / "codebase_file").touch()
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(1, len(Project.get_root_content(project.codebase_path)))
+
+        out = StringIO()
+        options = [
+            "--project",
+            project.name,
+            "--no-color",
+            "--no-input",
+        ]
+        call_command("reset-project", *options, stdout=out)
+        out_value = out.getvalue().strip()
+
+        expected = (
+            "All data, except inputs, for the my_project project have been removed."
+        )
+        self.assertEqual(expected, out_value)
+
+        self.assertEqual(0, project.runs.count())
+        self.assertEqual(0, project.codebaseresources.count())
+        self.assertEqual(0, project.discoveredpackages.count())
+        self.assertEqual(1, len(Project.get_root_content(project.input_path)))
+        self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))

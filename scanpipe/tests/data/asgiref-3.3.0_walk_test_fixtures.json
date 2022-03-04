@@ -142,35 +142,6 @@
 },
 {
   "model": "scanpipe.codebaseresource",
-  "pk": 46,
-  "fields": {
-    "path": "codebase/asgiref-3.3.0.whl-extract/asgiref/__init__.py",
-    "size": 22,
-    "sha1": "91bc786d907bf3ca8b8e6277063107975780f9ca",
-    "md5": "4910b756f4e611055140e80f757d9325",
-    "sha256": "30f49b9094bff904a42caeec32515715fe625a56dc48bd7c0e3d9988c0ad4bd7",
-    "sha512": "",
-    "project": "44915ce7-7664-42ff-8334-04399f844c04",
-    "copyrights": [],
-    "holders": [],
-    "authors": [],
-    "licenses": [],
-    "license_expressions": [],
-    "emails": [],
-    "urls": [],
-    "rootfs_path": "",
-    "status": "",
-    "type": "file",
-    "extra_data": {},
-    "name": "__init__.py",
-    "extension": ".py",
-    "programming_language": "Python",
-    "mime_type": "text/plain",
-    "file_type": "ASCII text"
-  }
-},
-{
-  "model": "scanpipe.codebaseresource",
   "pk": 47,
   "fields": {
     "path": "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",

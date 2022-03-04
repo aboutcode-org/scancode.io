@@ -23,8 +23,8 @@
 from collections import Counter
 
 from django.apps import apps
-from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import FileResponse
 from django.http import Http404
 from django.http import JsonResponse
@@ -33,23 +33,28 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
+from django.views.generic.detail import SingleObjectMixin
+from django.views.generic.edit import FormView
 
 import saneyaml
 from django_filters.views import FilterView
 
-from scancodeio.celery import app as celery_app
+from scancodeio.auth import ConditionalLoginRequired
+from scancodeio.auth import conditional_login_required
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
+from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
+from scanpipe.models import RunInProgressError
 from scanpipe.pipes import codebase
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
@@ -86,15 +91,27 @@ class PaginatedFilterView(FilterView):
         return context
 
 
-class ProjectListView(PrefetchRelatedViewMixin, PaginatedFilterView):
+class AccountProfileView(LoginRequiredMixin, generic.TemplateView):
+    template_name = "account/profile.html"
+
+
+class ProjectListView(
+    ConditionalLoginRequired, PrefetchRelatedViewMixin, PaginatedFilterView
+):
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
     paginate_by = 10
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_count"] = Project.objects.filter(is_archived=False).count()
+        context["archived_count"] = Project.objects.filter(is_archived=True).count()
+        return context
 
-class ProjectCreateView(generic.CreateView):
+
+class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
@@ -130,7 +147,7 @@ class ProjectCreateView(generic.CreateView):
         return reverse_lazy("project_detail", kwargs={"uuid": self.object.pk})
 
 
-class ProjectDetailView(ProjectViewMixin, generic.DetailView):
+class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_detail.html"
 
     @staticmethod
@@ -199,11 +216,16 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
 
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
+            missing_files = "\n- ".join(missing_inputs.keys())
             message = (
-                "The following input files are not available on disk anymore:\n- "
-                + "\n- ".join(missing_inputs.keys())
+                f"The following input files are not available on disk anymore:\n"
+                f"- {missing_files}"
             )
             messages.error(self.request, message)
+
+        if project.is_archived:
+            message = "WARNING: This project is archived and read-only."
+            messages.warning(self.request, message)
 
         context.update(
             {
@@ -220,6 +242,7 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
+                "archive_form": ArchiveProjectForm(),
             }
         )
 
@@ -251,30 +274,67 @@ class ProjectDetailView(ProjectViewMixin, generic.DetailView):
         return redirect(project)
 
 
-class ProjectDeleteView(ProjectViewMixin, generic.DeleteView):
+class ProjectArchiveView(
+    ConditionalLoginRequired, ProjectViewMixin, SingleObjectMixin, FormView
+):
+    http_method_names = ["post"]
+    form_class = ArchiveProjectForm
+    success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" has been archived.'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        project = self.get_object()
+        try:
+            project.archive(
+                remove_input=form.cleaned_data["remove_input"],
+                remove_codebase=form.cleaned_data["remove_codebase"],
+                remove_output=form.cleaned_data["remove_output"],
+            )
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+            return redirect(project)
+
+        messages.success(self.request, self.success_message.format(project))
+        return response
+
+
+class ProjectDeleteView(ConditionalLoginRequired, ProjectViewMixin, generic.DeleteView):
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" and all its related data have been removed.'
 
     def delete(self, request, *args, **kwargs):
-        response_redirect = super().delete(request, *args, **kwargs)
-        messages.success(self.request, self.success_message.format(self.object.name))
+        project = self.get_object()
+        try:
+            response_redirect = super().delete(request, *args, **kwargs)
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+            return redirect(project)
+
+        messages.success(self.request, self.success_message.format(project.name))
         return response_redirect
 
 
-class ProjectResetView(ProjectViewMixin, generic.DeleteView):
+class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.DeleteView):
     success_message = 'All data, except inputs, for the "{}" project have been removed.'
 
     def delete(self, request, *args, **kwargs):
         """
         Call the reset() method on the project.
         """
-        self.object = self.get_object()
-        messages.success(self.request, self.success_message.format(self.object.name))
-        self.object.reset(keep_input=True)
-        return redirect(self.object)
+        project = self.get_object()
+        try:
+            project.reset(keep_input=True)
+        except RunInProgressError as error:
+            messages.error(self.request, error)
+        else:
+            messages.success(self.request, self.success_message.format(project.name))
+
+        return redirect(project)
 
 
-class ProjectTreeView(ProjectViewMixin, generic.DetailView):
+class ProjectTreeView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_tree.html"
 
     def get_context_data(self, **kwargs):
@@ -287,17 +347,42 @@ class ProjectTreeView(ProjectViewMixin, generic.DetailView):
         return context
 
 
+@conditional_login_required
 def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
-    if run.status == run.Status.RUNNING:
-        raise Http404("Pipeline already started.")
-    elif run.status == run.Status.QUEUED:
-        raise Http404("Pipeline already queued.")
+    if run.status != run.Status.NOT_STARTED:
+        raise Http404("Pipeline already queued, started or completed.")
 
     run.execute_task_async()
-    messages.success(request, f'Pipeline "{run.pipeline_name}" run started.')
+    messages.success(request, f"Pipeline {run.pipeline_name} run started.")
+    return redirect(project)
+
+
+@conditional_login_required
+def stop_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.status != run.Status.RUNNING:
+        raise Http404("Pipeline is not running.")
+
+    run.stop_task()
+    messages.success(request, f"Pipeline {run.pipeline_name} stopped.")
+    return redirect(project)
+
+
+@conditional_login_required
+def delete_pipeline_view(request, uuid, run_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    run = get_object_or_404(Run, uuid=run_uuid, project=project)
+
+    if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
+        raise Http404("Only non started or queued pipelines can be deleted.")
+
+    run.delete_task()
+    messages.success(request, f"Pipeline {run.pipeline_name} deleted.")
     return redirect(project)
 
 
@@ -320,7 +405,9 @@ def project_results_json_response(project, as_attachment=False):
     return response
 
 
-class ProjectResultsView(ProjectViewMixin, generic.DetailView):
+class ProjectResultsView(
+    ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
+):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         project = self.object
@@ -354,6 +441,7 @@ class ProjectRelatedViewMixin:
 
 
 class CodebaseResourceListView(
+    ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
     PaginatedFilterView,
@@ -376,6 +464,7 @@ class CodebaseResourceListView(
 
 
 class DiscoveredPackageListView(
+    ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
     PaginatedFilterView,
@@ -387,14 +476,18 @@ class DiscoveredPackageListView(
     prefetch_related = ["codebase_resources"]
 
 
-class ProjectErrorListView(ProjectRelatedViewMixin, FilterView):
+class ProjectErrorListView(
+    ConditionalLoginRequired, ProjectRelatedViewMixin, FilterView
+):
     model = ProjectError
     filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
 
 
-class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
+class CodebaseResourceDetailsView(
+    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+):
     model = CodebaseResource
     template_name = "scanpipe/resource_detail.html"
 
@@ -411,15 +504,26 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         return entry.get(value_key)
 
     def get_annotations(self, field_name, value_key="value"):
-        return [
-            {
-                "start_line": entry.get("start_line"),
-                "end_line": entry.get("end_line"),
-                "text": self.get_annotation_text(entry, field_name, value_key),
-                "type": entry.get("policy", {}).get("compliance_alert") or "info",
-            }
-            for entry in getattr(self.object, field_name)
-        ]
+        annotations = []
+
+        for entry in getattr(self.object, field_name):
+            annotation_type = "info"
+
+            # Customize the annotation icon based on the policy compliance_alert
+            policy = entry.get("policy")
+            if policy:
+                annotation_type = policy.get("compliance_alert")
+
+            annotations.append(
+                {
+                    "start_line": entry.get("start_line"),
+                    "end_line": entry.get("end_line"),
+                    "text": self.get_annotation_text(entry, field_name, value_key),
+                    "type": annotation_type,
+                }
+            )
+
+        return annotations
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -441,6 +545,7 @@ class CodebaseResourceDetailsView(ProjectRelatedViewMixin, generic.DetailView):
         return context
 
 
+@conditional_login_required
 def run_detail_view(request, uuid):
     template = "scanpipe/includes/run_modal_content.html"
     run = get_object_or_404(Run, uuid=uuid)
@@ -455,6 +560,7 @@ def run_detail_view(request, uuid):
 
 
 class CodebaseResourceRawView(
+    ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     generic.detail.SingleObjectMixin,
     generic.base.View,
@@ -472,19 +578,3 @@ class CodebaseResourceRawView(
             )
 
         raise Http404
-
-
-class AppMonitorView(generic.TemplateView):
-    template_name = "scanpipe/app_monitoring.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        always_eager = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", None)
-        if always_eager:
-            raise Http404(
-                "Celery monitoring not supported with CELERY_TASK_ALWAYS_EAGER=True"
-            )
-
-        context["inspector"] = celery_app.control.inspect()
-        return context

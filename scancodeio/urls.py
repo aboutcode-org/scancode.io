@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.urls import include
 from django.urls import path
 from django.views.generic import RedirectView
@@ -28,19 +29,28 @@ from django.views.generic import RedirectView
 from rest_framework.routers import DefaultRouter
 
 from scancodeio import licenses
-from scanner.api.views import ScanViewSet
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
+from scanpipe.views import AccountProfileView
 
 api_router = DefaultRouter()
-api_router.register(r"scans", ScanViewSet)
 api_router.register(r"projects", ProjectViewSet)
 api_router.register(r"runs", RunViewSet)
 
-urlpatterns = [
+auth_urlpatterns = [
+    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
+    path(
+        "accounts/logout/",
+        auth_views.LogoutView.as_view(next_page="login"),
+        name="logout",
+    ),
+    path("accounts/profile/", AccountProfileView.as_view(), name="account_profile"),
+]
+
+urlpatterns = auth_urlpatterns + [
     path("admin/", admin.site.urls),
     path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
+    path("license/", include((licenses.urls, "license_app"))),
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]

@@ -52,6 +52,15 @@ class Command(AddInputCommandMixin, BaseCommand):
             action="store_true",
             help="Execute the pipelines right after the project creation.",
         )
+        parser.add_argument(
+            "--async",
+            action="store_true",
+            help=(
+                "Add the pipeline run to the tasks queue for execution by a worker "
+                "instead of running in the current thread. "
+                "Applies only when --execute is provided."
+            ),
+        )
 
     def handle(self, *args, **options):
         name = options["name"]
@@ -90,5 +99,9 @@ class Command(AddInputCommandMixin, BaseCommand):
 
         if execute:
             call_command(
-                "execute", project=project, stderr=self.stderr, stdout=self.stdout
+                "execute",
+                project=project,
+                stderr=self.stderr,
+                stdout=self.stdout,
+                **{"async": options["async"]},
             )
