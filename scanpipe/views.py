@@ -239,7 +239,8 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 'score',
                 'The license clarity score is a value from 0-100 calculated by combining the weighted '
                 'values determined for each of the five scoring elements: Declared license, '
-                'Precise license detection, License',
+                'Precise license detection, License text, Declared copyrights, Ambigous compound licensing, '
+                'Conflicting license categories',
                 ),
                 ('Declared License',
                 'declared_license',
@@ -255,7 +256,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 'the SPDX license list, the OSI license list, or a URL pointing to a specific license '
                 'text in a project or organization website. Scoring Weight = 40.',
                 ),
-                ('Has License Text',
+                ('License Text',
                 'has_license_text',
                 'When true (checked), indicates that license texts are provided to support '
                 'the declared license expression in files such as a package manifest, NOTICE, '
