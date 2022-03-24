@@ -89,6 +89,38 @@
       {% endif %}
     </section>
 
+    {% if summary_data %}
+      {% if forloop.first %}<dl class="row mb-0">{% endif %}
+        <dt class="col-sm-2 text-right pt-2 pr-0"></dt>
+        <dd class="col-sm-10">
+          <table class="table table-bordered table-md">
+            <thead>
+              <tr>
+                {% for entry in summary_data %}
+                  <th>
+                    {% if entry.help_text %}
+                      <span class="help_text" data-toggle="tooltip" data-placement="top" title="{{ entry.help_text }}">
+                    {% endif %}
+                    {{ entry.label }}
+                    {% if header.help_text %}
+                      </span>
+                    {% endif %}
+                  </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {% for entry in summary_data %}
+                  <td{% if entry.td_class %} class="{{ entry.td_class }}"{% endif %}>{{ entry.value }}</td>
+                {% endfor %}
+              </tr>
+            </tbody>
+          </table>
+        </dd>
+        {% if forloop.last %}</dl>{% endif %}
+    {% endif %}
+
     {% if project.package_count %}
       <hr class="mx-5">
       <h3 class="title is-4 has-text-centered">

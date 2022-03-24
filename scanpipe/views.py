@@ -20,7 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 from collections import Counter
+from django.utils.html import escape
 
 from django.apps import apps
 from django.contrib import messages
@@ -227,6 +229,90 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             message = "WARNING: This project is archived and read-only."
             messages.warning(self.request, message)
 
+        summary_data = []
+        summary_file = project.get_latest_output(filename="summary")
+        if summary_file:
+            summary = json.loads(summary_file.read_text())
+            license_clarity_score = summary.get('license_clarity_score')
+            license_clarity_fields = [
+                ('Score',
+                'score',
+                'The license clarity score is a value from 0-100 calculated by combining the weighted '
+                'values determined for each of the five scoring elements: Declared license, '
+                'Precise license detection, License',
+                ),
+                ('Declared License',
+                'declared_license',
+                'When true (checked), indicates that the software package licensing is documented at '
+                'top-level or well-known locations in the software project, typically in a package '
+                'manifest, NOTICE, LICENSE, COPYING or README file. Scoring Weight = 40.',
+                ),
+                ('Precise License Detection',
+                'precise_license_detection',
+                'When true (checked), indicates how well the license statement(s) of the software '
+                'identify known licenses that can be designated by precise keys (identifiers) as '
+                'provided in a publicly available license list, such as the ScanCode LicenseDB, '
+                'the SPDX license list, the OSI license list, or a URL pointing to a specific license '
+                'text in a project or organization website. Scoring Weight = 40.',
+                ),
+                ('Has License Text',
+                'has_license_text',
+                'When true (checked), indicates that license texts are provided to support '
+                'the declared license expression in files such as a package manifest, NOTICE, '
+                'LICENSE, COPYING or README. Scoring Weight = 10.',
+                ),
+                ('Declared Copyrights',
+                'declared_copyrights',
+                'When true (checked), indicates that the software package copyright is documented at '
+                'top-level or well-known locations in the software project, typically in a package manifest, '
+                'NOTICE, LICENSE, COPYING or README file. Scoring Weight = 10.',
+                ),
+                ('Ambigous Compound Licensing',
+                'ambigous_compound_licensing',
+                'When true (checked), indicates that the software has a license declaration that makes it '
+                'difficult to construct a reliable license expression, such as in the case of multiple licenses '
+                'where the conjunctive versus disjunctive relationship is not well defined. Scoring Weight = -10.',
+                ),
+                ('Conflicting License Categories',
+                'conflicting_license_categories',
+                'When true (checked), indicates the declared license expression of the software is in the permissive '
+                'category, but that other potentially conflicting categories, such as copyleft and proprietary, have '
+                'been detected in lower level code. Scoring Weight = -20.',
+                ),
+            ]
+
+            def as_icon(field_value):
+                """
+                Returns the proper icon based on the field_value (True/False/None).
+                """
+                from django.utils.html import format_html
+
+                icon = {
+                    True: 'fas fa-check-circle color-true',
+                    False: 'far fa-circle color-false',
+                    None: 'far fa-question-circle color-none',
+                }.get(field_value)
+
+                if icon:
+                    return format_html('<i class="{} fa-md"></i>', icon)
+
+            for label, field, help_text in license_clarity_fields:
+                value = license_clarity_score.get(field)
+                if value is not None:
+                    if field == 'discovered':
+                        value = f'{int(value * 100)}%'
+                    elif value in [True, False]:
+                        value = as_icon(value)
+                    else:
+                        value = escape(value)
+
+                summary_data.append({
+                    'label': label,
+                    'value': value,
+                    'help_text': help_text,
+                    'td_class': 'text-center',
+                })
+
         context.update(
             {
                 "inputs_with_source": inputs,
@@ -243,6 +329,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "archive_form": ArchiveProjectForm(),
+                "summary_data": summary_data,
             }
         )
 
