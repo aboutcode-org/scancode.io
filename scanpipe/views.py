@@ -229,6 +229,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             message = "WARNING: This project is archived and read-only."
             messages.warning(self.request, message)
 
+        license_clarity = []
         summary_data = []
         summary_file = project.get_latest_output(filename="summary")
         if summary_file:
@@ -295,24 +296,61 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 }.get(field_value)
 
                 if icon:
-                    return format_html('<i class="{} fa-md"></i>', icon)
+                    return format_html('<i class="{}"></i>', icon)
 
             for label, field, help_text in license_clarity_fields:
                 value = license_clarity_score.get(field)
                 if value is not None:
-                    if field == 'discovered':
-                        value = f'{int(value * 100)}%'
-                    elif value in [True, False]:
+                    if value in [True, False]:
                         value = as_icon(value)
                     else:
                         value = escape(value)
 
-                summary_data.append({
+                license_clarity.append({
                     'label': label,
                     'value': value,
                     'help_text': help_text,
                     'td_class': 'text-center',
                 })
+
+            summary_fields = [
+                ('Primary License Expression', 'primary_license_expression'),
+                ('Declared License Expressions', 'declared_license_expressions'),
+                ('License Expressions', 'license_expressions'),
+                ('Copyright Holders', 'holders')
+            ]
+            for field_title, field_name in summary_fields:
+                value = summary.get(field_name)
+                if not value:
+                    continue
+                if field_name == 'primary_license_expression':
+                    summary_data.append(
+                        {
+                            "label": field_title,
+                            "values": [value],
+                        }
+                    )
+                elif field_name == 'declared_license_expressions':
+                    summary_data.append(
+                        {
+                            "label": field_title,
+                            "values": value,
+                        }
+                    )
+                else:
+                    values = [
+                        {
+                            "value": entry.get("value"),
+                            "count": entry.get("count"),
+                        }
+                        for entry in value
+                    ]
+                    summary_data.append(
+                        {
+                            "label": field_title,
+                            "values": values,
+                        }
+                    )
 
         context.update(
             {
@@ -330,6 +368,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "archive_form": ArchiveProjectForm(),
+                "license_clarity": license_clarity,
                 "summary_data": summary_data,
             }
         )

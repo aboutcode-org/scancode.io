@@ -89,7 +89,7 @@
       {% endif %}
     </section>
 
-    {% if summary_data %}
+    {% if license_clarity %}
       <article id="license-clarity-fields" class="panel is-info mx-5">
         <p class="panel-heading py-2 is-size-6">
           License Clarity
@@ -102,7 +102,7 @@
                 <table class="table table-bordered table-md">
                   <thead>
                     <tr>
-                      {% for entry in summary_data %}
+                      {% for entry in license_clarity %}
                         <th>
                           {% if entry.help_text %}
                             <span class="help_text" data-toggle="tooltip" data-placement="top" title="{{ entry.help_text }}">
@@ -117,7 +117,7 @@
                   </thead>
                   <tbody>
                     <tr>
-                      {% for entry in summary_data %}
+                      {% for entry in license_clarity %}
                         <td{% if entry.td_class %} class="{{ entry.td_class }}"{% endif %}>{{ entry.value }}</td>
                       {% endfor %}
                     </tr>
@@ -128,6 +128,28 @@
           </figure>
         </div>
       </article>
+    {% endif %}
+
+    {% if summary_data %}
+    <article id="summary-info" class="panel is-info mx-5">
+      <p class="panel-heading py-2 is-size-6">
+        Summary
+      </p>
+      <div class="panel-block p-0">
+        <figure class="highlight border-bottom-radius">
+          {% for s in summary_data %}
+            <dt class="col-sm-2 text-right pt-2 pr-0">{{ s.label }}</dt>
+            {% for value in s.values %}
+              {% if value.value %}
+                <dd class="col-sm-10"><pre class="pre-bg-light mb-1">{{ value.value }}</pre></dd>
+              {% else %}
+                <dd class="col-sm-10"><pre class="pre-bg-light mb-1">{{ value }}</pre></dd>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </figure>
+      </div>
+    </article>
     {% endif %}
 
     {% if project.package_count %}
