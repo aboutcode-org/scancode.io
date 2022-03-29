@@ -118,7 +118,7 @@
                   <tbody>
                     <tr>
                       {% for entry in license_clarity %}
-                        <td{% if entry.td_class %} class="{{ entry.td_class }}"{% endif %}>{{ entry.value }}</td>
+                        <td {% if entry.td_class %} class="{{ entry.td_class }}"{% endif %}>{{ entry.value }}</td>
                       {% endfor %}
                     </tr>
                   </tbody>
@@ -137,16 +137,16 @@
       </p>
       <div class="panel-block p-0">
         <figure class="highlight border-bottom-radius">
-          {% for s in summary_data %}
-            <dt class="col-sm-2 text-right pt-2 pr-0">{{ s.label }}</dt>
-            {% for value in s.values %}
-              {% if value.value %}
-                <dd class="col-sm-10"><pre class="pre-bg-light mb-1">{{ value.value }}</pre></dd>
-              {% else %}
-                <dd class="col-sm-10"><pre class="pre-bg-light mb-1">{{ value }}</pre></dd>
-              {% endif %}
+          <table class="table table-bordered table-md">
+            {% for s in summary_data %}
+              <tr>
+                <td>{{ s.label }}</td>
+                {% for value in s.values %}
+                  <td class="text-center">{{ value }}</td>
+                {% endfor %}
+              </tr>
             {% endfor %}
-          {% endfor %}
+          </table>
         </figure>
       </div>
     </article>

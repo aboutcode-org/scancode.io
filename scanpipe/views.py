@@ -319,35 +319,34 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 ('License Expressions', 'license_expressions'),
                 ('Copyright Holders', 'holders')
             ]
-            for field_title, field_name in summary_fields:
+            for field_label, field_name in summary_fields:
                 value = summary.get(field_name)
                 if not value:
                     continue
                 if field_name == 'primary_license_expression':
                     summary_data.append(
                         {
-                            "label": field_title,
+                            "label": field_label,
                             "values": [value],
                         }
                     )
                 elif field_name == 'declared_license_expressions':
                     summary_data.append(
                         {
-                            "label": field_title,
+                            "label": field_label,
                             "values": value,
                         }
                     )
                 else:
-                    values = [
-                        {
-                            "value": entry.get("value"),
-                            "count": entry.get("count"),
-                        }
-                        for entry in value
-                    ]
+                    values = []
+                    for entry in value:
+                        v = entry.get("value")
+                        if v == None:
+                            v = "null"
+                        values.append(v)
                     summary_data.append(
                         {
-                            "label": field_title,
+                            "label": field_label,
                             "values": values,
                         }
                     )
