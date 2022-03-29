@@ -138,11 +138,11 @@
       <div class="panel-block p-0">
         <figure class="highlight border-bottom-radius">
           <table class="table table-bordered table-md">
-            {% for s in summary_data %}
+            {% for field_label, values in summary_data.items %}
               <tr>
-                <td>{{ s.label }}</td>
-                {% for value in s.values %}
-                  <td class="text-center">{{ value }}</td>
+                <th>{{ field_label }}</th>
+                {% for entry in values %}
+                  <td class="text-center">{{ entry.value }}</td>
                 {% endfor %}
               </tr>
             {% endfor %}

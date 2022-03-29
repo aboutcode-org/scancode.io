@@ -230,7 +230,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             messages.warning(self.request, message)
 
         license_clarity = []
-        summary_data = []
+        summary_data = {}
         summary_file = project.get_latest_output(filename="summary")
         if summary_file:
             summary = json.loads(summary_file.read_text())
@@ -316,40 +316,36 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             summary_fields = [
                 ('Primary License Expression', 'primary_license_expression'),
                 ('Declared License Expressions', 'declared_license_expressions'),
-                ('License Expressions', 'license_expressions'),
+                ('Other License Expressions', 'license_expressions'),
                 ('Copyright Holders', 'holders')
             ]
+            declared_license_expressions = summary.get('declared_license_expressions', [])
+            detected_license_expressions = summary.get('license_expressions', [])
+            declared_license_expressions_with_count = []
+            other_license_expressions = []
+            for entry in detected_license_expressions:
+                license_expression = entry.get('value')
+                if license_expression in declared_license_expressions:
+                    declared_license_expressions_with_count.append(entry)
+                else:
+                    other_license_expressions.append(entry)
+
             for field_label, field_name in summary_fields:
                 value = summary.get(field_name)
                 if not value:
                     continue
                 if field_name == 'primary_license_expression':
-                    summary_data.append(
+                    summary_data[field_label] = [
                         {
-                            "label": field_label,
-                            "values": [value],
+                            'value': value,
                         }
-                    )
+                    ]
                 elif field_name == 'declared_license_expressions':
-                    summary_data.append(
-                        {
-                            "label": field_label,
-                            "values": value,
-                        }
-                    )
+                    summary_data[field_label] = declared_license_expressions_with_count
+                elif field_name == 'license_expressions':
+                    summary_data[field_label] = other_license_expressions
                 else:
-                    values = []
-                    for entry in value:
-                        v = entry.get("value")
-                        if v == None:
-                            v = "null"
-                        values.append(v)
-                    summary_data.append(
-                        {
-                            "label": field_label,
-                            "values": values,
-                        }
-                    )
+                    summary_data[field_label] = value
 
         context.update(
             {
