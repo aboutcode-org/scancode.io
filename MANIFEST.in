@@ -1,16 +1,22 @@
-include apache-2.0.LICENSE
-include NOTICE
-include manage.py
+include *LICENSE
+include *NOTICE
+include *.py
 include MANIFEST.in
 include Makefile
 include *.rst
-include setup.py
-include setup.cfg
+include setup.*
+include *.ini
+include *.yml
+include *.yaml
+include *.env
+include *ignore
+include Dockerfile
 
 graft scancodeio
 graft scanpipe
 graft docs
 graft etc
+graft .github/workflows
 
 prune scancodeio.egg-info
 prune bin
