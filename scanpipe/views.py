@@ -22,6 +22,7 @@
 
 import json
 from collections import Counter
+from traceback import StackSummary
 from django.utils.html import escape
 
 from django.apps import apps
@@ -176,6 +177,122 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 results.extend(entry.get(data_field) for entry in model_values)
         return results
 
+    def get_license_clarity_data(self, summary):
+        license_clarity_fields = [
+            ('Score',
+            'score',
+            'The license clarity score is a value from 0-100 calculated by combining the weighted '
+            'values determined for each of the five scoring elements: Declared license, '
+            'Precise license detection, License text, Declared copyrights, Ambigous compound licensing, '
+            'Conflicting license categories',
+            ),
+            ('Declared License',
+            'declared_license',
+            'When true (checked), indicates that the software package licensing is documented at '
+            'top-level or well-known locations in the software project, typically in a package '
+            'manifest, NOTICE, LICENSE, COPYING or README file. Scoring Weight = 40.',
+            ),
+            ('Precise License Detection',
+            'precise_license_detection',
+            'When true (checked), indicates how well the license statement(s) of the software '
+            'identify known licenses that can be designated by precise keys (identifiers) as '
+            'provided in a publicly available license list, such as the ScanCode LicenseDB, '
+            'the SPDX license list, the OSI license list, or a URL pointing to a specific license '
+            'text in a project or organization website. Scoring Weight = 40.',
+            ),
+            ('License Text',
+            'has_license_text',
+            'When true (checked), indicates that license texts are provided to support '
+            'the declared license expression in files such as a package manifest, NOTICE, '
+            'LICENSE, COPYING or README. Scoring Weight = 10.',
+            ),
+            ('Declared Copyrights',
+            'declared_copyrights',
+            'When true (checked), indicates that the software package copyright is documented at '
+            'top-level or well-known locations in the software project, typically in a package manifest, '
+            'NOTICE, LICENSE, COPYING or README file. Scoring Weight = 10.',
+            ),
+            ('Ambigous Compound Licensing',
+            'ambigous_compound_licensing',
+            'When true (checked), indicates that the software has a license declaration that makes it '
+            'difficult to construct a reliable license expression, such as in the case of multiple licenses '
+            'where the conjunctive versus disjunctive relationship is not well defined. Scoring Weight = -10.',
+            ),
+            ('Conflicting License Categories',
+            'conflicting_license_categories',
+            'When true (checked), indicates the declared license expression of the software is in the permissive '
+            'category, but that other potentially conflicting categories, such as copyleft and proprietary, have '
+            'been detected in lower level code. Scoring Weight = -20.',
+            ),
+        ]
+
+        def as_icon(field_value):
+            """
+            Returns the proper icon based on the field_value (True/False/None).
+            """
+            from django.utils.html import format_html
+
+            icon = {
+                True: 'fas fa-check-circle color-true',
+                False: 'far fa-circle color-false',
+                None: 'far fa-question-circle color-none',
+            }.get(field_value)
+
+            if icon:
+                return format_html('<i class="{}"></i>', icon)
+
+        license_clarity_score = summary.get('license_clarity_score')
+        for label, field, help_text in license_clarity_fields:
+            value = license_clarity_score.get(field)
+            if value is not None:
+                if value in [True, False]:
+                    value = as_icon(value)
+                else:
+                    value = escape(value)
+            yield {
+                'label': label,
+                'value': value,
+                'help_text': help_text,
+                'td_class': 'text-center',
+            }
+
+    def get_summary_data(self, summary):
+        summary_fields = [
+            ('Primary License Expression', 'primary_license_expression'),
+            ('Declared License Expressions', 'declared_license_expressions'),
+            ('Other License Expressions', 'license_expressions'),
+            ('Copyright Holders', 'holders')
+        ]
+        declared_license_expressions = summary.get('declared_license_expressions', [])
+        detected_license_expressions = summary.get('license_expressions', [])
+        declared_license_expressions_with_count = []
+        other_license_expressions = []
+        for entry in detected_license_expressions:
+            license_expression = entry.get('value')
+            if license_expression in declared_license_expressions:
+                declared_license_expressions_with_count.append(entry)
+            else:
+                other_license_expressions.append(entry)
+
+        summary_data = {}
+        for field_label, field_name in summary_fields:
+            value = summary.get(field_name)
+            if not value:
+                continue
+            if field_name == 'primary_license_expression':
+                summary_data[field_label] = [
+                    {
+                        'value': value,
+                    }
+                ]
+            elif field_name == 'declared_license_expressions':
+                summary_data[field_label] = declared_license_expressions_with_count
+            elif field_name == 'license_expressions':
+                summary_data[field_label] = other_license_expressions
+            else:
+                summary_data[field_label] = value
+        return summary_data
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
@@ -234,118 +351,8 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         summary_file = project.get_latest_output(filename="summary")
         if summary_file:
             summary = json.loads(summary_file.read_text())
-            license_clarity_score = summary.get('license_clarity_score')
-            license_clarity_fields = [
-                ('Score',
-                'score',
-                'The license clarity score is a value from 0-100 calculated by combining the weighted '
-                'values determined for each of the five scoring elements: Declared license, '
-                'Precise license detection, License text, Declared copyrights, Ambigous compound licensing, '
-                'Conflicting license categories',
-                ),
-                ('Declared License',
-                'declared_license',
-                'When true (checked), indicates that the software package licensing is documented at '
-                'top-level or well-known locations in the software project, typically in a package '
-                'manifest, NOTICE, LICENSE, COPYING or README file. Scoring Weight = 40.',
-                ),
-                ('Precise License Detection',
-                'precise_license_detection',
-                'When true (checked), indicates how well the license statement(s) of the software '
-                'identify known licenses that can be designated by precise keys (identifiers) as '
-                'provided in a publicly available license list, such as the ScanCode LicenseDB, '
-                'the SPDX license list, the OSI license list, or a URL pointing to a specific license '
-                'text in a project or organization website. Scoring Weight = 40.',
-                ),
-                ('License Text',
-                'has_license_text',
-                'When true (checked), indicates that license texts are provided to support '
-                'the declared license expression in files such as a package manifest, NOTICE, '
-                'LICENSE, COPYING or README. Scoring Weight = 10.',
-                ),
-                ('Declared Copyrights',
-                'declared_copyrights',
-                'When true (checked), indicates that the software package copyright is documented at '
-                'top-level or well-known locations in the software project, typically in a package manifest, '
-                'NOTICE, LICENSE, COPYING or README file. Scoring Weight = 10.',
-                ),
-                ('Ambigous Compound Licensing',
-                'ambigous_compound_licensing',
-                'When true (checked), indicates that the software has a license declaration that makes it '
-                'difficult to construct a reliable license expression, such as in the case of multiple licenses '
-                'where the conjunctive versus disjunctive relationship is not well defined. Scoring Weight = -10.',
-                ),
-                ('Conflicting License Categories',
-                'conflicting_license_categories',
-                'When true (checked), indicates the declared license expression of the software is in the permissive '
-                'category, but that other potentially conflicting categories, such as copyleft and proprietary, have '
-                'been detected in lower level code. Scoring Weight = -20.',
-                ),
-            ]
-
-            def as_icon(field_value):
-                """
-                Returns the proper icon based on the field_value (True/False/None).
-                """
-                from django.utils.html import format_html
-
-                icon = {
-                    True: 'fas fa-check-circle color-true',
-                    False: 'far fa-circle color-false',
-                    None: 'far fa-question-circle color-none',
-                }.get(field_value)
-
-                if icon:
-                    return format_html('<i class="{}"></i>', icon)
-
-            for label, field, help_text in license_clarity_fields:
-                value = license_clarity_score.get(field)
-                if value is not None:
-                    if value in [True, False]:
-                        value = as_icon(value)
-                    else:
-                        value = escape(value)
-
-                license_clarity.append({
-                    'label': label,
-                    'value': value,
-                    'help_text': help_text,
-                    'td_class': 'text-center',
-                })
-
-            summary_fields = [
-                ('Primary License Expression', 'primary_license_expression'),
-                ('Declared License Expressions', 'declared_license_expressions'),
-                ('Other License Expressions', 'license_expressions'),
-                ('Copyright Holders', 'holders')
-            ]
-            declared_license_expressions = summary.get('declared_license_expressions', [])
-            detected_license_expressions = summary.get('license_expressions', [])
-            declared_license_expressions_with_count = []
-            other_license_expressions = []
-            for entry in detected_license_expressions:
-                license_expression = entry.get('value')
-                if license_expression in declared_license_expressions:
-                    declared_license_expressions_with_count.append(entry)
-                else:
-                    other_license_expressions.append(entry)
-
-            for field_label, field_name in summary_fields:
-                value = summary.get(field_name)
-                if not value:
-                    continue
-                if field_name == 'primary_license_expression':
-                    summary_data[field_label] = [
-                        {
-                            'value': value,
-                        }
-                    ]
-                elif field_name == 'declared_license_expressions':
-                    summary_data[field_label] = declared_license_expressions_with_count
-                elif field_name == 'license_expressions':
-                    summary_data[field_label] = other_license_expressions
-                else:
-                    summary_data[field_label] = value
+            license_clarity = list(self.get_license_clarity_data(summary))
+            summary_data = self.get_summary_data(summary)
 
         context.update(
             {
