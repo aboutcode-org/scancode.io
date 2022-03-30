@@ -141,9 +141,13 @@
             {% for field_label, values in summary_data.items %}
               <tr>
                 <th>{{ field_label }}</th>
-                {% for entry in values %}
-                  <td class="text-center">{{ entry.value }}</td>
-                {% endfor %}
+                <td>
+                  <ul>
+                    {% for entry in values %}
+                      <li>{{ entry.value }} {% if entry.count %} ({{ entry.count }}) {% endif %}</li>
+                    {% endfor %}
+                  </ul>
+                </td>
               </tr>
             {% endfor %}
           </table>
