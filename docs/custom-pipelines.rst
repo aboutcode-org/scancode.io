@@ -54,7 +54,6 @@ setting.
 
 
 .. tip::
-.. tip::
     You can view the :guilabel:`scanpipe/pipelines/` directory for more pipeline
     examples.
 
