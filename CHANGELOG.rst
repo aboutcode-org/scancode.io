@@ -4,6 +4,9 @@ Changelog
 v31.0.0 (next)
 ---------------
 
+- WARNING: Drop support for Python 3.6 and 3.7. Add support for Python 3.10.
+  Upgrade Django to version 4.x series.
+
 - Add new SCANCODEIO_REDIS_PASSWORD environment variable and setting
   to optionally set Redis instance password
 
