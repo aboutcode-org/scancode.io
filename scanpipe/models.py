@@ -851,6 +851,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Returns the number of errors related to this project.
         """
         return self.projecterrors.count()
+    
+    @cached_property
+    def get_created_date(self):
+        """
+        Returns the created date of project.
+        """
+        created_date = self.created_date.strftime("%m/%d/%Y")
+        return created_date
 
 
 class ProjectRelatedQuerySet(models.QuerySet):

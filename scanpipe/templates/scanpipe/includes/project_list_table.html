@@ -1,4 +1,7 @@
-{% load humanize %}
+{% load humanize %} 
+<div>
+  Sort By
+</div>
 <table class="table is-bordered is-striped is-hoverable is-fullwidth">
   <thead>
     <tr>
@@ -6,6 +9,7 @@
       <th>Packages</th>
       <th>Resources</th>
       <th>Errors</th>
+      <th>Created Date</th>
       <th>Pipelines</th>
       <th style="width:41px;"></th>
     </tr>
@@ -46,6 +50,15 @@
         {% else %}
           <span>
             {{ project.error_count|intcomma }}
+          </span>
+        {% endif %}
+      </td>
+      <td>
+        {% if projectget.created_date %}
+            {{ project.get_created_date|intcomma }}
+        {% else %}
+          <span>
+            {{ project.get_created_date|intcomma }}
           </span>
         {% endif %}
       </td>
