@@ -42,6 +42,12 @@ create an **environment file**, and **build the Docker image**::
     make envfile
     docker-compose build
 
+.. warning::
+    If your host machine is based on Apple Silicon or another ARM64 architecture,
+    you need to force the platform to ``linux/amd64`` at build time using::
+
+        DOCKER_DEFAULT_PLATFORM=linux/amd64 docker-compose build
+
 .. note::
     You need to rebuild the image whenever ScanCode.io's source code has been
     modified or updated.
