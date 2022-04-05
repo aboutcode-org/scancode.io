@@ -218,6 +218,7 @@ class PipelinesIntegrationTest(TestCase):
         "--json-pp",
         "--processes",
         "--verbose",
+        "OUTDATED",
     ]
 
     def _without_keys(self, data, exclude_keys):
