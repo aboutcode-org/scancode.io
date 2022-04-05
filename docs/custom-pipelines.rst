@@ -54,6 +54,7 @@ setting.
 
 
 .. tip::
+.. tip::
     You can view the :guilabel:`scanpipe/pipelines/` directory for more pipeline
     examples.
 
@@ -240,7 +241,7 @@ the entry point to the pipeline under the ``[options.entry_points]`` section.
     packages=find:
     include_package_data = true
     zip_safe = false
-    python_requires = >=3.6
+    python_requires = >=3.8
     setup_requires = setuptools_scm[toml] >= 4
 
     [options.packages.find]

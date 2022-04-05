@@ -169,7 +169,7 @@ Pre-installation Checklist
 
 Before you install ScanCode.io, make sure you have the following prerequisites:
 
- * **Python: versions 3.6 to 3.9** found at https://www.python.org/downloads/
+ * **Python: versions 3.8 to 3.10** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
  * **PostgreSQL**: release 10 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
@@ -208,7 +208,7 @@ Clone and Configure
     You can specify the Python version during the ``make dev`` step using the following
     command::
 
-         make dev PYTHON_EXE=python3.6
+         make dev PYTHON_EXE=python3.9
 
     When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is
     used.
