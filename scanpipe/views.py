@@ -304,10 +304,10 @@ class ProjectDeleteView(ConditionalLoginRequired, ProjectViewMixin, generic.Dele
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" and all its related data have been removed.'
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form):
         project = self.get_object()
         try:
-            response_redirect = super().delete(request, *args, **kwargs)
+            response_redirect = super().form_valid(form)
         except RunInProgressError as error:
             messages.error(self.request, error)
             return redirect(project)
@@ -319,7 +319,7 @@ class ProjectDeleteView(ConditionalLoginRequired, ProjectViewMixin, generic.Dele
 class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.DeleteView):
     success_message = 'All data, except inputs, for the "{}" project have been removed.'
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form):
         """
         Call the reset() method on the project.
         """
