@@ -71,7 +71,3 @@ def license_details_view(request, key):
     return HttpResponse(f"<pre>{data}</pre><hr><pre>{text}</pre>")
 
 
-urls = [
-    path("", license_list_view, name="license_list"),
-    path("<path:key>/", license_details_view, name="license_details"),
-]

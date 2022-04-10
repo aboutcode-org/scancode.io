@@ -141,8 +141,8 @@ class ScanCodeIOAuthTest(TestCase):
             ("run_detail", [a_uuid]),
             ("admin:index", None),
             ("rq_home", None),
-            ("license_app:license_list", None),
-            ("license_app:license_details", [a_path]),
+            ("license_list", None),
+            ("license_details", [a_path]),
         ]
 
         for viewname, args in views:
