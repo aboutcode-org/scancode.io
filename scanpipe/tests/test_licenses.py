@@ -38,11 +38,9 @@ class LicensesTest(TestCase):
 		key="apache-2.0"
 		license_url=reverse("license_details", args=(key,))
 		response=self.client.get(license_url)
-		print(response)
-		self.assertNotContains(response, license_url)
+		self.assertContains(response, license_url)
 
 		key="abcdefg"
 		dummy_license_url=reverse("license_details", args=(key,))
 		response=self.client.get(dummy_license_url)
-		print(response)
-		self.assertContains(response, dummy_license_url)
+		self.assertNotContains(response, dummy_license_url)
