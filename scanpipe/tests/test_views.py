@@ -144,6 +144,61 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_project_archive_view(self):
+        url = reverse("project_archive", args=[self.project1.uuid])
+        run = self.project1.add_pipeline("docker")
+        run.set_task_started(run.pk)
+
+        response = self.client.post(url, follow=True)
+        expected = (
+            "Cannot execute this action until all associated pipeline runs "
+            "are completed."
+        )
+        self.assertContains(response, expected)
+
+        run.set_task_ended(exitcode=0)
+        response = self.client.post(url, follow=True)
+        expected = "has been archived."
+        self.assertContains(response, expected)
+        self.project1.refresh_from_db()
+        self.assertTrue(self.project1.is_archived)
+
+    def test_scanpipe_views_project_delete_view(self):
+        url = reverse("project_delete", args=[self.project1.uuid])
+        run = self.project1.add_pipeline("docker")
+        run.set_task_started(run.pk)
+
+        response = self.client.post(url, follow=True)
+        expected = (
+            "Cannot execute this action until all associated pipeline runs "
+            "are completed."
+        )
+        self.assertContains(response, expected)
+
+        run.set_task_ended(exitcode=0)
+        response = self.client.post(url, follow=True)
+        expected = "all its related data have been removed."
+        self.assertContains(response, expected)
+        self.assertFalse(Project.objects.filter(name=self.project1.name).exists())
+
+    def test_scanpipe_views_project_reset_view(self):
+        url = reverse("project_reset", args=[self.project1.uuid])
+        run = self.project1.add_pipeline("docker")
+        run.set_task_started(run.pk)
+
+        response = self.client.post(url, follow=True)
+        expected = (
+            "Cannot execute this action until all associated pipeline runs "
+            "are completed."
+        )
+        self.assertContains(response, expected)
+
+        run.set_task_ended(exitcode=0)
+        response = self.client.post(url, follow=True)
+        expected = "have been removed."
+        self.assertContains(response, expected)
+        self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
         run = self.project1.add_pipeline("docker")

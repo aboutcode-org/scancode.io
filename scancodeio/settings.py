@@ -92,6 +92,7 @@ INSTALLED_APPS = (
     "rest_framework",
     "rest_framework.authtoken",
     "django_rq",
+    "django_probes",
 )
 
 MIDDLEWARE = (
@@ -232,8 +233,6 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = env.str("TIME_ZONE", default="UTC")
 
 USE_I18N = True
-
-USE_L10N = True
 
 USE_TZ = True
 

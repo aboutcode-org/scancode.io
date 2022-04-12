@@ -4,6 +4,19 @@ Changelog
 v31.0.0 (next)
 ---------------
 
+- WARNING: Drop support for Python 3.6 and 3.7. Add support for Python 3.10.
+  Upgrade Django to version 4.x series.
+
+- Ensure the worker service waits for migrations completion before starting.
+  To solve this issue we install the wait-for-it script available in
+  Debian by @vishnubob and as suggested in the Docker documentation.
+  In the docker-compose.yml, we let the worker wait for the web processing
+  to be complete when gunicorn exposes port 8000 and web container is available.
+  Reference: https://docs.docker.com/compose/startup-order/
+  Reference: https://github.com/vishnubob/wait-for-it
+  Reference: https://tracker.debian.org/pkg/wait-for-it
+  https://github.com/nexB/scancode.io/issues/387
+
 - Add new SCANCODEIO_REDIS_PASSWORD environment variable and setting
   to optionally set Redis instance password
 
