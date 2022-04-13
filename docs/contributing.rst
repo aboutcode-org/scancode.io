@@ -58,6 +58,10 @@ For more established contributors, you can contribute to the codebase in several
     and :ref:`faq` to confirm whether a given issue or a question has previously been
     discussed.
 
+.. tip::
+    Cleanup your code before submitting changes using the ``make valid``
+    command to ensure the proper code format and imports order.
+
 Documentation Improvements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
