@@ -47,11 +47,11 @@ auth_urlpatterns = [
     path("accounts/profile/", AccountProfileView.as_view(), name="account_profile"),
 ]
 
+
 urlpatterns = auth_urlpatterns + [
     path("admin/", admin.site.urls),
     path("api/", include(api_router.urls)),
-    path("licenses/", licenses.license_list_view, name="license_list"),
-    path("licenses/<path:key>/", licenses.license_details_view, name="license_details"),
+    path("licenses/", include(licenses.urls)),
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]

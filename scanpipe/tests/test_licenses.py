@@ -23,24 +23,24 @@
 from unittest import mock
 
 from django.test import TestCase
-
 from django.urls import reverse
 
 
 class LicensesTest(TestCase):
-	"""docstring for LicensesTest"""
-	def get_licenses_test(self):
-		url=reverse("license_list")
-		response=self.client.get(url)
-		self.assertContains(respone, url)
+    """docstring for LicensesTest"""
 
-	def get_license_details_test(self):
-		key="apache-2.0"
-		license_url=reverse("license_details", args=(key,))
-		response=self.client.get(license_url)
-		self.assertContains(response, license_url)
+    def test_license_list_view(self):
+        url = reverse("license_list")
+        response = self.client.get(url)
+        self.assertContains(respone, url)
 
-		key="abcdefg"
-		dummy_license_url=reverse("license_details", args=(key,))
-		response=self.client.get(dummy_license_url)
-		self.assertNotContains(response, dummy_license_url)
+    def test_license_details_view(self):
+        key = "apache-2.0"
+        license_url = reverse("license_details", args=(key,))
+        response = self.client.get(license_url)
+        self.assertContains(response, license_url)
+
+        key = "abcdefg"
+        dummy_license_url = reverse("license_details", args=(key,))
+        response = self.client.get(dummy_license_url)
+        self.assertNotContains(response, dummy_license_url)
