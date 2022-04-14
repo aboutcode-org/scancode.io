@@ -27,8 +27,6 @@ from django.urls import reverse
 
 
 class LicensesTest(TestCase):
-    """docstring for LicensesTest"""
-
     def test_license_list_view(self):
         url = reverse("license_list")
         response = self.client.get(url)

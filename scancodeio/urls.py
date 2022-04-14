@@ -51,7 +51,7 @@ auth_urlpatterns = [
 urlpatterns = auth_urlpatterns + [
     path("admin/", admin.site.urls),
     path("api/", include(api_router.urls)),
-    path("licenses/", include(licenses.urls)),
+    path("license/", include(licenses.urls)),
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]
