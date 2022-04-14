@@ -30,7 +30,7 @@ class LicensesTest(TestCase):
     def test_license_list_view(self):
         url = reverse("license_list")
         response = self.client.get(url)
-        self.assertContains(respone, url)
+        self.assertContains(response, url)
 
     def test_license_details_view(self):
         key = "apache-2.0"
