@@ -23,22 +23,21 @@
 from unittest import mock
 
 from django.test import TestCase
+from django.test import override_settings
 from django.urls import reverse
 
 
+@override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False)
 class LicensesTest(TestCase):
     def test_license_list_view(self):
         url = reverse("license_list")
         response = self.client.get(url)
-        self.assertContains(response, url)
+        self.assertEqual(response.status_code, 200)
 
     def test_license_details_view(self):
-        key = "apache-2.0"
-        license_url = reverse("license_details", args=(key,))
-        response = self.client.get(license_url)
-        self.assertContains(response, license_url)
-
-        key = "abcdefg"
-        dummy_license_url = reverse("license_details", args=(key,))
-        response = self.client.get(dummy_license_url)
-        self.assertNotContains(response, dummy_license_url)
+        keys = ["apache-2.0", "abcdefg"]
+        license_url = reverse("license_details", args=(keys[0],))
+        dummy_license_url = reverse("license_details", args=(keys[1],))
+        response = [self.client.get(license_url), self.client.get(dummy_license_url)]
+        self.assertEqual(response[0].status_code, 200)
+        self.assertEqual(response[1].status_code, 404)

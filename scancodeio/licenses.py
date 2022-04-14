@@ -23,6 +23,7 @@
 from functools import lru_cache
 
 from django.http import HttpResponse
+from django.http import HttpResponseNotFound
 from django.urls import path
 from django.urls import reverse
 
@@ -67,7 +68,7 @@ def license_details_view(request, key):
         data = saneyaml.dump(licenses[key].to_dict())
         text = licenses[key].text
     except KeyError:
-        return HttpResponse(f"License {key} not found.")
+        return HttpResponseNotFound(f"License {key} not found.")
     return HttpResponse(f"<pre>{data}</pre><hr><pre>{text}</pre>")
 
 
