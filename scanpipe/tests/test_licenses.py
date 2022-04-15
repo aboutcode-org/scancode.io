@@ -20,38 +20,24 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.contrib import admin
-from django.contrib.auth import views as auth_views
-from django.urls import include
-from django.urls import path
-from django.views.generic import RedirectView
+from unittest import mock
 
-from rest_framework.routers import DefaultRouter
-
-from scancodeio import licenses
-from scanpipe.api.views import ProjectViewSet
-from scanpipe.api.views import RunViewSet
-from scanpipe.views import AccountProfileView
-
-api_router = DefaultRouter()
-api_router.register(r"projects", ProjectViewSet)
-api_router.register(r"runs", RunViewSet)
-
-auth_urlpatterns = [
-    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
-    path(
-        "accounts/logout/",
-        auth_views.LogoutView.as_view(next_page="login"),
-        name="logout",
-    ),
-    path("accounts/profile/", AccountProfileView.as_view(), name="account_profile"),
-]
+from django.test import TestCase
+from django.test import override_settings
+from django.urls import reverse
 
 
-urlpatterns = auth_urlpatterns + [
-    path("admin/", admin.site.urls),
-    path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
-    path("", include("scanpipe.urls")),
-    path("", RedirectView.as_view(url="project/")),
-]
+@override_settings(SCANCODEIO_REQUIRE_AUTHENTICATION=False)
+class LicensesTest(TestCase):
+    def test_license_list_view(self):
+        url = reverse("license_list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_license_details_view(self):
+        keys = ["apache-2.0", "abcdefg"]
+        license_url = reverse("license_details", args=(keys[0],))
+        dummy_license_url = reverse("license_details", args=(keys[1],))
+        response = [self.client.get(license_url), self.client.get(dummy_license_url)]
+        self.assertEqual(response[0].status_code, 200)
+        self.assertEqual(response[1].status_code, 404)
