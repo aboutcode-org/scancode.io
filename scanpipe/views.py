@@ -559,6 +559,13 @@ def run_detail_view(request, uuid):
     return render(request, template, context)
 
 
+@conditional_login_required
+def run_status_view(request, uuid):
+    template = "scanpipe/includes/run_status_tag.html"
+    run = get_object_or_404(Run, uuid=uuid)
+    return render(request, template, {"run": run})
+
+
 class CodebaseResourceRawView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,

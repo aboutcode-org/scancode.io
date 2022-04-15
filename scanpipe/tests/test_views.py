@@ -249,6 +249,48 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
+    def test_scanpipe_views_run_status_view(self):
+        run = self.project1.add_pipeline("docker")
+        url = reverse("run_status", args=[run.uuid])
+
+        response = self.client.get(url)
+        expected = '<span class="tag is-light">Not started</span>'
+        self.assertContains(response, expected)
+
+        run.set_task_queued()
+        response = self.client.get(url)
+        expected = 'Queued <i class="fas fa-clock ml-1"></i>'
+        self.assertContains(response, expected)
+        self.assertContains(response, f'hx-get="{url}"')
+
+        run.set_task_started(run.pk)
+        response = self.client.get(url)
+        expected = (
+            'Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i>'
+        )
+        self.assertContains(response, expected)
+        self.assertContains(response, f'hx-get="{url}"')
+
+        run.set_task_ended(exitcode=1)
+        response = self.client.get(url)
+        expected = '<span class="tag is-danger">Failure</span>'
+        self.assertContains(response, expected)
+
+        run.set_task_ended(exitcode=0)
+        response = self.client.get(url)
+        expected = '<span class="tag is-success">Success</span>'
+        self.assertContains(response, expected)
+
+        run.set_task_staled()
+        response = self.client.get(url)
+        expected = '<span class="tag is-dark">Stale</span>'
+        self.assertContains(response, expected)
+
+        run.set_task_stopped()
+        response = self.client.get(url)
+        expected = '<span class="tag is-danger">Stopped</span>'
+        self.assertContains(response, expected)
+
     def test_scanpipe_views_codebase_resource_details_annotations_missing_policy(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1,

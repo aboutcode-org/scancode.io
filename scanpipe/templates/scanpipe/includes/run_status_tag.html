@@ -2,10 +2,14 @@
   <span class="tag is-success">Success</span>
 {% elif run.status == run.Status.FAILURE %}
   <span class="tag is-danger">Failure</span>
-{% elif run.status == run.Status.RUNNING %}
-  <span class="tag is-info">Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i></span>
-{% elif run.status == run.Status.QUEUED %}
-  <span class="tag is-info">Queued <i class="fas fa-clock ml-1"></i></span>
+{% elif run.status == run.Status.RUNNING or run.status == run.Status.QUEUED %}
+  <span class="tag is-info" hx-get="{% url 'run_status' run.uuid %}" hx-trigger="load delay:10s" hx-swap="outerHTML">
+    {% if run.status == run.Status.RUNNING %}
+      Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i>
+    {% elif run.status == run.Status.QUEUED %}
+      Queued <i class="fas fa-clock ml-1"></i>
+    {% endif %}
+  </span>
 {% elif run.status == run.Status.STALE %}
   <span class="tag is-dark">Stale</span>
 {% elif run.status == run.Status.STOPPED %}

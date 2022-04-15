@@ -6,7 +6,7 @@
 
     let $modal = document.getElementById(modal_id);
     let run_uuid = event.detail.$button.dataset.uuid;
-    let run_detail_url = `/runs/${run_uuid}/`;
+    let run_detail_url = `/run/${run_uuid}/`;
     $modal.innerHTML = "";
 
     fetch(run_detail_url).then(function (response) {
