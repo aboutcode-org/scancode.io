@@ -108,6 +108,8 @@ ROOT_URLCONF = "scancodeio.urls"
 
 WSGI_APPLICATION = "scancodeio.wsgi.application"
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Database
 
 DATABASES = {
