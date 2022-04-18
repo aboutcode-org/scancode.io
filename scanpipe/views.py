@@ -559,6 +559,19 @@ def run_detail_view(request, uuid):
     return render(request, template, context)
 
 
+@conditional_login_required
+def run_status_view(request, uuid):
+    template = "scanpipe/includes/run_status_tag.html"
+    run = get_object_or_404(Run, uuid=uuid)
+    context = {"run": run}
+
+    current_status = request.GET.get("current_status")
+    if current_status and current_status != run.status:
+        context["status_changed"] = True
+
+    return render(request, template, context)
+
+
 class CodebaseResourceRawView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,

@@ -72,9 +72,14 @@ urlpatterns = [
         name="project_reset",
     ),
     path(
-        "runs/<uuid:uuid>/",
+        "run/<uuid:uuid>/",
         views.run_detail_view,
         name="run_detail",
+    ),
+    path(
+        "run/<uuid:uuid>/status/",
+        views.run_status_view,
+        name="run_status",
     ),
     path(
         "project/<uuid:uuid>/results/<path:format>/",

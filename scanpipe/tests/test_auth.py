@@ -139,6 +139,7 @@ class ScanCodeIOAuthTest(TestCase):
             ("project_stop_pipeline", [a_uuid, a_uuid]),
             ("project_delete_pipeline", [a_uuid, a_uuid]),
             ("run_detail", [a_uuid]),
+            ("run_status", [a_uuid]),
             ("admin:index", None),
             ("rq_home", None),
             ("license_list", None),
