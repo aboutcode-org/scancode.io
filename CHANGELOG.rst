@@ -10,7 +10,8 @@ v31.0.0 (next)
 - Implement run status auto-refresh using the htmx JavaScript library.
   The statuses of queued and running pipeline are now automatically refreshed
   in the project list and project details views every 10 seconds.
-  https://github.com/nexB/scancode.io/issues/399
+  A new "toast" type of notification is displayed along the status update.
+  https://github.com/nexB/scancode.io/issues/390
 
 - Ensure the worker service waits for migrations completion before starting.
   To solve this issue we install the wait-for-it script available in
