@@ -1,19 +1,44 @@
-{% if run.status == run.Status.SUCCESS %}
-  <span class="tag is-success">Success</span>
-{% elif run.status == run.Status.FAILURE %}
-  <span class="tag is-danger">Failure</span>
-{% elif run.status == run.Status.RUNNING or run.status == run.Status.QUEUED %}
-  <span class="tag is-info" hx-get="{% url 'run_status' run.uuid %}" hx-trigger="load delay:10s" hx-swap="outerHTML">
+{% if run.status == run.Status.RUNNING or run.status == run.Status.QUEUED %}
+  <span class="tag is-info" hx-get="{% url 'run_status' run.uuid %}?current_status={{ run.status }}" hx-trigger="load delay:10s" hx-swap="outerHTML">
     {% if run.status == run.Status.RUNNING %}
       Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i>
     {% elif run.status == run.Status.QUEUED %}
       Queued <i class="fas fa-clock ml-1"></i>
     {% endif %}
   </span>
+{% elif run.status == run.Status.SUCCESS %}
+  <span class="tag is-success">Success</span>
+{% elif run.status == run.Status.FAILURE %}
+  <span class="tag is-danger">Failure</span>
 {% elif run.status == run.Status.STALE %}
   <span class="tag is-dark">Stale</span>
 {% elif run.status == run.Status.STOPPED %}
   <span class="tag is-danger">Stopped</span>
 {% else %}
   <span class="tag is-light">Not started</span>
+{% endif %}
+
+{% if status_changed %}
+  <script>
+    bulmaToast.toast({
+      {% if run.status == run.Status.RUNNING %}
+        "message": "Pipeline {{ run.pipeline_name }} started",
+        "type": "is-info",
+        "duration": 3000,  // 3 secs
+      {% elif run.status == run.Status.SUCCESS %}
+        "message": 'Pipeline {{ run.pipeline_name }} completed successfully.\n' +
+                   '<a href="{{ run.project.get_absolute_url }}">Access or refresh the project page for results.</a>',
+        "type": "is-success is-inline-block",
+        "duration": 30000,  // 30 secs
+      {% else %}
+        "message": "Pipeline {{ run.pipeline_name }} {{ run.status }}.",
+        "type": "is-danger",
+        "duration": 30000,  // 30 secs
+      {% endif %}
+      "position": "top-center",
+      "dismissible": true,
+      "closeOnClick": false,
+      "pauseOnHover": true
+    });
+  </script>
 {% endif %}
