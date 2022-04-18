@@ -157,3 +157,39 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 });
+
+// Toasts (requires bulma-toast.js)
+
+function displayPipelineStatusToast(run_status, pipeline_name, project_url) {
+    const default_options = {
+      "position": "top-center",
+      "dismissible": true,
+      "closeOnClick": false,
+      "pauseOnHover": true,
+      "duration": 30000 // 30 secs
+    }
+    let custom_options;
+
+    if (run_status === "running") {
+      custom_options = {
+        "message": `Pipeline ${pipeline_name} started.`,
+        "type": "is-info",
+        "duration": 3000 // 3 secs
+      }
+    }
+    else if (run_status === "success") {
+      custom_options = {
+        "message": `Pipeline ${pipeline_name} completed successfully.\n` +
+                   `<a href="${project_url}">Access or refresh the project page for results.</a>`,
+        "type": "is-success is-inline-block",
+      }
+    }
+    else {
+      custom_options = {
+        "message": `Pipeline ${pipeline_name} ${run_status}.`,
+        "type": "is-danger",
+      }
+    }
+
+    bulmaToast.toast({...default_options, ...custom_options});
+}

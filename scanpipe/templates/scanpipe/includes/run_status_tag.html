@@ -20,25 +20,10 @@
 
 {% if status_changed %}
   <script>
-    bulmaToast.toast({
-      {% if run.status == run.Status.RUNNING %}
-        "message": "Pipeline {{ run.pipeline_name }} started",
-        "type": "is-info",
-        "duration": 3000,  // 3 secs
-      {% elif run.status == run.Status.SUCCESS %}
-        "message": 'Pipeline {{ run.pipeline_name }} completed successfully.\n' +
-                   '<a href="{{ run.project.get_absolute_url }}">Access or refresh the project page for results.</a>',
-        "type": "is-success is-inline-block",
-        "duration": 30000,  // 30 secs
-      {% else %}
-        "message": "Pipeline {{ run.pipeline_name }} {{ run.status }}.",
-        "type": "is-danger",
-        "duration": 30000,  // 30 secs
-      {% endif %}
-      "position": "top-center",
-      "dismissible": true,
-      "closeOnClick": false,
-      "pauseOnHover": true
-    });
+    displayPipelineStatusToast(
+      run_status="{{ run.status }}",
+      pipeline_name="{{ run.pipeline_name }}",
+      project_url="{{ run.project.get_absolute_url }}"
+    );
   </script>
 {% endif %}
