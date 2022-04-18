@@ -7,6 +7,12 @@ v31.0.0 (next)
 - WARNING: Drop support for Python 3.6 and 3.7. Add support for Python 3.10.
   Upgrade Django to version 4.x series.
 
+- Implement run status auto-refresh using the htmx JavaScript library.
+  The statuses of queued and running pipeline are now automatically refreshed
+  in the project list and project details views every 10 seconds.
+  A new "toast" type of notification is displayed along the status update.
+  https://github.com/nexB/scancode.io/issues/390
+
 - Ensure the worker service waits for migrations completion before starting.
   To solve this issue we install the wait-for-it script available in
   Debian by @vishnubob and as suggested in the Docker documentation.
