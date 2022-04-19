@@ -6,7 +6,7 @@
 
 ## About the Project
  This project can be considered as an initial approch (frontend) for few projects and issues mentioned below. 
-  
+ [Watch this short video demonstration to get a quick idea about the project](https://www.youtube.com/watch?v=BRy7EA5JsCU) 
  ### Projects
 - [ScanCode.io: web-based automated Conclusions app and GUI review app](https://github.com/nexB/aboutcode/wiki/GSOC-2022#scancodeio-web-based-automated-conclusions-app-and-gui-review-app)
 
