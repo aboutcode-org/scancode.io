@@ -258,37 +258,28 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
     def get_summary_data(self, summary):
         summary_fields = [
-            ('Primary License Expression', 'primary_license_expression'),
-            ('Declared License Expressions', 'declared_license_expressions'),
-            ('Other License Expressions', 'license_expressions'),
-            ('Copyright Holders', 'holders')
+            ('Declared License', 'declared_license_expression'),
+            ('Declared Holder', 'declared_holder'),
+            ('Primary Language', 'primary_language'),
+            ('Other Licenses', 'other_license_expressions'),
+            ('Other Holders', 'other_holders'),
+            ('Other Languages', 'other_languages')
         ]
-        declared_license_expressions = summary.get('declared_license_expressions', [])
-        detected_license_expressions = summary.get('license_expressions', [])
-        declared_license_expressions_with_count = []
-        other_license_expressions = []
-        for entry in detected_license_expressions:
-            license_expression = entry.get('value')
-            if license_expression in declared_license_expressions:
-                declared_license_expressions_with_count.append(entry)
-            else:
-                other_license_expressions.append(entry)
-
         summary_data = {}
         for field_label, field_name in summary_fields:
             value = summary.get(field_name)
             if not value:
                 continue
-            if field_name == 'primary_license_expression':
+            if field_name in (
+                'declared_license_expression',
+                'declared_holder',
+                'primary_language'
+            ):
                 summary_data[field_label] = [
                     {
                         'value': value,
                     }
                 ]
-            elif field_name == 'declared_license_expressions':
-                summary_data[field_label] = declared_license_expressions_with_count
-            elif field_name == 'license_expressions':
-                summary_data[field_label] = other_license_expressions
             else:
                 summary_data[field_label] = value
         return summary_data
