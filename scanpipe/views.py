@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
 from collections import Counter
 
 from django.apps import apps
@@ -35,6 +36,7 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
+from django.views.generic.edit import UpdateView
 
 import saneyaml
 from django_filters.views import FilterView
@@ -49,6 +51,7 @@ from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ProjectNoteUpdateForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -591,3 +594,11 @@ class CodebaseResourceRawView(
             )
 
         raise Http404
+
+
+class ProjectNoteUpdateView(UpdateView):
+    model = Project
+    template_name = "scanpipe/project_note_edit.html"
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
+    form_class = ProjectNoteUpdateForm

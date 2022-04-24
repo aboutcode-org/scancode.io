@@ -106,8 +106,12 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_files",
             "input_urls",
             "pipeline",
+            "note",
             "execute_now",
         ]
+        widgets = {
+            "note": forms.Textarea(attrs={"rows": 4, "cols": 63}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -162,3 +166,12 @@ class ArchiveProjectForm(forms.Form):
         initial=False,
         required=False,
     )
+
+
+class ProjectNoteUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ("note",)
+        widgets = {
+            "note": forms.Textarea(attrs={"rows": 15, "cols": 111}),
+        }

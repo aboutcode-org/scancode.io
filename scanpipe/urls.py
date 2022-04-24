@@ -117,4 +117,9 @@ urlpatterns = [
         name="project_list",
     ),
     path("monitor/", include("django_rq.urls")),
+    path(
+        "project/<uuid:uuid>/edit/",
+        views.ProjectNoteUpdateView.as_view(),
+        name="project_note_edit",
+    ),
 ]

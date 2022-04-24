@@ -1,0 +1,65 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }}{% endblock %}
+
+{% block extrahead %}
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
+{% endblock %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    <section class="mx-5 mb-3">
+      {% include 'scanpipe/includes/breadcrumb.html' %}
+      <div class="subtitle is-size-6">
+        <span title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
+        {% include "scanpipe/includes/project_actions_dropdown.html" %}
+      </div>
+    </section>
+    {% if not project.is_archived %}
+      {% include "scanpipe/includes/project_archive_modal.html" %}
+    {% endif %}
+    {% include "scanpipe/includes/project_reset_modal.html" %}
+    {% include "scanpipe/includes/project_delete_modal.html" %}
+
+    <div class="container mx-5 mb-5">
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">UUID</span>
+            <span class="tag is-info">{{ project.uuid }}</span>
+          </div>
+        </div>
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Work directory</span>
+            <span class="tag is-info">{{ project.work_directory }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <section class="section pt-0">
+        <h2 class="subtitle mb-0 pt-2 mb-5">
+          Edit a <strong>Project Note</strong>
+        </h2>
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+              <div class="field">
+                <label class="label" for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
+                <div class="control">
+                  {{ form.note }}
+                </div>
+              </div>
+
+              <div class="columns mt-6 is-variable is-1">
+                <div class="column">
+                  <input type="submit" class="button is-fullwidth is-link" value="Update">
+                </div>
+              </div>
+        </form>
+      </section>
+
+{% endblock content %}

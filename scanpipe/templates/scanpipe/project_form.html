@@ -66,6 +66,13 @@
             </div>
 
             <div class="field">
+              <label class="label" for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
+              <div class="control">
+                {{ form.note }}
+              </div>
+            </div>
+
+            <div class="field">
               <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
                 {{ form.execute_now }}
                 {{ form.execute_now.label }}

@@ -81,6 +81,17 @@
       </div>
     </section>
 
+    <section class="section pt-0 pb-5">
+      {% if project.note %}
+        <article class="message is-info">
+          <div class="message-body">
+            Note: {{ project.note }}
+            <p style="text-align:right; bottom:0"><a href="{% url 'project_note_edit' project.uuid %}">Edit Note</a></p>
+          </div>
+        </article>
+    </section>
+    {% endif %}
+
     {% if project.extra_data %}
       <article id="project-extra-data" class="panel is-info mx-5">
         <p class="panel-heading py-2 is-size-6">
