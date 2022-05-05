@@ -37,6 +37,8 @@ import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
+from packagedcode.models import PackageData
+from packageurl import PackageURL
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
@@ -44,6 +46,7 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -382,48 +385,30 @@ def create_codebase_resources(project, scanned_codebase):
         resource_data["type"] = CodebaseResource.Type[resource_type]
         resource_path = scanned_resource.get_path(strip_root=True)
 
-        CodebaseResource.objects.get_or_create(
+        cbr, _ = CodebaseResource.objects.get_or_create(
             project=project,
             path=resource_path,
             defaults=resource_data,
         )
+
+        # associate DiscoveredPackage to Resource, if applicable
+        for purl_uid in scanned_resource.for_packages:
+            purl = PackageURL.from_string(purl_uid)
+            # TODO: take package_uid qualifier into consideration
+            package = DiscoveredPackage.objects.filter(type=purl.type, name=purl.name, version=purl.version)
+            package = package[0]
+            set_codebase_resource_for_package(
+                codebase_resource=cbr, discovered_package=package
+            )
 
 
 def create_discovered_packages(project, scanned_codebase):
     """
     Saves the packages of a ScanCode `scanned_codebase` scancode.resource.Codebase
     object to the database as a DiscoveredPackage of `project`.
-    Relate package resources to CodebaseResource.
     """
-    for scanned_resource in scanned_codebase.walk(skip_root=True):
-        scanned_packages = getattr(scanned_resource, "packages", [])
-        if not scanned_packages:
-            continue
-
-        scanned_resource_path = scanned_resource.get_path(strip_root=True)
-        cbr = CodebaseResource.objects.get(project=project, path=scanned_resource_path)
-
-        for scan_data in scanned_packages:
-            discovered_package = pipes.update_or_create_package(project, scan_data, cbr)
-            if not discovered_package:
-                continue
-
-            set_codebase_resource_for_package(
-                codebase_resource=cbr, discovered_package=discovered_package
-            )
-
-            scanned_package = packagedcode.get_package_instance(scan_data)
-            # Set all the resource attached to that package
-            scanned_package_resources = scanned_package.get_package_resources(
-                scanned_resource, scanned_codebase
-            )
-            for scanned_package_res in scanned_package_resources:
-                package_cbr = CodebaseResource.objects.get(
-                    project=project, path=scanned_package_res.get_path(strip_root=True)
-                )
-                set_codebase_resource_for_package(
-                    codebase_resource=package_cbr, discovered_package=discovered_package
-                )
+    for package_data in scanned_codebase.attributes.packages:
+        pipes.update_or_create_package(project, package_data)
 
 
 def set_codebase_resource_for_package(codebase_resource, discovered_package):

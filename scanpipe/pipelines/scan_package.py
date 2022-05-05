@@ -58,11 +58,8 @@ class ScanPackage(Pipeline):
         "--url",
     ] + [
         "--classify",
-        "--consolidate",
         "--is-license-text",
-        "--license-clarity-score",
         "--summary",
-        "--summary-key-files",
     ]
 
     def get_package_archive_input(self):
@@ -121,8 +118,8 @@ class ScanPackage(Pipeline):
         """
         project = self.project
         scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
-        scancode.create_codebase_resources(project, scanned_codebase)
-        scancode.create_discovered_packages(project, scanned_codebase)
+        scancode.create_discovered_packages2(project, scanned_codebase)
+        scancode.create_codebase_resources2(project, scanned_codebase)
 
     def make_summary_from_scan_results(self):
         """
