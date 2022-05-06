@@ -389,13 +389,14 @@ def create_codebase_resources(project, scanned_codebase):
         )
 
         # associate DiscoveredPackage to Resource, if applicable
-        for package_uid in scanned_resource.for_packages:
-            package = DiscoveredPackage.objects.get(
-                extra_data__contains={"package_uids": [package_uid]}
-            )
-            set_codebase_resource_for_package(
-                codebase_resource=cbr, discovered_package=package
-            )
+        if hasattr(scanned_resource, "for_packages"):
+            for package_uid in scanned_resource.for_packages:
+                package = DiscoveredPackage.objects.get(
+                    extra_data__contains={"package_uids": [package_uid]}
+                )
+                set_codebase_resource_for_package(
+                    codebase_resource=cbr, discovered_package=package
+                )
 
 
 def create_discovered_packages(project, scanned_codebase):
@@ -403,8 +404,9 @@ def create_discovered_packages(project, scanned_codebase):
     Saves the packages of a ScanCode `scanned_codebase` scancode.resource.Codebase
     object to the database as a DiscoveredPackage of `project`.
     """
-    for package_data in scanned_codebase.attributes.packages:
-        pipes.update_or_create_package(project, package_data)
+    if hasattr(scanned_codebase.attributes, "packages"):
+        for package_data in scanned_codebase.attributes.packages:
+            pipes.update_or_create_package(project, package_data)
 
 
 def set_codebase_resource_for_package(codebase_resource, discovered_package):
