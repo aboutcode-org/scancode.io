@@ -91,6 +91,13 @@ def update_or_create_package(project, package_data, codebase_resource=None):
         else:
             package = DiscoveredPackage.create_from_data(project, package_data)
 
+    # Update package_uids list in package.extra_data
+    package_uid = package_data.get("package_uid")
+    if package_uid:
+        package_uids = package.extra_data.get("package_uids", [])
+        package_uids.append(package_uid)
+        package.update_extra_data({"package_uids": package_uids})
+
     return package
 
 
