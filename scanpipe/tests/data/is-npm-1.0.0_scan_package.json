@@ -4,32 +4,50 @@
       "tool_name": "scancode-toolkit",
       "options": {
         "--classify": true,
-        "--consolidate": true,
         "--copyright": true,
         "--email": true,
         "--info": true,
         "--is-license-text": true,
         "--license": true,
-        "--license-clarity-score": true,
         "--license-text": true,
         "--package": true,
         "--summary": true,
-        "--summary-key-files": true,
         "--url": true
       },
       "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
-      "output_format_version": "1.0.0",
-      "warnings": [],
+      "output_format_version": "2.0.0",
       "message": null,
       "errors": [],
+      "warnings": [],
       "extra_data": {
-        "spdx_license_list_version": "3.14",
+        "system_environment": {
+          "operating_system": "linux",
+          "cpu_architecture": "64",
+          "platform": "Linux-5.4.0-109-generic-x86_64-with-glibc2.27",
+          "platform_version": "#123~18.04.1-Ubuntu SMP Fri Apr 8 09:48:52 UTC 2022",
+          "python_version": "3.9.12 (main, Apr 16 2022, 19:31:36) \n[GCC 7.5.0]"
+        },
+        "spdx_license_list_version": "3.16",
         "files_count": 3
       }
     }
   ],
-  "consolidated_components": [],
-  "consolidated_packages": [
+  "dependencies": [
+    {
+      "purl": "pkg:npm/ava",
+      "extracted_requirement": "0.0.3",
+      "scope": "devDependencies",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": false,
+      "resolved_package": {},
+      "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/package/package.json",
+      "datasource_id": "npm_package_json"
+    }
+  ],
+  "packages": [
     {
       "type": "npm",
       "namespace": null,
@@ -59,7 +77,6 @@
       ],
       "homepage_url": null,
       "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-      "size": null,
       "sha1": null,
       "md5": null,
       "sha256": null,
@@ -73,178 +90,42 @@
         "MIT"
       ],
       "notice_text": null,
-      "root_path": "codebase/package",
-      "dependencies": [
-        {
-          "purl": "pkg:npm/ava",
-          "requirement": "0.0.3",
-          "scope": "devDependencies",
-          "is_runtime": false,
-          "is_optional": true,
-          "is_resolved": false
-        }
-      ],
-      "contains_source_code": null,
       "source_packages": [],
       "extra_data": {},
-      "purl": "pkg:npm/is-npm@1.0.0",
       "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
       "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
       "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
-      "identifier": "pkg_npm_is_npm_1_0_0_1",
-      "consolidated_license_expression": "mit",
-      "consolidated_holders": [
-        "Sindre Sorhus"
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_paths": [
+        "codebase/package/package.json"
       ],
-      "consolidated_copyright": "Copyright (c) Sindre Sorhus",
-      "core_license_expression": "mit",
-      "core_holders": [],
-      "other_license_expression": "mit",
-      "other_holders": [
-        "Sindre Sorhus"
+      "datasource_ids": [
+        "npm_package_json"
       ],
-      "files_count": 3
+      "purl": "pkg:npm/is-npm@1.0.0"
     }
   ],
   "summary": {
-    "license_expressions": [
-      {
-        "value": "mit",
-        "count": 2
-      }
-    ],
-    "copyrights": [
-      {
-        "value": null,
-        "count": 2
-      },
-      {
-        "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
-        "count": 1
-      }
-    ],
-    "holders": [
+    "declared_license_expression": "mit",
+    "license_clarity_score": {
+      "score": 90,
+      "declared_license": true,
+      "precise_license_detection": true,
+      "has_license_text": false,
+      "declared_copyrights": true,
+      "conflicting_license_categories": false,
+      "ambiguous_compound_licensing": false
+    },
+    "declared_holder": "Sindre Sorhus",
+    "primary_language": "JavaScript",
+    "other_license_expressions": [],
+    "other_holders": [
       {
         "value": null,
         "count": 2
-      },
-      {
-        "value": "Sindre Sorhus",
-        "count": 1
       }
     ],
-    "authors": [
-      {
-        "value": null,
-        "count": 3
-      }
-    ],
-    "programming_language": [
-      {
-        "value": "JavaScript",
-        "count": 1
-      }
-    ],
-    "packages": [
-      {
-        "type": "npm",
-        "namespace": null,
-        "name": "is-npm",
-        "version": "1.0.0",
-        "qualifiers": {},
-        "subpath": null,
-        "primary_language": "JavaScript",
-        "description": "Check if your code is running as an npm script",
-        "release_date": null,
-        "parties": [
-          {
-            "type": "person",
-            "role": "author",
-            "name": "Sindre Sorhus",
-            "email": "sindresorhus@gmail.com",
-            "url": "http://sindresorhus.com"
-          }
-        ],
-        "keywords": [
-          "npm",
-          "is",
-          "check",
-          "detect",
-          "env",
-          "environment"
-        ],
-        "homepage_url": null,
-        "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-        "size": null,
-        "sha1": null,
-        "md5": null,
-        "sha256": null,
-        "sha512": null,
-        "bug_tracking_url": null,
-        "code_view_url": null,
-        "vcs_url": "https://github.com/sindresorhus/is-npm",
-        "copyright": null,
-        "license_expression": "mit",
-        "declared_license": [
-          "MIT"
-        ],
-        "notice_text": null,
-        "root_path": "codebase/package",
-        "dependencies": [
-          {
-            "purl": "pkg:npm/ava",
-            "requirement": "0.0.3",
-            "scope": "devDependencies",
-            "is_runtime": false,
-            "is_optional": true,
-            "is_resolved": false
-          }
-        ],
-        "contains_source_code": null,
-        "source_packages": [],
-        "extra_data": {},
-        "purl": "pkg:npm/is-npm@1.0.0",
-        "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
-        "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-        "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
-        "files": [
-          {
-            "path": "codebase/package/package.json",
-            "type": "file"
-          }
-        ]
-      }
-    ]
-  },
-  "license_clarity_score": {
-    "score": 30,
-    "declared": true,
-    "discovered": 0,
-    "consistency": false,
-    "spdx": false,
-    "license_texts": false
-  },
-  "summary_of_key_files": {
-    "license_expressions": [
-      {
-        "value": "mit",
-        "count": 2
-      }
-    ],
-    "copyrights": [
-      {
-        "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
-        "count": 1
-      }
-    ],
-    "holders": [
-      {
-        "value": "Sindre Sorhus",
-        "count": 1
-      }
-    ],
-    "authors": [],
-    "programming_language": []
+    "other_languages": []
   },
   "files": [
     {
@@ -253,7 +134,6 @@
       "name": "codebase",
       "base_name": "codebase",
       "extension": "",
-      "size": 0,
       "sha1": null,
       "md5": null,
       "sha256": null,
@@ -272,8 +152,8 @@
       "copyrights": [],
       "holders": [],
       "authors": [],
-      "packages": [],
-      "consolidated_to": [],
+      "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "is_legal": false,
@@ -293,7 +173,6 @@
       "name": "package",
       "base_name": "package",
       "extension": "",
-      "size": 0,
       "sha1": null,
       "md5": null,
       "sha256": null,
@@ -312,10 +191,8 @@
       "copyrights": [],
       "holders": [],
       "authors": [],
-      "packages": [],
-      "consolidated_to": [
-        "pkg_npm_is_npm_1_0_0_1"
-      ],
+      "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "is_legal": false,
@@ -335,7 +212,6 @@
       "name": "index.js",
       "base_name": "index",
       "extension": ".js",
-      "size": 147,
       "sha1": "ecce1fc677fa7d20fc5593b63db45e45c5e8768a",
       "md5": "bc4b18b0c8c32b94883d6fc1d675e919",
       "sha256": "4044efe5626e2fbc40d3d7ce8b263b831d7644ac179e20cdf15b2794f8934030",
@@ -354,10 +230,8 @@
       "copyrights": [],
       "holders": [],
       "authors": [],
-      "packages": [],
-      "consolidated_to": [
-        "pkg_npm_is_npm_1_0_0_1"
-      ],
+      "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [],
       "is_legal": false,
@@ -377,7 +251,6 @@
       "name": "package.json",
       "base_name": "package",
       "extension": ".json",
-      "size": 563,
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
       "sha256": "522879426298e078881de533b9b3a82fa3bece1336a84bddacf4620008b5d0a3",
@@ -438,7 +311,7 @@
       "copyrights": [],
       "holders": [],
       "authors": [],
-      "packages": [
+      "package_data": [
         {
           "type": "npm",
           "namespace": null,
@@ -468,7 +341,6 @@
           ],
           "homepage_url": null,
           "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-          "size": null,
           "sha1": null,
           "md5": null,
           "sha256": null,
@@ -482,34 +354,29 @@
             "MIT"
           ],
           "notice_text": null,
-          "root_path": "codebase/package",
+          "source_packages": [],
+          "file_references": [],
+          "extra_data": {},
           "dependencies": [
             {
               "purl": "pkg:npm/ava",
-              "requirement": "0.0.3",
+              "extracted_requirement": "0.0.3",
               "scope": "devDependencies",
               "is_runtime": false,
               "is_optional": true,
-              "is_resolved": false
+              "is_resolved": false,
+              "resolved_package": {}
             }
           ],
-          "contains_source_code": null,
-          "source_packages": [],
-          "extra_data": {},
-          "purl": "pkg:npm/is-npm@1.0.0",
           "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
           "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
           "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
-          "files": [
-            {
-              "path": "codebase/package/package.json",
-              "type": "file"
-            }
-          ]
+          "datasource_id": "npm_package_json",
+          "purl": "pkg:npm/is-npm@1.0.0"
         }
       ],
-      "consolidated_to": [
-        "pkg_npm_is_npm_1_0_0_1"
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "emails": [
         {
@@ -542,7 +409,6 @@
       "name": "readme.md",
       "base_name": "readme",
       "extension": ".md",
-      "size": 477,
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
       "sha256": "e98b263545fe62a00c73b57412cbdbcd0792e013a76f9c88342623ab5e8467c1",
@@ -602,23 +468,21 @@
       "percentage_of_license_text": 2.78,
       "copyrights": [
         {
-          "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
+          "copyright": "(c) Sindre Sorhus (http://sindresorhus.com)",
           "start_line": 30,
           "end_line": 30
         }
       ],
       "holders": [
         {
-          "value": "Sindre Sorhus",
+          "holder": "Sindre Sorhus",
           "start_line": 30,
           "end_line": 30
         }
       ],
       "authors": [],
-      "packages": [],
-      "consolidated_to": [
-        "pkg_npm_is_npm_1_0_0_1"
-      ],
+      "package_data": [],
+      "for_packages": [],
       "emails": [],
       "urls": [
         {

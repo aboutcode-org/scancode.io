@@ -31,6 +31,8 @@ from unittest import skipIf
 from django.test import TestCase
 from django.test import tag
 
+from scancode.cli_test_utils import remove_uuid_from_scan
+
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
@@ -219,6 +221,8 @@ class PipelinesIntegrationTest(TestCase):
         "--processes",
         "--verbose",
         "OUTDATED",
+        # package_uids in extra_data have different values in it on every run
+        "package_uids",
     ]
 
     def _without_keys(self, data, exclude_keys):
@@ -244,12 +248,14 @@ class PipelinesIntegrationTest(TestCase):
         Set `regen` to True to regenerate the expected results.
         """
         result_json = json.loads(Path(result_file).read_text())
+        result_json = remove_uuid_from_scan(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
 
         if regen:
             expected_file.write_text(json.dumps(result_data, indent=2))
 
         expected_json = json.loads(expected_file.read_text())
+        expected_json = remove_uuid_from_scan(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
 
         self.assertEqual(expected_data, result_data)

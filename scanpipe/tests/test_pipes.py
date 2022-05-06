@@ -389,7 +389,6 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("scanned", codebase_resource2.status)
         expected = [
             "apache-2.0",
-            "apache-2.0 AND scancode-acknowledgment",
             "apache-2.0",
             "warranty-disclaimer",
         ]
