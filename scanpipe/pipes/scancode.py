@@ -33,12 +33,9 @@ from pathlib import Path
 from django.apps import apps
 from django.conf import settings
 
-import packagedcode
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
-from packagedcode.models import PackageData
-from packageurl import PackageURL
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
@@ -392,11 +389,10 @@ def create_codebase_resources(project, scanned_codebase):
         )
 
         # associate DiscoveredPackage to Resource, if applicable
-        for purl_uid in scanned_resource.for_packages:
-            purl = PackageURL.from_string(purl_uid)
-            # TODO: take package_uid qualifier into consideration
-            package = DiscoveredPackage.objects.filter(type=purl.type, name=purl.name, version=purl.version)
-            package = package[0]
+        for package_uid in scanned_resource.for_packages:
+            package = DiscoveredPackage.objects.get(
+                extra_data__contains={"package_uids": [package_uid]}
+            )
             set_codebase_resource_for_package(
                 codebase_resource=cbr, discovered_package=package
             )
