@@ -53,6 +53,7 @@ def get_tree(resource, fields, codebase=None):
     return resource_dict
 
 
+# TODO: Walking the ProjectCodebase is broken as we do not have a consistent way to get the root of a codebase.
 class ProjectCodebase:
     """
     Represents the codebase of a project stored in the database.
