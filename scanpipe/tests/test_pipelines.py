@@ -223,6 +223,8 @@ class PipelinesIntegrationTest(TestCase):
         "OUTDATED",
         # package_uids in extra_data have different values in it on every run
         "package_uids",
+        # system_environment differs between systems
+        "system_environment",
     ]
 
     def _without_keys(self, data, exclude_keys):
