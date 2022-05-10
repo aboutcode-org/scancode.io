@@ -40,6 +40,7 @@ local
 policies.yml
 *.rdb
 *.aof
+.vscode
 
 # This is only created when packaging for external redistribution
 /thirdparty/
