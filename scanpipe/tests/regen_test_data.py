@@ -84,7 +84,9 @@ class RegenTestData(TestCase):
         call_command("dumpdata", models, indent=2, output=fixtures_test_file_location)
 
         # Walk test fixtures
-        test_file_location = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
+        test_file_location = (
+            self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
+        )
         with open(fixtures_test_file_location) as f:
             fixtures = json.load(f)
         for fixture in fixtures:
@@ -94,7 +96,7 @@ class RegenTestData(TestCase):
                 # This is done to avoid having too long of paths for test
                 # expectations
                 fixture_path = fixture_path.replace("-py3-none-any", "")
-                fixture['fields']['path'] = fixture_path
+                fixture["fields"]["path"] = fixture_path
         test_file_location.write_text(json.dumps(fixtures, indent=2))
 
         # Codebase tree
