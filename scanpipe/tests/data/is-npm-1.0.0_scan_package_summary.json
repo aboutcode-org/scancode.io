@@ -1,6 +1,14 @@
 {
   "declared_license_expression": "mit",
-  "license_clarity_score": null,
+  "license_clarity_score": {
+    "score": 90,
+    "declared_license": true,
+    "precise_license_detection": true,
+    "has_license_text": false,
+    "declared_copyrights": true,
+    "conflicting_license_categories": false,
+    "ambiguous_compound_licensing": false
+  },
   "declared_holder": "Sindre Sorhus",
   "primary_language": "JavaScript",
   "other_license_expressions": [],

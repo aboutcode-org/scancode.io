@@ -466,9 +466,6 @@ def make_results_summary(project, scan_results_location):
 
     summary = scan_data.get("summary")
 
-    # Inject the `license_clarity_score` entry in the summary
-    summary["license_clarity_score"] = scan_data.get("license_clarity_score")
-
     # Inject the generated `license_matches` in the summary
     summary["license_matches"] = _get_license_matches_grouped(project)
 
