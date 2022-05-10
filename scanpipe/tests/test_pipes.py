@@ -552,10 +552,14 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
         project = Project.objects.create(name="asgiref")
-        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        # We are using `asgiref-3.3.0_scancode_scan.json` instead of
+        # `asgiref-3.3.0_scan.json` because `asgiref-3.3.0_scan.json` is not
+        # exactly the same format as a scancode-toolkit scan
+        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
 
         scanpipe_app.license_policies_index = license_policies_index
+        scancode.create_discovered_packages(project, virtual_codebase)
         scancode.create_codebase_resources(project, virtual_codebase)
         resources = project.codebaseresources
 
