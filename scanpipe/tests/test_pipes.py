@@ -38,11 +38,11 @@ from commoncode.archive import extract_tar
 from commoncode.resource import VirtualCodebase
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
+from scanpipe.models import ROOT_SYMBOL
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
-from scanpipe.models import ROOT_SYMBOL
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
@@ -532,7 +532,9 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
         # Make sure the root CodebaseResource has been created as ROOT_SYMBOL
-        self.assertTrue(CodebaseResource.objects.filter(path=ROOT_SYMBOL, name=ROOT_SYMBOL).exists())
+        self.assertTrue(
+            CodebaseResource.objects.filter(path=ROOT_SYMBOL, name=ROOT_SYMBOL).exists()
+        )
         # Make sure that the root was not created with a path of "codebase"
         self.assertFalse(CodebaseResource.objects.filter(path="codebase").exists())
 
@@ -697,7 +699,6 @@ class ScanPipePipesTest(TestCase):
             expected = json.loads(f.read())
 
         self.assertEqual(expected, tree)
-
 
     def test_scanpipe_pipes_codebase_project_codebase_class_walk(self):
         fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"

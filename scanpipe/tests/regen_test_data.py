@@ -26,8 +26,8 @@ from pathlib import Path
 from django.core.management import call_command
 from django.test import TestCase
 
-from scanpipe.models import Project
 from scanpipe.models import ROOT_SYMBOL
+from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import output
 

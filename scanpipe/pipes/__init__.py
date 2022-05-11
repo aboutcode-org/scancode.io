@@ -29,9 +29,9 @@ from time import sleep
 
 from django.db.models import Count
 
+from scanpipe.models import ROOT_SYMBOL
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
-from scanpipe.models import ROOT_SYMBOL
 from scanpipe.pipes import scancode
 
 logger = logging.getLogger("scanpipe.pipes")

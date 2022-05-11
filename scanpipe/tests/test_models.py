@@ -434,6 +434,37 @@ class ScanPipeModelsTest(TestCase):
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
 
+    def test_scanpipe_project_model_walk_codebase_path(self):
+        expected_truncated_paths = [
+            "asgiref-3.3.0-py3-none-any.whl-extract",
+            "asgiref-3.3.0-py3-none-any.whl",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+        ]
+        # We need to truncate the paths to avoid false test failures due to the
+        # difference in temporary directory names where the test Project lives
+        truncated_paths = []
+        for resource_path in self.project_asgiref.walk_codebase_path():
+            split_path = str(resource_path).split("/codebase/")
+            if len(split_path) > 1:
+                truncated_path = split_path[1]
+                truncated_paths.append(truncated_path)
+        self.assertEquals(expected_truncated_paths, truncated_paths)
+
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)

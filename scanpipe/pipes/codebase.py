@@ -22,8 +22,8 @@
 
 from django.core.exceptions import ObjectDoesNotExist
 
-from scanpipe.models import Project
 from scanpipe.models import ROOT_SYMBOL
+from scanpipe.models import Project
 
 
 def sort_by_lower_name(resource):
