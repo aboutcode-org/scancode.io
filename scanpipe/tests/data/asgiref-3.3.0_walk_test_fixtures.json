@@ -1,12 +1,12 @@
 [
   {
     "model": "scanpipe.project",
-    "pk": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+    "pk": "0c05f731-131d-4681-b990-da5039af2a07",
     "fields": {
       "extra_data": {},
-      "created_date": "2022-05-10T19:55:00.098Z",
+      "created_date": "2022-05-11T02:11:37.481Z",
       "name": "asgiref",
-      "work_directory": "/tmp/tmp07rqwl9v/projects/asgiref-f370ef2b",
+      "work_directory": "/tmp/tmp79ipugzd/projects/asgiref-0c05f731",
       "input_sources": {
         "asgiref-3.3.0-py3-none-any.whl": "-"
       },
@@ -15,24 +15,59 @@
   },
   {
     "model": "scanpipe.run",
-    "pk": "63b1a5b5-7e08-47ff-a6c4-ae920ae71a41",
+    "pk": "bfb5d0fb-047d-4fc2-822c-9ee1a50d4fea",
     "fields": {
       "task_id": null,
       "task_start_date": null,
       "task_end_date": null,
       "task_exitcode": null,
       "task_output": "",
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "pipeline_name": "scan_codebase",
-      "created_date": "2022-05-10T19:55:00.100Z",
+      "created_date": "2022-05-11T02:11:37.483Z",
       "scancodeio_version": "",
       "description": "A pipeline to scan a codebase resource with ScanCode-toolkit.\n\nInput files are copied to the project's codebase/ directory and are extracted\nin place before running the scan.\nAlternatively, the code can be manually copied to the project codebase/\ndirectory.",
-      "log": "2022-05-10 19:55:00.10 Pipeline [scan_codebase] starting\n2022-05-10 19:55:00.10 Step [copy_inputs_to_codebase_directory] starting\n2022-05-10 19:55:00.10 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds\n2022-05-10 19:55:00.10 Step [extract_archives] starting\n2022-05-10 19:55:00.17 Step [extract_archives] completed in 0.07 seconds\n2022-05-10 19:55:00.17 Step [collect_and_create_codebase_resources] starting\n2022-05-10 19:55:00.35 Step [collect_and_create_codebase_resources] completed in 0.18 seconds\n2022-05-10 19:55:00.35 Step [tag_empty_files] starting\n2022-05-10 19:55:00.36 Step [tag_empty_files] completed in 0.00 seconds\n2022-05-10 19:55:00.36 Step [scan_for_application_packages] starting\n2022-05-10 19:55:02.20 Step [scan_for_application_packages] completed in 1.84 seconds\n2022-05-10 19:55:02.20 Step [scan_for_files] starting\n2022-05-10 19:55:06.90 Step [scan_for_files] completed in 4.70 seconds\n2022-05-10 19:55:06.90 Pipeline completed\n"
+      "log": "2022-05-11 02:11:37.48 Pipeline [scan_codebase] starting\n2022-05-11 02:11:37.48 Step [copy_inputs_to_codebase_directory] starting\n2022-05-11 02:11:37.48 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds\n2022-05-11 02:11:37.48 Step [extract_archives] starting\n2022-05-11 02:11:37.50 Step [extract_archives] completed in 0.02 seconds\n2022-05-11 02:11:37.50 Step [collect_and_create_codebase_resources] starting\n2022-05-11 02:11:37.63 Step [collect_and_create_codebase_resources] completed in 0.12 seconds\n2022-05-11 02:11:37.63 Step [tag_empty_files] starting\n2022-05-11 02:11:37.63 Step [tag_empty_files] completed in 0.00 seconds\n2022-05-11 02:11:37.63 Step [scan_for_application_packages] starting\n2022-05-11 02:11:39.28 Step [scan_for_application_packages] completed in 1.65 seconds\n2022-05-11 02:11:39.28 Step [scan_for_files] starting\n2022-05-11 02:11:43.55 Step [scan_for_files] completed in 4.26 seconds\n2022-05-11 02:11:43.55 Pipeline completed\n"
     }
   },
   {
     "model": "scanpipe.codebaseresource",
     "pk": 1,
+    "fields": {
+      "path": ".",
+      "size": 4096,
+      "sha1": "",
+      "md5": "",
+      "sha256": "",
+      "sha512": "",
+      "extra_data": {},
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "rootfs_path": "",
+      "status": "scanned",
+      "type": "directory",
+      "name": ".",
+      "extension": "",
+      "programming_language": "",
+      "mime_type": "",
+      "file_type": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false,
+      "compliance_alert": ""
+    }
+  },
+  {
+    "model": "scanpipe.codebaseresource",
+    "pk": 2,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract",
       "size": 4096,
@@ -41,7 +76,7 @@
       "sha256": "",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -67,7 +102,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 2,
+    "pk": 3,
     "fields": {
       "path": "asgiref-3.3.0.whl",
       "size": 19948,
@@ -76,7 +111,7 @@
       "sha256": "a5098bc870b80e7b872bff60bb363c7f2c2c89078759f6c47b53ff8c525a152e",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -102,7 +137,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 3,
+    "pk": 4,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref",
       "size": 4096,
@@ -111,7 +146,7 @@
       "sha256": "",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -137,7 +172,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 4,
+    "pk": 5,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
       "size": 4096,
@@ -146,7 +181,7 @@
       "sha256": "",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -172,7 +207,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 5,
+    "pk": 6,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/sync.py",
       "size": 14081,
@@ -181,7 +216,7 @@
       "sha256": "fa4651a3b79201a4dc44a4096cd49ec8f427e912ea0ee05c666357b413a8afe7",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -207,7 +242,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 6,
+    "pk": 7,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/testing.py",
       "size": 3119,
@@ -216,7 +251,7 @@
       "sha256": "ddbc8d455eceb68fc583c67e7c4ad0277c867fb39095c51ec5b37f70342e8334",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -242,7 +277,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 7,
+    "pk": 8,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/server.py",
       "size": 5915,
@@ -251,7 +286,7 @@
       "sha256": "885267fee0fea687875a02ceb929ca095312d47aaa57e20e4ce382f397caaf4d",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -277,7 +312,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 8,
+    "pk": 9,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
       "size": 1598,
@@ -286,7 +321,7 @@
       "sha256": "3151f66c476208c3154cb6c4fb557a2a253bab82f0ab33fb3c8b9f7976be9e33",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -312,7 +347,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 9,
+    "pk": 10,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/local.py",
       "size": 4849,
@@ -321,7 +356,7 @@
       "sha256": "ee0fcf4a8e6fa9df8a4643bb48e82892d496afce44b6c8b8aea2721755545e1c",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -347,7 +382,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 10,
+    "pk": 11,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
       "size": 2974,
@@ -356,7 +391,7 @@
       "sha256": "ddd445b778c097fc75c2bf69ad964cbadd3bd6999d1dd2306d39d401855e8e3e",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -382,7 +417,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 11,
+    "pk": 12,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
       "size": 3914,
@@ -391,7 +426,7 @@
       "sha256": "126c3e3a8a75a517d2739612304607804cf5f34da63fa25d03a6f11f7edb6f2f",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -475,7 +510,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 12,
+    "pk": 13,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
       "size": 6575,
@@ -484,7 +519,7 @@
       "sha256": "f8bd1ea3fb8afddabb10f8efd66796d41446cad51168ef4d3c44b19c973d0ad0",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -510,7 +545,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 13,
+    "pk": 14,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
       "size": 22,
@@ -519,7 +554,7 @@
       "sha256": "30f49b9094bff904a42caeec32515715fe625a56dc48bd7c0e3d9988c0ad4bd7",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -545,7 +580,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 14,
+    "pk": 15,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
       "size": 1552,
@@ -554,7 +589,7 @@
       "sha256": "b846415d1b514e9c1dff14a22deb906d794bc546ca6129f950a18cd091e2a669",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [
         {
           "end_line": 1,
@@ -634,7 +669,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 15,
+    "pk": 16,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
       "size": 92,
@@ -643,7 +678,7 @@
       "sha256": "11546323af45e6a5639bf620a9c4d73e74c0bf705f494af4595007b923f75e8a",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -669,7 +704,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 16,
+    "pk": 17,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
       "size": 8,
@@ -678,7 +713,7 @@
       "sha256": "6e89108c2cf0c0446174188f76f60465ae1c1f14f83427807df40d52a27cb2c8",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -704,7 +739,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 17,
+    "pk": 18,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
       "size": 1073,
@@ -713,7 +748,7 @@
       "sha256": "2c1983592aa38f0bfb0afacc73ddc5b46ce10e8e89ceaa9fed1e5fc6361b608d",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -739,7 +774,7 @@
   },
   {
     "model": "scanpipe.codebaseresource",
-    "pk": 18,
+    "pk": 19,
     "fields": {
       "path": "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "size": 8800,
@@ -748,7 +783,7 @@
       "sha256": "70f98f4eb9f6068b192b5464fcdf69e29a8ff09962bfce84bbb052baeee44f33",
       "sha512": "",
       "extra_data": {},
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -782,7 +817,7 @@
       "version": "3.3.0",
       "qualifiers": "",
       "subpath": "",
-      "uuid": "9e7316ac-724e-4290-a311-7aafab4452b8",
+      "uuid": "7ec19cce-23ac-4a34-8114-a436e3afbc14",
       "last_modified_date": null,
       "filename": "",
       "primary_language": "Python",
@@ -807,7 +842,7 @@
         "Documentation": "Documentation, https://asgi.readthedocs.io/",
         "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [
@@ -846,7 +881,7 @@
       ],
       "source_packages": [],
       "codebase_resources": [
-        2
+        3
       ]
     }
   },
@@ -860,7 +895,7 @@
       "version": "3.3.0",
       "qualifiers": "",
       "subpath": "",
-      "uuid": "6660441c-b483-475f-82bb-2b8a483f4f7d",
+      "uuid": "5f45f131-5f15-411d-bb1b-abb600ec9547",
       "last_modified_date": null,
       "filename": "",
       "primary_language": "Python",
@@ -885,7 +920,7 @@
         "Documentation": "Documentation, https://asgi.readthedocs.io/",
         "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "project": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
+      "project": "0c05f731-131d-4681-b990-da5039af2a07",
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [
@@ -924,7 +959,7 @@
       ],
       "source_packages": [],
       "codebase_resources": [
-        18
+        19
       ]
     }
   }

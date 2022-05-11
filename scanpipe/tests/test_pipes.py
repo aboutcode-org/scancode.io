@@ -26,7 +26,6 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from unittest import expectedFailure
 from unittest import mock
 
 from django.apps import apps
@@ -43,6 +42,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import ROOT_SYMBOL
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
@@ -520,20 +520,19 @@ class ScanPipePipesTest(TestCase):
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
 
-    @expectedFailure
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
-        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
 
         self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
-        # Make sure the root CodebaseResource has been created as "."
-        self.assertTrue(CodebaseResource.objects.filter(path=".", name=".").exists())
+        # Make sure the root CodebaseResource has been created as ROOT_SYMBOL
+        self.assertTrue(CodebaseResource.objects.filter(path=ROOT_SYMBOL, name=ROOT_SYMBOL).exists())
         # Make sure that the root was not created with a path of "codebase"
         self.assertFalse(CodebaseResource.objects.filter(path="codebase").exists())
 
@@ -542,14 +541,19 @@ class ScanPipePipesTest(TestCase):
             CodebaseResource.objects.filter(path__startswith="codebase").exists()
         )
 
-        # Make sure the detected package is properly assigned to its codebase resource
+        # Make sure the detected package is properly assigned to its codebase resources
         package = DiscoveredPackage.objects.get()
-        expected = "asgiref-3.3.0-py3-none-any.whl"
-        self.assertEqual(expected, package.codebase_resources.get().path)
+        expected = [
+            "asgiref-3.3.0-py3-none-any.whl",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+        ]
+        package_resources = package.codebase_resources.all().order_by("path")
+        package_resource_paths = [resource.path for resource in package_resources]
+        self.assertEqual(expected, package_resource_paths)
 
         # The functions can be called again and existing objects are skipped
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
         self.assertEqual(19, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
 
@@ -669,7 +673,6 @@ class ScanPipePipesTest(TestCase):
         with self.assertRaises(AttributeError):
             project_codebase.get_tree()
 
-    @expectedFailure
     def test_scanpipe_pipes_codebase_project_codebase_class_with_resources(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -695,9 +698,9 @@ class ScanPipePipesTest(TestCase):
 
         self.assertEqual(expected, tree)
 
-    @expectedFailure
+
     def test_scanpipe_pipes_codebase_project_codebase_class_walk(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -711,6 +714,7 @@ class ScanPipePipesTest(TestCase):
             "asgiref-3.3.0.whl-extract/asgiref",
             "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/local.py",
             "asgiref-3.3.0.whl-extract/asgiref/server.py",
             "asgiref-3.3.0.whl-extract/asgiref/sync.py",
@@ -731,6 +735,7 @@ class ScanPipePipesTest(TestCase):
             "asgiref-3.3.0.whl",
             "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
             "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
             "asgiref-3.3.0.whl-extract/asgiref/local.py",
             "asgiref-3.3.0.whl-extract/asgiref/server.py",
             "asgiref-3.3.0.whl-extract/asgiref/sync.py",

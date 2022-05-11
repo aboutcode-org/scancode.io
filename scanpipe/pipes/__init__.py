@@ -29,10 +29,9 @@ from time import sleep
 
 from django.db.models import Count
 
-from packageurl import normalize_qualifiers
-
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import ROOT_SYMBOL
 from scanpipe.pipes import scancode
 
 logger = logging.getLogger("scanpipe.pipes")
@@ -64,10 +63,11 @@ def make_codebase_resource(project, location, rootfs_path=None):
 
     if location_path == project.codebase_path:
         # If we are making a CodebaseResource for the project codebase/
-        # directory, `relative_path` will be ".". However, when we scan
+        # directory, `relative_path` will be ROOT_SYMBOL. However, when we scan
         # `location`, the `name` field will be "codebase". We have to overwrite
-        # the `name` field with "." to be consistant with `relative_path`
-        resource_data["name"] = "."
+        # the `name` field with ROOT_SYMBOL to be consistant with
+        # `relative_path`
+        resource_data["name"] = ROOT_SYMBOL
 
     if rootfs_path:
         resource_data["rootfs_path"] = rootfs_path

@@ -23,6 +23,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from scanpipe.models import Project
+from scanpipe.models import ROOT_SYMBOL
 
 
 def sort_by_lower_name(resource):
@@ -70,7 +71,7 @@ class ProjectCodebase:
     @property
     def root(self):
         try:
-            return self.project.codebaseresources.get(path=".")
+            return self.project.codebaseresources.get(path=ROOT_SYMBOL)
         except ObjectDoesNotExist:
             raise AttributeError("Codebase root cannot be determined.")
 

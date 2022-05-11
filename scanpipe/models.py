@@ -74,6 +74,9 @@ logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+ROOT_SYMBOL = "."
+
+
 class RunInProgressError(Exception):
     """Run are in progress or queued on this project."""
 
@@ -1551,6 +1554,16 @@ class CodebaseResource(
         """
         return self.type == self.Type.SYMLINK
 
+    @property
+    def is_root(self):
+        """
+        Returns True, if the resource is the root of the codebase.
+
+        We consider the root resource of the codebase to be the resource whose
+        path is equal to ROOT_SYMBOL.
+        """
+        return self.path == ROOT_SYMBOL
+
     def compute_compliance_alert(self):
         """
         Computes and returns the compliance_alert value from the `licenses` policies.
@@ -1591,9 +1604,17 @@ class CodebaseResource(
         Returns a QuerySet of descendant CodebaseResource objects using a
         database query on the current CodebaseResource `path`.
         The current CodebaseResource is not included.
+
+        In the case where we are at the root CodebaseResource of a codebase, we
+        return all CodebaseResources, excluding the root CodebaseResource, whose
+        path is equal to ROOT_SYMBOL.
         """
-        if self.path == ".":
-            return self.project.codebaseresources.exclude(path=".")
+        if self.is_root:
+            # We use a different query in the case we are at the root
+            # CodebaseResource because its path is equal to ROOT_SYMBOL, and no
+            # other CodebaseResource start with ROOT_SYMBOL. Using the other query
+            # would result in no CodebaseResources being returned.
+            return self.project.codebaseresources.exclude(path=ROOT_SYMBOL)
         else:
             return self.project.codebaseresources.filter(
                 path__startswith=f"{self.path}/"
@@ -1611,7 +1632,11 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        if self.path == ".":
+        if self.is_root:
+            # The root CodebaseResource has a path of ROOT_SYMBOL, and no other
+            # CodebaseResource paths starts with ROOT_SYMBOL. Because of this,
+            # we cannot use the path value of the root as part of the query, as
+            # no other CodebaseResources would be found.
             unnested_file_or_directory = "^[^/]+$"
             children_regex = rf"{unnested_file_or_directory}"
         else:

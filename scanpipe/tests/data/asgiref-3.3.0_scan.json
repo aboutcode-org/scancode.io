@@ -4,8 +4,8 @@
       "tool_name": "scanpipe",
       "tool_version": "30.2.0",
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "uuid": "f370ef2b-440c-479b-b5aa-a96c083d4bae",
-      "created_date": "2022-05-10T19:55:00.098Z",
+      "uuid": "0c05f731-131d-4681-b990-da5039af2a07",
+      "created_date": "2022-05-11T02:11:37.481Z",
       "input_sources": [
         {
           "filename": "asgiref-3.3.0-py3-none-any.whl",
@@ -17,15 +17,15 @@
           "pipeline_name": "scan_codebase",
           "status": "not_started",
           "description": "A pipeline to scan a codebase resource with ScanCode-toolkit.\n\nInput files are copied to the project's codebase/ directory and are extracted\nin place before running the scan.\nAlternatively, the code can be manually copied to the project codebase/\ndirectory.",
-          "uuid": "63b1a5b5-7e08-47ff-a6c4-ae920ae71a41",
-          "created_date": "2022-05-10T19:55:00.100589Z",
+          "uuid": "bfb5d0fb-047d-4fc2-822c-9ee1a50d4fea",
+          "created_date": "2022-05-11T02:11:37.483234Z",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
           "task_end_date": null,
           "task_exitcode": null,
           "task_output": "",
-          "log": "2022-05-10 19:55:00.10 Pipeline [scan_codebase] starting\n2022-05-10 19:55:00.10 Step [copy_inputs_to_codebase_directory] starting\n2022-05-10 19:55:00.10 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds\n2022-05-10 19:55:00.10 Step [extract_archives] starting\n2022-05-10 19:55:00.17 Step [extract_archives] completed in 0.07 seconds\n2022-05-10 19:55:00.17 Step [collect_and_create_codebase_resources] starting\n2022-05-10 19:55:00.35 Step [collect_and_create_codebase_resources] completed in 0.18 seconds\n2022-05-10 19:55:00.35 Step [tag_empty_files] starting\n2022-05-10 19:55:00.36 Step [tag_empty_files] completed in 0.00 seconds\n2022-05-10 19:55:00.36 Step [scan_for_application_packages] starting\n2022-05-10 19:55:02.20 Step [scan_for_application_packages] completed in 1.84 seconds\n2022-05-10 19:55:02.20 Step [scan_for_files] starting\n2022-05-10 19:55:06.90 Step [scan_for_files] completed in 4.70 seconds\n2022-05-10 19:55:06.90 Pipeline completed\n",
+          "log": "2022-05-11 02:11:37.48 Pipeline [scan_codebase] starting\n2022-05-11 02:11:37.48 Step [copy_inputs_to_codebase_directory] starting\n2022-05-11 02:11:37.48 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds\n2022-05-11 02:11:37.48 Step [extract_archives] starting\n2022-05-11 02:11:37.50 Step [extract_archives] completed in 0.02 seconds\n2022-05-11 02:11:37.50 Step [collect_and_create_codebase_resources] starting\n2022-05-11 02:11:37.63 Step [collect_and_create_codebase_resources] completed in 0.12 seconds\n2022-05-11 02:11:37.63 Step [tag_empty_files] starting\n2022-05-11 02:11:37.63 Step [tag_empty_files] completed in 0.00 seconds\n2022-05-11 02:11:37.63 Step [scan_for_application_packages] starting\n2022-05-11 02:11:39.28 Step [scan_for_application_packages] completed in 1.65 seconds\n2022-05-11 02:11:39.28 Step [scan_for_files] starting\n2022-05-11 02:11:43.55 Step [scan_for_files] completed in 4.26 seconds\n2022-05-11 02:11:43.55 Pipeline completed\n",
           "execution_time": null
         }
       ],
@@ -171,6 +171,34 @@
     }
   ],
   "files": [
+    {
+      "for_packages": [],
+      "compliance_alert": "",
+      "path": ".",
+      "size": 4096,
+      "sha1": "",
+      "md5": "",
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "scanned",
+      "type": "directory",
+      "name": ".",
+      "extension": "",
+      "programming_language": "",
+      "mime_type": "",
+      "file_type": "",
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false
+    },
     {
       "for_packages": [
         "pkg:pypi/asgiref@3.3.0"
