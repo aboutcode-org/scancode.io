@@ -1769,7 +1769,7 @@ class DiscoveredPackage(
         If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
-        required_fields = ["type", "name", "version"]
+        required_fields = ["type", "name"]
         missing_values = [
             field_name
             for field_name in required_fields
