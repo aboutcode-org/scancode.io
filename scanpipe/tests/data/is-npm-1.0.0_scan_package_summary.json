@@ -258,44 +258,6 @@
         "environment"
       ],
       "source_packages": []
-    },
-    {
-      "purl": "pkg:npm/is-npm@1.0.0",
-      "type": "npm",
-      "namespace": "",
-      "name": "is-npm",
-      "version": "1.0.0",
-      "qualifiers": "",
-      "subpath": "",
-      "primary_language": "JavaScript",
-      "description": "Check if your code is running as an npm script",
-      "release_date": null,
-      "homepage_url": "",
-      "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "https://github.com/sindresorhus/is-npm",
-      "copyright": "",
-      "license_expression": "mit",
-      "declared_license": "['MIT']",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {},
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [
-        "npm",
-        "is",
-        "check",
-        "detect",
-        "env",
-        "environment"
-      ],
-      "source_packages": []
     }
   ]
 }

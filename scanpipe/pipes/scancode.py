@@ -481,10 +481,10 @@ def make_results_summary(project, scan_results_location):
         key_files.append(resource_data)
 
         packages = resource.discovered_packages.all()
-        packages_data = [
-            DiscoveredPackageSerializer(package).data for package in packages
-        ]
-        key_files_packages.extend(packages_data)
+        for package in packages:
+            package_data = DiscoveredPackageSerializer(package).data
+            if package_data not in key_files_packages:
+                key_files_packages.append(package_data)
 
     summary["key_files"] = key_files
     summary["key_files_packages"] = key_files_packages

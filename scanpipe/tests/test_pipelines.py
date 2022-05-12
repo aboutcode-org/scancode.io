@@ -287,6 +287,14 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
         self.assertPipelineResultEqual(expected_file, summary_file, regen=False)
 
+        # Ensure that we only have one instance of is-npm in `key_files_packages`
+        summary_data = json.loads(Path(summary_file).read_text())
+        key_files_packages = summary_data.get("key_files_packages", [])
+        self.assertEqual(1, len(key_files_packages))
+        key_file_package = key_files_packages[0]
+        key_file_package_purl = key_file_package.get("purl", "")
+        self.assertEqual("pkg:npm/is-npm@1.0.0", key_file_package_purl)
+
     def test_scanpipe_scan_codebase_pipeline_integration_test(self):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="Analysis")
