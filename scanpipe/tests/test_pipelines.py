@@ -340,3 +340,27 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = self.data_location / "alpine_3_15_4_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
+    def test_scanpipe_docker_pipeline_rpm_integration_test(self):
+        pipeline_name = "docker"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "redhat_ubi8.tar"
+        input_location = self.data_location / filename
+        project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, _ = pipeline.execute()
+        self.assertEqual(0, exitcode)
+
+        # TODO: add correct number of resources and packages when we get the
+        # pipeline working
+        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data_location / "redhat_ubi8_scan_codebase.json"
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
