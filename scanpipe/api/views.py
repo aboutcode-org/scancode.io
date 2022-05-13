@@ -261,6 +261,12 @@ class ProjectViewSet(
 
         return Response({"status": "Input(s) added."})
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except RunInProgressError as error:
+            return Response({"status": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=["get", "post"])
     def archive(self, request, *args, **kwargs):
         project = self.get_object()
