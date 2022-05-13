@@ -41,6 +41,8 @@ class Pipeline:
     Base class for all pipelines.
     """
 
+    download_inputs = True
+
     def __init__(self, run):
         """
         Load the Run and Project instances.
@@ -107,7 +109,12 @@ class Pipeline:
     def execute(self):
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
-        for step in self.get_steps():
+        steps = list(self.get_steps())
+
+        if self.download_inputs:
+            steps.insert(0, self.__class__.download_missing_inputs)
+
+        for step in steps:
             self.log(f"Step [{step.__name__}] starting")
             start_time = timeit.default_timer()
 
@@ -124,6 +131,9 @@ class Pipeline:
         self.log(f"Pipeline completed")
 
         return 0, ""
+
+    def download_missing_inputs(self):
+        self.log("Download missing inputs..")
 
     def add_error(self, error):
         self.project.add_error(error, model=self.pipeline_name)

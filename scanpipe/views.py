@@ -215,13 +215,13 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         package_types = packages.values_list("type", flat=True)
 
         inputs, missing_inputs = project.inputs_with_source
-        if missing_inputs:
-            missing_files = "\n- ".join(missing_inputs.keys())
-            message = (
-                f"The following input files are not available on disk anymore:\n"
-                f"- {missing_files}"
-            )
-            messages.error(self.request, message)
+        # if missing_inputs:
+        #     missing_files = "\n- ".join(missing_inputs.keys())
+        #     message = (
+        #         f"The following input files are not available on disk anymore:\n"
+        #         f"- {missing_files}"
+        #     )
+        #     messages.error(self.request, message)
 
         if project.is_archived:
             message = "WARNING: This project is archived and read-only."

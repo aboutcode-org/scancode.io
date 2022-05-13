@@ -40,7 +40,10 @@ class InputsBaseForm(forms.Form):
     input_urls = forms.CharField(
         label="Download URLs",
         required=False,
-        help_text="Provide one or more URLs to download, one per line.",
+        help_text=(
+            "Provide one or more URLs to download, one per line. "
+            "Files are fetched at the begin of the pipeline run execution."
+        ),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea",
@@ -56,28 +59,29 @@ class InputsBaseForm(forms.Form):
     class Media:
         js = ("add-inputs.js",)
 
-    def clean_input_urls(self):
-        """
-        Fetches the `input_urls` and sets the `downloads` objects in the cleaned_data.
-        A validation error is raised, if at least one URL can't be fetched.
-        """
-        input_urls = self.cleaned_data.get("input_urls", [])
-
-        self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
-        if errors:
-            raise ValidationError("Could not fetch: " + "\n".join(errors))
-
-        return input_urls
+    # def clean_input_urls(self):
+    #     """
+    #     Fetches the `input_urls` and sets the `downloads` objects in the cleaned_data.
+    #     A validation error is raised, if at least one URL can't be fetched.
+    #     """
+    #     input_urls = self.cleaned_data.get("input_urls", [])
+    #
+    #     self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
+    #     if errors:
+    #         raise ValidationError("Could not fetch: " + "\n".join(errors))
+    #
+    #     return input_urls
 
     def handle_inputs(self, project):
         input_files = self.files.getlist("input_files")
-        downloads = self.cleaned_data.get("downloads")
+        input_urls_str = self.cleaned_data.get("input_urls", "")
 
         if input_files:
             project.add_uploads(input_files)
 
-        if downloads:
-            project.add_downloads(downloads)
+        input_urls = input_urls_str.split()
+        for url in input_urls:
+            project.add_input_source(filename="", source=url, save=True)
 
 
 class PipelineBaseForm(forms.Form):

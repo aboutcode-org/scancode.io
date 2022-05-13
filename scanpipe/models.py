@@ -405,7 +405,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         editable=False,
         help_text=_("Project work directory location."),
     )
-    input_sources = models.JSONField(default=dict, blank=True, editable=False)
+    # {"filename": "source"}
+    # input_sources = models.JSONField(default=dict, blank=True, editable=False)
+
+    # [{
+    #     "filename": "dejacode-inventory.csv",
+    #     "source": "uploaded"
+    # }]
+    input_sources = models.JSONField(default=list, blank=True, editable=False)
+
     is_archived = models.BooleanField(
         default=False,
         editable=False,
@@ -493,7 +501,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
         if not keep_input:
             work_directories.append(self.input_path)
-            self.input_sources = {}
+            self.input_sources = []
 
         self.extra_data = {}
         self.save()
@@ -688,7 +696,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Adds given `filename` and `source` to the current project's `input_sources`
         field.
         """
-        self.input_sources[filename] = source
+        self.input_sources.append(
+            {
+                "filename": filename,
+                "source": source,
+            }
+        )
         if save:
             self.save()
 
