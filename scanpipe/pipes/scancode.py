@@ -474,6 +474,7 @@ def make_results_summary(project, scan_results_location):
 
     key_files = []
     key_files_packages = []
+    seen_package_uids = []
 
     for resource in key_files_qs:
         resource_data = CodebaseResourceSerializer(resource).data
@@ -483,7 +484,13 @@ def make_results_summary(project, scan_results_location):
         packages = resource.discovered_packages.all()
         for package in packages:
             package_data = DiscoveredPackageSerializer(package).data
-            if package_data not in key_files_packages:
+            package_uids = package_data.get('extra_data', {}).get("package_uids", [])
+            already_seen = all(
+                package_uid in seen_package_uids
+                for package_uid in package_uids
+            )
+            if not already_seen:
+                seen_package_uids.extend(package_uids)
                 key_files_packages.append(package_data)
 
     summary["key_files"] = key_files
