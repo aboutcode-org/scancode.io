@@ -445,6 +445,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
         if remove_input:
             shutil.rmtree(self.input_path, ignore_errors=True)
+            # Delete the file on disk but keep the InputSource entries for reference.
+            for input_source in self.inputsources.all():
+                input_source.delete_file()
 
         if remove_codebase:
             shutil.rmtree(self.codebase_path, ignore_errors=True)
@@ -887,17 +890,35 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 
 
 class InputSource(UUIDPKModel, ProjectRelatedModel):
-    """ """
+    """
+    A model that represents an input file associated to a project.
+    The file can either be "uploaded" and "fetched" from a provided `source`.
+    """
 
-    source = models.TextField(blank=True, help_text=_(""))
-    filename = models.CharField(max_length=1024, blank=True, help_text=_(""))
+    source = models.TextField(blank=True, help_text=_("URL of the file."))
+    filename = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_("Name of the file as uploaded or downloaded from a source."),
+    )
     is_uploaded = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.filename=} {self.source=} {self.is_uploaded=}"
 
+    def delete(self, *args, **kwargs):
+        """
+        Deletes the file on disk along the database entry.
+        """
+        self.delete_file()
+        return super().delete(*args, **kwargs)
+
     @property
     def path(self):
+        """
+        Return the `Path` of the input source instance on disk when a
+        `filename` is available.
+        """
         if self.filename:
             return self.project.input_path / self.filename
 
@@ -910,12 +931,19 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
             return self.path.exists()
         return False
 
+    def delete_file(self):
+        """
+        Deletes the file on disk.
+        """
+        if self.exists():
+            self.path.unlink()
+
     @property
     def file_info(self):
+        """
+        Returns file information.
+        """
         path = self.path
-        print(path)
-        print("uploaded" if self.is_uploaded else self.source)
-
         return {
             "name": path.name,
             "is_file": path.is_file(),
@@ -925,7 +953,13 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         }
 
     def fetch(self):
+        """
+        Fetches the file from this instance `source` field.
+        """
         from scanpipe.pipes.fetch import fetch_url
+
+        if not self.source:
+            raise Exception("No `source` value to be fetched.")
 
         downloaded = fetch_url(url=self.source)
         self.filename = downloaded.filename
