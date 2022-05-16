@@ -75,7 +75,7 @@ function displayOverlay() {
 }
 
 // Display and update the `$progress` object on `$form` submitted using XHR
-function displayFormUploadProgress($form, $progress, $form_errors) {
+function displayFormUploadProgress($form, $progress, $form_errors, update_title=false) {
 
  // Prepare an AJAX request to submit the form and track the progress
   let xhr = new XMLHttpRequest();
@@ -90,6 +90,7 @@ function displayFormUploadProgress($form, $progress, $form_errors) {
     if (event.lengthComputable) {
       let percent = (event.loaded / event.total * 100).toFixed();
       $progress.setAttribute('value', percent);
+      if (update_title) document.title = `Uploading: ${percent}% - ScanCode.io`;
     }
   }, false);
 
