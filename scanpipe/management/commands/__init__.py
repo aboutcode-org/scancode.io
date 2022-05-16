@@ -148,7 +148,7 @@ class AddInputCommandMixin:
             self.project.copy_input_from(file_location)
             filename = Path(file_location).name
             copied.append(filename)
-            self.project.add_input_source(filename, source="uploaded", save=True)
+            self.project.add_input_source(source="uploaded", filename=filename)
 
         msg = "File(s) copied to the project inputs directory:"
         self.stdout.write(self.style.SUCCESS(msg))

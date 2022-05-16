@@ -22,10 +22,8 @@
 
 from django import forms
 from django.apps import apps
-from django.core.exceptions import ValidationError
 
 from scanpipe.models import Project
-from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -59,19 +57,6 @@ class InputsBaseForm(forms.Form):
     class Media:
         js = ("add-inputs.js",)
 
-    # def clean_input_urls(self):
-    #     """
-    #     Fetches the `input_urls` and sets the `downloads` objects in the cleaned_data.
-    #     A validation error is raised, if at least one URL can't be fetched.
-    #     """
-    #     input_urls = self.cleaned_data.get("input_urls", [])
-    #
-    #     self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
-    #     if errors:
-    #         raise ValidationError("Could not fetch: " + "\n".join(errors))
-    #
-    #     return input_urls
-
     def handle_inputs(self, project):
         input_files = self.files.getlist("input_files")
         input_urls_str = self.cleaned_data.get("input_urls", "")
@@ -81,7 +66,7 @@ class InputsBaseForm(forms.Form):
 
         input_urls = input_urls_str.split()
         for url in input_urls:
-            project.add_input_source(filename="", source=url, save=True)
+            project.add_input_source(source=url)
 
 
 class PipelineBaseForm(forms.Form):

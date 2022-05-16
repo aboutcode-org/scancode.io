@@ -405,15 +405,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         editable=False,
         help_text=_("Project work directory location."),
     )
-    # {"filename": "source"}
-    # input_sources = models.JSONField(default=dict, blank=True, editable=False)
-
-    # [{
-    #     "filename": "dejacode-inventory.csv",
-    #     "source": "uploaded"
-    # }]
-    input_sources = models.JSONField(default=list, blank=True, editable=False)
-
     is_archived = models.BooleanField(
         default=False,
         editable=False,
@@ -524,7 +515,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def setup_work_directory(self):
         """
-        Creates all of the work_directory structure and skips if already existing.
+        Creates all the work_directory structure and skips if already existing.
         """
         for subdirectory in self.WORK_DIRECTORIES:
             Path(self.work_directory, subdirectory).mkdir(parents=True, exist_ok=True)
@@ -574,13 +565,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.tmp_path.mkdir(exist_ok=True)
 
-    @property
-    def input_sources_list(self):
-        return [
-            {"filename": filename, "source": source}
-            for filename, source in self.input_sources.items()
-        ]
-
     def inputs(self, pattern="**/*"):
         """
         Returns all files and directories path of the input/ directory matching
@@ -625,24 +609,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Returns a list of inputs including the source, type, sha256, and size data.
         Returns the `missing_inputs` defined in the `input_sources` field but not
         available in the input/ directory.
-        Only first level children will be listed.
+        Only first level children are listed.
         """
-        input_path = self.input_path
-        input_sources = dict(self.input_sources)
-
+        missing_inputs = []
         inputs = []
-        for path in input_path.glob("*"):
-            inputs.append(
-                {
-                    "name": path.name,
-                    "is_file": path.is_file(),
-                    "size": path.stat().st_size,
-                    **multi_checksums(path, ["sha256"]),
-                    "source": input_sources.pop(path.name, "not_found"),
-                }
-            )
 
-        missing_inputs = input_sources
+        for input_source in self.inputsources.all():
+            if input_source.exists():
+                inputs.append(input_source.file_info)
+            else:
+                missing_inputs.append(input_source)
+
         return inputs, missing_inputs
 
     @property
@@ -691,20 +668,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         return not self.runs.has_start_date().exists()
 
-    def add_input_source(self, filename, source, save=False):
-        """
-        Adds given `filename` and `source` to the current project's `input_sources`
-        field.
-        """
-        self.input_sources.append(
-            {
-                "filename": filename,
-                "source": source,
-            }
-        )
-        if save:
-            self.save()
-
     def write_input_file(self, file_object):
         """
         Writes the provided `file_object` to the project's input/ directory.
@@ -732,6 +695,21 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
         move_inputs([input_location], self.input_path)
 
+    def add_input_source(self, source="", filename="", is_uploaded=False):
+        """
+        Adds given `filename` and `source` to the current project's `input_sources`
+        field.
+        """
+        if not source and not filename:
+            raise Exception("Provide at least a value for source or filename.")
+
+        return InputSource.objects.create(
+            project=self,
+            source=source,
+            filename=filename,
+            is_uploaded=is_uploaded,
+        )
+
     def add_downloads(self, downloads):
         """
         Moves the given `downloads` to the current project's input/ directory and
@@ -739,8 +717,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         for downloaded in downloads:
             self.move_input_from(downloaded.path)
-            self.add_input_source(downloaded.filename, downloaded.uri)
-        self.save()
+            self.add_input_source(source=downloaded.uri, filename=downloaded.filename)
 
     def add_uploads(self, uploads):
         """
@@ -749,8 +726,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         for uploaded in uploads:
             self.write_input_file(uploaded)
-            self.add_input_source(filename=uploaded.name, source="uploaded")
-        self.save()
+            self.add_input_source(filename=uploaded.name, is_uploaded=True)
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
@@ -892,7 +868,7 @@ class ProjectRelatedModel(models.Model):
 
 class ProjectError(UUIDPKModel, ProjectRelatedModel):
     """
-    Stores errors and§ exceptions raised during a pipeline run.
+    Stores errors and exceptions raised during a pipeline run.
     """
 
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
@@ -908,6 +884,54 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 
     def __str__(self):
         return f"[{self.pk}] {self.model}: {self.message}"
+
+
+class InputSource(UUIDPKModel, ProjectRelatedModel):
+    """ """
+
+    source = models.TextField(blank=True, help_text=_(""))
+    filename = models.CharField(max_length=1024, blank=True, help_text=_(""))
+    is_uploaded = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.filename=} {self.source=} {self.is_uploaded=}"
+
+    @property
+    def path(self):
+        if self.filename:
+            return self.project.input_path / self.filename
+
+    def exists(self):
+        """
+        Returns True if the file is available on disk at the expected path.
+        """
+        path = self.path
+        if path:
+            return self.path.exists()
+        return False
+
+    @property
+    def file_info(self):
+        path = self.path
+        print(path)
+        print("uploaded" if self.is_uploaded else self.source)
+
+        return {
+            "name": path.name,
+            "is_file": path.is_file(),
+            "size": path.stat().st_size,
+            **multi_checksums(path, ["sha256"]),
+            "source": "uploaded" if self.is_uploaded else self.source,
+        }
+
+    def fetch(self):
+        from scanpipe.pipes.fetch import fetch_url
+
+        downloaded = fetch_url(url=self.source)
+        self.filename = downloaded.filename
+        self.save()
+
+        self.project.move_input_from(downloaded.path)
 
 
 class SaveProjectErrorMixin:

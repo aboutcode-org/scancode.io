@@ -89,7 +89,7 @@ class Pipeline:
     @classmethod
     def get_info(cls):
         """
-        Returns a dictctionary of combined data about the current pipeline.
+        Returns a dictionary of combined data about the current pipeline.
         """
         return {
             "description": cls.get_doc(),
@@ -133,7 +133,19 @@ class Pipeline:
         return 0, ""
 
     def download_missing_inputs(self):
-        self.log("Download missing inputs..")
+        """
+        Downloads any InputSource missing on disk.
+        Raise an error if any of the uploaded files is not available.
+        """
+        for input_source in self.project.inputsources.all():
+            if input_source.exists():
+                continue
+
+            if input_source.is_uploaded:
+                raise Exception(f"Uploaded file {input_source} not available.")
+
+            self.log(f"Fetching {input_source.source} ...")
+            input_source.fetch()
 
     def add_error(self, error):
         self.project.add_error(error, model=self.pipeline_name)

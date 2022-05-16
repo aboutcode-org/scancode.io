@@ -27,6 +27,7 @@ from rest_framework import serializers
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
@@ -89,6 +90,17 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
         ]
 
 
+class InputSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InputSource
+        fields = [
+            "source",
+            "filename",
+            "is_uploaded",
+            "exists",
+        ]
+
+
 class ProjectSerializer(
     ExcludeFromListViewMixin, PipelineChoicesMixin, serializers.ModelSerializer
 ):
@@ -99,7 +111,7 @@ class ProjectSerializer(
     )
     execute_now = serializers.BooleanField(
         write_only=True,
-        help_text=("Execute pipeline now"),
+        help_text="Execute pipeline now",
     )
     upload_file = serializers.FileField(write_only=True, required=False)
     input_urls = serializers.CharField(
@@ -110,7 +122,11 @@ class ProjectSerializer(
     webhook_url = serializers.CharField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
-    input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
+    input_sources = InputSourceSerializer(
+        source="inputsources",
+        many=True,
+        read_only=True,
+    )
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_package_summary = serializers.SerializerMethodField()
 
@@ -141,6 +157,7 @@ class ProjectSerializer(
         )
 
         exclude_from_list_view = [
+            "input_sources",
             "input_root",
             "output_root",
             "extra_data",

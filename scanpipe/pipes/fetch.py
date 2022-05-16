@@ -240,6 +240,16 @@ def _get_fetcher(url):
     return fetch_http
 
 
+def fetch_url(url):
+    """
+    Fetches provided `url` and returns the result as a `Download` object.
+    """
+    fetcher = _get_fetcher(url)
+    logger.info(f'Fetching "{url}" using {fetcher.__name__}')
+    downloaded = fetcher(url)
+    return downloaded
+
+
 def fetch_urls(urls):
     """
     Fetches provided `urls` list.
@@ -253,10 +263,8 @@ def fetch_urls(urls):
         urls = [url.strip() for url in urls.split()]
 
     for url in urls:
-        fetcher = _get_fetcher(url)
-        logger.info(f'Fetching "{url}" using {fetcher.__name__}')
         try:
-            downloaded = fetcher(url)
+            downloaded = fetch_url(url)
         except Exception:
             errors.append(url)
         else:
