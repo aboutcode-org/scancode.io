@@ -33,9 +33,9 @@
         {% endif %}
       </div>
       <div class="is-family-monospace is-size-7">
-<!--    {% if input.exists %}-->
+        {% if input.size %}
           {{ input.size|filesizeformat }}
-<!--    {% endif %}-->
+        {% endif %}
       </div>
     </div>
   {% endfor %}

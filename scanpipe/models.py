@@ -605,24 +605,31 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         return self.get_root_content(self.input_path)
 
-    @property
-    def inputs_with_source(self):
+    def get_inputs_with_source(self):
         """
         Returns a list of inputs including the source, type, sha256, and size data.
         Returns the `missing_inputs` defined in the `input_sources` field but not
         available in the input/ directory.
         Only first level children are listed.
         """
-        missing_inputs = []
-        inputs = []
+        input_sources = []
 
         for input_source in self.inputsources.all():
-            if input_source.exists():
-                inputs.append(input_source.file_info)
-            else:
-                missing_inputs.append(input_source)
+            input_sources.append(
+                {
+                    # Fields
+                    "uuid": input_source.uuid,
+                    "source": input_source.source,
+                    "filename": input_source.filename,
+                    "is_uploaded": input_source.is_uploaded,
+                    # Properties
+                    "size": input_source.size,
+                    # Methods
+                    "exists": input_source.exists(),
+                }
+            )
 
-        return inputs, missing_inputs
+        return input_sources
 
     @property
     def output_root(self):
@@ -942,20 +949,8 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         """
         Returns file size in byte.
         """
-        return self.path.stat().st_size
-
-    # @property
-    # def file_info(self):
-    #     """
-    #     Returns file information.
-    #     """
-    #     path = self.path
-    #     return {
-    #         "name": path.name,
-    #         "is_file": path.is_file(),
-    #         "size": path.stat().st_size,
-    #         "source": "uploaded" if self.is_uploaded else self.source,
-    #     }
+        if self.exists():
+            return self.path.stat().st_size
 
     def fetch(self):
         """
