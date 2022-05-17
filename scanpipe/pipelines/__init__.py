@@ -144,7 +144,7 @@ class Pipeline:
             if input_source.is_uploaded:
                 raise Exception(f"Uploaded file {input_source} not available.")
 
-            self.log(f"Fetching {input_source.source} ...")
+            self.log(f"Fetching {input_source.source}")
             input_source.fetch()
 
     def add_error(self, error):

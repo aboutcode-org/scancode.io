@@ -214,7 +214,9 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
 
-        inputs, missing_inputs = project.inputs_with_source
+        input_sources = project.inputsources.all()
+        # TODO: List missing for uploaded file only
+        # inputs, missing_inputs = project.inputs_with_source
         # if missing_inputs:
         #     missing_files = "\n- ".join(missing_inputs.keys())
         #     message = (
@@ -229,7 +231,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         context.update(
             {
-                "inputs_with_source": inputs,
+                "input_sources": input_sources,
                 "programming_languages": self.get_summary(file_languages),
                 "mime_types": self.get_summary(file_mime_types),
                 "holders": self.get_summary(file_holders),

@@ -2,35 +2,40 @@
   <p class="panel-heading py-2 is-size-6">
     Inputs
   </p>
-  {% for input in inputs_with_source %}
+  {% for input in input_sources %}
     <div class="panel-block is-flex is-justify-content-space-between dropdown is-hoverable is-up is-cursor-help">
       <div class="break-all pr-1">
         <div class="panel-icon pt-1">
           <div class="dropdown-trigger">
-            <i class="is-size-6 {% if input.is_file %}far fa-file-alt{% else %}fas fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.name|slugify }}"></i>
+            <i class="is-size-6 {% if input.is_uploaded %}far fa-file-alt{% else %}fas fa-link{% endif %} {% if input.exists %}has-text-info{% else %}has-text-grey-light{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ input.uuid }}"></i>
           </div>
-          <div class="dropdown-menu" id="dropdown-input-{{ file.name|slugify }}" role="menu">
+          <div class="dropdown-menu" id="dropdown-input-{{ input.uuid }}" role="menu">
             <div class="dropdown-content">
               <div class="dropdown-item">
                 Source:
                 <strong>
                   {% if input.source == "not_found" %}
                     Manually added
-                  {% elif input.source == "uploaded" %}
+                  {% elif input.is_uploaded %}
                     Uploaded
                   {% elif input.source %}
-                    Downloaded from {{ input.source }}
+                    {{ input.source }}
                   {% endif %}
                   </strong>
               </div>
             </div>
           </div>
-        </div>{{ input.name }}
+        </div>
+        {% if input.filename %}
+          {{ input.filename }}
+        {% else %}
+          {{ input.source }}
+        {% endif %}
       </div>
       <div class="is-family-monospace is-size-7">
-        {% if input.is_file %}
+<!--    {% if input.exists %}-->
           {{ input.size|filesizeformat }}
-        {% endif %}
+<!--    {% endif %}-->
       </div>
     </div>
   {% endfor %}

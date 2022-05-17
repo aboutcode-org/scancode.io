@@ -54,7 +54,6 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
-from commoncode.hash import multi_checksums
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
@@ -939,18 +938,24 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
             self.path.unlink()
 
     @property
-    def file_info(self):
+    def size(self):
         """
-        Returns file information.
+        Returns file size in byte.
         """
-        path = self.path
-        return {
-            "name": path.name,
-            "is_file": path.is_file(),
-            "size": path.stat().st_size,
-            **multi_checksums(path, ["sha256"]),
-            "source": "uploaded" if self.is_uploaded else self.source,
-        }
+        return self.path.stat().st_size
+
+    # @property
+    # def file_info(self):
+    #     """
+    #     Returns file information.
+    #     """
+    #     path = self.path
+    #     return {
+    #         "name": path.name,
+    #         "is_file": path.is_file(),
+    #         "size": path.stat().st_size,
+    #         "source": "uploaded" if self.is_uploaded else self.source,
+    #     }
 
     def fetch(self):
         """
