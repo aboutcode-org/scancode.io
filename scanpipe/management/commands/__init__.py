@@ -96,11 +96,18 @@ class RunStatusCommandMixin:
                         status = status or "(no status)"
                         message.append(f"   - {status}: {count}")
 
-            inputs, missing_inputs = project.inputs_with_source
-            if inputs:
+            inputs_sources = project.get_inputs_with_source()
+            if inputs_sources:
                 message.append("\nInputs:")
-                for input in inputs:
-                    message.append(f" - {input.get('name')} ({input.get('source')})")
+                for input in inputs_sources:
+                    line = f" - {input.get('filename', '')} "
+                    if input.get("is_uploaded"):
+                        line += "[source=uploaded]"
+                    else:
+                        line += f"[source={input.get('source')}]"
+                    if not input.get("exists"):
+                        line += self.style.ERROR(" NOT ON DISK")
+                    message.append(line)
 
             runs = project.runs.all()
             if runs:
