@@ -23,12 +23,17 @@
 from scanpipe.pipelines import root_filesystems
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
+from scanpipe.pipes import scancode
 
 
 class Docker(root_filesystems.RootFS):
     """
     A pipeline to analyze Docker images.
     """
+
+    scancode_options = [
+        "--system-package",
+    ]
 
     @classmethod
     def steps(cls):
@@ -37,8 +42,10 @@ class Docker(root_filesystems.RootFS):
             cls.extract_layers,
             cls.find_images_os_and_distro,
             cls.collect_images_information,
-            cls.collect_and_create_codebase_resources,
-            cls.collect_and_create_system_packages,
+            cls.run_scancode,
+            cls.build_inventory_from_scan,
+            #cls.collect_and_create_codebase_resources,
+            #cls.collect_and_create_system_packages,
             cls.tag_uninteresting_codebase_resources,
             cls.tag_empty_files,
             cls.scan_for_application_packages,
@@ -91,6 +98,32 @@ class Docker(root_filesystems.RootFS):
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
             for image in self.images:
                 docker.scan_image_for_system_packages(self.project, image)
+
+    def run_scancode(self):
+        """
+        Scans extracted codebase/ content.
+        """
+        self.scan_output = self.project.get_output_file_path("scancode", "json")
+
+        with self.save_errors(scancode.ScancodeError):
+            scancode.run_scancode(
+                location=str(self.project.codebase_path),
+                output_file=str(self.scan_output),
+                options=self.scancode_options,
+                raise_on_error=True,
+            )
+
+        if not self.scan_output.exists():
+            raise FileNotFoundError("ScanCode output not available.")
+
+    def build_inventory_from_scan(self):
+        """
+        Processes the JSON scan results to determine resources and packages.
+        """
+        project = self.project
+        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
+        scancode.create_discovered_packages(project, scanned_codebase)
+        scancode.create_codebase_resources(project, scanned_codebase)
 
     def tag_uninteresting_codebase_resources(self):
         """
