@@ -673,9 +673,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @cached_property
     def can_add_input(self):
         """
-        Returns True until one pipeline run has started to execute on the project.
+        Returns True until one CodebaseResource was created.
         """
-        return not self.runs.has_start_date().exists()
+        return not self.codebaseresources.exists()
 
     def write_input_file(self, file_object):
         """
