@@ -484,10 +484,9 @@ def make_results_summary(project, scan_results_location):
         packages = resource.discovered_packages.all()
         for package in packages:
             package_data = DiscoveredPackageSerializer(package).data
-            package_uids = package_data.get('extra_data', {}).get("package_uids", [])
+            package_uids = package_data.get("extra_data", {}).get("package_uids", [])
             already_seen = all(
-                package_uid in seen_package_uids
-                for package_uid in package_uids
+                package_uid in seen_package_uids for package_uid in package_uids
             )
             if not already_seen:
                 seen_package_uids.extend(package_uids)
