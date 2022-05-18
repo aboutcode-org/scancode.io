@@ -321,7 +321,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
-        filename = "alpine_3_15_4.tar"
+        filename = "alpine_3_15_4.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
         project1.add_input_source(filename, "https://download.url", save=True)
@@ -334,8 +334,8 @@ class PipelinesIntegrationTest(TestCase):
 
         # TODO: add correct number of resources and packages when we get the
         # pipeline working
-        self.assertEqual(6, project1.codebaseresources.count())
-        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(181, project1.codebaseresources.count())
+        self.assertEqual(14, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "alpine_3_15_4_scan_codebase.json"
@@ -345,7 +345,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
-        filename = "redhat_ubi8.tar"
+        filename = "redhat_ubi8.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
         project1.add_input_source(filename, "https://download.url", save=True)
@@ -358,8 +358,8 @@ class PipelinesIntegrationTest(TestCase):
 
         # TODO: add correct number of resources and packages when we get the
         # pipeline working
-        self.assertEqual(6, project1.codebaseresources.count())
-        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(9437, project1.codebaseresources.count())
+        self.assertEqual(186, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "redhat_ubi8_scan_codebase.json"
@@ -369,7 +369,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
-        filename = "ubuntu.tar"
+        filename = "ubuntu.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
         project1.add_input_source(filename, "https://download.url", save=True)
@@ -387,4 +387,4 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "ubuntu_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=True)
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
