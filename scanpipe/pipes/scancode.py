@@ -470,29 +470,31 @@ def make_results_summary(project, scan_results_location):
     summary["license_matches"] = _get_license_matches_grouped(project)
 
     # Inject the `key_files` and their file content in the summary
-    key_files_qs = project.codebaseresources.filter(is_key_file=True, is_text=True)
-
     key_files = []
-    key_files_packages = []
-    seen_package_uids = []
+    key_files_qs = (
+        project.codebaseresources
+        .filter(is_key_file=True, is_text=True)
+    )
 
     for resource in key_files_qs:
         resource_data = CodebaseResourceSerializer(resource).data
         resource_data["content"] = resource.file_content
         key_files.append(resource_data)
 
-        packages = resource.discovered_packages.all()
-        for package in packages:
-            package_data = DiscoveredPackageSerializer(package).data
-            package_uids = package_data.get("extra_data", {}).get("package_uids", [])
-            already_seen = all(
-                package_uid in seen_package_uids for package_uid in package_uids
-            )
-            if not already_seen:
-                seen_package_uids.extend(package_uids)
-                key_files_packages.append(package_data)
-
     summary["key_files"] = key_files
+
+    # Inject the `key_files_packages` filtered from the key_files_qs
+    key_files_packages = []
+    key_files_packages_qs = (
+        project.discoveredpackages
+        .filter(codebase_resources__in=key_files_qs)
+        .distinct()
+    )
+
+    for package in key_files_packages_qs:
+        package_data = DiscoveredPackageSerializer(package).data
+        key_files_packages.append(package_data)
+
     summary["key_files_packages"] = key_files_packages
 
     return summary
