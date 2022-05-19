@@ -36,6 +36,10 @@ from pyinstrument import Profiler
 logger = logging.getLogger(__name__)
 
 
+class InputFileError(Exception):
+    """InputFile is missing or cannot be downloaded."""
+
+
 class Pipeline:
     """
     Base class for all pipelines.
@@ -137,15 +141,27 @@ class Pipeline:
         Downloads any InputSource missing on disk.
         Raise an error if any of the uploaded files is not available.
         """
+        errors = []
+
         for input_source in self.project.inputsources.all():
             if input_source.exists():
                 continue
 
             if input_source.is_uploaded:
-                raise Exception(f"Uploaded file {input_source} not available.")
+                msg = f"Uploaded file {input_source} not available."
+                self.log(msg)
+                errors.append(msg)
+                continue
 
-            self.log(f"Fetching {input_source.source}")
-            input_source.fetch()
+            self.log(f"Fetching input from {input_source.source}")
+            try:
+                input_source.fetch()
+            except Exception as error:
+                self.log(f"{input_source.source} could not be fetched.")
+                errors.append(error)
+
+        if errors:
+            raise InputFileError(errors)
 
     def add_error(self, error):
         self.project.add_error(error, model=self.pipeline_name)
