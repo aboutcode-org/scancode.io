@@ -15,18 +15,26 @@
   "other_holders": [
     {
       "value": null,
-      "count": 2
+      "count": 4
     }
   ],
   "other_languages": [],
   "license_matches": {
     "mit": [
       {
-        "path": "package/package.json",
+        "path": "is-npm/node_modules/is-npm/package.json",
         "matched_text": "  \"license\": \"MIT\","
       },
       {
-        "path": "package/readme.md",
+        "path": "is-npm/node_modules/is-npm/readme.md",
+        "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
+      },
+      {
+        "path": "is-npm/package.json",
+        "matched_text": "  \"license\": \"MIT\","
+      },
+      {
+        "path": "is-npm/readme.md",
         "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
       }
     ]
@@ -36,7 +44,7 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0"
       ],
-      "path": "package/package.json",
+      "path": "is-npm/package.json",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
       "extra_data": {},
@@ -119,7 +127,7 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0"
       ],
-      "path": "package/readme.md",
+      "path": "is-npm/readme.md",
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
       "extra_data": {},
@@ -245,9 +253,7 @@
       "notice_text": "",
       "manifest_path": "",
       "contains_source_code": null,
-      "extra_data": {
-        "package_uid": "pkg:npm/is-npm@1.0.0?uuid=7931833e-522b-438b-9680-b8ca5bd53e76"
-      },
+      "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [],

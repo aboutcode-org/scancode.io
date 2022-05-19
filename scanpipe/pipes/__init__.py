@@ -73,15 +73,27 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     """
     Gets, updates or creates a DiscoveredPackage then returns it.
     Uses the `project` and `package_data` mapping to lookup and creates the
-    DiscoveredPackage using its Package URL as a unique key.
+    DiscoveredPackage using its Package URL and package_uid as a unique key.
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
+    package_uid = package_data.get("package_uid")
+    purl_data_and_package_uid = {
+        **purl_data,
+        "extra_data": {"package_uid": package_uid},
+    }
 
     try:
-        package = DiscoveredPackage.objects.get(project=project, **purl_data)
+        package = DiscoveredPackage.objects.get(
+            project=project,
+            **purl_data_and_package_uid
+        )
     except DiscoveredPackage.DoesNotExist:
         package = None
 
+    package_data = {
+        **package_data,
+        "extra_data": {"package_uid": package_uid},
+    }
     if package:
         package.update_from_data(package_data)
 
@@ -90,13 +102,6 @@ def update_or_create_package(project, package_data, codebase_resource=None):
             package = codebase_resource.create_and_add_package(package_data)
         else:
             package = DiscoveredPackage.create_from_data(project, package_data)
-
-    # Update package_uids list in package.extra_data
-    package_uid = package_data.get("package_uid")
-    if package_uid:
-        package_uids = package.extra_data.get("package_uids", [])
-        package_uids.append(package_uid)
-        package.update_extra_data({"package_uids": package_uids})
 
     return package
 

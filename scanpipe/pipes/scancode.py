@@ -392,7 +392,7 @@ def create_codebase_resources(project, scanned_codebase):
         if hasattr(scanned_resource, "for_packages"):
             for package_uid in scanned_resource.for_packages:
                 package = DiscoveredPackage.objects.get(
-                    extra_data__contains={"package_uids": [package_uid]}
+                    extra_data__contains={"package_uid": package_uid}
                 )
                 set_codebase_resource_for_package(
                     codebase_resource=cbr, discovered_package=package

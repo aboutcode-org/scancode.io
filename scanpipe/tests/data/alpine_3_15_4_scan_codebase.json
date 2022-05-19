@@ -99,23 +99,155 @@
   ],
   "packages": [
     {
-      "purl": "pkg:alpine/apk-tools@2.12.7-r3?arch=x86_64",
+      "purl": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64",
       "type": "alpine",
       "namespace": "",
-      "name": "apk-tools",
-      "version": "2.12.7-r3",
+      "name": "libc-utils",
+      "version": "0.7.2-r3",
       "qualifiers": "arch=x86_64",
       "subpath": "",
       "primary_language": "",
-      "description": "Alpine Package Keeper - package manager for alpine",
-      "release_date": "2021-09-25",
-      "homepage_url": "https://gitlab.alpinelinux.org/alpine/apk-tools",
+      "description": "Meta package to pull in correct libc",
+      "release_date": "2020-03-31",
+      "homepage_url": "https://alpinelinux.org",
       "download_url": "",
       "sha1": "",
       "md5": "",
       "bug_tracking_url": "",
       "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=1ac3c1bb29eeff083c621cf6b27ad12ab93cb73a",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=60424133be2e79bbfeff3d58147a22886f817ce2",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "BSD-2-Clause AND BSD-3-Clause",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/libc-dev@0.7.2-r3"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/libretls@3.3.4-r3?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "libretls",
+      "version": "3.3.4-r3",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "port of libtls from libressl to openssl",
+      "release_date": "2022-03-16",
+      "homepage_url": "https://git.causal.agency/libretls/",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=91c7a9f3aa296b6d462c5634e7658ebdbff65bb9",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "ISC AND (BSD-3-Clause OR MIT)",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/libretls@3.3.4-r3"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/musl-utils@1.2.2-r7?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "musl-utils",
+      "version": "1.2.2-r7",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "the musl c library (libc) implementation",
+      "release_date": "2021-09-23",
+      "homepage_url": "https://musl.libc.org/",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=bf5bbfdbf780092f387b7abe401fbfceda90c84d",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "MIT BSD GPL2+",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/musl@1.2.2-r7"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/ca-certificates-bundle@20211220-r0?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "ca-certificates-bundle",
+      "version": "20211220-r0",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "Pre generated bundle of Mozilla certificates",
+      "release_date": "2022-01-17",
+      "homepage_url": "https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=709b70bcb72738cfedc510bba08141b012038167",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "MPL-2.0 AND MIT",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/ca-certificates@20211220-r0"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/busybox@1.34.1-r5?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "busybox",
+      "version": "1.34.1-r5",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "Size optimized toolbox of many common UNIX utilities",
+      "release_date": "2022-04-04",
+      "homepage_url": "https://busybox.net/",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=2745de7e1b09e663b477a8141b84f7d81a049963",
       "copyright": "",
       "license_expression": "",
       "declared_license": "GPL-2.0-only",
@@ -128,51 +260,7 @@
       "dependencies": [],
       "keywords": [],
       "source_packages": [
-        "pkg:alpine/apk-tools@2.12.7-r3"
-      ]
-    },
-    {
-      "purl": "pkg:alpine/libssl1.1@1.1.1n-r0?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "libssl1.1",
-      "version": "1.1.1n-r0",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "SSL shared libraries",
-      "release_date": "2022-03-15",
-      "homepage_url": "https://www.openssl.org/",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=455e966899a9358fc94f5bce633afe8a1942095c",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "OpenSSL",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "usr/lib/libssl.so.1.1",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/openssl@1.1.1n-r0"
+        "pkg:alpine/busybox@1.34.1-r5"
       ]
     },
     {
@@ -209,195 +297,6 @@
       ]
     },
     {
-      "purl": "pkg:alpine/zlib@1.2.12-r0?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "zlib",
-      "version": "1.2.12-r0",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "A compression/decompression Library",
-      "release_date": "2022-03-28",
-      "homepage_url": "https://zlib.net/",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=74148808679f47ad96dc99e83ef73acfdeec1642",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "Zlib",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "lib/libz.so.1",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/zlib@1.2.12-r0"
-      ]
-    },
-    {
-      "purl": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "libc-utils",
-      "version": "0.7.2-r3",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "Meta package to pull in correct libc",
-      "release_date": "2020-03-31",
-      "homepage_url": "https://alpinelinux.org",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=60424133be2e79bbfeff3d58147a22886f817ce2",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "BSD-2-Clause AND BSD-3-Clause",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {},
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/libc-dev@0.7.2-r3"
-      ]
-    },
-    {
-      "purl": "pkg:alpine/alpine-baselayout@3.2.0-r18?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "alpine-baselayout",
-      "version": "3.2.0-r18",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "Alpine base dir structure and init scripts",
-      "release_date": "2021-09-16",
-      "homepage_url": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=dfa1379357a321e638feef1cd8d55ab03d020f45",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "GPL-2.0-only",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "etc/mtab",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "var/run",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "var/spool/cron/crontabs",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "var/spool/mail",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/alpine-baselayout@3.2.0-r18"
-      ]
-    },
-    {
-      "purl": "pkg:alpine/busybox@1.34.1-r5?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "busybox",
-      "version": "1.34.1-r5",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "Size optimized toolbox of many common UNIX utilities",
-      "release_date": "2022-04-04",
-      "homepage_url": "https://busybox.net/",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=2745de7e1b09e663b477a8141b84f7d81a049963",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "GPL-2.0-only",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "bin/sh",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/busybox@1.34.1-r5"
-      ]
-    },
-    {
       "purl": "pkg:alpine/ssl_client@1.34.1-r5?arch=x86_64",
       "type": "alpine",
       "namespace": "",
@@ -431,47 +330,168 @@
       ]
     },
     {
-      "purl": "pkg:alpine/libretls@3.3.4-r3?arch=x86_64",
+      "purl": "pkg:alpine/libcrypto1.1@1.1.1n-r0?arch=x86_64",
       "type": "alpine",
       "namespace": "",
-      "name": "libretls",
-      "version": "3.3.4-r3",
+      "name": "libcrypto1.1",
+      "version": "1.1.1n-r0",
       "qualifiers": "arch=x86_64",
       "subpath": "",
       "primary_language": "",
-      "description": "port of libtls from libressl to openssl",
-      "release_date": "2022-03-16",
-      "homepage_url": "https://git.causal.agency/libretls/",
+      "description": "Crypto library from openssl",
+      "release_date": "2022-03-15",
+      "homepage_url": "https://www.openssl.org/",
       "download_url": "",
       "sha1": "",
       "md5": "",
       "bug_tracking_url": "",
       "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=91c7a9f3aa296b6d462c5634e7658ebdbff65bb9",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=455e966899a9358fc94f5bce633afe8a1942095c",
       "copyright": "",
       "license_expression": "",
-      "declared_license": "ISC AND (BSD-3-Clause OR MIT)",
+      "declared_license": "OpenSSL",
       "notice_text": "",
       "manifest_path": "",
       "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "usr/lib/libtls.so.2",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
+      "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [],
       "keywords": [],
       "source_packages": [
-        "pkg:alpine/libretls@3.3.4-r3"
+        "pkg:alpine/openssl@1.1.1n-r0"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/alpine-baselayout@3.2.0-r18?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "alpine-baselayout",
+      "version": "3.2.0-r18",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "Alpine base dir structure and init scripts",
+      "release_date": "2021-09-16",
+      "homepage_url": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=dfa1379357a321e638feef1cd8d55ab03d020f45",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "GPL-2.0-only",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/alpine-baselayout@3.2.0-r18"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/zlib@1.2.12-r0?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "zlib",
+      "version": "1.2.12-r0",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "A compression/decompression Library",
+      "release_date": "2022-03-28",
+      "homepage_url": "https://zlib.net/",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=74148808679f47ad96dc99e83ef73acfdeec1642",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "Zlib",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/zlib@1.2.12-r0"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/libssl1.1@1.1.1n-r0?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "libssl1.1",
+      "version": "1.1.1n-r0",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "SSL shared libraries",
+      "release_date": "2022-03-15",
+      "homepage_url": "https://www.openssl.org/",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=455e966899a9358fc94f5bce633afe8a1942095c",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "OpenSSL",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/openssl@1.1.1n-r0"
+      ]
+    },
+    {
+      "purl": "pkg:alpine/apk-tools@2.12.7-r3?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "apk-tools",
+      "version": "2.12.7-r3",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "primary_language": "",
+      "description": "Alpine Package Keeper - package manager for alpine",
+      "release_date": "2021-09-25",
+      "homepage_url": "https://gitlab.alpinelinux.org/alpine/apk-tools",
+      "download_url": "",
+      "sha1": "",
+      "md5": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=1ac3c1bb29eeff083c621cf6b27ad12ab93cb73a",
+      "copyright": "",
+      "license_expression": "",
+      "declared_license": "GPL-2.0-only",
+      "notice_text": "",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "extra_data": {},
+      "missing_resources": [],
+      "modified_resources": [],
+      "dependencies": [],
+      "keywords": [],
+      "source_packages": [
+        "pkg:alpine/apk-tools@2.12.7-r3"
       ]
     },
     {
@@ -498,18 +518,7 @@
       "notice_text": "",
       "manifest_path": "",
       "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "lib/libc.musl-x86_64.so.1",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
+      "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [],
@@ -542,313 +551,13 @@
       "notice_text": "",
       "manifest_path": "",
       "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/aarch64/alpine-devel@lists.alpinelinux.org-58199dcc.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/aarch64/alpine-devel@lists.alpinelinux.org-616ae350.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/armhf/alpine-devel@lists.alpinelinux.org-524d27bb.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/armhf/alpine-devel@lists.alpinelinux.org-616a9724.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/armv7/alpine-devel@lists.alpinelinux.org-524d27bb.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/armv7/alpine-devel@lists.alpinelinux.org-616adfeb.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/mips64/alpine-devel@lists.alpinelinux.org-5e69ca50.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/ppc64le/alpine-devel@lists.alpinelinux.org-58cbb476.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/ppc64le/alpine-devel@lists.alpinelinux.org-616abc23.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/riscv64/alpine-devel@lists.alpinelinux.org-60ac2099.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/riscv64/alpine-devel@lists.alpinelinux.org-616db30d.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/s390x/alpine-devel@lists.alpinelinux.org-58e4f17d.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/s390x/alpine-devel@lists.alpinelinux.org-616ac3bc.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/x86/alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/x86/alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/x86/alpine-devel@lists.alpinelinux.org-61666e3f.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/x86_64/alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/x86_64/alpine-devel@lists.alpinelinux.org-5261cecb.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/share/apk/keys/x86_64/alpine-devel@lists.alpinelinux.org-6165ee59.rsa.pub",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/alpine-keys@2.4-r1"
-      ]
-    },
-    {
-      "purl": "pkg:alpine/ca-certificates-bundle@20211220-r0?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "ca-certificates-bundle",
-      "version": "20211220-r0",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "Pre generated bundle of Mozilla certificates",
-      "release_date": "2022-01-17",
-      "homepage_url": "https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=709b70bcb72738cfedc510bba08141b012038167",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "MPL-2.0 AND MIT",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "etc/ssl/cert.pem",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/ca-certificates@20211220-r0"
-      ]
-    },
-    {
-      "purl": "pkg:alpine/libcrypto1.1@1.1.1n-r0?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "libcrypto1.1",
-      "version": "1.1.1n-r0",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "Crypto library from openssl",
-      "release_date": "2022-03-15",
-      "homepage_url": "https://www.openssl.org/",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=455e966899a9358fc94f5bce633afe8a1942095c",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "OpenSSL",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {
-        "missing_file_references": [
-          {
-            "md5": null,
-            "path": "etc/ssl1.1/cert.pem",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "etc/ssl1.1/certs",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "etc/ssl1.1/ct_log_list.cnf",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          },
-          {
-            "md5": null,
-            "path": "usr/lib/libcrypto.so.1.1",
-            "sha1": null,
-            "sha256": null,
-            "sha512": null,
-            "extra_data": {}
-          }
-        ]
-      },
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "keywords": [],
-      "source_packages": [
-        "pkg:alpine/openssl@1.1.1n-r0"
-      ]
-    },
-    {
-      "purl": "pkg:alpine/musl-utils@1.2.2-r7?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "musl-utils",
-      "version": "1.2.2-r7",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "primary_language": "",
-      "description": "the musl c library (libc) implementation",
-      "release_date": "2021-09-23",
-      "homepage_url": "https://musl.libc.org/",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=bf5bbfdbf780092f387b7abe401fbfceda90c84d",
-      "copyright": "",
-      "license_expression": "",
-      "declared_license": "MIT BSD GPL2+",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
       "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [],
       "keywords": [],
       "source_packages": [
-        "pkg:alpine/musl@1.2.2-r7"
+        "pkg:alpine/alpine-keys@2.4-r1"
       ]
     }
   ],

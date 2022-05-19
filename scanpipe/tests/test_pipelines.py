@@ -221,8 +221,8 @@ class PipelinesIntegrationTest(TestCase):
         "--processes",
         "--verbose",
         "OUTDATED",
-        # package_uids in extra_data have different values in it on every run
-        "package_uids",
+        # package_uid in extra_data have different values in it on every run
+        "package_uid",
         # system_environment differs between systems
         "system_environment",
     ]
@@ -294,6 +294,31 @@ class PipelinesIntegrationTest(TestCase):
         key_file_package = key_files_packages[0]
         key_file_package_purl = key_file_package.get("purl", "")
         self.assertEqual("pkg:npm/is-npm@1.0.0", key_file_package_purl)
+
+    @skipIf(from_docker_image, "Random failure in the Docker context.")
+    def test_scanpipe_scan_package_pipeline_integration_test_multiple_package_instances(self):
+        pipeline_name = "scan_package"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "multiple-is-npm-1.0.0.tar.gz"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, output = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=output)
+
+        self.assertEqual(9, project1.codebaseresources.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
+        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
+
+        summary_file = project1.get_latest_output(filename="summary")
+        expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package_summary.json"
+        self.assertPipelineResultEqual(expected_file, summary_file, regen=False)
 
     def test_scanpipe_scan_codebase_pipeline_integration_test(self):
         pipeline_name = "scan_codebase"
