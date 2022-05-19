@@ -104,7 +104,7 @@ class RunStatusCommandMixin:
                     if input.get("is_uploaded"):
                         line += "[source=uploaded]"
                     else:
-                        line += f"[source={input.get('source')}]"
+                        line += f"[download_url={input.get('download_url')}]"
                     if not input.get("exists"):
                         line += self.style.ERROR(" NOT ON DISK")
                     message.append(line)
@@ -155,7 +155,7 @@ class AddInputCommandMixin:
             self.project.copy_input_from(file_location)
             filename = Path(file_location).name
             copied.append(filename)
-            self.project.add_input_source(source="uploaded", filename=filename)
+            self.project.add_input_source(filename=filename, is_uploaded=True)
 
         msg = "File(s) copied to the project inputs directory:"
         self.stdout.write(self.style.SUCCESS(msg))

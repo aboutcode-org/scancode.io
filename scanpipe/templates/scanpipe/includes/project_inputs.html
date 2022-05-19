@@ -14,12 +14,10 @@
               <div class="dropdown-item">
                 Source:
                 <strong>
-                  {% if input.source == "not_found" %}
-                    Manually added
-                  {% elif input.is_uploaded %}
+                  {% if input.is_uploaded %}
                     Uploaded
-                  {% elif input.source %}
-                    {{ input.source }}
+                  {% elif input.download_url %}
+                    {{ input.download_url }}
                   {% endif %}
                   </strong>
               </div>
@@ -29,7 +27,7 @@
         {% if input.filename %}
           {{ input.filename }}
         {% else %}
-          {{ input.source }}
+          {{ input.download_url }}
         {% endif %}
       </div>
       <div class="is-size-7">

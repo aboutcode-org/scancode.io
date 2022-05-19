@@ -36,6 +36,7 @@ from django.apps import apps
 from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
@@ -607,10 +608,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def get_inputs_with_source(self):
         """
-        Returns a list of inputs including the source, type, sha256, and size data.
-        Returns the `missing_inputs` defined in the `input_sources` field but not
-        available in the input/ directory.
-        Only first level children are listed.
+        Returns a list of inputs including the filename, download_url, and size data.
         """
         input_sources = []
 
@@ -619,8 +617,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
                 {
                     # Fields
                     "uuid": input_source.uuid,
-                    "source": input_source.source,
                     "filename": input_source.filename,
+                    "download_url": input_source.download_url,
                     "is_uploaded": input_source.is_uploaded,
                     # Properties
                     "size": input_source.size,
@@ -705,17 +703,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
         move_inputs([input_location], self.input_path)
 
-    def add_input_source(self, source="", filename="", is_uploaded=False):
+    def add_input_source(self, download_url="", filename="", is_uploaded=False):
         """
-        Adds given `filename` and `source` to the current project's `input_sources`
-        field.
+        Creates a InputFile entry for the current project, given a `download_url` or
+        a `filename`.
         """
-        if not source and not filename:
-            raise Exception("Provide at least a value for source or filename.")
+        if not download_url and not filename:
+            raise Exception("Provide at least a value for download_url or filename.")
 
         return InputSource.objects.create(
             project=self,
-            source=source,
+            download_url=download_url,
             filename=filename,
             is_uploaded=is_uploaded,
         )
@@ -727,7 +725,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         for downloaded in downloads:
             self.move_input_from(downloaded.path)
-            self.add_input_source(source=downloaded.uri, filename=downloaded.filename)
+            self.add_input_source(
+                download_url=downloaded.uri,
+                filename=downloaded.filename,
+            )
 
     def add_uploads(self, uploads):
         """
@@ -899,19 +900,37 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
 class InputSource(UUIDPKModel, ProjectRelatedModel):
     """
     A model that represents an input file associated to a project.
-    The file can either be "uploaded" and "fetched" from a provided `source`.
+    The file can either be "uploaded", or "fetched" from a provided `download_url`.
     """
 
-    source = models.TextField(blank=True, help_text=_("URL of the file."))
-    filename = models.CharField(
+    download_url = models.CharField(
         max_length=1024,
+        blank=True,
+        help_text=_("URL of the file."),
+    )
+    filename = models.CharField(
+        max_length=255,
         blank=True,
         help_text=_("Name of the file as uploaded or downloaded from a source."),
     )
     is_uploaded = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.filename=} {self.source=} {self.is_uploaded=}"
+        if self.is_uploaded:
+            return f"filename={self.filename} [uploaded]"
+        elif self.filename:
+            return f"{self.filename} [download_url={self.download_url}]"
+        else:
+            return self.download_url
+
+    def save(self, *args, **kwargs):
+        """
+        Raise an error if a download_url is not provided, except for uploaded files.
+        """
+        if not self.is_uploaded and not self.download_url:
+            raise ValidationError("A `download_url` value is required.")
+
+        super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """
@@ -959,10 +978,10 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         """
         from scanpipe.pipes.fetch import fetch_url
 
-        if not self.source:
-            raise Exception("No `source` value to be fetched.")
+        if not self.download_url:
+            raise Exception("No `download_url` value to be fetched.")
 
-        downloaded = fetch_url(url=self.source)
+        downloaded = fetch_url(url=self.download_url)
         self.filename = downloaded.filename
         self.save()
 

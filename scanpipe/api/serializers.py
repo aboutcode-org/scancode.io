@@ -94,8 +94,8 @@ class InputSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = InputSource
         fields = [
-            "source",
             "filename",
+            "download_url",
             "is_uploaded",
             "exists",
         ]

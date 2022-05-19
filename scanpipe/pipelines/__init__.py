@@ -153,11 +153,11 @@ class Pipeline:
                 errors.append(msg)
                 continue
 
-            self.log(f"Fetching input from {input_source.source}")
+            self.log(f"Fetching input from {input_source.download_url}")
             try:
                 input_source.fetch()
             except Exception as error:
-                self.log(f"{input_source.source} could not be fetched.")
+                self.log(f"{input_source.download_url} could not be fetched.")
                 errors.append(error)
 
         if errors:

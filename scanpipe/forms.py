@@ -66,7 +66,7 @@ class InputsBaseForm(forms.Form):
 
         input_urls = input_urls_str.split()
         for url in input_urls:
-            project.add_input_source(source=url)
+            project.add_input_source(download_url=url)
 
 
 class PipelineBaseForm(forms.Form):
