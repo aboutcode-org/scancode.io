@@ -51,6 +51,7 @@ from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
@@ -374,6 +375,19 @@ def delete_pipeline_view(request, uuid, run_uuid):
 
     run.delete_task()
     messages.success(request, f"Pipeline {run.pipeline_name} deleted.")
+    return redirect(project)
+
+
+@conditional_login_required
+def delete_input_view(request, uuid, input_uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+    input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
+
+    if not project.can_add_input:
+        raise Http404("Inputs cannot be deleted on this project.")
+
+    input_source.delete()
+    messages.success(request, f"Input {input_source} deleted.")
     return redirect(project)
 
 

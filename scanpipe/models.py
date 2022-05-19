@@ -673,9 +673,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @cached_property
     def can_add_input(self):
         """
-        Returns True until one CodebaseResource was created.
+        Returns True until one CodebaseResource was created or if the project is
+        archived.
         """
-        return not self.codebaseresources.exists()
+        return not self.codebaseresources.exists() and not self.is_archived
 
     def write_input_file(self, file_object):
         """
