@@ -168,7 +168,7 @@ class JSONResultsGenerator:
     def get_packages(self, project):
         from scanpipe.api.serializers import DiscoveredPackageSerializer
 
-        packages = project.discoveredpackages.all()
+        packages = project.discoveredpackages.all().order_by("type", "name")
 
         for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)

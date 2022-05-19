@@ -101,6 +101,7 @@
       "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
       "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
       "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_paths": [
         "codebase/is-npm/package.json"
       ],
@@ -156,6 +157,7 @@
       "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
       "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
       "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_paths": [
         "codebase/is-npm/node_modules/is-npm/package.json"
       ],

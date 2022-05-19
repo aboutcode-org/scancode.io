@@ -246,7 +246,7 @@
       "manifest_path": "",
       "contains_source_code": null,
       "extra_data": {
-        "package_uid": "pkg:npm/is-npm@1.0.0?uuid=7931833e-522b-438b-9680-b8ca5bd53e76"
+        "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       },
       "missing_resources": [],
       "modified_resources": [],

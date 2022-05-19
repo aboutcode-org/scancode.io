@@ -31,6 +31,7 @@ from unittest import skipIf
 from django.test import TestCase
 from django.test import tag
 
+from scancode.cli_test_utils import purl_with_fake_uuid
 from scancode.cli_test_utils import remove_uuid_from_scan
 
 from scanpipe.models import Project
@@ -221,8 +222,6 @@ class PipelinesIntegrationTest(TestCase):
         "--processes",
         "--verbose",
         "OUTDATED",
-        # package_uid in extra_data have different values in it on every run
-        "package_uid",
         # system_environment differs between systems
         "system_environment",
     ]
@@ -245,12 +244,35 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
+    def _normalize_package_uid(self, results):
+        """
+        Normalizes the ``package_uid`` (stored in the ``extra_data`` field) in
+        the top-level ``packages`` or ``key_file_packages`` field of ``results``.
+
+        TODO: Remove this when ``package_uid`` is no longer stored in the
+        ``extra_data`` field on DiscoveredPackage.
+        """
+
+        packages_collections = [
+            results.get("packages", []),
+            results.get("key_files_packages", [])
+        ]
+        for pc in packages_collections:
+            for package in pc:
+                package_uid = package.get("extra_data", {}).get("package_uid")
+                if not package_uid:
+                    continue
+                package["extra_data"]["package_uid"] = purl_with_fake_uuid(package_uid)
+
+        return results
+
     def assertPipelineResultEqual(self, expected_file, result_file, regen=False):
         """
         Set `regen` to True to regenerate the expected results.
         """
         result_json = json.loads(Path(result_file).read_text())
         result_json = remove_uuid_from_scan(result_json)
+        result_json = self._normalize_package_uid(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
 
         if regen:
@@ -258,6 +280,7 @@ class PipelinesIntegrationTest(TestCase):
 
         expected_json = json.loads(expected_file.read_text())
         expected_json = remove_uuid_from_scan(expected_json)
+        expected_json = self._normalize_package_uid(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
 
         self.assertEqual(expected_data, result_data)
