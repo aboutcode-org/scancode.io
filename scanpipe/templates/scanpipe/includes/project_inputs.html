@@ -3,7 +3,7 @@
     Inputs
   </p>
   {% for input in input_sources %}
-    <div class="panel-block is-flex is-justify-content-space-between dropdown is-hoverable is-up is-cursor-help">
+    <div class="panel-block is-flex is-justify-content-space-between">
       <div class="break-all pr-1">
         <div class="panel-icon pt-1">
           <div class="dropdown-trigger">
@@ -35,7 +35,20 @@
           <span class="is-family-monospace mr-2">{{ input.size|filesizeformat }}</span>
         {% endif %}
         {% if project.can_add_input %}
-          <a class="is-grey-link" href="{% url 'project_delete_input' project.uuid input.uuid %}"><i class="fas fa-times"></i></a>
+          <div class="dropdown is-hoverable is-up is-right">
+            <div class="dropdown-trigger">
+              <a class="is-grey-link modal-button" data-target="modal-inputs-delete" aria-haspopup="true" data-url="{% url 'project_delete_input' project.uuid input.uuid %}" href="#"><i class="fas fa-times"></i></a>
+            </div>
+            <div class="dropdown-menu" id="dropdown-delete-input-{{ input.uuid }}" role="menu">
+              <div class="dropdown-content">
+                <div class="dropdown-item">
+                  <p>
+                    <strong class="has-text-danger">Delete</strong> this input.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         {% endif %}
       </div>
     </div>

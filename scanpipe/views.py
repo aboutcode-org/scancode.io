@@ -33,6 +33,7 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
+from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 
@@ -378,6 +379,7 @@ def delete_pipeline_view(request, uuid, run_uuid):
     return redirect(project)
 
 
+@require_POST
 @conditional_login_required
 def delete_input_view(request, uuid, input_uuid):
     project = get_object_or_404(Project, uuid=uuid)
@@ -387,7 +389,7 @@ def delete_input_view(request, uuid, input_uuid):
         raise Http404("Inputs cannot be deleted on this project.")
 
     input_source.delete()
-    messages.success(request, f"Input {input_source} deleted.")
+    messages.success(request, f'Input "{input_source}" deleted.')
     return redirect(project)
 
 

@@ -75,7 +75,7 @@
         <div class="column">
           {% include "scanpipe/includes/project_inputs.html" %}
         </div>
-        <div class="column">
+        <div class="column is-5">
           {% include "scanpipe/includes/project_pipelines.html" %}
         </div>
       </div>
@@ -141,6 +141,9 @@
     {% endif %}
   </div>
   {% include 'scanpipe/includes/run_modal.html' %}
+  {% if project.can_add_input %}
+    {% include 'scanpipe/includes/project_inputs_delete_modal.html' %}
+  {% endif %}
 {% endblock %}
 
 {% block scripts %}
