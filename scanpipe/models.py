@@ -611,6 +611,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Returns a list of inputs including the filename, download_url, and size data.
         """
         input_sources = []
+        seen_filenames = set()
 
         for input_source in self.inputsources.all():
             input_sources.append(
@@ -622,10 +623,26 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
                     "is_uploaded": input_source.is_uploaded,
                     # Properties
                     "size": input_source.size,
+                    "is_file": True,
                     # Methods
                     "exists": input_source.exists(),
                 }
             )
+            seen_filenames.add(input_source.filename)
+
+        # Inputs located in `input_path` but without an input source.
+        # Those are usually manually copied there.
+        for path in self.input_path.glob("*"):
+            if path.name not in seen_filenames:
+                input_sources.append(
+                    {
+                        "filename": path.name,
+                        "is_uploaded": False,
+                        "is_file": path.is_file(),
+                        "size": path.stat().st_size,
+                        "exists": True,
+                    }
+                )
 
         return input_sources
 

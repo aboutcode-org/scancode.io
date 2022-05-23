@@ -6,7 +6,7 @@
     <div class="panel-block is-flex is-justify-content-space-between">
       <div class="break-all pr-1">
         <div class="panel-icon pt-1 mr-1">
-          <i class="is-size-6 {% if input.is_uploaded %}far fa-file-alt{% elif input.download_url %}fas fa-link{% else %}fas fa-folder{% endif %} {% if not input.exists %}has-text-grey-light{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ input.uuid }}"></i>
+          <i class="is-size-6 {% if input.is_file and input.exists %}far fa-file-alt{% elif input.download_url %}fas fa-link{% else %}fas fa-folder{% endif %} {% if not input.exists %}has-text-grey-light{% endif %}" aria-hidden="true" aria-haspopup="true"></i>
         </div>
         {% if input.filename %}
           {{ input.filename }}
@@ -15,7 +15,7 @@
         {% endif %}
       </div>
       <div>
-        {% if input.size %}
+        {% if input.size and input.is_file %}
           <span class="is-family-monospace is-size-7 mr-2">{{ input.size|filesizeformat }}</span>
         {% endif %}
         <div class="dropdown is-hoverable is-up is-right">
@@ -28,20 +28,20 @@
               <i class="fas fa-copy"></i>
             {% endif %}
           </div>
-          <div class="dropdown-menu" role="menu">
+          <div class="dropdown-menu" role="menu" style="width: 300px;">
             <div class="dropdown-content">
               <div class="dropdown-item">
-                <p>
+                <p class="break-all">
                   <strong>Source:</strong>
                   {% if input.is_uploaded %}
                     Uploaded
                   {% elif input.download_url %}
                     {{ input.download_url }}
-                    <br>
-                  {% if not input.exists %}
-                    <strong>Not downloaded yet:</strong>
-                    The file will be fetched during the first pipeline run.
-                  {% endif %}
+                    {% if not input.exists %}
+                      <br><br>
+                      <strong>Not downloaded yet:</strong>
+                      The file will be fetched during the first pipeline run.
+                    {% endif %}
                   {% else %}
                     Manually added
                   {% endif %}
@@ -51,12 +51,12 @@
           </div>
         </div>
 
-        {% if project.can_add_input %}
+        {% if project.can_add_input and input.uuid %}
           <div class="is-size-7 dropdown is-hoverable is-up is-right pt-1">
             <div class="dropdown-trigger">
               <a class="is-grey-link modal-button" data-target="modal-inputs-delete" aria-haspopup="true" data-url="{% url 'project_delete_input' project.uuid input.uuid %}" href="#"><i class="fas fa-times"></i></a>
             </div>
-            <div class="dropdown-menu" id="dropdown-delete-input-{{ input.uuid }}" role="menu">
+            <div class="dropdown-menu" role="menu">
               <div class="dropdown-content">
                 <div class="dropdown-item">
                   <p>
