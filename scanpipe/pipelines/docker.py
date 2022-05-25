@@ -32,6 +32,8 @@ class Docker(root_filesystems.RootFS, scan_package.ScanPackage):
     """
 
     scancode_options = [
+        "--info",
+        "--package",
         "--system-package",
     ]
 
@@ -46,7 +48,6 @@ class Docker(root_filesystems.RootFS, scan_package.ScanPackage):
             cls.build_inventory_from_scan,
             cls.tag_uninteresting_codebase_resources,
             cls.tag_empty_files,
-            cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
             cls.tag_not_analyzed_codebase_resources,
