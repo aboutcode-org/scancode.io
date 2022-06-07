@@ -167,11 +167,15 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         logger.info(f"Creating package #{i}: {purl}")
         created_package = pipes.update_or_create_package(project, package.to_dict())
 
+        installed_files = []
+        if hasattr(package, "installed_files"):
+            installed_files = package.installed_files
+
         # We have no files for this installed package, we cannot go further.
-        if not package.installed_files:
+        if not installed_files:
             logger.info(f"  No installed_files for: {purl}")
             continue
-
+        
         missing_resources = created_package.missing_resources[:]
         modified_resources = created_package.modified_resources[:]
 

@@ -21,21 +21,14 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import root_filesystems
-from scanpipe.pipelines import scan_package
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
 
 
-class Docker(root_filesystems.RootFS, scan_package.ScanPackage):
+class Docker(root_filesystems.RootFS):
     """
     A pipeline to analyze Docker images.
     """
-
-    scancode_options = [
-        "--info",
-        "--package",
-        "--system-package",
-    ]
 
     @classmethod
     def steps(cls):
@@ -44,10 +37,11 @@ class Docker(root_filesystems.RootFS, scan_package.ScanPackage):
             cls.extract_layers,
             cls.find_images_os_and_distro,
             cls.collect_images_information,
-            cls.run_scancode,
-            cls.build_inventory_from_scan,
+            cls.collect_and_create_codebase_resources,
+            cls.collect_and_create_system_packages,
             cls.tag_uninteresting_codebase_resources,
             cls.tag_empty_files,
+            cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
             cls.tag_not_analyzed_codebase_resources,
@@ -82,6 +76,21 @@ class Docker(root_filesystems.RootFS, scan_package.ScanPackage):
         """
         images_data = [docker.get_image_data(image) for image in self.images]
         self.project.update_extra_data({"images": images_data})
+
+    def collect_and_create_codebase_resources(self):
+        """
+        Collects and labels all image files as CodebaseResources.
+        """
+        for image in self.images:
+            docker.create_codebase_resources(self.project, image)
+
+    def collect_and_create_system_packages(self):
+        """
+        Collects installed system packages for each layer based on the distro.
+        """
+        with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
+            for image in self.images:
+                docker.scan_image_for_system_packages(self.project, image)
 
     def tag_uninteresting_codebase_resources(self):
         """
