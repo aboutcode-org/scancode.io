@@ -26,6 +26,7 @@ from functools import partial
 from pathlib import Path
 
 from container_inspector.image import Image
+from packagedcode import plugin_package
 
 from scanpipe import pipes
 from scanpipe.pipes import rootfs
@@ -139,6 +140,15 @@ def create_codebase_resources(project, image):
         )
 
 
+def package_getter(root_dir, **kwargs):
+    """
+    Returns installed package objects.
+    """
+    packages = plugin_package.get_installed_packages(root_dir)
+    for package in packages:
+        yield package.purl, package
+
+
 def scan_image_for_system_packages(project, image, detect_licenses=True):
     """
     Given a `project` and an `image` - this scans the `image` layer by layer for
@@ -155,12 +165,6 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
     if distro_id not in rootfs.PACKAGE_GETTER_BY_DISTRO:
         raise rootfs.DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
-    package_getter = partial(
-        rootfs.PACKAGE_GETTER_BY_DISTRO[distro_id],
-        distro=distro_id,
-        detect_licenses=detect_licenses,
-    )
-
     installed_packages = image.get_installed_packages(package_getter)
 
     for i, (purl, package, layer) in enumerate(installed_packages):
@@ -168,25 +172,32 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         created_package = pipes.update_or_create_package(project, package.to_dict())
 
         installed_files = []
-        if hasattr(package, "installed_files"):
-            installed_files = package.installed_files
+        if hasattr(package, "resources"):
+            installed_files = package.resources
 
         # We have no files for this installed package, we cannot go further.
         if not installed_files:
             logger.info(f"  No installed_files for: {purl}")
             continue
-        
+
         missing_resources = created_package.missing_resources[:]
         modified_resources = created_package.modified_resources[:]
 
         codebase_resources = project.codebaseresources.all()
 
-        for install_file in package.installed_files:
-            install_file_path = pipes.normalize_path(install_file.path)
-            layer_rootfs_path = posixpath.join(
-                layer.layer_id,
-                install_file_path.strip("/"),
-            )
+        for install_file in installed_files:
+            # TODO: Uncomment the following when the installed_file paths have their roots pre-stripped
+            # install_file_path = pipes.normalize_path(install_file.path)
+            # layer_rootfs_path = posixpath.join(
+            #     layer.layer_id,
+            #     install_file_path.strip("/"),
+            # )
+
+            # TODO: Remove the following when the installed_file paths have their roots pre-stripped
+            layer_rootfs_path = pipes.normalize_path(install_file.path)
+            leading_layer_id_segment = f"/{layer.layer_id}"
+            install_file_path = layer_rootfs_path.replace(leading_layer_id_segment, "")
+
             logger.info(f"   installed file rootfs_path: {install_file_path}")
             logger.info(f"   layer rootfs_path: {layer_rootfs_path}")
             cbr_qs = codebase_resources.filter(

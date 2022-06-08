@@ -175,6 +175,14 @@ def has_hash_diff(install_file, codebase_resource):
     hash_types = ["sha512", "sha256", "sha1", "md5"]
 
     for hash_type in hash_types:
+        # Find a suitable hash type that is present on both install_file and
+        # codebase_resource, skip otherwise.
+        if not (
+            hasattr(install_file, hash_type)
+            and hasattr(codebase_resource, hash_type)
+        ):
+            continue
+
         install_file_sum = getattr(install_file, hash_type)
         codebase_resource_sum = getattr(codebase_resource, hash_type)
         hashes_differ = all(
