@@ -186,18 +186,12 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         codebase_resources = project.codebaseresources.all()
 
         for install_file in installed_files:
-            # TODO: Uncomment the following when the installed_file paths have their roots pre-stripped
-            # install_file_path = pipes.normalize_path(install_file.path)
-            # layer_rootfs_path = posixpath.join(
-            #     layer.layer_id,
-            #     install_file_path.strip("/"),
-            # )
-
-            # TODO: Remove the following when the installed_file paths have their roots pre-stripped
-            layer_rootfs_path = pipes.normalize_path(install_file.path)
-            leading_layer_id_segment = f"/{layer.layer_id}"
-            install_file_path = layer_rootfs_path.replace(leading_layer_id_segment, "")
-
+            install_file_path = install_file.get_path(strip_root=True)
+            install_file_path = pipes.normalize_path(install_file_path)
+            layer_rootfs_path = posixpath.join(
+                layer.layer_id,
+                install_file_path.strip("/"),
+            )
             logger.info(f"   installed file rootfs_path: {install_file_path}")
             logger.info(f"   layer rootfs_path: {layer_rootfs_path}")
             cbr_qs = codebase_resources.filter(

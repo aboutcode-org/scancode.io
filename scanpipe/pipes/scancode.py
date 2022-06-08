@@ -231,7 +231,7 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Saves the resource scan package results in the database.
     Creates project errors if any occurred during the scan.
     """
-    packages = scan_results.get("packages", [])
+    packages = scan_results.get("package_data", [])
     if packages:
         for package_data in packages:
             codebase_resource.create_and_add_package(package_data)
@@ -317,7 +317,11 @@ def scan_for_application_packages(project):
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     resource_qs = project.codebaseresources.no_status()
-    _scan_and_save(resource_qs, scan_for_package_info, save_scan_package_results)
+    _scan_and_save(
+        resource_qs=resource_qs,
+        scan_func=scan_for_package_info,
+        save_func=save_scan_package_results,
+    )
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):
