@@ -384,8 +384,6 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
-        # TODO: add correct number of resources and packages when we get the
-        # pipeline working
         self.assertEqual(83, project1.codebaseresources.count())
         self.assertEqual(14, project1.discoveredpackages.count())
 
@@ -397,7 +395,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
-        filename = "redhat_ubi8.tar.gz"
+        filename = "centos.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
         project1.add_input_source(filename, "https://download.url", save=True)
@@ -408,13 +406,11 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
-        # TODO: add correct number of resources and packages when we get the
-        # pipeline working
-        self.assertEqual(8178, project1.codebaseresources.count())
-        self.assertEqual(186, project1.discoveredpackages.count())
+        self.assertEqual(25, project1.codebaseresources.count())
+        self.assertEqual(101, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data_location / "redhat_ubi8_scan_codebase.json"
+        expected_file = self.data_location / "centos_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
     def test_scanpipe_docker_pipeline_ubuntu_integration_test(self):
@@ -432,8 +428,6 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
-        # TODO: add correct number of resources and packages when we get the
-        # pipeline working
         self.assertEqual(1880, project1.codebaseresources.count())
         self.assertEqual(98, project1.discoveredpackages.count())
 
