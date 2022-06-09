@@ -22,11 +22,9 @@
 
 import logging
 import posixpath
-from functools import partial
 from pathlib import Path
 
 from container_inspector.image import Image
-from packagedcode import plugin_package
 
 from scanpipe import pipes
 from scanpipe.pipes import rootfs
@@ -140,15 +138,6 @@ def create_codebase_resources(project, image):
         )
 
 
-def package_getter(root_dir, **kwargs):
-    """
-    Returns installed package objects.
-    """
-    packages = plugin_package.get_installed_packages(root_dir)
-    for package in packages:
-        yield package.purl, package
-
-
 def scan_image_for_system_packages(project, image, detect_licenses=True):
     """
     Given a `project` and an `image` - this scans the `image` layer by layer for
@@ -162,10 +151,10 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         raise rootfs.DistroNotFound(f"Distro not found.")
 
     distro_id = image.distro.identifier
-    if distro_id not in rootfs.PACKAGE_GETTER_BY_DISTRO:
+    if distro_id not in rootfs.SUPPORTED_DISTROS:
         raise rootfs.DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
-    installed_packages = image.get_installed_packages(package_getter)
+    installed_packages = image.get_installed_packages(rootfs.package_getter)
 
     for i, (purl, package, layer) in enumerate(installed_packages):
         logger.info(f"Creating package #{i}: {purl}")

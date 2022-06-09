@@ -200,14 +200,14 @@ def scan_file(location, with_threading=True):
     return _scan_resource(location, scanners, with_threading)
 
 
-def scan_for_package_info(location, with_threading=True):
+def scan_for_package_data(location, with_threading=True):
     """
     Runs a package scan on provided `location` using the scancode-toolkit direct API.
 
     Returns a dict of scan `results` and a list of `errors`.
     """
     scanners = [
-        Scanner("packages", scancode_api.get_package_info),
+        Scanner("package_data", scancode_api.get_package_data),
     ]
     return _scan_resource(location, scanners, with_threading)
 
@@ -319,7 +319,7 @@ def scan_for_application_packages(project):
     resource_qs = project.codebaseresources.no_status()
     _scan_and_save(
         resource_qs=resource_qs,
-        scan_func=scan_for_package_info,
+        scan_func=scan_for_package_data,
         save_func=save_scan_package_results,
     )
 

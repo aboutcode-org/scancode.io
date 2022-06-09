@@ -196,6 +196,26 @@ class RootFSPipelineTest(TestCase):
         error = project1.projecterrors.get()
         self.assertEqual("Error\nError", error.message)
 
+    def test_scanpipe_rootfs_pipeline_integration_test(self):
+        pipeline_name = "root_filesystems"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "basic-rootfs.tar.gz"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, output = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=output)
+
+        self.assertEqual(5, project1.codebaseresources.count())
+        self.assertEqual(4, project1.discoveredpackages.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
 
 @tag("slow")
 class PipelinesIntegrationTest(TestCase):
@@ -382,7 +402,7 @@ class PipelinesIntegrationTest(TestCase):
 
         # TODO: add correct number of resources and packages when we get the
         # pipeline working
-        self.assertEqual(181, project1.codebaseresources.count())
+        self.assertEqual(83, project1.codebaseresources.count())
         self.assertEqual(14, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
@@ -406,7 +426,7 @@ class PipelinesIntegrationTest(TestCase):
 
         # TODO: add correct number of resources and packages when we get the
         # pipeline working
-        self.assertEqual(9437, project1.codebaseresources.count())
+        self.assertEqual(8178, project1.codebaseresources.count())
         self.assertEqual(186, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
