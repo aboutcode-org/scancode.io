@@ -42,7 +42,7 @@
   "key_files": [
     {
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0"
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "path": "is-npm/package.json",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
@@ -125,7 +125,7 @@
     },
     {
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0"
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "path": "is-npm/readme.md",
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
@@ -253,12 +253,11 @@
       "notice_text": "",
       "manifest_path": "",
       "contains_source_code": null,
-      "extra_data": {
-        "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      },
+      "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [],
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "npm",
         "is",

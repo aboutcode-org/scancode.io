@@ -32,7 +32,6 @@ from django.test import TestCase
 from django.test import tag
 
 from scancode.cli_test_utils import purl_with_fake_uuid
-from scancode.cli_test_utils import remove_uuid_from_scan
 
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
@@ -196,26 +195,6 @@ class RootFSPipelineTest(TestCase):
         error = project1.projecterrors.get()
         self.assertEqual("Error\nError", error.message)
 
-    def test_scanpipe_rootfs_pipeline_integration_test(self):
-        pipeline_name = "root_filesystems"
-        project1 = Project.objects.create(name="Analysis")
-
-        input_location = self.data_location / "basic-rootfs.tar.gz"
-        project1.copy_input_from(input_location)
-
-        run = project1.add_pipeline(pipeline_name)
-        pipeline = run.make_pipeline_instance()
-
-        exitcode, output = pipeline.execute()
-        self.assertEqual(0, exitcode, msg=output)
-
-        self.assertEqual(5, project1.codebaseresources.count())
-        self.assertEqual(4, project1.discoveredpackages.count())
-
-        result_file = output.to_json(project1)
-        expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
-
 
 @tag("slow")
 class PipelinesIntegrationTest(TestCase):
@@ -264,43 +243,48 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
-    def _normalize_package_uid(self, results):
+    def _normalize_package_uids(self, data):
         """
-        Normalizes the ``package_uid`` (stored in the ``extra_data`` field) in
-        the top-level ``packages`` or ``key_file_packages`` field of ``results``.
-
-        TODO: Remove this when ``package_uid`` is no longer stored in the
-        ``extra_data`` field on DiscoveredPackage.
+        Returns the `data`, where any `package_uid` value has been normalized
+        with `purl_with_fake_uuid()`
         """
+        if type(data) == list:
+            return [self._normalize_package_uids(entry) for entry in data]
 
-        packages_collections = [
-            results.get("packages", []),
-            results.get("key_files_packages", [])
-        ]
-        for pc in packages_collections:
-            for package in pc:
-                package_uid = package.get("extra_data", {}).get("package_uid")
-                if not package_uid:
-                    continue
-                package["extra_data"]["package_uid"] = purl_with_fake_uuid(package_uid)
+        if type(data) == dict:
+            normalized_data = {}
+            for key, value in data.items():
+                if type(value) in [list, dict]:
+                    value = self._normalize_package_uids(value)
+                if (
+                    key in ("package_uid", "dependency_uid", "for_package_uid")
+                    and value
+                ):
+                    value = purl_with_fake_uuid(value)
+                if key == 'for_packages':
+                    value = [
+                        purl_with_fake_uuid(package_uid)
+                        for package_uid in value
+                    ]
+                normalized_data[key] = value
+            return normalized_data
 
-        return results
+        return data
+
 
     def assertPipelineResultEqual(self, expected_file, result_file, regen=False):
         """
         Set `regen` to True to regenerate the expected results.
         """
         result_json = json.loads(Path(result_file).read_text())
-        result_json = remove_uuid_from_scan(result_json)
-        result_json = self._normalize_package_uid(result_json)
+        result_json = self._normalize_package_uids(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
 
         if regen:
             expected_file.write_text(json.dumps(result_data, indent=2))
 
         expected_json = json.loads(expected_file.read_text())
-        expected_json = remove_uuid_from_scan(expected_json)
-        expected_json = self._normalize_package_uid(expected_json)
+        expected_json = self._normalize_package_uids(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
 
         self.assertEqual(expected_data, result_data)
@@ -450,9 +434,29 @@ class PipelinesIntegrationTest(TestCase):
 
         # TODO: add correct number of resources and packages when we get the
         # pipeline working
-        self.assertEqual(6, project1.codebaseresources.count())
-        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1880, project1.codebaseresources.count())
+        self.assertEqual(97, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "ubuntu_scan_codebase.json"
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
+    def test_scanpipe_rootfs_pipeline_integration_test(self):
+        pipeline_name = "root_filesystems"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "basic-rootfs.tar.gz"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, _ = pipeline.execute()
+        self.assertEqual(0, exitcode)
+
+        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(4, project1.discoveredpackages.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)

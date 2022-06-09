@@ -75,25 +75,16 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     Uses the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL and package_uid as a unique key.
     """
-    purl_data = DiscoveredPackage.extract_purl_data(package_data)
     package_uid = package_data.get("package_uid")
-    purl_data_and_package_uid = {
-        **purl_data,
-        "extra_data": {"package_uid": package_uid},
-    }
 
     try:
         package = DiscoveredPackage.objects.get(
             project=project,
-            **purl_data_and_package_uid
+            package_uid=package_uid,
         )
     except DiscoveredPackage.DoesNotExist:
         package = None
 
-    package_data = {
-        **package_data,
-        "extra_data": {"package_uid": package_uid},
-    }
     if package:
         package.update_from_data(package_data)
 

@@ -1726,6 +1726,11 @@ class DiscoveredPackage(
         blank=True,
         help_text=_("A list of dependencies for this package."),
     )
+    package_uid = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_("Unique identifier for this package."),
+    )
 
     # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
