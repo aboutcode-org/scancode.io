@@ -488,17 +488,15 @@ def make_results_summary(project, scan_results_location):
     summary["key_files"] = key_files
 
     # Inject the `key_files_packages` filtered from the key_files_qs
-    key_files_packages = []
     key_files_packages_qs = (
         project.discoveredpackages
         .filter(codebase_resources__in=key_files_qs)
         .distinct()
     )
-
-    for package in key_files_packages_qs:
-        package_data = DiscoveredPackageSerializer(package).data
-        key_files_packages.append(package_data)
-
+    key_files_packages = [
+        DiscoveredPackageSerializer(package).data
+        for package in key_files_packages_qs
+    ]
     summary["key_files_packages"] = key_files_packages
 
     return summary
