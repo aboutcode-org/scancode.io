@@ -395,9 +395,7 @@ def create_codebase_resources(project, scanned_codebase):
         # associate DiscoveredPackage to Resource, if applicable
         if hasattr(scanned_resource, "for_packages"):
             for package_uid in scanned_resource.for_packages:
-                package = DiscoveredPackage.objects.get(
-                    package_uid=package_uid
-                )
+                package = DiscoveredPackage.objects.get(package_uid=package_uid)
                 set_codebase_resource_for_package(
                     codebase_resource=cbr, discovered_package=package
                 )
@@ -475,10 +473,7 @@ def make_results_summary(project, scan_results_location):
 
     # Inject the `key_files` and their file content in the summary
     key_files = []
-    key_files_qs = (
-        project.codebaseresources
-        .filter(is_key_file=True, is_text=True)
-    )
+    key_files_qs = project.codebaseresources.filter(is_key_file=True, is_text=True)
 
     for resource in key_files_qs:
         resource_data = CodebaseResourceSerializer(resource).data
@@ -488,14 +483,11 @@ def make_results_summary(project, scan_results_location):
     summary["key_files"] = key_files
 
     # Inject the `key_files_packages` filtered from the key_files_qs
-    key_files_packages_qs = (
-        project.discoveredpackages
-        .filter(codebase_resources__in=key_files_qs)
-        .distinct()
-    )
+    key_files_packages_qs = project.discoveredpackages.filter(
+        codebase_resources__in=key_files_qs
+    ).distinct()
     key_files_packages = [
-        DiscoveredPackageSerializer(package).data
-        for package in key_files_packages_qs
+        DiscoveredPackageSerializer(package).data for package in key_files_packages_qs
     ]
     summary["key_files_packages"] = key_files_packages
 

@@ -606,7 +606,9 @@ class ScanPipePipesTest(TestCase):
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
 
-        scan_results_location = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
+        scan_results_location = (
+            self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
+        )
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
 

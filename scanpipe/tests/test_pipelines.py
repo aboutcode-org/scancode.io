@@ -261,16 +261,12 @@ class PipelinesIntegrationTest(TestCase):
                     and value
                 ):
                     value = purl_with_fake_uuid(value)
-                if key == 'for_packages':
-                    value = [
-                        purl_with_fake_uuid(package_uid)
-                        for package_uid in value
-                    ]
+                if key == "for_packages":
+                    value = [purl_with_fake_uuid(package_uid) for package_uid in value]
                 normalized_data[key] = value
             return normalized_data
 
         return data
-
 
     def assertPipelineResultEqual(self, expected_file, result_file, regen=False):
         """
@@ -323,7 +319,9 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("pkg:npm/is-npm@1.0.0", key_file_package_purl)
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
-    def test_scanpipe_scan_package_pipeline_integration_test_multiple_package_instances(self):
+    def test_scanpipe_scan_package_pipeline_integration_test_multiple_package_instances(
+        self,
+    ):
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
@@ -344,7 +342,9 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
 
         summary_file = project1.get_latest_output(filename="summary")
-        expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package_summary.json"
+        expected_file = (
+            self.data_location / "multiple-is-npm-1.0.0_scan_package_summary.json"
+        )
         self.assertPipelineResultEqual(expected_file, summary_file, regen=False)
 
     def test_scanpipe_scan_codebase_pipeline_integration_test(self):

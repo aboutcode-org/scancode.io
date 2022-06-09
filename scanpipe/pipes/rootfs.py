@@ -174,8 +174,7 @@ def has_hash_diff(install_file, codebase_resource):
         # Find a suitable hash type that is present on both install_file and
         # codebase_resource, skip otherwise.
         if not (
-            hasattr(install_file, hash_type)
-            and hasattr(codebase_resource, hash_type)
+            hasattr(install_file, hash_type) and hasattr(codebase_resource, hash_type)
         ):
             continue
 
