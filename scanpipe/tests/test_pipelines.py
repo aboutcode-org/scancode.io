@@ -435,7 +435,7 @@ class PipelinesIntegrationTest(TestCase):
         # TODO: add correct number of resources and packages when we get the
         # pipeline working
         self.assertEqual(1880, project1.codebaseresources.count())
-        self.assertEqual(97, project1.discoveredpackages.count())
+        self.assertEqual(98, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "ubuntu_scan_codebase.json"
