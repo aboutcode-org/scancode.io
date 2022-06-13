@@ -52,5 +52,5 @@ class LoadInventory(Pipeline):
         """
         project = self.project
         scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
-        scancode.create_codebase_resources(project, scanned_codebase)
         scancode.create_discovered_packages(project, scanned_codebase)
+        scancode.create_codebase_resources(project, scanned_codebase)
