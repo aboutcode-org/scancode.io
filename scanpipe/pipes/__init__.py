@@ -29,8 +29,6 @@ from time import sleep
 
 from django.db.models import Count
 
-from packageurl import normalize_qualifiers
-
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
@@ -73,12 +71,19 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     """
     Gets, updates or creates a DiscoveredPackage then returns it.
     Uses the `project` and `package_data` mapping to lookup and creates the
-    DiscoveredPackage using its Package URL as a unique key.
+    DiscoveredPackage using its Package URL and package_uid as a unique key.
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
+    package_uid = package_data.get("package_uid")
+    purl_data_and_package_uid = {
+        **purl_data,
+        "package_uid": package_uid,
+    }
 
     try:
-        package = DiscoveredPackage.objects.get(project=project, **purl_data)
+        package = DiscoveredPackage.objects.get(
+            project=project, **purl_data_and_package_uid
+        )
     except DiscoveredPackage.DoesNotExist:
         package = None
 

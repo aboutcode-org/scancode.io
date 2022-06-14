@@ -61,9 +61,11 @@
           "is_runtime": false,
           "is_optional": true,
           "is_resolved": false,
-          "requirement": "0.0.3"
+          "resolved_package": {},
+          "extracted_requirement": "0.0.3"
         }
       ],
+      "package_uid": "",
       "keywords": [
         "npm",
         "is",
@@ -182,7 +184,7 @@
     },
     {
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0"
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "path": "is-npm-1.0.0.tgz-extract/package/package.json",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
@@ -216,14 +218,14 @@
       "extra_data": {},
       "copyrights": [
         {
-          "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
           "end_line": 30,
+          "copyright": "(c) Sindre Sorhus (http://sindresorhus.com)",
           "start_line": 30
         }
       ],
       "holders": [
         {
-          "value": "Sindre Sorhus",
+          "holder": "Sindre Sorhus",
           "end_line": 30,
           "start_line": 30
         }

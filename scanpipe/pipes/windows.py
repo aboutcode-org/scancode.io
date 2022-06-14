@@ -25,6 +25,7 @@ import re
 from django.db.models import Q
 
 from packagedcode import win_reg
+from packagedcode.models import Package
 
 from scanpipe import pipes
 
@@ -150,7 +151,8 @@ def _tag_python_software(project):
     q_objects = [~Q(rootfs_path__icontains="site-packages")]
 
     for python_path, python_version in python_versions_by_path.items():
-        python_package = win_reg.InstalledWindowsProgram(
+        python_package = Package(
+            type="windows-program",
             name="Python",
             version=python_version,
             license_expression="python",
@@ -194,7 +196,8 @@ def _tag_openjdk_software(project):
         openjdk_versions_by_path[openjdk_root_path] = openjdk_version
 
     for openjdk_path, openjdk_version in openjdk_versions_by_path.items():
-        openjdk_package = win_reg.InstalledWindowsProgram(
+        openjdk_package = Package(
+            type="windows-program",
             name="OpenJDK",
             version=openjdk_version,
             license_expression="gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0",
@@ -270,7 +273,7 @@ def tag_program_files(project):
         program_files_dirname_by_path[program_files_subdir] = dirname
 
     for root_dir, root_dir_name in program_files_dirname_by_path.items():
-        package = win_reg.InstalledWindowsProgram(name=root_dir_name, version="nv")
+        package = Package(type="windows-program", name=root_dir_name, version="nv")
         tag_installed_package_files(
             project=project,
             root_dir_pattern=root_dir,

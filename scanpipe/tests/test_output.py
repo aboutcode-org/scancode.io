@@ -139,7 +139,7 @@ class ScanPipeOutputTest(TestCase):
     def test__adapt_value_for_xlsx_does_adapt_copyrights(self):
         result, error = output._adapt_value_for_xlsx(
             fieldname="copyrights",
-            value=[{"value": "bar"}, {"value": "foo"}, {"value": "bar"}],
+            value=[{"copyright": "bar"}, {"copyright": "foo"}, {"copyright": "bar"}],
         )
         self.assertEqual(result, "bar\nfoo")
         self.assertEqual(error, None)
@@ -147,7 +147,7 @@ class ScanPipeOutputTest(TestCase):
     def test__adapt_value_for_xlsx_does_adapt_authors(self):
         result, error = output._adapt_value_for_xlsx(
             fieldname="authors",
-            value=[{"value": "bar"}, {"value": "foo"}, {"value": "bar"}],
+            value=[{"author": "bar"}, {"author": "foo"}, {"author": "bar"}],
         )
         self.assertEqual(result, "bar\nfoo")
         self.assertEqual(error, None)
@@ -155,7 +155,7 @@ class ScanPipeOutputTest(TestCase):
     def test__adapt_value_for_xlsx_does_adapt_holders(self):
         result, error = output._adapt_value_for_xlsx(
             fieldname="holders",
-            value=[{"value": "bar"}, {"value": "foo"}, {"value": "bar"}],
+            value=[{"holder": "bar"}, {"holder": "foo"}, {"holder": "bar"}],
         )
         self.assertEqual(result, "bar\nfoo")
         self.assertEqual(error, None)
