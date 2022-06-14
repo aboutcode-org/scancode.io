@@ -373,6 +373,25 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(10, len(response.data.keys()))
 
+    def test_scanpipe_api_project_action_delete(self):
+        run = self.project1.add_pipeline("docker")
+        run.set_task_started(task_id=uuid.uuid4())
+        self.assertEqual(run.Status.RUNNING, run.status)
+
+        response = self.csrf_client.delete(self.project1_detail_url)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = (
+            "Cannot execute this action until all associated pipeline runs are "
+            "completed."
+        )
+        self.assertEqual(expected, response.data["status"])
+
+        run.set_task_ended(exitcode=0)
+        self.assertEqual(run.Status.SUCCESS, run.status)
+        response = self.csrf_client.delete(self.project1_detail_url)
+        self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+        self.assertFalse(Project.objects.filter(pk=self.project1.pk).exists())
+
     def test_scanpipe_api_project_action_archive(self):
         (self.project1.input_path / "input_file").touch()
         (self.project1.codebase_path / "codebase_file").touch()
@@ -608,7 +627,7 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(30, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(31, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(26, len(get_serializer_fields(CodebaseResource)))
 
         with self.assertRaises(LookupError):

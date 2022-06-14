@@ -22,7 +22,6 @@
 
 import logging
 import posixpath
-from functools import partial
 from pathlib import Path
 
 from container_inspector.image import Image
@@ -152,23 +151,21 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         raise rootfs.DistroNotFound(f"Distro not found.")
 
     distro_id = image.distro.identifier
-    if distro_id not in rootfs.PACKAGE_GETTER_BY_DISTRO:
+    if distro_id not in rootfs.SUPPORTED_DISTROS:
         raise rootfs.DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
-    package_getter = partial(
-        rootfs.PACKAGE_GETTER_BY_DISTRO[distro_id],
-        distro=distro_id,
-        detect_licenses=detect_licenses,
-    )
-
-    installed_packages = image.get_installed_packages(package_getter)
+    installed_packages = image.get_installed_packages(rootfs.package_getter)
 
     for i, (purl, package, layer) in enumerate(installed_packages):
         logger.info(f"Creating package #{i}: {purl}")
         created_package = pipes.update_or_create_package(project, package.to_dict())
 
+        installed_files = []
+        if hasattr(package, "resources"):
+            installed_files = package.resources
+
         # We have no files for this installed package, we cannot go further.
-        if not package.installed_files:
+        if not installed_files:
             logger.info(f"  No installed_files for: {purl}")
             continue
 
@@ -177,8 +174,9 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
 
         codebase_resources = project.codebaseresources.all()
 
-        for install_file in package.installed_files:
-            install_file_path = pipes.normalize_path(install_file.path)
+        for install_file in installed_files:
+            install_file_path = install_file.get_path(strip_root=True)
+            install_file_path = pipes.normalize_path(install_file_path)
             layer_rootfs_path = posixpath.join(
                 layer.layer_id,
                 install_file_path.strip("/"),

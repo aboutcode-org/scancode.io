@@ -22,7 +22,6 @@
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import output
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_inputs

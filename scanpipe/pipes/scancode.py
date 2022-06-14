@@ -200,14 +200,14 @@ def scan_file(location, with_threading=True):
     return _scan_resource(location, scanners, with_threading)
 
 
-def scan_for_package_info(location, with_threading=True):
+def scan_for_package_data(location, with_threading=True):
     """
     Runs a package scan on provided `location` using the scancode-toolkit direct API.
 
     Returns a dict of scan `results` and a list of `errors`.
     """
     scanners = [
-        Scanner("packages", scancode_api.get_package_info),
+        Scanner("package_data", scancode_api.get_package_data),
     ]
     return _scan_resource(location, scanners, with_threading)
 
@@ -231,7 +231,7 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Saves the resource scan package results in the database.
     Creates project errors if any occurred during the scan.
     """
-    packages = scan_results.get("packages", [])
+    packages = scan_results.get("package_data", [])
     if packages:
         for package_data in packages:
             codebase_resource.create_and_add_package(package_data)
@@ -317,7 +317,11 @@ def scan_for_application_packages(project):
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     resource_qs = project.codebaseresources.no_status()
-    _scan_and_save(resource_qs, scan_for_package_info, save_scan_package_results)
+    _scan_and_save(
+        resource_qs=resource_qs,
+        scan_func=scan_for_package_data,
+        save_func=save_scan_package_results,
+    )
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):
@@ -389,20 +393,18 @@ def create_codebase_resources(project, scanned_codebase):
         else:
             resource_path = scanned_resource.get_path(strip_root=True)
 
-        cbr, _ = CodebaseResource.objects.get_or_create(
+        codebase_resource, _ = CodebaseResource.objects.get_or_create(
             project=project,
             path=resource_path,
             defaults=resource_data,
         )
 
-        # associate DiscoveredPackage to Resource, if applicable
+        # Associate DiscoveredPackage to CodebaseResource, if applicable
         if hasattr(scanned_resource, "for_packages"):
             for package_uid in scanned_resource.for_packages:
-                package = DiscoveredPackage.objects.get(
-                    extra_data__contains={"package_uids": [package_uid]}
-                )
+                package = DiscoveredPackage.objects.get(package_uid=package_uid)
                 set_codebase_resource_for_package(
-                    codebase_resource=cbr, discovered_package=package
+                    codebase_resource=codebase_resource, discovered_package=package
                 )
 
 
@@ -477,24 +479,24 @@ def make_results_summary(project, scan_results_location):
     summary["license_matches"] = _get_license_matches_grouped(project)
 
     # Inject the `key_files` and their file content in the summary
-    key_files_qs = project.codebaseresources.filter(is_key_file=True, is_text=True)
-
     key_files = []
-    key_files_packages = []
+    key_files_qs = project.codebaseresources.filter(is_key_file=True, is_text=True)
 
     for resource in key_files_qs:
         resource_data = CodebaseResourceSerializer(resource).data
         resource_data["content"] = resource.file_content
         key_files.append(resource_data)
 
-        packages = resource.discovered_packages.all()
-        packages_data = [
-            DiscoveredPackageSerializer(package).data for package in packages
-        ]
-        key_files_packages.extend(packages_data)
-
     summary["key_files"] = key_files
-    summary["key_files_packages"] = key_files_packages
+
+    # Inject the `key_files_packages` filtered from the key_files_qs
+    key_files_packages_qs = project.discoveredpackages.filter(
+        codebase_resources__in=key_files_qs
+    ).distinct()
+
+    summary["key_files_packages"] = [
+        DiscoveredPackageSerializer(package).data for package in key_files_packages_qs
+    ]
 
     return summary
 
@@ -512,3 +514,13 @@ def replace_root_path_and_name(scanned_codebase):
             scanned_resource.path = scanned_resource.get_path(strip_root=True)
         scanned_resource.save(scanned_codebase)
     return scanned_codebase
+
+
+def create_inventory_from_scan(project, input_location):
+    """
+    Create CodebaseResource and DiscoveredPackage instances loaded from the scan
+    results located at `input_location`.
+    """
+    scanned_codebase = get_virtual_codebase(project, input_location)
+    create_discovered_packages(project, scanned_codebase)
+    create_codebase_resources(project, scanned_codebase)

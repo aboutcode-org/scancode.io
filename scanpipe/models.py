@@ -1768,6 +1768,11 @@ class DiscoveredPackage(
         blank=True,
         help_text=_("A list of dependencies for this package."),
     )
+    package_uid = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_("Unique identifier for this package."),
+    )
 
     # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
@@ -1811,7 +1816,7 @@ class DiscoveredPackage(
         If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
-        required_fields = ["type", "name", "version"]
+        required_fields = ["type", "name"]
         missing_values = [
             field_name
             for field_name in required_fields

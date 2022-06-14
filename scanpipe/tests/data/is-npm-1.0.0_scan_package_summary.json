@@ -3,7 +3,7 @@
   "license_clarity_score": {
     "score": 90,
     "declared_license": true,
-    "precise_license_detection": true,
+    "identification_precision": true,
     "has_license_text": false,
     "declared_copyrights": true,
     "conflicting_license_categories": false,
@@ -34,7 +34,7 @@
   "key_files": [
     {
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0"
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "path": "package/package.json",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
@@ -116,7 +116,9 @@
       "content": "{\n  \"name\": \"is-npm\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Check if your code is running as an npm script\",\n  \"license\": \"MIT\",\n  \"repository\": \"sindresorhus/is-npm\",\n  \"author\": {\n    \"name\": \"Sindre Sorhus\",\n    \"email\": \"sindresorhus@gmail.com\",\n    \"url\": \"http://sindresorhus.com\"\n  },\n  \"engines\": {\n    \"node\": \">=0.10.0\"\n  },\n  \"scripts\": {\n    \"test\": \"node test.js\"\n  },\n  \"files\": [\n    \"index.js\"\n  ],\n  \"keywords\": [\n    \"npm\",\n    \"is\",\n    \"check\",\n    \"detect\",\n    \"env\",\n    \"environment\"\n  ],\n  \"devDependencies\": {\n    \"ava\": \"0.0.3\"\n  }\n}\n"
     },
     {
-      "for_packages": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "path": "package/readme.md",
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
@@ -203,7 +205,7 @@
           "start_line": 30
         }
       ],
-      "status": "",
+      "status": "application-package",
       "type": "file",
       "name": "readme.md",
       "extension": ".md",
@@ -247,6 +249,7 @@
       "missing_resources": [],
       "modified_resources": [],
       "dependencies": [],
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "npm",
         "is",

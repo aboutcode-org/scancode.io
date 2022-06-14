@@ -23,7 +23,6 @@
 import fnmatch
 import logging
 import os
-from functools import partial
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
@@ -31,28 +30,25 @@ from django.db.models import Q
 import attr
 from commoncode.ignore import default_ignores
 from container_inspector.distro import Distro
+from packagedcode import plugin_package
 
 from scanpipe import pipes
-from scanpipe.pipes import alpine
-from scanpipe.pipes import debian
-from scanpipe.pipes import rpm
-from scanpipe.pipes import windows
 
 logger = logging.getLogger(__name__)
 
-PACKAGE_GETTER_BY_DISTRO = {
-    "alpine": alpine.package_getter,
-    "debian": partial(debian.package_getter, distro="debian"),
-    "ubuntu": partial(debian.package_getter, distro="ubuntu"),
-    "rhel": rpm.package_getter,
-    "centos": rpm.package_getter,
-    "fedora": rpm.package_getter,
-    "sles": rpm.package_getter,
-    "opensuse": rpm.package_getter,
-    "opensuse-tumbleweed": rpm.package_getter,
-    "photon": rpm.package_getter,
-    "windows": windows.package_getter,
-}
+SUPPORTED_DISTROS = [
+    "alpine",
+    "debian",
+    "ubuntu",
+    "rhel",
+    "centos",
+    "fedora",
+    "sles",
+    "opensuse",
+    "opensuse-tumbleweed",
+    "photon",
+    "windows",
+]
 
 
 class DistroNotFound(Exception):
@@ -175,6 +171,15 @@ def has_hash_diff(install_file, codebase_resource):
     hash_types = ["sha512", "sha256", "sha1", "md5"]
 
     for hash_type in hash_types:
+        # Find a suitable hash type that is present on both install_file and
+        # codebase_resource, skip otherwise.
+        share_hash_type = all(
+            [hasattr(install_file, hash_type), hasattr(codebase_resource, hash_type)]
+        )
+
+        if not share_hash_type:
+            continue
+
         install_file_sum = getattr(install_file, hash_type)
         codebase_resource_sum = getattr(codebase_resource, hash_type)
         hashes_differ = all(
@@ -190,6 +195,15 @@ def has_hash_diff(install_file, codebase_resource):
     return False
 
 
+def package_getter(root_dir, **kwargs):
+    """
+    Returns installed package objects.
+    """
+    packages = plugin_package.get_installed_packages(root_dir)
+    for package in packages:
+        yield package.purl, package
+
+
 def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     """
     Given a `project` Project and a `rootfs` RootFs, scan the `rootfs` for
@@ -203,14 +217,10 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
         raise DistroNotFound(f"Distro not found.")
 
     distro_id = rootfs.distro.identifier
-    if distro_id not in PACKAGE_GETTER_BY_DISTRO:
+    if distro_id not in SUPPORTED_DISTROS:
         raise DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
-    package_getter = partial(
-        PACKAGE_GETTER_BY_DISTRO[distro_id],
-        distro=distro_id,
-        detect_licenses=detect_licenses,
-    )
+    logger.info(f"rootfs location: {rootfs.location}")
 
     installed_packages = rootfs.get_installed_packages(package_getter)
 
@@ -218,8 +228,12 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
         logger.info(f"Creating package #{i}: {purl}")
         created_package = pipes.update_or_create_package(project, package.to_dict())
 
+        installed_files = []
+        if hasattr(package, "resources"):
+            installed_files = package.resources
+
         # We have no files for this installed package, we cannot go further.
-        if not package.installed_files:
+        if not installed_files:
             logger.info(f"  No installed_files for: {purl}")
             continue
 
@@ -228,7 +242,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
 
         codebase_resources = project.codebaseresources.all()
 
-        for install_file in package.installed_files:
+        for install_file in installed_files:
             rootfs_path = pipes.normalize_path(install_file.path)
             logger.info(f"   installed file rootfs_path: {rootfs_path}")
 

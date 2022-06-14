@@ -20,13 +20,6 @@
       "errors": [],
       "warnings": [],
       "extra_data": {
-        "system_environment": {
-          "operating_system": "linux",
-          "cpu_architecture": "64",
-          "platform": "Linux-5.4.0-109-generic-x86_64-with-glibc2.27",
-          "platform_version": "#123~18.04.1-Ubuntu SMP Fri Apr 8 09:48:52 UTC 2022",
-          "python_version": "3.9.12 (main, Apr 16 2022, 19:31:36) \n[GCC 7.5.0]"
-        },
         "spdx_license_list_version": "3.16",
         "files_count": 3
       }
@@ -110,7 +103,7 @@
     "license_clarity_score": {
       "score": 90,
       "declared_license": true,
-      "precise_license_detection": true,
+      "identification_precision": true,
       "has_license_text": false,
       "declared_copyrights": true,
       "conflicting_license_categories": false,
@@ -231,7 +224,9 @@
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "is_legal": false,
@@ -482,7 +477,9 @@
       ],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [
         {
