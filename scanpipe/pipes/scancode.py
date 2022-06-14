@@ -492,3 +492,13 @@ def make_results_summary(project, scan_results_location):
     ]
 
     return summary
+
+
+def create_inventory_from_scan(project, input_location):
+    """
+    Create CodebaseResource and DiscoveredPackage instances loaded from the scan
+    results located at `input_location`.
+    """
+    scanned_codebase = get_virtual_codebase(project, input_location)
+    create_discovered_packages(project, scanned_codebase)
+    create_codebase_resources(project, scanned_codebase)

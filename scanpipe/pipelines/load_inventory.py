@@ -50,9 +50,6 @@ class LoadInventory(Pipeline):
 
     def build_inventory_from_scan(self):
         """
-        Processes a given JSON scan input to populate codebase resources and packages.
+        Processes a JSON Scan results file to populate codebase resources and packages.
         """
-        project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
-        scancode.create_discovered_packages(project, scanned_codebase)
-        scancode.create_codebase_resources(project, scanned_codebase)
+        scancode.create_inventory_from_scan(self.project, self.input_location)
