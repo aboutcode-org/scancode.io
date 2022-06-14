@@ -653,7 +653,7 @@ class ScanPipePipesTest(TestCase):
 
         fields = ["name", "path"]
         virtual_tree = codebase.get_tree(
-            virtual_codebase.root, fields, codebase=virtual_codebase_root_replaced
+            virtual_codebase_root_replaced.root, fields, codebase=virtual_codebase_root_replaced
         )
         project_tree = codebase.get_tree(project_codebase.root, fields)
 
