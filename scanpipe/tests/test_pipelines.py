@@ -454,3 +454,25 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
+    def test_scanpipe_load_inventory_pipeline_integration_test(self):
+        pipeline_name = "load_inventory"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, _ = pipeline.execute()
+        self.assertEqual(0, exitcode)
+
+        self.assertEqual(18, project1.codebaseresources.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data_location / "asgiref-3.3.0_load_inventory_expected.json"
+        )
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
