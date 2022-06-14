@@ -169,7 +169,10 @@ class JSONResultsGenerator:
         from scanpipe.api.serializers import DiscoveredPackageSerializer
 
         packages = project.discoveredpackages.all().order_by(
-            "type", "namespace", "name", "version"
+            "type",
+            "namespace",
+            "name",
+            "version",
         )
 
         for obj in packages.iterator():

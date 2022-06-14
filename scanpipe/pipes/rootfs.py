@@ -173,9 +173,11 @@ def has_hash_diff(install_file, codebase_resource):
     for hash_type in hash_types:
         # Find a suitable hash type that is present on both install_file and
         # codebase_resource, skip otherwise.
-        if not (
-            hasattr(install_file, hash_type) and hasattr(codebase_resource, hash_type)
-        ):
+        share_hash_type = all(
+            [hasattr(install_file, hash_type), hasattr(codebase_resource, hash_type)]
+        )
+
+        if not share_hash_type:
             continue
 
         install_file_sum = getattr(install_file, hash_type)

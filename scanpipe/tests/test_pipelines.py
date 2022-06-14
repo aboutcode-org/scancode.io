@@ -220,9 +220,9 @@ class PipelinesIntegrationTest(TestCase):
         "--json-pp",
         "--processes",
         "--verbose",
-        "OUTDATED",
         # system_environment differs between systems
         "system_environment",
+        "file_type",
     ]
 
     def _without_keys(self, data, exclude_keys):
@@ -319,9 +319,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("pkg:npm/is-npm@1.0.0", key_file_package_purl)
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
-    def test_scanpipe_scan_package_pipeline_integration_test_multiple_package_instances(
-        self,
-    ):
+    def test_scanpipe_scan_package_pipeline_integration_test_multiple_packages(self):
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 

@@ -42,8 +42,10 @@ class LoadInventory(Pipeline):
         Locates a JSON scan input from a project's input/ directory.
         """
         inputs = list(self.project.inputs(pattern="*.json"))
+
         if len(inputs) != 1:
             raise Exception("Only 1 JSON input file supported")
+
         self.input_location = str(inputs[0].absolute())
 
     def build_inventory_from_scan(self):

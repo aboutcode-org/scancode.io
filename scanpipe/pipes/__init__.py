@@ -29,8 +29,6 @@ from time import sleep
 
 from django.db.models import Count
 
-from packageurl import normalize_qualifiers
-
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode

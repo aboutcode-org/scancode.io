@@ -56,7 +56,6 @@ class ScanPackage(Pipeline):
         "--license-text",
         "--package",
         "--url",
-    ] + [
         "--classify",
         "--is-license-text",
         "--summary",

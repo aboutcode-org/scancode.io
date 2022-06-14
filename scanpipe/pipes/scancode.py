@@ -386,18 +386,18 @@ def create_codebase_resources(project, scanned_codebase):
         resource_data["type"] = CodebaseResource.Type[resource_type]
         resource_path = scanned_resource.get_path(strip_root=True)
 
-        cbr, _ = CodebaseResource.objects.get_or_create(
+        codebase_resource, _ = CodebaseResource.objects.get_or_create(
             project=project,
             path=resource_path,
             defaults=resource_data,
         )
 
-        # associate DiscoveredPackage to Resource, if applicable
+        # Associate DiscoveredPackage to CodebaseResource, if applicable
         if hasattr(scanned_resource, "for_packages"):
             for package_uid in scanned_resource.for_packages:
                 package = DiscoveredPackage.objects.get(package_uid=package_uid)
                 set_codebase_resource_for_package(
-                    codebase_resource=cbr, discovered_package=package
+                    codebase_resource=codebase_resource, discovered_package=package
                 )
 
 
@@ -486,9 +486,9 @@ def make_results_summary(project, scan_results_location):
     key_files_packages_qs = project.discoveredpackages.filter(
         codebase_resources__in=key_files_qs
     ).distinct()
-    key_files_packages = [
+
+    summary["key_files_packages"] = [
         DiscoveredPackageSerializer(package).data for package in key_files_packages_qs
     ]
-    summary["key_files_packages"] = key_files_packages
 
     return summary
