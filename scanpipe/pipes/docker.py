@@ -25,10 +25,10 @@ import posixpath
 from pathlib import Path
 
 from container_inspector.image import Image
+from container_inspector.utils import extract_tar
 
 from scanpipe import pipes
 from scanpipe.pipes import rootfs
-from scanpipe.pipes.scancode import extract_archive
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,10 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=True):
     Returns the `images` and an `errors` list of error messages that may have
     happen during the extraction.
     """
-    errors = list(extract_archive(location=input_tarball, target=extract_target))
+    errors = extract_tar(
+        location=input_tarball,
+        target_dir=extract_target
+    )
     images = Image.get_images_from_dir(
         extracted_location=str(extract_target),
         verify=verify,
@@ -101,9 +104,9 @@ def extract_layers_from_images_to_base_path(base_path, images):
 
         for layer in image.layers:
             extract_target = target_path / layer.layer_id
-            extract_errors = extract_archive(
+            extract_errors = extract_tar(
                 location=layer.archive_location,
-                target=extract_target,
+                target_dir=extract_target,
             )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
