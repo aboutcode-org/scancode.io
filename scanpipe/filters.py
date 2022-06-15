@@ -88,6 +88,9 @@ class FilterSetUtilsMixin:
 
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+    sort = django_filters.OrderingFilter(
+        fields=(("name", "name"), ("created_date", "created_date")),
+    )
 
     class Meta:
         model = Project

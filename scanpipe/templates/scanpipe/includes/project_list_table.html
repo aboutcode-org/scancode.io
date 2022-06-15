@@ -15,6 +15,7 @@
     <tr>
       <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
+        <span class="has-text-grey is-size-7 is-block" title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
       </th>
       <td>
         {% if project.package_count %}
