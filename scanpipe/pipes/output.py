@@ -181,7 +181,9 @@ class JSONResultsGenerator:
     def get_files(self, project):
         from scanpipe.api.serializers import CodebaseResourceSerializer
 
-        resources = project.codebaseresources.without_symlinks()
+        resources = project.codebaseresources.without_symlinks().order_by(
+            "path",
+        )
 
         for obj in resources.iterator():
             yield self.encode(CodebaseResourceSerializer(obj).data)
