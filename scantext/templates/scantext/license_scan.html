@@ -1,0 +1,84 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block content %}
+
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    <section class="section pt-0">
+      <form method="post" action="{% url 'license_scan' %}" >
+        {% csrf_token %}
+      <div class="is-flex is-justify-content-space-between mb-2">
+        <div class="mb-2">
+          <h1 class="title is-5">Scan License</h1>
+        </div>
+        <div>
+          <a href="{% url 'project_add' %}" class="button is-info">New Project</a>
+          <input type="submit" class="button is-link" value="Scan License">
+        </div>
+      </div>
+        {{form.input_text}}
+      </form>
+    </section>
+  </div>
+{% endblock %}
+
+<!--       <div id="editor" style="min-height:730px; border: lightgrey 1px solid;"></div>
+ -->
+<!-- 
+{% block scripts %}
+   <script src="{% static 'ace-1.4.12.min.js' %}" crossorigin="anonymous"></script>
+  <script>
+    let editor = ace.edit("editor", {
+      mode: "ace/mode/text",
+      autoScrollEditorIntoView: true,
+      wrap: true,
+      readOnly: false,
+      showPrintMargin: false,
+      highlightActiveLine: true,
+      highlightGutterLine: false,
+      fontSize: 15,
+      foldStyle: "manual",
+      fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
+    });
+
+    let form = document.querySelector('form');
+
+    form.addEventListener('submit', (event) => {
+      
+      let background = displayOverlay();
+
+      // The upload progress is only added when input files are provided.
+      // if (!form["input_files"].files.length) return false;
+
+      event.preventDefault();
+
+      // let progress_bar = document.createElement('progress');
+      // progress_bar.className = 'progress is-success is-medium file-upload';
+      // progress_bar.setAttribute('value', '0');
+      // progress_bar.setAttribute('max', '100');
+
+      // let progress_container = document.createElement('div');
+      // progress_container.className = 'container is-max-desktop mt-6 px-6';
+      // progress_container.appendChild(progress_bar)
+      // background.appendChild(progress_container);
+
+      // let form_errors = document.getElementById('form-errors');
+      // displayFormUploadProgress(form, progress_bar, form_errors);
+
+      // The upload progress is only added when input files are provided.
+      // if (!form["input_files"].files.length) return false;
+
+      // event.preventDefault();
+      // console.log(form["input_files"].files);
+
+      // event.preventDefault();
+      hidden_input = document.querySelector('#id_input_text');
+      hidden_input.value = editor.getValue();
+      console.log(hidden_input.value)
+    });
+
+  </script>
+{% endblock %} -->

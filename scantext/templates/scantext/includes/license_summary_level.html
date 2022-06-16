@@ -1,0 +1,35 @@
+{% load humanize %}
+<nav class="level is-mobile">
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Percentage Of License Text</p>
+      <p class="title">
+          <span>
+            {{ expr.percentage_of_license_text }}
+          </span>
+      </p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">License Expressions</p>
+      <p class="title">
+          <span>
+            {{ expr.license_expressions | length }}
+
+          </span>
+      </p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Licenses</p>
+      <p class="title">
+          <span>
+            {{ expr.licenses | length }}
+
+          </span>
+      </p>
+    </div>
+  </div>
+</nav>

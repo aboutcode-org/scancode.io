@@ -1,0 +1,312 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# http://nexb.com and https://github.com/nexB/scancode.io
+# The ScanCode.io software is licensed under the Apache License version 2.0.
+# Data generated with ScanCode.io is provided as-is without warranties.
+# ScanCode is a trademark of nexB Inc.
+#
+# You may not use this software except in compliance with the License.
+# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+# ScanCode.io should be considered or used as legal advice. Consult an Attorney
+# for any legal advice.
+#
+# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
+# Visit https://github.com/nexB/scancode.io for support and download.
+
+import pprint
+import sys
+
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+from django.views import generic
+
+from licensedcode import cache
+
+from scancodeio.auth import ConditionalLoginRequired
+from scantext.forms import EditorForm
+
+SPDX_LICENSE_URL = "https://spdx.org/licenses/{}"
+DEJACODE_LICENSE_URL = "https://enterprise.dejacode.com/urn/urn:dje:license:{}"
+SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
+
+
+def license_scanview(request):
+    form = EditorForm()
+    if request.method == "POST":
+        form = EditorForm(request.POST)
+        if form.is_valid():
+            # idx = cache.get_index()
+            # matches = idx.match(query_string=text)
+            # print(type(matches))
+            # print(type(matches[0].rule))
+            text = form.cleaned_data["input_text"]
+            expressions = get_licenses("/home/human/Desktop/license-text.txt")
+            pp = pprint.PrettyPrinter(indent=4)
+            pp.pprint(expressions)
+            return render(
+                request,
+                "scantext/license_detail.html",
+                {
+                    "text": text.split("\r"),
+                    "expr": expressions,
+                },
+            )
+    return render(request, "scantext/license_scan.html", {"form": form})
+
+
+def get_licenses(
+    location,
+    min_score=0,
+    include_text=False,
+    license_text_diagnostics=False,
+    license_url_template=SCANCODE_LICENSEDB_URL,
+    unknown_licenses=False,
+    deadline=sys.maxsize,
+    **kwargs,
+):
+    """
+    Return a mapping or detected_licenses for licenses detected in the file at
+    `location`
+    This mapping contains two keys:
+     - 'licenses' with a value that is list of mappings of license information.
+     - 'license_expressions' with a value that is list of license expression
+       strings.
+    `min_score` is a minimum score threshold from 0 to 100. The default is 0,
+    meaning that all license matches are returned. If specified, matches with a
+    score lower than `minimum_score` are not returned.
+    If `include_text` is True, matched text is included in the returned
+    `licenses` data as well as a file-level `percentage_of_license_text` percentage to
+    indicate the overall proportion of detected license text and license notice
+    words in the file. This is used to determine if a file contains mostly
+    licensing information.
+    If ``unknown_licenses`` is True, also detect unknown licenses.
+    """
+    from licensedcode import cache
+    from licensedcode.spans import Span
+
+    idx = cache.get_index()
+
+    detected_licenses = []
+    detected_expressions = []
+
+    matches = idx.match(
+        location=location,
+        min_score=min_score,
+        deadline=deadline,
+        unknown_licenses=unknown_licenses,
+        **kwargs,
+    )
+
+    qspans = []
+    match = None
+    for match in matches:
+        qspans.append(match.qspan)
+
+        detected_expressions.append(match.rule.license_expression)
+
+        detected_licenses.extend(
+            _licenses_data_from_match(
+                match=match,
+                include_text=include_text,
+                license_text_diagnostics=license_text_diagnostics,
+                license_url_template=license_url_template,
+            )
+        )
+
+    percentage_of_license_text = 0
+    if match:
+        # we need at least one match to compute a license_coverage
+        matched_tokens_length = len(Span().union(*qspans))
+        query_tokens_length = match.query.tokens_length(with_unknown=True)
+        percentage_of_license_text = round(
+            (matched_tokens_length / query_tokens_length) * 100, 2
+        )
+
+    detected_spdx_expressions = []
+    return dict(
+        [
+            ("licenses", detected_licenses),
+            ("license_expressions", detected_expressions),
+            ("spdx_license_expressions", detected_spdx_expressions),
+            ("percentage_of_license_text", percentage_of_license_text),
+        ]
+    )
+
+
+def _licenses_data_from_match(
+    match,
+    include_text=False,
+    license_text_diagnostics=False,
+    license_url_template=SCANCODE_LICENSEDB_URL,
+):
+    """
+    Return a list of "licenses" scan data built from a license match.
+    Used directly only internally for testing.
+    """
+    from licensedcode import cache
+
+    licenses = cache.get_licenses_db()
+
+    matched_text = None
+    if include_text:
+        if license_text_diagnostics:
+            matched_text = match.matched_text(whole_lines=False, highlight=True)
+        else:
+            matched_text = match.matched_text(whole_lines=True, highlight=False)
+
+    SCANCODE_BASE_URL = "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses"
+    SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
+    SCANCODE_LICENSE_DATA_URL = SCANCODE_BASE_URL + "/{}.yml"
+
+    detected_licenses = []
+    for license_key in match.rule.license_keys():
+        lic = licenses.get(license_key)
+        result = {}
+        detected_licenses.append(result)
+        result["key"] = lic.key
+        result["score"] = match.score()
+        result["name"] = lic.name
+        result["short_name"] = lic.short_name
+        result["category"] = lic.category
+        result["is_exception"] = lic.is_exception
+        result["is_unknown"] = lic.is_unknown
+        result["owner"] = lic.owner
+        result["homepage_url"] = lic.homepage_url
+        result["text_url"] = lic.text_urls[0] if lic.text_urls else ""
+        result["reference_url"] = license_url_template.format(lic.key)
+        result["scancode_text_url"] = SCANCODE_LICENSE_TEXT_URL.format(lic.key)
+        result["scancode_data_url"] = SCANCODE_LICENSE_DATA_URL.format(lic.key)
+
+        spdx_key = lic.spdx_license_key
+        result["spdx_license_key"] = spdx_key
+
+        if spdx_key:
+            is_license_ref = spdx_key.lower().startswith("licenseref-")
+            if is_license_ref:
+                spdx_url = SCANCODE_LICENSE_TEXT_URL.format(lic.key)
+            else:
+                spdx_key = lic.spdx_license_key.rstrip("+")
+                spdx_url = SPDX_LICENSE_URL.format(spdx_key)
+        else:
+            spdx_url = ""
+        result["spdx_url"] = spdx_url
+        result["start_line"] = match.start_line
+        result["end_line"] = match.end_line
+        matched_rule = result["matched_rule"] = {}
+        matched_rule["identifier"] = match.rule.identifier
+        matched_rule["license_expression"] = match.rule.license_expression
+        matched_rule["licenses"] = match.rule.license_keys()
+        matched_rule["referenced_filenames"] = match.rule.referenced_filenames
+        matched_rule["is_license_text"] = match.rule.is_license_text
+        matched_rule["is_license_notice"] = match.rule.is_license_notice
+        matched_rule["is_license_reference"] = match.rule.is_license_reference
+        matched_rule["is_license_tag"] = match.rule.is_license_tag
+        matched_rule["is_license_intro"] = match.rule.is_license_intro
+        matched_rule["has_unknown"] = match.rule.has_unknown
+        matched_rule["matcher"] = match.matcher
+        matched_rule["rule_length"] = match.rule.length
+        matched_rule["matched_length"] = match.len()
+        matched_rule["match_coverage"] = match.coverage()
+        matched_rule["rule_relevance"] = match.rule.relevance
+        # FIXME: for sanity this should always be included?????
+        if include_text:
+            result["matched_text"] = matched_text
+    return detected_licenses
+
+
+# class LicenseScanView(ConditionalLoginRequired, generic.FormView):
+#      template_name = "scantext/license_scan.html"
+#      form_class = EditorForm
+
+#      def form_valid(self, form):
+#          idx = cache.get_index()
+#          text = form.cleaned_data["input_text"]
+#          matches = idx.match(query_string=text)
+#          print(matches)
+#          return HttpResponseRedirect("/scan/history/detail/", {
+#             "matches": matches
+#             })
+# print(form.cleaned_data["input_text"])
+
+#     import magic
+#     def is_text(self, form):
+#         return magic.from_file(self.request.files) == 'text/plain'
+
+#     def form_invalid(self, form):
+#         print("No")
+
+# def LicenseScanView(request):
+#     if request.method == 'POST':
+#         form = EditorForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             print(type(request.FILES['input_files']))
+#             return HttpResponseRedirect('/scan/history/')
+
+#     return render(request, "scantext/license_scan.html", {
+#         "form": EditorForm
+#         })
+
+# class LicenseListView(ConditionalLoginRequired, generic.TemplateView):
+#    template_name = "scantext/license_list.html"
+#
+#
+# class LicenseDetailView(ConditionalLoginRequired, generic.DetailView):
+#    model = License
+#    template_name = "scantext/license_detail.html"
+#
+#
+#    def get_context_data(self, **kwargs):
+#        context = super().get_context_data(**kwargs)
+#        context['now'] = context.objects.all()
+#        return context
+#
+#
+# class LicenseReportView(ConditionalLoginRequired, generic.DetailView):
+#    template_name = "scantext/license_report.html"
+#
+#
+#
+# import ast
+# import json
+# def template_vv(request):
+#
+#    with open("/home/human/dev/sco/output.json", "r") as f:
+#        data = f.read()
+#        # print(data)
+#        co = json.loads(ast.literal_eval(json.dumps(data)))
+#        # print(co)
+#        # print(type(co))
+#        return render(request, "scantext/license_list.html", {
+#        "co": co
+#        })
+#
+# def template_dt(request):
+#
+#    with open("/home/human/dev/sco/output.json", "r") as f:
+#        data = f.read()
+#        # print(data)
+#        co = json.loads(ast.literal_eval(json.dumps(data, sort_keys=True, indent=4)))
+#        # print(co)
+#        # print(type(co))
+#        return render(request, "scantext/license_detail.html", {
+#        "co": co
+#        })
+#
+#    # def get_context_data(self, **kwargs):
+#    #     context = super().get_context_data(**kwargs)
+#    #     context['now'] = json.dumps(co)
+#    #     return context
+#
+#
+#
+# class LicenseResultView(ConditionalLoginRequired, generic.DetailView):
+#    model = License
+#    template_name = "scantext/license_detail.html"
+#

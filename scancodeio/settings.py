@@ -45,7 +45,7 @@ SECRET_KEY = env.str("SECRET_KEY")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
 
 # SECURITY WARNING: don't run with debug turned on in production
-DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
+DEBUG = env.bool("SCANCODEIO_DEBUG", default=True)
 
 SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
@@ -78,6 +78,7 @@ INSTALLED_APPS = (
     # Local apps
     # Must come before Third-party apps for proper templates override
     "scanpipe",
+    "scantext",
     # Django built-in
     "django.contrib.auth",
     "django.contrib.contenttypes",
