@@ -223,6 +223,7 @@ LOGGING = {
         "scanpipe": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
+            "propagate": False,
         },
     },
 }
