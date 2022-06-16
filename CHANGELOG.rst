@@ -27,8 +27,11 @@ v31.0.0 (next)
   Reference: https://tracker.debian.org/pkg/wait-for-it
   https://github.com/nexB/scancode.io/issues/387
 
+- Add support for multiple inputs in the LoadInventory pipeline.
+  https://github.com/nexB/scancode.io/issues/451
+
 - Add new SCANCODEIO_REDIS_PASSWORD environment variable and setting
-  to optionally set Redis instance password
+  to optionally set Redis instance password.
 
 - Ensure a project cannot be deleted through the API while a pipeline is running.
   https://github.com/nexB/scancode.io/issues/402

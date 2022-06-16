@@ -77,9 +77,9 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("do_nothing")
         pipeline = run.make_pipeline_instance()
 
-        exitcode, output = pipeline.execute()
+        exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode)
-        self.assertEqual("", output)
+        self.assertEqual("", out)
 
         run.refresh_from_db()
         self.assertIn("Pipeline [do_nothing] starting", run.log)
@@ -94,14 +94,14 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("raise_exception")
         pipeline = run.make_pipeline_instance()
 
-        exitcode, output = pipeline.execute()
+        exitcode, out = pipeline.execute()
         self.assertEqual(1, exitcode)
-        self.assertTrue(output.startswith("Error message"))
-        self.assertIn("Traceback:", output)
-        self.assertIn("in execute", output)
-        self.assertIn("step(self)", output)
-        self.assertIn("in raise_exception", output)
-        self.assertIn("raise ValueError", output)
+        self.assertTrue(out.startswith("Error message"))
+        self.assertIn("Traceback:", out)
+        self.assertIn("in execute", out)
+        self.assertIn("step(self)", out)
+        self.assertIn("in raise_exception", out)
+        self.assertIn("raise ValueError", out)
 
         run.refresh_from_db()
         self.assertIn("Pipeline [raise_exception] starting", run.log)
@@ -145,7 +145,7 @@ class ScanPipePipelinesTest(TestCase):
         run = project1.add_pipeline("profile_step")
         pipeline_instance = run.make_pipeline_instance()
 
-        exitcode, output = pipeline_instance.execute()
+        exitcode, out = pipeline_instance.execute()
         self.assertEqual(0, exitcode)
 
         run.refresh_from_db()
@@ -296,8 +296,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, output = pipeline.execute()
-        self.assertEqual(0, exitcode, msg=output)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(4, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
@@ -329,8 +329,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, output = pipeline.execute()
-        self.assertEqual(0, exitcode, msg=output)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(9, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
@@ -357,8 +357,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
-        self.assertEqual(0, exitcode)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
@@ -379,8 +379,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
-        self.assertEqual(0, exitcode)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(83, project1.codebaseresources.count())
         self.assertEqual(14, project1.discoveredpackages.count())
@@ -401,8 +401,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
-        self.assertEqual(0, exitcode)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(25, project1.codebaseresources.count())
         self.assertEqual(101, project1.discoveredpackages.count())
@@ -423,8 +423,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
-        self.assertEqual(0, exitcode)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
@@ -443,8 +443,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
-        self.assertEqual(0, exitcode)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(4, project1.discoveredpackages.count())
@@ -463,8 +463,8 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        exitcode, _ = pipeline.execute()
-        self.assertEqual(0, exitcode)
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(18, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
