@@ -8,7 +8,7 @@
         {
           "pipeline_name": "load_inventory",
           "status": "not_started",
-          "description": "A pipeline to load an inventory of files and packages from a ScanCode JSON scan.\n(Presumably containing file information and package scan data).",
+          "description": "A pipeline to load one or more inventory of files and packages from a ScanCode JSON\nscan results. (Presumably containing resource information and package scan data).",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
