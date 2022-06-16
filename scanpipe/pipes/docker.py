@@ -62,10 +62,7 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=True):
     Returns the `images` and an `errors` list of error messages that may have
     happen during the extraction.
     """
-    errors = extract_tar(
-        location=input_tarball,
-        target_dir=extract_target
-    )
+    errors = extract_tar(location=input_tarball, target_dir=extract_target)
     images = Image.get_images_from_dir(
         extracted_location=str(extract_target),
         verify=verify,
