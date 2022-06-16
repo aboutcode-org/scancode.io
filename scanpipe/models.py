@@ -1729,6 +1729,9 @@ class DiscoveredPackage(
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
+        unique=True,
+        null=True,
+        db_index=True,
         help_text=_("Unique identifier for this package."),
     )
 
