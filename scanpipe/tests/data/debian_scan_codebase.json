@@ -123,7 +123,41 @@
       "manifest_path": "",
       "contains_source_code": null,
       "extra_data": {
-        "multi_arch": "same"
+        "multi_arch": "same",
+        "missing_file_references": [
+          {
+            "md5": "23c8a935fa4fc7290d55cc5df3ef56b1",
+            "path": "lib/x86_64-linux-gnu/libncurses.so.5.9",
+            "sha1": null,
+            "sha256": null,
+            "sha512": null,
+            "extra_data": {}
+          },
+          {
+            "md5": "98b70f283324e89db5787a018a54adf4",
+            "path": "usr/lib/x86_64-linux-gnu/libform.so.5.9",
+            "sha1": null,
+            "sha256": null,
+            "sha512": null,
+            "extra_data": {}
+          },
+          {
+            "md5": "e3a0f5154928da2da234920343ac14b2",
+            "path": "usr/lib/x86_64-linux-gnu/libmenu.so.5.9",
+            "sha1": null,
+            "sha256": null,
+            "sha512": null,
+            "extra_data": {}
+          },
+          {
+            "md5": "a927e7d76753bb85f5a784b653d337d2",
+            "path": "usr/lib/x86_64-linux-gnu/libpanel.so.5.9",
+            "sha1": null,
+            "sha256": null,
+            "sha512": null,
+            "extra_data": {}
+          }
+        ]
       },
       "missing_resources": [],
       "modified_resources": [],
@@ -161,7 +195,25 @@
       "manifest_path": "",
       "contains_source_code": null,
       "extra_data": {
-        "multi_arch": "same"
+        "multi_arch": "same",
+        "missing_file_references": [
+          {
+            "md5": "5d26434efecc08048ab72357af804ef7",
+            "path": "usr/lib/x86_64-linux-gnu/libndp.so.0.0.2",
+            "sha1": null,
+            "sha256": null,
+            "sha512": null,
+            "extra_data": {}
+          },
+          {
+            "md5": "60d977e0c9a9fb07c1f8ae3090ea6f48",
+            "path": "usr/share/doc/libndp0/changelog.Debian.gz",
+            "sha1": null,
+            "sha256": null,
+            "sha512": null,
+            "extra_data": {}
+          }
+        ]
       },
       "missing_resources": [],
       "modified_resources": [],
@@ -256,8 +308,10 @@
       "is_media": false
     },
     {
-      "for_packages": [],
-      "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libncurses5_amd64.md5sums",
+      "for_packages": [
+        "pkg:deb/libncurses5@6.1-1ubuntu1.18.04?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libncurses5:amd64.md5sums",
       "sha1": "e5ff875218d4f909576575b0471feb0e5230a861",
       "md5": "9d18792b91935a5849328cb368005ec9",
       "extra_data": {},
@@ -268,9 +322,9 @@
       "license_expressions": [],
       "emails": [],
       "urls": [],
-      "status": "no-licenses",
+      "status": "system-package",
       "type": "file",
-      "name": "libncurses5_amd64",
+      "name": "libncurses5:amd64",
       "extension": ".md5sums",
       "programming_language": "",
       "mime_type": "text/plain",
@@ -281,8 +335,10 @@
       "is_media": false
     },
     {
-      "for_packages": [],
-      "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libndp0_amd64.md5sums",
+      "for_packages": [
+        "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "path": "debian.tar.gz-extract/8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libndp0:amd64.md5sums",
       "sha1": "c212d44c6649df5ff13ec447f4fa30faf81fc490",
       "md5": "7cb818062922c437df1902c18862455a",
       "extra_data": {},
@@ -293,9 +349,9 @@
       "license_expressions": [],
       "emails": [],
       "urls": [],
-      "status": "no-licenses",
+      "status": "system-package",
       "type": "file",
-      "name": "libndp0_amd64",
+      "name": "libndp0:amd64",
       "extension": ".md5sums",
       "programming_language": "",
       "mime_type": "text/plain",

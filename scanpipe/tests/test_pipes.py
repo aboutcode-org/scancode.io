@@ -1210,6 +1210,7 @@ class ScanPipePipesTest(TestCase):
         resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
         package_data2 = dict(package_data1)
         package_data2["name"] = "new name"
+        package_data2["package_uid"] = ""
         package2 = update_or_create_package(p1, package_data2, resource1)
         self.assertNotEqual(package.pk, package2.pk)
         self.assertIn(resource1, package2.codebase_resources.all())
