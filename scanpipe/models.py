@@ -1729,6 +1729,7 @@ class DiscoveredPackage(
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
+        db_index=True,
         help_text=_("Unique identifier for this package."),
     )
 
@@ -1740,6 +1741,13 @@ class DiscoveredPackage(
 
     class Meta:
         ordering = ["uuid"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "package_uid"],
+                condition=~Q(package_uid=""),
+                name="%(app_label)s_%(class)s_unique_package_uid_within_project",
+            ),
+        ]
 
     def __str__(self):
         return self.package_url or str(self.uuid)
@@ -1807,7 +1815,7 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
-    def update_from_data(self, package_data):
+    def update_from_data(self, package_data, override=False):
         """
         Update this discovered package instance with the provided `package_data`.
         The `save()` is called only if at least one field was modified.
@@ -1825,11 +1833,9 @@ class DiscoveredPackage(
                 continue
 
             current_value = getattr(self, field_name, None)
-            if not current_value:
+            if not current_value or (current_value != value and override):
                 setattr(self, field_name, value)
                 updated_fields.append(field_name)
-            elif current_value != value:
-                pass  # TODO: handle this case
 
         if updated_fields:
             self.save()
