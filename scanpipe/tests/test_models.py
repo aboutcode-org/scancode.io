@@ -1261,6 +1261,10 @@ class ScanPipeModelsTest(TestCase):
         # Already a value, not updated
         self.assertEqual(package_data1["description"], package.description)
 
+        updated_fields = package.update_from_data(new_data, override=True)
+        self.assertEqual(["description"], updated_fields)
+        self.assertEqual(new_data["description"], package.description)
+
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
