@@ -192,8 +192,8 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             'top-level or well-known locations in the software project, typically in a package '
             'manifest, NOTICE, LICENSE, COPYING or README file. Scoring Weight = 40.',
             ),
-            ('Precise License Detection',
-            'precise_license_detection',
+            ('Identification Precision',
+            'identification_precision',
             'When true (checked), indicates how well the license statement(s) of the software '
             'identify known licenses that can be designated by precise keys (identifiers) as '
             'provided in a publicly available license list, such as the ScanCode LicenseDB, '
@@ -212,8 +212,8 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             'top-level or well-known locations in the software project, typically in a package manifest, '
             'NOTICE, LICENSE, COPYING or README file. Scoring Weight = 10.',
             ),
-            ('Ambigous Compound Licensing',
-            'ambigous_compound_licensing',
+            ('Ambiguous Compound Licensing',
+            'ambiguous_compound_licensing',
             'When true (checked), indicates that the software has a license declaration that makes it '
             'difficult to construct a reliable license expression, such as in the case of multiple licenses '
             'where the conjunctive versus disjunctive relationship is not well defined. Scoring Weight = -10.',
@@ -245,7 +245,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         for label, field, help_text in license_clarity_fields:
             value = license_clarity_score.get(field)
             if value is not None:
-                if value in [True, False]:
+                if isinstance(value, bool):
                     value = as_icon(value)
                 else:
                     value = escape(value)
