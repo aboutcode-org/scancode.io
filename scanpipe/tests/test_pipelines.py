@@ -382,7 +382,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(83, project1.codebaseresources.count())
+        self.assertEqual(109, project1.codebaseresources.count())
         self.assertEqual(14, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
@@ -431,7 +431,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "debian_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file, regen=True)
 
     def test_scanpipe_rootfs_pipeline_integration_test(self):
         pipeline_name = "root_filesystems"
