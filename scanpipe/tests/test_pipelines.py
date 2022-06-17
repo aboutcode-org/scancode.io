@@ -448,7 +448,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(1605, project1.codebaseresources.count())
+        self.assertEqual(2302, project1.codebaseresources.count())
         self.assertEqual(8, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
