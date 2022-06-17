@@ -43,7 +43,6 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -392,13 +391,14 @@ def create_codebase_resources(project, scanned_codebase):
             defaults=resource_data,
         )
 
-        # Associate DiscoveredPackage to CodebaseResource, if applicable
-        if hasattr(scanned_resource, "for_packages"):
-            for package_uid in scanned_resource.for_packages:
-                package = DiscoveredPackage.objects.get(package_uid=package_uid)
-                set_codebase_resource_for_package(
-                    codebase_resource=codebase_resource, discovered_package=package
-                )
+        for_packages = getattr(scanned_resource, "for_packages", [])
+        for package_uid in for_packages:
+            logger.debug(f"Assign {package_uid} to {codebase_resource}")
+            package = project.discoveredpackages.get(package_uid=package_uid)
+            set_codebase_resource_for_package(
+                codebase_resource=codebase_resource,
+                discovered_package=package,
+            )
 
 
 def create_discovered_packages(project, scanned_codebase):
