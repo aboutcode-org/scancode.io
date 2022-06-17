@@ -35,6 +35,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DataError
+from django.db import IntegrityError
 from django.db import connection
 from django.test import TestCase
 from django.test import TransactionTestCase
@@ -50,7 +51,6 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
-from scanpipe.models import WebhookSubscription
 from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
@@ -1411,6 +1411,23 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         self.assertEqual(project_error_count, ProjectError.objects.count())
+
+    def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        self.assertTrue(package_data1["package_uid"])
+        package = DiscoveredPackage.create_from_data(project1, package_data1)
+        self.assertTrue(package.package_uid)
+
+        with self.assertRaises(IntegrityError):
+            DiscoveredPackage.create_from_data(project1, package_data1)
+
+        package_data_no_uid = package_data1.copy()
+        package_data_no_uid.pop("package_uid")
+        package2 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
+        self.assertFalse(package2.package_uid)
+        package3 = DiscoveredPackage.create_from_data(project1, package_data_no_uid)
+        self.assertFalse(package3.package_uid)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_codebase_resource_create_and_add_package_errors(self):

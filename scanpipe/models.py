@@ -1729,8 +1729,6 @@ class DiscoveredPackage(
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
-        unique=True,
-        null=True,
         db_index=True,
         help_text=_("Unique identifier for this package."),
     )
@@ -1743,6 +1741,13 @@ class DiscoveredPackage(
 
     class Meta:
         ordering = ["uuid"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "package_uid"],
+                condition=~Q(package_uid=""),
+                name="%(app_label)s_%(class)s_unique_package_uid_within_project",
+            ),
+        ]
 
     def __str__(self):
         return self.package_url or str(self.uuid)
