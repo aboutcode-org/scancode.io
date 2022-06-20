@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import pprint
 import sys
 import tempfile
 
@@ -28,7 +27,7 @@ from django.conf import settings
 from django.shortcuts import render
 from django.views import generic
 
-from scantext.forms import EditorForm
+from scantext.forms import LicenseForm
 
 SCANCODE_BASE_URL = "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses"
 SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
@@ -39,36 +38,34 @@ SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
 
 
 def license_scanview(request):
-    form = EditorForm()
+    form = LicenseForm()
     if request.method == "POST":
-        form = EditorForm(request.POST)
+        form = LicenseForm(request.POST)
         if form.is_valid():
             text = form.cleaned_data["input_text"]
-            # license_location = tempfile.NamedTemporaryFile(mode="w", prefix="license_scan_", dir=settings.SCANCODEIO_WORKSPACE_LOCATION)
-            # with license_location as f:
-            #     f.write(text)
-            #     f.flush()
-            #     x=get_licenses(location=f)
-            #     f.close()
-            # the get_licenses in the above code (line 56) returns this error
-            # error:
-            # expected str, bytes or os.PathLike object, not _TemporaryFileWrapper
-            # the below code just works
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                prefix="license_scan_",
+                dir=settings.SCANCODEIO_WORKSPACE_LOCATION,
+            ) as temp_file:
+                temp_file.write(text)
+                temp_file.flush()
+                expressions = get_licenses(
+                    location=temp_file.name,
+                    include_text=True,
+                    license_text_diagnostics=True,
+                )
+                temp_file.close()
 
-            expressions = get_licenses(
-                location="scantext/tests/data/LICENSES",
-                include_text=True,
-                license_text_diagnostics=True,
-            )
             return render(
                 request,
                 "scantext/license_detail.html",
                 {
                     "text": text,
-                    "expr": expressions,
+                    "result": expressions,
                 },
             )
-    return render(request, "scantext/license_scan.html", {"form": form})
+    return render(request, "scantext/license_scan_form.html", {"form": form})
 
 
 def get_licenses(
