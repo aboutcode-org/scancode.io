@@ -60,7 +60,7 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=True):
     Path object and collects the extracted images.
 
     Returns the `images` and an `errors` list of error messages that may have
-    happen during the extraction.
+    happened during the extraction.
     """
     errors = extract_tar(location=input_tarball, target_dir=extract_target)
     images = Image.get_images_from_dir(
@@ -126,16 +126,41 @@ def get_image_data(image, layer_path_segments=2):
     return image_data
 
 
+def get_layer_tag(image_id, layer_id, layer_index, id_length=6):
+    """
+    Returns a "tag" crafted from the provided `image_id`, `layer_id`, and `layer_index`.
+    The purpose of this tag is to be short, clear and sortable.
+
+    For instance, given an image with an id:
+        785df58b6b3e120f59bce6cd10169a0c58b8837b24f382e27593e2eea011a0d8
+
+    and two layers from bottom to top as:
+        0690c89adf3e8c306d4ced085fc16d1d104dcfddd6dc637e141fa78be242a707
+        7a1d89d2653e8e4aa9011fd95034a4857109d6636f2ad32df470a196e5dd1585
+
+    we would get these two tags:
+        img-785df5-layer-01-0690c8
+        img-785df5-layer-02-7a1d89
+    """
+    short_image_id = image_id[:id_length]
+    short_layer_id = layer_id[:id_length]
+    return f"img-{short_image_id}-layer-{layer_index:02}-{short_layer_id}"
+
+
 def create_codebase_resources(project, image):
     """
     Creates the CodebaseResource for an `image` in a `project`.
     """
-    for layer_resource in image.get_layers_resources():
-        pipes.make_codebase_resource(
-            project=project,
-            location=layer_resource.location,
-            rootfs_path=layer_resource.path,
-        )
+    for layer_index, layer in enumerate(image.layers, start=1):
+        layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
+
+        for resource in layer.get_resources():
+            pipes.make_codebase_resource(
+                project=project,
+                location=resource.location,
+                rootfs_path=resource.path,
+                tag=layer_tag,
+            )
 
 
 def scan_image_for_system_packages(project, image, detect_licenses=True):
