@@ -23,11 +23,11 @@
 from django import forms
 
 
-class EditorForm(forms.Form):
+class LicenseForm(forms.Form):
     input_text = forms.CharField(
         widget=forms.Textarea(
             attrs={
-                "rows": 25,
+                "rows": 15,
                 "class": "textarea has-fixed-size",
                 "placeholder": "Paste your license text here.",
             }

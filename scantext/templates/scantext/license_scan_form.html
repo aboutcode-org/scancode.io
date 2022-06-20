@@ -6,14 +6,9 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
-    <section class="section pt-0">
-        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-            <div class="mb-2">
-                <h1 class="title is-5">Scan License</h1>
-            </div>
-            <div>
-                <a href="{% url 'project_list' %}" class="button is-link">Go to Projects</a>
-            </div>
+    <section class="mx-5 mb-4">
+        <div class="mb-4">
+            <h1 class="title is-4">Scan License</h1>
         </div>
         <form method="post" action="{% url 'license_scan' %}">
             {% csrf_token %}
@@ -26,9 +21,9 @@
                       <span class="file-icon">
                         <i class="fas fa-upload"></i>
                       </span>
-                      <span class="file-label">Choose a file to scan…</span>
+                      <span class="file-label-text">Choose a file to scan…</span>
                     </span>
-                    <span class="file-name">/home/user/dev/license-text.txt</span>
+                    <span class="file-name is-hidden"></span>
                   </label>
                 </div>
                 <div class="column is-half">
@@ -38,13 +33,31 @@
         </form>
     </section>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %} 
+
+{% block scripts %}
 <script>
-    let form = document.querySelector('form');
+    const fileInput = document.querySelector('#id_input_file');
+    fileInput.onchange = updateFile;
+    
+    // Update the file name on upload
+    function updateFile() {
+      const fileName = document.querySelector('.file-name');
+      console.log(fileInput.files)
+      if (fileInput.files.length > 0) {
+        fileName.classList.remove('is-hidden')
+        fileName.innerHTML = fileInput.files[0].name;
+      }
+    }
+
+    // let form = document.querySelector('form');
 
     // form.addEventListener('submit', (event) => {
 
-    //   if (!form["id_input_file"].files.length && !form["id_input_text"].value.length) return false;
+    //   if (!form["id_input_file"].files.length && !form["id_input_text"].value.length) {
+    //     console.log("err");
+    //   }
     // });
+
 </script>
-{% endblock %} -->
+{% endblock %}

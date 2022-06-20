@@ -6,69 +6,26 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
-    <section class="section p-0">
-        <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
-            <div class="mb-2">
-                <h1 class="title is-4">License Detection Summary</h1>
-            </div>
-            <div>
-                <a href="{% url 'license_scan' %}" class="button is-link">Scan Again</a>
-            </div>
+    <section class="mx-1 mb-0">
+        <div class="is-flex is-justify-content-space-between">
+            <h1 class="title is-4">License Detection Summary</h1>
+            <a href="{% url 'license_scan' %}" class="button is-link">New Scan</a>
         </div>
     </section>
 
-    <hr class="mx-5">
-    {% include "scantext/includes/license_summary_level.html" with expr=expr %}
-    <hr class="mx-5">
+    <hr class="mx-1 mt-0">
+    {% include 'scantext/includes/license_summary_level.html' with result=result %}
+    <hr class="mx-1">
 
-    <div class="columns mb-5">
+    <div class="columns mb-5 mx-1">
         <div class="column is-half">
-            <p class="title is-4">Input License Text</p>
-            <pre>{{ text }}</pre>
+            <p class="title is-5">Input License Text</p>
+            <textarea class="textarea has-fixed-size" rows="25" style="cursor: text;" disabled>{{ text }}</textarea>
         </div>
         <div class="column is-half">
-            <p class="title is-4">Detected Licenses</p>
+            <p class="title is-5">Detected Licenses</p>
             <div class="card">
-                {% for license in expr.licenses %}
-                <div class="licenses-card">
-                    <div class="card-header is-flex is-justify-content-space-between">
-                        <div class="card-header-title" title="{{ license.short_name }}">
-                          {% if license.homepage_url %}
-                            <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})">{{ license.short_name }}</a> 
-                          {% else %} {{ license.short_name }} {% endif %}
-                        </div>
-                        <div class="is-flex is-justify-content-row is-align-items-center">
-                            <p class="lines tag is-6 mx-1 is-light is-info">
-                              {% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}
-                            </p>
-                            <p class="tag is-6 mx-1 is-light 
-                  {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}</p>
-                            <p class="card-header-icon" aria-label="more options">
-                              <span class="icon">
-                                <i class="fas fa-angle-down" aria-hidden="true"></i>
-                              </span>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="card-content is-hidden">
-                        <div class="content">
-                            <div class="is-flex is-justify-content-space-between">
-                                <div>
-                                    <p class="subtitle is-5">Matched Text</p>
-                                </div>
-                                <div>
-                                    <p class="tag is-6 mx-1 is-light is-primary">{{ license.category }}</p>
-                                    <a class="tag is-6 mx-1 is-light is-link" href="{{ license.reference_url }}">ref</a>
-                                    <p class="tag is-6 mx-1 is-light is-info">
-                                        {% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                            <pre>{{ license.matched_text }}</pre>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+                {% include 'scantext/includes/license_detail_card.html' with result=result %}
             </div>
         </div>
     </div>
@@ -93,7 +50,6 @@
           lineTag.remove('is-hidden')
         }
       })
-    })
-    
+    })  
 </script>
 {% endblock %}
