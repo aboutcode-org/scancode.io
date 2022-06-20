@@ -45,7 +45,7 @@ SECRET_KEY = env.str("SECRET_KEY")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
 
 # SECURITY WARNING: don't run with debug turned on in production
-DEBUG = env.bool("SCANCODEIO_DEBUG", default=True)
+DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
 
 SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False

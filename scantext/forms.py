@@ -27,38 +27,16 @@ class EditorForm(forms.Form):
     input_text = forms.CharField(
         widget=forms.Textarea(
             attrs={
-                "rows": 30,
+                "rows": 25,
                 "class": "textarea has-fixed-size",
                 "placeholder": "Paste your license text here.",
             }
         ),
-        required=True,
+        required=False,
     )
-
-    # def clean_input_text(self):
-    #     input_text = self.cleaned_data.get("input_text")
-    #     return " ".join(input_text.split())
-
-    # def save(self, *args, **kwargs):
-    #     license = super().save(*args, **kwargs)
-    #     self.handle_input(license)
-    #     return license
-
-    # class Media:
-    #     js = ("add-inputs.js",)
-
-    # def handle_inputs(self, project):
-    #     input_file = self.files.getlist("input_files")
-    #     input_text = self.cleaned_data.get("input_text")
-    #     print(input_text)
-    #     if input_file:
-    #         license.add_uploads(input_file)
-    #     elif input_text:
-    #         license.add_license(input_text)
-
-    # input_files = forms.FileField(
-    #     required=False,
-    #     widget=forms.ClearableFileInput(
-    #         attrs={"class": "file-input", "multiple": False},
-    #     ),
-    # )
+    input_file = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(
+            attrs={"class": "file-input", "multiple": False},
+        ),
+    )

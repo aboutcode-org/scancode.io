@@ -22,16 +22,17 @@
 
 import pprint
 import sys
+import tempfile
 
-from django.http import HttpResponseRedirect
+from django.conf import settings
 from django.shortcuts import render
 from django.views import generic
 
-from licensedcode import cache
-
-from scancodeio.auth import ConditionalLoginRequired
 from scantext.forms import EditorForm
 
+SCANCODE_BASE_URL = "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses"
+SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
+SCANCODE_LICENSE_DATA_URL = SCANCODE_BASE_URL + "/{}.yml"
 SPDX_LICENSE_URL = "https://spdx.org/licenses/{}"
 DEJACODE_LICENSE_URL = "https://enterprise.dejacode.com/urn/urn:dje:license:{}"
 SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
@@ -42,19 +43,28 @@ def license_scanview(request):
     if request.method == "POST":
         form = EditorForm(request.POST)
         if form.is_valid():
-            # idx = cache.get_index()
-            # matches = idx.match(query_string=text)
-            # print(type(matches))
-            # print(type(matches[0].rule))
             text = form.cleaned_data["input_text"]
-            expressions = get_licenses("/home/human/Desktop/license-text.txt")
-            pp = pprint.PrettyPrinter(indent=4)
-            pp.pprint(expressions)
+            # license_location = tempfile.NamedTemporaryFile(mode="w", prefix="license_scan_", dir=settings.SCANCODEIO_WORKSPACE_LOCATION)
+            # with license_location as f:
+            #     f.write(text)
+            #     f.flush()
+            #     x=get_licenses(location=f)
+            #     f.close()
+            # the get_licenses in the above code (line 56) returns this error
+            # error:
+            # expected str, bytes or os.PathLike object, not _TemporaryFileWrapper
+            # the below code just works
+
+            expressions = get_licenses(
+                location="scantext/tests/data/LICENSES",
+                include_text=True,
+                license_text_diagnostics=True,
+            )
             return render(
                 request,
                 "scantext/license_detail.html",
                 {
-                    "text": text.split("\r"),
+                    "text": text,
                     "expr": expressions,
                 },
             )
@@ -161,10 +171,6 @@ def _licenses_data_from_match(
         else:
             matched_text = match.matched_text(whole_lines=True, highlight=False)
 
-    SCANCODE_BASE_URL = "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses"
-    SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
-    SCANCODE_LICENSE_DATA_URL = SCANCODE_BASE_URL + "/{}.yml"
-
     detected_licenses = []
     for license_key in match.rule.license_keys():
         lic = licenses.get(license_key)
@@ -219,94 +225,3 @@ def _licenses_data_from_match(
         if include_text:
             result["matched_text"] = matched_text
     return detected_licenses
-
-
-# class LicenseScanView(ConditionalLoginRequired, generic.FormView):
-#      template_name = "scantext/license_scan.html"
-#      form_class = EditorForm
-
-#      def form_valid(self, form):
-#          idx = cache.get_index()
-#          text = form.cleaned_data["input_text"]
-#          matches = idx.match(query_string=text)
-#          print(matches)
-#          return HttpResponseRedirect("/scan/history/detail/", {
-#             "matches": matches
-#             })
-# print(form.cleaned_data["input_text"])
-
-#     import magic
-#     def is_text(self, form):
-#         return magic.from_file(self.request.files) == 'text/plain'
-
-#     def form_invalid(self, form):
-#         print("No")
-
-# def LicenseScanView(request):
-#     if request.method == 'POST':
-#         form = EditorForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             print(type(request.FILES['input_files']))
-#             return HttpResponseRedirect('/scan/history/')
-
-#     return render(request, "scantext/license_scan.html", {
-#         "form": EditorForm
-#         })
-
-# class LicenseListView(ConditionalLoginRequired, generic.TemplateView):
-#    template_name = "scantext/license_list.html"
-#
-#
-# class LicenseDetailView(ConditionalLoginRequired, generic.DetailView):
-#    model = License
-#    template_name = "scantext/license_detail.html"
-#
-#
-#    def get_context_data(self, **kwargs):
-#        context = super().get_context_data(**kwargs)
-#        context['now'] = context.objects.all()
-#        return context
-#
-#
-# class LicenseReportView(ConditionalLoginRequired, generic.DetailView):
-#    template_name = "scantext/license_report.html"
-#
-#
-#
-# import ast
-# import json
-# def template_vv(request):
-#
-#    with open("/home/human/dev/sco/output.json", "r") as f:
-#        data = f.read()
-#        # print(data)
-#        co = json.loads(ast.literal_eval(json.dumps(data)))
-#        # print(co)
-#        # print(type(co))
-#        return render(request, "scantext/license_list.html", {
-#        "co": co
-#        })
-#
-# def template_dt(request):
-#
-#    with open("/home/human/dev/sco/output.json", "r") as f:
-#        data = f.read()
-#        # print(data)
-#        co = json.loads(ast.literal_eval(json.dumps(data, sort_keys=True, indent=4)))
-#        # print(co)
-#        # print(type(co))
-#        return render(request, "scantext/license_detail.html", {
-#        "co": co
-#        })
-#
-#    # def get_context_data(self, **kwargs):
-#    #     context = super().get_context_data(**kwargs)
-#    #     context['now'] = json.dumps(co)
-#    #     return context
-#
-#
-#
-# class LicenseResultView(ConditionalLoginRequired, generic.DetailView):
-#    model = License
-#    template_name = "scantext/license_detail.html"
-#
