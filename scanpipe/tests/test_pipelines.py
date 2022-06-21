@@ -431,7 +431,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "debian_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=True)
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
     def test_scanpipe_docker_pipeline_distroless_debian_integration_test(self):
         pipeline_name = "docker"

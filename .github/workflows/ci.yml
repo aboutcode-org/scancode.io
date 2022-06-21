@@ -6,6 +6,7 @@ env:
   DB_NAME: scancodeio
   DB_USER: scancodeio
   DB_PASSWORD: scancodeio
+  INITDB_ARGS: --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 
 jobs:
   build:
@@ -18,6 +19,7 @@ jobs:
           POSTGRES_DB: ${{ env.DB_NAME }}
           POSTGRES_USER: ${{ env.DB_USER }}
           POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
+          POSTGRES_INITDB_ARGS: ${{ env.INITDB_ARGS }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
