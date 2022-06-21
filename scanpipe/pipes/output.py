@@ -25,7 +25,6 @@ import json
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models.functions import Lower
 
 import saneyaml
 import xlsxwriter
@@ -183,7 +182,7 @@ class JSONResultsGenerator:
         from scanpipe.api.serializers import CodebaseResourceSerializer
 
         resources = project.codebaseresources.without_symlinks().order_by(
-            Lower("path"),
+            "path",
         )
 
         for obj in resources.iterator():
