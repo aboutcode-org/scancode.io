@@ -225,13 +225,13 @@ production servers.
 
 * Create the PostgreSQL user, database, and table with::
 
-    make postgres
+    make postgresdb
 
 .. note::
     You can also use a **SQLite** database for local development as a single user
     with::
 
-        make sqlite
+        make sqlitedb
 
 .. warning::
     Choosing SQLite over PostgreSQL has some caveats. Check this `link
