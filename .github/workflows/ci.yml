@@ -3,10 +3,10 @@ name: Tests CI
 on: [push, pull_request]
 
 env:
-  DB_NAME: scancodeio
-  DB_USER: scancodeio
-  DB_PASSWORD: scancodeio
-  INITDB_ARGS: --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+  POSTGRES_DB: scancodeio
+  POSTGRES_USER: scancodeio
+  POSTGRES_PASSWORD: scancodeio
+  POSTGRES_INITDB_ARGS: --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 
 jobs:
   build:
@@ -14,12 +14,12 @@ jobs:
 
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:13
         env:
-          POSTGRES_DB: ${{ env.DB_NAME }}
-          POSTGRES_USER: ${{ env.DB_USER }}
-          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
-          POSTGRES_INITDB_ARGS: ${{ env.INITDB_ARGS }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_INITDB_ARGS: ${{ env.POSTGRES_INITDB_ARGS }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -54,8 +54,6 @@ jobs:
       - name: Run tests
         run: bin/python manage.py test --verbosity=2 --noinput
         env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          SCANCODEIO_DB_NAME: ${{ env.DB_NAME }}
-          SCANCODEIO_DB_USER: ${{ env.DB_USER }}
-          SCANCODEIO_DB_PASSWORD: ${{ env.DB_PASSWORD }}
+          SCANCODEIO_DB_NAME: ${{ env.POSTGRES_DB }}
+          SCANCODEIO_DB_USER: ${{ env.POSTGRES_USER }}
+          SCANCODEIO_DB_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
