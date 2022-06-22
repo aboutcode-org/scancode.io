@@ -203,7 +203,7 @@ class PipelinesIntegrationTest(TestCase):
     Set of integration tests to ensure the proper output for each built-in Pipelines.
     """
 
-    # maxDiff = None
+    maxDiff = None
     data_location = Path(__file__).parent / "data"
     exclude_from_diff = [
         "start_timestamp",
@@ -475,6 +475,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
+        print(Path(result_file).read_text())
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
     def test_scanpipe_load_inventory_pipeline_integration_test(self):
