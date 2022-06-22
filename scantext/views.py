@@ -48,11 +48,12 @@ def license_scanview(request):
                 prefix="license_scan_",
             ) as temp_file:
                 temp_file.write(text)
+                temp_file.flush()
                 expressions = get_licenses(
                     location=temp_file.name,
                 )
+                temp_file.close()
 
-            print(expressions)
             return render(
                 request,
                 "scantext/license_detail.html",
