@@ -20,7 +20,7 @@
     <div class="columns mb-5 mx-1">
         <div class="column is-half">
             <p class="title is-5">Input License Text</p>
-            <textarea class="textarea has-fixed-size" rows="25" style="cursor: text;" disabled>{{ text }}</textarea>
+	    <div class="box" style="height: 70vh; overflow-y: scroll; white-space: pre-wrap;">{% for line in text %}<span>{{ line }}</span>{% endfor %}</div>
         </div>
         <div class="column is-half">
             <p class="title is-5">Detected Licenses</p>
