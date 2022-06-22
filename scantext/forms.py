@@ -23,8 +23,9 @@
 from django import forms
 
 
-class LicenseForm(forms.Form):
+class LicenseScanForm(forms.Form):
     input_text = forms.CharField(
+        strip=False,
         widget=forms.Textarea(
             attrs={
                 "rows": 15,

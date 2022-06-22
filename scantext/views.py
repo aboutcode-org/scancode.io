@@ -27,7 +27,7 @@ from django.conf import settings
 from django.shortcuts import render
 from django.views import generic
 
-from scantext.forms import LicenseForm
+from scantext.forms import LicenseScanForm
 
 SCANCODE_BASE_URL = "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses"
 SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
@@ -38,24 +38,22 @@ SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
 
 
 def license_scanview(request):
-    form = LicenseForm()
+    form = LicenseScanForm()
     if request.method == "POST":
-        form = LicenseForm(request.POST)
+        form = LicenseScanForm(request.POST)
         if form.is_valid():
             text = form.cleaned_data["input_text"]
             with tempfile.NamedTemporaryFile(
                 mode="w",
                 prefix="license_scan_",
-                dir=settings.SCANCODEIO_WORKSPACE_LOCATION,
             ) as temp_file:
                 temp_file.write(text)
-                temp_file.flush()
                 expressions = get_licenses(
                     location=temp_file.name,
                     include_text=True,
                     license_text_diagnostics=True,
+                    unknown_licenses=True
                 )
-                temp_file.close()
 
             return render(
                 request,
