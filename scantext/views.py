@@ -43,9 +43,7 @@ def license_scanview(request):
         form = LicenseScanForm(request.POST)
         if form.is_valid():
             text = form.cleaned_data["input_text"]
-            """
-            The flush in tempfile is required to ensure that the content is written to the disk before it's read by get_licenses function
-            """
+            # The flush in tempfile is required to ensure that the content is written to the disk before it's read by get_licenses function
             with tempfile.NamedTemporaryFile(
                 mode="w",
             ) as temp_file:
@@ -146,9 +144,7 @@ def _licenses_data_from_match(
 
     licenses = cache.get_licenses_db()
 
-    """
-    Returned matched_text will also include the text detected
-    """
+    # Returned matched_text will also include the text detected
     matched_text = match.matched_text(whole_lines=False, highlight=True)
 
     detected_licenses = []
