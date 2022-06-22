@@ -43,7 +43,8 @@ def license_scanview(request):
         form = LicenseScanForm(request.POST)
         if form.is_valid():
             text = form.cleaned_data["input_text"]
-            # The flush in tempfile is required to ensure that the content is written to the disk before it's read by get_licenses function
+            # The flush in tempfile is required to ensure that the content is
+            # written to the disk before it's read by get_licenses function
             with tempfile.NamedTemporaryFile(
                 mode="w",
             ) as temp_file:
@@ -57,7 +58,7 @@ def license_scanview(request):
                 request,
                 "scantext/license_detail.html",
                 {
-                    "text": text.split('\n'),
+                    "text": text.split("\n"),
                     "detected_licenses": expressions,
                 },
             )
