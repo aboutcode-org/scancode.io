@@ -224,6 +224,10 @@ LOGGING = {
             "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
             "propagate": False,
         },
+        "django": {
+            "handlers": ["null"] if IS_TESTS else ["console"],
+            "propagate": False,
+        },
     },
 }
 

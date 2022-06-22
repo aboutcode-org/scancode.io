@@ -22,6 +22,7 @@
 
 import json
 import os
+import sys
 import tempfile
 import warnings
 from pathlib import Path
@@ -389,6 +390,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "alpine_3_15_4_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
+    @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
     def test_scanpipe_docker_pipeline_rpm_integration_test(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
