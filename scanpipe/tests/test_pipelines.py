@@ -202,7 +202,7 @@ class PipelinesIntegrationTest(TestCase):
     Set of integration tests to ensure the proper output for each built-in Pipelines.
     """
 
-    maxDiff = None
+    # maxDiff = None
     data_location = Path(__file__).parent / "data"
     exclude_from_diff = [
         "start_timestamp",
