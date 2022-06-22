@@ -4,7 +4,7 @@
         <div>
             <p class="heading">Percentage Of License Text</p>
             <p class="title">
-              <span>{{ result.percentage_of_license_text }}</span>
+              <span>{{ detected_licenses.percentage_of_license_text }}</span>
             </p>
         </div>
     </div>
@@ -12,7 +12,7 @@
         <div>
             <p class="heading">License Expressions</p>
             <p class="title">
-              <span>{{ result.license_expressions|length }}</span>
+              <span>{{ detected_licenses.license_expressions|length }}</span>
             </p>
         </div>
     </div>
@@ -20,7 +20,7 @@
         <div>
             <p class="heading">Licenses</p>
             <p class="title">
-              <span>{{ result.licenses|length }}</span>
+              <span>{{ detected_licenses.licenses|length }}</span>
             </p>
         </div>
     </div>

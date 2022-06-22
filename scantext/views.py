@@ -50,17 +50,15 @@ def license_scanview(request):
                 temp_file.write(text)
                 expressions = get_licenses(
                     location=temp_file.name,
-                    include_text=True,
-                    license_text_diagnostics=True,
-                    unknown_licenses=True
                 )
 
+            print(expressions)
             return render(
                 request,
                 "scantext/license_detail.html",
                 {
                     "text": text,
-                    "result": expressions,
+                    "detected_licenses": expressions,
                 },
             )
     return render(request, "scantext/license_scan_form.html", {"form": form})
@@ -68,11 +66,7 @@ def license_scanview(request):
 
 def get_licenses(
     location,
-    min_score=0,
-    include_text=False,
-    license_text_diagnostics=False,
     license_url_template=SCANCODE_LICENSEDB_URL,
-    unknown_licenses=False,
     deadline=sys.maxsize,
     **kwargs,
 ):
@@ -86,12 +80,7 @@ def get_licenses(
     `min_score` is a minimum score threshold from 0 to 100. The default is 0,
     meaning that all license matches are returned. If specified, matches with a
     score lower than `minimum_score` are not returned.
-    If `include_text` is True, matched text is included in the returned
-    `licenses` data as well as a file-level `percentage_of_license_text` percentage to
-    indicate the overall proportion of detected license text and license notice
-    words in the file. This is used to determine if a file contains mostly
-    licensing information.
-    If ``unknown_licenses`` is True, also detect unknown licenses.
+    By Default ``unknown_licenses`` is set to True to detect unknown licenses.
     """
     from licensedcode import cache
     from licensedcode.spans import Span
@@ -103,9 +92,9 @@ def get_licenses(
 
     matches = idx.match(
         location=location,
-        min_score=min_score,
+        min_score=0,
         deadline=deadline,
-        unknown_licenses=unknown_licenses,
+        unknown_licenses=True,
         **kwargs,
     )
 
@@ -119,8 +108,6 @@ def get_licenses(
         detected_licenses.extend(
             _licenses_data_from_match(
                 match=match,
-                include_text=include_text,
-                license_text_diagnostics=license_text_diagnostics,
                 license_url_template=license_url_template,
             )
         )
@@ -147,8 +134,6 @@ def get_licenses(
 
 def _licenses_data_from_match(
     match,
-    include_text=False,
-    license_text_diagnostics=False,
     license_url_template=SCANCODE_LICENSEDB_URL,
 ):
     """
@@ -159,12 +144,10 @@ def _licenses_data_from_match(
 
     licenses = cache.get_licenses_db()
 
-    matched_text = None
-    if include_text:
-        if license_text_diagnostics:
-            matched_text = match.matched_text(whole_lines=False, highlight=True)
-        else:
-            matched_text = match.matched_text(whole_lines=True, highlight=False)
+    """
+    Returned matched_text will also include the text detected 
+    """
+    matched_text = match.matched_text(whole_lines=False, highlight=True)
 
     detected_licenses = []
     for license_key in match.rule.license_keys():
@@ -200,6 +183,7 @@ def _licenses_data_from_match(
         result["spdx_url"] = spdx_url
         result["start_line"] = match.start_line
         result["end_line"] = match.end_line
+        result["matched_text"] = matched_text
         matched_rule = result["matched_rule"] = {}
         matched_rule["identifier"] = match.rule.identifier
         matched_rule["license_expression"] = match.rule.license_expression
@@ -216,7 +200,5 @@ def _licenses_data_from_match(
         matched_rule["matched_length"] = match.len()
         matched_rule["match_coverage"] = match.coverage()
         matched_rule["rule_relevance"] = match.rule.relevance
-        # FIXME: for sanity this should always be included?????
-        if include_text:
-            result["matched_text"] = matched_text
+
     return detected_licenses

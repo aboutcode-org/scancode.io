@@ -14,7 +14,7 @@
     </section>
 
     <hr class="mx-1 mt-0">
-    {% include 'scantext/includes/license_summary_level.html' with result=result %}
+    {% include 'scantext/includes/license_summary_level.html' with detected_licenses=detected_licenses %}
     <hr class="mx-1">
 
     <div class="columns mb-5 mx-1">
@@ -25,7 +25,7 @@
         <div class="column is-half">
             <p class="title is-5">Detected Licenses</p>
             <div class="card">
-                {% include 'scantext/includes/license_detail_card.html' with result=result %}
+                {% include 'scantext/includes/license_detail_card.html' with detected_licenses=detected_licenses %}
             </div>
         </div>
     </div>
