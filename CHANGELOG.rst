@@ -27,6 +27,9 @@ v31.0.0 (next)
   Reference: https://tracker.debian.org/pkg/wait-for-it
   https://github.com/nexB/scancode.io/issues/387
 
+- Add a "create-user" management command to create new user with its API key.
+  https://github.com/nexB/scancode.io/issues/458
+
 - Add a "tag" field on the CodebaseResource model.
   The layer details are stored in this field in the "docker" pipeline.
   https://github.com/nexB/scancode.io/issues/443

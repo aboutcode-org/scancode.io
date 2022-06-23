@@ -28,6 +28,7 @@ from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
+from django.contrib.auth import get_user_model
 from django.core.management import CommandError
 from django.core.management import call_command
 from django.test import TestCase
@@ -506,3 +507,28 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertEqual(0, project.discoveredpackages.count())
         self.assertEqual(1, len(Project.get_root_content(project.input_path)))
         self.assertEqual(0, len(Project.get_root_content(project.codebase_path)))
+
+    def test_scanpipe_management_command_create_user(self):
+        out = StringIO()
+
+        expected = "Error: the following arguments are required: username"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("create-user")
+
+        username = "my_username"
+        call_command("create-user", username, stdout=out)
+        self.assertIn(f"User {username} created with API key:", out.getvalue())
+        user = get_user_model().objects.get(username=username)
+        self.assertTrue(user.auth_token)
+
+        expected = "Error: That username is already taken."
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("create-user", username)
+
+        username = "^&*"
+        expected = (
+            "Enter a valid username. This value may contain only letters, numbers, "
+            "and @/./+/-/_ characters."
+        )
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("create-user", username)

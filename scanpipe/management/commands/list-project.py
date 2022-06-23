@@ -25,7 +25,6 @@ from django.core.management.base import BaseCommand
 
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.management.commands import RunStatusCommandMixin
-from scanpipe.models import Project
 
 
 class Command(BaseCommand, RunStatusCommandMixin):

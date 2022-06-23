@@ -181,9 +181,9 @@ class AddInputCommandMixin:
             self.stdout.write(msg)
 
         if errors:
-            self.stdout.write(self.style.ERROR("Could not fetch URL(s):"))
+            self.stderr.write(self.style.ERROR("Could not fetch URL(s):"))
             msg = "\n".join(["- " + url for url in errors])
-            self.stdout.write(self.style.ERROR(msg))
+            self.stderr.write(self.style.ERROR(msg))
 
 
 def validate_input_files(file_locations):
