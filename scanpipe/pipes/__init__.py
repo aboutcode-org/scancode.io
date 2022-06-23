@@ -46,12 +46,12 @@ def make_codebase_resource(project, location, **extra_fields):
 
     Extra fields can be provided as keywords arguments to this function call:
 
-        make_codebase_resource(
-            project=project,
-            location=resource.location,
-            rootfs_path=resource.path,
-            tag=layer_tag,
-        )
+    >>> make_codebase_resource(
+    >>>     project=project,
+    >>>     location=resource.location,
+    >>>     rootfs_path=resource.path,
+    >>>     tag=layer_tag,
+    >>> )
 
     In this example, `rootfs_path` is an optional path relative to a rootfs root
     within an Image/VM filesystem context. e.g.: "/var/log/file.log"

@@ -100,6 +100,27 @@ Using cURL:
 
     curl -X POST "$api_url" -H "$content_type" -d "$data"
 
+.. note::
+
+    To **upload a file** as the input of the project, you have to use the cURL "form
+    emulation" mode with the following syntax:
+
+    .. code-block:: console
+
+        api_url="http://localhost/api/projects/"
+        upload_file="/path/to/the/archive.zip"
+
+        curl -F "name=project_name" \
+             -F "pipeline=scan_package" \
+             -F "execute_now=True" \
+             -F "upload_file=@$upload_file" \
+             "$api_url"
+
+.. tip::
+
+    To upload more than one file, you can use the :ref:`rest_api_add_input` endpoint of
+    the project.
+
 Using Python and the **"requests"** library:
 
 .. code-block:: python
@@ -116,6 +137,24 @@ Using Python and the **"requests"** library:
     response = requests.post(api_url, data=data)
     response.json()
 
+.. note::
+
+    To **upload a file** as the input of the project, you have to provide the ``files``
+    argument to the ``requests.post`` call:
+
+    .. code-block:: python
+
+        import requests
+
+        api_url = "http://localhost/api/projects/"
+        data = {
+            "name": "project_name",
+            "pipeline": "scan_package",
+            "execute_now": True,
+        }
+        files = {"upload_file": open("/path/to/the/archive.zip", "rb")}
+        response = requests.post(api_url, data=data, files=files)
+        response.json()
 
 When creating a project, the response will include the project's details URL
 value among the returned data.
@@ -160,6 +199,8 @@ Managing projects
 -----------------
 
 Multiple **actions** are available to manage projects:
+
+.. _rest_api_add_input:
 
 Add input
 ^^^^^^^^^
