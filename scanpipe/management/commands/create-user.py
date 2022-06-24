@@ -20,7 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import getpass
+
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
@@ -41,6 +44,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("username", help="Specifies the username for the user.")
+        parser.add_argument(
+            "--no-input",
+            action="store_false",
+            dest="interactive",
+            help="Do not prompt the user for input of any kind.",
+        )
 
     def handle(self, *args, **options):
         username = options["username"]
@@ -49,12 +58,46 @@ class Command(BaseCommand):
         if error_msg:
             raise CommandError(error_msg)
 
-        user = self.UserModel._default_manager.create_user(username=username)
+        password = None
+        if options["interactive"]:
+            password = self.get_password_from_stdin(username)
+
+        user = self.UserModel._default_manager.create_user(username, password=password)
         token, _ = Token._default_manager.get_or_create(user=user)
 
         if options["verbosity"] >= 1:
             msg = f"User {username} created with API key: {token.key}"
             self.stdout.write(msg, self.style.SUCCESS)
+
+    def get_password_from_stdin(self, username):
+        # Validators, such as UserAttributeSimilarityValidator, depends on other user's
+        # fields data for password validation.
+        fake_user_data = {
+            self.UserModel.USERNAME_FIELD: username,
+        }
+
+        password = None
+        while password is None:
+            password1 = getpass.getpass()
+            password2 = getpass.getpass("Password (again): ")
+            if password1 != password2:
+                self.stderr.write("Error: Your passwords didn't match.")
+                continue
+            if password1.strip() == "":
+                self.stderr.write("Error: Blank passwords aren't allowed.")
+                continue
+            try:
+                validate_password(password2, self.UserModel(**fake_user_data))
+            except exceptions.ValidationError as err:
+                self.stderr.write("\n".join(err.messages))
+                response = input(
+                    "Bypass password validation and create user anyway? [y/N]: "
+                )
+                if response.lower() != "y":
+                    continue
+            password = password1
+
+        return password
 
     def _validate_username(self, username):
         """

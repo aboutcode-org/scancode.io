@@ -511,17 +511,17 @@ class ScanPipeManagementCommandTest(TestCase):
 
         expected = "Error: the following arguments are required: username"
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("create-user")
+            call_command("create-user", "--no-input")
 
         username = "my_username"
-        call_command("create-user", username, stdout=out)
+        call_command("create-user", "--no-input", username, stdout=out)
         self.assertIn(f"User {username} created with API key:", out.getvalue())
         user = get_user_model().objects.get(username=username)
         self.assertTrue(user.auth_token)
 
         expected = "Error: That username is already taken."
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("create-user", username)
+            call_command("create-user", "--no-input", username)
 
         username = "^&*"
         expected = (
@@ -529,4 +529,5 @@ class ScanPipeManagementCommandTest(TestCase):
             "and @/./+/-/_ characters."
         )
         with self.assertRaisesMessage(CommandError, expected):
-            call_command("create-user", username)
+            call_command("create-user", "--no-input", username)
+
