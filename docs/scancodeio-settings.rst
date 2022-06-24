@@ -44,17 +44,11 @@ The authentication system can be enable with this settings::
 Once enabled, all the Web UI views and REST API endpoints will force the user to login
 to gain access.
 
-Create a superuser with the following command and follow the prompts:
-$ ./manage.py createsuperuser
+A management command :ref:`cli_create_user` is available to create users and
+generate their API key for authentication.
 
-Generate a unique API key for this user using providing the username used in the previous command:
-$ ./manage.py drf_create_token USERNAME
-Generated token 3bf81af7f100548219e73ec69669ee7acabf8fd8 for user USERNAME
-
-The 3bf81af7f100548219e73ec69669ee7acabf8fd8 valie is your API key.
-
-See :ref:`rest_api_authentication` for details on the``API key`` authentication system
-in the REST API.
+See :ref:`rest_api_authentication` for details on using the ``API key``
+authentication system in the REST API.
 
 .. _scancodeio_settings_workspace_location:
 

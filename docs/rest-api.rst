@@ -12,9 +12,9 @@ local development setup.
 Authentication
 --------------
 
-When the authentication setting is enabled on a ScanCode.io instance—disabled by
-default—you will have to include an authentication token ``API key`` in the
-Authorization HTTP header of each request.
+When the authentication setting :ref:`scancodeio_settings_require_authentication`
+is enabled on a ScanCode.io instance (disabled by default), you will have to include
+an authentication token ``API key`` in the Authorization HTTP header of each request.
 
 The key should be prefixed by the string literal "Token" with whitespace
 separating the two strings. For example::
