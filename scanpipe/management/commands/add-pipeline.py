@@ -44,4 +44,4 @@ class Command(ProjectCommand):
             self.project.add_pipeline(pipeline_name)
 
         msg = "Pipeline(s) added to the project"
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg, self.style.SUCCESS)

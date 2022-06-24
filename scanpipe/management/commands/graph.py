@@ -87,7 +87,7 @@ class Command(BaseCommand):
     def handle(self, *pipeline_names, **options):
         if options["list"]:
             for pipeline_name, pipeline_class in scanpipe_app.pipelines.items():
-                self.stdout.write("- " + self.style.SUCCESS(pipeline_name))
+                self.stdout.write("- " + pipeline_name, self.style.SUCCESS)
                 self.stdout.write(indent(pipeline_class.get_doc(), "  "), ending="\n\n")
             sys.exit(0)
 
@@ -95,17 +95,13 @@ class Command(BaseCommand):
             raise CommandError("Graphviz is not installed.")
 
         if not pipeline_names:
-            self.stderr.write(
-                self.style.ERROR("The pipeline-names argument is required.")
-            )
-            sys.exit(1)
+            raise CommandError("The pipeline-names argument is required.")
 
         outputs = []
         for pipeline_name in pipeline_names:
             pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
             if not pipeline_class:
-                self.stderr.write(self.style.ERROR(f"{pipeline_name} is not valid."))
-                sys.exit(1)
+                raise CommandError(f"{pipeline_name} is not valid.")
 
             output_directory = options.get("output")
             outputs.append(
@@ -114,7 +110,7 @@ class Command(BaseCommand):
 
         separator = "\n - "
         msg = f"Graph(s) generated:{separator}" + separator.join(outputs)
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg, self.style.SUCCESS)
 
     @staticmethod
     def generate_graph_png(pipeline_name, pipeline_class, output_directory):

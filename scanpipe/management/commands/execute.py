@@ -59,7 +59,7 @@ class Command(ProjectCommand):
 
             run.execute_task_async()
             msg = f"{run.pipeline_name} added to the tasks queue for execution."
-            self.stdout.write(self.style.SUCCESS(msg))
+            self.stdout.write(msg, self.style.SUCCESS)
             sys.exit(0)
 
         self.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
@@ -68,20 +68,16 @@ class Command(ProjectCommand):
             tasks.execute_pipeline_task(run.pk)
         except KeyboardInterrupt:
             run.set_task_stopped()
-            self.stderr.write(self.style.ERROR("Pipeline execution stopped."))
-            sys.exit(1)
+            raise CommandError("Pipeline execution stopped.")
         except Exception as e:
             run.set_task_ended(exitcode=1, output=str(e))
-            self.stderr.write(self.style.ERROR(e))
-            sys.exit(1)
+            raise CommandError(e)
 
         run.refresh_from_db()
 
         if run.task_succeeded:
             msg = f"{run.pipeline_name} successfully executed on project {self.project}"
-            self.stdout.write(self.style.SUCCESS(msg))
+            self.stdout.write(msg, self.style.SUCCESS)
         else:
-            msg = f"Error during {run.pipeline_name} execution:\n"
-            self.stderr.write(self.style.ERROR(msg))
-            self.stderr.write(run.task_output)
-            sys.exit(1)
+            msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
+            raise CommandError(msg)
