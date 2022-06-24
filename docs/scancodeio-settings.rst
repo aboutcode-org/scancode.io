@@ -41,10 +41,14 @@ The authentication system can be enable with this settings::
 
     SCANCODEIO_REQUIRE_AUTHENTICATION=True
 
-Once enabled, all the Web UI views and REST API endpoints will force theuser to login
+Once enabled, all the Web UI views and REST API endpoints will force the user to login
 to gain access.
 
-See :ref:`rest_api_authentication` for ``API key`` system with the REST API.
+A management command :ref:`cli_create_user` is available to create users and
+generate their API key for authentication.
+
+See :ref:`rest_api_authentication` for details on using the ``API key``
+authentication system in the REST API.
 
 .. _scancodeio_settings_workspace_location:
 

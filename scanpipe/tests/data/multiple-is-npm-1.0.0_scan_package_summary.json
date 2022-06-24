@@ -110,6 +110,7 @@
         }
       ],
       "status": "application-package",
+      "tag": "",
       "type": "file",
       "name": "package.json",
       "extension": ".json",
@@ -214,6 +215,7 @@
         }
       ],
       "status": "application-package",
+      "tag": "",
       "type": "file",
       "name": "readme.md",
       "extension": ".md",

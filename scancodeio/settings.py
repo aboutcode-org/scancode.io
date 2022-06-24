@@ -160,7 +160,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
         "OPTIONS": {
-            "min_length": 14,
+            "min_length": env.int("SCANCODEIO_PASSWORD_MIN_LENGTH", default=12),
         },
     },
     {
@@ -223,6 +223,10 @@ LOGGING = {
         "scanpipe": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["null"] if IS_TESTS else ["console"],
             "propagate": False,
         },
     },
