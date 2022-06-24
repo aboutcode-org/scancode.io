@@ -305,12 +305,11 @@ class ScanPipeManagementCommandTest(TestCase):
 
         err = StringIO()
         run2 = project.add_pipeline(self.pipeline_name)
+
+        expected = "Error during docker execution:\nError log"
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
-            with self.assertRaisesMessage(SystemExit, "1"):
+            with self.assertRaisesMessage(CommandError, expected):
                 call_command("execute", *options, stdout=out, stderr=err)
-        expected = "Error during docker execution:"
-        self.assertIn(expected, err.getvalue())
-        self.assertIn("Error log", err.getvalue())
         run2.refresh_from_db()
         self.assertTrue(run2.task_failed)
         self.assertEqual("Error log", run2.task_output)
@@ -319,9 +318,8 @@ class ScanPipeManagementCommandTest(TestCase):
         err = StringIO()
         run3 = project.add_pipeline(self.pipeline_name)
         with mock.patch("scanpipe.tasks.execute_pipeline_task", raise_interrupt):
-            with self.assertRaisesMessage(SystemExit, "1"):
+            with self.assertRaisesMessage(CommandError, "Pipeline execution stopped."):
                 call_command("execute", *options, stdout=out, stderr=err)
-        self.assertIn("Pipeline execution stopped.", err.getvalue())
         run3.refresh_from_db()
         run3 = Run.objects.get(pk=run3.pk)
         self.assertTrue(run3.task_stopped)

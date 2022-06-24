@@ -61,4 +61,4 @@ class Command(ProjectCommand):
             f"All data, except inputs, for the {self.project} project have been "
             f"removed."
         )
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg, self.style.SUCCESS)

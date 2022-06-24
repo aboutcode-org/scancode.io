@@ -51,4 +51,4 @@ class Command(ProjectCommand):
 
         if isinstance(output_file, list):
             output_file = "\n".join([str(path) for path in output_file])
-        self.stdout.write(self.style.SUCCESS(str(output_file)))
+        self.stdout.write(str(output_file), self.style.SUCCESS)

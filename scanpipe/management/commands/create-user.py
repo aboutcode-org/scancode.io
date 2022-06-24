@@ -54,7 +54,7 @@ class Command(BaseCommand):
 
         if options["verbosity"] >= 1:
             msg = f"User {username} created with API key: {token.key}"
-            self.stdout.write(self.style.SUCCESS(msg))
+            self.stdout.write(msg, self.style.SUCCESS)
 
     def _validate_username(self, username):
         """
