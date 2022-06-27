@@ -40,25 +40,64 @@ SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
 def license_scanview(request):
     form = LicenseScanForm()
     if request.method == "POST":
-        form = LicenseScanForm(request.POST)
+        form = LicenseScanForm(request.POST, request.FILES)
         if form.is_valid():
-            text = form.cleaned_data["input_text"]
+            input_text = form.cleaned_data["input_text"]
+            input_file = request.FILES.get("input_file", False)
+            if not len(input_text) and not input_file:
+                message = "Please provide some text or a text file to scan."
+                return render(
+                    request,
+                    "scantext/license_scan_form.html",
+                    {
+                        "form": LicenseScanForm(),
+                        "input_error": message,
+                    },
+                )
+
             # The flush in tempfile is required to ensure that the content is
             # written to the disk before it's read by get_licenses function
-            with tempfile.NamedTemporaryFile(
-                mode="w",
-            ) as temp_file:
-                temp_file.write(text)
-                temp_file.flush()
-                expressions = get_licenses(
-                    location=temp_file.name,
+            if len(input_text):
+                with tempfile.NamedTemporaryFile(
+                    mode="w",
+                ) as temp_file:
+                    temp_file.write(input_text)
+                    temp_file.flush()
+                    expressions = get_licenses(
+                        location=temp_file.name,
+                    )
+            elif input_file:
+                # import typecode
+                # print(typecode.contenttype.magic2.mime_type())
+                # the below code only works for text files and doesnot check the file type
+                with tempfile.NamedTemporaryFile(
+                    mode="w",
+                ) as temp_file:
+                    input_text = str(input_file.read(), "UTF-8")
+                    temp_file.write(input_text)
+                    temp_file.flush()
+                    expressions = get_licenses(
+                        location=temp_file.name,
+                    )
+
+            if not len(expressions["licenses"]) and not len(
+                expressions["license_expressions"]
+            ):
+                message = "Couldn't detect any license from the provided input."
+                return render(
+                    request,
+                    "scantext/license_scan_form.html",
+                    {
+                        "form": form,
+                        "detection_message": message,
+                    },
                 )
 
             return render(
                 request,
                 "scantext/license_detail.html",
                 {
-                    "text": text.split("\n"),
+                    "text": input_text.split("\n"),
                     "detected_licenses": expressions,
                 },
             )

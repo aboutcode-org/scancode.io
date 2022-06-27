@@ -10,7 +10,19 @@
         <div class="mb-4">
             <h1 class="title is-4">Scan License</h1>
         </div>
-        <form method="post" action="{% url 'license_scan' %}">
+
+        <article class="message is-warning {% if not input_error %}is-hidden{% endif %}">
+            <div class="message-body">
+                {{ input_error }}
+            </div>
+        </article>
+        <article class="message is-info {% if not detection_message %}is-hidden{% endif %}">
+            <div class="message-body">
+                {{ detection_message }}
+            </div>
+        </article>
+
+        <form action="{% url 'license_scan' %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ form.input_text }}
             <div class="columns mt-1">
@@ -21,7 +33,7 @@
                       <span class="file-icon">
                         <i class="fas fa-upload"></i>
                       </span>
-                      <span class="file-label-text">Choose a file to scan…</span>
+                      <span class="file-label-text">Choose a text file to scan…</span>
                     </span>
                     <span class="file-name is-hidden"></span>
                   </label>

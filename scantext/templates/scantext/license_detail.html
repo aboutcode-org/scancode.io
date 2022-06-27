@@ -20,13 +20,13 @@
     <div class="columns mb-5 mx-1">
         <div class="column is-half">
             <p class="title is-5">Input License Text</p>
-	    <div class="box" style="height: 70vh; overflow-y: scroll; white-space: pre-wrap;">{% for line in text %}<span>{{ line }}</span>{% endfor %}</div>
+	       <div class="box" style="max-height: 68vh; overflow-y: scroll; white-space: pre-wrap;">{% for line in text %}<span >{{ line }}</span>{% endfor %}</div>
         </div>
         <div class="column is-half">
             <p class="title is-5">Detected Licenses</p>
             <div class="card">
-                {% include 'scantext/includes/license_detail_card.html' with detected_licenses=detected_licenses %}
-            </div>
+                {% include 'scantext/includes/license_detail_card.html' with detected_licenses=detected_licenses %}     
+            </div>       
         </div>
     </div>
 

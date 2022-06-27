@@ -32,7 +32,11 @@
                     </p>
                 </div>
             </div>
-            <textarea class="textarea has-fixed-size" rows="15" style="cursor: text;" disabled>{{ license.matched_text }}</textarea>
+            <article class="message is-dark" style="max-height: 30vh; overflow-y: scroll;">
+                <div class="message-body" style="white-space: pre-wrap;">
+                    {{ license.matched_text }}
+                </div>
+            </article>
         </div>
     </div>
 </div>
