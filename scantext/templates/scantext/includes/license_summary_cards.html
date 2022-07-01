@@ -27,13 +27,11 @@
                 <div>
                     <p class="tag is-6 mx-1 is-light is-primary">{{ license.category }}</p>
                     <a class="tag is-6 mx-1 is-light is-link" href="{{ license.reference_url }}">ref</a>
-                    <p class="tag is-6 mx-1 is-light is-info">
-                        {% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}
-                    </p>
+                    <p class="tag is-6 mx-1 is-light is-info">{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</p>
                 </div>
             </div>
-            <article class="message is-dark" style="max-height: 30vh; overflow-y: scroll;">
-                <div class="message-body" style="white-space: pre-wrap;">
+            <article class="message is-dark">
+                <div class="message-body" style="max-height: 30vh; overflow-y: scroll; white-space: pre-wrap;">
                     {{ license.matched_text }}
                 </div>
             </article>
