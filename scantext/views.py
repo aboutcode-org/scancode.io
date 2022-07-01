@@ -24,12 +24,14 @@ import sys
 import tempfile
 
 from django.conf import settings
+from django.contrib import messages
 from django.shortcuts import render
 from django.views import generic
 
 from scantext.forms import LicenseScanForm
 
-SCANCODE_BASE_URL = "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses"
+SCANCODE_REPO_URL = "https://github.com/nexB/scancode-toolkit"
+SCANCODE_BASE_URL = SCANCODE_REPO_URL + "/tree/develop/src/licensedcode/data/licenses"
 SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
 SCANCODE_LICENSE_DATA_URL = SCANCODE_BASE_URL + "/{}.yml"
 SPDX_LICENSE_URL = "https://spdx.org/licenses/{}"
@@ -46,56 +48,60 @@ def license_scanview(request):
             input_file = request.FILES.get("input_file", False)
             if not len(input_text) and not input_file:
                 message = "Please provide some text or a text file to scan."
+                messages.warning(request, message)
                 return render(
                     request,
                     "scantext/license_scan_form.html",
                     {
                         "form": LicenseScanForm(),
-                        "input_error": message,
                     },
                 )
 
             # The flush in tempfile is required to ensure that the content is
             # written to the disk before it's read by get_licenses function
             if len(input_text):
-                with tempfile.NamedTemporaryFile(
-                    mode="w",
-                ) as temp_file:
+                with tempfile.NamedTemporaryFile(mode="w") as temp_file:
                     temp_file.write(input_text)
                     temp_file.flush()
                     expressions = get_licenses(
                         location=temp_file.name,
                     )
             elif input_file:
-                # import typecode
-                # print(typecode.contenttype.magic2.mime_type())
-                # the below code only works for text files and doesnot check the file type
-                with tempfile.NamedTemporaryFile(
-                    mode="w",
-                ) as temp_file:
-                    input_text = str(input_file.read(), "UTF-8")
-                    temp_file.write(input_text)
-                    temp_file.flush()
-                    expressions = get_licenses(
-                        location=temp_file.name,
+                try:
+                    with tempfile.NamedTemporaryFile(mode="w") as temp_file:
+                        input_text = str(input_file.read(), "UTF-8")
+                        temp_file.write(input_text)
+                        temp_file.flush()
+                        expressions = get_licenses(
+                            location=temp_file.name,
+                        )
+                except UnicodeDecodeError:
+                    message = "Please upload a valid text file."
+                    messages.warning(request, message)
+                    return render(
+                        request,
+                        "scantext/license_scan_form.html",
+                        {
+                            "form": LicenseScanForm(),
+                        },
                     )
 
-            if not len(expressions["licenses"]) and not len(
-                expressions["license_expressions"]
-            ):
-                message = "Couldn't detect any license from the provided input."
-                return render(
-                    request,
-                    "scantext/license_scan_form.html",
-                    {
-                        "form": form,
-                        "detection_message": message,
-                    },
-                )
+            if not len(expressions["licenses"]):
+                if not len(expressions["license_expressions"]):
+                    message = "Couldn't detect any license from the provided input."
+                    messages.info(request, message)
+                    return render(
+                        request,
+                        "scantext/license_summary.html",
+                        {
+                            "text": input_text.split("\n"),
+                            "detected_licenses": expressions,
+                        },
+                    )
 
             return render(
                 request,
-                "scantext/license_detail.html",
+                "scantext/license_summary.html",
                 {
                     "text": input_text.split("\n"),
                     "detected_licenses": expressions,
@@ -161,12 +167,10 @@ def get_licenses(
             (matched_tokens_length / query_tokens_length) * 100, 2
         )
 
-    detected_spdx_expressions = []
     return dict(
         [
             ("licenses", detected_licenses),
             ("license_expressions", detected_expressions),
-            ("spdx_license_expressions", detected_spdx_expressions),
             ("percentage_of_license_text", percentage_of_license_text),
         ]
     )

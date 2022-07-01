@@ -1,5 +1,5 @@
-{% extends "scanpipe/base.html" %} 
-{% load static humanize %} 
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
 
 {% block content %}
 <div class="container is-max-desktop">
@@ -10,17 +10,6 @@
         <div class="mb-4">
             <h1 class="title is-4">Scan License</h1>
         </div>
-
-        <article class="message is-warning {% if not input_error %}is-hidden{% endif %}">
-            <div class="message-body">
-                {{ input_error }}
-            </div>
-        </article>
-        <article class="message is-info {% if not detection_message %}is-hidden{% endif %}">
-            <div class="message-body">
-                {{ detection_message }}
-            </div>
-        </article>
 
         <form action="{% url 'license_scan' %}" method="post" enctype="multipart/form-data">
             {% csrf_token %}
@@ -45,7 +34,7 @@
         </form>
     </section>
 </div>
-{% endblock %} 
+{% endblock %}
 
 {% block scripts %}
 <script>
@@ -61,15 +50,6 @@
         fileName.innerHTML = fileInput.files[0].name;
       }
     }
-
-    // let form = document.querySelector('form');
-
-    // form.addEventListener('submit', (event) => {
-
-    //   if (!form["id_input_file"].files.length && !form["id_input_text"].value.length) {
-    //     console.log("err");
-    //   }
-    // });
 
 </script>
 {% endblock %}
