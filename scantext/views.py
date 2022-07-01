@@ -63,18 +63,14 @@ def license_scanview(request):
                 with tempfile.NamedTemporaryFile(mode="w") as temp_file:
                     temp_file.write(input_text)
                     temp_file.flush()
-                    expressions = get_licenses(
-                        location=temp_file.name,
-                    )
+                    expressions = get_licenses(location=temp_file.name)
             elif input_file:
                 try:
                     with tempfile.NamedTemporaryFile(mode="w") as temp_file:
                         input_text = str(input_file.read(), "UTF-8")
                         temp_file.write(input_text)
                         temp_file.flush()
-                        expressions = get_licenses(
-                            location=temp_file.name,
-                        )
+                        expressions = get_licenses(location=temp_file.name)
                 except UnicodeDecodeError:
                     message = "Please upload a valid text file."
                     messages.warning(request, message)
