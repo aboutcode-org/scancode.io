@@ -26,7 +26,6 @@ import tempfile
 from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import render
-from django.views import generic
 
 from scantext.forms import LicenseScanForm
 
@@ -90,7 +89,7 @@ def license_scanview(request):
                         request,
                         "scantext/license_summary.html",
                         {
-                            "text": input_text.split("\n"),
+                            "text": input_text,
                             "detected_licenses": expressions,
                         },
                     )
@@ -99,7 +98,7 @@ def license_scanview(request):
                 request,
                 "scantext/license_summary.html",
                 {
-                    "text": input_text.split("\n"),
+                    "text": input_text,
                     "detected_licenses": expressions,
                 },
             )

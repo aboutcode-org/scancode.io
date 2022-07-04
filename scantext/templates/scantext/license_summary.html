@@ -25,12 +25,15 @@
     <hr class="mx-1">
 
     <div class="info columns mb-5 mx-1">
-        <div class="column is-half">
-           <p class="title is-5">Input License Text</p>
-	       <div class="box" style="max-height: 70vh; overflow: scroll; white-space: pre-wrap;">{% for line in text %}<span class="is-block">{{ line }}</span>{% endfor %}</div>
+        <div class="column is-two-third">
+            <div class="is-flex is-justify-content-space-between mb-2">
+                <p class="main-txt-view title is-5">Input License Text</p>
+                <button class="main-txt-btn button is-info is-hidden" data-text="{{ text }}" >View Input License</button>
+            </div>
+            <div id="editor" style="height: 70vh; border: lightgrey 1px solid; position: sticky; top: 2vh;">{{ text }}</div>
         </div>
-        <div class="column is-half">
-            <p class="title is-5">Matched Text</p>
+        <div class="column is-one-third">
+            <p class="title is-5">Detected Licenses</p>
             <div class="card">
                 {% include 'scantext/includes/license_summary_cards.html' with detected_licenses=detected_licenses %}
             </div>
@@ -42,12 +45,27 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
+<script src="{% static 'ace-1.4.12.min.js' %}" crossorigin="anonymous"></script>
 <script type="text/javascript">
+    let editor = ace.edit("editor", {
+        mode: "ace/mode/text",
+        autoScrollEditorIntoView: true,
+        wrap: false,
+        readOnly: true,
+        showPrintMargin: false,
+        highlightActiveLine: false,
+        highlightGutterLine: false,
+        fontSize: 15,
+        foldStyle: "manual",
+        fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
+    });
+
     const cards = document.querySelectorAll('.card-header-icon')
-    
+    let mainTxt = document.querySelector('.main-txt-view')
+    const viewTxt = document.querySelector('.main-txt-btn')
+
     document.querySelectorAll('li').forEach(li => {
-        li.addEventListener('click', e => {
+        li.addEventListener('click', (event) => {
          if (!li.classList.contains('is-active')) {
             document.querySelectorAll('li').forEach(listItem => {
                 listItem.classList.remove('is-active')
@@ -57,18 +75,29 @@
         })
     })
 
+    viewTxt.addEventListener('click', (event) => {
+        editor.setValue(viewTxt.getAttribute('data-text'))
+        mainTxt.innerHTML = "Input License Text"
+    })
+
     cards.forEach(card => {
       card.addEventListener('click', (event) => {
         event.preventDefault()
         content = card.parentElement.parentElement.parentElement.querySelector('.card-content').classList
         lineTag= card.parentElement.querySelector('.lines').classList
-        if (content.contains('is-hidden')) {
-          content.remove('is-hidden')
-          lineTag.add('is-hidden')
-        } else {
-          content.add('is-hidden')
-          lineTag.remove('is-hidden')
+        mainTxt.innerHTML = "Matched Text"
+        if (viewTxt.classList.contains('is-hidden')) {
+            viewTxt.classList.remove('is-hidden')
         }
+        editor.setValue(card.getAttribute('data-text'))
+        if (content.contains('is-hidden')) {
+            content.remove('is-hidden')
+            lineTag.add('is-hidden')
+        } else {
+            content.add('is-hidden')
+            lineTag.remove('is-hidden')
+        }
+
       })
     })
 

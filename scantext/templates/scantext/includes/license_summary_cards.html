@@ -1,6 +1,6 @@
 {% for license in detected_licenses.licenses %}
 <div class="licenses-card">
-    <div class="card-header is-flex is-justify-content-space-between">
+    <div class="card-header is-flex is-justify-content-space-between pr-2">
         <div class="card-header-title" title="{{ license.short_name }}">
             {% if license.homepage_url %}
             <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})">{{ license.short_name }}</a> {% else %} {{ license.short_name }} {% endif %}
@@ -11,30 +11,49 @@
             </p>
             <p class="tag is-6 mx-1 is-light 
                   {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}</p>
-            <p class="card-header-icon" aria-label="more options">
-                <span class="icon">
-                    <i class="fas fa-angle-down" aria-hidden="true"></i>
-                </span>
-            </p>
+            <p class="card-header-icon tag is-4 is-info" aria-label="more options" data-text="{{ license.matched_text }}">View</p>
         </div>
     </div>
     <div class="card-content is-hidden">
         <div class="content">
             <div class="is-flex is-justify-content-space-between">
                 <div>
-                    <p class="subtitle is-5">Matched Text</p>
+                    <p class="title is-5">Details</p>
                 </div>
                 <div>
-                    <p class="tag is-6 mx-1 is-light is-primary">{{ license.category }}</p>
-                    <a class="tag is-6 mx-1 is-light is-link" href="{{ license.reference_url }}">ref</a>
                     <p class="tag is-6 mx-1 is-light is-info">{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</p>
                 </div>
             </div>
-            <article class="message is-dark">
-                <div class="message-body" style="max-height: 30vh; overflow-y: scroll; white-space: pre-wrap;">
-                    {{ license.matched_text }}
-                </div>
-            </article>
+            <div class="table-container mt-3">
+              <table class="table is-striped is-narrow is-hoverable is-fullwidth">
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>{{ license.name }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Score</strong></td>
+                    <td>{{ license.score }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Owner</strong></td>
+                    <td>{{ license.owner }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Category</strong></td>
+                    <td>
+                        <p class="tag is-4 is-light is-primary">{{ license.category }}</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>SPDX Key</strong></td>
+                    <td>{{ license.spdx_license_key }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Reference</strong></td>
+                    <td>{{ license.reference_url }}</td>
+                </tr>
+              </table>
+            </div>
         </div>
     </div>
 </div>
