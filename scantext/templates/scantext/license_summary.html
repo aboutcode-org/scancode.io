@@ -26,9 +26,7 @@
 
     <div class="info columns mb-5 mx-1">
         <div class="column is-two-third">
-            <div class="is-flex is-justify-content-space-between mb-2">
-                <p class="main-txt-view title is-5">Input License Text</p>
-            </div>
+            <p class="title is-5">Input License Text</p>
             <div id="editor" style="height: 70vh; border: lightgrey 1px solid; position: sticky; top: 2vh;">{{ text }}</div>
         </div>
         <div class="column is-one-third">
@@ -78,6 +76,10 @@
         content = card.parentElement.parentElement.parentElement.querySelector('.card-content').classList
         lineTag= card.parentElement.querySelector('.lines').classList
         if (content.contains('is-hidden')) {
+            cards.forEach(eachcard => {
+                eachcard.parentElement.querySelector('.lines').classList.remove('is-hidden')
+                eachcard.parentElement.parentElement.parentElement.querySelector('.card-content').classList.add('is-hidden')
+            })
             content.remove('is-hidden')
             lineTag.add('is-hidden')
         } else {
