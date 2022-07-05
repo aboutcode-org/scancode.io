@@ -1,6 +1,6 @@
 {% for license in detected_licenses.licenses %}
 <div class="licenses-card">
-    <div class="card-header is-flex is-justify-content-space-between pr-2">
+    <div class="card-header is-flex is-justify-content-space-between">
         <div class="card-header-title" title="{{ license.short_name }}">
             {% if license.homepage_url %}
             <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})">{{ license.short_name }}</a> {% else %} {{ license.short_name }} {% endif %}
@@ -11,7 +11,14 @@
             </p>
             <p class="tag is-6 mx-1 is-light 
                   {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}</p>
-            <p class="card-header-icon tag is-4 is-info" aria-label="more options" data-text="{{ license.matched_text }}">View</p>
+            <p class="card-header-icon"
+            data-key="{{ license.key }}"
+            data-startline="{{ license.start_line }}"
+            data-endline="{{ license.end_line }}">
+                <span class="icon">
+                    <i class="fa fa-angle-down" aria-hidden="true"></i>
+                </span>
+            </p>
         </div>
     </div>
     <div class="card-content is-hidden">

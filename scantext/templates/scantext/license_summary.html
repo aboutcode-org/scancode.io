@@ -28,7 +28,6 @@
         <div class="column is-two-third">
             <div class="is-flex is-justify-content-space-between mb-2">
                 <p class="main-txt-view title is-5">Input License Text</p>
-                <button class="main-txt-btn button is-info is-hidden" data-text="{{ text }}" >View Input License</button>
             </div>
             <div id="editor" style="height: 70vh; border: lightgrey 1px solid; position: sticky; top: 2vh;">{{ text }}</div>
         </div>
@@ -61,8 +60,6 @@
     });
 
     const cards = document.querySelectorAll('.card-header-icon')
-    let mainTxt = document.querySelector('.main-txt-view')
-    const viewTxt = document.querySelector('.main-txt-btn')
 
     document.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', (event) => {
@@ -75,21 +72,11 @@
         })
     })
 
-    viewTxt.addEventListener('click', (event) => {
-        editor.setValue(viewTxt.getAttribute('data-text'))
-        mainTxt.innerHTML = "Input License Text"
-    })
-
     cards.forEach(card => {
       card.addEventListener('click', (event) => {
         event.preventDefault()
         content = card.parentElement.parentElement.parentElement.querySelector('.card-content').classList
         lineTag= card.parentElement.querySelector('.lines').classList
-        mainTxt.innerHTML = "Matched Text"
-        if (viewTxt.classList.contains('is-hidden')) {
-            viewTxt.classList.remove('is-hidden')
-        }
-        editor.setValue(card.getAttribute('data-text'))
         if (content.contains('is-hidden')) {
             content.remove('is-hidden')
             lineTag.add('is-hidden')
@@ -98,8 +85,47 @@
             lineTag.remove('is-hidden')
         }
 
+        let key = card.getAttribute('data-key')
+        let start_line = card.getAttribute('data-startline')
+        let end_line = card.getAttribute('data-endline')
+
+        setDetectedValues(key, start_line, end_line);
       })
     })
+
+    // Range(startRow, startColumn, endRow, endColumn)
+    const Range = require("ace/range").Range
+
+    let setDetectedValues = (key, start_line, end_line) => {
+      let annotations = [];
+      removeAllMarkers();
+
+        // Indexes a 0-based in ace.js
+        let start_row = start_line - 1;
+        let start_column = 0;
+        let end_row = end_line - 1;
+        let end_column = 10000;
+
+        let range = new Range(start_row, start_column, end_row, end_column);
+        editor.session.addMarker(range, "ace-marker", "fullLine");
+        annotations.push({
+          row: start_row,
+          column: 0,
+          text: key,
+          type: "info",
+        });
+
+      editor.getSession().setAnnotations(annotations);
+      editor.renderer.scrollToLine(start_row);
+    }
+
+    function removeAllMarkers() {
+      let session = editor.getSession();
+      let markers = session.getMarkers();
+        for (const [key, value] of Object.entries(markers)) {
+          session.removeMarker(value.id);
+        }
+    }
 
 </script>
 {% endblock %}
