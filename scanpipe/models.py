@@ -1388,6 +1388,10 @@ class CodebaseResource(
         max_length=30,
         help_text=_("Analysis status for this resource."),
     )
+    tag = models.CharField(
+        blank=True,
+        max_length=50,
+    )
 
     class Type(models.TextChoices):
         """

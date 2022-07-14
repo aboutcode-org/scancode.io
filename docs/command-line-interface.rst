@@ -238,3 +238,37 @@ Deletes a project and its related work directories.
 Optional arguments:
 
 - ``--no-input`` Does not prompt the user for input of any kind.
+
+
+.. _cli_create_user:
+
+`$ scanpipe create-user <username>`
+-----------------------------------
+
+.. note:: This command is to be used when ScanCode.io's authentication system
+  :ref:`scancodeio_settings_require_authentication` is enabled.
+
+Creates a user and generates an API key for authentication.
+
+You will be prompted for a password. After you enter one, the user will be created
+immediately.
+
+The API key for the new user account will be displayed on the terminal output.
+
+.. code-block:: console
+
+    User <username> created with API key: abcdef123456
+
+The API key can also be retrieved from the :guilabel:`Profile settings` menu in the UI.
+
+.. warning::
+    Your API key is like a password and should be treated with the same care.
+
+By default, this command will prompt for a password for the new user account.
+When run non-interactively with the ``--no-input`` option, no password will be set,
+and the user account will only be able to authenticate with the REST API using its
+API key.
+
+Optional arguments:
+
+- ``--no-input`` Does not prompt the user for input of any kind.

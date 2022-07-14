@@ -149,6 +149,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "sha512",
             "size",
             "status",
+            "tag",
             "type",
             "name",
             "extension",

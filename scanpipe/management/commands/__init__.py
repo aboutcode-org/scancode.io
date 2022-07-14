@@ -151,7 +151,7 @@ class AddInputCommandMixin:
             self.project.add_input_source(filename, source="uploaded", save=True)
 
         msg = "File(s) copied to the project inputs directory:"
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg, self.style.SUCCESS)
         msg = "\n".join(["- " + filename for filename in copied])
         self.stdout.write(msg)
 
@@ -176,14 +176,14 @@ class AddInputCommandMixin:
         if downloads:
             self.project.add_downloads(downloads)
             msg = "File(s) downloaded to the project inputs directory:"
-            self.stdout.write(self.style.SUCCESS(msg))
+            self.stdout.write(msg, self.style.SUCCESS)
             msg = "\n".join(["- " + downloaded.filename for downloaded in downloads])
             self.stdout.write(msg)
 
         if errors:
-            self.stdout.write(self.style.ERROR("Could not fetch URL(s):"))
-            msg = "\n".join(["- " + url for url in errors])
-            self.stdout.write(self.style.ERROR(msg))
+            msg = "Could not fetch URL(s):\n"
+            msg += "\n".join(["- " + url for url in errors])
+            self.stderr.write(msg)
 
 
 def validate_input_files(file_locations):

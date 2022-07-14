@@ -22,6 +22,7 @@
 
 import json
 import os
+import sys
 import tempfile
 import warnings
 from pathlib import Path
@@ -389,6 +390,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "alpine_3_15_4_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
+    @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
     def test_scanpipe_docker_pipeline_rpm_integration_test(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
@@ -431,7 +433,29 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "debian_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=True)
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
+    def test_scanpipe_docker_pipeline_distroless_debian_integration_test(self):
+        pipeline_name = "docker"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "gcr_io_distroless_base.tar.gz"
+        input_location = self.data_location / filename
+        project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(2302, project1.codebaseresources.count())
+        self.assertEqual(8, project1.discoveredpackages.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data_location / "gcr_io_distroless_base_scan_codebase.json"
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
     def test_scanpipe_rootfs_pipeline_integration_test(self):
         pipeline_name = "root_filesystems"
