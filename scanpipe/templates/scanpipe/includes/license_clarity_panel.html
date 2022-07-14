@@ -1,0 +1,31 @@
+<article id="license-clarity-panel" class="panel is-info">
+  <p class="panel-heading py-2 is-size-6">
+    License clarity
+  </p>
+  <div class="panel-block p-0">
+    <table class="table border-bottom-radius">
+      <thead>
+        <tr>
+          {% for entry in license_clarity %}
+            <th>
+              {% if entry.help_text %}
+                <span class="help_text" data-toggle="tooltip" data-placement="top" title="{{ entry.help_text }}">
+              {% endif %}
+              {{ entry.label }}
+              {% if header.help_text %}
+                </span>
+              {% endif %}
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for entry in license_clarity %}
+            <td>{{ entry.value }}</td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</article>
