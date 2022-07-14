@@ -22,8 +22,6 @@
 
 import json
 from collections import Counter
-from traceback import StackSummary
-from django.utils.html import escape
 
 from django.apps import apps
 from django.contrib import messages
@@ -35,6 +33,7 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.utils.html import escape
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
@@ -63,6 +62,72 @@ from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
 scanpipe_app = apps.get_app_config("scanpipe")
+
+
+LICENSE_CLARITY_FIELDS = [
+    (
+        "Score",
+        "score",
+        "The license clarity score is a value from 0-100 calculated by combining the weighted "
+        "values determined for each of the five scoring elements: Declared license, "
+        "Precise license detection, License text, Declared copyrights, Ambigous compound licensing, "
+        "Conflicting license categories",
+    ),
+    (
+        "Declared license",
+        "declared_license",
+        "When true (checked), indicates that the software package licensing is documented at "
+        "top-level or well-known locations in the software project, typically in a package "
+        "manifest, NOTICE, LICENSE, COPYING or README file. Scoring Weight = 40.",
+    ),
+    (
+        "Identification precision",
+        "identification_precision",
+        "When true (checked), indicates how well the license statement(s) of the software "
+        "identify known licenses that can be designated by precise keys (identifiers) as "
+        "provided in a publicly available license list, such as the ScanCode LicenseDB, "
+        "the SPDX license list, the OSI license list, or a URL pointing to a specific license "
+        "text in a project or organization website. Scoring Weight = 40.",
+    ),
+    (
+        "License text",
+        "has_license_text",
+        "When true (checked), indicates that license texts are provided to support "
+        "the declared license expression in files such as a package manifest, NOTICE, "
+        "LICENSE, COPYING or README. Scoring Weight = 10.",
+    ),
+    (
+        "Declared copyrights",
+        "declared_copyrights",
+        "When true (checked), indicates that the software package copyright is documented at "
+        "top-level or well-known locations in the software project, typically in a package manifest, "
+        "NOTICE, LICENSE, COPYING or README file. Scoring Weight = 10.",
+    ),
+    (
+        "Ambiguous compound licensing",
+        "ambiguous_compound_licensing",
+        "When true (checked), indicates that the software has a license declaration that makes it "
+        "difficult to construct a reliable license expression, such as in the case of multiple licenses "
+        "where the conjunctive versus disjunctive relationship is not well defined. Scoring Weight = -10.",
+    ),
+    (
+        "Conflicting license categories",
+        "conflicting_license_categories",
+        "When true (checked), indicates the declared license expression of the software is in the permissive "
+        "category, but that other potentially conflicting categories, such as copyleft and proprietary, have "
+        "been detected in lower level code. Scoring Weight = -20.",
+    ),
+]
+
+
+SCAN_SUMMARY_FIELDS = [
+    ("Declared license", "declared_license_expression"),
+    ("Declared holder", "declared_holder"),
+    ("Primary language", "primary_language"),
+    ("Other licenses", "other_license_expressions"),
+    ("Other holders", "other_holders"),
+    ("Other languages", "other_languages"),
+]
 
 
 class PrefetchRelatedViewMixin:
@@ -178,54 +243,6 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         return results
 
     def get_license_clarity_data(self, summary):
-        license_clarity_fields = [
-            ('Score',
-            'score',
-            'The license clarity score is a value from 0-100 calculated by combining the weighted '
-            'values determined for each of the five scoring elements: Declared license, '
-            'Precise license detection, License text, Declared copyrights, Ambigous compound licensing, '
-            'Conflicting license categories',
-            ),
-            ('Declared License',
-            'declared_license',
-            'When true (checked), indicates that the software package licensing is documented at '
-            'top-level or well-known locations in the software project, typically in a package '
-            'manifest, NOTICE, LICENSE, COPYING or README file. Scoring Weight = 40.',
-            ),
-            ('Identification Precision',
-            'identification_precision',
-            'When true (checked), indicates how well the license statement(s) of the software '
-            'identify known licenses that can be designated by precise keys (identifiers) as '
-            'provided in a publicly available license list, such as the ScanCode LicenseDB, '
-            'the SPDX license list, the OSI license list, or a URL pointing to a specific license '
-            'text in a project or organization website. Scoring Weight = 40.',
-            ),
-            ('License Text',
-            'has_license_text',
-            'When true (checked), indicates that license texts are provided to support '
-            'the declared license expression in files such as a package manifest, NOTICE, '
-            'LICENSE, COPYING or README. Scoring Weight = 10.',
-            ),
-            ('Declared Copyrights',
-            'declared_copyrights',
-            'When true (checked), indicates that the software package copyright is documented at '
-            'top-level or well-known locations in the software project, typically in a package manifest, '
-            'NOTICE, LICENSE, COPYING or README file. Scoring Weight = 10.',
-            ),
-            ('Ambiguous Compound Licensing',
-            'ambiguous_compound_licensing',
-            'When true (checked), indicates that the software has a license declaration that makes it '
-            'difficult to construct a reliable license expression, such as in the case of multiple licenses '
-            'where the conjunctive versus disjunctive relationship is not well defined. Scoring Weight = -10.',
-            ),
-            ('Conflicting License Categories',
-            'conflicting_license_categories',
-            'When true (checked), indicates the declared license expression of the software is in the permissive '
-            'category, but that other potentially conflicting categories, such as copyleft and proprietary, have '
-            'been detected in lower level code. Scoring Weight = -20.',
-            ),
-        ]
-
         def as_icon(field_value):
             """
             Returns the proper icon based on the field_value (True/False/None).
@@ -233,16 +250,16 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             from django.utils.html import format_html
 
             icon = {
-                True: 'fas fa-check-circle color-true',
-                False: 'far fa-circle color-false',
-                None: 'far fa-question-circle color-none',
+                True: "fas fa-check-circle has-text-success-dark fa-lg",
+                False: "far fa-circle fa-lg",
+                None: "far fa-question-circle fa-lg",
             }.get(field_value)
 
             if icon:
                 return format_html('<i class="{}"></i>', icon)
 
-        license_clarity_score = summary.get('license_clarity_score')
-        for label, field, help_text in license_clarity_fields:
+        license_clarity_score = summary.get("license_clarity_score")
+        for label, field, help_text in LICENSE_CLARITY_FIELDS:
             value = license_clarity_score.get(field)
             if value is not None:
                 if isinstance(value, bool):
@@ -250,34 +267,26 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 else:
                     value = escape(value)
             yield {
-                'label': label,
-                'value': value,
-                'help_text': help_text,
-                'td_class': 'text-center',
+                "label": label,
+                "value": value,
+                "help_text": help_text,
+                "td_class": "text-center",
             }
 
     def get_summary_data(self, summary):
-        summary_fields = [
-            ('Declared License', 'declared_license_expression'),
-            ('Declared Holder', 'declared_holder'),
-            ('Primary Language', 'primary_language'),
-            ('Other Licenses', 'other_license_expressions'),
-            ('Other Holders', 'other_holders'),
-            ('Other Languages', 'other_languages')
-        ]
         summary_data = {}
-        for field_label, field_name in summary_fields:
+        for field_label, field_name in SCAN_SUMMARY_FIELDS:
             value = summary.get(field_name)
             if not value:
                 continue
             if field_name in (
-                'declared_license_expression',
-                'declared_holder',
-                'primary_language'
+                "declared_license_expression",
+                "declared_holder",
+                "primary_language",
             ):
                 summary_data[field_label] = [
                     {
-                        'value': value,
+                        "value": value,
                     }
                 ]
             else:

@@ -3,29 +3,28 @@
     License clarity
   </p>
   <div class="panel-block p-0">
-    <table class="table border-bottom-radius">
-      <thead>
+    <table class="table is-fullwidth border-bottom-radius">
+      {% for entry in license_clarity %}
         <tr>
-          {% for entry in license_clarity %}
-            <th>
-              {% if entry.help_text %}
-                <span class="help_text" data-toggle="tooltip" data-placement="top" title="{{ entry.help_text }}">
-              {% endif %}
-              {{ entry.label }}
-              {% if header.help_text %}
-                </span>
-              {% endif %}
-            </th>
-          {% endfor %}
+          <th>
+            <div class="dropdown is-hoverable">
+              <div class="dropdown-trigger">
+                <span class="is-help-text">{{ entry.label }}</span>
+              </div>
+              <div class="dropdown-menu ml-5" role="menu" style="min-width: 18rem;">
+                <div class="dropdown-content">
+                  <div class="dropdown-item">
+                    {{ entry.help_text }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </th>
+          <td class="has-text-centered">
+            {{ entry.value }}
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <tr>
-          {% for entry in license_clarity %}
-            <td>{{ entry.value }}</td>
-          {% endfor %}
-        </tr>
-      </tbody>
+      {% endfor %}
     </table>
   </div>
 </article>
