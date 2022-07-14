@@ -70,7 +70,7 @@ LICENSE_CLARITY_FIELDS = [
         "score",
         "The license clarity score is a value from 0-100 calculated by combining the weighted "
         "values determined for each of the five scoring elements: Declared license, "
-        "Precise license detection, License text, Declared copyrights, Ambigous compound licensing, "
+        "Identification precision, License text, Declared copyrights, Ambigous compound licensing, "
         "Conflicting license categories",
     ),
     (
@@ -258,10 +258,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             if icon:
                 return format_html('<i class="{}"></i>', icon)
 
-        license_clarity_score = summary.get("license_clarity_score")
+        license_clarity_score = summary.get("license_clarity_score", {})
         for label, field, help_text in LICENSE_CLARITY_FIELDS:
             value = license_clarity_score.get(field)
-            if value is not None:
+            if value:
                 if isinstance(value, bool):
                     value = as_icon(value)
                 else:
