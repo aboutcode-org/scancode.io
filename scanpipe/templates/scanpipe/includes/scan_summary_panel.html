@@ -10,7 +10,12 @@
           <td>
             <ul>
               {% for entry in values %}
-                <li>{{ entry.value }} {% if entry.count %}({{ entry.count }}){% endif %}</li>
+                <li>
+                  {{ entry.value }}
+                  {% if entry.count %}
+                    <span class="tag is-rounded">{{ entry.count }}</span>
+                  {% endif %}
+                </li>
               {% endfor %}
             </ul>
           </td>
