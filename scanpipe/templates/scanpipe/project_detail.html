@@ -88,14 +88,14 @@
         </article>
       {% endif %}
 
-      {% if license_clarity or summary_data %}
+      {% if license_clarity or scan_summary %}
         <div class="columns">
           {% if license_clarity %}
             <div class="column is-two-fifths">
               {% include "scanpipe/includes/license_clarity_panel.html" %}
             </div>
           {% endif %}
-          {% if summary_data %}
+          {% if scan_summary %}
             <div class="column">
               {% include "scanpipe/includes/scan_summary_panel.html" %}
             </div>

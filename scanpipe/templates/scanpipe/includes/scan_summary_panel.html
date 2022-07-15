@@ -4,13 +4,13 @@
   </p>
   <div class="panel-block p-0">
     <table class="table is-fullwidth border-bottom-radius">
-      {% for field_label, values in summary_data.items %}
+      {% for field_label, values in scan_summary.items %}
         <tr>
           <th>{{ field_label }}</th>
           <td>
             <ul>
               {% for entry in values %}
-                <li>{{ entry.value }}{% if entry.count %} ({{ entry.count }}) {% endif %}</li>
+                <li>{{ entry.value }} {% if entry.count %}({{ entry.count }}){% endif %}</li>
               {% endfor %}
             </ul>
           </td>

@@ -250,55 +250,32 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 results.extend(entry.get(data_field) for entry in model_values)
         return results
 
-    def get_license_clarity_data(self, summary):
-        def as_icon(field_value):
-            """
-            Returns the proper icon based on the field_value (True/False/None).
-            """
-            from django.utils.html import format_html
-
-            icon = {
-                True: "fas fa-check-circle has-text-success-dark fa-lg",
-                False: "far fa-circle fa-lg",
-                None: "far fa-question-circle fa-lg",
-            }.get(field_value)
-
-            if icon:
-                return format_html('<i class="{}"></i>', icon)
-
-        license_clarity_score = summary.get("license_clarity_score", {})
-        for label, field, help_text in LICENSE_CLARITY_FIELDS:
-            value = license_clarity_score.get(field)
-            if value:
-                if isinstance(value, bool):
-                    value = as_icon(value)
-                else:
-                    value = escape(value)
-            yield {
+    @staticmethod
+    def get_license_clarity_data(scan_summary_json):
+        license_clarity_score = scan_summary_json.get("license_clarity_score", {})
+        return [
+            {
                 "label": label,
-                "value": value,
+                "value": license_clarity_score.get(field),
                 "help_text": help_text,
-                "td_class": "text-center",
             }
+            for label, field, help_text in LICENSE_CLARITY_FIELDS
+        ]
 
-    def get_summary_data(self, summary):
+    @staticmethod
+    def get_scan_summary_data(scan_summary_json):
         summary_data = {}
+
         for field_label, field_name in SCAN_SUMMARY_FIELDS:
-            value = summary.get(field_name)
+            value = scan_summary_json.get(field_name)
             if not value:
                 continue
-            if field_name in (
-                "declared_license_expression",
-                "declared_holder",
-                "primary_language",
-            ):
-                summary_data[field_label] = [
-                    {
-                        "value": value,
-                    }
-                ]
-            else:
-                summary_data[field_label] = value
+
+            if type(value) is not list:
+                value = [{"value": value}]
+
+            summary_data[field_label] = value
+
         return summary_data
 
     def get_context_data(self, **kwargs):
@@ -355,12 +332,14 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             messages.warning(self.request, message)
 
         license_clarity = []
-        summary_data = {}
-        summary_file = project.get_latest_output(filename="summary")
-        if summary_file:
-            summary = json.loads(summary_file.read_text())
-            license_clarity = list(self.get_license_clarity_data(summary))
-            summary_data = self.get_summary_data(summary)
+        scan_summary = {}
+        scan_summary_file = project.get_latest_output(filename="summary")
+
+        if scan_summary_file:
+            # TODO: This make breaks for many reasons!
+            scan_summary_json = json.loads(scan_summary_file.read_text())
+            license_clarity = self.get_license_clarity_data(scan_summary_json)
+            scan_summary = self.get_scan_summary_data(scan_summary_json)
 
         context.update(
             {
@@ -379,7 +358,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "add_inputs_form": AddInputsForm(),
                 "archive_form": ArchiveProjectForm(),
                 "license_clarity": license_clarity,
-                "summary_data": summary_data,
+                "scan_summary": scan_summary,
             }
         )
 

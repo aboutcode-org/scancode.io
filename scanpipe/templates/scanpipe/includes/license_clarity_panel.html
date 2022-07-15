@@ -21,7 +21,13 @@
             </div>
           </th>
           <td class="has-text-centered">
-            {{ entry.value }}
+            {% if entry.value is True %}
+              <i class="fas fa-check-circle fa-lg has-text-success-dark"></i>
+            {% elif entry.value is False %}
+              <i class="far fa-circle fa-lg"></i>
+            {% else %}
+              <span class="tag is-dark has-text-weight-bold">{{ entry.value }}</span>
+            {% endif %}
           </td>
         </tr>
       {% endfor %}
