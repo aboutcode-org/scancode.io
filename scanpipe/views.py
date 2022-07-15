@@ -68,54 +68,62 @@ LICENSE_CLARITY_FIELDS = [
     (
         "Score",
         "score",
-        "The license clarity score is a value from 0-100 calculated by combining the weighted "
-        "values determined for each of the five scoring elements: Declared license, "
-        "Identification precision, License text, Declared copyrights, Ambigous compound licensing, "
-        "Conflicting license categories",
+        "The license clarity score is a value from 0-100 calculated by combining the "
+        "weighted values determined for each of the scoring elements: Declared license,"
+        " Identification precision, License text, Declared copyrights, Ambiguous "
+        "compound licensing, and Conflicting license categories.",
     ),
     (
         "Declared license",
         "declared_license",
-        "When true (checked), indicates that the software package licensing is documented at "
-        "top-level or well-known locations in the software project, typically in a package "
-        "manifest, NOTICE, LICENSE, COPYING or README file. Scoring Weight = 40.",
+        "When true (checked), indicates that the software package licensing is "
+        "documented at top-level or well-known locations in the software project, "
+        "typically in a package manifest, NOTICE, LICENSE, COPYING or README file. "
+        "Scoring Weight = 40.",
     ),
     (
         "Identification precision",
         "identification_precision",
-        "When true (checked), indicates how well the license statement(s) of the software "
-        "identify known licenses that can be designated by precise keys (identifiers) as "
-        "provided in a publicly available license list, such as the ScanCode LicenseDB, "
-        "the SPDX license list, the OSI license list, or a URL pointing to a specific license "
-        "text in a project or organization website. Scoring Weight = 40.",
+        "When true (checked), indicates how well the license statement(s) of the "
+        "software identify known licenses that can be designated by precise keys "
+        "(identifiers) as provided in a publicly available license list, such as the "
+        "ScanCode LicenseDB, the SPDX license list, the OSI license list, or a URL "
+        "pointing to a specific license text in a project or organization website. "
+        "Scoring Weight = 40.",
     ),
     (
         "License text",
         "has_license_text",
         "When true (checked), indicates that license texts are provided to support "
         "the declared license expression in files such as a package manifest, NOTICE, "
-        "LICENSE, COPYING or README. Scoring Weight = 10.",
+        "LICENSE, COPYING or README. "
+        "Scoring Weight = 10.",
     ),
     (
         "Declared copyrights",
         "declared_copyrights",
-        "When true (checked), indicates that the software package copyright is documented at "
-        "top-level or well-known locations in the software project, typically in a package manifest, "
-        "NOTICE, LICENSE, COPYING or README file. Scoring Weight = 10.",
+        "When true (checked), indicates that the software package copyright is "
+        "documented at top-level or well-known locations in the software project, "
+        "typically in a package manifest, NOTICE, LICENSE, COPYING or README file. "
+        "Scoring Weight = 10.",
     ),
     (
         "Ambiguous compound licensing",
         "ambiguous_compound_licensing",
-        "When true (checked), indicates that the software has a license declaration that makes it "
-        "difficult to construct a reliable license expression, such as in the case of multiple licenses "
-        "where the conjunctive versus disjunctive relationship is not well defined. Scoring Weight = -10.",
+        "When true (checked), indicates that the software has a license declaration "
+        "that makes it difficult to construct a reliable license expression, such as "
+        "in the case of multiple licenses where the conjunctive versus disjunctive "
+        "relationship is not well defined. "
+        "Scoring Weight = -10.",
     ),
     (
         "Conflicting license categories",
         "conflicting_license_categories",
-        "When true (checked), indicates the declared license expression of the software is in the permissive "
-        "category, but that other potentially conflicting categories, such as copyleft and proprietary, have "
-        "been detected in lower level code. Scoring Weight = -20.",
+        "When true (checked), indicates the declared license expression of the "
+        "software is in the permissive category, but that other potentially "
+        "conflicting categories, such as copyleft and proprietary, have been detected "
+        "in lower level code. "
+        "Scoring Weight = -20.",
     ),
 ]
 
