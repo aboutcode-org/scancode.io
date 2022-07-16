@@ -13,23 +13,24 @@
         </div>
     </section>
 
-    <hr class="mx-1">
+    <!-- still under implementation -->
+    <div class="tabs">
+        <ul>
+            <li class="is-active"><a>Summary</a></li>
+            <li><a>Details</a></li>
+        </ul>
+    </div>
+
     {% include 'scantext/includes/license_summary_header.html' with detected_licenses=detected_licenses %}
     <hr class="mx-1">
 
-    <div class="columns mb-5 mx-1">
-        <div class="column is-two-third">
-            <p class="title is-5">Input License Text</p>
-            <div id="editor" style="height: 70vh; border: lightgrey 1px solid; position: sticky; top: 2vh;">{{ text }}</div>
-        </div>
-        <div class="column is-one-third">
-            <p class="title is-5">Detected Licenses</p>
-            <div class="card">
-                {% include 'scantext/includes/license_summary_cards.html' with detected_licenses=detected_licenses %}
-            </div>
-        </div>
-    </div>
+    <section class="tab-content">
+        {% include 'scantext/includes/license_summary_cards.html' with detected_licenses=detected_licenses %}
+    </section>
 
+    <section class="tab-content is-hidden">
+        {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
+    </section>
 </div>
 {% endblock %}
 
@@ -39,7 +40,7 @@
     let editor = ace.edit("editor", {
         mode: "ace/mode/text",
         autoScrollEditorIntoView: true,
-        wrap: false,
+        wrap: true,
         readOnly: true,
         showPrintMargin: false,
         highlightActiveLine: false,
@@ -50,6 +51,23 @@
     });
 
     const cards = document.querySelectorAll('.card-header-icon')
+    const tabContent = document.querySelectorAll('.tab-content')
+
+    document.querySelectorAll('li').forEach((li, index) => {
+        li.addEventListener('click', (event) => {
+         if (!li.classList.contains('is-active')) {
+            document.querySelectorAll('li').forEach(listItem => {
+                listItem.classList.remove('is-active')
+            })
+            li.classList.add('is-active')
+         }
+
+         tabContent.forEach(section => {
+            section.classList.add('is-hidden')
+         })
+         tabContent[index].classList.remove('is-hidden')
+        })
+    })
 
     cards.forEach(card => {
       card.addEventListener('click', (event) => {
@@ -90,7 +108,7 @@
         let end_column = 10000;
 
         let range = new Range(start_row, start_column, end_row, end_column);
-        editor.session.addMarker(range, "ace-marker", "fullLine");
+        editor.session.addMarker(range, "ace-marker", "line");
         annotations.push({
           row: start_row,
           column: 0,
@@ -109,6 +127,5 @@
           session.removeMarker(value.id);
         }
     }
-
 </script>
 {% endblock %}

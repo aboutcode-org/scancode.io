@@ -1,67 +1,76 @@
-{% for license in detected_licenses.licenses %}
-<div class="licenses-card">
-    <div class="card-header is-flex is-justify-content-space-between">
-        <div class="card-header-title" title="{{ license.short_name }}">
-            {% if license.homepage_url %}
-            <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})">{{ license.short_name }}</a> {% else %} {{ license.short_name }} {% endif %}
-        </div>
-        <div class="is-flex is-justify-content-row is-align-items-center">
-            <p class="lines tag is-6 mx-1 is-light is-info">
-                {% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}
-            </p>
-            <p class="tag is-6 mx-1 is-light 
+<div class="columns mb-5 mx-1">
+    <div class="column is-two-third">
+        <p class="title is-5">Input License Text</p>
+        <div id="editor" style="height: 70vh; border: lightgrey 1px solid; position: sticky; top: 2vh;">{{ text }}</div>
+    </div>
+    <div class="column is-one-third">
+        <p class="title is-5">Detected Licenses</p>
+        <div class="card">
+            {% for license in detected_licenses.licenses %}
+            <div class="licenses-card">
+                <div class="card-header is-flex is-justify-content-space-between">
+                    <div class="card-header-title" title="{{ license.short_name }}">
+                        {% if license.homepage_url %}
+                        <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})">{{ license.short_name }}</a> {% else %} {{ license.short_name }} {% endif %}
+                    </div>
+                    <div class="is-flex is-justify-content-row is-align-items-center">
+                        <p class="lines tag is-6 mx-1 is-light is-info">
+                            {% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}
+                        </p>
+                        <p class="tag is-6 mx-1 is-light 
                   {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}</p>
-            <p class="card-header-icon"
-            data-key="{{ license.key }}"
-            data-startline="{{ license.start_line }}"
-            data-endline="{{ license.end_line }}">
-                <span class="icon">
+                        <p class="card-header-icon" data-key="{{ license.key }}" data-startline="{{ license.start_line }}" data-endline="{{ license.end_line }}">
+                            <span class="icon">
                     <i class="fa fa-angle-down" aria-hidden="true"></i>
                 </span>
-            </p>
-        </div>
-    </div>
-    <div class="card-content is-hidden">
-        <div class="content">
-            <div class="is-flex is-justify-content-space-between">
-                <div>
-                    <p class="title is-5">Details</p>
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <p class="tag is-6 mx-1 is-light is-info">{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</p>
+                <div class="card-content is-hidden">
+                    <div class="content">
+                        <div class="is-flex is-justify-content-space-between">
+                            <div>
+                                <p class="title is-5">Details</p>
+                            </div>
+                            <div>
+                                <p class="tag is-6 mx-1 is-light is-info">{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</p>
+                            </div>
+                        </div>
+                        <div class="table-container mt-3">
+                            <table class="table is-striped is-narrow is-hoverable is-fullwidth">
+                                <tr>
+                                    <td><strong>Name</strong></td>
+                                    <td>{{ license.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Score</strong></td>
+                                    <td>{{ license.score }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Owner</strong></td>
+                                    <td>{{ license.owner }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Category</strong></td>
+                                    <td>
+                                        <p class="tag is-4 is-light is-primary">{{ license.category }}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>SPDX Key</strong></td>
+                                    <td>{{ license.spdx_license_key }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Reference</strong></td>
+                                    <td><a href="{{ license.reference_url }}" target="_blank">{{ license.reference_url }}</a></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="table-container mt-3">
-              <table class="table is-striped is-narrow is-hoverable is-fullwidth">
-                <tr>
-                    <td><strong>Name</strong></td>
-                    <td>{{ license.name }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Score</strong></td>
-                    <td>{{ license.score }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Owner</strong></td>
-                    <td>{{ license.owner }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Category</strong></td>
-                    <td>
-                        <p class="tag is-4 is-light is-primary">{{ license.category }}</p>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>SPDX Key</strong></td>
-                    <td>{{ license.spdx_license_key }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Reference</strong></td>
-                    <td>{{ license.reference_url }}</td>
-                </tr>
-              </table>
-            </div>
+            {% endfor %}
+
         </div>
     </div>
 </div>
-{% endfor %}
