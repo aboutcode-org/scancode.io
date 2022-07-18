@@ -8,7 +8,9 @@
     <table class="table is-fullwidth border-bottom-radius">
       {% for field_label, values in scan_summary.items %}
         <tr>
-          <th>{{ field_label }}</th>
+          <th class="is-narrow">
+            {{ field_label }}
+          </th>
           <td>
             <ul>
               {% for entry in values %}
@@ -16,7 +18,9 @@
                   <li>
                     {{ entry.value }}
                     {% if entry.count %}
-                      <span class="tag is-rounded">{{ entry.count|intcomma }}</span>
+                      <span class="tag is-rounded">
+                        {{ entry.count|intcomma }}
+                      </span>
                     {% endif %}
                   </li>
                 {% endif %}
