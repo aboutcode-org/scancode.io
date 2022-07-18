@@ -268,8 +268,6 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         for field_label, field_name in SCAN_SUMMARY_FIELDS:
             value = scan_summary_json.get(field_name)
-            if not value:
-                continue
 
             if type(value) is not list:
                 value = [{"value": value}]
