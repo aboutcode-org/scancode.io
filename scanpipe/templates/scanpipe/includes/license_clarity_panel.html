@@ -6,7 +6,7 @@
   <div class="panel-block p-0">
     <table class="table is-fullwidth border-bottom-radius">
       {% for entry in license_clarity %}
-        <tr>
+        {% if entry.label != "Score" %}<tr>{% else %}<tr class="has-background-light">{% endif %}
           <th>
             <div class="dropdown is-hoverable is-wider is-tooltip">
               <div class="dropdown-trigger">
@@ -22,12 +22,10 @@
             </div>
           </th>
           <td class="has-text-centered">
-            {% if entry.value is True %}
-              <i class="fas fa-check-circle fa-lg has-text-success-dark"></i>
-            {% elif entry.value is False %}
-              <i class="far fa-circle fa-lg"></i>
-            {% else %}
-              <span class="tag is-dark has-text-weight-bold">{{ entry.value }}</span>
+            {% if entry.label == "Score" %}
+              <span class="tag is-info has-text-weight-bold">{{ entry.value }}</span>
+            {% elif entry.value is True %}
+              <span class="tag {% if '+' in entry.weight %}is-success{% else %}is-danger{% endif %} has-text-weight-bold">{{ entry.weight }}</span>
             {% endif %}
           </td>
         </tr>
