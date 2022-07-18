@@ -22,6 +22,7 @@
 
 import json
 from collections import Counter
+from contextlib import suppress
 
 from django.apps import apps
 from django.contrib import messages
@@ -345,10 +346,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         scan_summary_file = project.get_latest_output(filename="summary")
 
         if scan_summary_file:
-            # TODO: This make breaks for many reasons!
-            scan_summary_json = json.loads(scan_summary_file.read_text())
-            license_clarity = self.get_license_clarity_data(scan_summary_json)
-            scan_summary = self.get_scan_summary_data(scan_summary_json)
+            with suppress(json.decoder.JSONDecodeError):
+                scan_summary_json = json.loads(scan_summary_file.read_text())
+                license_clarity = self.get_license_clarity_data(scan_summary_json)
+                scan_summary = self.get_scan_summary_data(scan_summary_json)
 
         context.update(
             {
