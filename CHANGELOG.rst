@@ -43,6 +43,10 @@ v31.0.0 (next)
 - Ensure a project cannot be deleted through the API while a pipeline is running.
   https://github.com/nexB/scancode.io/issues/402
 
+- Display "License clarity" and "Scan summary" values as new panel in the project
+  details view. The summary is generated during the `scan_package` pipeline.
+  https://github.com/nexB/scancode.io/issues/411
+
 v30.2.0 (2021-12-17)
 --------------------
 
