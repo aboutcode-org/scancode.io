@@ -34,7 +34,6 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.utils.html import escape
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
@@ -186,12 +185,6 @@ class ProjectListView(
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
     paginate_by = 20
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["active_count"] = Project.objects.filter(is_archived=False).count()
-        context["archived_count"] = Project.objects.filter(is_archived=True).count()
-        return context
 
 
 class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
