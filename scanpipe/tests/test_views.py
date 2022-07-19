@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 from pathlib import Path
 from unittest import mock
 
@@ -31,6 +32,7 @@ from django.urls import reverse
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.tests import license_policies_index
+from scanpipe.views import ProjectDetailView
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -45,15 +47,15 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_list_is_archived(self):
         project2 = Project.objects.create(name="project2", is_archived=True)
         url = reverse("project_list")
-        url_with_filter = url + "?is_archived=true"
+        is_archive_filter = "?is_archived=true"
 
         response = self.client.get(url)
         self.assertContains(response, self.project1.name)
         self.assertNotContains(response, project2.name)
         self.assertContains(response, url)
-        self.assertContains(response, url_with_filter)
+        self.assertContains(response, is_archive_filter)
 
-        response = self.client.get(url_with_filter)
+        response = self.client.get(url + is_archive_filter)
         self.assertNotContains(response, self.project1.name)
         self.assertContains(response, project2.name)
 
@@ -143,6 +145,66 @@ class ScanPipeViewsTest(TestCase):
         )
         response = self.client.get(url)
         self.assertContains(response, expected)
+
+    def test_scanpipe_views_project_details_scan_summary_panels(self):
+        url = self.project1.get_absolute_url()
+
+        expected1 = 'id="license-clarity-panel"'
+        expected2 = 'id="scan-summary-panel"'
+
+        response = self.client.get(url)
+        self.assertNotContains(response, expected1)
+        self.assertNotContains(response, expected2)
+
+        summary_file = self.project1.get_output_file_path("summary", "json")
+        with summary_file.open("wb") as opened_file:
+            opened_file.write(b"\x21")
+
+        response = self.client.get(url)
+        self.assertNotContains(response, expected1)
+        self.assertNotContains(response, expected2)
+
+        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        with summary_file.open("w") as opened_file:
+            opened_file.write(scan_summary.read_text())
+
+        response = self.client.get(url)
+        self.assertContains(response, expected1)
+        self.assertContains(response, expected2)
+
+    def test_scanpipe_views_project_details_get_license_clarity_data(self):
+        get_license_clarity_data = ProjectDetailView.get_license_clarity_data
+
+        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary_json = json.loads(scan_summary.read_text())
+        license_clarity_data = get_license_clarity_data(scan_summary_json)
+
+        self.assertEqual(7, len(license_clarity_data))
+        expected = ["label", "value", "help_text", "weight"]
+        self.assertEqual(expected, list(license_clarity_data[0].keys()))
+
+        score_entry = license_clarity_data[-1]
+        self.assertEqual("Score", score_entry.get("label"))
+        self.assertEqual(90, score_entry.get("value"))
+        self.assertIsNone(score_entry.get("weight"))
+
+    def test_scanpipe_views_project_details_get_scan_summary_data(self):
+        get_scan_summary_data = ProjectDetailView.get_scan_summary_data
+
+        scan_summary = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
+        scan_summary_json = json.loads(scan_summary.read_text())
+        scan_summary_data = get_scan_summary_data(scan_summary_json)
+
+        self.assertEqual(6, len(scan_summary_data))
+        expected = [
+            "Declared license",
+            "Declared holder",
+            "Primary language",
+            "Other licenses",
+            "Other holders",
+            "Other languages",
+        ]
+        self.assertEqual(expected, list(scan_summary_data.keys()))
 
     def test_scanpipe_views_project_archive_view(self):
         url = reverse("project_archive", args=[self.project1.uuid])

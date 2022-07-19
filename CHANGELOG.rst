@@ -27,6 +27,13 @@ v31.0.0 (next)
   Reference: https://tracker.debian.org/pkg/wait-for-it
   https://github.com/nexB/scancode.io/issues/387
 
+- Add a "create-user" management command to create new user with its API key.
+  https://github.com/nexB/scancode.io/issues/458
+
+- Add a "tag" field on the CodebaseResource model.
+  The layer details are stored in this field in the "docker" pipeline.
+  https://github.com/nexB/scancode.io/issues/443
+
 - Add support for multiple inputs in the LoadInventory pipeline.
   https://github.com/nexB/scancode.io/issues/451
 
@@ -35,6 +42,19 @@ v31.0.0 (next)
 
 - Ensure a project cannot be deleted through the API while a pipeline is running.
   https://github.com/nexB/scancode.io/issues/402
+
+- Display "License clarity" and "Scan summary" values as new panel in the project
+  details view. The summary is generated during the `scan_package` pipeline.
+  https://github.com/nexB/scancode.io/issues/411
+
+- Enhance Project list view page:
+
+  - 20 projects are now displayed per page
+  - Creation date displayed under the project name
+  - Add ability to sort by date and name
+  - Add ability to filter by pipeline type
+
+  https://github.com/nexB/scancode.io/issues/413
 
 v30.2.0 (2021-12-17)
 --------------------

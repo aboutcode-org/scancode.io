@@ -8,11 +8,6 @@ Generic
 .. automodule:: scanpipe.pipes
     :members:
 
-Alpine
-------
-.. automodule:: scanpipe.pipes.alpine
-    :members:
-
 Codebase
 --------
 .. automodule:: scanpipe.pipes.codebase
@@ -21,11 +16,6 @@ Codebase
 Compliance
 ----------
 .. automodule:: scanpipe.pipes.compliance
-    :members:
-
-Debian
-------
-.. automodule:: scanpipe.pipes.debian
     :members:
 
 Docker
@@ -59,11 +49,6 @@ RootFS
 ------
 
 .. automodule:: scanpipe.pipes.rootfs
-    :members:
-
-RPM
----
-.. automodule:: scanpipe.pipes.rpm
     :members:
 
 ScanCode

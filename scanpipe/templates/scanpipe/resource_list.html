@@ -26,6 +26,7 @@
             <th>Extension</th>
             <th>Programming language</th>
             <th>Mime type</th>
+            <th>Tag</th>
             <th>License expressions</th>
             {% if include_compliance_alert %}
               <th>Compliance alert</th>
@@ -57,6 +58,9 @@
               </td>
               <td>
                 <a href="?mime_type={{ resource.mime_type }}" class="is-black-link">{{ resource.mime_type }}</a>
+              </td>
+              <td>
+                <a href="?tag={{ resource.tag }}" class="is-black-link">{{ resource.tag }}</a>
               </td>
               <td>
                  <ul>

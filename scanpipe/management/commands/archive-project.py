@@ -81,4 +81,4 @@ class Command(ProjectCommand):
             raise CommandError(error)
 
         msg = f"The {self.project} project has been archived."
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg, self.style.SUCCESS)
