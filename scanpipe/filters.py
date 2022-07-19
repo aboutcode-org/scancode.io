@@ -147,7 +147,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         super().__init__(data, *args, **kwargs)
 
         # Default filtering by "Active" projects.
-        if not data or not data.get("is_archived"):
+        if not data or data.get("is_archived", "") == "":
             self.queryset = self.queryset.filter(is_archived=False)
 
         active_count = Project.objects.filter(is_archived=False).count()

@@ -39,6 +39,7 @@ class Command(BaseCommand, RunStatusCommandMixin):
         parser.add_argument(
             "--include-archived",
             action="store_true",
+            dest="include_archived",
             help="Include archived projects.",
         )
 
