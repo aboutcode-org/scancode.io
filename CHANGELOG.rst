@@ -47,6 +47,15 @@ v31.0.0 (next)
   details view. The summary is generated during the `scan_package` pipeline.
   https://github.com/nexB/scancode.io/issues/411
 
+- Enhance Project list view page:
+
+  - 20 projects are now displayed per page
+  - Creation date displayed under the project name
+  - Add ability to sort by date and name
+  - Add ability to filter by pipeline type
+
+  https://github.com/nexB/scancode.io/issues/413
+
 v30.2.0 (2021-12-17)
 --------------------
 
