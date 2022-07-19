@@ -22,7 +22,8 @@
           {% endif %}
         </div>
         <div>
-          {% include 'scanpipe/includes/project_list_filters.html' %}
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
           <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
         </div>
       </div>

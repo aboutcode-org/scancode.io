@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.apps import apps
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -31,6 +32,9 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
+
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class FilterSetUtilsMixin:
@@ -91,8 +95,11 @@ class BulmaLinkWidget(LinkWidget):
     """
     Replace LinkWidget rendering with Bulma CSS classes.
     """
+
     def render_option(self, name, selected_choices, option_value, option_label):
-        option = super().render_option(name, selected_choices, option_value, option_label)
+        option = super().render_option(
+            name, selected_choices, option_value, option_label
+        )
         css_class = "dropdown-item"
         default_selected_class = ' class="selected"'
 
@@ -107,20 +114,26 @@ class BulmaLinkWidget(LinkWidget):
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
     sort = django_filters.OrderingFilter(
-        label=_('Sort'),
+        label=_("Sort"),
         fields=["created_date", "name"],
-        empty_label='Newest (default)',
+        empty_label="Newest (default)",
         choices=(
-            ('created_date', 'Oldest'),
-            ('name', 'Name (a-Z)'),
-            ('-name', 'Name (Z-a)'),
+            ("created_date", "Oldest"),
+            ("name", "Name (a-Z)"),
+            ("-name", "Name (Z-a)"),
         ),
+        widget=BulmaLinkWidget,
+    )
+    pipeline = django_filters.ChoiceFilter(
+        label=_("Pipeline"),
+        field_name="runs__pipeline_name",
+        choices=scanpipe_app.get_pipeline_choices(include_blank=False),
         widget=BulmaLinkWidget,
     )
 
     class Meta:
         model = Project
-        fields = ["search", "is_archived", "sort"]
+        fields = ["is_archived"]
 
     def __init__(self, data=None, *args, **kwargs):
         """
