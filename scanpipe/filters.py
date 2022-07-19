@@ -24,6 +24,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 import django_filters
+from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
@@ -86,15 +87,40 @@ class FilterSetUtilsMixin:
         return cls.Meta.model._meta.verbose_name_plural
 
 
+class BulmaLinkWidget(LinkWidget):
+    """
+    Replace LinkWidget rendering with Bulma CSS classes.
+    """
+    def render_option(self, name, selected_choices, option_value, option_label):
+        option = super().render_option(name, selected_choices, option_value, option_label)
+        css_class = "dropdown-item"
+        default_selected_class = ' class="selected"'
+
+        if default_selected_class in option:
+            option = option.replace(default_selected_class, "")
+            css_class += " is-active"
+
+        option = option.replace("<a", f'<a class="{css_class}"')
+        return option
+
+
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
     sort = django_filters.OrderingFilter(
-        fields=(("name", "name"), ("created_date", "created_date")),
+        label=_('Sort'),
+        fields=["created_date", "name"],
+        empty_label='Newest (default)',
+        choices=(
+            ('created_date', 'Oldest'),
+            ('name', 'Name (a-Z)'),
+            ('-name', 'Name (Z-a)'),
+        ),
+        widget=BulmaLinkWidget,
     )
 
     class Meta:
         model = Project
-        fields = ["search", "is_archived"]
+        fields = ["search", "is_archived", "sort"]
 
     def __init__(self, data=None, *args, **kwargs):
         """

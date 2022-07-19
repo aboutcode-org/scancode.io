@@ -22,24 +22,7 @@
           {% endif %}
         </div>
         <div>
-          <div class="dropdown is-right is-hoverable">
-            <div class="dropdown-trigger">
-              <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
-                <span>Sort</span>
-                <span class="icon is-small">
-                  <i class="fas fa-angle-down" aria-hidden="true"></i>
-                </span>
-              </button>
-            </div>
-            <div class="dropdown-menu" id="dropdown-sort-filters" role="menu">
-              <div class="dropdown-content">
-                <a href="?sort=name" class="dropdown-item">Name (A-Z)</a>
-                <a href="?sort=-name" class="dropdown-item">Name (Z-A)</a>
-                <a href="?sort=created_date" class="dropdown-item">Oldest</a>
-                <a href="?sort=-created_date" class="dropdown-item">Newest</a>
-              </div>
-            </div>
-          </div>
+          {% include 'scanpipe/includes/project_list_filters.html' %}
           <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
         </div>
       </div>
