@@ -22,14 +22,18 @@
           {% include 'scanpipe/includes/breadcrumb.html' %}
           {{ filter.form.is_archived }}
         </div>
+        <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
+      </div>
+
+      <div class="is-flex mb-3">
+        <div class="is-flex-grow-1 mr-2">
+          {% include 'scanpipe/includes/search_field.html' %}
+        </div>
         <div>
           {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
           {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
-          <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
         </div>
       </div>
-
-      {% include 'scanpipe/includes/search_field.html' %}
 
       {% if object_list %}
         {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
