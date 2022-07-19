@@ -1,0 +1,15 @@
+<div class="dropdown is-right is-hoverable">
+  <div class="dropdown-trigger">
+    <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+      <span>{{ filter_form_field.label }}</span>
+      <span class="icon is-small">
+        <i class="fas fa-angle-down" aria-hidden="true"></i>
+      </span>
+    </button>
+  </div>
+  <div class="dropdown-menu" id="dropdown-sort-filters" role="menu">
+    <div class="dropdown-content">
+      {{ filter_form_field }}
+    </div>
+  </div>
+</div>

@@ -20,16 +20,20 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.apps import apps
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 import django_filters
+from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class FilterSetUtilsMixin:
@@ -86,15 +90,55 @@ class FilterSetUtilsMixin:
         return cls.Meta.model._meta.verbose_name_plural
 
 
+class BulmaLinkWidget(LinkWidget):
+    """
+    Replace LinkWidget rendering with Bulma CSS classes.
+    """
+
+    extra_css_class = ""
+
+    def render_option(self, name, selected_choices, option_value, option_label):
+        option = super().render_option(
+            name, selected_choices, option_value, option_label
+        )
+        css_class = str(self.extra_css_class)
+
+        selected_class = ' class="selected"'
+        if selected_class in option:
+            option = option.replace(selected_class, "")
+            css_class += " is-active"
+
+        option = option.replace("<a", f'<a class="{css_class}"')
+        return option
+
+
+class BulmaDropdownWidget(BulmaLinkWidget):
+    extra_css_class = "dropdown-item"
+
+
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
     sort = django_filters.OrderingFilter(
-        fields=(("name", "name"), ("created_date", "created_date")),
+        label=_("Sort"),
+        fields=["created_date", "name"],
+        empty_label="Newest",
+        choices=(
+            ("created_date", "Oldest"),
+            ("name", "Name (a-Z)"),
+            ("-name", "Name (Z-a)"),
+        ),
+        widget=BulmaDropdownWidget,
+    )
+    pipeline = django_filters.ChoiceFilter(
+        label=_("Pipeline"),
+        field_name="runs__pipeline_name",
+        choices=scanpipe_app.get_pipeline_choices(include_blank=False),
+        widget=BulmaDropdownWidget,
     )
 
     class Meta:
         model = Project
-        fields = ["search", "is_archived"]
+        fields = ["is_archived"]
 
     def __init__(self, data=None, *args, **kwargs):
         """
@@ -102,8 +146,18 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         """
         super().__init__(data, *args, **kwargs)
 
-        if not data or "is_archived" not in data:
+        # Default filtering by "Active" projects.
+        if not data or data.get("is_archived", "") == "":
             self.queryset = self.queryset.filter(is_archived=False)
+
+        active_count = Project.objects.filter(is_archived=False).count()
+        archived_count = Project.objects.filter(is_archived=True).count()
+        self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
+            choices=[
+                ("", f'<i class="fas fa-seedling"></i> {active_count} Active'),
+                ("true", f'<i class="fas fa-dice-d6"></i> {archived_count} Archived'),
+            ]
+        )
 
 
 class JSONContainsFilter(django_filters.CharFilter):

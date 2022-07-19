@@ -1,6 +1,16 @@
 {% extends "scanpipe/base.html" %}
 {% load humanize %}
 
+{% block extrahead %}
+  <style>
+    ul#id_is_archived {display: inline-flex;}
+    ul#id_is_archived li {margin-right: 1rem;}
+    ul#id_is_archived li a {color: #7a7a7a;}
+    ul#id_is_archived li a:hover {text-decoration: underline;}
+    ul#id_is_archived li a.is-active {color: #363636;}
+  </style>
+{% endblock %}
+
 {% block content %}
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
@@ -10,41 +20,20 @@
       <div class="is-flex is-justify-content-space-between mb-2">
         <div>
           {% include 'scanpipe/includes/breadcrumb.html' %}
-          {% if archived_count > 0 %}
-            <a href="{% url 'project_list' %}" class="{% if 'is_archived' in request.GET %}is-grey-link{% else %}is-black-link{% endif %}">
-              <i class="fas fa-seedling"></i>
-              {{ active_count }} Active
-            </a>
-            <a href="{% url 'project_list' %}?is_archived=true" class="ml-4 {% if 'is_archived' in request.GET %}is-black-link{% else %}is-grey-link{% endif %}">
-              <i class="fas fa-dice-d6"></i>
-              {{ archived_count }} Archived
-            </a>
-          {% endif %}
+          {{ filter.form.is_archived }}
         </div>
-        <div>
-          <div class="dropdown is-right is-hoverable">
-            <div class="dropdown-trigger">
-              <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
-                <span>Sort</span>
-                <span class="icon is-small">
-                  <i class="fas fa-angle-down" aria-hidden="true"></i>
-                </span>
-              </button>
-            </div>
-            <div class="dropdown-menu" id="dropdown-sort-filters" role="menu">
-              <div class="dropdown-content">
-                <a href="?sort=name" class="dropdown-item">Name (A-Z)</a>
-                <a href="?sort=-name" class="dropdown-item">Name (Z-A)</a>
-                <a href="?sort=created_date" class="dropdown-item">Oldest</a>
-                <a href="?sort=-created_date" class="dropdown-item">Newest</a>
-              </div>
-            </div>
-          </div>
-          <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
-        </div>
+        <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
       </div>
 
-      {% include 'scanpipe/includes/search_field.html' %}
+      <div class="is-flex mb-3">
+        <div class="is-flex-grow-1 mr-2">
+          {% include 'scanpipe/includes/search_field.html' %}
+        </div>
+        <div>
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
+        </div>
+      </div>
 
       {% if object_list %}
         {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
