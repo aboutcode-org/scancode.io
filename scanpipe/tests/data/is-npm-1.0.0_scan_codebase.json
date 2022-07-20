@@ -92,6 +92,7 @@
       "emails": [],
       "urls": [],
       "status": "scanned",
+      "tag": "",
       "type": "directory",
       "name": ".",
       "extension": "",
