@@ -54,6 +54,7 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
@@ -1466,6 +1467,12 @@ class CodebaseResource(
         ),
     )
 
+    package_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("List of Package data detected from this CodebaseResource"),
+    )
+
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
@@ -1581,6 +1588,56 @@ class CodebaseResource(
         Returns the sorted set of unique license_expressions.
         """
         return sorted(set(self.license_expressions))
+
+    def parent_path(self):
+        """
+        Return the parent path for this CodebaseResource or None.
+        """
+        return parent_directory(self.path, with_trail=False)
+
+    def has_parent(self):
+        """
+        Return True if this CodebaseResource has a parent CodebaseResource or
+        False otherwise.
+        """
+        parent_path = self.parent_path()
+        if not parent_path:
+            return False
+        if self.project.codebaseresources.filter(path=parent_path).exists():
+            return True
+        return False
+
+    def parent(self, codebase=None):
+        """
+        Return the parent CodebaseResource object for this CodebaseResource or
+        None.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        parent_path = self.parent_path()
+        return parent_path and self.project.codebaseresources.get(path=parent_path)
+
+    def has_siblings(self, codebase=None):
+        """
+        Return True is this CodebaseResource has siblings.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        return self.has_parent() and self.parent(codebase).has_children()
+
+    def siblings(self, codebase=None):
+        """
+        Return a sequence of sibling Resource objects for this Resource
+        or an empty sequence.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        if self.has_parent():
+            return self.parent(codebase).children(codebase)
+        return []
 
     def descendants(self):
         """
@@ -1840,6 +1897,103 @@ class DiscoveredPackage(
             if not current_value or (current_value != value and override):
                 setattr(self, field_name, value)
                 updated_fields.append(field_name)
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
+
+
+class DiscoveredDependency(
+    ProjectRelatedModel,
+    SaveProjectErrorMixin,
+):
+    """
+    A project's Discovered Dependencies are records of the dependencies used by
+    system and application packages discovered in the code under analysis.
+    """
+    purl = models.CharField(
+        max_length=1024,
+        help_text=_(
+            "The Package URL of this dependency."
+        ),
+    )
+    extracted_requirement = models.CharField(
+        max_length=32,
+        help_text=_(
+            "The version requirements of this dependency."
+        ),
+    )
+    scope = models.CharField(
+        max_length=32,
+        help_text=_(
+            "The scope of this dependency, how it is used in a project."
+        ),
+    )
+
+    is_runtime = models.BooleanField(default=False)
+    is_optional = models.BooleanField(default=False)
+    is_resolved = models.BooleanField(default=False)
+
+    dependency_uid = models.CharField(
+        max_length=1024,
+        help_text=_(
+            "The unique identifier of this dependency."
+        ),
+    )
+    for_package_uid = models.CharField(
+        max_length=1024,
+        help_text=_(
+            "The unique identifier of the package this dependency is for."
+        ),
+    )
+    datafile_path = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "The relative path to the datafile where this dependency was detected from."
+        ),
+    )
+    datasource_id = models.CharField(
+        max_length=64,
+        help_text=_(
+            "The identifier for the datafile handler used to obtain this dependency."
+        )
+    )
+
+    @classmethod
+    def create_from_data(cls, project, dependency_data):
+        """
+        Creates and returns a DiscoveredPackage for a `project` from the `dependency_data`.
+        """
+        if "resolved_package" in dependency_data:
+            dependency_data.pop("resolved_package")
+        discovered_dependency = cls(project=project, **dependency_data)
+        discovered_dependency.save()
+        return discovered_dependency
+
+    def update_from_data(self, dependency_data):
+        """
+        Update this discovered dependency instance with the provided `dependency_data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = DiscoveredPackage.model_fields()
+        updated_fields = []
+
+        for field_name, value in dependency_data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if not current_value:
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+            elif current_value != value:
+                pass  # TODO: handle this case
 
         if updated_fields:
             self.save()
