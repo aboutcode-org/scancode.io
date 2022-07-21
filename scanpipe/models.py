@@ -853,6 +853,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         return self.projecterrors.count()
 
+    @property
+    def has_single_resource(self):
+        """
+        Return True if we only have a single CodebaseResource associated to this
+        project, False otherwise.
+        """
+        return self.codebaseresources.count() == 1
+
 
 class ProjectRelatedQuerySet(models.QuerySet):
     def project(self, project):
@@ -1919,13 +1927,13 @@ class DiscoveredDependency(
         ),
     )
     extracted_requirement = models.CharField(
-        max_length=32,
+        max_length=64,
         help_text=_(
             "The version requirements of this dependency."
         ),
     )
     scope = models.CharField(
-        max_length=32,
+        max_length=64,
         help_text=_(
             "The scope of this dependency, how it is used in a project."
         ),

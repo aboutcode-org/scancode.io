@@ -371,7 +371,7 @@ def assemble_packages(project):
             items = handler.assemble(
                 package_data=package_data,
                 resource=resource,
-                codebase=None,
+                codebase=project,
             )
 
             for item in items:
