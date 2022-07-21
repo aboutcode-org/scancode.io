@@ -1503,11 +1503,14 @@ class CodebaseResource(
 
         return new
 
-    def save(self, *args, **kwargs):
+    def save(self, codebase=None, *args, **kwargs):
         """
         Saves the current resource instance.
         Injects policies—if the feature is enabled—when the `licenses` field value is
         changed.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
         """
         if scanpipe_app.policies_enabled:
             loaded_licenses = getattr(self, "loaded_licenses", [])
