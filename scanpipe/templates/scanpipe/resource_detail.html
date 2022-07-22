@@ -35,7 +35,7 @@
     </div>
 
     <section class="mx-5">
-      <div class="message-header">
+      <div class="message-header is-flex">
         <p>
           {{ object.name }}
           | {{ object.size|filesizeformat }}
@@ -43,6 +43,10 @@
           <br>
           <span style="font-size: 10px;">{{ object.path }}</span>
         </p>
+        <div>
+          <button class="button prev-item is-hidden"><i class="fas fa-arrow-up"></i></button>
+          <button class="button next-item is-hidden"><i class="fas fa-arrow-down"></i></button>
+        </div>
       </div>
       <div id="editor" style="min-height:730px; border: lightgrey 1px solid;">{{ file_content }}</div>
     </section>
@@ -103,6 +107,8 @@
     }
 
     const $selectionButtons = getAll('.tabs a');
+    const prevItem = document.querySelector('.prev-item');
+    const nextItem = document.querySelector('.next-item');
 
     let detected_values = JSON.parse(document.querySelector("#detected_values").textContent);
 
@@ -111,17 +117,40 @@
         $el.addEventListener('click', function () {
           let active_li = document.querySelector("li.is-active");
           if (active_li) active_li.classList.remove("is-active");
+          prevItem.classList.remove("is-hidden");
+          nextItem.classList.remove("is-hidden");
           $el.parentElement.classList.add("is-active");
-
+          let count = 0;
           let type = $el.getAttribute("data-type");
           let detected_data = detected_values[type];
-          if (detected_data) {
+          if (detected_data.length) {
             setDetectedValues(detected_data);
+            editor.renderer.scrollToLine(detected_data[0].start_line - 1);
           }
           else {
             removeAllMarkers();
+            nextItem.classList.add("is-hidden");
+            prevItem.classList.add("is-hidden");
             editor.getSession().setAnnotations([]);
           }
+
+          prevItem.addEventListener('click', function () {
+            count -= 1
+            if (count < 0){
+              count = 0
+            } else {
+              editor.renderer.scrollToLine(detected_data[count].start_line - 1);
+            }
+          })
+
+          nextItem.addEventListener('click', function () {
+            count += 1
+            if (count >= detected_data.length){
+              count = detected_data.length
+            } else {
+              editor.renderer.scrollToLine(detected_data[count].start_line - 1);
+            }
+          })
         });
       });
     }
