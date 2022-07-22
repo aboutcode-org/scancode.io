@@ -47,6 +47,11 @@ urlpatterns = [
         name="project_packages",
     ),
     path(
+        "project/<uuid:uuid>/dependencies/",
+        views.DiscoveredDependencyListView.as_view(),
+        name="project_dependencies",
+    ),
+    path(
         "project/<uuid:uuid>/errors/",
         views.ProjectErrorListView.as_view(),
         name="project_errors",

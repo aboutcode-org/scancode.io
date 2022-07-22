@@ -847,6 +847,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return self.discoveredpackages.count()
 
     @cached_property
+    def dependency_count(self):
+        """
+        Returns the number of dependencies related to this project.
+        """
+        return self.discovereddependencys.count()
+
+    @cached_property
     def error_count(self):
         """
         Returns the number of errors related to this project.
