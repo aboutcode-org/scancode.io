@@ -26,6 +26,7 @@ from rest_framework import serializers
 
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -216,6 +217,15 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "filename",
             "last_modified_date",
             "codebase_resources",
+        ]
+
+
+class DiscoveredDependencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscoveredDependency
+        exclude = [
+            "id",
+            "project",
         ]
 
 
