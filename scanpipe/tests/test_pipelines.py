@@ -363,6 +363,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(6, project1.discovereddependencys.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
@@ -451,7 +452,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(2302, project1.codebaseresources.count())
-        self.assertEqual(8, project1.discoveredpackages.count())
+        self.assertEqual(6, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencys.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "gcr_io_distroless_base_scan_codebase.json"
@@ -471,7 +473,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(6, project1.codebaseresources.count())
-        self.assertEqual(4, project1.discoveredpackages.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencys.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"

@@ -202,7 +202,7 @@ class ScanPipePipesTest(TestCase):
         with output_file.open() as f:
             results = json.loads(f.read())
 
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["headers"]))

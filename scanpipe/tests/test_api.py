@@ -42,6 +42,7 @@ from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -269,9 +270,10 @@ class ScanPipeAPITest(TransactionTestCase):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))
 
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
+        self.assertEqual(0, len(results["dependencies"]))
         self.assertEqual(1, len(results["headers"]))
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
@@ -282,7 +284,7 @@ class ScanPipeAPITest(TransactionTestCase):
         response_value = response.getvalue()
         results = json.loads(response_value)
 
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["headers"]))
@@ -299,7 +301,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response_value = response.getvalue()
         results = json.loads(response_value)
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
     def test_scanpipe_api_project_action_pipelines(self):
@@ -628,7 +630,8 @@ class ScanPipeAPITest(TransactionTestCase):
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
         self.assertEqual(31, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(27, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(10, len(get_serializer_fields(DiscoveredDependency)))
+        self.assertEqual(28, len(get_serializer_fields(CodebaseResource)))
 
         with self.assertRaises(LookupError):
             get_serializer_fields(None)
