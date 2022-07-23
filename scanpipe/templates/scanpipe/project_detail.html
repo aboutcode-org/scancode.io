@@ -40,7 +40,7 @@
     <hr class="mx-5">
     {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
 
-    <section class="section pt-0 pb-5">
+    <section class="pt-0 pb-5 mx-5">
       {% if project.resource_count or project.package_count %}
         <article class="message is-info">
           <div class="message-body">
@@ -86,6 +86,21 @@
             </figure>
           </div>
         </article>
+      {% endif %}
+
+      {% if license_clarity or scan_summary %}
+        <div class="columns">
+          {% if license_clarity %}
+            <div class="column is-two-fifths">
+              {% include "scanpipe/includes/license_clarity_panel.html" %}
+            </div>
+          {% endif %}
+          {% if scan_summary %}
+            <div class="column">
+              {% include "scanpipe/includes/scan_summary_panel.html" %}
+            </div>
+          {% endif %}
+        </div>
       {% endif %}
     </section>
 

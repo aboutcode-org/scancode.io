@@ -20,7 +20,9 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 from collections import Counter
+from contextlib import suppress
 
 from django.apps import apps
 from django.contrib import messages
@@ -60,6 +62,86 @@ from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
 scanpipe_app = apps.get_app_config("scanpipe")
+
+
+LICENSE_CLARITY_FIELDS = [
+    (
+        "Declared license",
+        "declared_license",
+        "Indicates that the software package licensing is documented at top-level or "
+        "well-known locations in the software project, typically in a package "
+        "manifest, NOTICE, LICENSE, COPYING or README file. "
+        "Scoring Weight = 40.",
+        "+40",
+    ),
+    (
+        "Identification precision",
+        "identification_precision",
+        "Indicates how well the license statement(s) of the software identify known "
+        "licenses that can be designated by precise keys (identifiers) as provided in "
+        "a publicly available license list, such as the ScanCode LicenseDB, the SPDX "
+        "license list, the OSI license list, or a URL pointing to a specific license "
+        "text in a project or organization website. "
+        "Scoring Weight = 40.",
+        "+40",
+    ),
+    (
+        "License text",
+        "has_license_text",
+        "Indicates that license texts are provided to support the declared license "
+        "expression in files such as a package manifest, NOTICE, LICENSE, COPYING or "
+        "README. "
+        "Scoring Weight = 10.",
+        "+10",
+    ),
+    (
+        "Declared copyrights",
+        "declared_copyrights",
+        "Indicates that the software package copyright is documented at top-level or "
+        "well-known locations in the software project, typically in a package "
+        "manifest, NOTICE, LICENSE, COPYING or README file. "
+        "Scoring Weight = 10.",
+        "+10",
+    ),
+    (
+        "Ambiguous compound licensing",
+        "ambiguous_compound_licensing",
+        "Indicates that the software has a license declaration that makes it "
+        "difficult to construct a reliable license expression, such as in the case "
+        "of multiple licenses where the conjunctive versus disjunctive relationship "
+        "is not well defined. "
+        "Scoring Weight = -10.",
+        "-10",
+    ),
+    (
+        "Conflicting license categories",
+        "conflicting_license_categories",
+        "Indicates the declared license expression of the software is in the "
+        "permissive category, but that other potentially conflicting categories, "
+        "such as copyleft and proprietary, have been detected in lower level code. "
+        "Scoring Weight = -20.",
+        "-20",
+    ),
+    (
+        "Score",
+        "score",
+        "The license clarity score is a value from 0-100 calculated by combining the "
+        "weighted values determined for each of the scoring elements: Declared license,"
+        " Identification precision, License text, Declared copyrights, Ambiguous "
+        "compound licensing, and Conflicting license categories.",
+        None,
+    ),
+]
+
+
+SCAN_SUMMARY_FIELDS = [
+    ("Declared license", "declared_license_expression"),
+    ("Declared holder", "declared_holder"),
+    ("Primary language", "primary_language"),
+    ("Other licenses", "other_license_expressions"),
+    ("Other holders", "other_holders"),
+    ("Other languages", "other_languages"),
+]
 
 
 class PrefetchRelatedViewMixin:
@@ -102,13 +184,7 @@ class ProjectListView(
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
-    paginate_by = 10
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["active_count"] = Project.objects.filter(is_archived=False).count()
-        context["archived_count"] = Project.objects.filter(is_archived=True).count()
-        return context
+    paginate_by = 20
 
 
 class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
@@ -174,6 +250,37 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 results.extend(entry.get(data_field) for entry in model_values)
         return results
 
+    @staticmethod
+    def get_license_clarity_data(scan_summary_json):
+        license_clarity_score = scan_summary_json.get("license_clarity_score", {})
+        return [
+            {
+                "label": label,
+                "value": license_clarity_score.get(field),
+                "help_text": help_text,
+                "weight": weight,
+            }
+            for label, field, help_text, weight in LICENSE_CLARITY_FIELDS
+        ]
+
+    @staticmethod
+    def get_scan_summary_data(scan_summary_json):
+        summary_data = {}
+
+        for field_label, field_name in SCAN_SUMMARY_FIELDS:
+            field_data = scan_summary_json.get(field_name)
+
+            if type(field_data) is list:
+                # Do not include `None` entries
+                values = [entry for entry in field_data if entry.get("value")]
+            else:
+                # Converts single value type into common data-structure
+                values = [{"value": field_data}]
+
+            summary_data[field_label] = values
+
+        return summary_data
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
@@ -227,6 +334,16 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             message = "WARNING: This project is archived and read-only."
             messages.warning(self.request, message)
 
+        license_clarity = []
+        scan_summary = {}
+        scan_summary_file = project.get_latest_output(filename="summary")
+
+        if scan_summary_file:
+            with suppress(json.decoder.JSONDecodeError):
+                scan_summary_json = json.loads(scan_summary_file.read_text())
+                license_clarity = self.get_license_clarity_data(scan_summary_json)
+                scan_summary = self.get_scan_summary_data(scan_summary_json)
+
         context.update(
             {
                 "inputs_with_source": inputs,
@@ -243,6 +360,8 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "archive_form": ArchiveProjectForm(),
+                "license_clarity": license_clarity,
+                "scan_summary": scan_summary,
             }
         )
 
