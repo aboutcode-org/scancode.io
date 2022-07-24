@@ -98,7 +98,23 @@ class PipelineBaseForm(forms.Form):
             project.add_pipeline(pipeline, execute_now)
 
 
-class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
+class NotesForm(forms.Form):
+    notes_field = forms.CharField(
+        label="Notes",
+        required=False,
+        help_text="Adding notes to your project is optional and can be edited later.",
+        max_length=2000,
+        widget=forms.Textarea(
+            attrs={
+                "rows": "5",
+                "class": "textarea has-fixed-size",
+                "placeholder": "Maximum of 2000 characters are allowed.",
+            }
+        ),
+    )
+
+
+class ProjectForm(InputsBaseForm, NotesForm, PipelineBaseForm, forms.ModelForm):
     class Meta:
         model = Project
         fields = [
@@ -107,6 +123,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_urls",
             "pipeline",
             "execute_now",
+            "notes_field",
         ]
 
     def __init__(self, *args, **kwargs):
