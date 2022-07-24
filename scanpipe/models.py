@@ -406,6 +406,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         help_text=_("Project work directory location."),
     )
     input_sources = models.JSONField(default=dict, blank=True, editable=False)
+    notes = models.CharField(max_length=2000, blank=True, editable=True)
     is_archived = models.BooleanField(
         default=False,
         editable=False,
