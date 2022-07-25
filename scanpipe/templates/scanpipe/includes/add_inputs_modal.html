@@ -1,11 +1,12 @@
 <div id="add-inputs-modal" class="modal">
   <div class="modal-background"></div>
-  <div class="modal-card">
-    <header class="modal-card-head">
-      <p class="modal-card-title">Add inputs</p>
-      <button class="delete" type="button" aria-label="close"></button>
-    </header>
-    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+  {# Keep the <form> outside the .modal-card head/body/footer sections #}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Add inputs</p>
+        <button class="delete" type="button" aria-label="close"></button>
+      </header>
       <section class="modal-card-body">
         <label class="label has-text-weight-semibold" for="{{ add_inputs_form.input_files.id_for_label }}">Upload files</label>
         <div class="file has-name is-boxed is-fullwidth" id="input_files_box">
@@ -36,7 +37,7 @@
         <button id="add-inputs-button" name="add-inputs-submit" class="button is-link is-no-close" type="submit">Add inputs</button>
         <button class="button" type="button">Close</button>
       </footer>
-    </form>
-  </div>
+    </div>
+  </form>
   {{ add_inputs_form.media }}
 </div>

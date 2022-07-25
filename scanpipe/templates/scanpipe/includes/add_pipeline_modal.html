@@ -1,11 +1,12 @@
 <div id="add-pipeline-modal" class="modal">
   <div class="modal-background"></div>
-  <div class="modal-card">
-    <header class="modal-card-head">
-      <p class="modal-card-title">Add pipeline</p>
-      <button class="delete" type="button" aria-label="close"></button>
-    </header>
-    <form method="post">{% csrf_token %}
+  {# Keep the <form> outside the .modal-card head/body/footer sections #}
+  <form method="post">{% csrf_token %}
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Add pipeline</p>
+        <button class="delete" type="button" aria-label="close"></button>
+      </header>
       <section class="modal-card-body">
         <div class="field">
           <label class="label" for="{{ add_pipeline_form.pipeline.id_for_label }}">Pipeline</label>
@@ -26,6 +27,6 @@
         <button id="add-pipeline-button" class="button is-link is-no-close" type="submit">Add pipeline</button>
         <button class="button" type="button">Close</button>
       </footer>
-    </form>
-  </div>
+    </div>
+  </form>
 </div>
