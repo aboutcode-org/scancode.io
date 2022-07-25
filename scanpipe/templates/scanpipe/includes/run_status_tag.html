@@ -1,9 +1,12 @@
 {% if run.status == run.Status.RUNNING or run.status == run.Status.QUEUED %}
   <span class="tag is-info" hx-get="{% url 'run_status' run.uuid %}?current_status={{ run.status }}" hx-trigger="load delay:10s" hx-swap="outerHTML">
     {% if run.status == run.Status.RUNNING %}
-      Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i>
+      <i class="fas fa-spinner fa-pulse mr-1" aria-hidden="true"></i>Running
+      {% if display_current_step and run.current_step %}
+        {{ run.current_step|truncatechars:30 }}
+      {% endif %}
     {% elif run.status == run.Status.QUEUED %}
-      Queued <i class="fas fa-clock ml-1"></i>
+      <i class="fas fa-clock mr-1"></i>Queued
     {% endif %}
   </span>
 {% elif run.status == run.Status.SUCCESS %}
