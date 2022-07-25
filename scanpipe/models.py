@@ -1031,6 +1031,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
+    current_step = models.CharField(max_length=256, blank=True)
     log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
