@@ -8,7 +8,6 @@
       {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
     </a>
   {% endfor %}
-  <div id="run-detail-modal" class="modal is-desktop-size"></div>
   <div class="panel-block">
     {% if project.is_archived %}
       <button class="button is-link is-outlined is-fullwidth" disabled>Add pipeline</button>
