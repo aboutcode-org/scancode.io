@@ -306,6 +306,11 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             "type",
             "license_expression",
         )
+        dependencies = project.discovereddependencys.all().only(
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+        )
 
         file_languages = files.values_list("programming_language", flat=True)
         file_mime_types = files.values_list("mime_type", flat=True)
@@ -322,6 +327,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
+
+        dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
+        dependency_is_optional = dependencies.values_list("is_optional", flat=True)
+        dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
 
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
@@ -358,6 +367,9 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
+                "dependency_is_runtime": self.get_summary(dependency_is_runtime),
+                "dependency_is_optional": self.get_summary(dependency_is_optional),
+                "dependency_is_resolved": self.get_summary(dependency_is_resolved),
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
