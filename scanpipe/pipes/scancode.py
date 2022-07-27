@@ -44,7 +44,7 @@ from scancode import api as scancode_api
 from scancode import cli as scancode_cli
 
 from scanpipe import pipes
-from scanpipe.pipes.codebase import ProjectCodebase
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import CodebaseResource
 
 logger = logging.getLogger("scanpipe.pipes")
@@ -385,7 +385,7 @@ def assemble_packages(project):
                     pipes.update_or_create_package(project, package_data)
                 elif isinstance(item, packagedcode_models.Dependency):
                     dependency_data = item.to_dict()
-                    pipes.update_or_create_dependencies(project, dependency_data)
+                    _ = DiscoveredDependency.create_from_data(project, dependency_data)
                 elif isinstance(item, CodebaseResource):
                     seen_resource_paths.add(item.path)
                 else:
