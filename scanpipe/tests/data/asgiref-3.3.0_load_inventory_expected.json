@@ -53,7 +53,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "Development Status :: 5 - Production/Stable",
@@ -102,7 +101,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "Development Status :: 5 - Production/Stable",

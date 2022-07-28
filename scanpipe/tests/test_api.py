@@ -287,6 +287,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
+        self.assertEqual(0, len(results["dependencies"]))
         self.assertEqual(1, len(results["headers"]))
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
@@ -629,7 +630,7 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(31, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(30, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(10, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(28, len(get_serializer_fields(CodebaseResource)))
 

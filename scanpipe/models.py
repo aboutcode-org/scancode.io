@@ -1808,11 +1808,6 @@ class DiscoveredPackage(
     )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
-    dependencies = models.JSONField(
-        default=list,
-        blank=True,
-        help_text=_("A list of dependencies for this package."),
-    )
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
