@@ -21,15 +21,16 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import sys
-import attr
 import tempfile
 
 from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import render
 
-from licensedcode.stopwords import STOPWORDS
+import attr
 from licensedcode.match import tokenize_matched_text
+from licensedcode.stopwords import STOPWORDS
+
 from scantext.forms import LicenseScanForm
 
 TRACE_HIGHLIGHTED_TEXT = True
@@ -108,13 +109,13 @@ def license_scanview(request):
         message = "Couldn't detect any license from the provided input."
         messages.info(request, message)
         return render(
-                request,
-                "scantext/license_summary.html",
-                {
-                    "text": input_text,
-                    "detected_licenses": expressions,
-                },
-            )
+            request,
+            "scantext/license_summary.html",
+            {
+                "text": input_text,
+                "detected_licenses": expressions,
+            },
+        )
     # if TRACE_HIGHLIGHTED_TEXT:
     #     from pprint import pprint
     #     pprint(expressions, indent=4)
@@ -165,7 +166,7 @@ def get_licenses(
 
     qspans = []
     match = None
-    complete_text = ''
+    complete_text = ""
     complete_text_in_array = []
     for match in matches:
         qspans.append(match.qspan)
@@ -180,16 +181,18 @@ def get_licenses(
         )
 
         complete_text += get_highlighted_lines(
+            match=match,
+            stopwords=STOPWORDS,
+            trace=TRACE_HIGHLIGHTED_TEXT,
+        )
+
+        complete_text_in_array.append(
+            get_highlighted_lines(
                 match=match,
                 stopwords=STOPWORDS,
                 trace=TRACE_HIGHLIGHTED_TEXT,
             )
-
-        complete_text_in_array.append(get_highlighted_lines(
-                match=match,
-                stopwords=STOPWORDS,
-                trace=TRACE_HIGHLIGHTED_TEXT,
-            ))
+        )
 
     percentage_of_license_text = 0
     if match:
@@ -206,7 +209,7 @@ def get_licenses(
             ("license_expressions", detected_expressions),
             ("percentage_of_license_text", percentage_of_license_text),
             ("complete_text_in_array", complete_text_in_array),
-            ("complete_text", complete_text)
+            ("complete_text", complete_text),
         ]
     )
 
@@ -224,9 +227,12 @@ def _licenses_data_from_match(
     licenses = cache.get_licenses_db()
 
     # Returned matched_text will also include the text detected
-    matched_text = match.matched_text(whole_lines=False, highlight=True,
-        highlight_matched='<matched>{}</matched>',
-        highlight_not_matched='<notmatched>{}</notmatched>',)
+    matched_text = match.matched_text(
+        whole_lines=False,
+        highlight=True,
+        highlight_matched="<matched>{}</matched>",
+        highlight_not_matched="<notmatched>{}</notmatched>",
+    )
 
     detected_licenses = []
     for license_key in match.rule.license_keys():
@@ -282,7 +288,10 @@ def _licenses_data_from_match(
 
     return detected_licenses
 
-def logger_debug(*args): pass
+
+def logger_debug(*args):
+    pass
+
 
 def get_highlighted_lines(
     match,
@@ -302,16 +311,16 @@ def get_highlighted_lines(
     )
     tokens = tag_matched_tokens(tokens=tokens, match_qspan=match.qspan)
 
-    header = '''<style>
+    header = """<style>
       .license-match.log {color: #f1f1f1; background-color: #222; font-family: monospace;}
       .license-match.wrap {white-space: pre-wrap;}
       .not-matched {color:#ac0000;}
       .matched {color:#00ac00;}
     </style>
-    <div class="license-match">'''
-    footer = '''</div>'''
+    <div class="license-match">"""
+    footer = """</div>"""
 
-    body = ''
+    body = ""
     highlight_matched = '<span class="matched">{}</span>'
     highlight_not_matched = '<span class="not-matched">{}</span>'
     for token in tokens:
@@ -338,5 +347,3 @@ def tag_matched_tokens(tokens, match_qspan):
         if tok.pos != -1 and tok.is_known and tok.pos in match_qspan:
             tok = attr.evolve(tok, is_matched=True)
         yield tok
-
-
