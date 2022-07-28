@@ -43,8 +43,8 @@ from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
-from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import DependencyFilterSet
+from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet

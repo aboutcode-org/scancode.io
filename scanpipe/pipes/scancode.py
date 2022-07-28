@@ -35,17 +35,17 @@ from django.conf import settings
 
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
+from extractcode import api as extractcode_api
 from packagedcode import get_package_handler
 from packagedcode import models as packagedcode_models
-from extractcode import api as extractcode_api
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
 from scancode import cli as scancode_cli
 
 from scanpipe import pipes
-from scanpipe.models import DiscoveredDependency
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -139,7 +139,7 @@ def get_resource_info(location):
     file_info.update(
         {
             "type": resource_type,
-            "name": fileutils.file_base_name(location),
+            "name": fileutils.file_name(location),
             "extension": fileutils.file_extension(location),
         }
     )
@@ -340,7 +340,9 @@ def assemble_packages(project):
     from the parsed package data present in the CodebaseResources of `project`.
     """
     seen_resource_paths = set()
-    package_data_resources_qs = project.codebaseresources.filter(package_data__isnull=False)
+    package_data_resources_qs = project.codebaseresources.filter(
+        package_data__isnull=False
+    )
     for resource in package_data_resources_qs:
         if resource.path in seen_resource_paths:
             continue
@@ -352,7 +354,9 @@ def assemble_packages(project):
         )
 
         for package_data in resource.package_data:
-            package_data = packagedcode_models.PackageData.from_dict(mapping=package_data)
+            package_data = packagedcode_models.PackageData.from_dict(
+                mapping=package_data
+            )
 
             logger.info(
                 f"project: {project}:\n"

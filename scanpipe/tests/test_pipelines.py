@@ -363,7 +363,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
-        self.assertEqual(6, project1.discovereddependencys.count())
+        self.assertEqual(1, project1.discovereddependencys.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"

@@ -1428,7 +1428,7 @@ class CodebaseResource(
     name = models.CharField(
         max_length=255,
         blank=True,
-        help_text=_("File or directory name of this resource."),
+        help_text=_("File or directory name of this resource with its extension."),
     )
     extension = models.CharField(
         max_length=100,
@@ -1775,6 +1775,14 @@ class CodebaseResource(
         """
         return [str(package) for package in self.discovered_packages.all()]
 
+    def for_packages_append(self, package_uid):
+        if not package_uid:
+            return
+        package = DiscoveredPackage.objects.get(package_uid=package_uid)
+        if package not in self.discovered_packages.all():
+            self.discovered_packages.add(package)
+            self.save()
+
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
@@ -1930,23 +1938,18 @@ class DiscoveredDependency(
     A project's Discovered Dependencies are records of the dependencies used by
     system and application packages discovered in the code under analysis.
     """
+
     purl = models.CharField(
         max_length=1024,
-        help_text=_(
-            "The Package URL of this dependency."
-        ),
+        help_text=_("The Package URL of this dependency."),
     )
     extracted_requirement = models.CharField(
         max_length=64,
-        help_text=_(
-            "The version requirements of this dependency."
-        ),
+        help_text=_("The version requirements of this dependency."),
     )
     scope = models.CharField(
         max_length=64,
-        help_text=_(
-            "The scope of this dependency, how it is used in a project."
-        ),
+        help_text=_("The scope of this dependency, how it is used in a project."),
     )
 
     is_runtime = models.BooleanField(default=False)
@@ -1955,15 +1958,11 @@ class DiscoveredDependency(
 
     dependency_uid = models.CharField(
         max_length=1024,
-        help_text=_(
-            "The unique identifier of this dependency."
-        ),
+        help_text=_("The unique identifier of this dependency."),
     )
     for_package_uid = models.CharField(
         max_length=1024,
-        help_text=_(
-            "The unique identifier of the package this dependency is for."
-        ),
+        help_text=_("The unique identifier of the package this dependency is for."),
     )
     datafile_path = models.CharField(
         max_length=1024,
@@ -1976,13 +1975,14 @@ class DiscoveredDependency(
         max_length=64,
         help_text=_(
             "The identifier for the datafile handler used to obtain this dependency."
-        )
+        ),
     )
 
     @classmethod
     def create_from_data(cls, project, dependency_data):
         """
-        Creates and returns a DiscoveredDependency for a `project` from the `dependency_data`.
+        Creates and returns a DiscoveredDependency for a `project` from the
+        `dependency_data`.
         """
         if "resolved_package" in dependency_data:
             dependency_data.pop("resolved_package")

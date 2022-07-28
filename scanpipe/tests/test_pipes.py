@@ -313,7 +313,7 @@ class ScanPipePipesTest(TestCase):
         sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
         expected = {
             "type": CodebaseResource.Type.FILE,
-            "name": "notice",
+            "name": "notice.NOTICE",
             "extension": ".NOTICE",
             "is_text": True,
             "size": 1178,

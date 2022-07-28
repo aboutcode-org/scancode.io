@@ -54,18 +54,8 @@
       "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [
-        {
-          "purl": "pkg:npm/ava",
-          "scope": "devDependencies",
-          "is_runtime": false,
-          "is_optional": true,
-          "is_resolved": false,
-          "resolved_package": {},
-          "extracted_requirement": "0.0.3"
-        }
-      ],
-      "package_uid": "",
+      "dependencies": [],
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "npm",
         "is",
@@ -75,6 +65,20 @@
         "environment"
       ],
       "source_packages": []
+    }
+  ],
+  "dependencies": [
+    {
+      "purl": "pkg:npm/ava",
+      "extracted_requirement": "0.0.3",
+      "scope": "devDependencies",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": false,
+      "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "is-npm-1.0.0.tgz-extract/package/package.json",
+      "datasource_id": "npm_package_json"
     }
   ],
   "files": [
@@ -94,7 +98,7 @@
       "status": "scanned",
       "tag": "",
       "type": "file",
-      "name": "is-npm-1.0.0",
+      "name": "is-npm-1.0.0.tgz",
       "extension": ".tgz",
       "programming_language": "",
       "mime_type": "application/gzip",
@@ -102,7 +106,8 @@
       "is_text": false,
       "is_archive": true,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -120,7 +125,7 @@
       "status": "scanned",
       "tag": "",
       "type": "directory",
-      "name": "is-npm-1.0.0",
+      "name": "is-npm-1.0.0.tgz-extract",
       "extension": ".tgz-extract",
       "programming_language": "",
       "mime_type": "",
@@ -128,7 +133,8 @@
       "is_text": false,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -154,7 +160,8 @@
       "is_text": false,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -172,7 +179,7 @@
       "status": "scanned",
       "tag": "",
       "type": "file",
-      "name": "index",
+      "name": "index.js",
       "extension": ".js",
       "programming_language": "JavaScript",
       "mime_type": "text/plain",
@@ -180,12 +187,11 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
+      "for_packages": [],
       "path": "is-npm-1.0.0.tgz-extract/package/package.json",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
@@ -200,7 +206,7 @@
       "status": "application-package",
       "tag": "",
       "type": "file",
-      "name": "package",
+      "name": "package.json",
       "extension": ".json",
       "programming_language": "",
       "mime_type": "application/json",
@@ -208,7 +214,71 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": [
+        {
+          "md5": null,
+          "name": "is-npm",
+          "purl": "pkg:npm/is-npm@1.0.0",
+          "sha1": null,
+          "type": "npm",
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": "http://sindresorhus.com",
+              "name": "Sindre Sorhus",
+              "role": "author",
+              "type": "person",
+              "email": "sindresorhus@gmail.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": "https://github.com/sindresorhus/is-npm",
+          "version": "1.0.0",
+          "keywords": [
+            "npm",
+            "is",
+            "check",
+            "detect",
+            "env",
+            "environment"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {},
+          "qualifiers": {},
+          "description": "Check if your code is running as an npm script",
+          "notice_text": null,
+          "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+          "dependencies": [
+            {
+              "purl": "pkg:npm/ava",
+              "scope": "devDependencies",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": "0.0.3"
+            }
+          ],
+          "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "homepage_url": null,
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "npm_package_json",
+          "file_references": [],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": [
+            "MIT"
+          ],
+          "primary_language": "JavaScript",
+          "license_expression": "mit",
+          "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "repository_homepage_url": "https://www.npmjs.com/package/is-npm"
+        }
+      ]
     },
     {
       "for_packages": [],
@@ -301,7 +371,7 @@
       "status": "scanned",
       "tag": "",
       "type": "file",
-      "name": "readme",
+      "name": "readme.md",
       "extension": ".md",
       "programming_language": "",
       "mime_type": "text/plain",
@@ -309,7 +379,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     }
   ]
 }
