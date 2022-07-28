@@ -18,6 +18,8 @@
         <ul>
             <li class="is-active"><a>Summary</a></li>
             <li><a>Details</a></li>
+            <li><a>License Matches</a></li>
+            <li><a>License Matches (whole)</a></li>
         </ul>
     </div>
 
@@ -30,6 +32,20 @@
 
     <section class="tab-content is-hidden">
         {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
+    </section>
+
+    <section class="tab-content is-hidden">
+        {% for text in detected_licenses.complete_text_in_array %}
+        <div class="box" style="white-space: pre-wrap; max-height: 30vh; overflow: scroll;">
+            {{ text|safe }}
+        </div>
+        {% endfor %}
+    </section>
+
+    <section class="tab-content is-hidden">
+        <div class="box" style="white-space: pre-wrap; max-height: 30vh; overflow: scroll;">
+            {{ detected_licenses.complete_text|safe }}
+        </div>
     </section>
 </div>
 {% endblock %}

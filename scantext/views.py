@@ -21,14 +21,18 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import sys
+import attr
 import tempfile
 
 from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import render
 
+from licensedcode.stopwords import STOPWORDS
+from licensedcode.match import tokenize_matched_text
 from scantext.forms import LicenseScanForm
 
+TRACE_HIGHLIGHTED_TEXT = True
 SCANCODE_REPO_URL = "https://github.com/nexB/scancode-toolkit"
 SCANCODE_BASE_URL = SCANCODE_REPO_URL + "/tree/develop/src/licensedcode/data/licenses"
 SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
@@ -39,62 +43,71 @@ SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
 
 
 def license_scanview(request):
-    form = LicenseScanForm()
-    if request.method == "POST":
-        form = LicenseScanForm(request.POST, request.FILES)
-        if form.is_valid():
-            input_text = form.cleaned_data["input_text"]
-            input_file = request.FILES.get("input_file", False)
-            if not len(input_text) and not input_file:
-                message = "Please provide some text or a text file to scan."
-                messages.warning(request, message)
-                return render(
-                    request,
-                    "scantext/license_scan_form.html",
-                    {
-                        "form": LicenseScanForm(),
-                    },
-                )
+    if request.method != "POST":
+        return render(
+            request, "scantext/license_scan_form.html", {"form": LicenseScanForm()}
+        )
 
-            # The flush in tempfile is required to ensure that the content is
-            # written to the disk before it's read by get_licenses function
-            if len(input_text):
-                with tempfile.NamedTemporaryFile(mode="w") as temp_file:
-                    temp_file.write(input_text)
-                    temp_file.flush()
-                    expressions = get_licenses(location=temp_file.name)
-            elif input_file:
-                try:
-                    with tempfile.NamedTemporaryFile(mode="w") as temp_file:
-                        input_text = str(input_file.read(), "UTF-8")
-                        temp_file.write(input_text)
-                        temp_file.flush()
-                        expressions = get_licenses(location=temp_file.name)
-                except UnicodeDecodeError:
-                    message = "Please upload a valid text file."
-                    messages.warning(request, message)
-                    return render(
-                        request,
-                        "scantext/license_scan_form.html",
-                        {
-                            "form": LicenseScanForm(),
-                        },
-                    )
+    form = LicenseScanForm(request.POST, request.FILES)
+    if not form.is_valid():
+        return render(
+            request, "scantext/license_scan_form.html", {"form": LicenseScanForm()}
+        )
 
-            if not len(expressions["licenses"]):
-                if not len(expressions["license_expressions"]):
-                    message = "Couldn't detect any license from the provided input."
-                    messages.info(request, message)
-                    return render(
-                        request,
-                        "scantext/license_summary.html",
-                        {
-                            "text": input_text,
-                            "detected_licenses": expressions,
-                        },
-                    )
+    input_text = form.cleaned_data["input_text"]
+    input_file = request.FILES.get("input_file", False)
 
+    if input_text and input_file:
+        message = "Provide text or a text file but not both."
+        messages.warning(request, message)
+        return render(
+            request,
+            "scantext/license_scan_form.html",
+            {
+                "form": LicenseScanForm(),
+            },
+        )
+
+    if not input_text and not input_file:
+        message = "Provide text or a text file to scan."
+        messages.warning(request, message)
+        return render(
+            request,
+            "scantext/license_scan_form.html",
+            {
+                "form": LicenseScanForm(),
+            },
+        )
+
+    # The flush in tempfile is required to ensure that the content is
+    # written to the disk before it's read by get_licenses function
+    if input_text:
+        with tempfile.NamedTemporaryFile(mode="w") as temp_file:
+            temp_file.write(input_text)
+            temp_file.flush()
+            expressions = get_licenses(location=temp_file.name)
+    elif input_file:
+        try:
+            with tempfile.NamedTemporaryFile(mode="w") as temp_file:
+                input_text = str(input_file.read(), "UTF-8")
+                temp_file.write(input_text)
+                temp_file.flush()
+                expressions = get_licenses(location=temp_file.name)
+        except UnicodeDecodeError:
+            message = "Please upload a valid text file."
+            messages.warning(request, message)
             return render(
+                request,
+                "scantext/license_scan_form.html",
+                {
+                    "form": LicenseScanForm(),
+                },
+            )
+
+    if not expressions["licenses"] and not expressions["license_expressions"]:
+        message = "Couldn't detect any license from the provided input."
+        messages.info(request, message)
+        return render(
                 request,
                 "scantext/license_summary.html",
                 {
@@ -102,7 +115,18 @@ def license_scanview(request):
                     "detected_licenses": expressions,
                 },
             )
-    return render(request, "scantext/license_scan_form.html", {"form": form})
+    # if TRACE_HIGHLIGHTED_TEXT:
+    #     from pprint import pprint
+    #     pprint(expressions, indent=4)
+
+    return render(
+        request,
+        "scantext/license_summary.html",
+        {
+            "text": input_text,
+            "detected_licenses": expressions,
+        },
+    )
 
 
 def get_licenses(
@@ -123,10 +147,10 @@ def get_licenses(
     score lower than `minimum_score` are not returned.
     By Default ``unknown_licenses`` is set to True to detect unknown licenses.
     """
-    from licensedcode import cache
+    from licensedcode.cache import get_index
     from licensedcode.spans import Span
 
-    idx = cache.get_index()
+    idx = get_index()
 
     detected_licenses = []
     detected_expressions = []
@@ -141,6 +165,8 @@ def get_licenses(
 
     qspans = []
     match = None
+    complete_text = ''
+    complete_text_in_array = []
     for match in matches:
         qspans.append(match.qspan)
 
@@ -152,6 +178,18 @@ def get_licenses(
                 license_url_template=license_url_template,
             )
         )
+
+        complete_text += get_highlighted_lines(
+                match=match,
+                stopwords=STOPWORDS,
+                trace=TRACE_HIGHLIGHTED_TEXT,
+            )
+
+        complete_text_in_array.append(get_highlighted_lines(
+                match=match,
+                stopwords=STOPWORDS,
+                trace=TRACE_HIGHLIGHTED_TEXT,
+            ))
 
     percentage_of_license_text = 0
     if match:
@@ -167,6 +205,8 @@ def get_licenses(
             ("licenses", detected_licenses),
             ("license_expressions", detected_expressions),
             ("percentage_of_license_text", percentage_of_license_text),
+            ("complete_text_in_array", complete_text_in_array),
+            ("complete_text", complete_text)
         ]
     )
 
@@ -184,7 +224,9 @@ def _licenses_data_from_match(
     licenses = cache.get_licenses_db()
 
     # Returned matched_text will also include the text detected
-    matched_text = match.matched_text(whole_lines=False, highlight=True)
+    matched_text = match.matched_text(whole_lines=False, highlight=True,
+        highlight_matched='<matched>{}</matched>',
+        highlight_not_matched='<notmatched>{}</notmatched>',)
 
     detected_licenses = []
     for license_key in match.rule.license_keys():
@@ -239,3 +281,62 @@ def _licenses_data_from_match(
         matched_rule["rule_relevance"] = match.rule.relevance
 
     return detected_licenses
+
+def logger_debug(*args): pass
+
+def get_highlighted_lines(
+    match,
+    stopwords=STOPWORDS,
+    trace=TRACE_HIGHLIGHTED_TEXT,
+):
+    """
+    Yield highlighted text lines (with line returns) for the whole of the matched and unmatched text of a ``query``.
+    """
+    query = match.query
+    tokens = tokenize_matched_text(
+        location=query.location,
+        query_string=query.query_string,
+        dictionary=query.idx.dictionary,
+        start_line=match.query.start_line,
+        _cache={},
+    )
+    tokens = tag_matched_tokens(tokens=tokens, match_qspan=match.qspan)
+
+    header = '''<style>
+      .license-match.log {color: #f1f1f1; background-color: #222; font-family: monospace;}
+      .license-match.wrap {white-space: pre-wrap;}
+      .not-matched {color:#ac0000;}
+      .matched {color:#00ac00;}
+    </style>
+    <div class="license-match">'''
+    footer = '''</div>'''
+
+    body = ''
+    highlight_matched = '<span class="matched">{}</span>'
+    highlight_not_matched = '<span class="not-matched">{}</span>'
+    for token in tokens:
+        val = token.value
+        if token.is_text and val.lower() not in stopwords:
+            if token.is_matched:
+                body += highlight_matched.format(val)
+            else:
+                body += highlight_not_matched.format(val)
+        else:
+            # we do not highlight punctuation and stopwords.
+            body += highlight_not_matched.format(val)
+
+    return header + body + footer
+
+
+def tag_matched_tokens(tokens, match_qspan):
+    """
+    Yield Tokens from a ``tokens`` iterable of Token objects.
+    Known matched tokens are tagged as "is_matched=True" if they are matched.
+    """
+    for tok in tokens:
+        # tagged known matched tokens (useful for highlighting)
+        if tok.pos != -1 and tok.is_known and tok.pos in match_qspan:
+            tok = attr.evolve(tok, is_matched=True)
+        yield tok
+
+
