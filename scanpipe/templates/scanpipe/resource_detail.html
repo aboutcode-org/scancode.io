@@ -34,7 +34,7 @@
       </ul>
     </div>
 
-    <section class="mx-5">
+    <section class="mx-5 message is-dark">
       <div class="message-header is-flex">
         <p>
           {{ object.name }}
@@ -44,8 +44,8 @@
           <span style="font-size: 10px;">{{ object.path }}</span>
         </p>
         <div>
-          <button class="button prev-item is-hidden"><i class="fas fa-arrow-up"></i></button>
-          <button class="button next-item is-hidden"><i class="fas fa-arrow-down"></i></button>
+          <button class="button prev-btn is-dark" disabled onclick="previousValue();"><i class="fas fa-arrow-up"></i>&nbsp;Prev</button>
+          <button class="button next-btn is-dark" disabled onclick="nextValue();"><i class="fas fa-arrow-down"></i>&nbsp;Next</button>
         </div>
       </div>
       <div id="editor" style="min-height:730px; border: lightgrey 1px solid;">{{ file_content }}</div>
@@ -106,53 +106,55 @@
       editor.getSession().setAnnotations(annotations);
     }
 
-    const $selectionButtons = getAll('.tabs a');
-    const prevItem = document.querySelector('.prev-item');
-    const nextItem = document.querySelector('.next-item');
+    let valueIndex = 0;
+    const selectionButtons = getAll('.tabs a');
+    const prevBtn = document.querySelector('.prev-btn');
+    const nextBtn = document.querySelector('.next-btn');
 
     let detected_values = JSON.parse(document.querySelector("#detected_values").textContent);
+    let detected_data;
 
-    if ($selectionButtons.length > 0) {
-      $selectionButtons.forEach(function ($el) {
+    if (selectionButtons.length > 0) {
+      selectionButtons.forEach(function ($el) {
         $el.addEventListener('click', function () {
+          removeAllMarkers();
           let active_li = document.querySelector("li.is-active");
           if (active_li) active_li.classList.remove("is-active");
-          prevItem.classList.remove("is-hidden");
-          nextItem.classList.remove("is-hidden");
+
           $el.parentElement.classList.add("is-active");
-          let count = 0;
           let type = $el.getAttribute("data-type");
-          let detected_data = detected_values[type];
+          detected_data = detected_values[type];
+
           if (detected_data.length) {
+            valueIndex = 0;
             setDetectedValues(detected_data);
             editor.renderer.scrollToLine(detected_data[0].start_line - 1);
+            prevBtn.disabled = true;
+            nextBtn.disabled = false;
+          } else {
+            valueIndex = 0;
+            editor.renderer.scrollToLine(0);
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
           }
-          else {
-            removeAllMarkers();
-            nextItem.classList.add("is-hidden");
-            prevItem.classList.add("is-hidden");
-            editor.getSession().setAnnotations([]);
-          }
-
-          prevItem.addEventListener('click', function () {
-            count -= 1
-            if (count < 0){
-              count = 0
-            } else {
-              editor.renderer.scrollToLine(detected_data[count].start_line - 1);
-            }
-          })
-
-          nextItem.addEventListener('click', function () {
-            count += 1
-            if (count >= detected_data.length){
-              count = detected_data.length
-            } else {
-              editor.renderer.scrollToLine(detected_data[count].start_line - 1);
-            }
-          })
-        });
       });
+      });
+    }
+
+    function nextValue() {
+        if (valueIndex >= detected_data.length - 1) return false;
+        valueIndex++;
+        editor.renderer.scrollToLine(detected_data[valueIndex].start_line - 1);
+        nextBtn.disabled = (valueIndex == detected_data.length - 1) ? true : false; 
+        prevBtn.disabled = false;
+
+    }
+    function previousValue() {
+        if (valueIndex <= 0) return false;
+        valueIndex--;
+        editor.renderer.scrollToLine(detected_data[valueIndex].start_line - 1);
+        prevBtn.disabled  = (valueIndex == 0) ? true : false;
+        nextBtn.disabled = false;
     }
   </script>
 {% endblock %}
