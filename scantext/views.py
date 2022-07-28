@@ -299,7 +299,8 @@ def get_highlighted_lines(
     trace=TRACE_HIGHLIGHTED_TEXT,
 ):
     """
-    Yield highlighted text lines (with line returns) for the whole of the matched and unmatched text of a ``query``.
+    Yield highlighted text lines (with line returns) for the whole
+    of the matched and unmatched text of a ``query``.
     """
     query = match.query
     tokens = tokenize_matched_text(
@@ -312,12 +313,26 @@ def get_highlighted_lines(
     tokens = tag_matched_tokens(tokens=tokens, match_qspan=match.qspan)
 
     header = """<style>
-      .license-match.log {color: #f1f1f1; background-color: #222; font-family: monospace;}
-      .license-match.wrap {white-space: pre-wrap;}
-      .not-matched {color:#ac0000;}
-      .matched {color:#00ac00;}
+    .license-match.log {
+        color: #f1f1f1;
+        background-color: #222;
+        font-family: monospace;
+    }
+
+    .license-match.wrap {
+        white-space: pre-wrap;
+    }
+
+    .not-matched {
+        color: #ac0000;
+    }
+
+    .matched {
+        color: #00ac00;
+    }
     </style>
-    <div class="license-match">"""
+    <div class="license-match">
+    """
     footer = """</div>"""
 
     body = ""
