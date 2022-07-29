@@ -1756,6 +1756,9 @@ class DiscoveredPackage(
     def __str__(self):
         return self.package_url or str(self.uuid)
 
+    def get_absolute_url(self):
+        return reverse("package_detail", args=[self.project_id, self.pk])
+
     @property
     def purl(self):
         """

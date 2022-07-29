@@ -11,9 +11,9 @@
     <section class="mx-5 mb-3">
       <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
         <ul>
-            <li><a href="{% url 'project_list' %}">Projects</a></li>
-            <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
-            <li><a href="{% url 'project_resources' project.uuid %}">Codebase Resources</a></li>
+          <li><a href="{% url 'project_list' %}">Projects</a></li>
+          <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+          <li><a href="{% url 'project_resources' project.uuid %}">Codebase Resources</a></li>
         </ul>
       </nav>
     </section>

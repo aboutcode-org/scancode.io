@@ -37,6 +37,11 @@ urlpatterns = [
         name="resource_detail",
     ),
     path(
+        "project/<uuid:uuid>/packages/<int:pk>/",
+        views.DiscoveredPackageDetailsView.as_view(),
+        name="package_detail",
+    ),
+    path(
         "project/<uuid:uuid>/resources/",
         views.CodebaseResourceListView.as_view(),
         name="project_resources",
