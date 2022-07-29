@@ -44,7 +44,7 @@
           <span style="font-size: 10px;">{{ object.path }}</span>
         </p>
         <div>
-          <button class="button prev-btn is-dark" disabled><i class="fas fa-arrow-up mr-2"></i>Prev</button>
+          <button class="button previous-btn is-dark" disabled><i class="fas fa-arrow-up mr-2"></i>Previous</button>
           <button class="button next-btn is-dark" disabled><i class="fas fa-arrow-down mr-2"></i>Next</button>
         </div>
       </div>
@@ -106,9 +106,9 @@
         editor.getSession().setAnnotations(annotations);
     }
 
-    let valueIndex = 0;
+    let scrollPositionIndex = 0;
     const selectionButtons = getAll('.tabs a');
-    const prevBtn = document.querySelector('.prev-btn');
+    const previousBtn = document.querySelector('.previous-btn');
     const nextBtn = document.querySelector('.next-btn');
 
     let detected_values = JSON.parse(document.querySelector("#detected_values").textContent);
@@ -126,15 +126,15 @@
                 detected_data = detected_values[type];
 
                 if (detected_data.length) {
-                    valueIndex = 0;
+                    scrollPositionIndex = 0;
                     setDetectedValues(detected_data);
                     editor.renderer.scrollToLine(detected_data[0].start_line - 1);
-                    prevBtn.disabled = true;
-                    nextBtn.disabled = false;
+                    previousBtn.disabled = true;
+                    nextBtn.disabled = (detected_data.length - 1 == 0);
                 } else {
-                    valueIndex = 0;
+                    scrollPositionIndex = 0;
                     editor.renderer.scrollToLine(0);
-                    prevBtn.disabled = true;
+                    previousBtn.disabled = true;
                     nextBtn.disabled = true;
                 }
             });
@@ -142,19 +142,18 @@
     }
 
     nextBtn.addEventListener('click', function() {
-        if (valueIndex >= detected_data.length - 1) return false;
-        valueIndex++;
-        editor.renderer.scrollToLine(detected_data[valueIndex].start_line - 1);
-        nextBtn.disabled = (valueIndex == detected_data.length - 1) ? true : false;
-        prevBtn.disabled = false;
-
+        if (scrollPositionIndex >= detected_data.length - 1) return false;
+        scrollPositionIndex++;
+        editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
+        nextBtn.disabled = (scrollPositionIndex == detected_data.length - 1);
+        previousBtn.disabled = false;
     })
 
-    prevBtn.addEventListener('click', function() {
-        if (valueIndex <= 0) return false;
-        valueIndex--;
-        editor.renderer.scrollToLine(detected_data[valueIndex].start_line - 1);
-        prevBtn.disabled = (valueIndex == 0) ? true : false;
+    previousBtn.addEventListener('click', function() {
+        if (scrollPositionIndex <= 0) return false;
+        scrollPositionIndex--;
+        editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
+        previousBtn.disabled = (scrollPositionIndex == 0);
         nextBtn.disabled = false;
     })
   </script>
