@@ -57,7 +57,7 @@ class PassThroughRenderer(renderers.BaseRenderer):
         return data
 
 
-class ProjectFilterSet(django_filters.FilterSet):
+class ProjectFilterSet(django_filters.rest_framework.FilterSet):
     name = django_filters.CharFilter()
     name__contains = django_filters.CharFilter(
         field_name="name",
@@ -77,7 +77,6 @@ class ProjectFilterSet(django_filters.FilterSet):
         method="filter_names",
     )
     uuid = django_filters.CharFilter()
-    is_archived = django_filters.CharFilter()
 
     class Meta:
         model = Project
