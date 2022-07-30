@@ -46,6 +46,7 @@ from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -57,6 +58,7 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
+from scanpipe.tests import dependency_data1
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
@@ -1415,6 +1417,37 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         self.assertEqual(project_error_count, ProjectError.objects.count())
+
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
+    def test_scanpipe_discovered_dependency_model_create_from_data(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        dependency = DiscoveredDependency.create_from_data(project1, dependency_data1)
+        self.assertEqual(project1, dependency.project)
+        self.assertEqual("pkg:pypi/dask", dependency.purl)
+        self.assertEqual("dask<2023.0.0,>=2022.6.0", dependency.extracted_requirement)
+        self.assertEqual("install", dependency.scope)
+        self.assertTrue(dependency.is_runtime)
+        self.assertFalse(dependency.is_optional)
+        self.assertFalse(dependency.is_resolved)
+        self.assertEqual("pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692", dependency.dependency_uid)
+        self.assertEqual("pkg:pypi/daglib@0.3.2?uuid=4d1f048b-a155-4f95-8cf9-185ab872ab4c", dependency.for_package_uid)
+        self.assertEqual("daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO", dependency.datafile_path)
+        self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
+
+        dependency_count = DiscoveredDependency.objects.count()
+        incomplete_data = dict(dependency_data1)
+        incomplete_data["dependency_uid"] = ""
+        self.assertIsNone(DiscoveredDependency.create_from_data(project1, incomplete_data))
+        self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("DiscoveredDependency", error.model)
+        expected_message = "No values for the following required fields: dependency_uid"
+        self.assertEqual(expected_message, error.message)
+        self.assertEqual(dependency_data1["purl"], error.details["purl"])
+        self.assertEqual("", error.details["dependency_uid"])
+        self.assertEqual("", error.traceback)
+
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")

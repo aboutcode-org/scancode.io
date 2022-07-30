@@ -1983,11 +1983,66 @@ class DiscoveredDependency(
         Creates and returns a DiscoveredDependency for a `project` from the
         `dependency_data`.
         """
+        required_fields = ["purl", "dependency_uid"]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not dependency_data.get(field_name)
+        ]
+
+        if missing_values:
+            message = (
+                f"No values for the following required fields: "
+                f"{', '.join(missing_values)}"
+            )
+
+            project.add_error(error=message, model=cls, details=dependency_data)
+            return
+
         if "resolved_package" in dependency_data:
             dependency_data.pop("resolved_package")
-        discovered_dependency = cls(project=project, **dependency_data)
+
+        cleaned_dependency_data = {
+            field_name: value
+            for field_name, value in dependency_data.items()
+            if field_name in DiscoveredDependency.model_fields() and value
+        }
+        discovered_dependency = cls(
+            project=project,
+            **cleaned_dependency_data
+        )
         discovered_dependency.save()
+
         return discovered_dependency
+
+    def update_from_data(self, dependency_data):
+        """
+        Update this discovered dependency instance with the provided `dependency_data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = DiscoveredDependency.model_fields()
+        updated_fields = []
+
+        for field_name, value in dependency_data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if (
+                not current_value
+                or current_value != value
+            ):
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
