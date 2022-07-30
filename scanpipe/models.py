@@ -1940,10 +1940,12 @@ class DiscoveredDependency(
     )
     extracted_requirement = models.CharField(
         max_length=64,
+        blank=True,
         help_text=_("The version requirements of this dependency."),
     )
     scope = models.CharField(
         max_length=64,
+        blank=True,
         help_text=_("The scope of this dependency, how it is used in a project."),
     )
 
@@ -1957,6 +1959,7 @@ class DiscoveredDependency(
     )
     for_package_uid = models.CharField(
         max_length=1024,
+        blank=True,
         help_text=_("The unique identifier of the package this dependency is for."),
     )
     datafile_path = models.CharField(
@@ -1968,6 +1971,7 @@ class DiscoveredDependency(
     )
     datasource_id = models.CharField(
         max_length=64,
+        blank=True,
         help_text=_(
             "The identifier for the datafile handler used to obtain this dependency."
         ),
