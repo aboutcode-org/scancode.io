@@ -28,7 +28,7 @@
           {% for package in object_list %}
             <tr class="break-word">
               <td style="min-width: 500px;" title="{{ package.package_uid }}">
-                {{ package.package_url }}
+                <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
               </td>
               <td style="min-width: 300px; max-width: 400px;">
                 {{ package.license_expression|linebreaksbr }}
@@ -36,14 +36,17 @@
               <td title="{{ package.copyright }}">
                 {{ package.copyright|truncatechars:150|linebreaksbr }}
               </td>
-              <td>
+              <td class="is-clipped-list">
                 <ul>
-                  {% for resource in package.codebase_resources.all %}
+                  {% for resource in package.resources %}
                     <li>
-                      <a href="{{ resource.get_absolute_url }}">{{ resource }}</a>
+                      <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
                     </li>
                   {% endfor %}
                 </ul>
+                {% if package.resources|length > 5 %}
+                  <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
@@ -55,4 +58,21 @@
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
     {% endif %}
   </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    let $showClippedButton = getAll("button.show-clipped");
+
+    $showClippedButton.forEach(function ($el) {
+      $el.addEventListener("click", function () {
+        $el.parentNode.classList.toggle("is-clipped-list");
+        let text = $el.textContent;
+        if (text.startsWith("Show"))
+          $el.textContent = text.toggle("Show", "Hide");
+        else
+          $el.textContent = text.replace("Hide", "Show");
+      });
+    });
+  </script>
 {% endblock %}
