@@ -56,6 +56,14 @@ v31.0.0 (next)
 
   https://github.com/nexB/scancode.io/issues/413
 
+- Correctly extract symlinks in docker images. We now usse the latest
+  container-inspector to fix symlinks extraction in docker image tarballs.
+  In particular broken synlinks are not treated as an error anymore
+  and symlinks are extracted correctly.
+  https://github.com/nexB/scancode.io/issues/471
+  https://github.com/nexB/scancode.io/issues/407
+
+
 v30.2.0 (2021-12-17)
 --------------------
 
