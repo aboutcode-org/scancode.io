@@ -173,6 +173,9 @@ class ProjectSerializer(
         base_qs = project.discovereddependencys
         return {
             "total": base_qs.count(),
+            "is_runtime": base_qs.filter(is_runtime=True).count(),
+            "is_optional": base_qs.filter(is_optional=True).count(),
+            "is_resolved": base_qs.filter(is_resolved=True).count(),
         }
 
     def create(self, validated_data):
