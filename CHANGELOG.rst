@@ -56,6 +56,11 @@ v31.0.0 (next)
 
   https://github.com/nexB/scancode.io/issues/413
 
+- Add a Package details view including all model fields and resources.
+  Display only 5 resources per package in the list view.
+  https://github.com/nexB/scancode.io/issues/164
+  https://github.com/nexB/scancode.io/issues/464
+
 v30.2.0 (2021-12-17)
 --------------------
 
