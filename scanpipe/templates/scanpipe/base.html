@@ -49,7 +49,9 @@
       button.as-link {height: auto; line-height: initial; font-size: inherit;}
       .file.is-boxed.has-name .file-cta {border-width: medium; border-style: dashed;}
       progress.file-upload::before {content: 'Files upload: 'attr(value)'%'; position: absolute; top: -14%; left: 43%; color: black; font-weight: 400;}
-      .is-clipped ul {--snippet-spacing: 0.95rem; height: calc(8 * var(--snippet-spacing)); overflow: hidden;}
+      .is-clipped-list ul {--snippet-spacing: 0.95rem; height: calc(8 * var(--snippet-spacing)); overflow: hidden;}
+      .tab-content {display: none;}
+      .tab-content.is-active {display: revert !important;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>

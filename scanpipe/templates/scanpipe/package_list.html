@@ -36,7 +36,7 @@
               <td title="{{ package.copyright }}">
                 {{ package.copyright|truncatechars:150|linebreaksbr }}
               </td>
-              <td class="is-clipped">
+              <td class="is-clipped-list">
                 <ul>
                   {% for resource in package.resources %}
                     <li>
@@ -66,7 +66,7 @@
 
     $showClippedButton.forEach(function ($el) {
       $el.addEventListener("click", function () {
-        $el.parentNode.classList.toggle("is-clipped");
+        $el.parentNode.classList.toggle("is-clipped-list");
         let text = $el.textContent;
         if (text.startsWith("Show"))
           $el.textContent = text.toggle("Show", "Hide");

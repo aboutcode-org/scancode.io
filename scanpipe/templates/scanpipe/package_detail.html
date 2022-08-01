@@ -16,9 +16,30 @@
           <li><a href="{% url 'project_packages' project.uuid %}">Discovered Packages</a></li>
         </ul>
       </nav>
+      <div class="tags has-addons my-3">
+        <span class="tag is-dark">Package URL</span>
+        <span class="tag is-info">{{ object }}</span>
+      </div>
     </section>
 
-    <section class="mx-5">
+    <div class="tabs is-boxed mx-5">
+      <ul>
+        <li class="is-active">
+          <a data-target="tab-details">
+            <span class="icon is-small"><i class="fas fa-info-circle"></i></span>
+            <span>Details</span>
+          </a>
+        </li>
+        <li>
+          <a data-target="tab-resources">
+            <span class="icon is-small"><i class="fas fa-file-alt"></i></span>
+            <span>Resources</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <section id="tab-details" class="tab-content is-active mx-5">
       <dl>
         {% for field, value in package_data.items %}
           <dt class="has-text-weight-semibold">
@@ -29,6 +50,16 @@
           </dd>
         {% endfor %}
       </dl>
+    </section>
+
+    <section id="tab-resources" class="tab-content mx-5">
+      <ul>
+        {% for resource in object.resources %}
+          <li>
+            <a href="{{ resource.get_absolute_url }}">{{ resource }}</a>
+          </li>
+        {% endfor %}
+      </ul>
     </section>
 
   </div>
