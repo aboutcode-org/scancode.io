@@ -153,6 +153,7 @@
             {
               "purl": "pkg:npm/ava",
               "scope": "devDependencies",
+              "extra_data": {},
               "is_runtime": false,
               "is_optional": true,
               "is_resolved": false,
