@@ -4,6 +4,7 @@
     <tr>
       <th>Name</th>
       <th>Packages</th>
+      <th>Dependencies</th>
       <th>Resources</th>
       <th>Errors</th>
       <th>Pipelines</th>
@@ -25,6 +26,17 @@
         {% else %}
           <span>
             {{ project.package_count|intcomma }}
+          </span>
+        {% endif %}
+      </td>
+      <td>
+        {% if project.dependency_count %}
+          <a href="{% url 'project_dependencies' project.uuid %}">
+            {{ project.dependency_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.dependency_count|intcomma }}
           </span>
         {% endif %}
       </td>

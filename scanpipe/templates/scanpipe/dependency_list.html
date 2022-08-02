@@ -18,16 +18,16 @@
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
-            <th>purl</th>
-            <th>extracted_requirement</th>
+            <th>Package URL</th>
+            <th>Extracted requirement</th>
             <th>scope</th>
-            <th>is_runtime</th>
-            <th>is_optional</th>
-            <th>is_resolved</th>
-            <th>dependency_uid</th>
-            <th>for_package_uid</th>
-            <th>datafile_path</th>
-            <th>datasource_id</th>
+            <th>Is runtime</th>
+            <th>Is optional</th>
+            <th>Is resolved</th>
+            <th>Dependency UID</th>
+            <th>For package UID</th>
+            <th>Datafile path</th>
+            <th>Datasource ID</th>
           </tr>
         </thead>
         <tbody>
@@ -51,13 +51,13 @@
               <td>
                 {{ dependency.is_resolved }}
               </td>
-              <td style="min-width: 500px;" title="{{ dependency.dependency_uid }}">
+              <td style="min-width: 400px;" title="{{ dependency.dependency_uid }}">
                 {{ dependency.dependency_uid }}
               </td>
-              <td style="min-width: 500px;" title="{{ dependency.for_package_uid }}">
+              <td style="min-width: 400px;" title="{{ dependency.for_package_uid }}">
                 {{ dependency.for_package_uid }}
               </td>
-              <td style="min-width: 500px;" title="{{ dependency.datafile_path }}">
+              <td style="min-width: 400px;" title="{{ dependency.datafile_path }}">
                 {{ dependency.datafile_path }}
               </td>
               <td>

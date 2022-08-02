@@ -480,6 +480,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             self.projecterrors,
             self.runs,
             self.discoveredpackages,
+            self.discovereddependencys,
             self.codebaseresources,
         ]
 
