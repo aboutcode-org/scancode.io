@@ -345,7 +345,6 @@ def add_to_package(package_uid, resource, project):
     if not package_associated_with_resource:
         package = project.discoveredpackages.get(package_uid=package_uid)
         resource.discovered_packages.add(package)
-        resource.save()
 
 
 def assemble_packages(project):
