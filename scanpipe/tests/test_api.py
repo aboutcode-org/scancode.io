@@ -66,8 +66,7 @@ class ScanPipeAPITest(TransactionTestCase):
         )
         self.discovered_package1 = self.resource1.create_and_add_package(package_data1)
         self.discovered_dependency1 = DiscoveredDependency.create_from_data(
-            self.project1,
-            dependency_data1
+            self.project1, dependency_data1
         )
 
         self.project_list_url = reverse("project-list")

@@ -1775,14 +1775,6 @@ class CodebaseResource(
         """
         return [str(package) for package in self.discovered_packages.all()]
 
-    def for_packages_append(self, package_uid):
-        if not package_uid:
-            return
-        package = DiscoveredPackage.objects.get(package_uid=package_uid)
-        if package not in self.discovered_packages.all():
-            self.discovered_packages.add(package)
-            self.save()
-
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
@@ -2007,10 +1999,7 @@ class DiscoveredDependency(
             for field_name, value in dependency_data.items()
             if field_name in DiscoveredDependency.model_fields() and value
         }
-        discovered_dependency = cls(
-            project=project,
-            **cleaned_dependency_data
-        )
+        discovered_dependency = cls(project=project, **cleaned_dependency_data)
         discovered_dependency.save()
 
         return discovered_dependency
@@ -2032,10 +2021,7 @@ class DiscoveredDependency(
                 continue
 
             current_value = getattr(self, field_name, None)
-            if (
-                not current_value
-                or current_value != value
-            ):
+            if not current_value or current_value != value:
                 setattr(self, field_name, value)
                 updated_fields.append(field_name)
 

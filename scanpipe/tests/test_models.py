@@ -56,9 +56,9 @@ from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import dependency_data1
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
-from scanpipe.tests import dependency_data1
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
@@ -1430,15 +1430,26 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertTrue(dependency.is_runtime)
         self.assertFalse(dependency.is_optional)
         self.assertFalse(dependency.is_resolved)
-        self.assertEqual("pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692", dependency.dependency_uid)
-        self.assertEqual("pkg:pypi/daglib@0.3.2?uuid=4d1f048b-a155-4f95-8cf9-185ab872ab4c", dependency.for_package_uid)
-        self.assertEqual("daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO", dependency.datafile_path)
+        self.assertEqual(
+            "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+            dependency.dependency_uid,
+        )
+        self.assertEqual(
+            "pkg:pypi/daglib@0.3.2?uuid=4d1f048b-a155-4f95-8cf9-185ab872ab4c",
+            dependency.for_package_uid,
+        )
+        self.assertEqual(
+            "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            dependency.datafile_path,
+        )
         self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
 
         dependency_count = DiscoveredDependency.objects.count()
         incomplete_data = dict(dependency_data1)
         incomplete_data["dependency_uid"] = ""
-        self.assertIsNone(DiscoveredDependency.create_from_data(project1, incomplete_data))
+        self.assertIsNone(
+            DiscoveredDependency.create_from_data(project1, incomplete_data)
+        )
         self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
         error = project1.projecterrors.latest("created_date")
         self.assertEqual("DiscoveredDependency", error.model)
@@ -1447,7 +1458,6 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(dependency_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["dependency_uid"])
         self.assertEqual("", error.traceback)
-
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")

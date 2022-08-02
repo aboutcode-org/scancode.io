@@ -45,7 +45,6 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredDependency
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -334,6 +333,21 @@ def scan_for_application_packages(project):
     assemble_packages(project=project)
 
 
+def add_to_package(package_uid, resource, project):
+    """
+    Relate a DiscoveredPackage to `resource` from `project` using `package_uid`
+    """
+    if not package_uid:
+        return
+    package_associated_with_resource = resource.discovered_packages.filter(
+        package_uid=package_uid
+    ).exists()
+    if not package_associated_with_resource:
+        package = project.discoveredpackages.get(package_uid=package_uid)
+        resource.discovered_packages.add(package)
+        resource.save()
+
+
 def assemble_packages(project):
     """
     Create instances of DiscoveredPackage and DiscoveredDependency for `project`
@@ -376,6 +390,7 @@ def assemble_packages(project):
                 package_data=package_data,
                 resource=resource,
                 codebase=project,
+                package_adder=add_to_package,
             )
 
             for item in items:
@@ -389,7 +404,7 @@ def assemble_packages(project):
                     pipes.update_or_create_package(project, package_data)
                 elif isinstance(item, packagedcode_models.Dependency):
                     dependency_data = item.to_dict()
-                    _ = DiscoveredDependency.create_from_data(project, dependency_data)
+                    pipes.update_or_create_dependencies(project, dependency_data)
                 elif isinstance(item, CodebaseResource):
                     seen_resource_paths.add(item.path)
                 else:
