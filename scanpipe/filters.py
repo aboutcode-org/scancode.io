@@ -22,7 +22,6 @@
 
 from django.apps import apps
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 import django_filters
 from django_filters.widgets import LinkWidget
@@ -118,9 +117,11 @@ class BulmaDropdownWidget(BulmaLinkWidget):
 
 
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
     sort = django_filters.OrderingFilter(
-        label=_("Sort"),
+        label="Sort",
         fields=["created_date", "name"],
         empty_label="Newest",
         choices=(
@@ -131,7 +132,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         widget=BulmaDropdownWidget,
     )
     pipeline = django_filters.ChoiceFilter(
-        label=_("Pipeline"),
+        label="Pipeline",
         field_name="runs__pipeline_name",
         choices=scanpipe_app.get_pipeline_choices(include_blank=False),
         widget=BulmaDropdownWidget,
@@ -178,8 +179,8 @@ class JSONContainsFilter(django_filters.CharFilter):
 class InPackageFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
-            ("true", _("Yes")),
-            ("false", _("No")),
+            ("true", "Yes"),
+            ("false", "No"),
         )
         super().__init__(*args, **kwargs)
 
@@ -192,7 +193,9 @@ class InPackageFilter(django_filters.ChoiceFilter):
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="path", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="path", lookup_expr="icontains"
+    )
     in_package = InPackageFilter(label="In a Package")
 
     class Meta:
@@ -237,8 +240,10 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
-    purl = PackageURLFilter()
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    purl = PackageURLFilter(label="Package URL")
 
     class Meta:
         model = DiscoveredPackage
@@ -280,7 +285,9 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="message", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="message", lookup_expr="icontains"
+    )
 
     class Meta:
         model = ProjectError

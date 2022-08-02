@@ -43,6 +43,7 @@ from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
+from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
@@ -686,6 +687,18 @@ class CodebaseResourceDetailsView(
             "urls": self.get_annotations("urls", value_key="url"),
         }
 
+        return context
+
+
+class DiscoveredPackageDetailsView(
+    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+):
+    model = DiscoveredPackage
+    template_name = "scanpipe/package_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["package_data"] = DiscoveredPackageSerializer(self.object).data
         return context
 
 

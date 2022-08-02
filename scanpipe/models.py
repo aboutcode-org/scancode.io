@@ -1826,6 +1826,16 @@ class DiscoveredPackage(
     def __str__(self):
         return self.package_url or str(self.uuid)
 
+    def get_absolute_url(self):
+        return reverse("package_detail", args=[self.project_id, self.pk])
+
+    @cached_property
+    def resources(self):
+        """
+        Returns the assigned codebase_resources QuerySet as a list.
+        """
+        return list(self.codebase_resources.all())
+
     @property
     def purl(self):
         """

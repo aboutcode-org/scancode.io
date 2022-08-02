@@ -56,6 +56,18 @@ v31.0.0 (next)
 
   https://github.com/nexB/scancode.io/issues/413
 
+- Correctly extract symlinks in docker images. We now use the latest
+  container-inspector to fix symlinks extraction in docker image tarballs.
+  In particular broken symlinks are not treated as an error anymore
+  and symlinks are extracted correctly.
+  https://github.com/nexB/scancode.io/issues/471
+  https://github.com/nexB/scancode.io/issues/407
+
+- Add a Package details view including all model fields and resources.
+  Display only 5 resources per package in the list view.
+  https://github.com/nexB/scancode.io/issues/164
+  https://github.com/nexB/scancode.io/issues/464
+
 - Update application Package scanning step to reflect the updates in
   scancode-toolkit package scanning.
 

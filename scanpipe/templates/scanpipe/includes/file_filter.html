@@ -3,23 +3,17 @@
   <ul>
     <li{% if file_filter == "all" %} class="is-active"{% endif %}>
       <a href="?file-filter=all#resource-charts">
-        <span>
-          All Files <span class="tag is-link is-light is-rounded ml-1">{{ project.file_count|intcomma }}
-        </span>
+        All Files <span class="tag is-link is-light is-rounded ml-1">{{ project.file_count|intcomma }}</span>
       </a>
     </li>
     <li{% if file_filter == "in-a-package" %} class="is-active"{% endif %}>
       <a href="?file-filter=in-a-package#resource-charts">
-        <span>
-          In a Package <span class="tag is-link is-light is-rounded ml-1">{{ project.file_in_package_count|intcomma }}
-        </span>
+        In a Package <span class="tag is-link is-light is-rounded ml-1">{{ project.file_in_package_count|intcomma }}</span>
       </a>
     </li>
     <li{% if file_filter == "not-in-a-package" %} class="is-active"{% endif %}>
       <a href="?file-filter=not-in-a-package#resource-charts">
-        <span>
-          NOT in a Package <span class="tag is-link is-light is-rounded ml-1">{{ project.file_not_in_package_count|intcomma }}
-        </span>
+        NOT in a Package <span class="tag is-link is-light is-rounded ml-1">{{ project.file_not_in_package_count|intcomma }}</span>
       </a>
     </li>
   </ul>
