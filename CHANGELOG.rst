@@ -89,7 +89,21 @@ v31.0.0 (next)
 
 - Add the model DiscoveredDependency. This represents Package dependencies
   discovered in a Project. The ``scan_codebase`` and ``scan_packages`` pipelines
-  have been updated to create DiscoveredDepdendency objects.
+  have been updated to create DiscoveredDepdendency objects. The Project API has
+  been updated with new fields:
+  - ``dependency_count``
+    - The number of DiscoveredDependencies associated with the project.
+  - ``discovered_dependency_summary``
+    - A mapping that contains following fields:
+      - ``total``
+        - The number of DiscoveredDependencies associated with the project.
+      - ``is_runtime``
+        - The number of runtime dependencies.
+      - ``is_optional``
+        - The number of optional dependencies.
+      - ``is_resolved``
+        - The number of resolved dependencies.
+  These values are also available on the Project view.
   https://github.com/nexB/scancode.io/issues/447
 
 - The ``dependencies`` field has been removed from the DiscoveredPackage model.
