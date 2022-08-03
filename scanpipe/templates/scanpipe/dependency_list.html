@@ -28,6 +28,7 @@
             <th>For package UID</th>
             <th>Datafile path</th>
             <th>Datasource ID</th>
+            <th>From Packages</th>
           </tr>
         </thead>
         <tbody>
@@ -62,6 +63,18 @@
               </td>
               <td>
                 {{ dependency.datasource_id }}
+              </td>
+              <td class="is-clipped-list">
+                <ul>
+                  {% for package in dependency.packages %}
+                    <li>
+                      <a href="{{ package.get_absolute_url }}" title="{{ package.purl }}">{{ package.purl }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+                {% if dependency.packages|length > 5 %}
+                  <button class="button is-small is-fullwidth show-clipped">Show {{ dependency.packages|length }} packages</button>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}

@@ -1799,6 +1799,9 @@ class DiscoveredPackage(
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
+    dependencies = models.ManyToManyField(
+        "DiscoveredDependency", related_name="discovered_packages"
+    )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
     package_uid = models.CharField(
@@ -1928,6 +1931,10 @@ class DiscoveredPackage(
         return updated_fields
 
 
+class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
+    pass
+
+
 class DiscoveredDependency(
     ProjectRelatedModel,
     SaveProjectErrorMixin,
@@ -1980,11 +1987,20 @@ class DiscoveredDependency(
         ),
     )
 
+    objects = DiscoveredDependencyQuerySet.as_manager()
+
     def __str__(self):
         return self.purl or str(self.uuid)
 
     def get_absolute_url(self):
         return reverse("dependency_detail", args=[self.project_id, self.pk])
+
+    @cached_property
+    def packages(self):
+        """
+        Returns the associated discovered_packages QuerySet as a list.
+        """
+        return list(self.discovered_packages.all())
 
     @classmethod
     def create_from_data(cls, project, dependency_data):

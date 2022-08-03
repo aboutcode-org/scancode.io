@@ -111,11 +111,12 @@ def update_or_create_dependencies(project, dependency_data):
     Uses the `project` and `dependency_data` mapping to lookup and creates the
     DiscoveredDependency using its dependency_uid and for_package_uid as a unique key.
     """
+    for_package_uid = dependency_data.get("for_package_uid")
     try:
         dependency = DiscoveredDependency.objects.get(
             project=project,
             dependency_uid=dependency_data.get("dependency_uid"),
-            for_package_uid=dependency_data.get("for_package_uid"),
+            for_package_uid=for_package_uid,
         )
     except DiscoveredDependency.DoesNotExist:
         dependency = None
@@ -124,6 +125,14 @@ def update_or_create_dependencies(project, dependency_data):
         dependency.update_from_data(dependency_data)
     else:
         dependency = DiscoveredDependency.create_from_data(project, dependency_data)
+
+    if for_package_uid:
+        package_exists_in_project = project.discoveredpackages.filter(
+            package_uid=for_package_uid
+        ).exists()
+        if package_exists_in_project:
+            package = project.discoveredpackages.get(package_uid=for_package_uid)
+            dependency.discovered_packages.add(package)
 
     return dependency
 
