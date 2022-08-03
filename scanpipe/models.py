@@ -1980,6 +1980,12 @@ class DiscoveredDependency(
         ),
     )
 
+    def __str__(self):
+        return self.purl or str(self.uuid)
+
+    def get_absolute_url(self):
+        return reverse("dependency_detail", args=[self.project_id, self.pk])
+
     @classmethod
     def create_from_data(cls, project, dependency_data):
         """

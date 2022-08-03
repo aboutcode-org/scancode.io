@@ -27,7 +27,7 @@
         <tbody>
           {% for package in object_list %}
             <tr class="break-word">
-              <td style="min-width: 500px;" title="{{ package.package_uid }}">
+              <td style="min-width: 500px;" title="{{ package.package_url }}">
                 <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
               </td>
               <td style="min-width: 300px; max-width: 400px;">

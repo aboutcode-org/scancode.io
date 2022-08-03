@@ -34,7 +34,7 @@
           {% for dependency in object_list %}
             <tr class="break-word">
               <td style="min-width: 500px;" title="{{ dependency.purl }}">
-                {{ dependency.purl }}
+                <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
               </td>
               <td>
                 {{ dependency.extracted_requirement }}

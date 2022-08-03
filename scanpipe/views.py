@@ -43,6 +43,7 @@ from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
+from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
@@ -699,6 +700,18 @@ class DiscoveredPackageDetailsView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["package_data"] = DiscoveredPackageSerializer(self.object).data
+        return context
+
+
+class DiscoveredDependencyDetailsView(
+    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+):
+    model = DiscoveredDependency
+    template_name = "scanpipe/dependency_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["dependency_data"] = DiscoveredDependencySerializer(self.object).data
         return context
 
 
