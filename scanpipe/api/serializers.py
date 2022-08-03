@@ -231,6 +231,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "filename",
             "last_modified_date",
             "codebase_resources",
+            "dependencies",
         ]
 
 

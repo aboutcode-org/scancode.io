@@ -1265,6 +1265,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_no_licenses(self):
         return self.filter(licenses=[])
 
+    def has_package_data(self):
+        return self.filter(package_data__isnull=False)
+
     def licenses_categories(self, categories):
         return self.json_list_contains(
             field_name="licenses",

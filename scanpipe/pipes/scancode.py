@@ -352,52 +352,32 @@ def assemble_packages(project):
     Create instances of DiscoveredPackage and DiscoveredDependency for `project`
     from the parsed package data present in the CodebaseResources of `project`.
     """
+    logger.info(f"Project: {project}:\n" "Function: assemble_packages\n")
     seen_resource_paths = set()
-    package_data_resources_qs = project.codebaseresources.filter(
-        package_data__isnull=False
-    )
-    for resource in package_data_resources_qs:
+    for resource in project.codebaseresources.has_package_data():
         if resource.path in seen_resource_paths:
             continue
 
-        logger.info(
-            f"project: {project}:\n"
-            "function: assemble_packages\n"
-            f"Processing: CodebaseResource {resource.path}\n"
-        )
+        logger.info(f"Processing: CodebaseResource {resource.path}\n")
 
-        for package_data in resource.package_data:
-            package_data = packagedcode_models.PackageData.from_dict(
-                mapping=package_data
-            )
+        for package_mapping in resource.package_data:
+            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
 
-            logger.info(
-                f"project: {project}:\n"
-                "function: assemble_packages\n"
-                f"Processing: PackageData {package_data.purl}\n"
-            )
+            logger.info(f"Processing: PackageData {pd.purl}\n")
 
-            handler = get_package_handler(package_data)
+            handler = get_package_handler(pd)
 
-            logger.info(
-                f"project: {project}:\n"
-                "function: assemble_packages\n"
-                f"Selected: Package handler {handler}\n"
-            )
+            logger.info(f"Selected: Package handler {handler}\n")
 
             items = handler.assemble(
-                package_data=package_data,
+                package_data=pd,
                 resource=resource,
                 codebase=project,
                 package_adder=add_to_package,
             )
 
             for item in items:
-                logger.info(
-                    f"project: {project}:\n"
-                    "function: assemble_packages\n"
-                    f"Processing: item {item}\n"
-                )
+                logger.info(f"Processing: item {item}\n")
                 if isinstance(item, packagedcode_models.Package):
                     package_data = item.to_dict()
                     pipes.update_or_create_package(project, package_data)
@@ -407,11 +387,7 @@ def assemble_packages(project):
                 elif isinstance(item, CodebaseResource):
                     seen_resource_paths.add(item.path)
                 else:
-                    logger.info(
-                        f"project: {project}:\n"
-                        "function: assemble_packages\n"
-                        f"Unknown Package assembly item type: {item!r}\n"
-                    )
+                    logger.info(f"Unknown Package assembly item type: {item!r}\n")
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):
