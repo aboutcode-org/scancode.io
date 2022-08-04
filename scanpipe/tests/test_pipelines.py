@@ -197,6 +197,16 @@ class RootFSPipelineTest(TestCase):
         self.assertEqual("Error\nError", error.message)
 
 
+def sort_scanned_files_by_path(scan_data):
+    """
+    Sort the ``scan_data`` files in place. Return ``scan_data``.
+    """
+    files = scan_data.get("files")
+    if files:
+        files.sort(key=lambda x: x["path"])
+    return scan_data
+
+
 @tag("slow")
 class PipelinesIntegrationTest(TestCase):
     """
@@ -276,6 +286,7 @@ class PipelinesIntegrationTest(TestCase):
         result_json = json.loads(Path(result_file).read_text())
         result_json = self._normalize_package_uids(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
+        result_data = sort_scanned_files_by_path(result_data)
 
         if regen:
             expected_file.write_text(json.dumps(result_data, indent=2))
@@ -283,6 +294,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_json = json.loads(expected_file.read_text())
         expected_json = self._normalize_package_uids(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
+        expected_data = sort_scanned_files_by_path(expected_data)
 
         self.assertEqual(expected_data, result_data)
 
@@ -383,11 +395,35 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(109, project1.codebaseresources.count())
-        self.assertEqual(14, project1.discoveredpackages.count())
-
         result_file = output.to_json(project1)
         expected_file = self.data_location / "alpine_3_15_4_scan_codebase.json"
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
+    def test_scanpipe_docker_pipeline_does_not_report_errors_for_broken_symlinks(self):
+        pipeline_name = "docker"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "minitag.tar"
+        input_location = self.data_location / "image-with-symlinks" / filename
+        project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        project_errors = [pe.message for pe in project1.projecterrors.all()]
+        self.assertEqual(1, len(project_errors))
+        self.assertEqual("Distro not found.", project_errors[0])
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data_location
+            / "image-with-symlinks"
+            / (filename + "-expected-scan.json")
+        )
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
     @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
@@ -435,6 +471,50 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "debian_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
+    def test_scanpipe_docker_pipeline_debian_mini_license_integration_test(self):
+        pipeline_name = "docker"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "docker-mini-with-license-debian.tar.xz"
+        input_location = self.data_location / filename
+        project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data_location
+            / "docker-mini-with-license-debian.tar.xz-docker-scan.json"
+        )
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
+    def test_scanpipe_docker_pipeline_alpine_mini_license_integration_test(self):
+        pipeline_name = "docker"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "docker-mini-with-license-alpine.tar.xz"
+        input_location = self.data_location / filename
+        project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data_location
+            / "docker-mini-with-license-alpine.tar.xz-docker-scan.json"
+        )
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
     def test_scanpipe_docker_pipeline_distroless_debian_integration_test(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
@@ -449,9 +529,6 @@ class PipelinesIntegrationTest(TestCase):
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
-
-        self.assertEqual(2302, project1.codebaseresources.count())
-        self.assertEqual(8, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "gcr_io_distroless_base_scan_codebase.json"
