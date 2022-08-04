@@ -1515,6 +1515,12 @@ class CodebaseResource(
         help_text=_("List of Package data detected from this CodebaseResource"),
     )
 
+    package_data = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("List of Package data detected from this CodebaseResource"),
+    )
+
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
