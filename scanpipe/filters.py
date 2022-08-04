@@ -32,6 +32,7 @@ from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -361,6 +362,14 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyright",
             "manifest_path",
             "contains_source_code",
+        ]
+
+
+class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    class Meta:
+        model = DiscoveredDependency
+        fields = [
+            "purl",
         ]
 
 

@@ -18,6 +18,17 @@
         {% endif %}
       </td>
       <td>
+        {% if project.dependency_count %}
+          <a href="{% url 'project_dependencies' project.uuid %}">
+            {{ project.dependency_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.dependency_count|intcomma }}
+          </span>
+        {% endif %}
+      </td>
+      <td>
         {% if project.codebaseresources_count %}
           <a href="{% url 'project_resources' project.uuid %}">
             {{ project.codebaseresources_count|intcomma }}

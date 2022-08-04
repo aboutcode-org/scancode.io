@@ -30,6 +30,7 @@ from time import sleep
 from django.db.models import Count
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
 
@@ -102,6 +103,37 @@ def update_or_create_package(project, package_data, codebase_resource=None):
             package = DiscoveredPackage.create_from_data(project, package_data)
 
     return package
+
+
+def update_or_create_dependencies(project, dependency_data):
+    """
+    Gets, updates or creates a DiscoveredDependency then returns it.
+    Uses the `project` and `dependency_data` mapping to lookup and creates the
+    DiscoveredDependency using its dependency_uid and for_package_uid as a unique key.
+    """
+    for_package_uid = dependency_data.get("for_package_uid")
+    try:
+        dependency = project.discovereddependencys.get(
+            dependency_uid=dependency_data.get("dependency_uid"),
+            for_package_uid=for_package_uid,
+        )
+    except DiscoveredDependency.DoesNotExist:
+        dependency = None
+
+    if dependency:
+        dependency.update_from_data(dependency_data)
+    else:
+        dependency = DiscoveredDependency.create_from_data(project, dependency_data)
+
+    if for_package_uid:
+        package_exists_in_project = project.discoveredpackages.filter(
+            package_uid=for_package_uid
+        ).exists()
+        if package_exists_in_project:
+            package = project.discoveredpackages.get(package_uid=for_package_uid)
+            dependency.discovered_packages.add(package)
+
+    return dependency
 
 
 def analyze_scanned_files(project):

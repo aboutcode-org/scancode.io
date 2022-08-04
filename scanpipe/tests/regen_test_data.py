@@ -80,6 +80,7 @@ class RegenTestData(TestCase):
             "scanpipe.run",
             "scanpipe.codebaseresource",
             "scanpipe.discoveredpackage",
+            "scanpipe.discovereddependency",
         ]
         call_command("dumpdata", models, indent=2, output=fixtures_test_file_location)
 

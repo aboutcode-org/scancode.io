@@ -1,0 +1,89 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-desktop mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+      </div>
+      {% include 'scanpipe/includes/pagination_header.html' with verbose_name="Packages" %}
+      {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
+    </section>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <div class="table-container">
+      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Package URL</th>
+            <th>Extracted requirement</th>
+            <th>scope</th>
+            <th>Is runtime</th>
+            <th>Is optional</th>
+            <th>Is resolved</th>
+            <th>Dependency UID</th>
+            <th>For package UID</th>
+            <th>Datafile path</th>
+            <th>Datasource ID</th>
+            <th>From Packages</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dependency in object_list %}
+            <tr class="break-word">
+              <td style="min-width: 500px;" title="{{ dependency.purl }}">
+                <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
+              </td>
+              <td>
+                {{ dependency.extracted_requirement }}
+              </td>
+              <td>
+                {{ dependency.scope }}
+              </td>
+              <td>
+                {{ dependency.is_runtime }}
+              </td>
+              <td>
+                {{ dependency.is_optional }}
+              </td>
+              <td>
+                {{ dependency.is_resolved }}
+              </td>
+              <td style="min-width: 400px;" title="{{ dependency.dependency_uid }}">
+                {{ dependency.dependency_uid }}
+              </td>
+              <td style="min-width: 400px;" title="{{ dependency.for_package_uid }}">
+                {{ dependency.for_package_uid }}
+              </td>
+              <td style="min-width: 400px;" title="{{ dependency.datafile_path }}">
+                {{ dependency.datafile_path }}
+              </td>
+              <td>
+                {{ dependency.datasource_id }}
+              </td>
+              <td class="is-clipped-list">
+                <ul>
+                  {% for package in dependency.packages %}
+                    <li>
+                      <a href="{{ package.get_absolute_url }}" title="{{ package.purl }}">{{ package.purl }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+                {% if dependency.packages|length > 5 %}
+                  <button class="button is-small is-fullwidth show-clipped">Show {{ dependency.packages|length }} packages</button>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+    {% endif %}
+  </div>
+{% endblock %}

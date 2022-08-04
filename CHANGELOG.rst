@@ -99,7 +99,8 @@ v31.0.0 (2022-08-25)
   - Package data detected from a file are now stored on the
     CodebaseResource.package_data field.
   - A second processing step is now done after scanning for Package data, where
-    Package Resources are determined and DiscoveredPackages are created.
+    Package Resources are determined and DiscoveredPackages and
+    DiscoveredDependencies are created.
 
   https://github.com/nexB/scancode.io/issues/444
 
@@ -108,6 +109,31 @@ v31.0.0 (2022-08-25)
   ``DiscoveredPackage.package_uid`` is not present. This is done to reflect the
   how scancode-toolkit's JSON output returns ``package_uid``s in the
   ``for_packages`` field for Resources.
+
+- Add the model DiscoveredDependency. This represents Package dependencies
+  discovered in a Project. The ``scan_codebase`` and ``scan_packages`` pipelines
+  have been updated to create DiscoveredDepdendency objects. The Project API has
+  been updated with new fields:
+
+  - ``dependency_count``
+    - The number of DiscoveredDependencies associated with the project.
+
+  - ``discovered_dependency_summary``
+    - A mapping that contains following fields:
+
+      - ``total``
+        - The number of DiscoveredDependencies associated with the project.
+      - ``is_runtime``
+        - The number of runtime dependencies.
+      - ``is_optional``
+        - The number of optional dependencies.
+      - ``is_resolved``
+        - The number of resolved dependencies.
+
+  These values are also available on the Project view.
+  https://github.com/nexB/scancode.io/issues/447
+
+- The ``dependencies`` field has been removed from the DiscoveredPackage model.
 
 v30.2.0 (2021-12-17)
 --------------------

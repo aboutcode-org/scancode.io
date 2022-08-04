@@ -41,6 +41,7 @@ from scancode.cli_test_utils import purl_with_fake_uuid
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -205,7 +206,7 @@ class ScanPipePipesTest(TestCase):
         with output_file.open() as f:
             results = json.loads(f.read())
 
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["headers"]))
@@ -531,9 +532,11 @@ class ScanPipePipesTest(TestCase):
 
         scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_discovered_dependencies(project, virtual_codebase)
 
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertEqual(1, DiscoveredDependency.objects.count())
         # Make sure the root is not created as a CodebaseResource, walk(skip_root=True)
         self.assertFalse(CodebaseResource.objects.filter(path="codebase").exists())
 
@@ -550,8 +553,10 @@ class ScanPipePipesTest(TestCase):
         # The functions can be called again and existing objects are skipped
         scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_discovered_dependencies(project, virtual_codebase)
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertEqual(1, DiscoveredDependency.objects.count())
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
         project = Project.objects.create(name="asgiref")
@@ -563,6 +568,7 @@ class ScanPipePipesTest(TestCase):
 
         scanpipe_app.license_policies_index = license_policies_index
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_discovered_dependencies(project, virtual_codebase)
         scancode.create_codebase_resources(project, virtual_codebase)
         resources = project.codebaseresources
 

@@ -36,6 +36,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from scanpipe.api.serializers import CodebaseResourceSerializer
+from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import PipelineSerializer
 from scanpipe.api.serializers import ProjectErrorSerializer
@@ -177,6 +178,16 @@ class ProjectViewSet(
 
         paginated_qs = self.paginate_queryset(queryset)
         serializer = DiscoveredPackageSerializer(paginated_qs, many=True)
+
+        return Response(serializer.data)
+
+    @action(detail=True)
+    def dependencies(self, request, *args, **kwargs):
+        project = self.get_object()
+        queryset = project.discovereddependencys.all()
+
+        paginated_qs = self.paginate_queryset(queryset)
+        serializer = DiscoveredDependencySerializer(paginated_qs, many=True)
 
         return Response(serializer.data)
 

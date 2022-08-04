@@ -26,6 +26,7 @@ from rest_framework import serializers
 
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -113,6 +114,7 @@ class ProjectSerializer(
     input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_package_summary = serializers.SerializerMethodField()
+    discovered_dependency_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -136,8 +138,10 @@ class ProjectSerializer(
             "error_count",
             "resource_count",
             "package_count",
+            "dependency_count",
             "codebase_resources_summary",
             "discovered_package_summary",
+            "discovered_dependency_summary",
         )
 
         exclude_from_list_view = [
@@ -147,8 +151,10 @@ class ProjectSerializer(
             "error_count",
             "resource_count",
             "package_count",
+            "dependency_count",
             "codebase_resources_summary",
             "discovered_package_summary",
+            "discovered_dependency_summary",
         ]
 
     def get_codebase_resources_summary(self, project):
@@ -161,6 +167,15 @@ class ProjectSerializer(
             "total": base_qs.count(),
             "with_missing_resources": base_qs.exclude(missing_resources=[]).count(),
             "with_modified_resources": base_qs.exclude(modified_resources=[]).count(),
+        }
+
+    def get_discovered_dependency_summary(self, project):
+        base_qs = project.discovereddependencys
+        return {
+            "total": base_qs.count(),
+            "is_runtime": base_qs.filter(is_runtime=True).count(),
+            "is_optional": base_qs.filter(is_optional=True).count(),
+            "is_resolved": base_qs.filter(is_resolved=True).count(),
         }
 
     def create(self, validated_data):
@@ -216,6 +231,16 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "filename",
             "last_modified_date",
             "codebase_resources",
+            "dependencies",
+        ]
+
+
+class DiscoveredDependencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscoveredDependency
+        exclude = [
+            "id",
+            "project",
         ]
 
 
@@ -257,6 +282,7 @@ def get_model_serializer(model_class):
     serializer = {
         CodebaseResource: CodebaseResourceSerializer,
         DiscoveredPackage: DiscoveredPackageSerializer,
+        DiscoveredDependency: DiscoveredDependencySerializer,
         ProjectError: ProjectErrorSerializer,
     }.get(model_class, None)
 

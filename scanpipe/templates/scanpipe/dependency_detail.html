@@ -1,0 +1,49 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    <section class="mx-5 mb-3">
+      <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
+        <ul>
+          <li><a href="{% url 'project_list' %}">Projects</a></li>
+          <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+          <li><a href="{% url 'project_dependencies' project.uuid %}">Discovered Dependencies</a></li>
+        </ul>
+      </nav>
+      <div class="tags has-addons my-3">
+        <span class="tag is-dark">Package URL</span>
+        <span class="tag is-info">{{ object }}</span>
+      </div>
+    </section>
+
+    <div class="tabs is-boxed mx-5">
+      <ul>
+        <li class="is-active">
+          <a data-target="tab-details">
+            <span class="icon is-small"><i class="fas fa-info-circle"></i></span>
+            <span>Details</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <section id="tab-details" class="tab-content is-active mx-5">
+      <dl>
+        {% for field, value in dependency_data.items %}
+          <dt class="has-text-weight-semibold">
+            {{ field }}
+          </dt>
+          <dd class="mb-4">
+            <pre>{{ value|default_if_none:'' }}</pre>
+          </dd>
+        {% endfor %}
+      </dl>
+    </section>
+  </div>
+{% endblock %}

@@ -511,6 +511,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             self.projecterrors,
             self.runs,
             self.discoveredpackages,
+            self.discovereddependencys,
             self.codebaseresources,
         ]
 
@@ -876,6 +877,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Returns the number of packages related to this project.
         """
         return self.discoveredpackages.count()
+
+    @cached_property
+    def dependency_count(self):
+        """
+        Returns the number of dependencies related to this project.
+        """
+        return self.discovereddependencys.count()
 
     @cached_property
     def error_count(self):
@@ -1825,13 +1833,11 @@ class DiscoveredPackage(
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
+    dependencies = models.ManyToManyField(
+        "DiscoveredDependency", related_name="discovered_packages"
+    )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
-    dependencies = models.JSONField(
-        default=list,
-        blank=True,
-        help_text=_("A list of dependencies for this package."),
-    )
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
@@ -1950,6 +1956,139 @@ class DiscoveredPackage(
 
             current_value = getattr(self, field_name, None)
             if not current_value or (current_value != value and override):
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
+
+
+class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
+    pass
+
+
+class DiscoveredDependency(
+    ProjectRelatedModel,
+    SaveProjectErrorMixin,
+):
+    """
+    A project's Discovered Dependencies are records of the dependencies used by
+    system and application packages discovered in the code under analysis.
+    """
+
+    purl = models.CharField(
+        max_length=1024,
+        help_text=_("The Package URL of this dependency."),
+    )
+    extracted_requirement = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_("The version requirements of this dependency."),
+    )
+    scope = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_("The scope of this dependency, how it is used in a project."),
+    )
+
+    is_runtime = models.BooleanField(default=False)
+    is_optional = models.BooleanField(default=False)
+    is_resolved = models.BooleanField(default=False)
+
+    dependency_uid = models.CharField(
+        max_length=1024,
+        help_text=_("The unique identifier of this dependency."),
+    )
+    for_package_uid = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_("The unique identifier of the package this dependency is for."),
+    )
+    datafile_path = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "The relative path to the datafile where this dependency was detected from."
+        ),
+    )
+    datasource_id = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_(
+            "The identifier for the datafile handler used to obtain this dependency."
+        ),
+    )
+
+    objects = DiscoveredDependencyQuerySet.as_manager()
+
+    def __str__(self):
+        return self.purl or str(self.uuid)
+
+    def get_absolute_url(self):
+        return reverse("dependency_detail", args=[self.project_id, self.pk])
+
+    @cached_property
+    def packages(self):
+        """
+        Returns the associated discovered_packages QuerySet as a list.
+        """
+        return list(self.discovered_packages.all())
+
+    @classmethod
+    def create_from_data(cls, project, dependency_data):
+        """
+        Creates and returns a DiscoveredDependency for a `project` from the
+        `dependency_data`.
+        """
+        required_fields = ["purl", "dependency_uid"]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not dependency_data.get(field_name)
+        ]
+
+        if missing_values:
+            message = (
+                f"No values for the following required fields: "
+                f"{', '.join(missing_values)}"
+            )
+
+            project.add_error(error=message, model=cls, details=dependency_data)
+            return
+
+        if "resolved_package" in dependency_data:
+            dependency_data.pop("resolved_package")
+
+        cleaned_dependency_data = {
+            field_name: value
+            for field_name, value in dependency_data.items()
+            if field_name in DiscoveredDependency.model_fields() and value
+        }
+        discovered_dependency = cls(project=project, **cleaned_dependency_data)
+        discovered_dependency.save()
+
+        return discovered_dependency
+
+    def update_from_data(self, dependency_data):
+        """
+        Update this discovered dependency instance with the provided `dependency_data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = DiscoveredDependency.model_fields()
+        updated_fields = []
+
+        for field_name, value in dependency_data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if not current_value or current_value != value:
                 setattr(self, field_name, value)
                 updated_fields.append(field_name)
 

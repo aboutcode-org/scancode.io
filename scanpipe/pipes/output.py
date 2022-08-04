@@ -125,6 +125,7 @@ class JSONResultsGenerator:
         yield "{\n"
         yield from self.serialize(label="headers", generator=self.get_headers)
         yield from self.serialize(label="packages", generator=self.get_packages)
+        yield from self.serialize(label="dependencies", generator=self.get_dependencies)
         yield from self.serialize(label="files", generator=self.get_files, latest=True)
         yield "}"
 
@@ -177,6 +178,16 @@ class JSONResultsGenerator:
 
         for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)
+
+    def get_dependencies(self, project):
+        from scanpipe.api.serializers import DiscoveredDependencySerializer
+
+        dependencies = project.discovereddependencys.all().order_by(
+            "purl",
+        )
+
+        for obj in dependencies.iterator():
+            yield self.encode(DiscoveredDependencySerializer(obj).data)
 
     def get_files(self, project):
         from scanpipe.api.serializers import CodebaseResourceSerializer
