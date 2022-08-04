@@ -113,8 +113,7 @@ def update_or_create_dependencies(project, dependency_data):
     """
     for_package_uid = dependency_data.get("for_package_uid")
     try:
-        dependency = DiscoveredDependency.objects.get(
-            project=project,
+        dependency = project.discovereddependencys.get(
             dependency_uid=dependency_data.get("dependency_uid"),
             for_package_uid=for_package_uid,
         )

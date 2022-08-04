@@ -861,7 +861,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         return self.projecterrors.count()
 
-    @property
+    @cached_property
     def has_single_resource(self):
         """
         Return True if we only have a single CodebaseResource associated to this
@@ -1639,15 +1639,6 @@ class CodebaseResource(
         """
         parent_path = self.parent_path()
         return parent_path and self.project.codebaseresources.get(path=parent_path)
-
-    def has_siblings(self, codebase=None):
-        """
-        Return True is this CodebaseResource has siblings.
-
-        `codebase` is not used in this context but required for compatibility
-        with the commoncode.resource.Codebase class API.
-        """
-        return self.has_parent() and self.parent(codebase).has_children()
 
     def siblings(self, codebase=None):
         """
