@@ -36,6 +36,8 @@ from django.conf import settings
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
+from packagedcode import get_package_handler
+from packagedcode import models as packagedcode_models
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
@@ -230,10 +232,9 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Saves the resource scan package results in the database.
     Creates project errors if any occurred during the scan.
     """
-    packages = scan_results.get("package_data", [])
-    if packages:
-        for package_data in packages:
-            codebase_resource.create_and_add_package(package_data)
+    package_data = scan_results.get("package_data", [])
+    if package_data:
+        codebase_resource.package_data = package_data
         codebase_resource.status = "application-package"
         codebase_resource.save()
 
@@ -310,17 +311,83 @@ def scan_for_files(project):
 
 def scan_for_application_packages(project):
     """
-    Runs a package scan on files without a status for a `project`.
+    Runs a package scan on files without a status for a `project`, then create
+    DiscoveredPackage instances from the detected package data.
 
-    Multiprocessing is enabled by default on this pipe, the number of processes can be
-    controlled through the SCANCODEIO_PROCESSES setting.
+    Multiprocessing is enabled by default on this pipe, the number of processes
+    can be controlled through the SCANCODEIO_PROCESSES setting.
     """
     resource_qs = project.codebaseresources.no_status()
+
+    # Collect detected Package data and save it to the CodebaseResource it was
+    # detected from
     _scan_and_save(
         resource_qs=resource_qs,
         scan_func=scan_for_package_data,
         save_func=save_scan_package_results,
     )
+
+    # Iterate through CodebaseResources with Package data and handle them using
+    # the proper Package handler from packagedcode
+    assemble_packages(project=project)
+
+
+def add_to_package(package_uid, resource, project):
+    """
+    Relate a DiscoveredPackage to `resource` from `project` using `package_uid`
+    """
+    if not package_uid:
+        return
+    package_associated_with_resource = resource.discovered_packages.filter(
+        package_uid=package_uid
+    ).exists()
+    if not package_associated_with_resource:
+        package = project.discoveredpackages.get(package_uid=package_uid)
+        resource.discovered_packages.add(package)
+
+
+def assemble_packages(project):
+    """
+    Create instances of DiscoveredPackage and DiscoveredDependency for `project`
+    from the parsed package data present in the CodebaseResources of `project`.
+    """
+    logger.info(f"Project: {project}:\n" "Function: assemble_packages\n")
+    seen_resource_paths = set()
+    for resource in project.codebaseresources.has_package_data():
+        if resource.path in seen_resource_paths:
+            continue
+
+        logger.info(f"Processing: CodebaseResource {resource.path}\n")
+
+        for package_mapping in resource.package_data:
+            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+
+            logger.info(f"Processing: PackageData {pd.purl}\n")
+
+            handler = get_package_handler(pd)
+
+            logger.info(f"Selected: Package handler {handler}\n")
+
+            items = handler.assemble(
+                package_data=pd,
+                resource=resource,
+                codebase=project,
+                package_adder=add_to_package,
+            )
+
+            for item in items:
+                logger.info(f"Processing: item {item}\n")
+                if isinstance(item, packagedcode_models.Package):
+                    package_data = item.to_dict()
+                    pipes.update_or_create_package(project, package_data)
+                elif isinstance(item, packagedcode_models.Dependency):
+                    # We will handle Dependencies when we properly implement the
+                    # DiscoveredDependency model
+                    pass
+                elif isinstance(item, CodebaseResource):
+                    seen_resource_paths.add(item.path)
+                else:
+                    logger.info(f"Unknown Package assembly item type: {item!r}\n")
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):

@@ -121,6 +121,71 @@
       "is_archive": false,
       "is_key_file": true,
       "is_media": false,
+      "package_data": [
+        {
+          "md5": null,
+          "name": "is-npm",
+          "purl": "pkg:npm/is-npm@1.0.0",
+          "sha1": null,
+          "type": "npm",
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": "http://sindresorhus.com",
+              "name": "Sindre Sorhus",
+              "role": "author",
+              "type": "person",
+              "email": "sindresorhus@gmail.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": "https://github.com/sindresorhus/is-npm",
+          "version": "1.0.0",
+          "keywords": [
+            "npm",
+            "is",
+            "check",
+            "detect",
+            "env",
+            "environment"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {},
+          "qualifiers": {},
+          "description": "Check if your code is running as an npm script",
+          "notice_text": null,
+          "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+          "dependencies": [
+            {
+              "purl": "pkg:npm/ava",
+              "scope": "devDependencies",
+              "extra_data": {},
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": "0.0.3"
+            }
+          ],
+          "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "homepage_url": null,
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "npm_package_json",
+          "file_references": [],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": [
+            "MIT"
+          ],
+          "primary_language": "JavaScript",
+          "license_expression": "mit",
+          "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "repository_homepage_url": "https://www.npmjs.com/package/is-npm"
+        }
+      ],
       "content": "{\n  \"name\": \"is-npm\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Check if your code is running as an npm script\",\n  \"license\": \"MIT\",\n  \"repository\": \"sindresorhus/is-npm\",\n  \"author\": {\n    \"name\": \"Sindre Sorhus\",\n    \"email\": \"sindresorhus@gmail.com\",\n    \"url\": \"http://sindresorhus.com\"\n  },\n  \"engines\": {\n    \"node\": \">=0.10.0\"\n  },\n  \"scripts\": {\n    \"test\": \"node test.js\"\n  },\n  \"files\": [\n    \"index.js\"\n  ],\n  \"keywords\": [\n    \"npm\",\n    \"is\",\n    \"check\",\n    \"detect\",\n    \"env\",\n    \"environment\"\n  ],\n  \"devDependencies\": {\n    \"ava\": \"0.0.3\"\n  }\n}\n"
     },
     {
@@ -225,6 +290,7 @@
       "is_archive": false,
       "is_key_file": true,
       "is_media": false,
+      "package_data": [],
       "content": "# is-npm [![Build Status](https://travis-ci.org/sindresorhus/is-npm.svg?branch=master)](https://travis-ci.org/sindresorhus/is-npm)\n\n> Check if your code is running as an [npm script](https://www.npmjs.org/doc/misc/npm-scripts.html)\n\n\n## Install\n\n```sh\n$ npm install --save is-npm\n```\n\n\n## Usage\n\n```js\nvar isNpm = require('is-npm');\nconsole.log(isNpm);\n```\n\n```sh\n$ node foo.js\n#=> false\n$ npm run foo\n#=> true\n```\n\n\n## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)\n"
     }
   ],

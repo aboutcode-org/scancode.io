@@ -550,7 +550,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(6, project1.codebaseresources.count())
-        self.assertEqual(4, project1.discoveredpackages.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"

@@ -148,7 +148,206 @@
       "is_text": false,
       "is_archive": true,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": [
+        {
+          "md5": null,
+          "name": "asgiref",
+          "purl": "pkg:pypi/asgiref@3.3.0",
+          "sha1": null,
+          "type": "pypi",
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": null,
+              "name": "Django Software Foundation",
+              "role": "author",
+              "type": "person",
+              "email": "foundation@djangoproject.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": null,
+          "version": "3.3.0",
+          "keywords": [
+            "Development Status :: 5 - Production/Stable",
+            "Environment :: Web Environment",
+            "Intended Audience :: Developers",
+            "Operating System :: OS Independent",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3 :: Only",
+            "Programming Language :: Python :: 3.5",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Topic :: Internet :: WWW/HTTP"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {
+            "Changelog": "Changelog, https://github.com/django/asgiref/blob/master/CHANGELOG.txt",
+            "Documentation": "Documentation, https://asgi.readthedocs.io/",
+            "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
+          },
+          "qualifiers": {},
+          "description": "ASGI specs, helper code, and adapters\nasgiref\n=======\n\n.. image:: https://api.travis-ci.org/django/asgiref.svg\n    :target: https://travis-ci.org/django/asgiref\n\n.. image:: https://img.shields.io/pypi/v/asgiref.svg\n    :target: https://pypi.python.org/pypi/asgiref\n\nASGI is a standard for Python asynchronous web apps and servers to communicate\nwith each other, and positioned as an asynchronous successor to WSGI. You can\nread more at https://asgi.readthedocs.io/en/latest/\n\nThis package includes ASGI base libraries, such as:\n\n* Sync-to-async and async-to-sync function wrappers, ``asgiref.sync``\n* Server base classes, ``asgiref.server``\n* A WSGI-to-ASGI adapter, in ``asgiref.wsgi``\n\n\nFunction wrappers\n-----------------\n\nThese allow you to wrap or decorate async or sync functions to call them from\nthe other style (so you can call async functions from a synchronous thread,\nor vice-versa).\n\nIn particular:\n\n* AsyncToSync lets a synchronous subthread stop and wait while the async\n  function is called on the main thread's event loop, and then control is\n  returned to the thread when the async function is finished.\n\n* SyncToAsync lets async code call a synchronous function, which is run in\n  a threadpool and control returned to the async coroutine when the synchronous\n  function completes.\n\nThe idea is to make it easier to call synchronous APIs from async code and\nasynchronous APIs from synchronous code so it's easier to transition code from\none style to the other. In the case of Channels, we wrap the (synchronous)\nDjango view system with SyncToAsync to allow it to run inside the (asynchronous)\nASGI server.\n\nNote that exactly what threads things run in is very specific, and aimed to\nkeep maximum compatibility with old synchronous code. See\n\"Synchronous code & Threads\" below for a full explanation. By default,\n``sync_to_async`` will run all synchronous code in the program in the same\nthread for safety reasons; you can disable this for more performance with\n``@sync_to_async(thread_sensitive=False)``, but make sure that your code does\nnot rely on anything bound to threads (like database connections) when you do.\n\n\nThreadlocal replacement\n-----------------------\n\nThis is a drop-in replacement for ``threading.local`` that works with both\nthreads and asyncio Tasks. Even better, it will proxy values through from a\ntask-local context to a thread-local context when you use ``sync_to_async``\nto run things in a threadpool, and vice-versa for ``async_to_sync``.\n\nIf you instead want true thread- and task-safety, you can set\n``thread_critical`` on the Local object to ensure this instead.\n\n\nServer base classes\n-------------------\n\nIncludes a ``StatelessServer`` class which provides all the hard work of\nwriting a stateless server (as in, does not handle direct incoming sockets\nbut instead consumes external streams or sockets to work out what is happening).\n\nAn example of such a server would be a chatbot server that connects out to\na central chat server and provides a \"connection scope\" per user chatting to\nit. There's only one actual connection, but the server has to separate things\ninto several scopes for easier writing of the code.\n\nYou can see an example of this being used in `frequensgi <https://github.com/andrewgodwin/frequensgi>`_.\n\n\nWSGI-to-ASGI adapter\n--------------------\n\nAllows you to wrap a WSGI application so it appears as a valid ASGI application.\n\nSimply wrap it around your WSGI application like so::\n\n    asgi_application = WsgiToAsgi(wsgi_application)\n\nThe WSGI application will be run in a synchronous threadpool, and the wrapped\nASGI application will be one that accepts ``http`` class messages.\n\nPlease note that not all extended features of WSGI may be supported (such as\nfile handles for incoming POST bodies).\n\n\nDependencies\n------------\n\n``asgiref`` requires Python 3.5 or higher.\n\n\nContributing\n------------\n\nPlease refer to the\n`main Channels contributing docs <https://github.com/django/channels/blob/master/CONTRIBUTING.rst>`_.\n\n\nTesting\n'''''''\n\nTo run tests, make sure you have installed the ``tests`` extra with the package::\n\n    cd asgiref/\n    pip install -e .[tests]\n    pytest\n\n\nBuilding the documentation\n''''''''''''''''''''''''''\n\nThe documentation uses `Sphinx <http://www.sphinx-doc.org>`_::\n\n    cd asgiref/docs/\n    pip install sphinx\n\nTo build the docs, you can use the default tools::\n\n    sphinx-build -b html . _build/html  # or `make html`, if you've got make set up\n    cd _build/html\n    python -m http.server\n\n...or you can use ``sphinx-autobuild`` to run a server and rebuild/reload\nyour documentation changes automatically::\n\n    pip install sphinx-autobuild\n    sphinx-autobuild . _build/html\n\n\nImplementation Details\n----------------------\n\nSynchronous code & threads\n''''''''''''''''''''''''''\n\nThe ``asgiref.sync`` module provides two wrappers that let you go between\nasynchronous and synchronous code at will, while taking care of the rough edges\nfor you.\n\nUnfortunately, the rough edges are numerous, and the code has to work especially\nhard to keep things in the same thread as much as possible. Notably, the\nrestrictions we are working with are:\n\n* All synchronous code called through ``SyncToAsync`` and marked with\n  ``thread_sensitive`` should run in the same thread as each other (and if the\n  outer layer of the program is synchronous, the main thread)\n\n* If a thread already has a running async loop, ``AsyncToSync`` can't run things\n  on that loop if it's blocked on synchronous code that is above you in the\n  call stack.\n\nThe first compromise you get to might be that ``thread_sensitive`` code should\njust run in the same thread and not spawn in a sub-thread, fulfilling the first\nrestriction, but that immediately runs you into the second restriction.\n\nThe only real solution is to essentially have a variant of ThreadPoolExecutor\nthat executes any ``thread_sensitive`` code on the outermost synchronous\nthread - either the main thread, or a single spawned subthread.\n\nThis means you now have two basic states:\n\n* If the outermost layer of your program is synchronous, then all async code\n  run through ``AsyncToSync`` will run in a per-call event loop in arbitary\n  sub-threads, while all ``thread_sensitive`` code will run in the main thread.\n\n* If the outermost layer of your program is asynchronous, then all async code\n  runs on the main thread's event loop, and all ``thread_sensitive`` synchronous\n  code will run in a single shared sub-thread.\n\nCruicially, this means that in both cases there is a thread which is a shared\nresource that all ``thread_sensitive`` code must run on, and there is a chance\nthat this thread is currently blocked on its own ``AsyncToSync`` call. Thus,\n``AsyncToSync`` needs to act as an executor for thread code while it's blocking.\n\nThe ``CurrentThreadExecutor`` class provides this functionality; rather than\nsimply waiting on a Future, you can call its ``run_until_future`` method and\nit will run submitted code until that Future is done. This means that code\ninside the call can then run code on your thread.\n\n\nMaintenance and Security\n------------------------\n\nTo report security issues, please contact security@djangoproject.com. For GPG\nsignatures and more security process information, see\nhttps://docs.djangoproject.com/en/dev/internals/security/.\n\nTo report bugs or request new features, please open a new GitHub issue.\n\nThis repository is part of the Channels project. For the shepherd and maintenance team, please see the\n`main Channels readme <https://github.com/django/channels/blob/master/README.rst>`_.",
+          "notice_text": null,
+          "api_data_url": "https://pypi.org/pypi/asgiref/3.3.0/json",
+          "dependencies": [
+            {
+              "purl": "pkg:pypi/pytest",
+              "scope": "tests",
+              "is_runtime": true,
+              "is_optional": false,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": null
+            },
+            {
+              "purl": "pkg:pypi/pytest-asyncio",
+              "scope": "tests",
+              "is_runtime": true,
+              "is_optional": false,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": null
+            }
+          ],
+          "download_url": null,
+          "homepage_url": "https://github.com/django/asgiref/",
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "pypi_wheel",
+          "file_references": [
+            {
+              "md5": null,
+              "path": "asgiref/__init__.py",
+              "sha1": null,
+              "sha256": "30f49b9094bff904a42caeec32515715fe625a56dc48bd7c0e3d9988c0ad4bd7",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/compatibility.py",
+              "sha1": null,
+              "sha256": "3151f66c476208c3154cb6c4fb557a2a253bab82f0ab33fb3c8b9f7976be9e33",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/current_thread_executor.py",
+              "sha1": null,
+              "sha256": "ddd445b778c097fc75c2bf69ad964cbadd3bd6999d1dd2306d39d401855e8e3e",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/local.py",
+              "sha1": null,
+              "sha256": "ee0fcf4a8e6fa9df8a4643bb48e82892d496afce44b6c8b8aea2721755545e1c",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/server.py",
+              "sha1": null,
+              "sha256": "885267fee0fea687875a02ceb929ca095312d47aaa57e20e4ce382f397caaf4d",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/sync.py",
+              "sha1": null,
+              "sha256": "fa4651a3b79201a4dc44a4096cd49ec8f427e912ea0ee05c666357b413a8afe7",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/testing.py",
+              "sha1": null,
+              "sha256": "ddbc8d455eceb68fc583c67e7c4ad0277c867fb39095c51ec5b37f70342e8334",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/timeout.py",
+              "sha1": null,
+              "sha256": "126c3e3a8a75a517d2739612304607804cf5f34da63fa25d03a6f11f7edb6f2f",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/wsgi.py",
+              "sha1": null,
+              "sha256": "f8bd1ea3fb8afddabb10f8efd66796d41446cad51168ef4d3c44b19c973d0ad0",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/LICENSE",
+              "sha1": null,
+              "sha256": "b846415d1b514e9c1dff14a22deb906d794bc546ca6129f950a18cd091e2a669",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/METADATA",
+              "sha1": null,
+              "sha256": "70f98f4eb9f6068b192b5464fcdf69e29a8ff09962bfce84bbb052baeee44f33",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/WHEEL",
+              "sha1": null,
+              "sha256": "11546323af45e6a5639bf620a9c4d73e74c0bf705f494af4595007b923f75e8a",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/top_level.txt",
+              "sha1": null,
+              "sha256": "6e89108c2cf0c0446174188f76f60465ae1c1f14f83427807df40d52a27cb2c8",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/RECORD",
+              "sha1": null,
+              "sha256": null,
+              "sha512": null,
+              "extra_data": {}
+            }
+          ],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": {
+            "license": "BSD",
+            "classifiers": [
+              "License :: OSI Approved :: BSD License"
+            ]
+          },
+          "primary_language": "Python",
+          "license_expression": "bsd-new AND bsd-new",
+          "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
+          "repository_homepage_url": "https://pypi.org/project/asgiref"
+        }
+      ]
     },
     {
       "for_packages": [],
@@ -174,7 +373,8 @@
       "is_text": false,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -200,7 +400,8 @@
       "is_text": false,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -226,7 +427,8 @@
       "is_text": false,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -305,7 +507,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [
@@ -419,7 +622,206 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": [
+        {
+          "md5": null,
+          "name": "asgiref",
+          "purl": "pkg:pypi/asgiref@3.3.0",
+          "sha1": null,
+          "type": "pypi",
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": null,
+              "name": "Django Software Foundation",
+              "role": "author",
+              "type": "person",
+              "email": "foundation@djangoproject.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": null,
+          "version": "3.3.0",
+          "keywords": [
+            "Development Status :: 5 - Production/Stable",
+            "Environment :: Web Environment",
+            "Intended Audience :: Developers",
+            "Operating System :: OS Independent",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3 :: Only",
+            "Programming Language :: Python :: 3.5",
+            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Topic :: Internet :: WWW/HTTP"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {
+            "Changelog": "Changelog, https://github.com/django/asgiref/blob/master/CHANGELOG.txt",
+            "Documentation": "Documentation, https://asgi.readthedocs.io/",
+            "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
+          },
+          "qualifiers": {},
+          "description": "ASGI specs, helper code, and adapters\nasgiref\n=======\n\n.. image:: https://api.travis-ci.org/django/asgiref.svg\n    :target: https://travis-ci.org/django/asgiref\n\n.. image:: https://img.shields.io/pypi/v/asgiref.svg\n    :target: https://pypi.python.org/pypi/asgiref\n\nASGI is a standard for Python asynchronous web apps and servers to communicate\nwith each other, and positioned as an asynchronous successor to WSGI. You can\nread more at https://asgi.readthedocs.io/en/latest/\n\nThis package includes ASGI base libraries, such as:\n\n* Sync-to-async and async-to-sync function wrappers, ``asgiref.sync``\n* Server base classes, ``asgiref.server``\n* A WSGI-to-ASGI adapter, in ``asgiref.wsgi``\n\n\nFunction wrappers\n-----------------\n\nThese allow you to wrap or decorate async or sync functions to call them from\nthe other style (so you can call async functions from a synchronous thread,\nor vice-versa).\n\nIn particular:\n\n* AsyncToSync lets a synchronous subthread stop and wait while the async\n  function is called on the main thread's event loop, and then control is\n  returned to the thread when the async function is finished.\n\n* SyncToAsync lets async code call a synchronous function, which is run in\n  a threadpool and control returned to the async coroutine when the synchronous\n  function completes.\n\nThe idea is to make it easier to call synchronous APIs from async code and\nasynchronous APIs from synchronous code so it's easier to transition code from\none style to the other. In the case of Channels, we wrap the (synchronous)\nDjango view system with SyncToAsync to allow it to run inside the (asynchronous)\nASGI server.\n\nNote that exactly what threads things run in is very specific, and aimed to\nkeep maximum compatibility with old synchronous code. See\n\"Synchronous code & Threads\" below for a full explanation. By default,\n``sync_to_async`` will run all synchronous code in the program in the same\nthread for safety reasons; you can disable this for more performance with\n``@sync_to_async(thread_sensitive=False)``, but make sure that your code does\nnot rely on anything bound to threads (like database connections) when you do.\n\n\nThreadlocal replacement\n-----------------------\n\nThis is a drop-in replacement for ``threading.local`` that works with both\nthreads and asyncio Tasks. Even better, it will proxy values through from a\ntask-local context to a thread-local context when you use ``sync_to_async``\nto run things in a threadpool, and vice-versa for ``async_to_sync``.\n\nIf you instead want true thread- and task-safety, you can set\n``thread_critical`` on the Local object to ensure this instead.\n\n\nServer base classes\n-------------------\n\nIncludes a ``StatelessServer`` class which provides all the hard work of\nwriting a stateless server (as in, does not handle direct incoming sockets\nbut instead consumes external streams or sockets to work out what is happening).\n\nAn example of such a server would be a chatbot server that connects out to\na central chat server and provides a \"connection scope\" per user chatting to\nit. There's only one actual connection, but the server has to separate things\ninto several scopes for easier writing of the code.\n\nYou can see an example of this being used in `frequensgi <https://github.com/andrewgodwin/frequensgi>`_.\n\n\nWSGI-to-ASGI adapter\n--------------------\n\nAllows you to wrap a WSGI application so it appears as a valid ASGI application.\n\nSimply wrap it around your WSGI application like so::\n\n    asgi_application = WsgiToAsgi(wsgi_application)\n\nThe WSGI application will be run in a synchronous threadpool, and the wrapped\nASGI application will be one that accepts ``http`` class messages.\n\nPlease note that not all extended features of WSGI may be supported (such as\nfile handles for incoming POST bodies).\n\n\nDependencies\n------------\n\n``asgiref`` requires Python 3.5 or higher.\n\n\nContributing\n------------\n\nPlease refer to the\n`main Channels contributing docs <https://github.com/django/channels/blob/master/CONTRIBUTING.rst>`_.\n\n\nTesting\n'''''''\n\nTo run tests, make sure you have installed the ``tests`` extra with the package::\n\n    cd asgiref/\n    pip install -e .[tests]\n    pytest\n\n\nBuilding the documentation\n''''''''''''''''''''''''''\n\nThe documentation uses `Sphinx <http://www.sphinx-doc.org>`_::\n\n    cd asgiref/docs/\n    pip install sphinx\n\nTo build the docs, you can use the default tools::\n\n    sphinx-build -b html . _build/html  # or `make html`, if you've got make set up\n    cd _build/html\n    python -m http.server\n\n...or you can use ``sphinx-autobuild`` to run a server and rebuild/reload\nyour documentation changes automatically::\n\n    pip install sphinx-autobuild\n    sphinx-autobuild . _build/html\n\n\nImplementation Details\n----------------------\n\nSynchronous code & threads\n''''''''''''''''''''''''''\n\nThe ``asgiref.sync`` module provides two wrappers that let you go between\nasynchronous and synchronous code at will, while taking care of the rough edges\nfor you.\n\nUnfortunately, the rough edges are numerous, and the code has to work especially\nhard to keep things in the same thread as much as possible. Notably, the\nrestrictions we are working with are:\n\n* All synchronous code called through ``SyncToAsync`` and marked with\n  ``thread_sensitive`` should run in the same thread as each other (and if the\n  outer layer of the program is synchronous, the main thread)\n\n* If a thread already has a running async loop, ``AsyncToSync`` can't run things\n  on that loop if it's blocked on synchronous code that is above you in the\n  call stack.\n\nThe first compromise you get to might be that ``thread_sensitive`` code should\njust run in the same thread and not spawn in a sub-thread, fulfilling the first\nrestriction, but that immediately runs you into the second restriction.\n\nThe only real solution is to essentially have a variant of ThreadPoolExecutor\nthat executes any ``thread_sensitive`` code on the outermost synchronous\nthread - either the main thread, or a single spawned subthread.\n\nThis means you now have two basic states:\n\n* If the outermost layer of your program is synchronous, then all async code\n  run through ``AsyncToSync`` will run in a per-call event loop in arbitary\n  sub-threads, while all ``thread_sensitive`` code will run in the main thread.\n\n* If the outermost layer of your program is asynchronous, then all async code\n  runs on the main thread's event loop, and all ``thread_sensitive`` synchronous\n  code will run in a single shared sub-thread.\n\nCruicially, this means that in both cases there is a thread which is a shared\nresource that all ``thread_sensitive`` code must run on, and there is a chance\nthat this thread is currently blocked on its own ``AsyncToSync`` call. Thus,\n``AsyncToSync`` needs to act as an executor for thread code while it's blocking.\n\nThe ``CurrentThreadExecutor`` class provides this functionality; rather than\nsimply waiting on a Future, you can call its ``run_until_future`` method and\nit will run submitted code until that Future is done. This means that code\ninside the call can then run code on your thread.\n\n\nMaintenance and Security\n------------------------\n\nTo report security issues, please contact security@djangoproject.com. For GPG\nsignatures and more security process information, see\nhttps://docs.djangoproject.com/en/dev/internals/security/.\n\nTo report bugs or request new features, please open a new GitHub issue.\n\nThis repository is part of the Channels project. For the shepherd and maintenance team, please see the\n`main Channels readme <https://github.com/django/channels/blob/master/README.rst>`_.",
+          "notice_text": null,
+          "api_data_url": "https://pypi.org/pypi/asgiref/3.3.0/json",
+          "dependencies": [
+            {
+              "purl": "pkg:pypi/pytest",
+              "scope": "tests",
+              "is_runtime": true,
+              "is_optional": false,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": null
+            },
+            {
+              "purl": "pkg:pypi/pytest-asyncio",
+              "scope": "tests",
+              "is_runtime": true,
+              "is_optional": false,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": null
+            }
+          ],
+          "download_url": null,
+          "homepage_url": "https://github.com/django/asgiref/",
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "pypi_wheel_metadata",
+          "file_references": [
+            {
+              "md5": null,
+              "path": "asgiref/__init__.py",
+              "sha1": null,
+              "sha256": "30f49b9094bff904a42caeec32515715fe625a56dc48bd7c0e3d9988c0ad4bd7",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/compatibility.py",
+              "sha1": null,
+              "sha256": "3151f66c476208c3154cb6c4fb557a2a253bab82f0ab33fb3c8b9f7976be9e33",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/current_thread_executor.py",
+              "sha1": null,
+              "sha256": "ddd445b778c097fc75c2bf69ad964cbadd3bd6999d1dd2306d39d401855e8e3e",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/local.py",
+              "sha1": null,
+              "sha256": "ee0fcf4a8e6fa9df8a4643bb48e82892d496afce44b6c8b8aea2721755545e1c",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/server.py",
+              "sha1": null,
+              "sha256": "885267fee0fea687875a02ceb929ca095312d47aaa57e20e4ce382f397caaf4d",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/sync.py",
+              "sha1": null,
+              "sha256": "fa4651a3b79201a4dc44a4096cd49ec8f427e912ea0ee05c666357b413a8afe7",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/testing.py",
+              "sha1": null,
+              "sha256": "ddbc8d455eceb68fc583c67e7c4ad0277c867fb39095c51ec5b37f70342e8334",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/timeout.py",
+              "sha1": null,
+              "sha256": "126c3e3a8a75a517d2739612304607804cf5f34da63fa25d03a6f11f7edb6f2f",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref/wsgi.py",
+              "sha1": null,
+              "sha256": "f8bd1ea3fb8afddabb10f8efd66796d41446cad51168ef4d3c44b19c973d0ad0",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/LICENSE",
+              "sha1": null,
+              "sha256": "b846415d1b514e9c1dff14a22deb906d794bc546ca6129f950a18cd091e2a669",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/METADATA",
+              "sha1": null,
+              "sha256": "70f98f4eb9f6068b192b5464fcdf69e29a8ff09962bfce84bbb052baeee44f33",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/WHEEL",
+              "sha1": null,
+              "sha256": "11546323af45e6a5639bf620a9c4d73e74c0bf705f494af4595007b923f75e8a",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/top_level.txt",
+              "sha1": null,
+              "sha256": "6e89108c2cf0c0446174188f76f60465ae1c1f14f83427807df40d52a27cb2c8",
+              "sha512": null,
+              "extra_data": {}
+            },
+            {
+              "md5": null,
+              "path": "asgiref-3.3.0.dist-info/RECORD",
+              "sha1": null,
+              "sha256": null,
+              "sha512": null,
+              "extra_data": {}
+            }
+          ],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": {
+            "license": "BSD",
+            "classifiers": [
+              "License :: OSI Approved :: BSD License"
+            ]
+          },
+          "primary_language": "Python",
+          "license_expression": "bsd-new AND bsd-new",
+          "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
+          "repository_homepage_url": "https://pypi.org/project/asgiref"
+        }
+      ]
     },
     {
       "for_packages": [],
@@ -523,13 +925,14 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
-      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
-      "sha1": "9c74e64e9a71903bb227907ea1806eac77e52434",
-      "md5": "5231077fd0628314246fcba7817b561e",
+      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
+      "sha1": "612390bd0d0227c009f9c99b479878adf7ac2f23",
+      "md5": "680e61db4d95c8d9501b7a49fa2bf0b2",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -541,41 +944,16 @@
       "status": "",
       "tag": "",
       "type": "file",
-      "name": "compatibility.py",
-      "extension": ".py",
-      "programming_language": "Python",
-      "mime_type": "text/x-script.python",
+      "name": "top_level.txt",
+      "extension": ".txt",
+      "programming_language": "",
+      "mime_type": "text/plain",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
-    },
-    {
-      "for_packages": [],
-      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
-      "sha1": "aacf7e5e2e5ba78ccfb67fa10e9e6b22c3935c9b",
-      "md5": "b4c45f37055d88dd11b15eb4de51b074",
-      "extra_data": {},
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "licenses": [],
-      "license_expressions": [],
-      "emails": [],
-      "urls": [],
-      "status": "",
-      "tag": "",
-      "type": "file",
-      "name": "current_thread_executor.py",
-      "extension": ".py",
-      "programming_language": "Python",
-      "mime_type": "text/x-script.python",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -601,7 +979,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -627,7 +1006,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -653,7 +1033,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -679,7 +1060,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -746,7 +1128,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -772,7 +1155,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     }
   ]
 }

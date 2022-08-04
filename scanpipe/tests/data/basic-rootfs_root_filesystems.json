@@ -49,38 +49,6 @@
   ],
   "packages": [
     {
-      "purl": "pkg:deb/libncurses5",
-      "type": "deb",
-      "namespace": "",
-      "name": "libncurses5",
-      "version": "",
-      "qualifiers": "",
-      "subpath": "",
-      "primary_language": "",
-      "description": "",
-      "release_date": null,
-      "homepage_url": "",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "",
-      "copyright": "Copyright (c) 1998-2016 Free Software Foundation, Inc.\nCopyright (c) 2001 by Pradeep Padala\nCopyright (c) 1994 X Consortium\nCopyright (c) 1980, 1991, 1992, 1993 The Regents of the University of California\nCopyright 1996-2007 by Thomas E. Dickey",
-      "license_expression": "x11-fsf AND x11-xconsortium AND bsd-new AND x11-fsf",
-      "declared_license": "",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {},
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "package_uid": "",
-      "keywords": [],
-      "source_packages": []
-    },
-    {
       "purl": "pkg:deb/libncurses5@6.1-1ubuntu1.18.04?architecture=amd64",
       "type": "deb",
       "namespace": "",
@@ -119,38 +87,6 @@
       "source_packages": [
         "pkg:deb/ncurses"
       ]
-    },
-    {
-      "purl": "pkg:deb/libndp0",
-      "type": "deb",
-      "namespace": "",
-      "name": "libndp0",
-      "version": "",
-      "qualifiers": "",
-      "subpath": "",
-      "primary_language": "",
-      "description": "",
-      "release_date": null,
-      "homepage_url": "",
-      "download_url": "",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "",
-      "copyright": "Copyright 2013 Jiri Pirko <jiri@resnulli.us>\nCopyright 2014 Andrew Ayer <agwa@andrewayer.name>",
-      "license_expression": "(lgpl-2.1-plus AND lgpl-2.1-plus AND lgpl-2.1) AND (lgpl-2.1-plus AND lgpl-2.1-plus AND lgpl-2.1)",
-      "declared_license": "['LGPL-2.1+', 'LGPL-2.1+', 'LGPL-2.1+']",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {},
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "package_uid": "",
-      "keywords": [],
-      "source_packages": []
     },
     {
       "purl": "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64",
@@ -218,12 +154,11 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
-      "for_packages": [
-        "pkg:deb/libncurses5?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
+      "for_packages": [],
       "path": "basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright",
       "sha1": "3ffa530d4b2e0ef318cf12f68cb7106a255ea27b",
       "md5": "bd73d1dbbd2e6374358baa205d6d9e66",
@@ -246,12 +181,47 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": [
+        {
+          "md5": null,
+          "name": "libncurses5",
+          "purl": "pkg:deb/libncurses5",
+          "sha1": null,
+          "type": "deb",
+          "sha256": null,
+          "sha512": null,
+          "parties": [],
+          "subpath": null,
+          "vcs_url": null,
+          "version": null,
+          "keywords": [],
+          "copyright": "Copyright (c) 1998-2016 Free Software Foundation, Inc.\nCopyright (c) 2001 by Pradeep Padala\nCopyright (c) 1994 X Consortium\nCopyright (c) 1980, 1991, 1992, 1993 The Regents of the University of California\nCopyright 1996-2007 by Thomas E. Dickey",
+          "namespace": null,
+          "extra_data": {},
+          "qualifiers": {},
+          "description": null,
+          "notice_text": null,
+          "api_data_url": null,
+          "dependencies": [],
+          "download_url": null,
+          "homepage_url": null,
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "debian_copyright_in_package",
+          "file_references": [],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": null,
+          "primary_language": null,
+          "license_expression": "x11-fsf AND x11-xconsortium AND bsd-new AND x11-fsf",
+          "repository_download_url": null,
+          "repository_homepage_url": null
+        }
+      ]
     },
     {
-      "for_packages": [
-        "pkg:deb/libndp0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
+      "for_packages": [],
       "path": "basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright",
       "sha1": "0d667249e3a0f605589e7607ae6cb29024ae59b5",
       "md5": "3f4ecdd67d5b9427cdc66847bdd11cf4",
@@ -274,7 +244,48 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": [
+        {
+          "md5": null,
+          "name": "libndp0",
+          "purl": "pkg:deb/libndp0",
+          "sha1": null,
+          "type": "deb",
+          "sha256": null,
+          "sha512": null,
+          "parties": [],
+          "subpath": null,
+          "vcs_url": null,
+          "version": null,
+          "keywords": [],
+          "copyright": "Copyright 2013 Jiri Pirko <jiri@resnulli.us>\nCopyright 2014 Andrew Ayer <agwa@andrewayer.name>",
+          "namespace": null,
+          "extra_data": {},
+          "qualifiers": {},
+          "description": null,
+          "notice_text": null,
+          "api_data_url": null,
+          "dependencies": [],
+          "download_url": null,
+          "homepage_url": null,
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "debian_copyright_in_package",
+          "file_references": [],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": [
+            "LGPL-2.1+",
+            "LGPL-2.1+",
+            "LGPL-2.1+"
+          ],
+          "primary_language": null,
+          "license_expression": "(lgpl-2.1-plus AND lgpl-2.1-plus AND lgpl-2.1) AND (lgpl-2.1-plus AND lgpl-2.1-plus AND lgpl-2.1)",
+          "repository_download_url": null,
+          "repository_homepage_url": null
+        }
+      ]
     },
     {
       "for_packages": [],
@@ -300,7 +311,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -326,7 +338,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -379,7 +392,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     }
   ]
 }

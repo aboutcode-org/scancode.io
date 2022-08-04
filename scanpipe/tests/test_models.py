@@ -1198,6 +1198,33 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
+        # Test parent-related methods
+        asgiref_resource = self.project_asgiref.codebaseresources.get(
+            path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
+        )
+        expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
+        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertTrue(asgiref_resource.has_parent())
+        expected_parent = self.project_asgiref.codebaseresources.get(
+            path=expected_parent_path
+        )
+        self.assertEqual(expected_parent, asgiref_resource.parent())
+
+        # Test sibling-related methods
+        expected_siblings = [
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+        ]
+        asgiref_resource_siblings = [r.path for r in asgiref_resource.siblings()]
+        self.assertEqual(sorted(expected_siblings), sorted(asgiref_resource_siblings))
+
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_send_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")

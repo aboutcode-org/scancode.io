@@ -54,19 +54,8 @@
       "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [
-        {
-          "purl": "pkg:npm/ava",
-          "scope": "devDependencies",
-          "extra_data": {},
-          "is_runtime": false,
-          "is_optional": true,
-          "is_resolved": false,
-          "resolved_package": {},
-          "extracted_requirement": "0.0.3"
-        }
-      ],
-      "package_uid": "",
+      "dependencies": [],
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "npm",
         "is",
@@ -103,7 +92,8 @@
       "is_text": false,
       "is_archive": true,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -129,7 +119,8 @@
       "is_text": false,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -155,10 +146,13 @@
       "is_text": false,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
-      "for_packages": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "path": "is-npm-1.0.0.tgz-extract/package/index.js",
       "sha1": "ecce1fc677fa7d20fc5593b63db45e45c5e8768a",
       "md5": "bc4b18b0c8c32b94883d6fc1d675e919",
@@ -181,7 +175,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [
@@ -209,10 +204,77 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": [
+        {
+          "md5": null,
+          "name": "is-npm",
+          "purl": "pkg:npm/is-npm@1.0.0",
+          "sha1": null,
+          "type": "npm",
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": "http://sindresorhus.com",
+              "name": "Sindre Sorhus",
+              "role": "author",
+              "type": "person",
+              "email": "sindresorhus@gmail.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": "https://github.com/sindresorhus/is-npm",
+          "version": "1.0.0",
+          "keywords": [
+            "npm",
+            "is",
+            "check",
+            "detect",
+            "env",
+            "environment"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {},
+          "qualifiers": {},
+          "description": "Check if your code is running as an npm script",
+          "notice_text": null,
+          "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+          "dependencies": [
+            {
+              "purl": "pkg:npm/ava",
+              "scope": "devDependencies",
+              "extra_data": {},
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": "0.0.3"
+            }
+          ],
+          "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "homepage_url": null,
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "npm_package_json",
+          "file_references": [],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": [
+            "MIT"
+          ],
+          "primary_language": "JavaScript",
+          "license_expression": "mit",
+          "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "repository_homepage_url": "https://www.npmjs.com/package/is-npm"
+        }
+      ]
     },
     {
-      "for_packages": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "path": "is-npm-1.0.0.tgz-extract/package/readme.md",
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
@@ -310,7 +372,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     }
   ]
 }
