@@ -320,7 +320,7 @@ def scan_for_application_packages(project):
     resource_qs = project.codebaseresources.no_status()
 
     # Collect detected Package data and save it to the CodebaseResource it was
-    # detected from
+    # detected from.
     _scan_and_save(
         resource_qs=resource_qs,
         scan_func=scan_for_package_data,
@@ -328,20 +328,19 @@ def scan_for_application_packages(project):
     )
 
     # Iterate through CodebaseResources with Package data and handle them using
-    # the proper Package handler from packagedcode
+    # the proper Package handler from packagedcode.
     assemble_packages(project=project)
 
 
 def add_to_package(package_uid, resource, project):
     """
-    Relate a DiscoveredPackage to `resource` from `project` using `package_uid`
+    Relate a DiscoveredPackage to `resource` from `project` using `package_uid`.
     """
     if not package_uid:
         return
-    package_associated_with_resource = resource.discovered_packages.filter(
-        package_uid=package_uid
-    ).exists()
-    if not package_associated_with_resource:
+
+    resource_package = resource.discovered_packages.filter(package_uid=package_uid)
+    if not resource_package.exists():
         package = project.discoveredpackages.get(package_uid=package_uid)
         resource.discovered_packages.add(package)
 
@@ -351,22 +350,20 @@ def assemble_packages(project):
     Create instances of DiscoveredPackage and DiscoveredDependency for `project`
     from the parsed package data present in the CodebaseResources of `project`.
     """
-    logger.info(f"Project: {project}:\n" "Function: assemble_packages\n")
+    logger.info(f"Project {project} assemble_packages:")
     seen_resource_paths = set()
+
     for resource in project.codebaseresources.has_package_data():
         if resource.path in seen_resource_paths:
             continue
 
-        logger.info(f"Processing: CodebaseResource {resource.path}\n")
-
+        logger.info(f"  Processing: {resource.path}")
         for package_mapping in resource.package_data:
             pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
-
-            logger.info(f"Processing: PackageData {pd.purl}\n")
+            logger.info(f"  Package data: {pd.purl}")
 
             handler = get_package_handler(pd)
-
-            logger.info(f"Selected: Package handler {handler}\n")
+            logger.info(f"  Selected package handler: {handler.__name__}")
 
             items = handler.assemble(
                 package_data=pd,
@@ -376,7 +373,7 @@ def assemble_packages(project):
             )
 
             for item in items:
-                logger.info(f"Processing: item {item}\n")
+                logger.info(f"    Processing item: {item}")
                 if isinstance(item, packagedcode_models.Package):
                     package_data = item.to_dict()
                     pipes.update_or_create_package(project, package_data)
@@ -387,7 +384,7 @@ def assemble_packages(project):
                 elif isinstance(item, CodebaseResource):
                     seen_resource_paths.add(item.path)
                 else:
-                    logger.info(f"Unknown Package assembly item type: {item!r}\n")
+                    logger.info(f"Unknown Package assembly item type: {item!r}")
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):

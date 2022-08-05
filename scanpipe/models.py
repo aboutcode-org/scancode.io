@@ -1495,7 +1495,6 @@ class CodebaseResource(
             "provided policies."
         ),
     )
-
     package_data = models.JSONField(
         default=list,
         blank=True,

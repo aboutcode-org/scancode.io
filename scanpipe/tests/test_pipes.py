@@ -1225,14 +1225,21 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
     def test_scanpipe_add_to_package(self):
         project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
+        resource1 = CodebaseResource.objects.create(
             project=project1,
             path="filename.ext",
         )
         package1 = update_or_create_package(project1, package_data1)
-        self.assertFalse(codebase_resource.for_packages)
-        scancode.add_to_package(package1.package_uid, codebase_resource, project1)
-        for_packages = codebase_resource.for_packages
-        self.assertEqual(len(for_packages), 1)
-        result_purl = for_packages[0]
-        self.assertEqual(result_purl, package1.purl)
+        self.assertFalse(resource1.for_packages)
+
+        self.assertIsNone(scancode.add_to_package(None, resource1, project1))
+        self.assertFalse(resource1.for_packages)
+
+        scancode.add_to_package(package1.package_uid, resource1, project1)
+        self.assertEqual(len(resource1.for_packages), 1)
+        self.assertIn(package1.package_url, resource1.for_packages)
+
+        # Package will not be added twice since it is already associated with the
+        # resource.
+        scancode.add_to_package(package1.package_uid, resource1, project1)
+        self.assertEqual(len(resource1.for_packages), 1)
