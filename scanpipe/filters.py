@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
+from django.core.validators import EMPTY_VALUES
 from django.db import models
 
 import django_filters
@@ -36,6 +37,8 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class FilterSetUtilsMixin:
+    empty_value = "EMPTY"
+
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
         """
@@ -87,6 +90,20 @@ class FilterSetUtilsMixin:
     @classmethod
     def verbose_name_plural(cls):
         return cls.Meta.model._meta.verbose_name_plural
+
+    def filter_queryset(self, queryset):
+        """
+        Adds the ability to filter by empty and none values providing the "magic"
+        `empty_value` to any filters.
+        """
+
+        for name, value in self.form.cleaned_data.items():
+            if value == self.empty_value:
+                queryset = queryset.filter(**{f"{name}__in": EMPTY_VALUES})
+            else:
+                queryset = self.filters[name].filter(queryset, value)
+
+        return queryset
 
 
 class BulmaLinkWidget(LinkWidget):

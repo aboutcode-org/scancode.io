@@ -92,7 +92,7 @@
               Resources status
             </p>
             {% for status, count in status_summary.items %}
-              <a class="panel-block" href="{% url 'project_resources' run.project.uuid %}?status={{ status }}" target="_blank">
+              <a class="panel-block" href="{% url 'project_resources' run.project.uuid %}?status={{ status|default:'EMPTY' }}" target="_blank">
                 {% if status %}{{ status }}{% else %}<i>(no status)</i>{% endif %}: {{ count }}
               </a>
             {% endfor %}
