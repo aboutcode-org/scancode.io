@@ -68,6 +68,10 @@ v31.0.0 (next)
   https://github.com/nexB/scancode.io/issues/164
   https://github.com/nexB/scancode.io/issues/464
 
+- Add the ability to filter by empty and none values providing the "EMPTY" magic value
+  to any filters.
+  https://github.com/nexB/scancode.io/issues/296
+
 v30.2.0 (2021-12-17)
 --------------------
 
