@@ -380,7 +380,11 @@ def assemble_packages(project):
                     pipes.update_or_create_package(project, package_data)
                 elif isinstance(item, packagedcode_models.Dependency):
                     dependency_data = item.to_dict()
-                    pipes.update_or_create_dependencies(project, dependency_data)
+                    pipes.update_or_create_dependencies(
+                        project,
+                        dependency_data,
+                        datafile_resource=resource,
+                    )
                 elif isinstance(item, CodebaseResource):
                     seen_resource_paths.add(item.path)
                 else:

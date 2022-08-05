@@ -89,7 +89,7 @@ package_data1 = {
     "package_uid": "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b",
 }
 
-for_package_uid = "pkg:pypi/daglib@0.3.2?uuid=4d1f048b-a155-4f95-8cf9-185ab872ab4c"
+for_package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
 dependency_data1 = {
     "purl": "pkg:pypi/dask",
     "extracted_requirement": "dask<2023.0.0,>=2022.6.0",

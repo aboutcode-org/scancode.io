@@ -82,6 +82,7 @@ def to_csv(project):
 
     querysets = [
         project.discoveredpackages.all(),
+        project.discovereddependencys.all(),
         project.codebaseresources.without_symlinks(),
     ]
 
@@ -392,6 +393,7 @@ def to_xlsx(project):
 
     querysets = [
         project.discoveredpackages.all(),
+        project.discovereddependencys.all(),
         project.codebaseresources.without_symlinks(),
         project.projecterrors.all(),
     ]

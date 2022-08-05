@@ -68,15 +68,15 @@
   ],
   "dependencies": [
     {
+      "for_package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "is-npm-1.0.0.tgz-extract/package/package.json",
+      "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
       "purl": "pkg:npm/ava",
       "extracted_requirement": "0.0.3",
       "scope": "devDependencies",
       "is_runtime": false,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "for_package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "is-npm-1.0.0.tgz-extract/package/package.json",
       "datasource_id": "npm_package_json"
     }
   ],

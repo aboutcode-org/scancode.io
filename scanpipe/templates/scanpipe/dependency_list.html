@@ -18,24 +18,26 @@
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
         <thead>
           <tr>
+            <th>Dependency UID</th>
             <th>Package URL</th>
             <th>Extracted requirement</th>
-            <th>scope</th>
+            <th>Dependency scope</th>
             <th>Is runtime</th>
             <th>Is optional</th>
             <th>Is resolved</th>
-            <th>Dependency UID</th>
-            <th>For package UID</th>
-            <th>Datafile path</th>
+            <th>For package</th>
+            <th>Datafile resource</th>
             <th>Datasource ID</th>
-            <th>From Packages</th>
           </tr>
         </thead>
         <tbody>
           {% for dependency in object_list %}
             <tr class="break-word">
-              <td style="min-width: 500px;" title="{{ dependency.purl }}">
-                <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
+              <td style="min-width: 500px;" title="{{ dependency.dependency_uid }}">
+                <a href="{{ dependency.get_absolute_url }}">{{ dependency.dependency_uid }}</a>
+              </td>
+              <td>
+                {{ dependency.purl }}
               </td>
               <td>
                 {{ dependency.extracted_requirement }}
@@ -52,29 +54,18 @@
               <td>
                 {{ dependency.is_resolved }}
               </td>
-              <td style="min-width: 400px;" title="{{ dependency.dependency_uid }}">
-                {{ dependency.dependency_uid }}
+              <td>
+                {% if dependency.for_package %}
+                  <a href="{{ dependency.for_package.get_absolute_url }}" title="{{ dependency.for_package.purl }}">{{ dependency.for_package.purl }}</a>
+                {% endif %}
               </td>
-              <td style="min-width: 400px;" title="{{ dependency.for_package_uid }}">
-                {{ dependency.for_package_uid }}
-              </td>
-              <td style="min-width: 400px;" title="{{ dependency.datafile_path }}">
-                {{ dependency.datafile_path }}
+              <td>
+                {% if dependency.datafile_resource %}
+                  <a href="{{ dependency.datafile_resource.get_absolute_url }}" title="{{ dependency.datafile_resource.path }}">{{ dependency.datafile_resource.name }}</a>
+                {% endif %}
               </td>
               <td>
                 {{ dependency.datasource_id }}
-              </td>
-              <td class="is-clipped-list">
-                <ul>
-                  {% for package in dependency.packages %}
-                    <li>
-                      <a href="{{ package.get_absolute_url }}" title="{{ package.purl }}">{{ package.purl }}</a>
-                    </li>
-                  {% endfor %}
-                </ul>
-                {% if dependency.packages|length > 5 %}
-                  <button class="button is-small is-fullwidth show-clipped">Show {{ dependency.packages|length }} packages</button>
-                {% endif %}
               </td>
             </tr>
           {% endfor %}

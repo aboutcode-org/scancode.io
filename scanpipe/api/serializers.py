@@ -231,16 +231,20 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "filename",
             "last_modified_date",
             "codebase_resources",
-            "dependencies",
         ]
 
 
 class DiscoveredDependencySerializer(serializers.ModelSerializer):
+    for_package_uid = serializers.ReadOnlyField()
+    datafile_path = serializers.ReadOnlyField()
+
     class Meta:
         model = DiscoveredDependency
         exclude = [
             "id",
             "project",
+            "datafile_resource",
+            "for_package",
         ]
 
 

@@ -1833,9 +1833,6 @@ class DiscoveredPackage(
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
-    dependencies = models.ManyToManyField(
-        "DiscoveredDependency", related_name="discovered_packages"
-    )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
     package_uid = models.CharField(
@@ -1978,6 +1975,26 @@ class DiscoveredDependency(
     system and application packages discovered in the code under analysis.
     """
 
+    dependency_uid = models.CharField(
+        max_length=1024,
+        help_text=_("The unique identifier of this dependency."),
+    )
+    for_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="dependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    datafile_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="dependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
     purl = models.CharField(
         max_length=1024,
         help_text=_("The Package URL of this dependency."),
@@ -1997,22 +2014,6 @@ class DiscoveredDependency(
     is_optional = models.BooleanField(default=False)
     is_resolved = models.BooleanField(default=False)
 
-    dependency_uid = models.CharField(
-        max_length=1024,
-        help_text=_("The unique identifier of this dependency."),
-    )
-    for_package_uid = models.CharField(
-        max_length=1024,
-        blank=True,
-        help_text=_("The unique identifier of the package this dependency is for."),
-    )
-    datafile_path = models.CharField(
-        max_length=1024,
-        blank=True,
-        help_text=_(
-            "The relative path to the datafile where this dependency was detected from."
-        ),
-    )
     datasource_id = models.CharField(
         max_length=64,
         blank=True,
@@ -2023,21 +2024,38 @@ class DiscoveredDependency(
 
     objects = DiscoveredDependencyQuerySet.as_manager()
 
+    class Meta:
+        ordering = ["dependency_uid"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "dependency_uid"],
+                condition=~Q(dependency_uid=""),
+                name="%(app_label)s_%(class)s_unique_dependency_uid_within_project",
+            ),
+        ]
+
     def __str__(self):
-        return self.purl or str(self.uuid)
+        return self.dependency_uid
 
     def get_absolute_url(self):
         return reverse("dependency_detail", args=[self.project_id, self.pk])
 
-    @cached_property
-    def packages(self):
-        """
-        Returns the associated discovered_packages QuerySet as a list.
-        """
-        return list(self.discovered_packages.all())
+    @property
+    def for_package_uid(self):
+        if self.for_package:
+            return self.for_package.package_uid
+        else:
+            return ""
+
+    @property
+    def datafile_path(self):
+        if self.datafile_resource:
+            return self.datafile_resource.path
+        else:
+            return ""
 
     @classmethod
-    def create_from_data(cls, project, dependency_data):
+    def create_from_data(cls, project, dependency_data, datafile_resource=None):
         """
         Creates and returns a DiscoveredDependency for a `project` from the
         `dependency_data`.
@@ -2061,12 +2079,23 @@ class DiscoveredDependency(
         if "resolved_package" in dependency_data:
             dependency_data.pop("resolved_package")
 
+        package = None
+        if "for_package_uid" in dependency_data:
+            package_uid = dependency_data.pop("for_package_uid")
+            if package_uid:
+                package = project.discoveredpackages.get(package_uid=package_uid)
+
         cleaned_dependency_data = {
             field_name: value
             for field_name, value in dependency_data.items()
             if field_name in DiscoveredDependency.model_fields() and value
         }
-        discovered_dependency = cls(project=project, **cleaned_dependency_data)
+        discovered_dependency = cls(
+            project=project,
+            for_package=package,
+            datafile_resource=datafile_resource,
+            **cleaned_dependency_data,
+        )
         discovered_dependency.save()
 
         return discovered_dependency

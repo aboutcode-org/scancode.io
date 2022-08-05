@@ -1467,7 +1467,9 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
         project1 = Project.objects.create(name="Analysis")
 
-        dependency = DiscoveredDependency.create_from_data(project1, dependency_data1)
+        package = DiscoveredPackage.create_from_data(project1, package_data1)
+        resource = CodebaseResource.objects.create(project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO")
+        dependency = DiscoveredDependency.create_from_data(project1, dependency_data1, resource)
         self.assertEqual(project1, dependency.project)
         self.assertEqual("pkg:pypi/dask", dependency.purl)
         self.assertEqual("dask<2023.0.0,>=2022.6.0", dependency.extracted_requirement)
@@ -1480,7 +1482,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             dependency.dependency_uid,
         )
         self.assertEqual(
-            "pkg:pypi/daglib@0.3.2?uuid=4d1f048b-a155-4f95-8cf9-185ab872ab4c",
+            "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b",
             dependency.for_package_uid,
         )
         self.assertEqual(
@@ -1489,6 +1491,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         )
         self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
 
+        # Test field validation when using create_from_data
         dependency_count = DiscoveredDependency.objects.count()
         incomplete_data = dict(dependency_data1)
         incomplete_data["dependency_uid"] = ""

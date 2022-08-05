@@ -187,6 +187,7 @@ class ScanPipePipesTest(TestCase):
         output_files = output.to_csv(project=project1)
         expected = [
             "codebaseresource-2010-10-10-10-10-10.csv",
+            "discovereddependency-2010-10-10-10-10-10.csv",
             "discoveredpackage-2010-10-10-10-10-10.csv",
         ]
         self.assertEqual(sorted(expected), sorted(project1.output_root))
