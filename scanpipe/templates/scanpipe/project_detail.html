@@ -231,6 +231,7 @@
             // Retrieve the data ("name" value for filtering) from the .bb-tooltip section
             let name = document.querySelector(`#${base_chart_div.id} .bb-tooltip .name`).textContent;
             if (base_url && field) {
+              if (name === "(No value detected)") name = "EMPTY";
               let full_url = `${base_url}?${field}=${name}`;
               if (in_package) full_url += `&in_package=${in_package}`;
               if (event.ctrlKey || event.metaKey) window.open(full_url, '_blank');
