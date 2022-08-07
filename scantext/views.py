@@ -166,7 +166,6 @@ def get_licenses(
 
     qspans = []
     match = None
-    complete_text = ""
     complete_text_in_array = []
     for match in matches:
         qspans.append(match.qspan)
@@ -178,12 +177,6 @@ def get_licenses(
                 match=match,
                 license_url_template=license_url_template,
             )
-        )
-
-        complete_text += get_highlighted_lines(
-            match=match,
-            stopwords=STOPWORDS,
-            trace=TRACE_HIGHLIGHTED_TEXT,
         )
 
         complete_text_in_array.append(
@@ -209,7 +202,6 @@ def get_licenses(
             ("license_expressions", detected_expressions),
             ("percentage_of_license_text", percentage_of_license_text),
             ("complete_text_in_array", complete_text_in_array),
-            ("complete_text", complete_text),
         ]
     )
 

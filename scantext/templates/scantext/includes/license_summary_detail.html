@@ -1,48 +1,51 @@
-<!-- code for the sticky divs in new ui -->
-<div id="details" class="columns mb-5 mx-1">
-    <div class="column is-one-third">
-        <p class="title is-5">Detected Licenses</p>
-    </div>
-    <div class="column is-two-third">
-        <p class="title is-5">Matched Text</p>
-    </div>
-</div>
-
-{% for license in detected_licenses.licenses %}
 <div class="columns mb-5 mx-1">
-    <div class="column is-one-third mb-2">
-        <div id="sticky">
-            <div class="mb-2 is-link mx-1">
-                <a class="title is-5" href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})"> {{ license.short_name }} <i class="fa fa-link is-link"></i></a>
-            </div>
-            <div class="is-flex">
-                <p class="tag is-6 mr-2 is-light {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}</p>
-                <p class="tag is-6 mr-2 is-light is-primary">{{ license.category }}</p>
-                <a class="tag is-6 mr-2 is-light is-link" href="{{ license.reference_url }}">ref</a>
-                <p class="tag is-6 mr-2 is-light is-info">
-                {% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}
-                </p>
-            </div>
-        </div>
-    </div>
     <div class="column is-two-third">
-        <article class="message is-small">
-            <div class="message-header is-hidden"></div>
-            <div class="message-body" style="white-space: pre-wrap; max-height: 30vh; overflow: scroll;">
-                {{ license.matched_text|safe }}
+        <p class="title is-5">Input License Text</p>
+        {% for text in detected_licenses.complete_text_in_array %}
+        <section class="match-container box" style="white-space: pre-wrap; max-height: 70vh; overflow: scroll;">
+            {{ text|safe }}
+        </section>
+        {% endfor %}
+    </div>
+    <div class="column is-one-third">
+        <article class="panel is-info">
+            <div class="panel-heading is-flex is-justify-content-space-between is-align-items-center py-0 px-3">
+                <p>Detected Licenses</p>
+                <div>
+                    <button class="button px-2 previous-btn is-info"><i class="fas fa-arrow-up"></i></button>
+                    <button class="button px-2 next-btn is-info"><i class="fas fa-arrow-down"></i></button>
+                </div>
             </div>
+            {% for license in detected_licenses.licenses %}
+            <table class="license-table table is-fullwidth">
+                <tbody>
+                    <tr>
+                        <td><strong>Name</strong></td>
+                        <td>{{ license.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Score</strong></td>
+                        <td>{{ license.score }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Owner</strong></td>
+                        <td>{{ license.owner }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Category</strong></td>
+                        <td>{{ license.category }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SPDX Key</strong></td>
+                        <td>{{ license.spdx_license_key }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reference</strong></td>
+                        <td><a href="{{ license.reference_url }}" target="_blank">{{ license.reference_url }}</a></td>
+                    </tr>
+                </tbody>
+            </table>
+            {% endfor %}
         </article>
     </div>
 </div>
-<hr class="mx-1 mt-0">
-
-<style type="text/css">
-    #sticky {
-        position: sticky;
-        position: -webkit-sticky;
-        margin-top: 1vh;
-        top:  4vh;
-    }
-
-</style>
-{% endfor %}
