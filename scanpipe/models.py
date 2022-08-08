@@ -2042,14 +2042,14 @@ class DiscoveredDependency(
     def get_absolute_url(self):
         return reverse("dependency_detail", args=[self.project_id, self.pk])
 
-    @property
+    @cached_property
     def for_package_uid(self):
         if self.for_package:
             return self.for_package.package_uid
         else:
             return ""
 
-    @property
+    @cached_property
     def datafile_path(self):
         if self.datafile_resource:
             return self.datafile_resource.path

@@ -892,7 +892,7 @@ class DiscoveredDependencyListView(
     filterset_class = DependencyFilterSet
     template_name = "scanpipe/dependency_list.html"
     paginate_by = 100
-    prefetch_related = ["discovered_packages"]
+    prefetch_related = ["for_package", "datafile_resource"]
 
 
 class ProjectErrorListView(
