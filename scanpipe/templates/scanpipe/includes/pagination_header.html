@@ -1,7 +1,7 @@
 {% load humanize %}
 <div class="is-flex is-justify-content-space-between">
   <div>
-    <strong>{{ verbose_name }}:</strong> {{ paginator.count|intcomma }} results
+    {{ paginator.count|intcomma }} results
   </div>
   <div>
     {% if page_obj.has_previous %}

@@ -13,7 +13,8 @@
         <ul>
           <li><a href="{% url 'project_list' %}">Projects</a></li>
           <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
-          <li><a href="{% url 'project_resources' project.uuid %}">Codebase Resources</a></li>
+          <li><a href="{% url 'project_resources' project.uuid %}">Resources</a></li>
+          <li class="is-active"><a href="#" aria-current="page">{{ object.name }}</a></li>
         </ul>
       </nav>
     </section>
