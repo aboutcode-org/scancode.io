@@ -38,7 +38,11 @@
           {% for resource in object_list %}
             <tr>
               <td class="break-all">
-                <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+                {% if resource.is_dir %}
+                  {{ resource.path }}
+                {% else %}
+                  <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+                {% endif %}
               </td>
               <td>
                 <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
