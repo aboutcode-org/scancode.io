@@ -25,7 +25,9 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude="migrations|data|lib|bin|var" .
+BLACK_ARGS=--exclude="migrations|data|lib|bin|var"
+PYCODESTYLE_ARGS=--max-line-length=88 \
+  --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -64,11 +66,11 @@ envfile:
 
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"
-	bin/isort .
+	@${ACTIVATE} isort .
 
 black:
 	@echo "-> Apply black code formatter"
-	bin/black ${BLACK_ARGS}
+	@${ACTIVATE} black ${BLACK_ARGS} .
 
 doc8:
 	@echo "-> Run doc8 validation"
@@ -78,11 +80,11 @@ valid: isort black doc8
 
 check: doc8
 	@echo "-> Run pycodestyle (PEP8) validation"
-	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var .
+	@${ACTIVATE} pycodestyle ${PYCODESTYLE_ARGS} .
 	@echo "-> Run isort imports ordering validation"
 	@${ACTIVATE} isort --check-only .
 	@echo "-> Run black validation"
-	@${ACTIVATE} black --check ${BLACK_ARGS}
+	@${ACTIVATE} black --check ${BLACK_ARGS} .
 
 clean:
 	@echo "-> Clean the Python env"
@@ -111,7 +113,7 @@ sqlitedb:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --noreload --insecure
+	${MANAGE} runserver 8001 --insecure --noreload
 
 test:
 	@echo "-> Run the test suite"
@@ -122,7 +124,7 @@ worker:
 
 bump:
 	@echo "-> Bump the version"
-	bin/bumpver update --no-fetch --patch
+	@${ACTIVATE} bumpver update --no-fetch --patch
 
 docs:
 	rm -rf docs/_build/

@@ -53,6 +53,7 @@ v31.0.0 (next)
   - Creation date displayed under the project name
   - Add ability to sort by date and name
   - Add ability to filter by pipeline type
+  - Add ability to filter by run status
 
   https://github.com/nexB/scancode.io/issues/413
 
