@@ -46,7 +46,7 @@
               <td>
                  <a href="?type={{ resource.type }}" class="is-black-link">{{ resource.type }}</a>
               </td>
-              <td>{{ resource.size|default_if_none:"" }}</td>
+              <td>{{ resource.size|filesizeformat|default_if_none:"" }}</td>
               <td class="break-all">
                 <a href="?name={{ resource.name }}" class="is-black-link">{{ resource.name }}</a>
               </td>
