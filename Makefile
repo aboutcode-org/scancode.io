@@ -25,7 +25,7 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude="migrations|data|lib|bin|var" .
+BLACK_ARGS=--exclude="migrations|data|lib|bin|var"
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -68,7 +68,7 @@ isort:
 
 black:
 	@echo "-> Apply black code formatter"
-	bin/black ${BLACK_ARGS}
+	bin/black ${BLACK_ARGS} .
 
 doc8:
 	@echo "-> Run doc8 validation"
@@ -111,7 +111,7 @@ sqlitedb:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --noreload --insecure
+	${MANAGE} runserver 8001 --insecure --noreload
 
 test:
 	@echo "-> Run the test suite"
