@@ -122,7 +122,7 @@
   "dependencies": [
     {
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "purl": "pkg:pypi/pytest",
       "extracted_requirement": "",
@@ -134,7 +134,7 @@
     },
     {
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "purl": "pkg:pypi/pytest",
       "extracted_requirement": "",
@@ -146,7 +146,7 @@
     },
     {
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "purl": "pkg:pypi/pytest-asyncio",
       "extracted_requirement": "",
@@ -158,7 +158,7 @@
     },
     {
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "purl": "pkg:pypi/pytest-asyncio",
       "extracted_requirement": "",

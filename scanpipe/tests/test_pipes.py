@@ -531,8 +531,8 @@ class ScanPipePipesTest(TestCase):
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_dependencies(project, virtual_codebase)
 
         self.assertEqual(18, CodebaseResource.objects.count())
@@ -552,8 +552,8 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected, package.codebase_resources.get().path)
 
         # The functions can be called again and existing objects are skipped
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_dependencies(project, virtual_codebase)
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
@@ -569,8 +569,10 @@ class ScanPipePipesTest(TestCase):
 
         scanpipe_app.license_policies_index = license_policies_index
         scancode.create_discovered_packages(project, virtual_codebase)
-        scancode.create_discovered_dependencies(project, virtual_codebase)
         scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_dependencies(
+            project, virtual_codebase, strip_datafile_path_root=True
+        )
         resources = project.codebaseresources
 
         resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")

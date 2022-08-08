@@ -1468,8 +1468,12 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         project1 = Project.objects.create(name="Analysis")
 
         package = DiscoveredPackage.create_from_data(project1, package_data1)
-        resource = CodebaseResource.objects.create(project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO")
-        dependency = DiscoveredDependency.create_from_data(project1, dependency_data1, resource)
+        resource = CodebaseResource.objects.create(
+            project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
+        )
+        dependency = DiscoveredDependency.create_from_data(
+            project1, dependency_data1, strip_datafile_path_root=False
+        )
         self.assertEqual(project1, dependency.project)
         self.assertEqual("pkg:pypi/dask", dependency.purl)
         self.assertEqual("dask<2023.0.0,>=2022.6.0", dependency.extracted_requirement)

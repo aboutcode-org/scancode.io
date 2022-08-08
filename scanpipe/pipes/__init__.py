@@ -105,11 +105,20 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     return package
 
 
-def update_or_create_dependencies(project, dependency_data, datafile_resource=None):
+def update_or_create_dependencies(
+    project, dependency_data, strip_datafile_path_root=False
+):
     """
     Gets, updates or creates a DiscoveredDependency then returns it.
     Uses the `project` and `dependency_data` mapping to lookup and creates the
     DiscoveredDependency using its dependency_uid and for_package_uid as a unique key.
+
+    If `strip_datafile_path_root` is True, then
+    `DiscoveredDependency.create_from_data()` will strip the root path segment
+    from the `datafile_path` of `dependency_data` before looking up the
+    corresponding CodebaseResource for `datafile_path`. This is used in the case
+    where Dependency data is imported from a scancode-toolkit scan, where the
+    root path segments are not stripped for `datafile_path`s.
     """
     try:
         dependency = project.discovereddependencys.get(
@@ -124,7 +133,7 @@ def update_or_create_dependencies(project, dependency_data, datafile_resource=No
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
-            datafile_resource=datafile_resource,
+            strip_datafile_path_root=strip_datafile_path_root,
         )
 
     return dependency

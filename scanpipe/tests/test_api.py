@@ -62,7 +62,8 @@ class ScanPipeAPITest(TransactionTestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
         self.resource1 = CodebaseResource.objects.create(
-            project=self.project1, path="filename.ext"
+            project=self.project1,
+            path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         )
         self.discovered_package1 = self.resource1.create_and_add_package(package_data1)
         self.discovered_dependency1 = DiscoveredDependency.create_from_data(
@@ -335,7 +336,9 @@ class ScanPipeAPITest(TransactionTestCase):
             ["pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"],
             resource["for_packages"],
         )
-        self.assertEqual("filename.ext", resource["path"])
+        self.assertEqual(
+            "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO", resource["path"]
+        )
 
         self.assertEqual("", resource["compliance_alert"])
         self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR

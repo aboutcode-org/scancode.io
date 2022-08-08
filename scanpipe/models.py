@@ -2057,10 +2057,17 @@ class DiscoveredDependency(
             return ""
 
     @classmethod
-    def create_from_data(cls, project, dependency_data, datafile_resource=None):
+    def create_from_data(cls, project, dependency_data, strip_datafile_path_root=False):
         """
         Creates and returns a DiscoveredDependency for a `project` from the
         `dependency_data`.
+
+        If `strip_datafile_path_root` is True, then `create_from_data()` will
+        strip the root path segment from the `datafile_path` of
+        `dependency_data` before looking up the corresponding CodebaseResource
+        for `datafile_path`. This is used in the case where Dependency data is
+        imported from a scancode-toolkit scan, where the root path segments are
+        not stripped for `datafile_path`s.
         """
         required_fields = ["purl", "dependency_uid"]
         missing_values = [
@@ -2081,11 +2088,18 @@ class DiscoveredDependency(
         if "resolved_package" in dependency_data:
             dependency_data.pop("resolved_package")
 
-        package = None
-        if "for_package_uid" in dependency_data:
-            package_uid = dependency_data.pop("for_package_uid")
-            if package_uid:
-                package = project.discoveredpackages.get(package_uid=package_uid)
+        for_package = None
+        for_package_uid = dependency_data.get("for_package_uid")
+        if for_package_uid:
+            for_package = project.discoveredpackages.get(package_uid=for_package_uid)
+
+        datafile_resource = None
+        datafile_path = dependency_data.get("datafile_path")
+        if datafile_path:
+            if strip_datafile_path_root:
+                segments = datafile_path.split("/")
+                datafile_path = "/".join(segments[1:])
+            datafile_resource = project.codebaseresources.get(path=datafile_path)
 
         cleaned_dependency_data = {
             field_name: value
@@ -2094,7 +2108,7 @@ class DiscoveredDependency(
         }
         discovered_dependency = cls(
             project=project,
-            for_package=package,
+            for_package=for_package,
             datafile_resource=datafile_resource,
             **cleaned_dependency_data,
         )

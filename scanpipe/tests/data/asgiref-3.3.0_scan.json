@@ -4,8 +4,8 @@
       "tool_name": "scanpipe",
       "tool_version": "30.2.0",
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "uuid": "2c670949-6856-4d17-b938-5fa7e061e43e",
-      "created_date": "2022-08-05T21:33:36.065Z",
+      "uuid": "15e5f0b0-81a1-4edb-a5e2-1e963e482569",
+      "created_date": "2022-08-08T22:39:16.165Z",
       "input_sources": [
         {
           "filename": "asgiref-3.3.0-py3-none-any.whl",
@@ -17,15 +17,15 @@
           "pipeline_name": "scan_codebase",
           "status": "not_started",
           "description": "A pipeline to scan a codebase resource with ScanCode-toolkit.\n\nInput files are copied to the project's codebase/ directory and are extracted\nin place before running the scan.\nAlternatively, the code can be manually copied to the project codebase/\ndirectory.",
-          "uuid": "6c34e880-3878-4916-a4af-a9413a1cf4de",
-          "created_date": "2022-08-05T21:33:36.068842Z",
+          "uuid": "dce43472-a732-4126-bcf5-a2dea287f64e",
+          "created_date": "2022-08-08T22:39:16.167868Z",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
           "task_end_date": null,
           "task_exitcode": null,
           "task_output": "",
-          "log": "2022-08-05 21:33:36.06 Pipeline [scan_codebase] starting\n2022-08-05 21:33:36.07 Step [copy_inputs_to_codebase_directory] starting\n2022-08-05 21:33:36.07 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds\n2022-08-05 21:33:36.07 Step [extract_archives] starting\n2022-08-05 21:33:36.11 Step [extract_archives] completed in 0.04 seconds\n2022-08-05 21:33:36.11 Step [collect_and_create_codebase_resources] starting\n2022-08-05 21:33:36.31 Step [collect_and_create_codebase_resources] completed in 0.20 seconds\n2022-08-05 21:33:36.31 Step [tag_empty_files] starting\n2022-08-05 21:33:36.32 Step [tag_empty_files] completed in 0.00 seconds\n2022-08-05 21:33:36.32 Step [scan_for_application_packages] starting\n2022-08-05 21:33:39.27 Step [scan_for_application_packages] completed in 2.95 seconds\n2022-08-05 21:33:39.27 Step [scan_for_files] starting\n2022-08-05 21:33:48.93 Step [scan_for_files] completed in 9.66 seconds\n2022-08-05 21:33:48.93 Pipeline completed\n",
+          "log": "2022-08-08 22:39:16.16 Pipeline [scan_codebase] starting\n2022-08-08 22:39:16.16 Step [copy_inputs_to_codebase_directory] starting\n2022-08-08 22:39:16.17 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds\n2022-08-08 22:39:16.17 Step [extract_archives] starting\n2022-08-08 22:39:16.19 Step [extract_archives] completed in 0.02 seconds\n2022-08-08 22:39:16.19 Step [collect_and_create_codebase_resources] starting\n2022-08-08 22:39:16.39 Step [collect_and_create_codebase_resources] completed in 0.19 seconds\n2022-08-08 22:39:16.39 Step [tag_empty_files] starting\n2022-08-08 22:39:16.39 Step [tag_empty_files] completed in 0.00 seconds\n2022-08-08 22:39:16.39 Step [scan_for_application_packages] starting\n2022-08-08 22:39:19.40 Step [scan_for_application_packages] completed in 3.00 seconds\n2022-08-08 22:39:19.40 Step [scan_for_files] starting\n2022-08-08 22:39:28.41 Step [scan_for_files] completed in 9.01 seconds\n2022-08-08 22:39:28.41 Pipeline completed\n",
           "execution_time": null
         }
       ],
@@ -65,7 +65,7 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=87db2fd4-7e4f-47ff-923e-ba8aa832a6c9",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=68d5fb97-adf3-4e46-ac43-8ce38b552d74",
       "keywords": [
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
@@ -114,7 +114,7 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=e6722e7a-9a92-4d42-a241-9006e2cbaeaa",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=5b8b863c-31e1-4260-8ab9-ddbb3c5c59fc",
       "keywords": [
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
@@ -134,7 +134,9 @@
   ],
   "dependencies": [
     {
-      "dependency_uid": "pkg:pypi/pytest?uuid=76dfd800-e201-42ab-a79f-c507a8349484",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=68d5fb97-adf3-4e46-ac43-8ce38b552d74",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
+      "dependency_uid": "pkg:pypi/pytest?uuid=7cb1268a-195e-4540-a627-e6ada2d24189",
       "purl": "pkg:pypi/pytest",
       "extracted_requirement": "pytest; extra == \"tests\"",
       "scope": "tests",
@@ -144,7 +146,9 @@
       "datasource_id": "pypi_wheel"
     },
     {
-      "dependency_uid": "pkg:pypi/pytest?uuid=2693dc66-af22-4c78-8c03-667788111420",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=5b8b863c-31e1-4260-8ab9-ddbb3c5c59fc",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+      "dependency_uid": "pkg:pypi/pytest?uuid=95c08eea-dded-4fb8-83da-a6f88543c09a",
       "purl": "pkg:pypi/pytest",
       "extracted_requirement": "pytest; extra == \"tests\"",
       "scope": "tests",
@@ -154,7 +158,9 @@
       "datasource_id": "pypi_wheel_metadata"
     },
     {
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=1d64c409-4073-4a28-b05f-2fc269b90f17",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=68d5fb97-adf3-4e46-ac43-8ce38b552d74",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=ea753285-7c8a-482b-8651-8b68a4dc0f98",
       "purl": "pkg:pypi/pytest-asyncio",
       "extracted_requirement": "pytest-asyncio; extra == \"tests\"",
       "scope": "tests",
@@ -164,7 +170,9 @@
       "datasource_id": "pypi_wheel"
     },
     {
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=408e0381-2968-438d-8155-0a438ea0efd6",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=5b8b863c-31e1-4260-8ab9-ddbb3c5c59fc",
+      "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=61806865-cd6f-409a-8708-96bfd744fb4e",
       "purl": "pkg:pypi/pytest-asyncio",
       "extracted_requirement": "pytest-asyncio; extra == \"tests\"",
       "scope": "tests",
