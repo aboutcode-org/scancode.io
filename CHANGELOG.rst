@@ -73,6 +73,14 @@ v31.0.0 (next)
   to any filters.
   https://github.com/nexB/scancode.io/issues/296
 
+- CodebaseResource.name now contains both the bare file name with extension, as
+  opposed to just the bare file name without extension.
+
+  - Using a name stripped from its extension was something that was not used in
+    other AboutCode project or tools.
+
+  https://github.com/nexB/scancode.io/issues/467
+
 v30.2.0 (2021-12-17)
 --------------------
 

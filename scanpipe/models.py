@@ -1412,7 +1412,7 @@ class CodebaseResource(
     name = models.CharField(
         max_length=255,
         blank=True,
-        help_text=_("File or directory name of this resource."),
+        help_text=_("File or directory name of this resource with its extension."),
     )
     extension = models.CharField(
         max_length=100,
