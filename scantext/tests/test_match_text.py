@@ -13,16 +13,11 @@ from commoncode.testcase import FileBasedTesting
 from licensedcode import cache
 from licensedcode import index
 from licensedcode import models
-from licensedcode.index import LicenseIndex
-from licensedcode.match import LicenseMatch
-from scantext.match_text import Token
+from licensedcode.spans import Span
 from scantext.match_text import get_full_matched_text
 from scantext.match_text import reportable_tokens
-from licensedcode.match import tokenize_matched_text
-from licensedcode.models import Rule
-from licensedcode.models import load_rules
-from licensedcode.query import Query
-from licensedcode.spans import Span
+from scantext.match_text import Token
+from scantext.match_text import tokenize_matched_text
 
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -39,7 +34,7 @@ class TestCollectLicenseMatchTexts(FileBasedTesting):
             EVEN IF ADVISED OF THE [[POSSIBILITY OF SUCH]] DAMAGE
         """
 
-        rule = Rule(stored_text=rule_text, license_expression="test")
+        rule = models.Rule(stored_text=rule_text, license_expression="test")
         idx = index.LicenseIndex([rule])
 
         querys = """
@@ -95,7 +90,7 @@ class TestCollectLicenseMatchTexts(FileBasedTesting):
             EVEN IF ADVISED OF THE [[POSSIBILITY OF SUCH]] DAMAGE
         """
 
-        rule = Rule(stored_text=rule_text, license_expression="test")
+        rule = models.Rule(stored_text=rule_text, license_expression="test")
         idx = index.LicenseIndex([rule])
 
         querys = """
@@ -159,7 +154,7 @@ class TestCollectLicenseMatchTexts(FileBasedTesting):
     def test_get_full_matched_text_does_not_munge_underscore(self):
         rule_text = "MODULE_LICENSE_GPL"
 
-        rule = Rule(stored_text=rule_text, license_expression="test")
+        rule = models.Rule(stored_text=rule_text, license_expression="test")
         idx = index.LicenseIndex([rule])
 
         querys = "MODULE_LICENSE_GPL"
@@ -176,7 +171,7 @@ class TestCollectLicenseMatchTexts(FileBasedTesting):
     def test_get_full_matched_text_does_not_munge_plus(self):
         rule_text = "MODULE_LICENSE_GPL+ +"
 
-        rule = Rule(stored_text=rule_text, license_expression="test")
+        rule = models.Rule(stored_text=rule_text, license_expression="test")
         idx = index.LicenseIndex([rule])
 
         querys = "MODULE_LICENSE_GPL+ +"
@@ -1067,7 +1062,7 @@ class TestCollectLicenseMatchTexts(FileBasedTesting):
         rules_data_dir = self.get_test_loc("matched_text/index/rules")
         query_location = self.get_test_loc("matched_text/query.txt")
         rules = models.load_rules(rules_data_dir)
-        idx = LicenseIndex(rules)
+        idx = index.LicenseIndex(rules)
 
         results = [
             match.matched_text(_usecache=False)
@@ -1150,7 +1145,7 @@ class TestCollectLicenseMatchTexts(FileBasedTesting):
         self,
     ):
         rule_dir = self.get_test_loc("matched_text/turkish_unicode/rules")
-        idx = index.LicenseIndex(load_rules(rule_dir))
+        idx = index.LicenseIndex(models.load_rules(rule_dir))
         query_loc = self.get_test_loc("matched_text/turkish_unicode/query")
         matches = idx.match(location=query_loc)
         matched_texts = [
@@ -1186,7 +1181,7 @@ class TestCollectLicenseMatchTexts(FileBasedTesting):
 
     def test_matched_text_does_not_ignores_whole_lines_in_binary_with_small_index(self):
         rule_dir = self.get_test_loc("matched_text/binary_text/rules")
-        idx = index.LicenseIndex(load_rules(rule_dir))
+        idx = index.LicenseIndex(models.load_rules(rule_dir))
         query_loc = self.get_test_loc("matched_text/binary_text/gosu")
         matches = idx.match(location=query_loc)
         matched_texts = [

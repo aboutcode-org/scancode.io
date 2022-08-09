@@ -7,11 +7,8 @@
 # See https://aboutcode.org for more information about nexB OSS projects.
 #
 
-from enum import IntEnum
-from itertools import groupby
 
 import attr
-from attr import validators
 from licensedcode import query
 from licensedcode.spans import Span
 from licensedcode.stopwords import STOPWORDS
