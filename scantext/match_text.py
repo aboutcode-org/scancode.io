@@ -7,7 +7,6 @@
 # See https://aboutcode.org for more information about nexB OSS projects.
 #
 
-
 import attr
 from licensedcode import query
 from licensedcode.spans import Span
@@ -65,20 +64,43 @@ class Token(object):
     """
     Used to represent a token in collected query-side matched texts and SPDX
     identifiers.
+
+    ``matches`` is a lits of LicenseMatch to accomodate for overlapping matches.
+    For example, say we have these two matched text portions:
+    QueryText: this is licensed under GPL or MIT
+    Match1:    this is licensed under GPL
+    Match2:            licensed under GPL or MIT
+
+    Each Token would be to assigned one or more LicenseMatch:
+        this:         Match1            : yellow
+        is:           Match1            : yellow
+        licensed:     Match1, Match2    : orange (mixing yellow and pink colors)
+        under:        Match1, Match2    : orange (mixing yellow and pink colors)
+        GPL:          Match1, Match2    : orange (mixing yellow and pink colors)
+        or:           Match2            : pink
+        MIT:          Match2            : pink
     """
 
     # original text value for this token.
     value = attr.ib()
+
     # line number, one-based
     line_num = attr.ib()
+
     # absolute position for known tokens, zero-based. -1 for unknown tokens
     pos = attr.ib(default=-1)
+
     # True if text/alpha False if this is punctuation or spaces
     is_text = attr.ib(default=False)
+
     # True if part of a match
     is_matched = attr.ib(default=False)
+
     # True if this is a known token
     is_known = attr.ib(default=False)
+
+    # List of LicenseMatch that match this token
+    matches = attr.ib(attr.Factory(list))
 
 
 def tokenize_matched_text(
