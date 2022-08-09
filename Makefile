@@ -25,13 +25,18 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude="migrations|data|lib|bin|var" .
+BLACK_ARGS=--exclude="migrations|data|lib|bin|var"
+PYCODESTYLE_ARGS=--max-line-length=88 \
+  --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
 ENV_FILE=.env
-# Customize with `$ make postgres SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
+# Customize with `$ make postgresdb SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
+SCANCODEIO_DB_NAME=scancodeio
+SCANCODEIO_DB_USER=scancodeio
 SCANCODEIO_DB_PASSWORD=scancodeio
+POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 
 # Use sudo for postgres, but only on Linux
 UNAME := $(shell uname)
@@ -61,11 +66,11 @@ envfile:
 
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"
-	bin/isort .
+	@${ACTIVATE} isort .
 
 black:
 	@echo "-> Apply black code formatter"
-	bin/black ${BLACK_ARGS}
+	@${ACTIVATE} black ${BLACK_ARGS} .
 
 doc8:
 	@echo "-> Run doc8 validation"
@@ -75,40 +80,40 @@ valid: isort black doc8
 
 check: doc8
 	@echo "-> Run pycodestyle (PEP8) validation"
-	@${ACTIVATE} pycodestyle --max-line-length=88 --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var .
+	@${ACTIVATE} pycodestyle ${PYCODESTYLE_ARGS} .
 	@echo "-> Run isort imports ordering validation"
 	@${ACTIVATE} isort --check-only .
 	@echo "-> Run black validation"
-	@${ACTIVATE} black --check ${BLACK_ARGS}
+	@${ACTIVATE} black --check ${BLACK_ARGS} .
 
 clean:
 	@echo "-> Clean the Python env"
-	rm -rf bin/ lib/ lib64/ include/ build/ dist/ scancodeio.egg-info/ docs/_build/ pip-selfcheck.json pyvenv.cfg
-	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
+	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ pip-selfcheck.json pyvenv.cfg
+	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete -type d -name '*.egg-info' -delete
 
 migrate:
 	@echo "-> Apply database migrations"
 	${MANAGE} migrate
 
-postgres:
+postgresdb:
 	@echo "-> Configure PostgreSQL database"
-	@echo "-> Create database user 'scancodeio'"
-	${SUDO_POSTGRES} createuser --no-createrole --no-superuser --login --inherit --createdb scancodeio || true
-	${SUDO_POSTGRES} psql -c "alter user scancodeio with encrypted password '${SCANCODEIO_DB_PASSWORD}';" || true
-	@echo "-> Drop 'scancodeio' database"
-	${SUDO_POSTGRES} dropdb scancodeio || true
-	@echo "-> Create 'scancodeio' database"
-	${SUDO_POSTGRES} createdb --encoding=utf-8 --owner=scancodeio scancodeio
+	@echo "-> Create database user ${SCANCODEIO_DB_NAME}"
+	@${SUDO_POSTGRES} createuser --no-createrole --no-superuser --login --inherit --createdb '${SCANCODEIO_DB_USER}' || true
+	@${SUDO_POSTGRES} psql -c "alter user ${SCANCODEIO_DB_USER} with encrypted password '${SCANCODEIO_DB_PASSWORD}';" || true
+	@echo "-> Drop ${SCANCODEIO_DB_NAME} database"
+	@${SUDO_POSTGRES} dropdb ${SCANCODEIO_DB_NAME} || true
+	@echo "-> Create ${SCANCODEIO_DB_NAME} database"
+	@${SUDO_POSTGRES} createdb --owner=${SCANCODEIO_DB_USER} ${POSTGRES_INITDB_ARGS} ${SCANCODEIO_DB_NAME}
 	@$(MAKE) migrate
 
-sqlite:
+sqlitedb:
 	@echo "-> Configure SQLite database"
 	@echo SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\" >> ${ENV_FILE}
 	@echo SCANCODEIO_DB_NAME=\"sqlite3.db\" >> ${ENV_FILE}
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --noreload --insecure
+	${MANAGE} runserver 8001 --insecure --noreload
 
 test:
 	@echo "-> Run the test suite"
@@ -119,7 +124,7 @@ worker:
 
 bump:
 	@echo "-> Bump the version"
-	bin/bumpver update --no-fetch --patch
+	@${ACTIVATE} bumpver update --no-fetch --patch
 
 docs:
 	rm -rf docs/_build/
@@ -134,4 +139,4 @@ docker-images:
 	@mkdir -p dist/
 	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgres sqlite run test bump docs docker-images
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb run test bump docs docker-images

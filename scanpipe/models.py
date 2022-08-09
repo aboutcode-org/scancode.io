@@ -1496,6 +1496,10 @@ class CodebaseResource(
         max_length=30,
         help_text=_("Analysis status for this resource."),
     )
+    tag = models.CharField(
+        blank=True,
+        max_length=50,
+    )
 
     class Type(models.TextChoices):
         """
@@ -1834,6 +1838,12 @@ class DiscoveredPackage(
         blank=True,
         help_text=_("A list of dependencies for this package."),
     )
+    package_uid = models.CharField(
+        max_length=1024,
+        blank=True,
+        db_index=True,
+        help_text=_("Unique identifier for this package."),
+    )
 
     # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
@@ -1843,9 +1853,26 @@ class DiscoveredPackage(
 
     class Meta:
         ordering = ["uuid"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "package_uid"],
+                condition=~Q(package_uid=""),
+                name="%(app_label)s_%(class)s_unique_package_uid_within_project",
+            ),
+        ]
 
     def __str__(self):
         return self.package_url or str(self.uuid)
+
+    def get_absolute_url(self):
+        return reverse("package_detail", args=[self.project_id, self.pk])
+
+    @cached_property
+    def resources(self):
+        """
+        Returns the assigned codebase_resources QuerySet as a list.
+        """
+        return list(self.codebase_resources.all())
 
     @property
     def purl(self):
@@ -1877,7 +1904,7 @@ class DiscoveredPackage(
         If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
-        required_fields = ["type", "name", "version"]
+        required_fields = ["type", "name"]
         missing_values = [
             field_name
             for field_name in required_fields
@@ -1910,7 +1937,7 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
-    def update_from_data(self, package_data):
+    def update_from_data(self, package_data, override=False):
         """
         Update this discovered package instance with the provided `package_data`.
         The `save()` is called only if at least one field was modified.
@@ -1928,11 +1955,9 @@ class DiscoveredPackage(
                 continue
 
             current_value = getattr(self, field_name, None)
-            if not current_value:
+            if not current_value or (current_value != value and override):
                 setattr(self, field_name, value)
                 updated_fields.append(field_name)
-            elif current_value != value:
-                pass  # TODO: handle this case
 
         if updated_fields:
             self.save()

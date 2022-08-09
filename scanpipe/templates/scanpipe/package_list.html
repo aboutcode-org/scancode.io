@@ -5,10 +5,10 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True %}
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Packages" %}
         {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
       </div>
-      {% include 'scanpipe/includes/pagination_header.html' with verbose_name="Packages" %}
+      {% include 'scanpipe/includes/pagination_header.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
     </section>
   </div>
@@ -27,8 +27,8 @@
         <tbody>
           {% for package in object_list %}
             <tr class="break-word">
-              <td style="min-width: 500px;">
-                {{ package.package_url }}
+              <td style="min-width: 500px;" title="{{ package.package_uid }}">
+                <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
               </td>
               <td style="min-width: 300px; max-width: 400px;">
                 {{ package.license_expression|linebreaksbr }}
@@ -36,14 +36,17 @@
               <td title="{{ package.copyright }}">
                 {{ package.copyright|truncatechars:150|linebreaksbr }}
               </td>
-              <td>
+              <td class="is-clipped-list">
                 <ul>
-                  {% for resource in package.codebase_resources.all %}
+                  {% for resource in package.resources %}
                     <li>
-                      <a href="{{ resource.get_absolute_url }}">{{ resource }}</a>
+                      <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
                     </li>
                   {% endfor %}
                 </ul>
+                {% if package.resources|length > 5 %}
+                  <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
@@ -55,4 +58,21 @@
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
     {% endif %}
   </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    let $showClippedButton = getAll("button.show-clipped");
+
+    $showClippedButton.forEach(function ($el) {
+      $el.addEventListener("click", function () {
+        $el.parentNode.classList.toggle("is-clipped-list");
+        let text = $el.textContent;
+        if (text.startsWith("Show"))
+          $el.textContent = text.replace("Show", "Hide");
+        else
+          $el.textContent = text.replace("Hide", "Show");
+      });
+    });
+  </script>
 {% endblock %}

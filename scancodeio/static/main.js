@@ -58,6 +58,26 @@ function setupCloseModalButtons() {
   }
 }
 
+// Tabs
+
+function setupTabs() {
+  const $tabLinks = getAll('.tabs a');
+
+  $tabLinks.forEach(function ($el) {
+    $el.addEventListener('click', function (event) {
+      const activeLink = document.querySelector('.tabs .is-active');
+      const activeTabContent = document.querySelector('.tab-content.is-active');
+      const target_id = $el.dataset.target;
+      const targetTabContent = document.getElementById(target_id);
+
+      activeLink.classList.remove('is-active');
+      $el.parentNode.classList.add('is-active');
+      activeTabContent.classList.remove('is-active');
+      targetTabContent.classList.add('is-active');
+    });
+  });
+}
+
 // Utils, available globally
 
 function getAll(selector) {
@@ -123,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   setupOpenModalButtons();
   setupCloseModalButtons();
+  setupTabs();
 
   // Close modals and dropdowns on pressing "escape" key
   document.addEventListener('keydown', function (event) {

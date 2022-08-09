@@ -26,31 +26,30 @@ from scanpipe.pipes import scancode
 
 class LoadInventory(Pipeline):
     """
-    A pipeline to load an inventory of files and packages from a ScanCode JSON scan.
-    (Presumably containing file information and package scan data).
+    A pipeline to load one or more inventory of files and packages from a ScanCode JSON
+    scan results. (Presumably containing resource information and package scan data).
     """
 
     @classmethod
     def steps(cls):
         return (
-            cls.get_scan_json_input,
-            cls.build_inventory_from_scan,
+            cls.get_scan_json_inputs,
+            cls.build_inventory_from_scans,
         )
 
-    def get_scan_json_input(self):
+    def get_scan_json_inputs(self):
         """
-        Locates a JSON scan input from a project's input/ directory.
+        Locates all the ScanCode JSON scan results from the project's input/ directory.
+        This includes all files with a .json extension.
         """
-        inputs = list(self.project.inputs(pattern="*.json"))
-        if len(inputs) != 1:
-            raise Exception("Only 1 JSON input file supported")
-        self.input_location = str(inputs[0].absolute())
+        self.input_locations = [
+            str(scan_input.absolute())
+            for scan_input in self.project.inputs(pattern="*.json")
+        ]
 
-    def build_inventory_from_scan(self):
+    def build_inventory_from_scans(self):
         """
-        Processes a given JSON scan input to populate codebase resources and packages.
+        Processes JSON scan results files to populate codebase resources and packages.
         """
-        project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, self.input_location)
-        scancode.create_codebase_resources(project, scanned_codebase)
-        scancode.create_discovered_packages(project, scanned_codebase)
+        for input_location in self.input_locations:
+            scancode.create_inventory_from_scan(self.project, input_location)

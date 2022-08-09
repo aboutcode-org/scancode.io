@@ -20,19 +20,26 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.apps import apps
+from django.core.validators import EMPTY_VALUES
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 import django_filters
+from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
+
+scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class FilterSetUtilsMixin:
+    empty_value = "EMPTY"
+
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
         """
@@ -85,13 +92,84 @@ class FilterSetUtilsMixin:
     def verbose_name_plural(cls):
         return cls.Meta.model._meta.verbose_name_plural
 
+    def filter_queryset(self, queryset):
+        """
+        Adds the ability to filter by empty and none values providing the "magic"
+        `empty_value` to any filters.
+        """
+
+        for name, value in self.form.cleaned_data.items():
+            if value == self.empty_value:
+                queryset = queryset.filter(**{f"{name}__in": EMPTY_VALUES})
+            else:
+                queryset = self.filters[name].filter(queryset, value)
+
+        return queryset
+
+
+class BulmaLinkWidget(LinkWidget):
+    """
+    Replace LinkWidget rendering with Bulma CSS classes.
+    """
+
+    extra_css_class = ""
+
+    def render_option(self, name, selected_choices, option_value, option_label):
+        option = super().render_option(
+            name, selected_choices, option_value, option_label
+        )
+        css_class = str(self.extra_css_class)
+
+        selected_class = ' class="selected"'
+        if selected_class in option:
+            option = option.replace(selected_class, "")
+            css_class += " is-active"
+
+        option = option.replace("<a", f'<a class="{css_class}"')
+        return option
+
+
+class BulmaDropdownWidget(BulmaLinkWidget):
+    extra_css_class = "dropdown-item"
+
 
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=["created_date", "name"],
+        empty_label="Newest",
+        choices=(
+            ("created_date", "Oldest"),
+            ("name", "Name (a-Z)"),
+            ("-name", "Name (Z-a)"),
+        ),
+        widget=BulmaDropdownWidget,
+    )
+    pipeline = django_filters.ChoiceFilter(
+        label="Pipeline",
+        field_name="runs__pipeline_name",
+        choices=scanpipe_app.get_pipeline_choices(include_blank=False),
+        widget=BulmaDropdownWidget,
+    )
+    status = django_filters.ChoiceFilter(
+        label="Status",
+        method="filter_run_status",
+        choices=[
+            ("not_started", "Not started"),
+            ("queued", "Queued"),
+            ("running", "Running"),
+            ("succeed", "Success"),
+            ("failed", "Failure"),
+        ],
+        widget=BulmaDropdownWidget,
+    )
 
     class Meta:
         model = Project
-        fields = ["search", "is_archived"]
+        fields = ["is_archived"]
 
     def __init__(self, data=None, *args, **kwargs):
         """
@@ -99,8 +177,26 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         """
         super().__init__(data, *args, **kwargs)
 
-        if not data or "is_archived" not in data:
+        # Default filtering by "Active" projects.
+        if not data or data.get("is_archived", "") == "":
             self.queryset = self.queryset.filter(is_archived=False)
+
+        active_count = Project.objects.filter(is_archived=False).count()
+        archived_count = Project.objects.filter(is_archived=True).count()
+        self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
+            choices=[
+                ("", f'<i class="fas fa-seedling"></i> {active_count} Active'),
+                ("true", f'<i class="fas fa-dice-d6"></i> {archived_count} Archived'),
+            ]
+        )
+
+    def filter_run_status(self, queryset, name, value):
+        """
+        Filter by Run status using the `RunQuerySet` methods.
+        """
+        run_queryset_method = value
+        run_queryset = getattr(Run.objects, run_queryset_method)()
+        return queryset.filter(runs__in=run_queryset)
 
 
 class JSONContainsFilter(django_filters.CharFilter):
@@ -120,8 +216,8 @@ class JSONContainsFilter(django_filters.CharFilter):
 class InPackageFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
-            ("true", _("Yes")),
-            ("false", _("No")),
+            ("true", "Yes"),
+            ("false", "No"),
         )
         super().__init__(*args, **kwargs)
 
@@ -134,7 +230,9 @@ class InPackageFilter(django_filters.ChoiceFilter):
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="path", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="path", lookup_expr="icontains"
+    )
     in_package = InPackageFilter(label="In a Package")
 
     class Meta:
@@ -149,6 +247,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "sha512",
             "size",
             "status",
+            "tag",
             "type",
             "name",
             "extension",
@@ -178,8 +277,10 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
-    purl = PackageURLFilter()
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    purl = PackageURLFilter(label="Package URL")
 
     class Meta:
         model = DiscoveredPackage
@@ -213,7 +314,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="message", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="message", lookup_expr="icontains"
+    )
 
     class Meta:
         model = ProjectError

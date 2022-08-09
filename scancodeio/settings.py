@@ -44,6 +44,8 @@ SECRET_KEY = env.str("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
 
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
 # SECURITY WARNING: don't run with debug turned on in production
 DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
 
@@ -159,7 +161,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
         "OPTIONS": {
-            "min_length": 14,
+            "min_length": env.int("SCANCODEIO_PASSWORD_MIN_LENGTH", default=12),
         },
     },
     {
@@ -222,6 +224,11 @@ LOGGING = {
         "scanpipe": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["null"] if IS_TESTS else ["console"],
+            "propagate": False,
         },
     },
 }

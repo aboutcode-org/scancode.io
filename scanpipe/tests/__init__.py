@@ -86,6 +86,7 @@ package_data1 = {
     "repository_homepage_url": None,
     "repository_download_url": None,
     "api_data_url": None,
+    "package_uid": "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b",
 }
 
 license_policies = [

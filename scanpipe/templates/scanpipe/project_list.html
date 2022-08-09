@@ -1,30 +1,45 @@
 {% extends "scanpipe/base.html" %}
 {% load humanize %}
 
+{% block extrahead %}
+  <style>
+    ul#id_is_archived {display: inline-flex;}
+    ul#id_is_archived li {margin-right: 1rem;}
+    ul#id_is_archived li a {color: #7a7a7a;}
+    ul#id_is_archived li a:hover {text-decoration: underline;}
+    ul#id_is_archived li a.is-active {color: #363636;}
+  </style>
+{% endblock %}
+
 {% block content %}
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
-    <section class="section pt-0">
+    <section class="mx-5 mb-5">
       <div class="is-flex is-justify-content-space-between mb-2">
         <div>
           {% include 'scanpipe/includes/breadcrumb.html' %}
-          {% if archived_count > 0 %}
-            <a href="{% url 'project_list' %}" class="{% if 'is_archived' in request.GET %}is-grey-link{% else %}is-black-link{% endif %}">
-              <i class="fas fa-seedling"></i>
-              {{ active_count }} Active
-            </a>
-            <a href="{% url 'project_list' %}?is_archived=true" class="ml-4 {% if 'is_archived' in request.GET %}is-black-link{% else %}is-grey-link{% endif %}">
-              <i class="fas fa-dice-d6"></i>
-              {{ archived_count }} Archived
+          {{ filter.form.is_archived }}
+          {% if filter.is_active %}
+            <a class="is-grey-link" href="{% url 'project_list' %}">
+              <i class="fas fa-times"></i> Clear search and filters
             </a>
           {% endif %}
         </div>
         <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
       </div>
 
-      {% include 'scanpipe/includes/search_field.html' %}
+      <div class="is-flex mb-3">
+        <div class="is-flex-grow-1 mr-2">
+          {% include 'scanpipe/includes/search_field.html' %}
+        </div>
+        <div>
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.status only %}
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
+        </div>
+      </div>
 
       {% if object_list %}
         {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
@@ -32,8 +47,8 @@
         <div class="tile is-ancestor">
           <div class="tile is-parent">
             <article class="tile is-child box has-text-centered border-dashed">
-              {% if filter.form.search.value %}
-                No Projects found. <a href="{% url 'project_list' %}">Clear the search</a>
+              {% if filter.is_active %}
+                No Projects found. <a href="{% url 'project_list' %}">Clear search and filters</a>
               {% else %}
                 <a href="{% url 'project_add' %}">New Project</a>
               {% endif %}

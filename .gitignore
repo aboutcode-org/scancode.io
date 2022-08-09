@@ -1,4 +1,7 @@
-*.pyc
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
 *.db
 .installed.cfg
 parts
@@ -26,9 +29,15 @@ _build
 pip-selfcheck.json
 pyvenv.cfg
 geckodriver.log
+
+# Various junk and temp files
 .DS_Store
+*~
+.*.sw[po]
+.build
+.ve
+*.bak
 var
-.metaflow
 share
 selenium
 local
@@ -40,6 +49,7 @@ local
 policies.yml
 *.rdb
 *.aof
+.vscode
 
 # This is only created when packaging for external redistribution
 /thirdparty/

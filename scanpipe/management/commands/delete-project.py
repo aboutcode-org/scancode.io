@@ -54,4 +54,4 @@ class Command(ProjectCommand):
         self.project.delete()
 
         msg = f"All the {self.project} project data have been removed."
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg, self.style.SUCCESS)

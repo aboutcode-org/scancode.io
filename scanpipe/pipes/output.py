@@ -168,7 +168,12 @@ class JSONResultsGenerator:
     def get_packages(self, project):
         from scanpipe.api.serializers import DiscoveredPackageSerializer
 
-        packages = project.discoveredpackages.all()
+        packages = project.discoveredpackages.all().order_by(
+            "type",
+            "namespace",
+            "name",
+            "version",
+        )
 
         for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)
@@ -280,9 +285,9 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 # https://github.com/nexB/scancode-toolkit/pull/2381
 # https://github.com/nexB/scancode-toolkit/issues/2350
 mappings_key_by_fieldname = {
-    "copyrights": "value",
-    "holders": "value",
-    "authors": "value",
+    "copyrights": "copyright",
+    "holders": "holder",
+    "authors": "author",
     "emails": "email",
     "urls": "url",
 }

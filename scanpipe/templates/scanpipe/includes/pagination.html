@@ -1,4 +1,4 @@
-<nav class="pagination is-centered is-small" role="navigation" aria-label="pagination">
+<nav class="pagination is-centered is-small" aria-label="pagination">
   {% if page_obj.has_previous %}
     <a href="?page={{ page_obj.previous_page_number }}{% if url_params_without_page %}&{{ url_params_without_page }}{% endif %}" class="pagination-previous">Previous</a>
   {% else %}

@@ -5,12 +5,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ScanCode.io{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'bulma-0.9.2.min.css' %}" crossorigin="anonymous">
+    <link rel="icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'bulma-0.9.4.min.css' %}" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'highlight-10.6.0.css' %}" crossorigin="anonymous">
     <style>
       .width-100, .select, .select select {width: 100%;}
       .has-border-radius {border-radius: 6px;}
       .help-text {color: #333333; text-decoration: underline;}
+      .is-help-text {cursor: help; color: #333333; border-bottom: dotted 1px #cccccc;}
       .modal.is-desktop-size .modal-card {width: 960px;}
       .panel-block {align-items: initial;}
       .breadcrumb {user-select: text!important;}
@@ -37,6 +39,9 @@
       #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap;}
       #inputs-panel .panel-block.dropdown:hover {background-color: #f5f5f5;}
       #inputs-panel .dropdown-menu {width: 85%;}
+      .is-wider .dropdown-menu {min-width: 18rem;}
+      .is-tooltip .dropdown-content {background-color: #363636;}
+      .is-tooltip .dropdown-item {font-weight: normal; color: #fff;}
       .ace-marker {position: absolute; z-index: 3; background: #ffe9b3;}
       .break-all {word-break: break-all;}
       .break-word {word-break: break-word;}
@@ -44,13 +49,17 @@
       button.as-link {height: auto; line-height: initial; font-size: inherit;}
       .file.is-boxed.has-name .file-cta {border-width: medium; border-style: dashed;}
       progress.file-upload::before {content: 'Files upload: 'attr(value)'%'; position: absolute; top: -14%; left: 43%; color: black; font-weight: 400;}
+      .is-clipped-list ul {--snippet-spacing: 0.95rem; height: calc(8 * var(--snippet-spacing)); overflow: hidden;}
+      .tab-content {display: none;}
+      .tab-content.is-active {display: revert !important;}
+      .breadcrumb a {padding: 0 0.25em;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>
   <body>
     {% block content %}{% endblock %}
     <script src="{% static 'main.js' %}" crossorigin="anonymous"></script>
-    <script src="{% static 'fontawesome-5.15.1.all.min.js' %}" crossorigin="anonymous"></script>
+    <script src="{% static 'fontawesome-5.15.4.all.min.js' %}" crossorigin="anonymous" defer></script>
     <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>
     <script src="{% static 'bulma-toast-2.4.1.min.js' %}" crossorigin="anonymous" defer></script>
     <script src="{% static 'htmx-1.7.0.min.js' %}" crossorigin="anonymous" defer></script>

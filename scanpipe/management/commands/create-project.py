@@ -84,7 +84,7 @@ class Command(AddInputCommandMixin, BaseCommand):
 
         project.save()
         msg = f"Project {name} created with work directory {project.work_directory}"
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg, self.style.SUCCESS)
 
         for pipeline_name in pipeline_names:
             project.add_pipeline(pipeline_name)

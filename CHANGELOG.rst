@@ -7,6 +7,10 @@ v31.0.0 (next)
 - WARNING: Drop support for Python 3.6 and 3.7. Add support for Python 3.10.
   Upgrade Django to version 4.x series.
 
+- Upgrade ScanCode-toolkit to version v31.
+  See https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst for an
+  overview of the changes in v31 compared to v30.
+
 - Implement run status auto-refresh using the htmx JavaScript library.
   The statuses of queued and running pipeline are now automatically refreshed
   in the project list and project details views every 10 seconds.
@@ -23,11 +27,51 @@ v31.0.0 (next)
   Reference: https://tracker.debian.org/pkg/wait-for-it
   https://github.com/nexB/scancode.io/issues/387
 
+- Add a "create-user" management command to create new user with its API key.
+  https://github.com/nexB/scancode.io/issues/458
+
+- Add a "tag" field on the CodebaseResource model.
+  The layer details are stored in this field in the "docker" pipeline.
+  https://github.com/nexB/scancode.io/issues/443
+
+- Add support for multiple inputs in the LoadInventory pipeline.
+  https://github.com/nexB/scancode.io/issues/451
+
 - Add new SCANCODEIO_REDIS_PASSWORD environment variable and setting
-  to optionally set Redis instance password
+  to optionally set Redis instance password.
 
 - Ensure a project cannot be deleted through the API while a pipeline is running.
   https://github.com/nexB/scancode.io/issues/402
+
+- Display "License clarity" and "Scan summary" values as new panel in the project
+  details view. The summary is generated during the `scan_package` pipeline.
+  https://github.com/nexB/scancode.io/issues/411
+
+- Enhance Project list view page:
+
+  - 20 projects are now displayed per page
+  - Creation date displayed under the project name
+  - Add ability to sort by date and name
+  - Add ability to filter by pipeline type
+  - Add ability to filter by run status
+
+  https://github.com/nexB/scancode.io/issues/413
+
+- Correctly extract symlinks in docker images. We now use the latest
+  container-inspector to fix symlinks extraction in docker image tarballs.
+  In particular broken symlinks are not treated as an error anymore
+  and symlinks are extracted correctly.
+  https://github.com/nexB/scancode.io/issues/471
+  https://github.com/nexB/scancode.io/issues/407
+
+- Add a Package details view including all model fields and resources.
+  Display only 5 resources per package in the list view.
+  https://github.com/nexB/scancode.io/issues/164
+  https://github.com/nexB/scancode.io/issues/464
+
+- Add the ability to filter by empty and none values providing the "EMPTY" magic value
+  to any filters.
+  https://github.com/nexB/scancode.io/issues/296
 
 v30.2.0 (2021-12-17)
 --------------------

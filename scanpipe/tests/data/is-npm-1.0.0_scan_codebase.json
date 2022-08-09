@@ -58,12 +58,15 @@
         {
           "purl": "pkg:npm/ava",
           "scope": "devDependencies",
+          "extra_data": {},
           "is_runtime": false,
           "is_optional": true,
           "is_resolved": false,
-          "requirement": "0.0.3"
+          "resolved_package": {},
+          "extracted_requirement": "0.0.3"
         }
       ],
+      "package_uid": "",
       "keywords": [
         "npm",
         "is",
@@ -90,12 +93,12 @@
       "emails": [],
       "urls": [],
       "status": "scanned",
+      "tag": "",
       "type": "file",
       "name": "is-npm-1.0.0",
       "extension": ".tgz",
       "programming_language": "",
       "mime_type": "application/gzip",
-      "file_type": "gzip compressed data, from Unix, original size modulo 2^32 4608",
       "is_binary": true,
       "is_text": false,
       "is_archive": true,
@@ -116,12 +119,12 @@
       "emails": [],
       "urls": [],
       "status": "scanned",
+      "tag": "",
       "type": "directory",
       "name": "is-npm-1.0.0",
       "extension": ".tgz-extract",
       "programming_language": "",
       "mime_type": "",
-      "file_type": "",
       "is_binary": false,
       "is_text": false,
       "is_archive": false,
@@ -142,12 +145,12 @@
       "emails": [],
       "urls": [],
       "status": "scanned",
+      "tag": "",
       "type": "directory",
       "name": "package",
       "extension": "",
       "programming_language": "",
       "mime_type": "",
-      "file_type": "",
       "is_binary": false,
       "is_text": false,
       "is_archive": false,
@@ -168,12 +171,12 @@
       "emails": [],
       "urls": [],
       "status": "scanned",
+      "tag": "",
       "type": "file",
       "name": "index",
       "extension": ".js",
       "programming_language": "JavaScript",
       "mime_type": "text/plain",
-      "file_type": "ASCII text",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -182,7 +185,7 @@
     },
     {
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0"
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
       "path": "is-npm-1.0.0.tgz-extract/package/package.json",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
@@ -196,12 +199,12 @@
       "emails": [],
       "urls": [],
       "status": "application-package",
+      "tag": "",
       "type": "file",
       "name": "package",
       "extension": ".json",
       "programming_language": "",
       "mime_type": "application/json",
-      "file_type": "JSON data",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,
@@ -216,14 +219,14 @@
       "extra_data": {},
       "copyrights": [
         {
-          "value": "(c) Sindre Sorhus (http://sindresorhus.com)",
           "end_line": 30,
+          "copyright": "(c) Sindre Sorhus (http://sindresorhus.com)",
           "start_line": 30
         }
       ],
       "holders": [
         {
-          "value": "Sindre Sorhus",
+          "holder": "Sindre Sorhus",
           "end_line": 30,
           "start_line": 30
         }
@@ -297,12 +300,12 @@
         }
       ],
       "status": "scanned",
+      "tag": "",
       "type": "file",
       "name": "readme",
       "extension": ".md",
       "programming_language": "",
       "mime_type": "text/plain",
-      "file_type": "UTF-8 Unicode text",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,

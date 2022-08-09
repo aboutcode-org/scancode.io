@@ -56,13 +56,9 @@ class ScanPackage(Pipeline):
         "--license-text",
         "--package",
         "--url",
-    ] + [
         "--classify",
-        "--consolidate",
         "--is-license-text",
-        "--license-clarity-score",
         "--summary",
-        "--summary-key-files",
     ]
 
     def get_package_archive_input(self):
@@ -102,33 +98,31 @@ class ScanPackage(Pipeline):
         """
         Scans extracted codebase/ content.
         """
-        self.scan_output = self.project.get_output_file_path("scancode", "json")
+        scan_output_path = self.project.get_output_file_path("scancode", "json")
+        self.scan_output_location = str(scan_output_path.absolute())
 
         with self.save_errors(scancode.ScancodeError):
             scancode.run_scancode(
                 location=str(self.project.codebase_path),
-                output_file=str(self.scan_output),
+                output_file=self.scan_output_location,
                 options=self.scancode_options,
                 raise_on_error=True,
             )
 
-        if not self.scan_output.exists():
+        if not scan_output_path.exists():
             raise FileNotFoundError("ScanCode output not available.")
 
     def build_inventory_from_scan(self):
         """
-        Processes the JSON scan results to determine resources and packages.
+        Processes a JSON Scan results file to populate codebase resources and packages.
         """
-        project = self.project
-        scanned_codebase = scancode.get_virtual_codebase(project, str(self.scan_output))
-        scancode.create_codebase_resources(project, scanned_codebase)
-        scancode.create_discovered_packages(project, scanned_codebase)
+        scancode.create_inventory_from_scan(self.project, self.scan_output_location)
 
     def make_summary_from_scan_results(self):
         """
         Builds a summary in JSON format from the generated scan results.
         """
-        summary = scancode.make_results_summary(self.project, str(self.scan_output))
+        summary = scancode.make_results_summary(self.project, self.scan_output_location)
         output_file = self.project.get_output_file_path("summary", "json")
 
         with output_file.open("w") as summary_file:

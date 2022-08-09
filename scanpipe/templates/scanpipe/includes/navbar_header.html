@@ -1,4 +1,4 @@
-<nav class="navbar is-dark mb-5 border-bottom-radius" role="navigation" aria-label="main navigation">
+<nav class="navbar is-dark mb-5 border-bottom-radius" aria-label="main navigation">
   <div class="navbar-brand ml-3">
     <a class="navbar-item is-size-4 has-text-weight-bold" href="/">
       ScanCode<span class="nexb-orange">.</span>io
@@ -6,6 +6,9 @@
   </div>
   <div class="navbar-menu">
     <div class="navbar-start">
+      <a class="navbar-item" href="{% url 'project_list' %}">
+        Projects
+      </a>
       <a class="navbar-item" href="https://scancodeio.readthedocs.org/" target="_blank">
         Documentation
       </a>

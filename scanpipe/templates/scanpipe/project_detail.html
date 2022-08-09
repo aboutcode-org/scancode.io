@@ -19,11 +19,6 @@
         {% include "scanpipe/includes/project_actions_dropdown.html" %}
       </div>
     </section>
-    {% if not project.is_archived %}
-      {% include "scanpipe/includes/project_archive_modal.html" %}
-    {% endif %}
-    {% include "scanpipe/includes/project_reset_modal.html" %}
-    {% include "scanpipe/includes/project_delete_modal.html" %}
 
     <div class="container mx-5 mb-5">
       <div class="field is-grouped is-grouped-multiline">
@@ -45,7 +40,7 @@
     <hr class="mx-5">
     {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
 
-    <section class="section pt-0 pb-5">
+    <section class="pt-0 pb-5 mx-5">
       {% if project.resource_count or project.package_count %}
         <article class="message is-info">
           <div class="message-body">
@@ -79,20 +74,35 @@
           {% include "scanpipe/includes/project_pipelines.html" %}
         </div>
       </div>
-    </section>
 
-    {% if project.extra_data %}
-      <article id="project-extra-data" class="panel is-info mx-5">
-        <p class="panel-heading py-2 is-size-6">
-          Project data
-        </p>
-        <div class="panel-block p-0">
-          <figure class="highlight border-bottom-radius">
-            <pre class="language-yaml"><code class="p-3">{{ extra_data_yaml }}</code></pre>
-          </figure>
+      {% if project.extra_data %}
+        <article id="project-extra-data" class="panel is-info">
+          <p class="panel-heading py-2 is-size-6">
+            Project data
+          </p>
+          <div class="panel-block p-0">
+            <figure class="highlight border-bottom-radius">
+              <pre class="language-yaml"><code class="p-3">{{ extra_data_yaml }}</code></pre>
+            </figure>
+          </div>
+        </article>
+      {% endif %}
+
+      {% if license_clarity or scan_summary %}
+        <div class="columns">
+          {% if license_clarity %}
+            <div class="column is-two-fifths">
+              {% include "scanpipe/includes/license_clarity_panel.html" %}
+            </div>
+          {% endif %}
+          {% if scan_summary %}
+            <div class="column">
+              {% include "scanpipe/includes/scan_summary_panel.html" %}
+            </div>
+          {% endif %}
         </div>
-      </article>
-    {% endif %}
+      {% endif %}
+    </section>
 
     {% if project.package_count %}
       <hr class="mx-5">
@@ -144,6 +154,13 @@
   {% if project.can_add_input %}
     {% include 'scanpipe/includes/project_inputs_delete_modal.html' %}
   {% endif %}
+
+  {% if not project.is_archived %}
+    {% include "scanpipe/includes/project_archive_modal.html" %}
+  {% endif %}
+  {% include "scanpipe/includes/project_reset_modal.html" %}
+  {% include "scanpipe/includes/project_delete_modal.html" %}
+
 {% endblock %}
 
 {% block scripts %}
@@ -218,6 +235,7 @@
             // Retrieve the data ("name" value for filtering) from the .bb-tooltip section
             let name = document.querySelector(`#${base_chart_div.id} .bb-tooltip .name`).textContent;
             if (base_url && field) {
+              if (name === "(No value detected)") name = "EMPTY";
               let full_url = `${base_url}?${field}=${name}`;
               if (in_package) full_url += `&in_package=${in_package}`;
               if (event.ctrlKey || event.metaKey) window.open(full_url, '_blank');

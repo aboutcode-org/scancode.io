@@ -29,8 +29,6 @@ from time import sleep
 
 from django.db.models import Count
 
-from packageurl import normalize_qualifiers
-
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
@@ -38,7 +36,7 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
-def make_codebase_resource(project, location, rootfs_path=None):
+def make_codebase_resource(project, location, **extra_fields):
     """
     Creates a CodebaseResource instance in the database for the given `project`.
 
@@ -46,8 +44,17 @@ def make_codebase_resource(project, location, rootfs_path=None):
     It must be rooted in `project.codebase_path` as only the relative path within the
     project codebase/ directory is stored in the database.
 
-    `rootfs_path` is an optional path relative to a rootfs root within an
-    Image/VM filesystem context. e.g.: "/var/log/file.log"
+    Extra fields can be provided as keywords arguments to this function call:
+
+    >>> make_codebase_resource(
+    >>>     project=project,
+    >>>     location=resource.location,
+    >>>     rootfs_path=resource.path,
+    >>>     tag=layer_tag,
+    >>> )
+
+    In this example, `rootfs_path` is an optional path relative to a rootfs root
+    within an Image/VM filesystem context. e.g.: "/var/log/file.log"
 
     All paths use the POSIX separators.
 
@@ -58,8 +65,8 @@ def make_codebase_resource(project, location, rootfs_path=None):
     relative_path = Path(location).relative_to(project.codebase_path)
     resource_data = scancode.get_resource_info(location=location)
 
-    if rootfs_path:
-        resource_data["rootfs_path"] = rootfs_path
+    if extra_fields:
+        resource_data.update(**extra_fields)
 
     codebase_resource = CodebaseResource(
         project=project,
@@ -73,18 +80,21 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     """
     Gets, updates or creates a DiscoveredPackage then returns it.
     Uses the `project` and `package_data` mapping to lookup and creates the
-    DiscoveredPackage using its Package URL as a unique key.
+    DiscoveredPackage using its Package URL and package_uid as a unique key.
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
 
     try:
-        package = DiscoveredPackage.objects.get(project=project, **purl_data)
+        package = DiscoveredPackage.objects.get(
+            project=project,
+            package_uid=package_data.get("package_uid"),
+            **purl_data,
+        )
     except DiscoveredPackage.DoesNotExist:
         package = None
 
     if package:
         package.update_from_data(package_data)
-
     else:
         if codebase_resource:
             package = codebase_resource.create_and_add_package(package_data)

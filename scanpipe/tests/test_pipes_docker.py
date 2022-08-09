@@ -36,6 +36,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 class ScanPipeDockerPipesTest(TestCase):
     data_path = Path(__file__).parent / "data"
+    maxDiff = None
 
     def assertResultsEqual(self, expected_file, results, regen=False):
         """
@@ -86,3 +87,38 @@ class ScanPipeDockerPipesTest(TestCase):
         resource2.refresh_from_db()
         self.assertEqual("", resource1.status)
         self.assertEqual("ignored-whiteout", resource2.status)
+
+    def test_pipes_docker_extract_image_from_tarball_with_broken_symlinks(
+        self,
+    ):
+        extract_target = str(Path(tempfile.mkdtemp()) / "tempdir")
+        input_tarball = str(self.data_path / "image-with-symlinks/minitag.tar")
+
+        # Extract the image first
+        images, errors = docker.extract_image_from_tarball(
+            input_tarball,
+            extract_target,
+            verify=False,
+        )
+        self.assertEqual([], errors)
+
+        images_data = [docker.get_image_data(i) for i in images]
+        results = json.dumps(images_data, indent=2)
+        expected_location = (
+            self.data_path / "image-with-symlinks/minitag.tar-expected-data-1.json"
+        )
+        self.assertResultsEqual(expected_location, results, regen=False)
+
+        # Extract the layers second
+        errors = docker.extract_layers_from_images_to_base_path(
+            base_path=extract_target,
+            images=images,
+        )
+        self.assertEqual([], errors)
+
+        images_data = [docker.get_image_data(i) for i in images]
+        results = json.dumps(images_data, indent=2)
+        expected_location = (
+            self.data_path / "image-with-symlinks/minitag.tar-expected-data-2.json"
+        )
+        self.assertResultsEqual(expected_location, results, regen=False)

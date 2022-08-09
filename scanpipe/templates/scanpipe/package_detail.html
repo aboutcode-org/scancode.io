@@ -1,0 +1,63 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    <section class="mx-5 mb-3">
+      <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
+        <ul>
+          <li><a href="{% url 'project_list' %}">Projects</a></li>
+          <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+          <li><a href="{% url 'project_packages' project.uuid %}">Packages</a></li>
+          <li class="is-active"><a href="#" aria-current="page">{{ object.package_url }}</a></li>
+        </ul>
+      </nav>
+    </section>
+
+    <div class="tabs is-boxed mx-5">
+      <ul>
+        <li class="is-active">
+          <a data-target="tab-details">
+            <span class="icon is-small"><i class="fas fa-info-circle"></i></span>
+            <span>Details</span>
+          </a>
+        </li>
+        <li>
+          <a data-target="tab-resources">
+            <span class="icon is-small"><i class="fas fa-file-alt"></i></span>
+            <span>Resources</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <section id="tab-details" class="tab-content is-active mx-5">
+      <dl>
+        {% for field, value in package_data.items %}
+          <dt class="has-text-weight-semibold">
+            {{ field }}
+          </dt>
+          <dd class="mb-4">
+            <pre>{{ value|default_if_none:'' }}</pre>
+          </dd>
+        {% endfor %}
+      </dl>
+    </section>
+
+    <section id="tab-resources" class="tab-content mx-5">
+      <ul>
+        {% for resource in object.resources %}
+          <li>
+            <a href="{{ resource.get_absolute_url }}">{{ resource }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+  </div>
+{% endblock %}
