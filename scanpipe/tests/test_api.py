@@ -315,7 +315,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, len(response.data))
         resource = response.data[0]
         self.assertEqual(
-            ["pkg:deb/debian/adduser@3.118?arch=all"], resource["for_packages"]
+            ["pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"],
+            resource["for_packages"],
         )
         self.assertEqual("filename.ext", resource["path"])
 

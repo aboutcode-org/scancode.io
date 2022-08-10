@@ -847,7 +847,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -873,7 +874,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -899,7 +901,8 @@
       "is_text": true,
       "is_archive": false,
       "is_key_file": false,
-      "is_media": false
+      "is_media": false,
+      "package_data": []
     },
     {
       "for_packages": [],
@@ -930,9 +933,9 @@
     },
     {
       "for_packages": [],
-      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-      "sha1": "612390bd0d0227c009f9c99b479878adf7ac2f23",
-      "md5": "680e61db4d95c8d9501b7a49fa2bf0b2",
+      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+      "sha1": "9c74e64e9a71903bb227907ea1806eac77e52434",
+      "md5": "5231077fd0628314246fcba7817b561e",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -944,10 +947,37 @@
       "status": "",
       "tag": "",
       "type": "file",
-      "name": "top_level.txt",
-      "extension": ".txt",
-      "programming_language": "",
-      "mime_type": "text/plain",
+      "name": "compatibility.py",
+      "extension": ".py",
+      "programming_language": "Python",
+      "mime_type": "text/x-script.python",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_key_file": false,
+      "is_media": false,
+      "package_data": []
+    },
+    {
+      "for_packages": [],
+      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+      "sha1": "aacf7e5e2e5ba78ccfb67fa10e9e6b22c3935c9b",
+      "md5": "b4c45f37055d88dd11b15eb4de51b074",
+      "extra_data": {},
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "licenses": [],
+      "license_expressions": [],
+      "emails": [],
+      "urls": [],
+      "status": "",
+      "tag": "",
+      "type": "file",
+      "name": "current_thread_executor.py",
+      "extension": ".py",
+      "programming_language": "Python",
+      "mime_type": "text/x-script.python",
       "is_binary": false,
       "is_text": true,
       "is_archive": false,

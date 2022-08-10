@@ -23,6 +23,7 @@
 import collections
 import json
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -36,6 +37,7 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 
 from commoncode.archive import extract_tar
+from scancode.cli_test_utils import purl_with_fake_uuid
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
@@ -127,9 +129,10 @@ class ScanPipePipesTest(TestCase):
         with output_file_path.open("w") as output_file:
             output.queryset_to_csv_file(queryset, fieldnames, output_file)
 
+        package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
         expected = [
             "for_packages,path\n",
-            "['pkg:deb/debian/adduser@3.118?arch=all'],filename.ext\n",
+            f"['{package_uid}'],filename.ext\n",
         ]
         with output_file_path.open() as f:
             self.assertEqual(expected, f.readlines())
@@ -169,10 +172,10 @@ class ScanPipePipesTest(TestCase):
             collections.deque(generator, maxlen=0)  # Exhaust the generator
 
         output.queryset_to_csv_stream(queryset, fieldnames, output_file)
-
+        package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
         expected = [
             "for_packages,path\n",
-            "['pkg:deb/debian/adduser@3.118?arch=all'],filename.ext\n",
+            f"['{package_uid}'],filename.ext\n",
         ]
         with output_file.open() as f:
             self.assertEqual(expected, f.readlines())
@@ -1237,7 +1240,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         scancode.add_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
-        self.assertIn(package1.package_url, resource1.for_packages)
+        self.assertIn(package1.package_uid, resource1.for_packages)
 
         # Package will not be added twice since it is already associated with the
         # resource.

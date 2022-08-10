@@ -1777,7 +1777,10 @@ class CodebaseResource(
         """
         Returns the list of all discovered packages associated to this resource.
         """
-        return [str(package) for package in self.discovered_packages.all()]
+        return [
+            package.package_uid if package.package_uid else str(package)
+            for package in self.discovered_packages.all()
+        ]
 
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
