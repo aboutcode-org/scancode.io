@@ -45,6 +45,7 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -461,11 +462,28 @@ def create_codebase_resources(project, scanned_codebase):
         for_packages = getattr(scanned_resource, "for_packages", [])
         for package_uid in for_packages:
             logger.debug(f"Assign {package_uid} to {codebase_resource}")
-            package = project.discoveredpackages.get(package_uid=package_uid)
-            set_codebase_resource_for_package(
-                codebase_resource=codebase_resource,
-                discovered_package=package,
-            )
+            try:
+                packages = project.discoveredpackages.filter(package_uid=package_uid)
+            except DiscoveredPackage.DoesNotExist:
+                packages = None
+
+            # In the case where we are importing a scan generated from
+            # scancode.io prior to version 31.0.0, the values in `for_packages`
+            # are purls instead of package_uids
+            if not packages:
+                try:
+                    packages = project.discoveredpackages.for_package_url(package_uid)
+                except DiscoveredPackage.DoesNotExist:
+                    packages = None
+
+            if not packages:
+                continue
+
+            for package in packages:
+                set_codebase_resource_for_package(
+                    codebase_resource=codebase_resource,
+                    discovered_package=package,
+                )
 
 
 def create_discovered_packages(project, scanned_codebase):

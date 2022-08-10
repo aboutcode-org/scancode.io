@@ -60,6 +60,7 @@ import redis
 import requests
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
+from packagedcode.models import build_package_uid
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
@@ -1921,6 +1922,10 @@ class DiscoveredPackage(
         if qualifiers:
             package_data["qualifiers"] = normalize_qualifiers(qualifiers, encode=True)
 
+        dependencies = []
+        if "dependencies" in package_data:
+            dependencies = package_data.pop("dependencies")
+
         cleaned_package_data = {
             field_name: value
             for field_name, value in package_data.items()
@@ -1932,6 +1937,13 @@ class DiscoveredPackage(
         # rather in the CodebaseResource.create_and_add_package method so resource data
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
+
+        if dependencies:
+            for dependency_data in dependencies:
+                _ = DiscoveredDependency.create_from_data(
+                    project, dependency_data, for_package=discovered_package
+                )
+
         return discovered_package
 
     def update_from_data(self, package_data, override=False):
@@ -2027,7 +2039,7 @@ class DiscoveredDependency(
     class Meta:
         verbose_name = "discovered dependency"
         verbose_name_plural = "discovered dependencies"
-        ordering = ["dependency_uid"]
+        ordering = ["-is_runtime", "-is_resolved", "is_optional", "dependency_uid"]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "dependency_uid"],
@@ -2057,7 +2069,14 @@ class DiscoveredDependency(
             return ""
 
     @classmethod
-    def create_from_data(cls, project, dependency_data, strip_datafile_path_root=False):
+    def create_from_data(
+        cls,
+        project,
+        dependency_data,
+        for_package=None,
+        datafile_resource=None,
+        strip_datafile_path_root=False,
+    ):
         """
         Creates and returns a DiscoveredDependency for a `project` from the
         `dependency_data`.
@@ -2069,7 +2088,7 @@ class DiscoveredDependency(
         imported from a scancode-toolkit scan, where the root path segments are
         not stripped for `datafile_path`s.
         """
-        required_fields = ["purl", "dependency_uid"]
+        required_fields = ["purl"]
         missing_values = [
             field_name
             for field_name in required_fields
@@ -2088,18 +2107,25 @@ class DiscoveredDependency(
         if "resolved_package" in dependency_data:
             dependency_data.pop("resolved_package")
 
-        for_package = None
-        for_package_uid = dependency_data.get("for_package_uid")
-        if for_package_uid:
-            for_package = project.discoveredpackages.get(package_uid=for_package_uid)
+        # Generate a dependency_uid for this DiscoveredDependency if we do not
+        # have one already
+        if "dependency_uid" not in dependency_data:
+            dependency_data["dependency_uid"] = build_package_uid(dependency_data.get("purl"))
 
-        datafile_resource = None
-        datafile_path = dependency_data.get("datafile_path")
-        if datafile_path:
-            if strip_datafile_path_root:
-                segments = datafile_path.split("/")
-                datafile_path = "/".join(segments[1:])
-            datafile_resource = project.codebaseresources.get(path=datafile_path)
+        if not for_package:
+            for_package_uid = dependency_data.get("for_package_uid")
+            if for_package_uid:
+                for_package = project.discoveredpackages.get(
+                    package_uid=for_package_uid
+                )
+
+        if not datafile_resource:
+            datafile_path = dependency_data.get("datafile_path")
+            if datafile_path:
+                if strip_datafile_path_root:
+                    segments = datafile_path.split("/")
+                    datafile_path = "/".join(segments[1:])
+                datafile_resource = project.codebaseresources.get(path=datafile_path)
 
         cleaned_dependency_data = {
             field_name: value
