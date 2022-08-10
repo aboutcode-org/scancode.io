@@ -170,40 +170,62 @@ class TabSetMixin:
             tab_data = {
                 "icon_class": tab_definition.get("icon_class"),
                 "template": tab_definition.get("template"),
-                "fields": self.get_fields_with_values(tab_definition.get("fields"))
+                "fields": self.get_fields_data(tab_definition.get("fields"))
             }
             tabset_data[label] = tab_data
 
         return tabset_data
 
-    def get_fields_with_values(self, fields):
+    def get_fields_data(self, fields):
         """
         Returns the tab fields including their values for display.
         """
-        fields_with_values = {}
+        fields_data = {}
 
-        for field_name in fields:
-            fields_with_values[field_name] = self.get_field_data(field_name)
+        for field_definition in fields:
+            # Support for single "field_name" entry in fields list.
+            if not isinstance(field_definition, dict):
+                field_name = field_definition
+                field_data = {'name': field_name}
+            else:
+                field_name = field_definition.get('name')
+                field_data = field_definition[:]
 
-        return fields_with_values
+            if 'label' not in field_data:
+                field_data['label'] = self.get_field_label(field_name)
 
-    def get_field_data(self, field_name):
+            field_data['value'] = self.get_field_value(field_name)
+
+            fields_data[field_name] = field_data
+
+        return fields_data
+
+    def get_field_value(self, field_name):
         """
         Returns the formatted value for the given `field_name` on the current object.
         """
         field_value = getattr(self.object, field_name, None)
+
+        # TODO: Implement proper render for those fields.
+        if field_name in ['dependencies']:
+            return field_value
+
         if isinstance(field_value, list):
             field_value = "\n".join(field_value)
+
         return field_value
 
-    # @staticmethod
-    # def get_field_label(field_name):
-    #     return (
-    #         field_name
-    #         .replace("_", " ")
-    #         .capitalize()
-    #         .replace("url", "URL")
-    #     )
+    @staticmethod
+    def get_field_label(field_name):
+        """
+        Returns a formatted label for display based on the `field_name`.
+        """
+        return (
+            field_name
+            .replace("_", " ")
+            .capitalize()
+            .replace("url", "URL")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
