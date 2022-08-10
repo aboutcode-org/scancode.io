@@ -170,20 +170,40 @@ class TabSetMixin:
             tab_data = {
                 "icon_class": tab_definition.get("icon_class"),
                 "template": tab_definition.get("template"),
+                "fields": self.get_fields_with_values(tab_definition.get("fields"))
             }
-
-            fields = tab_definition.get("fields")
-            fields_with_values = {}
-            for field_name in fields:
-                field_value = getattr(self.object, field_name, None)
-                if isinstance(field_value, list):
-                    field_value = "\n".join(field_value)
-                fields_with_values[field_name] = field_value
-            tab_data["fields"] = fields_with_values
-
             tabset_data[label] = tab_data
 
         return tabset_data
+
+    def get_fields_with_values(self, fields):
+        """
+        Returns the tab fields including their values for display.
+        """
+        fields_with_values = {}
+
+        for field_name in fields:
+            fields_with_values[field_name] = self.get_field_data(field_name)
+
+        return fields_with_values
+
+    def get_field_data(self, field_name):
+        """
+        Returns the formatted value for the given `field_name` on the current object.
+        """
+        field_value = getattr(self.object, field_name, None)
+        if isinstance(field_value, list):
+            field_value = "\n".join(field_value)
+        return field_value
+
+    # @staticmethod
+    # def get_field_label(field_name):
+    #     return (
+    #         field_name
+    #         .replace("_", " ")
+    #         .capitalize()
+    #         .replace("url", "URL")
+    #     )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -711,7 +731,7 @@ class DiscoveredPackageDetailsView(
     tabset = {
         "essentials": {
             "fields": [
-                "purl",
+                "package_url",
                 "license_expression",
                 "primary_language",
                 "homepage_url",
