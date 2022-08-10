@@ -1,0 +1,10 @@
+<dl>
+  {% for field_name, value in tab_data.fields.items %}
+    <dt class="has-text-weight-semibold">
+      {{ field_name }}
+    </dt>
+    <dd class="mb-4">
+      <pre class="is-small">{{ value|default_if_none:''|urlize }}</pre>
+    </dd>
+  {% endfor %}
+</dl>

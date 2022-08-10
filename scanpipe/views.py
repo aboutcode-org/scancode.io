@@ -43,7 +43,6 @@ from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
-from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -156,6 +155,40 @@ class ProjectViewMixin:
     model = Project
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
+
+
+class TabSetMixin:
+    tabset = {}
+
+    def get_tabset_data(self):
+        """
+        Returns the tabset data structure used in template rendering.
+        """
+        tabset_data = {}
+
+        for label, tab_definition in self.tabset.items():
+            tab_data = {
+                "icon_class": tab_definition.get("icon_class"),
+                "template": tab_definition.get("template"),
+            }
+
+            fields = tab_definition.get("fields")
+            fields_with_values = {}
+            for field_name in fields:
+                field_value = getattr(self.object, field_name, None)
+                if isinstance(field_value, list):
+                    field_value = "\n".join(field_value)
+                fields_with_values[field_name] = field_value
+            tab_data["fields"] = fields_with_values
+
+            tabset_data[label] = tab_data
+
+        return tabset_data
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tabset_data"] = self.get_tabset_data()
+        return context
 
 
 class PaginatedFilterView(FilterView):
@@ -666,15 +699,63 @@ class CodebaseResourceDetailsView(
 
 
 class DiscoveredPackageDetailsView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    PrefetchRelatedViewMixin,
+    generic.DetailView,
 ):
     model = DiscoveredPackage
     template_name = "scanpipe/package_detail.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["package_data"] = DiscoveredPackageSerializer(self.object).data
-        return context
+    prefetch_related = ["codebase_resources"]
+    tabset = {
+        "essentials": {
+            "fields": [
+                "purl",
+                "license_expression",
+                "primary_language",
+                "homepage_url",
+                "download_url",
+                "description",
+                "keywords",
+                "size",
+                "release_date",
+                "bug_tracking_url",
+                "code_view_url",
+                "vcs_url",
+                "sha1",
+                "md5",
+            ],
+            "icon_class": "fas fa-info-circle",
+        },
+        "terms": {
+            "fields": [
+                "license_expression",
+                "declared_license",
+                "copyright",
+                "notice_text",
+                "dependencies",
+                "manifest_path",
+                "contains_source_code",
+            ],
+            "icon_class": "fas fa-file-contract",
+        },
+        "resources": {
+            "fields": ["codebase_resources"],
+            "icon_class": "fas fa-folder-open",
+            "template": "scanpipe/tabset/tab_content_resources.html",
+        },
+        "others": {
+            "fields": [
+                "extra_data",
+                "missing_resources",
+                "modified_resources",
+                "package_uid",
+                "source_packages",
+            ],
+            "icon_class": "fas fa-plus-square",
+        },
+    }
 
 
 @conditional_login_required

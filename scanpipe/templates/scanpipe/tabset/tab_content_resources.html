@@ -1,0 +1,9 @@
+<div class="content">
+  <ul>
+    {% for resource in tab_data.fields.codebase_resources.all %}
+      <li>
+        <a href="{{ resource.get_absolute_url }}">{{ resource }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
