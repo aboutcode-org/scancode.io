@@ -106,7 +106,7 @@ v31.0.0 (2022-08-25)
 - ``CodebaseResource.for_packages`` now returns a list of
   ``DiscoveredPackage.package_uid`` or ``DiscoveredPackage.package_url`` if
   ``DiscoveredPackage.package_uid`` is not present. This is done to reflect the
-  how scancode-toolkit's JSON output returns ``package_uid`` in the
+  how scancode-toolkit's JSON output returns ``package_uid``s in the
   ``for_packages`` field for Resources.
 
 v30.2.0 (2021-12-17)
