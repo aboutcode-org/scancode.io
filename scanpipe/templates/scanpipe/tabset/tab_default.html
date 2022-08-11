@@ -4,7 +4,7 @@
       {{ field_data.label }}
     </dt>
     <dd class="mb-4">
-      <pre class="is-small">{{ field_data.value|default:''|default_if_none:''|urlize }}</pre>
+      <pre class="break-all is-small">{{ field_data.value|default:''|default_if_none:''|urlize }}</pre>
     </dd>
   {% endfor %}
 </dl>

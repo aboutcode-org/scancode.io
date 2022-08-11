@@ -33,6 +33,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
@@ -157,7 +158,29 @@ class ProjectViewMixin:
     slug_field = "uuid"
 
 
+def render_as_yaml(value):
+    if value:
+        return saneyaml.dump(value, indent=2)
+
+
 class TabSetMixin:
+    """
+    tabset = {
+        "<tab_label>": {
+            "fields": [
+                "<field_name>",
+                "<field_name>",
+                {
+                    "field_name": "<field_name>",
+                    "label": None,
+                    "render_func": None,
+                },
+            ]
+            "template": "",
+            "icon_class": "",
+        }
+    }
+    """
     tabset = {}
 
     def get_tabset_data(self):
@@ -170,7 +193,7 @@ class TabSetMixin:
             tab_data = {
                 "icon_class": tab_definition.get("icon_class"),
                 "template": tab_definition.get("template"),
-                "fields": self.get_fields_data(tab_definition.get("fields"))
+                "fields": self.get_fields_data(tab_definition.get("fields")),
             }
             tabset_data[label] = tab_data
 
@@ -186,29 +209,29 @@ class TabSetMixin:
             # Support for single "field_name" entry in fields list.
             if not isinstance(field_definition, dict):
                 field_name = field_definition
-                field_data = {'name': field_name}
+                field_data = {"field_name": field_name}
             else:
-                field_name = field_definition.get('name')
-                field_data = field_definition[:]
+                field_name = field_definition.get("field_name")
+                field_data = field_definition.copy()
 
-            if 'label' not in field_data:
-                field_data['label'] = self.get_field_label(field_name)
+            if "label" not in field_data:
+                field_data["label"] = self.get_field_label(field_name)
 
-            field_data['value'] = self.get_field_value(field_name)
+            render_func = field_data.get("render_func")
+            field_data["value"] = self.get_field_value(field_name, render_func)
 
             fields_data[field_name] = field_data
 
         return fields_data
 
-    def get_field_value(self, field_name):
+    def get_field_value(self, field_name, render_func=None):
         """
         Returns the formatted value for the given `field_name` on the current object.
         """
         field_value = getattr(self.object, field_name, None)
 
-        # TODO: Implement proper render for those fields.
-        if field_name in ['dependencies']:
-            return field_value
+        if field_value and render_func:
+            return render_func(field_value)
 
         if isinstance(field_value, list):
             field_value = "\n".join(field_value)
@@ -220,12 +243,7 @@ class TabSetMixin:
         """
         Returns a formatted label for display based on the `field_name`.
         """
-        return (
-            field_name
-            .replace("_", " ")
-            .capitalize()
-            .replace("url", "URL")
-        )
+        return field_name.replace("_", " ").capitalize().replace("url", "URL")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -442,7 +460,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         )
 
         if project.extra_data:
-            context["extra_data_yaml"] = saneyaml.dump(project.extra_data, indent=2)
+            context["extra_data_yaml"] = render_as_yaml(project.extra_data)
 
         return context
 
@@ -782,12 +800,14 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_resources.html",
         },
         "dependencies": {
-            "fields": ["dependencies"],
+            "fields": [
+                {"field_name": "dependencies", "render_func": render_as_yaml},
+            ],
             "icon_class": "fas fa-layer-group",
         },
         "others": {
             "fields": [
-                "size",
+                {"field_name": "size", "render_func": filesizeformat},
                 "release_date",
                 "sha1",
                 "md5",
@@ -800,7 +820,9 @@ class DiscoveredPackageDetailsView(
             "icon_class": "fas fa-plus-square",
         },
         "extra data": {
-            "fields": ["extra_data"],
+            "fields": [
+                {"field_name": "extra_data", "render_func": render_as_yaml},
+            ],
             "icon_class": "fas fa-database",
         },
     }
