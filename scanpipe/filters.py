@@ -32,6 +32,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -153,6 +154,18 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         choices=scanpipe_app.get_pipeline_choices(include_blank=False),
         widget=BulmaDropdownWidget,
     )
+    status = django_filters.ChoiceFilter(
+        label="Status",
+        method="filter_run_status",
+        choices=[
+            ("not_started", "Not started"),
+            ("queued", "Queued"),
+            ("running", "Running"),
+            ("succeed", "Success"),
+            ("failed", "Failure"),
+        ],
+        widget=BulmaDropdownWidget,
+    )
 
     class Meta:
         model = Project
@@ -176,6 +189,14 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
                 ("true", f'<i class="fas fa-dice-d6"></i> {archived_count} Archived'),
             ]
         )
+
+    def filter_run_status(self, queryset, name, value):
+        """
+        Filter by Run status using the `RunQuerySet` methods.
+        """
+        run_queryset_method = value
+        run_queryset = getattr(Run.objects, run_queryset_method)()
+        return queryset.filter(runs__in=run_queryset)
 
 
 class JSONContainsFilter(django_filters.CharFilter):

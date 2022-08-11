@@ -20,16 +20,56 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.test import TestCase
+import uuid
 
+from django.test import TestCase
+from django.utils import timezone
+
+from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
+from scanpipe.models import Run
 
 
 class ScanPipeFiltersTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
+
+    def test_scanpipe_filters_project_filterset_status(self):
+        now = timezone.now()
+        not_started = Project.objects.create(name="not_started")
+        Run.objects.create(project=not_started)
+        queued = Project.objects.create(name="queued")
+        Run.objects.create(project=queued, task_id=uuid.uuid4())
+        running = Project.objects.create(name="running")
+        Run.objects.create(project=running, task_start_date=now, task_id=uuid.uuid4())
+        succeed = Project.objects.create(name="succeed")
+        Run.objects.create(
+            project=succeed, task_start_date=now, task_end_date=now, task_exitcode=0
+        )
+        failed = Project.objects.create(name="failed")
+        Run.objects.create(
+            project=failed, task_start_date=now, task_end_date=now, task_exitcode=1
+        )
+
+        filterset = ProjectFilterSet(data={"status": ""})
+        self.assertEqual(6, len(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"status": "not_started"})
+        self.assertEqual([not_started], list(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"status": "queued"})
+        self.assertEqual([queued], list(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"status": "running"})
+        self.assertEqual([running], list(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"status": "succeed"})
+        self.assertEqual([succeed], list(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"status": "failed"})
+        self.assertEqual([failed], list(filterset.qs))
 
     def test_scanpipe_filters_filter_queryset_empty_values(self):
         resource1 = CodebaseResource.objects.create(

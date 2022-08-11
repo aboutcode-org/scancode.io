@@ -136,7 +136,7 @@ def get_resource_info(location):
     file_info.update(
         {
             "type": resource_type,
-            "name": fileutils.file_base_name(location),
+            "name": fileutils.file_name(location),
             "extension": fileutils.file_extension(location),
         }
     )

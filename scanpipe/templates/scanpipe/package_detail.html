@@ -13,13 +13,10 @@
         <ul>
           <li><a href="{% url 'project_list' %}">Projects</a></li>
           <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
-          <li><a href="{% url 'project_packages' project.uuid %}">Discovered Packages</a></li>
+          <li><a href="{% url 'project_packages' project.uuid %}">Packages</a></li>
+          <li class="is-active"><a href="#" aria-current="page">{{ object.package_url }}</a></li>
         </ul>
       </nav>
-      <div class="tags has-addons my-3">
-        <span class="tag is-dark">Package URL</span>
-        <span class="tag is-info">{{ object }}</span>
-      </div>
     </section>
 
     <div class="tabs is-boxed mx-5">

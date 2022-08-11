@@ -5,10 +5,10 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True %}
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Packages" %}
         {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
       </div>
-      {% include 'scanpipe/includes/pagination_header.html' with verbose_name="Packages" %}
+      {% include 'scanpipe/includes/pagination_header.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
     </section>
   </div>
@@ -69,7 +69,7 @@
         $el.parentNode.classList.toggle("is-clipped-list");
         let text = $el.textContent;
         if (text.startsWith("Show"))
-          $el.textContent = text.toggle("Show", "Hide");
+          $el.textContent = text.replace("Show", "Hide");
         else
           $el.textContent = text.replace("Hide", "Show");
       });

@@ -53,6 +53,7 @@ v31.0.0 (next)
   - Creation date displayed under the project name
   - Add ability to sort by date and name
   - Add ability to filter by pipeline type
+  - Add ability to filter by run status
 
   https://github.com/nexB/scancode.io/issues/413
 
@@ -71,6 +72,14 @@ v31.0.0 (next)
 - Add the ability to filter by empty and none values providing the "EMPTY" magic value
   to any filters.
   https://github.com/nexB/scancode.io/issues/296
+
+- CodebaseResource.name now contains both the bare file name with extension, as
+  opposed to just the bare file name without extension.
+
+  - Using a name stripped from its extension was something that was not used in
+    other AboutCode project or tools.
+
+  https://github.com/nexB/scancode.io/issues/467
 
 v30.2.0 (2021-12-17)
 --------------------
