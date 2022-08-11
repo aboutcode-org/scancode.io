@@ -18,7 +18,7 @@
     {% if tab_data.template %}
       {% include tab_data.template with tab_data=tab_data only %}
     {% else %}
-      {% include 'scanpipe/tabset/tab_content_default.html' with tab_data=tab_data only %}
+      {% include 'scanpipe/tabset/tab_default.html' with tab_data=tab_data only %}
     {% endif %}
   </section>
 {% endfor %}
