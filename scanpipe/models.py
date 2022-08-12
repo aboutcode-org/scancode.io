@@ -1922,10 +1922,6 @@ class DiscoveredPackage(
         if qualifiers:
             package_data["qualifiers"] = normalize_qualifiers(qualifiers, encode=True)
 
-        dependencies = []
-        if "dependencies" in package_data:
-            dependencies = package_data.pop("dependencies")
-
         cleaned_package_data = {
             field_name: value
             for field_name, value in package_data.items()
@@ -1937,13 +1933,6 @@ class DiscoveredPackage(
         # rather in the CodebaseResource.create_and_add_package method so resource data
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
-
-        if dependencies:
-            for dependency_data in dependencies:
-                _ = DiscoveredDependency.create_from_data(
-                    project, dependency_data, for_package=discovered_package
-                )
-
         return discovered_package
 
     def update_from_data(self, package_data, override=False):
@@ -2088,7 +2077,7 @@ class DiscoveredDependency(
         imported from a scancode-toolkit scan, where the root path segments are
         not stripped for `datafile_path`s.
         """
-        required_fields = ["purl"]
+        required_fields = ["purl", "dependency_uid"]
         missing_values = [
             field_name
             for field_name in required_fields
@@ -2106,11 +2095,6 @@ class DiscoveredDependency(
 
         if "resolved_package" in dependency_data:
             dependency_data.pop("resolved_package")
-
-        # Generate a dependency_uid for this DiscoveredDependency if we do not
-        # have one already
-        if "dependency_uid" not in dependency_data:
-            dependency_data["dependency_uid"] = build_package_uid(dependency_data.get("purl"))
 
         if not for_package:
             for_package_uid = dependency_data.get("for_package_uid")
