@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
 from collections import Counter
 from contextlib import suppress
@@ -39,6 +40,7 @@ from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 
 import saneyaml
+import xlsxwriter
 from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
@@ -156,6 +158,42 @@ class ProjectViewMixin:
     model = Project
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
+
+
+class ExportXLSXMixin:
+    """
+    Adds the ability to export the current filtered QuerySet of a `FilterView` into
+    the XLSX format.
+    """
+
+    export_xlsx_query_param = "export_xlsx"
+
+    def export_xlsx_file_response(self):
+        filtered_qs = self.filterset.qs
+        output_file = io.BytesIO()
+        with xlsxwriter.Workbook(output_file) as workbook:
+            output.queryset_to_xlsx_worksheet(filtered_qs, workbook)
+
+        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+        output_file.seek(0)
+        return FileResponse(output_file, as_attachment=True, filename=filename)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        query_dict = self.request.GET.copy()
+        query_dict[self.export_xlsx_query_param] = True
+        context["export_xlsx_url_query"] = query_dict.urlencode()
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        if request.GET.get(self.export_xlsx_query_param):
+            return self.export_xlsx_file_response()
+
+        return response
 
 
 class PaginatedFilterView(FilterView):
@@ -564,6 +602,7 @@ class CodebaseResourceListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    ExportXLSXMixin,
     PaginatedFilterView,
 ):
     model = CodebaseResource
@@ -574,11 +613,6 @@ class CodebaseResourceListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        query_dict = self.request.GET.copy()
-        query_dict.pop("page", None)
-        context["url_params_without_page"] = query_dict.urlencode()
-
         context["include_compliance_alert"] = scanpipe_app.policies_enabled
         return context
 
@@ -587,6 +621,7 @@ class DiscoveredPackageListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    ExportXLSXMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredPackage
@@ -597,7 +632,7 @@ class DiscoveredPackageListView(
 
 
 class ProjectErrorListView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, FilterView
+    ConditionalLoginRequired, ProjectRelatedViewMixin, ExportXLSXMixin, FilterView
 ):
     model = ProjectError
     filterset_class = ErrorFilterSet
