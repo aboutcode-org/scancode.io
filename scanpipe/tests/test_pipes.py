@@ -615,6 +615,25 @@ class ScanPipePipesTest(TestCase):
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
 
+    def test_scanpipe_pipes_scancode_assemble_packages(self):
+        project = Project.objects.create(name="Analysis")
+        project_scan_location = self.data_location / "package_assembly_codebase.json"
+        scancode.create_inventory_from_scan(project, project_scan_location)
+
+        self.assertEqual(0, project.discoveredpackages.count())
+        scancode.assemble_packages(project)
+        self.assertEqual(1, project.discoveredpackages.count())
+
+        package = project.discoveredpackages.all()[0]
+        self.assertEqual("pkg:npm/test@0.1.0", package.package_url)
+
+        associated_resources = [r.path for r in package.codebase_resources.all()]
+        expected_resources = [
+            "get_package_resources/package.json",
+            "get_package_resources/this-should-be-returned",
+        ]
+        self.assertEquals(sorted(expected_resources), sorted(associated_resources))
+
     @expectedFailure
     def test_scanpipe_pipes_codebase_get_tree(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
