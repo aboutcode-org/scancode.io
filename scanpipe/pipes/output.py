@@ -203,7 +203,7 @@ def to_json(project):
     return output_file
 
 
-def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
+def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     """
     Adds a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
@@ -378,6 +378,6 @@ def to_xlsx(project):
 
     with xlsxwriter.Workbook(output_file) as workbook:
         for queryset in querysets:
-            _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
+            queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
     return output_file
