@@ -156,6 +156,7 @@ def get_licenses(
     detected_licenses = []
     detected_expressions = []
 
+    # gets matches from a license file
     matches = idx.match(
         location=location,
         min_score=0,
@@ -167,6 +168,7 @@ def get_licenses(
     qspans = []
     match = None
     complete_text_in_array = []
+    # run through a list of matches
     for match in matches:
         qspans.append(match.qspan)
 
@@ -244,6 +246,8 @@ def _licenses_data_from_match(
         result["reference_url"] = license_url_template.format(lic.key)
         result["scancode_text_url"] = SCANCODE_LICENSE_TEXT_URL.format(lic.key)
         result["scancode_data_url"] = SCANCODE_LICENSE_DATA_URL.format(lic.key)
+        result["rule"] = match.rule.license_expression
+        result["rules"] = match.rule.license_keys()
 
         spdx_key = lic.spdx_license_key
         result["spdx_license_key"] = spdx_key
@@ -316,11 +320,11 @@ def get_highlighted_lines(
     }
 
     .not-matched {
-        color: #ac0000;
+        background-color: #ff0000;
     }
 
     .matched {
-        color: #00ac00;
+        background-color: #00ff00;
     }
     </style>
     <div class="license-match">

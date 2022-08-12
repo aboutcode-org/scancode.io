@@ -9,39 +9,84 @@
     </div>
     <div class="column is-one-third">
         <article class="panel is-info">
-            <div class="panel-heading is-flex is-justify-content-space-between is-align-items-center py-0 px-3">
+            <div class="panel-heading py-2 px-4">
                 <p>Detected Licenses</p>
-                <div>
-                    <button class="button px-2 previous-btn is-info"><i class="fas fa-arrow-up"></i></button>
-                    <button class="button px-2 next-btn is-info"><i class="fas fa-arrow-down"></i></button>
-                </div>
             </div>
             {% for license in detected_licenses.licenses %}
-            <table class="license-table table is-fullwidth">
+            <p class="panel-tabs">
+                {% for rule in license.rules %}
+                <a class="">{{ rule }}</a>
+                {% endfor %}
+            </p>
+            <table class="license-table table is-striped is-hoverable mx-1">
                 <tbody>
                     <tr>
-                        <td><strong>Name</strong></td>
-                        <td>{{ license.name }}</td>
+                    <td><strong>Matched Rule</strong></td>
+                    <td>{{ license.rule }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Key</strong></td>
+                        <td>{{ license.key }}</td>
                     </tr>
                     <tr>
                         <td><strong>Score</strong></td>
                         <td>{{ license.score }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Owner</strong></td>
-                        <td>{{ license.owner }}</td>
+                        <td><strong>Name</strong></td>
+                        <td>{{ license.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Short Name</strong></td>
+                        <td>{{ license.short_name }}</td>
                     </tr>
                     <tr>
                         <td><strong>Category</strong></td>
                         <td>{{ license.category }}</td>
                     </tr>
                     <tr>
-                        <td><strong>SPDX Key</strong></td>
-                        <td>{{ license.spdx_license_key }}</td>
+                        <td><strong>Lines</strong></td>
+                        <td>{% if license.start_line == license.end_line %} {{ license.start_line }} {% else %} {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
                     </tr>
                     <tr>
                         <td><strong>Reference</strong></td>
                         <td><a href="{{ license.reference_url }}" target="_blank">{{ license.reference_url }}</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Exection</strong></td>
+                        <td>{{ license.is_exception }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Is Unknown</strong></td>
+                        <td>{{ license.is_unknown }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Owner</strong></td>
+                        <td>{{ license.owner }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Homepage</strong></td>
+                        <td>{{ license.homepage_url }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Text URL</strong></td>
+                        <td>{{ license.text_url }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scancode Text URL</strong></td>
+                        <td>{{ license.scancode_text_url }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scancode Data URL</strong></td>
+                        <td>{{ license.scancode_data_url }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SPDX License Key</strong></td>
+                        <td>{{ license.spdx_license_key }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SPDX URL</strong></td>
+                        <td>{{ license.spdx_url }}</td>
                     </tr>
                 </tbody>
             </table>
