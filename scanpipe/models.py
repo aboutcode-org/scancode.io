@@ -2093,9 +2093,6 @@ class DiscoveredDependency(
             project.add_error(error=message, model=cls, details=dependency_data)
             return
 
-        if "resolved_package" in dependency_data:
-            dependency_data.pop("resolved_package")
-
         if not for_package:
             for_package_uid = dependency_data.get("for_package_uid")
             if for_package_uid:
