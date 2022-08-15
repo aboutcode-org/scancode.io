@@ -34,6 +34,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
@@ -45,7 +46,6 @@ from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
-from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -158,6 +158,100 @@ class ProjectViewMixin:
     model = Project
     slug_url_kwarg = "uuid"
     slug_field = "uuid"
+
+
+def render_as_yaml(value):
+    if value:
+        return saneyaml.dump(value, indent=2)
+
+
+class TabSetMixin:
+    """
+    tabset = {
+        "<tab_label>": {
+            "fields": [
+                "<field_name>",
+                "<field_name>",
+                {
+                    "field_name": "<field_name>",
+                    "label": None,
+                    "render_func": None,
+                },
+            ]
+            "template": "",
+            "icon_class": "",
+        }
+    }
+    """
+
+    tabset = {}
+
+    def get_tabset_data(self):
+        """
+        Returns the tabset data structure used in template rendering.
+        """
+        tabset_data = {}
+
+        for label, tab_definition in self.tabset.items():
+            tab_data = {
+                "icon_class": tab_definition.get("icon_class"),
+                "template": tab_definition.get("template"),
+                "fields": self.get_fields_data(tab_definition.get("fields")),
+            }
+            tabset_data[label] = tab_data
+
+        return tabset_data
+
+    def get_fields_data(self, fields):
+        """
+        Returns the tab fields including their values for display.
+        """
+        fields_data = {}
+
+        for field_definition in fields:
+            # Support for single "field_name" entry in fields list.
+            if not isinstance(field_definition, dict):
+                field_name = field_definition
+                field_data = {"field_name": field_name}
+            else:
+                field_name = field_definition.get("field_name")
+                field_data = field_definition.copy()
+
+            if "label" not in field_data:
+                field_data["label"] = self.get_field_label(field_name)
+
+            render_func = field_data.get("render_func")
+            field_data["value"] = self.get_field_value(field_name, render_func)
+
+            fields_data[field_name] = field_data
+
+        return fields_data
+
+    def get_field_value(self, field_name, render_func=None):
+        """
+        Returns the formatted value for the given `field_name` on the current object.
+        """
+        field_value = getattr(self.object, field_name, None)
+
+        if field_value and render_func:
+            return render_func(field_value)
+
+        if isinstance(field_value, list):
+            field_value = "\n".join(field_value)
+
+        return field_value
+
+    @staticmethod
+    def get_field_label(field_name):
+        """
+        Returns a formatted label for display based on the `field_name`.
+        """
+        return field_name.replace("_", " ").capitalize().replace("url", "URL")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tabset_data"] = self.get_tabset_data()
+        return context
 
 
 class ExportXLSXMixin:
@@ -405,7 +499,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         )
 
         if project.extra_data:
-            context["extra_data_yaml"] = saneyaml.dump(project.extra_data, indent=2)
+            context["extra_data_yaml"] = render_as_yaml(project.extra_data)
 
         return context
 
@@ -701,15 +795,73 @@ class CodebaseResourceDetailsView(
 
 
 class DiscoveredPackageDetailsView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    PrefetchRelatedViewMixin,
+    generic.DetailView,
 ):
     model = DiscoveredPackage
     template_name = "scanpipe/package_detail.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["package_data"] = DiscoveredPackageSerializer(self.object).data
-        return context
+    prefetch_related = ["codebase_resources"]
+    tabset = {
+        "essentials": {
+            "fields": [
+                "package_url",
+                "license_expression",
+                "primary_language",
+                "homepage_url",
+                "download_url",
+                "bug_tracking_url",
+                "code_view_url",
+                "vcs_url",
+                "source_packages",
+                "keywords",
+                "description",
+            ],
+            "icon_class": "fas fa-info-circle",
+        },
+        "terms": {
+            "fields": [
+                "license_expression",
+                "declared_license",
+                "copyright",
+                "notice_text",
+            ],
+            "icon_class": "fas fa-file-contract",
+        },
+        "resources": {
+            "fields": ["codebase_resources"],
+            "icon_class": "fas fa-folder-open",
+            "template": "scanpipe/tabset/tab_resources.html",
+        },
+        "dependencies": {
+            "fields": [
+                {"field_name": "dependencies", "render_func": render_as_yaml},
+            ],
+            "icon_class": "fas fa-layer-group",
+        },
+        "others": {
+            "fields": [
+                {"field_name": "size", "render_func": filesizeformat},
+                "release_date",
+                "sha1",
+                "md5",
+                "missing_resources",
+                "modified_resources",
+                "manifest_path",
+                "contains_source_code",
+                "package_uid",
+            ],
+            "icon_class": "fas fa-plus-square",
+        },
+        "extra data": {
+            "fields": [
+                {"field_name": "extra_data", "render_func": render_as_yaml},
+            ],
+            "icon_class": "fas fa-database",
+        },
+    }
 
 
 @conditional_login_required
