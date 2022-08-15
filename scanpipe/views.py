@@ -181,6 +181,7 @@ class TabSetMixin:
         }
     }
     """
+
     tabset = {}
 
     def get_tabset_data(self):
