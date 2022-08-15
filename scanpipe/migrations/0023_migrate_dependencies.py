@@ -9,14 +9,36 @@ def migrate_dependencies_to_discovereddependencies(apps, schema_editor):
     DiscoveredPackage = apps.get_model('scanpipe', 'DiscoveredPackage')
     DiscoveredDependency = apps.get_model('scanpipe', 'DiscoveredDependency')
 
-    qs = DiscoveredPackage.objects.filter(dependencies_data__isnull=False)
-    for package in qs:
-        for pd in package.dependencies_data:
-            if "extra_data" in pd:
-                pd.pop("extra_data")
-            if "resolved_package" in pd:
-                pd.pop("resolved_package")
-            DiscoveredDependency.objects.create(project=package.project, **pd)
+    package_with_dependencies = DiscoveredPackage.objects.exclude(dependencies_data=[])
+
+    for package in package_with_dependencies:
+        for dependency_data in package.dependencies_data:
+            project = package.project
+
+            # Remove non-supported fields from the data dict
+            dependency_data.pop("extra_data", None)
+            dependency_data.pop("resolved_package", None)
+
+            for_package = None
+            for_package_uid = dependency_data.get("for_package_uid")
+            p = project.discoveredpackages.filter(package_uid=for_package_uid)
+            if p.exists():
+                for_package = project.discoveredpackages.get(
+                    package_uid=for_package_uid
+                )
+
+            datafile_resource = None
+            datafile_path = dependency_data.get("datafile_path")
+            datafile = project.codebaseresources.filter(path=datafile_path)
+            if datafile.exists():
+                datafile_resource = project.codebaseresources.get(path=datafile_path)
+
+            DiscoveredDependency.objects.create(
+                project=project,
+                for_package=for_package,
+                datafile_resource=datafile_resource,
+                **dependency_data,
+            )
 
 
 class Migration(migrations.Migration):

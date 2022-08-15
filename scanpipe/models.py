@@ -1524,12 +1524,6 @@ class CodebaseResource(
         help_text=_("List of Package data detected from this CodebaseResource"),
     )
 
-    package_data = models.JSONField(
-        default=list,
-        blank=True,
-        help_text=_("List of Package data detected from this CodebaseResource"),
-    )
-
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
@@ -2047,15 +2041,11 @@ class DiscoveredDependency(
     def for_package_uid(self):
         if self.for_package:
             return self.for_package.package_uid
-        else:
-            return ""
 
     @cached_property
     def datafile_path(self):
         if self.datafile_resource:
             return self.datafile_resource.path
-        else:
-            return ""
 
     @classmethod
     def create_from_data(
