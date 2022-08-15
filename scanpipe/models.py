@@ -60,9 +60,9 @@ import redis
 import requests
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
-from packagedcode.models import build_package_uid
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
+from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
@@ -1964,6 +1964,7 @@ class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
 class DiscoveredDependency(
     ProjectRelatedModel,
     SaveProjectErrorMixin,
+    PackageURLMixin,
 ):
     """
     A project's Discovered Dependencies are records of the dependencies used by
