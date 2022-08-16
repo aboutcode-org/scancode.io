@@ -9,11 +9,11 @@ def migrate_dependency_uids_to_purl_fields(apps, schema_editor):
     DiscoveredDependency = apps.get_model('scanpipe', 'DiscoveredDependency')
 
     qs = DiscoveredDependency.objects.exclude(
-        Q(dependency_uid="") | Q(dependency_uid__isnull=True)
+        Q(purl="") | Q(purl__isnull=True)
     )
     for dependency in qs:
-        purled_dependency_uid_mapping = PackageURL.from_string(dependency.dependency_uid).to_dict()
-        for field_name, value in purled_dependency_uid_mapping.items():
+        purl_mapping = PackageURL.from_string(dependency.purl).to_dict()
+        for field_name, value in purl_mapping.items():
             if not value:
                 continue
             setattr(dependency, field_name, value)
