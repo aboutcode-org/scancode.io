@@ -235,6 +235,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
 
 
 class DiscoveredDependencySerializer(serializers.ModelSerializer):
+    purl = serializers.ReadOnlyField()
     for_package_uid = serializers.ReadOnlyField()
     datafile_path = serializers.ReadOnlyField()
 

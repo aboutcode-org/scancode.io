@@ -369,7 +369,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     class Meta:
         model = DiscoveredDependency
         fields = [
-            "purl",
+            "name",
         ]
 
 

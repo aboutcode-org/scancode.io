@@ -1991,10 +1991,6 @@ class DiscoveredDependency(
         blank=True,
         null=True,
     )
-    purl = models.CharField(
-        max_length=1024,
-        help_text=_("The Package URL of this dependency."),
-    )
     extracted_requirement = models.CharField(
         max_length=64,
         blank=True,
@@ -2037,6 +2033,10 @@ class DiscoveredDependency(
 
     def get_absolute_url(self):
         return reverse("dependency_detail", args=[self.project_id, self.pk])
+
+    @cached_property
+    def purl(self):
+        return self.package_url
 
     @cached_property
     def for_package_uid(self):
