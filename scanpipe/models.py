@@ -2099,6 +2099,11 @@ class DiscoveredDependency(
                     datafile_path = "/".join(segments[1:])
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
 
+        # Set purl fields from `dependency_uid`
+        dependency_uid = dependency_data.get("dependency_uid")
+        purled_dependency_uid_mapping = PackageURL.from_string(dependency_uid).to_dict()
+        dependency_data.update(**purled_dependency_uid_mapping)
+
         cleaned_dependency_data = {
             field_name: value
             for field_name, value in dependency_data.items()
