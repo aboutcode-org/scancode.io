@@ -14,11 +14,11 @@ from licensedcode import cache
 from licensedcode import index
 from licensedcode import models
 from licensedcode.spans import Span
+
+from scantext.match_text import Token
 from scantext.match_text import get_full_matched_text
 from scantext.match_text import reportable_tokens
-from scantext.match_text import Token
 from scantext.match_text import tokenize_matched_text
-
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
