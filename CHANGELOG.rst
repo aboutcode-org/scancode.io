@@ -82,6 +82,10 @@ v31.0.0 (next)
 - Export current results as XLSX for resource, packages, and errors list views.
   https://github.com/nexB/scancode.io/issues/48
 
+- Add support for resource missing file content in details view.
+  Refine the annotation using the new className instead of type.
+  https://github.com/nexB/scancode.io/issues/495
+
 v30.2.0 (2021-12-17)
 --------------------
 
