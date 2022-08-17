@@ -18,6 +18,7 @@
         <ul class="nav">
             <li><a>Summary In Ace</a></li>
             <li class="is-active"><a>Summary with Highlighted Text</a></li>
+            <li><a>License Details</a></li>
         </ul>
     </div>
 
@@ -30,12 +31,18 @@
 
     <section class="tab-container">
         {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
+        {% include 'scantext/includes/license_summary_chart.html' with detected_licenses=detected_licenses %}
+    </section>
+
+    <section class="tab-container is-hidden">
+        {% include 'scantext/includes/license_summary_more_details.html' with detected_licenses=detected_licenses %}
     </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{% static 'ace-1.4.12.min.js' %}" crossorigin="anonymous"></script>
+<script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
 <script type="text/javascript">
     let editor = ace.edit("editor", {
         mode: "ace/mode/text",
@@ -127,5 +134,29 @@
           session.removeMarker(value.id);
         }
     }
+</script>
+{{ detected_licenses|json_script:"detected_licenses" }}
+<script type="text/javascript">
+    var chart = bb.generate({
+      data: {
+        columns: {{ detected_licenses.license_expressions_scores|safe }},
+        type: "donut",
+      },
+      bindto: "#pieChart"
+    });
+
+    var chart = bb.generate({
+      data: {
+        columns: {{ detected_licenses.license_expressions_scores|safe }},
+        type: "bar", // for ESM specify as: bar()
+      },
+      bar: {
+        width: {
+          ratio: 0.5
+        }
+      },
+      bindto: "#barChart_1"
+    });
+
 </script>
 {% endblock %}

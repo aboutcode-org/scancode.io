@@ -1,11 +1,15 @@
 <div class="columns mb-5 mx-1">
     <div class="column is-two-third">
         <p class="title is-5">Input License Text</p>
-        {% for text in detected_licenses.complete_text_in_array %}
+<!--         {% for text in detected_licenses.complete_text_in_array %}
         <section class="match-container box" style="white-space: pre-wrap; max-height: 70vh; overflow: scroll;">
             {{ text|safe }}
         </section>
-        {% endfor %}
+        {% endfor %} -->
+        <section class="match-container box" style="white-space: pre-wrap; max-height: 70vh; overflow: scroll;">
+            {{ detected_licenses.complete_text|safe }}
+        </section>
+
     </div>
     <div class="column is-one-third">
         <article class="panel is-info">
@@ -21,10 +25,6 @@
             <table class="license-table table is-striped is-hoverable mx-1">
                 <tbody>
                     <tr>
-                    <td><strong>Matched Rule</strong></td>
-                    <td>{{ license.rule }}</td>
-                    </tr>
-                    <tr>
                         <td><strong>Key</strong></td>
                         <td>{{ license.key }}</td>
                     </tr>
@@ -37,56 +37,20 @@
                         <td>{{ license.name }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Short Name</strong></td>
-                        <td>{{ license.short_name }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Category</strong></td>
-                        <td>{{ license.category }}</td>
-                    </tr>
-                    <tr>
                         <td><strong>Lines</strong></td>
-                        <td>{% if license.start_line == license.end_line %} {{ license.start_line }} {% else %} {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Reference</strong></td>
-                        <td><a href="{{ license.reference_url }}" target="_blank">{{ license.reference_url }}</a></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Exection</strong></td>
-                        <td>{{ license.is_exception }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Is Unknown</strong></td>
-                        <td>{{ license.is_unknown }}</td>
+                        <td>{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
                     </tr>
                     <tr>
                         <td><strong>Owner</strong></td>
                         <td>{{ license.owner }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Homepage</strong></td>
-                        <td>{{ license.homepage_url }}</td>
+                        <td><strong>Category</strong></td>
+                        <td>{{ license.category }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Text URL</strong></td>
-                        <td>{{ license.text_url }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Scancode Text URL</strong></td>
-                        <td>{{ license.scancode_text_url }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Scancode Data URL</strong></td>
-                        <td>{{ license.scancode_data_url }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>SPDX License Key</strong></td>
-                        <td>{{ license.spdx_license_key }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>SPDX URL</strong></td>
-                        <td>{{ license.spdx_url }}</td>
+                        <td><strong>Reference</strong></td>
+                        <td><a href="{{ license.reference_url }}" target="_blank">{{ license.reference_url }}</a></td>
                     </tr>
                 </tbody>
             </table>
