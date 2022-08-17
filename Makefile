@@ -113,7 +113,7 @@ sqlitedb:
 	@$(MAKE) migrate
 
 run:
-	${MANAGE} runserver 8001 --insecure --noreload
+	${MANAGE} runserver 8001 --insecure
 
 test:
 	@echo "-> Run the test suite"

@@ -740,11 +740,12 @@ class CodebaseResourceDetailsView(
     model = CodebaseResource
     template_name = "scanpipe/resource_detail.html"
     annotation_types = {
-        CodebaseResource.Compliance.OK: "info",
+        CodebaseResource.Compliance.OK: "ok",
         CodebaseResource.Compliance.WARNING: "warning",
         CodebaseResource.Compliance.ERROR: "error",
-        CodebaseResource.Compliance.MISSING: "error",
-        "": "info",
+        CodebaseResource.Compliance.MISSING: "missing",
+        "": "ok",
+        None: "info",
     }
 
     @staticmethod
@@ -768,7 +769,7 @@ class CodebaseResourceDetailsView(
             # Customize the annotation icon based on the policy compliance_alert
             policy = entry.get("policy")
             if policy:
-                compliance_alert = policy.get("compliance_alert", "")
+                compliance_alert = policy.get("compliance_alert", None)
                 annotation_type = self.annotation_types.get(compliance_alert)
 
             annotations.append(
@@ -776,7 +777,7 @@ class CodebaseResourceDetailsView(
                     "start_line": entry.get("start_line"),
                     "end_line": entry.get("end_line"),
                     "text": self.get_annotation_text(entry, field_name, value_key),
-                    "type": annotation_type,
+                    "className": f"ace_{annotation_type}",
                 }
             )
 
@@ -794,6 +795,14 @@ class CodebaseResourceDetailsView(
 
         context["detected_values"] = {
             "licenses": self.get_annotations("licenses"),
+            "licenses": [
+                {'start_line': 10, 'end_line': 10, 'text': 'a', 'className': ''},
+                {'start_line': 6, 'end_line': 6, 'text': 'a', 'className': 'ace_ok'},
+                {'start_line': 2, 'end_line': 2, 'text': 'b', 'className': 'ace_info'},
+                {'start_line': 3, 'end_line': 3, 'text': 'c', 'className': 'ace_warning'},
+                {'start_line': 4, 'end_line': 4, 'text': 'd', 'className': 'ace_error'},
+                {'start_line': 5, 'end_line': 5, 'text': 'e', 'className': 'ace_missing'},
+            ],
             "copyrights": self.get_annotations("copyrights"),
             "holders": self.get_annotations("holders"),
             "authors": self.get_annotations("authors"),
