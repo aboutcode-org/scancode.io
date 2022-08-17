@@ -155,6 +155,7 @@ def get_licenses(
 
     detected_licenses = []
     detected_expressions = []
+    detected_expressions_with_scores = []
 
     # gets matches from a license file
     matches = idx.match(
@@ -173,7 +174,7 @@ def get_licenses(
         qspans.append(match.qspan)
 
         detected_expressions.append(match.rule.license_expression)
-
+        detected_expressions_with_scores.append([match.rule.license_expression, match.score()])
         detected_licenses.extend(
             _licenses_data_from_match(
                 match=match,
@@ -202,6 +203,7 @@ def get_licenses(
         [
             ("licenses", detected_licenses),
             ("license_expressions", detected_expressions),
+            ("license_expressions_scores", detected_expressions_with_scores),
             ("percentage_of_license_text", percentage_of_license_text),
             ("complete_text_in_array", complete_text_in_array),
         ]
