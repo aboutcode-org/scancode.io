@@ -3,6 +3,33 @@
 
 {% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
 
+{% block extrahead %}
+  <style>
+    #resource-viewer #editor {min-height:730px; border: lightgrey 1px solid;}
+    #resource-viewer .nav-button {flex-basis: min-content;}
+    .ace_gutter-cell.ace_info, .ace_gutter-cell.undefined {
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANhJREFUOE+tU9EVgjAMTHAhGECEkcQBgAHEkag4ACwk8V18INam+mG/+trkcndJmAKnuIwFnu/CNYtccU8Scu6YOT+ctw9I1CQiBfCPELkdS7sFWgHy89gQcx1K/ESSdjhlDd4VAJVn4T5U0WKTsJRgogD7bupDgUOVmv+Qc6vSkmPVEYACeTdJSBpY8DftqBSTYQPIyyiLgYJb+ukHAMSYHkDzYqLFIAqwuKwmGjOiJlptXPpsAaxtjA1SbCrfBilGMwiyMfh/y+Rv5Tw/N1KYD9hA3EPr/ADng505myWL3AAAAABJRU5ErkJggg==);
+      background-position: 3px center;
+    }
+    .ace_gutter-cell.ace_ok {
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANpJREFUOE+tU10awyAIiyfbPNnoydadbPsColipT/OlSkkIfwXZETyb+QXg0+4nBOfVvUwGAxLkBAT4na58H5FoEAikgRcnDTL+80US+sMILPJbIwhqmpYbRf3oX6nECcwojXDLoAHpz28tIXqXtSksga5Q7ySw3HfR5/xVOgTfnID1iO3KwCZf06CCns+Szh3YCKjgGDXwFOZ2+gyY7HgWgtaWpOcZ2GemxjZqW3oQU5KOb5OvM/OnQdqMalAU9+QyymNMr8vkCxSX62aZ5goT4KCHLo+pXNb5B23CZJBu/hqNAAAAAElFTkSuQmCC);
+      background-position: 3px center;
+    }
+    .ace_gutter-cell.ace_warning {
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAALZJREFUOE+lkkESgzAIReFMpns9WfVkZm88Ex0BU2JI0pmyU+H97weEPwt785Smnb8TbvhK0ettAugIKyC9dShiOJefAY9hmSNcPBeuA0oTOWquiwrwtK6g2WSxWngN+KpnRQ2TIRjOYqZ4aAVnAbqR7CID6AgzIMnatG61KhMTqAXYtTGiCQDIv8cAd23i4j4eCdGWuhCAv7aeA4Zfx4Ud9RFATrxI2LvV/rvYdTDkXQ6GTYOGDxuwbcoBuC5JAAAAAElFTkSuQmCC);
+      background-position: 3px center;
+    }
+    .ace_gutter-cell.ace_error {
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAOZJREFUOE+lU0ESgjAM3PgW8dwjnJCXiS+znuDYs/gW4qSlGEoZcMwxTTa76YaQic6cr5Im0I1Bz1Ay2sq9bVpOOiGN0gTAA2TCMviugWaAzlxaAkuzhA2TRwucJjbzGxh0r9yrDSwBTJMfsbl0Q5OX9h3C4EaYeIDeFNKsadsDIL6G9PTSDaTANkFijbCgqF3r2gPZBUhkrZgo1namHJeil7fFRLPWO8hqzoH8BJCT05uCJe+XqAv0IlMfbH31ykhHQRZGCm5cWNnbNR6R2JnAdTTbysqR7l/HlF6lOqJaLlDec+f8Ad0vwzj333/QAAAAAElFTkSuQmCC);
+      background-position: 3px center;
+    }
+    .ace_gutter-cell.ace_missing {
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANRJREFUOE+lU8ENAyEMwxMcG7U3Wa+TldsIJqByRNoAQVepPKPYTmKD4LwY453lWusDwNlaUs45je2wBQIJCiEIgfMSgKcl+hDEGI8GXmC/5UZysCIETfllkJPSKABg5yRCsG0bwTp2KqXs3hheHzx1Eth7qNrYyzoJLnc3BF3vLwTdOo5YwrBXt3opxR55spdueDdQEnFCA+Vl44qAWJKcq3zIDRwbZQIblsWacp9VkERd8+A51QWppXGyk1PUWm/j/lOU9Wp/fabxV6oqJ1A3vO/8Bvwpta0GO9pwAAAAAElFTkSuQmCC);
+      background-position: 3px center;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
@@ -19,63 +46,19 @@
       </nav>
     </section>
 
-    <div class="tabs is-toggle is-fullwidth mx-5 mb-3 mt-4">
-      <ul>
-        <li class="has-text-weight-semibold is-radiusless">
-          Detected values:
-        </li>
-        {% for key, value in detected_values.items %}
-          <li>
-            <a data-type="{{ key }}" {% if forloop.first %}class="border-left-radius"{% endif %}>
-              {{ key|title }}
-              <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
+    {% if missing_file_content %}
+      <article class="box has-text-centered border-dashed mx-5 mt-5">
+        This resource is not available on disk.
+      </article>
+    {% else %}
+      {% include 'scanpipe/includes/resource_file_viewer.html' %}
+    {% endif %}
 
-    <section class="mx-5 message is-dark mb-2">
-      <div class="message-header is-flex">
-        <div>
-          <div>
-            {{ object.name }}
-            | {{ object.size|filesizeformat }}
-            | <a class="has-text-white" href="{{ object.get_raw_url }}?as_attachment=1"><i class="fas fa-download"></i></a>
-            <div class="mt-2">
-              {% if object.is_binary %}
-                {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
-              {% endif %}
-              {% if object.is_text %}
-                {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Text</span>' content="Plain text file." only %}
-              {% endif %}
-              {% if object.is_archive %}
-                {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
-              {% endif %}
-              {% if object.is_key_file %}
-                {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
-              {% endif %}
-              {% if object.is_media %}
-                {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
-              {% endif %}
-            </div>
-          </div>
-          <div class="mt-2" style="font-size: 10px;">
-            {{ object.path }}
-          </div>
-        </div>
-        <div style="flex-basis: min-content;">
-          <button class="button previous-btn is-dark" disabled><i class="fas fa-arrow-up mr-2"></i>Previous</button>
-          <button class="button next-btn is-dark" disabled><i class="fas fa-arrow-down mr-2"></i>Next</button>
-        </div>
-      </div>
-      <div id="editor" style="min-height:730px; border: lightgrey 1px solid;">{{ file_content }}</div>
-    </section>
   </div>
 {% endblock %}
 
 {% block scripts %}
-  <script src="{% static 'ace-1.4.12.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.9.5.min.js' %}" crossorigin="anonymous"></script>
   {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {
@@ -120,8 +103,9 @@
           row: start_row,
           column: 0,
           text: $el.text,
-          type: $el.type,
+          className: $el.className,
         });
+
       });
 
       editor.getSession().setAnnotations(annotations);
@@ -151,7 +135,7 @@
             setDetectedValues(detected_data);
             editor.renderer.scrollToLine(detected_data[0].start_line - 1);
             previousBtn.disabled = true;
-            nextBtn.disabled = (detected_data.length - 1 == 0);
+            nextBtn.disabled = detected_data.length - 1 === 0;
           } else {
             scrollPositionIndex = 0;
             editor.renderer.scrollToLine(0);
@@ -166,7 +150,7 @@
       if (scrollPositionIndex >= detected_data.length - 1) return false;
       scrollPositionIndex++;
       editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
-      nextBtn.disabled = (scrollPositionIndex == detected_data.length - 1);
+      nextBtn.disabled = scrollPositionIndex === detected_data.length - 1;
       previousBtn.disabled = false;
     })
 
@@ -174,7 +158,7 @@
       if (scrollPositionIndex <= 0) return false;
       scrollPositionIndex--;
       editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
-      previousBtn.disabled = (scrollPositionIndex == 0);
+      previousBtn.disabled = scrollPositionIndex === 0;
       nextBtn.disabled = false;
     })
   </script>

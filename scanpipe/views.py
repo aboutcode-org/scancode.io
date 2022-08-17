@@ -739,6 +739,14 @@ class CodebaseResourceDetailsView(
 ):
     model = CodebaseResource
     template_name = "scanpipe/resource_detail.html"
+    annotation_types = {
+        CodebaseResource.Compliance.OK: "ok",
+        CodebaseResource.Compliance.WARNING: "warning",
+        CodebaseResource.Compliance.ERROR: "error",
+        CodebaseResource.Compliance.MISSING: "missing",
+        "": "ok",
+        None: "info",
+    }
 
     @staticmethod
     def get_annotation_text(entry, field_name, value_key):
@@ -761,14 +769,15 @@ class CodebaseResourceDetailsView(
             # Customize the annotation icon based on the policy compliance_alert
             policy = entry.get("policy")
             if policy:
-                annotation_type = policy.get("compliance_alert")
+                compliance_alert = policy.get("compliance_alert", None)
+                annotation_type = self.annotation_types.get(compliance_alert)
 
             annotations.append(
                 {
                     "start_line": entry.get("start_line"),
                     "end_line": entry.get("end_line"),
                     "text": self.get_annotation_text(entry, field_name, value_key),
-                    "type": annotation_type,
+                    "className": f"ace_{annotation_type}",
                 }
             )
 
@@ -780,7 +789,9 @@ class CodebaseResourceDetailsView(
         try:
             context["file_content"] = self.object.file_content
         except OSError:
-            raise Http404("File not found.")
+            context["missing_file_content"] = True
+            message = "WARNING: This resource is not available on disk."
+            messages.warning(self.request, message)
 
         context["detected_values"] = {
             "licenses": self.get_annotations("licenses"),
