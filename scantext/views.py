@@ -311,22 +311,13 @@ def get_highlighted_lines(
     tokens = tag_matched_tokens(tokens=tokens, match_qspan=match.qspan)
 
     header = """<style>
-    .license-match.log {
-        color: #f1f1f1;
-        background-color: #222;
-        font-family: monospace;
-    }
-
-    .license-match.wrap {
+    .license-match {
+        font-size: 18px;
         white-space: pre-wrap;
     }
 
-    .not-matched {
-        background-color: #ff0000;
-    }
-
     .matched {
-        background-color: #00ff00;
+        background-color: rgba(30, 220, 90, 0.3);
     }
     </style>
     <div class="license-match">
