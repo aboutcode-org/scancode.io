@@ -795,14 +795,6 @@ class CodebaseResourceDetailsView(
 
         context["detected_values"] = {
             "licenses": self.get_annotations("licenses"),
-            "licenses": [
-                {'start_line': 10, 'end_line': 10, 'text': 'a', 'className': ''},
-                {'start_line': 6, 'end_line': 6, 'text': 'a', 'className': 'ace_ok'},
-                {'start_line': 2, 'end_line': 2, 'text': 'b', 'className': 'ace_info'},
-                {'start_line': 3, 'end_line': 3, 'text': 'c', 'className': 'ace_warning'},
-                {'start_line': 4, 'end_line': 4, 'text': 'd', 'className': 'ace_error'},
-                {'start_line': 5, 'end_line': 5, 'text': 'e', 'className': 'ace_missing'},
-            ],
             "copyrights": self.get_annotations("copyrights"),
             "holders": self.get_annotations("holders"),
             "authors": self.get_annotations("authors"),
