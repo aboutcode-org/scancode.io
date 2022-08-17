@@ -364,7 +364,6 @@ class ScanPipeViewsTest(TestCase):
 
         response = self.client.get(url)
         expected = (
-            '{"licenses": [{"start_line": 1, "end_line": 2, "text": null, '
-            '"type": "info"}]'
+            '{"start_line": 1, "end_line": 2, "text": null, "className": "ace_info"}'
         )
         self.assertContains(response, expected)
