@@ -189,7 +189,7 @@ class JSONResultsGenerator:
             project.discovereddependencys.all()
             .prefetch_related("for_package", "datafile_resource")
             .order_by(
-                "purl",
+                "dependency_uid",
             )
         )
 

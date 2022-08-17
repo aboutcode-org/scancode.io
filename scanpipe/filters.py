@@ -366,10 +366,28 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    purl = PackageURLFilter(label="Package URL")
+
     class Meta:
         model = DiscoveredDependency
         fields = [
+            "search",
+            "purl",
+            "dependency_uid",
+            "type",
+            "namespace",
             "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+            "datasource_id",
         ]
 
 

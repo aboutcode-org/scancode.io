@@ -2034,7 +2034,7 @@ class DiscoveredDependency(
     def get_absolute_url(self):
         return reverse("dependency_detail", args=[self.project_id, self.pk])
 
-    @cached_property
+    @property
     def purl(self):
         return self.package_url
 
