@@ -299,7 +299,9 @@ def get_highlighted_lines(
 
     class_position = 1
     for match in matches:
-        tokens = tag_matched_tokens(tokens=tokens, match_qspan=match.qspan, class_position=class_position)
+        tokens = tag_matched_tokens(
+            tokens=tokens, match_qspan=match.qspan, class_position=class_position
+        )
         class_position += 1
 
     header = """<style>
@@ -315,7 +317,6 @@ def get_highlighted_lines(
         '<span class="matched2">{}</span>',
         '<span class="matched3">{}</span>',
     ]
-
 
     for token in tokens:
         val = token.value
