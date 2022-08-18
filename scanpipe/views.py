@@ -440,8 +440,8 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         file_languages = files.values_list("programming_language", flat=True)
         file_mime_types = files.values_list("mime_type", flat=True)
-        file_holders = self.data_from_model_field(files, "holders", "value")
-        file_copyrights = self.data_from_model_field(files, "copyrights", "value")
+        file_holders = self.data_from_model_field(files, "holders", "holder")
+        file_copyrights = self.data_from_model_field(files, "copyrights", "copyright")
         file_license_keys = self.data_from_model_field(files, "licenses", "key")
         file_license_categories = self.data_from_model_field(
             files, "licenses", "category"
