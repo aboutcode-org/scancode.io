@@ -332,7 +332,7 @@ def get_highlighted_lines(
     return header + body + footer
 
 
-def tag_matched_tokens(tokens, match_qspan, color):
+def tag_matched_tokens(tokens, match_qspan, class_position):
 
     for tok in tokens:
         # tagged known matched tokens (useful for highlighting)
