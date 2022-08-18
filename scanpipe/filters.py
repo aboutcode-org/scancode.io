@@ -233,6 +233,21 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search", field_name="path", lookup_expr="icontains"
     )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "path",
+            "status",
+            "type",
+            "size",
+            "name",
+            "extension",
+            "programming_language",
+            "mime_type",
+            "tag",
+            "compliance_alert",
+        ],
+    )
     in_package = InPackageFilter(label="In a Package")
 
     class Meta:
