@@ -33,6 +33,18 @@ from scanpipe.pipes import rootfs
 logger = logging.getLogger(__name__)
 
 
+def get_tarballs_from_inputs(project):
+    """
+    Returns the tarballs from the `project` input/ work directory.
+    Supported file extensions: `.tar`, `.tar.gz`, `.tgz`.
+    """
+    return [
+        tarball
+        for pattern in ("*.tar*", "*.tgz")
+        for tarball in project.inputs(pattern=pattern)
+    ]
+
+
 def extract_images_from_inputs(project):
     """
     Collects all the tarballs from the `project` input/ work directory, extracts
@@ -45,9 +57,9 @@ def extract_images_from_inputs(project):
     images = []
     errors = []
 
-    for input_tarball in project.inputs(pattern="*.tar*"):
-        extract_target = target_path / f"{input_tarball.name}-extract"
-        imgs, errs = extract_image_from_tarball(input_tarball, extract_target)
+    for tarball in get_tarballs_from_inputs(project):
+        extract_target = target_path / f"{tarball.name}-extract"
+        imgs, errs = extract_image_from_tarball(tarball, extract_target)
         images.extend(imgs)
         errors.extend(errs)
 
