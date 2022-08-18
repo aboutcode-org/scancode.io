@@ -234,6 +234,8 @@ class PipelinesIntegrationTest(TestCase):
         # system_environment differs between systems
         "system_environment",
         "file_type",
+        # mime type is inconsistent across systems
+        "mime_type",
     ]
 
     def _without_keys(self, data, exclude_keys):

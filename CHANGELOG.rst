@@ -5,11 +5,11 @@ v31.0.0 (next)
 ---------------
 
 - WARNING: Drop support for Python 3.6 and 3.7. Add support for Python 3.10.
-  Upgrade Django to version 4.x series.
+  Upgrade Django to version 4.1 series.
 
-- Upgrade ScanCode-toolkit to version v31.
+- Upgrade ScanCode-toolkit to version 31.0.1.
   See https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst for an
-  overview of the changes in v31 compared to v30.
+  overview of the changes in the v31 compared to v30.
 
 - Implement run status auto-refresh using the htmx JavaScript library.
   The statuses of queued and running pipeline are now automatically refreshed
