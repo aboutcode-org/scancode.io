@@ -174,13 +174,6 @@ def _tokenize_matched_text(
                 # 2. to ensure the number of tokens is the same in both
                 # tokenizers (though, of course, the case will differ as the
                 # regular query tokenizer ignores case and punctuations).
-
-                # NOTE: we have a rare Unicode bug/issue because of some Unicode
-                # codepoint such as some Turkish characters that decompose to
-                # char + punct when casefolded. This should be fixed in Unicode
-                # release 14 and up and likely implemented in Python 3.10 and up
-                # See https://github.com/nexB/scancode-toolkit/issues/1872
-                # See also: https://bugs.python.org/issue34723#msg359514
                 qtokenized = list(index_tokenizer(token_str))
                 if not qtokenized:
 

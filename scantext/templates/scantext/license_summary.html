@@ -13,11 +13,10 @@
         </div>
     </section>
 
-    <!-- still under implementation -->
     <div class="tabs">
         <ul class="nav">
-            <li><a>Summary In Ace</a></li>
-            <li class="is-active"><a>Summary with Highlighted Text</a></li>
+            <li class="is-active"><a>Summary In Ace</a></li>
+            <li><a>Summary with Highlighted Text</a></li>
             <li><a>License Details</a></li>
         </ul>
     </div>
@@ -25,11 +24,11 @@
     {% include 'scantext/includes/license_summary_header.html' with detected_licenses=detected_licenses %}
     <hr class="mx-1">
 
-    <section class="tab-container is-hidden">
+    <section class="tab-container">
         {% include 'scantext/includes/license_summary_cards.html' with detected_licenses=detected_licenses %}
     </section>
 
-    <section class="tab-container">
+    <section class="tab-container is-hidden">
         {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
         {% include 'scantext/includes/license_summary_chart.html' with detected_licenses=detected_licenses %}
     </section>

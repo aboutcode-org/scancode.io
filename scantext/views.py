@@ -22,14 +22,19 @@
 
 import sys
 import tempfile
+from pprint import pprint
 
 from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import render
 
 import attr
+from licensedcode import query
 from licensedcode.match import tokenize_matched_text
+from licensedcode.spans import Span
 from licensedcode.stopwords import STOPWORDS
+from licensedcode.tokenize import index_tokenizer
+from licensedcode.tokenize import matched_query_text_tokenizer
 
 from scantext.forms import LicenseScanForm
 
@@ -116,9 +121,6 @@ def license_scanview(request):
                 "detected_licenses": expressions,
             },
         )
-    # if TRACE_HIGHLIGHTED_TEXT:
-    #     from pprint import pprint
-    #     pprint(expressions, indent=4)
 
     return render(
         request,
@@ -136,18 +138,6 @@ def get_licenses(
     deadline=sys.maxsize,
     **kwargs,
 ):
-    """
-    Return a mapping or detected_licenses for licenses detected in the file at
-    `location`
-    This mapping contains two keys:
-     - 'licenses' with a value that is list of mappings of license information.
-     - 'license_expressions' with a value that is list of license expression
-       strings.
-    `min_score` is a minimum score threshold from 0 to 100. The default is 0,
-    meaning that all license matches are returned. If specified, matches with a
-    score lower than `minimum_score` are not returned.
-    By Default ``unknown_licenses`` is set to True to detect unknown licenses.
-    """
     from licensedcode.cache import get_index
     from licensedcode.spans import Span
 
@@ -169,12 +159,14 @@ def get_licenses(
     qspans = []
     match = None
     complete_text_in_array = []
-    # run through a list of matches
+
     for match in matches:
         qspans.append(match.qspan)
 
         detected_expressions.append(match.rule.license_expression)
-        detected_expressions_with_scores.append([match.rule.license_expression, match.score()])
+        detected_expressions_with_scores.append(
+            [match.rule.license_expression, match.score()]
+        )
         detected_licenses.extend(
             _licenses_data_from_match(
                 match=match,
@@ -182,13 +174,11 @@ def get_licenses(
             )
         )
 
-        complete_text_in_array.append(
-            get_highlighted_lines(
-                match=match,
-                stopwords=STOPWORDS,
-                trace=TRACE_HIGHLIGHTED_TEXT,
-            )
-        )
+    complete_text = get_highlighted_lines(
+        matches=matches,
+        stopwords=STOPWORDS,
+        trace=TRACE_HIGHLIGHTED_TEXT,
+    )
 
     percentage_of_license_text = 0
     if match:
@@ -202,10 +192,10 @@ def get_licenses(
     return dict(
         [
             ("licenses", detected_licenses),
+            ("complete_text", complete_text),
             ("license_expressions", detected_expressions),
             ("license_expressions_scores", detected_expressions_with_scores),
             ("percentage_of_license_text", percentage_of_license_text),
-            ("complete_text_in_array", complete_text_in_array),
         ]
     )
 
@@ -292,62 +282,59 @@ def logger_debug(*args):
 
 
 def get_highlighted_lines(
-    match,
+    matches,
     stopwords=STOPWORDS,
     trace=TRACE_HIGHLIGHTED_TEXT,
 ):
-    """
-    Yield highlighted text lines (with line returns) for the whole
-    of the matched and unmatched text of a ``query``.
-    """
-    query = match.query
+    tokens = []
+
+    query = matches[0].query
     tokens = tokenize_matched_text(
         location=query.location,
         query_string=query.query_string,
         dictionary=query.idx.dictionary,
-        start_line=match.query.start_line,
+        start_line=query.start_line,
         _cache={},
     )
-    tokens = tag_matched_tokens(tokens=tokens, match_qspan=match.qspan)
+
+    class_position = 1
+    for match in matches:
+        tokens = tag_matched_tokens(tokens=tokens, match_qspan=match.qspan, class_position=class_position)
+        class_position += 1
 
     header = """<style>
-    .license-match {
-        font-size: 18px;
-        white-space: pre-wrap;
-    }
-
-    .matched {
-        background-color: rgba(30, 220, 90, 0.3);
-    }
-    </style>
-    <div class="license-match">
-    """
-    footer = """</div>"""
-
+    .license-match {font-size: 18px;white-space: pre-wrap;}
+    .matched1 {background-color: rgba(30, 220, 90, 0.3);}
+    .matched2 {background-color: rgba(30, 90, 220, 0.3);}
+    .matched3 {background-color: rgba(220, 90, 30, 0.3);}
+    </style><div class="license-match">"""
     body = ""
-    highlight_matched = '<span class="matched">{}</span>'
-    highlight_not_matched = '<span class="not-matched">{}</span>'
+    footer = """</div>"""
+    highlight_matched = [
+        '<span class="matched1">{}</span>',
+        '<span class="matched2">{}</span>',
+        '<span class="matched3">{}</span>',
+    ]
+
+
     for token in tokens:
         val = token.value
         if token.is_text and val.lower() not in stopwords:
             if token.is_matched:
-                body += highlight_matched.format(val)
+                body += highlight_matched[token.is_matched % 3].format(val)
             else:
-                body += highlight_not_matched.format(val)
+                body += val
         else:
             # we do not highlight punctuation and stopwords.
-            body += highlight_not_matched.format(val)
+            body += val
 
     return header + body + footer
 
 
-def tag_matched_tokens(tokens, match_qspan):
-    """
-    Yield Tokens from a ``tokens`` iterable of Token objects.
-    Known matched tokens are tagged as "is_matched=True" if they are matched.
-    """
+def tag_matched_tokens(tokens, match_qspan, color):
+
     for tok in tokens:
         # tagged known matched tokens (useful for highlighting)
         if tok.pos != -1 and tok.is_known and tok.pos in match_qspan:
-            tok = attr.evolve(tok, is_matched=True)
+            tok = attr.evolve(tok, is_matched=class_position)
         yield tok
