@@ -75,12 +75,16 @@ An overview of the web application usage is available at :ref:`user_interface`.
 
 .. warning::
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
-    setting needs to be provided in your ``.env`` file::
+    and ``CSRF_TRUSTED_ORIGINS`` settings need to be provided in your ``.env`` file,
+    for example::
 
-        ALLOWED_HOSTS=.domain.com,127.0.0.1
+        ALLOWED_HOSTS=.your-domain.com,127.0.0.1
+        CSRF_TRUSTED_ORIGINS=https://*.your-domain.com,http://127.0.0.1:8001
 
-    Refer to `Django ALLOWED_HOSTS settings <https://docs.djangoproject.com/
-    en/dev/ref/settings/#allowed-hosts>`_ for more details.
+    Refer to `ALLOWED_HOSTS settings <https://docs.djangoproject.com/
+    en/dev/ref/settings/#allowed-hosts>`_ and `CSRF_TRUSTED_ORIGINS settings
+    <https://docs.djangoproject.com/en/dev/ref/settings/
+    #std-setting-CSRF_TRUSTED_ORIGINS>`_ for more details.
 
 Execute a Command
 ^^^^^^^^^^^^^^^^^
