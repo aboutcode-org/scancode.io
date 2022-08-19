@@ -16,24 +16,7 @@
   <div class="container is-fluid mb-3">
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        <thead>
-          <tr>
-            {% for column in columns_data %}
-              <th{% if column.field_name in filter.data.sort %} class="nowrap"{% endif %}>
-                {% if column.sort_query %}
-                  <a class="is-black-link" href="?{{ column.sort_query }}">
-                    {{ column.label }}
-                    {% if column.field_name in filter.data.sort %}
-                      <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
-                    {% endif %}
-                 </a>
-                {% else %}
-                  {{ column.label }}
-                {% endif %}
-              </th>
-            {% endfor %}
-          </tr>
-        </thead>
+        {% include 'scanpipe/includes/list_view_thead.html' %}
         <tbody>
           {% for resource in object_list %}
             <tr>

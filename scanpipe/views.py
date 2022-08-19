@@ -807,6 +807,7 @@ class DiscoveredPackageListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
 ):
@@ -815,15 +816,32 @@ class DiscoveredPackageListView(
     template_name = "scanpipe/package_list.html"
     paginate_by = 100
     prefetch_related = ["codebase_resources"]
+    table_columns = [
+        "package_url",
+        "license_expression",
+        "copyright",
+        "primary_language",
+        "resources",
+    ]
 
 
 class ProjectErrorListView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, ExportXLSXMixin, FilterView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
+    FilterView,
 ):
     model = ProjectError
     filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
+    table_columns = [
+        "model",
+        "message",
+        "details",
+        "traceback",
+    ]
 
 
 class CodebaseResourceDetailsView(

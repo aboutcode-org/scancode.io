@@ -295,6 +295,14 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "license_expression",
+            "copyright",
+            "primary_language",
+        ],
+    )
     purl = PackageURLFilter(label="Package URL")
 
     class Meta:
@@ -331,6 +339,12 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search", field_name="message", lookup_expr="icontains"
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "model",
+        ],
     )
 
     class Meta:
