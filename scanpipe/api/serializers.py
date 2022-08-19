@@ -246,6 +246,12 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "project",
             "datafile_resource",
             "for_package",
+            "type",
+            "name",
+            "namespace",
+            "version",
+            "qualifiers",
+            "subpath",
         ]
 
 
