@@ -264,6 +264,7 @@ class TableColumnsMixin:
             "field_name": "<field_name>",
             "label": None,
             "condition": None,
+            "css_class": None,
         },
     ]
     """
@@ -385,13 +386,39 @@ class AccountProfileView(LoginRequiredMixin, generic.TemplateView):
 
 
 class ProjectListView(
-    ConditionalLoginRequired, PrefetchRelatedViewMixin, PaginatedFilterView
+    ConditionalLoginRequired,
+    PrefetchRelatedViewMixin,
+    TableColumnsMixin,
+    PaginatedFilterView,
 ):
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
     paginate_by = 20
+    table_columns = [
+        "name",
+        {
+            "field_name": "discoveredpackages",
+            "label": "Packages",
+        },
+        {
+            "field_name": "codebaseresources",
+            "label": "Resources",
+        },
+        {
+            "field_name": "projecterrors",
+            "label": "Errors",
+        },
+        {
+            "field_name": "runs",
+            "label": "Pipelines",
+        },
+        {
+            "label": "",
+            "css_class": "is-narrow",
+        },
+    ]
 
 
 class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):

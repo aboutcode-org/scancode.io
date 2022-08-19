@@ -143,8 +143,8 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         empty_label="Newest",
         choices=(
             ("created_date", "Oldest"),
-            ("name", "Name (a-Z)"),
-            ("-name", "Name (Z-a)"),
+            ("name", "Name (A-z)"),
+            ("-name", "Name (z-A)"),
         ),
         widget=BulmaDropdownWidget,
     )
