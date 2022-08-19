@@ -39,21 +39,21 @@
                     <td><strong>Owner</strong></td>
                     <td>{{ license.owner }}</td>
                     <td><strong>Homepage</strong></td>
-                    <td>{{ license.homepage_url }}</td>
+                    <td><a href="{{ license.homepage_url }}" target="_blank">{{ license.homepage_url }}</a></td>
                 </tr>
                 <tr>
                     <td><strong>Text URL</strong></td>
-                    <td>{{ license.text_url }}</td>
+                    <td><a href="{{ license.text_url }}" target="_blank">{{ license.text_url }}</a></td>
                     <td><strong>Scancode Text URL</strong></td>
-                    <td>{{ license.scancode_text_url }}</td>
+                    <td><a href="{{ license.scancode_text_url }}" target="_blank">{{ license.scancode_text_url }}</a></td>
                     <td><strong>Scancode Data URL</strong></td>
-                    <td>{{ license.scancode_data_url }}</td>
+                    <td><a href="{{ license.scancode_data_url }}" target="_blank">{{ license.scancode_data_url }}</a></td>
                 </tr>
                 <tr>
                     <td><strong>SPDX License Key</strong></td>
                     <td>{{ license.spdx_license_key }}</td>
                     <td><strong>SPDX URL</strong></td>
-                    <td>{{ license.spdx_url }}</td>
+                    <td><a href="{{ license.spdx_url }}" target="_blank">{{ license.spdx_url }}</a></td>
                     <td><strong>Matched Rule</strong></td>
                     <td>{{ license.matched_rule }}</td>
                 </tr>

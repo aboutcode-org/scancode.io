@@ -11,7 +11,7 @@
                 <div class="card-header is-flex is-justify-content-space-between">
                     <div class="card-header-title" title="{{ license.short_name }}">
                         {% if license.homepage_url %}
-                        <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})">{{ license.short_name }}</a> {% else %} {{ license.short_name }} {% endif %}
+                        <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})" target="_blank">{{ license.short_name }}</a> {% else %} {{ license.short_name }} {% endif %}
                     </div>
                     <div class="is-flex is-justify-content-row is-align-items-center">
                         <p class="lines tag is-6 mx-1 is-light is-info">
