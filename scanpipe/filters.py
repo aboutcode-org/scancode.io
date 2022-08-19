@@ -23,6 +23,9 @@
 from django.apps import apps
 from django.core.validators import EMPTY_VALUES
 from django.db import models
+from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils.http import urlencode
+from django.utils.translation import gettext as _
 
 import django_filters
 from django_filters.widgets import LinkWidget
@@ -115,18 +118,31 @@ class BulmaLinkWidget(LinkWidget):
     extra_css_class = ""
 
     def render_option(self, name, selected_choices, option_value, option_label):
-        option = super().render_option(
-            name, selected_choices, option_value, option_label
-        )
-        css_class = str(self.extra_css_class)
+        option_value = str(option_value)
+        if option_label == BLANK_CHOICE_DASH[0][1]:
+            option_label = _("All")
 
-        selected_class = ' class="selected"'
-        if selected_class in option:
-            option = option.replace(selected_class, "")
+        data = self.data.copy()
+        data[name] = option_value
+        selected = data == self.data or option_value in selected_choices
+
+        css_class = str(self.extra_css_class)
+        if selected:
             css_class += " is-active"
 
-        option = option.replace("<a", f'<a class="{css_class}"')
-        return option
+        try:
+            url = data.urlencode()
+        except AttributeError:
+            url = urlencode(data, doseq=True)
+
+        return self.option_string().format(
+            css_class=css_class,
+            query_string=url,
+            label=str(option_label),
+        )
+
+    def option_string(self):
+        return '<li><a href="?{query_string}" class="{css_class}">{label}</a></li>'
 
 
 class BulmaDropdownWidget(BulmaLinkWidget):
