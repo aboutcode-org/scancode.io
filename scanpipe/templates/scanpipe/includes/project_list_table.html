@@ -1,15 +1,6 @@
 {% load humanize %}
 <table class="table is-bordered is-striped is-hoverable is-fullwidth">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Packages</th>
-      <th>Resources</th>
-      <th>Errors</th>
-      <th>Pipelines</th>
-      <th style="width:41px;"></th>
-    </tr>
-  </thead>
+  {% include 'scanpipe/includes/list_view_thead.html' %}
   <tbody>
   {% for project in projects %}
     <tr>
@@ -18,35 +9,35 @@
         <span class="has-text-grey is-size-7 is-block" title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
       </th>
       <td>
-        {% if project.package_count %}
+        {% if project.discoveredpackages_count %}
           <a href="{% url 'project_packages' project.uuid %}">
-            {{ project.package_count|intcomma }}
+            {{ project.discoveredpackages_count|intcomma }}
           </a>
         {% else %}
           <span>
-            {{ project.package_count|intcomma }}
+            {{ project.discoveredpackages_count|intcomma }}
           </span>
         {% endif %}
       </td>
       <td>
-        {% if project.resource_count %}
+        {% if project.codebaseresources_count %}
           <a href="{% url 'project_resources' project.uuid %}">
-            {{ project.resource_count|intcomma }}
+            {{ project.codebaseresources_count|intcomma }}
           </a>
         {% else %}
           <span>
-            {{ project.resource_count|intcomma }}
+            {{ project.codebaseresources_count|intcomma }}
           </span>
         {% endif %}
       </td>
       <td>
-        {% if project.error_count %}
+        {% if project.projecterrors_count %}
           <a href="{% url 'project_errors' project.uuid %}">
-            {{ project.error_count|intcomma }}
+            {{ project.projecterrors_count|intcomma }}
           </a>
         {% else %}
           <span>
-            {{ project.error_count|intcomma }}
+            {{ project.projecterrors_count|intcomma }}
           </span>
         {% endif %}
       </td>

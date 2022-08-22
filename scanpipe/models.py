@@ -39,6 +39,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
+from django.db.models import Count
 from django.db.models import Q
 from django.db.models import TextField
 from django.db.models.functions import Cast
@@ -382,6 +383,21 @@ def get_project_work_directory(project):
     return f"{scanpipe_app.workspace_path}/projects/{project_workspace_id}"
 
 
+class ProjectQuerySet(models.QuerySet):
+    def with_counts(self, *fields):
+        """
+        Annotate the QuerySet with counts of provided relational `fields`.
+
+        Usage:
+            project_queryset.with_counts("codebaseresources", "discoveredpackages")
+        """
+        annotations = {}
+        for field_name in fields:
+            annotations[f"{field_name}_count"] = Count(field_name, distinct=True)
+
+        return self.annotate(**annotations)
+
+
 class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     """
     The Project encapsulates all analysis processing.
@@ -415,6 +431,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             "happened during the archive operation."
         ),
     )
+
+    objects = ProjectQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_date"]

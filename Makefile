@@ -76,7 +76,7 @@ doc8:
 	@echo "-> Run doc8 validation"
 	@${ACTIVATE} doc8 --max-line-length 100 --ignore-path docs/_build/ --quiet docs/
 
-valid: isort black doc8
+valid: isort black doc8 check
 
 check: doc8
 	@echo "-> Run pycodestyle (PEP8) validation"

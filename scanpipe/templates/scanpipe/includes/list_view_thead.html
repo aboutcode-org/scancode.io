@@ -1,0 +1,16 @@
+<thead>
+  <tr>
+    {% for column in columns_data %}
+      <th {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
+        {% if column.sort_query %}
+          <a class="is-black-link" href="?{{ column.sort_query }}">{{ column.label }}</a>
+          {% if column.field_name in filter.data.sort %}
+            <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+          {% endif %}
+        {% else %}
+          {{ column.label }}
+        {% endif %}
+      </th>
+    {% endfor %}
+  </tr>
+</thead>

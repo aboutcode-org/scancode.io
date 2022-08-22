@@ -16,24 +16,7 @@
   <div class="container is-fluid mb-3">
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        <thead>
-          <tr>
-            <th>Path</th>
-            <th>Status</th>
-            <th>Type</th>
-            <th>Size</th>
-            <th>Name</th>
-            <th>Extension</th>
-            <th>Programming language</th>
-            <th>Mime type</th>
-            <th>Tag</th>
-            <th>License expressions</th>
-            {% if include_compliance_alert %}
-              <th>Compliance alert</th>
-            {% endif %}
-            <th>Packages</th>
-          </tr>
-        </thead>
+        {% include 'scanpipe/includes/list_view_thead.html' %}
         <tbody>
           {% for resource in object_list %}
             <tr>

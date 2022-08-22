@@ -36,6 +36,7 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
+from django.utils.http import urlencode
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
@@ -254,6 +255,82 @@ class TabSetMixin:
         return context
 
 
+class TableColumnsMixin:
+    """
+    table_columns = [
+        "<field_name>",
+        "<field_name>",
+        {
+            "field_name": "<field_name>",
+            "label": None,
+            "condition": None,
+            "sort_name": None,
+            "css_class": None,
+        },
+    ]
+    """
+
+    table_columns = []
+
+    def get_columns_data(self):
+        """
+        Returns the columns data structure used in template rendering.
+        """
+        columns_data = []
+
+        sortable_fields = []
+        active_sort = ""
+        filterset = getattr(self, "filterset", None)
+        if filterset and "sort" in filterset.filters:
+            sortable_fields = list(filterset.filters["sort"].param_map.keys())
+            active_sort = filterset.data.get("sort", "")
+
+        for column_definition in self.table_columns:
+            # Support for single "field_name" entry in columns list.
+            if not isinstance(column_definition, dict):
+                field_name = column_definition
+                column_data = {"field_name": field_name}
+            else:
+                field_name = column_definition.get("field_name")
+                column_data = column_definition.copy()
+
+            condition = column_data.get("condition", None)
+            if condition is not None and not bool(condition):
+                continue
+
+            if "label" not in column_data:
+                column_data["label"] = self.get_field_label(field_name)
+
+            sort_name = column_data.get("sort_name") or field_name
+            if sort_name in sortable_fields:
+                sort_direction = ""
+
+                if active_sort.endswith(sort_name):
+                    if not active_sort.startswith("-"):
+                        sort_direction = "-"
+
+                column_data["sort_direction"] = sort_direction
+                query_dict = self.request.GET.copy()
+                query_dict["sort"] = f"{sort_direction}{sort_name}"
+                column_data["sort_query"] = query_dict.urlencode()
+
+            columns_data.append(column_data)
+
+        return columns_data
+
+    @staticmethod
+    def get_field_label(field_name):
+        """
+        Returns a formatted label for display based on the `field_name`.
+        """
+        return field_name.replace("_", " ").capitalize().replace("url", "URL")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["columns_data"] = self.get_columns_data()
+        return context
+
+
 class ExportXLSXMixin:
     """
     Adds the ability to export the current filtered QuerySet of a `FilterView` into
@@ -311,13 +388,53 @@ class AccountProfileView(LoginRequiredMixin, generic.TemplateView):
 
 
 class ProjectListView(
-    ConditionalLoginRequired, PrefetchRelatedViewMixin, PaginatedFilterView
+    ConditionalLoginRequired,
+    PrefetchRelatedViewMixin,
+    TableColumnsMixin,
+    PaginatedFilterView,
 ):
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
     paginate_by = 20
+    table_columns = [
+        "name",
+        {
+            "field_name": "discoveredpackages",
+            "label": "Packages",
+            "sort_name": "discoveredpackages_count",
+        },
+        {
+            "field_name": "codebaseresources",
+            "label": "Resources",
+            "sort_name": "codebaseresources_count",
+        },
+        {
+            "field_name": "projecterrors",
+            "label": "Errors",
+            "sort_name": "projecterrors_count",
+        },
+        {
+            "field_name": "runs",
+            "label": "Pipelines",
+        },
+        {
+            "label": "",
+            "css_class": "is-narrow",
+        },
+    ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .with_counts(
+                "codebaseresources",
+                "discoveredpackages",
+                "projecterrors",
+            )
+        )
 
 
 class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
@@ -696,6 +813,7 @@ class CodebaseResourceListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
 ):
@@ -704,6 +822,23 @@ class CodebaseResourceListView(
     template_name = "scanpipe/resource_list.html"
     paginate_by = 100
     prefetch_related = ["discovered_packages"]
+    table_columns = [
+        "path",
+        "status",
+        "type",
+        "size",
+        "name",
+        "extension",
+        "programming_language",
+        "mime_type",
+        "tag",
+        "license_expressions",
+        {
+            "field_name": "compliance_alert",
+            "condition": scanpipe_app.policies_enabled,
+        },
+        "packages",
+    ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -715,6 +850,7 @@ class DiscoveredPackageListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
 ):
@@ -723,15 +859,32 @@ class DiscoveredPackageListView(
     template_name = "scanpipe/package_list.html"
     paginate_by = 100
     prefetch_related = ["codebase_resources"]
+    table_columns = [
+        "package_url",
+        "license_expression",
+        "copyright",
+        "primary_language",
+        "resources",
+    ]
 
 
 class ProjectErrorListView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, ExportXLSXMixin, FilterView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
+    FilterView,
 ):
     model = ProjectError
     filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
+    table_columns = [
+        "model",
+        "message",
+        "details",
+        "traceback",
+    ]
 
 
 class CodebaseResourceDetailsView(
