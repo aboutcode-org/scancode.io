@@ -155,12 +155,24 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
-        fields=["created_date", "name"],
+        fields=[
+            "created_date",
+            "name",
+            "discoveredpackages_count",
+            "codebaseresources_count",
+            "projecterrors_count",
+        ],
         empty_label="Newest",
         choices=(
             ("created_date", "Oldest"),
             ("name", "Name (A-z)"),
             ("-name", "Name (z-A)"),
+            ("-discoveredpackages_count", "Packages (+)"),
+            ("discoveredpackages_count", "Packages (-)"),
+            ("-codebaseresources_count", "Resources (+)"),
+            ("codebaseresources_count", "Resources (-)"),
+            ("-projecterrors_count", "Errors (+)"),
+            ("projecterrors_count", "Errors (-)"),
         ),
         widget=BulmaDropdownWidget,
     )

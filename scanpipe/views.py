@@ -264,6 +264,7 @@ class TableColumnsMixin:
             "field_name": "<field_name>",
             "label": None,
             "condition": None,
+            "sort_name": None,
             "css_class": None,
         },
     ]
@@ -300,16 +301,17 @@ class TableColumnsMixin:
             if "label" not in column_data:
                 column_data["label"] = self.get_field_label(field_name)
 
-            if field_name in sortable_fields:
+            sort_name = column_data.get("sort_name") or field_name
+            if sort_name in sortable_fields:
                 sort_direction = ""
 
-                if active_sort.endswith(field_name):
+                if active_sort.endswith(sort_name):
                     if not active_sort.startswith("-"):
                         sort_direction = "-"
 
                 column_data["sort_direction"] = sort_direction
                 query_dict = self.request.GET.copy()
-                query_dict["sort"] = f"{sort_direction}{field_name}"
+                query_dict["sort"] = f"{sort_direction}{sort_name}"
                 column_data["sort_query"] = query_dict.urlencode()
 
             columns_data.append(column_data)
@@ -401,14 +403,17 @@ class ProjectListView(
         {
             "field_name": "discoveredpackages",
             "label": "Packages",
+            "sort_name": "discoveredpackages_count",
         },
         {
             "field_name": "codebaseresources",
             "label": "Resources",
+            "sort_name": "codebaseresources_count",
         },
         {
             "field_name": "projecterrors",
             "label": "Errors",
+            "sort_name": "projecterrors_count",
         },
         {
             "field_name": "runs",
@@ -419,6 +424,17 @@ class ProjectListView(
             "css_class": "is-narrow",
         },
     ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .with_counts(
+                "codebaseresources",
+                "discoveredpackages",
+                "projecterrors",
+            )
+        )
 
 
 class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
