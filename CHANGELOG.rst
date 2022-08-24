@@ -89,6 +89,10 @@ v31.0.0 (next)
   Refine the annotation using the new className instead of type.
   https://github.com/nexB/scancode.io/issues/495
 
+- Change the worksheet names in XLSX output, using the
+  "PACKAGES", "RESOURCES", "DEPENDENCIES", and "ERRORS" names.
+  https://github.com/nexB/scancode.io/issues/511
+
 v30.2.0 (2021-12-17)
 --------------------
 

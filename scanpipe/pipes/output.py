@@ -203,6 +203,14 @@ def to_json(project):
     return output_file
 
 
+model_name_to_worksheet_name = {
+    "discoveredpackage": "PACKAGES",
+    "discovereddependency": "DEPENDENCIES",
+    "codebaseresource": "RESOURCES",
+    "projecterror": "ERRORS",
+}
+
+
 def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     """
     Adds a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
@@ -217,7 +225,8 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model
-    model_name = model_class._meta.verbose_name_plural.title()
+    model_name = model_class._meta.model_name
+    worksheet_name = model_name_to_worksheet_name.get(model_name)
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
@@ -225,7 +234,7 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
     return _add_xlsx_worksheet(
         workbook=workbook,
-        worksheet_name=model_name,
+        worksheet_name=worksheet_name,
         rows=queryset,
         fields=fields,
     )
@@ -378,6 +387,7 @@ def to_xlsx(project):
 
     with xlsxwriter.Workbook(output_file) as workbook:
         for queryset in querysets:
+            name = ""
             queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
     return output_file
