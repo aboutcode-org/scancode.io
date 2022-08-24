@@ -444,7 +444,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(25, project1.codebaseresources.count())
+        self.assertEqual(29, project1.codebaseresources.count())
         self.assertEqual(101, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
@@ -466,7 +466,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(16, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
