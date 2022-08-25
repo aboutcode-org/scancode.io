@@ -1,13 +1,13 @@
 Changelog
 =========
 
-v31.0.0 (next)
----------------
+v31.0.0 (2022-08-25)
+--------------------
 
 - WARNING: Drop support for Python 3.6 and 3.7. Add support for Python 3.10.
   Upgrade Django to version 4.1 series.
 
-- Upgrade ScanCode-toolkit to version 31.0.1.
+- Upgrade ScanCode-toolkit to version 31.0.x.
   See https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst for an
   overview of the changes in the v31 compared to v30.
 
@@ -69,8 +69,8 @@ v31.0.0 (next)
   https://github.com/nexB/scancode.io/issues/164
   https://github.com/nexB/scancode.io/issues/464
 
-- Add the ability to filter by empty and none values providing the "EMPTY" magic value
-  to any filters.
+- Add the ability to filter by empty and none values providing the
+  "EMPTY" magic value to any filters.
   https://github.com/nexB/scancode.io/issues/296
 
 - CodebaseResource.name now contains both the bare file name with extension, as
@@ -106,7 +106,7 @@ v31.0.0 (next)
 - ``CodebaseResource.for_packages`` now returns a list of
   ``DiscoveredPackage.package_uid`` or ``DiscoveredPackage.package_url`` if
   ``DiscoveredPackage.package_uid`` is not present. This is done to reflect the
-  how scancode-toolkit's JSON output returns ``package_uid``s in the
+  how scancode-toolkit's JSON output returns ``package_uid`` in the
   ``for_packages`` field for Resources.
 
 v30.2.0 (2021-12-17)
