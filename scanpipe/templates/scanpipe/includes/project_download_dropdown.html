@@ -1,22 +1,20 @@
-{% if project.resource_count or project.package_count %}
-  <div class="dropdown is-hoverable is-right">
-    <div class="dropdown-trigger">
-      <a aria-haspopup="true" aria-controls="dropdown-download-{{ project.uuid }}">
-        <i class="fas fa-download"></i>
+<div class="dropdown is-hoverable is-right">
+  <div class="dropdown-trigger">
+    <a aria-haspopup="true" aria-controls="dropdown-download-{{ project.uuid }}">
+      <i class="fas fa-download"></i>
+    </a>
+  </div>
+  <div class="dropdown-menu" id="dropdown-download-{{ project.uuid }}" role="menu">
+    <div class="dropdown-content">
+      <span class="dropdown-item">
+        Download results as:
+      </span>
+      <a href="{% url 'project_results' project.uuid 'json' %}" class="dropdown-item">
+        <strong>JSON</strong>
+      </a>
+      <a href="{% url 'project_results' project.uuid 'xlsx' %}" class="dropdown-item">
+        <strong>XLSX</strong>
       </a>
     </div>
-    <div class="dropdown-menu" id="dropdown-download-{{ project.uuid }}" role="menu">
-      <div class="dropdown-content">
-        <span class="dropdown-item">
-          Download results as:
-        </span>
-        <a href="{% url 'project_results' project.uuid 'json' %}" class="dropdown-item">
-          <strong>JSON</strong>
-        </a>
-        <a href="{% url 'project_results' project.uuid 'xlsx' %}" class="dropdown-item">
-          <strong>XLSX</strong>
-        </a>
-      </div>
-    </div>
   </div>
-{% endif %}
+</div>

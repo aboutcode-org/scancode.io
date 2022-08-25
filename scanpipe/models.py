@@ -40,7 +40,10 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.db.models import Count
+from django.db.models import IntegerField
+from django.db.models import OuterRef
 from django.db.models import Q
+from django.db.models import Subquery
 from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
@@ -388,13 +391,23 @@ class ProjectQuerySet(models.QuerySet):
     def with_counts(self, *fields):
         """
         Annotate the QuerySet with counts of provided relational `fields`.
+        Using `Subquery` in place of the `Count` aggregate function as it results in
+        poor query performances when combining multiple counts.
 
         Usage:
             project_queryset.with_counts("codebaseresources", "discoveredpackages")
         """
         annotations = {}
         for field_name in fields:
-            annotations[f"{field_name}_count"] = Count(field_name, distinct=True)
+            count_label = f"{field_name}_count"
+            subquery_qs = self.model.objects.annotate(
+                **{count_label: Count(field_name)}
+            ).filter(pk=OuterRef("pk"))
+
+            annotations[count_label] = Subquery(
+                subquery_qs.values(count_label),
+                output_field=IntegerField(),
+            )
 
         return self.annotate(**annotations)
 

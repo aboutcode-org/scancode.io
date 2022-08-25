@@ -434,6 +434,24 @@ class ScanPipeModelsTest(TestCase):
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
 
+    def test_scanpipe_project_queryset_with_counts(self):
+        self.project_asgiref.add_error("error 1", "model")
+        self.project_asgiref.add_error("error 2", "model")
+
+        project_qs = Project.objects.with_counts(
+            "codebaseresources",
+            "discoveredpackages",
+            "projecterrors",
+        )
+
+        project = project_qs.get(pk=self.project_asgiref.pk)
+        self.assertEqual(18, project.codebaseresources_count)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages_count)
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(2, project.projecterrors_count)
+        self.assertEqual(2, project.projecterrors.count())
+
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)

@@ -14,9 +14,7 @@
             {{ project.discoveredpackages_count|intcomma }}
           </a>
         {% else %}
-          <span>
-            {{ project.discoveredpackages_count|intcomma }}
-          </span>
+          <span>0</span>
         {% endif %}
       </td>
       <td>
@@ -25,9 +23,7 @@
             {{ project.codebaseresources_count|intcomma }}
           </a>
         {% else %}
-          <span>
-            {{ project.codebaseresources_count|intcomma }}
-          </span>
+          <span>0</span>
         {% endif %}
       </td>
       <td>
@@ -36,9 +32,7 @@
             {{ project.projecterrors_count|intcomma }}
           </a>
         {% else %}
-          <span>
-            {{ project.projecterrors_count|intcomma }}
-          </span>
+          <span>0</span>
         {% endif %}
       </td>
       <td>
@@ -52,7 +46,9 @@
         {% endfor %}
       </td>
       <td>
-        {% include "scanpipe/includes/project_download_dropdown.html" with project=project only %}
+        {% if project.codebaseresources_count or project.discoveredpackages_count %}
+          {% include "scanpipe/includes/project_download_dropdown.html" with project=project only %}
+        {% endif %}
       </td>
     </tr>
   {% endfor %}
