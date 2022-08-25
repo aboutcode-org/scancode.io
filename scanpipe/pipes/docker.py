@@ -173,7 +173,7 @@ def create_codebase_resources(project, image):
     for layer_index, layer in enumerate(image.layers, start=1):
         layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
 
-        for resource in layer.get_resources():
+        for resource in layer.get_resources(with_dir=True):
             pipes.make_codebase_resource(
                 project=project,
                 location=resource.location,

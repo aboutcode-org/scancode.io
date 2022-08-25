@@ -58,6 +58,7 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
@@ -883,6 +884,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         return self.projecterrors.count()
 
+    @cached_property
+    def has_single_resource(self):
+        """
+        Return True if we only have a single CodebaseResource associated to this
+        project, False otherwise.
+        """
+        return self.codebaseresources.count() == 1
+
 
 class ProjectRelatedQuerySet(models.QuerySet):
     def project(self, project):
@@ -1279,6 +1288,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_no_licenses(self):
         return self.filter(licenses=[])
 
+    def has_package_data(self):
+        return self.filter(~Q(package_data=[]))
+
     def licenses_categories(self, categories):
         return self.json_list_contains(
             field_name="licenses",
@@ -1496,6 +1508,11 @@ class CodebaseResource(
             "provided policies."
         ),
     )
+    package_data = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("List of Package data detected from this CodebaseResource"),
+    )
 
     objects = CodebaseResourceQuerySet.as_manager()
 
@@ -1519,11 +1536,14 @@ class CodebaseResource(
 
         return new
 
-    def save(self, *args, **kwargs):
+    def save(self, codebase=None, *args, **kwargs):
         """
         Saves the current resource instance.
         Injects policies—if the feature is enabled—when the `licenses` field value is
         changed.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
         """
         if scanpipe_app.policies_enabled:
             loaded_licenses = getattr(self, "loaded_licenses", [])
@@ -1612,6 +1632,47 @@ class CodebaseResource(
         Returns the sorted set of unique license_expressions.
         """
         return sorted(set(self.license_expressions))
+
+    def parent_path(self):
+        """
+        Return the parent path for this CodebaseResource or None.
+        """
+        return parent_directory(self.path, with_trail=False)
+
+    def has_parent(self):
+        """
+        Return True if this CodebaseResource has a parent CodebaseResource or
+        False otherwise.
+        """
+        parent_path = self.parent_path()
+        if not parent_path:
+            return False
+        if self.project.codebaseresources.filter(path=parent_path).exists():
+            return True
+        return False
+
+    def parent(self, codebase=None):
+        """
+        Return the parent CodebaseResource object for this CodebaseResource or
+        None.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        parent_path = self.parent_path()
+        return parent_path and self.project.codebaseresources.get(path=parent_path)
+
+    def siblings(self, codebase=None):
+        """
+        Return a sequence of sibling Resource objects for this Resource
+        or an empty sequence.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        if self.has_parent():
+            return self.parent(codebase).children(codebase)
+        return []
 
     def descendants(self):
         """
@@ -1729,7 +1790,10 @@ class CodebaseResource(
         """
         Returns the list of all discovered packages associated to this resource.
         """
-        return [str(package) for package in self.discovered_packages.all()]
+        return [
+            package.package_uid if package.package_uid else str(package)
+            for package in self.discovered_packages.all()
+        ]
 
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
