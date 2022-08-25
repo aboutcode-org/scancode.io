@@ -6,73 +6,59 @@
     <div class="column is-one-third">
         <p class="title is-5">Detected Licenses</p>
         <div class="card">
-            {% for license in detected_licenses.licenses %}
+        {% for license in detected_licenses.licenses %}
             <div class="licenses-card">
                 <div class="card-header is-flex is-justify-content-space-between">
-                    <div class="card-header-title" title="{{ license.short_name }}">
-                        {% if license.homepage_url %}
-                        <a href="{{ license.homepage_url }}" title="{{ license.name }} ({{ license.short_name }})" target="_blank">{{ license.short_name }}</a> {% else %} {{ license.short_name }} {% endif %}
-                    </div>
+                    <div class="card-header-title" title="{{ license.short_name }}">{{ license.license_expression }}</div>
                     <div class="is-flex is-justify-content-row is-align-items-center">
-                        <p class="lines tag is-6 mx-1 is-light is-info">
-                            {% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}
-                        </p>
-                        <p class="tag is-6 mx-1 is-light 
-                  {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}</p>
+                        <p class="lines tag is-6 mx-1 is-light is-info">{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</p>
+                        <p class="tag is-6 mx-1 is-light {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}</p>
                         <p class="card-header-icon" data-key="{{ license.key }}" data-startline="{{ license.start_line }}" data-endline="{{ license.end_line }}">
                             <span class="icon">
-                    <i class="fa fa-angle-down" aria-hidden="true"></i>
-                </span>
+                                <i class="fa fa-angle-down" aria-hidden="true"></i>
+                            </span>
                         </p>
                     </div>
                 </div>
                 <div class="card-content is-hidden">
                     <div class="content">
-                        <div class="is-flex is-justify-content-space-between">
-                            <div>
-                                <p class="title is-5">Details</p>
-                            </div>
-                            <div>
-                                <p class="tag is-6 mx-1 is-light is-info">{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</p>
-                            </div>
-                        </div>
+                        <p class="title is-5">Details</p>
                         <div class="table-container mt-3">
                             <table class="table is-striped is-narrow is-hoverable is-fullwidth">
                                 <tr>
-                                    <td><strong>Key</strong></td>
-                                    <td>{{ license.key }}</td>
+                                    <td><strong>License Expression</strong></td>
+                                    <td>{{ license.license_expression }}</td>
                                 </tr>
                                 <tr>
                                     <td><strong>Score</strong></td>
                                     <td>{{ license.score }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Name</strong></td>
-                                    <td>{{ license.name }}</td>
+                                    <td><strong>Matched Line(s)</strong></td>
+                                    <td>{% if license.start_line == license.end_line %}{{ license.start_line }}{% else %}{{ license.start_line }}-{{ license.end_line }} {% endif %}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Line(s)</strong></td>
-                                    <td>{% if license.start_line == license.end_line %} Line {{ license.start_line }} {% else %} Lines {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
+                                    <td><strong>Matched Length</strong></td>
+                                    <td>{{ license.matched_length }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Owner</strong></td>
-                                    <td>{{ license.owner }}</td>
+                                    <td><strong>Matched Coverage</strong></td>
+                                    <td>{{ license.match_coverage }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Category</strong></td>
-                                    <td>{{ license.category }}</td>
+                                    <td><strong>Matcher</strong></td>
+                                    <td>{{ license.matcher }}</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Reference</strong></td>
-                                    <td><a href="{{ license.reference_url }}" target="_blank">{{ license.reference_url }}</a></td>
+                                    <td><strong>Rule Identifer</strong></td>
+                                    <td>{{ license.rule_identifier }}</td>
                                 </tr>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
-
+        {% endfor %}
         </div>
     </div>
 </div>

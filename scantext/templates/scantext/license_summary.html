@@ -2,9 +2,13 @@
 {% load static humanize %}
 
 {% block content %}
+<style>
+    .matched1 {background-color: rgba(30, 220, 90, 0.3);}
+    .matched2 {background-color: rgba(30, 90, 220, 0.3);}
+    .matched3 {background-color: rgba(220, 90, 30, 0.3);}
+</style>
 <div class="container is-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
-    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
     <section class="mx-5 mb-0">
         <div class="is-flex is-justify-content-space-between">
@@ -30,7 +34,6 @@
 
     <section class="tab-container is-hidden">
         {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
-        {% include 'scantext/includes/license_summary_chart.html' with detected_licenses=detected_licenses %}
     </section>
 
     <section class="tab-container is-hidden">

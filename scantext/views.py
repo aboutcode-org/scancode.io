@@ -40,9 +40,6 @@ from scantext.forms import LicenseScanForm
 
 TRACE_HIGHLIGHTED_TEXT = True
 SCANCODE_REPO_URL = "https://github.com/nexB/scancode-toolkit"
-SCANCODE_BASE_URL = SCANCODE_REPO_URL + "/tree/develop/src/licensedcode/data/licenses"
-SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
-SCANCODE_LICENSE_DATA_URL = SCANCODE_BASE_URL + "/{}.yml"
 SPDX_LICENSE_URL = "https://spdx.org/licenses/{}"
 DEJACODE_LICENSE_URL = "https://enterprise.dejacode.com/urn/urn:dje:license:{}"
 SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
@@ -110,17 +107,18 @@ def license_scanview(request):
                 },
             )
 
-    if not expressions["licenses"] and not expressions["license_expressions"]:
+    if not expressions:
         message = "Couldn't detect any license from the provided input."
-        messages.info(request, message)
+        messages.warning(request, message)
         return render(
             request,
-            "scantext/license_summary.html",
+            "scantext/license_scan_form.html",
             {
-                "text": input_text,
-                "detected_licenses": expressions,
+                "form": LicenseScanForm(),
             },
         )
+
+    # pprint(expressions)
 
     return render(
         request,
@@ -144,8 +142,7 @@ def get_licenses(
     idx = get_index()
 
     detected_licenses = []
-    detected_expressions = []
-    detected_expressions_with_scores = []
+    detected_expressions_and_scores = []
 
     # gets matches from a license file
     matches = idx.match(
@@ -156,21 +153,24 @@ def get_licenses(
         **kwargs,
     )
 
+    if not matches:
+        return False
+
     qspans = []
     match = None
-    complete_text_in_array = []
+    complete_text = None
 
     for match in matches:
         qspans.append(match.qspan)
-
-        detected_expressions.append(match.rule.license_expression)
-        detected_expressions_with_scores.append(
+        detected_expressions_and_scores.append(
             [match.rule.license_expression, match.score()]
         )
-        detected_licenses.extend(
-            _licenses_data_from_match(
+        detected_licenses.append(
+            get_mapping(
                 match=match,
+                include_text=True,
                 license_url_template=license_url_template,
+                spdx_license_url=SPDX_LICENSE_URL,
             )
         )
 
@@ -193,88 +193,10 @@ def get_licenses(
         [
             ("licenses", detected_licenses),
             ("complete_text", complete_text),
-            ("license_expressions", detected_expressions),
-            ("license_expressions_scores", detected_expressions_with_scores),
+            ("license_expressions_and_scores", detected_expressions_and_scores),
             ("percentage_of_license_text", percentage_of_license_text),
         ]
     )
-
-
-def _licenses_data_from_match(
-    match,
-    license_url_template=SCANCODE_LICENSEDB_URL,
-):
-    """
-    Return a list of "licenses" scan data built from a license match.
-    Used directly only internally for testing.
-    """
-    from licensedcode import cache
-
-    licenses = cache.get_licenses_db()
-
-    # Returned matched_text will also include the text detected
-    matched_text = match.matched_text(
-        whole_lines=False,
-        highlight=True,
-        highlight_matched="<matched>{}</matched>",
-        highlight_not_matched="<notmatched>{}</notmatched>",
-    )
-
-    detected_licenses = []
-    for license_key in match.rule.license_keys():
-        lic = licenses.get(license_key)
-        result = {}
-        detected_licenses.append(result)
-        result["key"] = lic.key
-        result["score"] = match.score()
-        result["name"] = lic.name
-        result["short_name"] = lic.short_name
-        result["category"] = lic.category
-        result["is_exception"] = lic.is_exception
-        result["is_unknown"] = lic.is_unknown
-        result["owner"] = lic.owner
-        result["homepage_url"] = lic.homepage_url
-        result["text_url"] = lic.text_urls[0] if lic.text_urls else ""
-        result["reference_url"] = license_url_template.format(lic.key)
-        result["scancode_text_url"] = SCANCODE_LICENSE_TEXT_URL.format(lic.key)
-        result["scancode_data_url"] = SCANCODE_LICENSE_DATA_URL.format(lic.key)
-        result["rule"] = match.rule.license_expression
-        result["rules"] = match.rule.license_keys()
-
-        spdx_key = lic.spdx_license_key
-        result["spdx_license_key"] = spdx_key
-
-        if spdx_key:
-            is_license_ref = spdx_key.lower().startswith("licenseref-")
-            if is_license_ref:
-                spdx_url = SCANCODE_LICENSE_TEXT_URL.format(lic.key)
-            else:
-                spdx_key = lic.spdx_license_key.rstrip("+")
-                spdx_url = SPDX_LICENSE_URL.format(spdx_key)
-        else:
-            spdx_url = ""
-        result["spdx_url"] = spdx_url
-        result["start_line"] = match.start_line
-        result["end_line"] = match.end_line
-        result["matched_text"] = matched_text
-        matched_rule = result["matched_rule"] = {}
-        matched_rule["identifier"] = match.rule.identifier
-        matched_rule["license_expression"] = match.rule.license_expression
-        matched_rule["licenses"] = match.rule.license_keys()
-        matched_rule["referenced_filenames"] = match.rule.referenced_filenames
-        matched_rule["is_license_text"] = match.rule.is_license_text
-        matched_rule["is_license_notice"] = match.rule.is_license_notice
-        matched_rule["is_license_reference"] = match.rule.is_license_reference
-        matched_rule["is_license_tag"] = match.rule.is_license_tag
-        matched_rule["is_license_intro"] = match.rule.is_license_intro
-        matched_rule["has_unknown"] = match.rule.has_unknown
-        matched_rule["matcher"] = match.matcher
-        matched_rule["rule_length"] = match.rule.length
-        matched_rule["matched_length"] = match.len()
-        matched_rule["match_coverage"] = match.coverage()
-        matched_rule["rule_relevance"] = match.rule.relevance
-
-    return detected_licenses
 
 
 def logger_debug(*args):
@@ -304,32 +226,19 @@ def get_highlighted_lines(
         )
         class_position += 1
 
-    header = """<style>
-    .license-match {font-size: 18px;white-space: pre-wrap;}
-    .matched1 {background-color: rgba(30, 220, 90, 0.3);}
-    .matched2 {background-color: rgba(30, 90, 220, 0.3);}
-    .matched3 {background-color: rgba(220, 90, 30, 0.3);}
-    </style><div class="license-match">"""
-    body = ""
-    footer = """</div>"""
-    highlight_matched = [
-        '<span class="matched1">{}</span>',
-        '<span class="matched2">{}</span>',
-        '<span class="matched3">{}</span>',
-    ]
-
+    body = []
     for token in tokens:
         val = token.value
         if token.is_text and val.lower() not in stopwords:
             if token.is_matched:
-                body += highlight_matched[token.is_matched % 3].format(val)
+                body.append([token.value, token.is_matched % 3])
             else:
-                body += val
+                body.append([token.value, -1])
         else:
             # we do not highlight punctuation and stopwords.
-            body += val
+            body.append([token.value, -1])
 
-    return header + body + footer
+    return body
 
 
 def tag_matched_tokens(tokens, match_qspan, class_position):
@@ -339,3 +248,97 @@ def tag_matched_tokens(tokens, match_qspan, class_position):
         if tok.pos != -1 and tok.is_known and tok.pos in match_qspan:
             tok = attr.evolve(tok, is_matched=class_position)
         yield tok
+
+
+def get_mapping(
+    match,
+    license_url_template,
+    spdx_license_url,
+    include_text=False,
+    license_text_diagnostics=False,
+):
+    """
+    Return a list of "matches" scan data built from a license match.
+    """
+    from licensedcode import cache
+
+    licenses = cache.get_licenses_db()
+
+    matched_text = None
+    if include_text:
+        if license_text_diagnostics:
+            matched_text = match.matched_text(whole_lines=False, highlight=True)
+        else:
+            matched_text = match.matched_text(whole_lines=False, highlight=False)
+
+    SCANCODE_BASE_URL = (
+        "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/"
+    )
+    SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
+    SCANCODE_LICENSE_DATA_URL = SCANCODE_BASE_URL + "/{}.yml"
+
+    result = {}
+
+    # Detection Level Information
+    result["score"] = match.score()
+    result["start_line"] = match.start_line
+    result["end_line"] = match.end_line
+    result["matched_length"] = match.len()
+    result["match_coverage"] = match.coverage()
+    result["matcher"] = match.matcher
+
+    # LicenseDB Level Information (Rule that was matched)
+    result["license_expression"] = match.rule.license_expression
+    result["rule_identifier"] = match.rule.identifier  # .RULE OR .LICENSE
+    result["referenced_filenames"] = match.rule.referenced_filenames
+    result["is_license_text"] = match.rule.is_license_text
+    result["is_license_notice"] = match.rule.is_license_notice
+    result["is_license_reference"] = match.rule.is_license_reference
+    result["is_license_tag"] = match.rule.is_license_tag
+    result["is_license_intro"] = match.rule.is_license_intro
+    result["rule_length"] = match.rule.length
+    result["rule_relevance"] = match.rule.relevance
+    if include_text:
+        result["matched_text"] = matched_text
+
+    # License Level Information (Individual licenses that this rule refers to)
+    result["licenses"] = detected_licenses = []
+    for license_key in match.rule.license_keys():
+        detected_license = {}
+        detected_licenses.append(detected_license)
+
+        lic = licenses.get(license_key)
+
+        detected_license["key"] = lic.key
+        detected_license["name"] = lic.name
+        detected_license["short_name"] = lic.short_name
+        detected_license["category"] = lic.category
+        detected_license["is_exception"] = lic.is_exception
+        detected_license["is_unknown"] = lic.is_unknown
+        detected_license["owner"] = lic.owner
+        detected_license["homepage_url"] = lic.homepage_url
+        detected_license["text_url"] = lic.text_urls[0] if lic.text_urls else ""
+        detected_license["reference_url"] = license_url_template.format(lic.key)
+        detected_license["scancode_text_url"] = SCANCODE_LICENSE_TEXT_URL.format(
+            lic.key
+        )
+        detected_license["scancode_data_url"] = SCANCODE_LICENSE_DATA_URL.format(
+            lic.key
+        )
+
+        spdx_key = lic.spdx_license_key
+        detected_license["spdx_license_key"] = spdx_key
+
+        if spdx_key:
+            is_license_ref = spdx_key.lower().startswith("licenseref-")
+            if is_license_ref:
+                spdx_url = SCANCODE_LICENSE_TEXT_URL.format(lic.key)
+            else:
+                # TODO: Is this replacing spdx_key???
+                spdx_key = lic.spdx_license_key.rstrip("+")
+                spdx_url = spdx_license_url.format(spdx_key)
+        else:
+            spdx_url = ""
+        detected_license["spdx_url"] = spdx_url
+
+    return result

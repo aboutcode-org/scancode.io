@@ -5,61 +5,43 @@
     {% for license in detected_licenses.licenses %}
     <article class="panel is-info">
         <div class="panel-heading py-2 px-4">
-            <p>{{ license.name }}</p>
+            <p>{{ license.license_expression }}</p>
         </div>
-        <table class="license-table table is-striped is-bordered is-hoverable">
+        <table class="license-table table is-striped is-bordered is-hoverable is-fullwidth">
             <tbody>
                 <tr>
-                    <td><strong>Rule</strong></td>
-                    <td>{{ license.rule }}</td>
-                    <td><strong>Key</strong></td>
-                    <td>{{ license.key }}</td>
                     <td><strong>Score</strong></td>
                     <td>{{ license.score }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Name</strong></td>
-                    <td>{{ license.name }}</td>
-                    <td><strong>Short Name</strong></td>
-                    <td>{{ license.short_name }}</td>
-                    <td><strong>Category</strong></td>
-                    <td>{{ license.category }}</td>
-                </tr>
-                <tr>
-                    <td><strong>Line(s)</strong></td>
+                    <td><strong>Matched Line(s)</strong></td>
                     <td>{% if license.start_line == license.end_line %} {{ license.start_line }} {% else %} {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
-                    <td><strong>Reference</strong></td>
-                    <td><a href="{{ license.reference_url }}" target="_blank">{{ license.reference_url }}</a></td>
-                    <td><strong>Execption</strong></td>
-                    <td>{{ license.is_exception }}</td>
+                    <td><strong>Rule Identifer</strong></td>
+                     <td>{{ license.rule_identifier }}</td>
                 </tr>
                 <tr>
-                    <td><strong>Is Unknown</strong></td>
-                    <td>{{ license.is_unknown }}</td>
-                    <td><strong>Owner</strong></td>
-                    <td>{{ license.owner }}</td>
-                    <td><strong>Homepage</strong></td>
-                    <td><a href="{{ license.homepage_url }}" target="_blank">{{ license.homepage_url }}</a></td>
+                    <td><strong>Matcher</strong></td>
+                    <td>{{ license.matcher }}</td>
+                    <td><strong>Match Coverage</strong></td>
+                    <td>{{ license.match_coverage }}</td>
+                    <td><strong>Matched Length</strong></td>
+                    <td>{{ license.matched_length }}</td>
+                <tr>
+                    <td><strong>Data File</strong></td>
+                    <td><a href="https://github.com/nexB/scancode-toolkit/tree/add-license-detection/src/licensedcode/data/{% if '.RULE' in license.rule_identifier %}rules{% elif '.LICENSE' in license.rule_identifier %}licenses{% endif %}/{{ license.rule_identifier }}" target="_blank">{{ license.rule_identifier }}</a></td>
+                    <td><strong>Key(s)</strong></td>
+                    <td>
+                        {% for key in license.licenses %}
+                        <a href="{{ key.reference_url }}" target="_blank"><span class="mr-2">{{ key.key }}</span></a>
+                        {% endfor %}
+                    </td>
                 </tr>
                 <tr>
-                    <td><strong>Text URL</strong></td>
-                    <td><a href="{{ license.text_url }}" target="_blank">{{ license.text_url }}</a></td>
-                    <td><strong>Scancode Text URL</strong></td>
-                    <td><a href="{{ license.scancode_text_url }}" target="_blank">{{ license.scancode_text_url }}</a></td>
-                    <td><strong>Scancode Data URL</strong></td>
-                    <td><a href="{{ license.scancode_data_url }}" target="_blank">{{ license.scancode_data_url }}</a></td>
-                </tr>
-                <tr>
-                    <td><strong>SPDX License Key</strong></td>
-                    <td>{{ license.spdx_license_key }}</td>
-                    <td><strong>SPDX URL</strong></td>
-                    <td><a href="{{ license.spdx_url }}" target="_blank">{{ license.spdx_url }}</a></td>
-                    <td><strong>Matched Rule</strong></td>
-                    <td>{{ license.matched_rule }}</td>
+                    <td><strong>Rule Length</strong></td>
+                    <td>{{ license.rule_length }}</td>
+                    <td><strong>Rule Relevance</strong></td>
+                    <td>{{ license.rule_relevance }}</td>
                 </tr>
             </tbody>
         </table>
     </article>
     {% endfor %}
-
 </div>
