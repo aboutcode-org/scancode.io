@@ -1,0 +1,10 @@
+<div class="content">
+  <strong>{{ tab_data.fields.dependencies.label }}</strong>
+  <ul>
+    {% for dependency in tab_data.fields.dependencies.value.all %}
+      <li>
+        <a href="{{ dependency.get_absolute_url }}">{{ dependency }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>

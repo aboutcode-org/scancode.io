@@ -1027,10 +1027,9 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_resources.html",
         },
         "dependencies": {
-            "fields": [
-                {"field_name": "dependencies", "render_func": render_as_yaml},
-            ],
+            "fields": ["dependencies"],
             "icon_class": "fas fa-layer-group",
+            "template": "scanpipe/tabset/tab_dependencies.html",
         },
         "others": {
             "fields": [
