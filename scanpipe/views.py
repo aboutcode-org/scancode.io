@@ -409,6 +409,11 @@ class ProjectListView(
             "sort_name": "discoveredpackages_count",
         },
         {
+            "field_name": "discovereddependencies",
+            "label": "Dependencies",
+            "sort_name": "discovereddependencies_count",
+        },
+        {
             "field_name": "codebaseresources",
             "label": "Resources",
             "sort_name": "codebaseresources_count",
@@ -435,6 +440,7 @@ class ProjectListView(
             .with_counts(
                 "codebaseresources",
                 "discoveredpackages",
+                "discovereddependencys",
                 "projecterrors",
             )
         )
