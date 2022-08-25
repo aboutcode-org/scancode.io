@@ -238,6 +238,7 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
     purl = serializers.ReadOnlyField()
     for_package_uid = serializers.ReadOnlyField()
     datafile_path = serializers.ReadOnlyField()
+    package_type = serializers.ReadOnlyField(source="type")
 
     class Meta:
         model = DiscoveredDependency

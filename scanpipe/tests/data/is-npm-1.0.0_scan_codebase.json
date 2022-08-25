@@ -71,6 +71,7 @@
       "purl": "pkg:npm/ava",
       "for_package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "is-npm-1.0.0.tgz-extract/package/package.json",
+      "package_type": "npm",
       "dependency_uid": "pkg:npm/ava?uuid=fixed-uid-done-for-testing-5642512d1758",
       "extracted_requirement": "0.0.3",
       "scope": "devDependencies",
