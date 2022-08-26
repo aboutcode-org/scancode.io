@@ -891,7 +891,10 @@ class DiscoveredPackageListView(
 
 class DiscoveredDependencyListView(
     ConditionalLoginRequired,
+    PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredDependency
@@ -899,6 +902,18 @@ class DiscoveredDependencyListView(
     template_name = "scanpipe/dependency_list.html"
     paginate_by = 100
     prefetch_related = ["for_package", "datafile_resource"]
+    table_columns = [
+        "package_url",
+        "package_type",
+        "extracted_requirement",
+        "scope",
+        "is_runtime",
+        "is_optional",
+        "is_resolved",
+        "for_package",
+        "datafile_resource",
+        "datasource_id",
+    ]
 
 
 class ProjectErrorListView(

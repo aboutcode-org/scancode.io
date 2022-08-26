@@ -13,7 +13,7 @@
         <ul>
           <li><a href="{% url 'project_list' %}">Projects</a></li>
           <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
-          <li><a href="{% url 'project_dependencies' project.uuid %}">Discovered Dependencies</a></li>
+          <li><a href="{% url 'project_dependencies' project.uuid %}">Dependencies</a></li>
           <li class="is-active"><a href="#" aria-current="page">{{ object.package_url }}</a></li>
         </ul>
       </nav>

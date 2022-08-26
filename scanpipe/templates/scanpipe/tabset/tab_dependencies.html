@@ -3,7 +3,7 @@
   <ul>
     {% for dependency in tab_data.fields.dependencies.value.all %}
       <li>
-        <a href="{{ dependency.get_absolute_url }}">{{ dependency }}</a>
+        <a href="{{ dependency.get_absolute_url }}" title="{{ dependency.dependency_uid }}">{{ dependency.package_url }}</a>
       </li>
     {% endfor %}
   </ul>
