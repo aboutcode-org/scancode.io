@@ -2019,7 +2019,14 @@ class DiscoveredDependency(
     class Meta:
         verbose_name = "discovered dependency"
         verbose_name_plural = "discovered dependencies"
-        ordering = ["-is_runtime", "-is_resolved", "is_optional", "dependency_uid"]
+        ordering = [
+            "-is_runtime",
+            "-is_resolved",
+            "is_optional",
+            "dependency_uid",
+            "for_package",
+            "datafile_resource",
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "dependency_uid"],

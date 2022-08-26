@@ -242,17 +242,18 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscoveredDependency
-        exclude = [
-            "id",
-            "project",
-            "datafile_resource",
-            "for_package",
-            "type",
-            "name",
-            "namespace",
-            "version",
-            "qualifiers",
-            "subpath",
+        fields = [
+            "purl",
+            "package_type",
+            "extracted_requirement",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+            "dependency_uid",
+            "for_package_uid",
+            "datafile_path",
+            "datasource_id",
         ]
 
 
