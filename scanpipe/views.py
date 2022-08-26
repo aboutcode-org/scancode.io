@@ -1061,10 +1061,43 @@ class DiscoveredPackageDetailsView(
 
 
 class DiscoveredDependencyDetailsView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    PrefetchRelatedViewMixin,
+    generic.DetailView,
 ):
     model = DiscoveredDependency
     template_name = "scanpipe/dependency_detail.html"
+    prefetch_related = ["for_package", "datafile_resource"]
+    tabset = {
+        "essentials": {
+            "fields": [
+                "dependency_uid",
+                "package_url",
+                "package_type",
+                "extracted_requirement",
+                "scope",
+                "is_runtime",
+                "is_optional",
+                "is_resolved",
+                "for_package_uid",
+                "datafile_path",
+                "datasource_id",
+            ],
+            "icon_class": "fas fa-info-circle",
+        },
+        "For package": {
+            "fields": ["for_package"],
+            "icon_class": "fas fa-layer-group",
+            "template": "scanpipe/tabset/tab_for_package.html",
+        },
+        "Datafile resource": {
+            "fields": ["datafile_resource"],
+            "icon_class": "fas fa-folder-open",
+            "template": "scanpipe/tabset/tab_datafile_resource.html",
+        },
+    }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

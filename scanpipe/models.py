@@ -2038,6 +2038,10 @@ class DiscoveredDependency(
     def purl(self):
         return self.package_url
 
+    @property
+    def package_type(self):
+        return self.type
+
     @cached_property
     def for_package_uid(self):
         if self.for_package:

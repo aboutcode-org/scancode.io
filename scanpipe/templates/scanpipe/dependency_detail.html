@@ -14,36 +14,11 @@
           <li><a href="{% url 'project_list' %}">Projects</a></li>
           <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
           <li><a href="{% url 'project_dependencies' project.uuid %}">Discovered Dependencies</a></li>
+          <li class="is-active"><a href="#" aria-current="page">{{ object.package_url }}</a></li>
         </ul>
       </nav>
-      <div class="tags has-addons my-3">
-        <span class="tag is-dark">Package URL</span>
-        <span class="tag is-info">{{ object }}</span>
-      </div>
     </section>
 
-    <div class="tabs is-boxed mx-5">
-      <ul>
-        <li class="is-active">
-          <a data-target="tab-details">
-            <span class="icon is-small"><i class="fas fa-info-circle"></i></span>
-            <span>Details</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <section id="tab-details" class="tab-content is-active mx-5">
-      <dl>
-        {% for field, value in dependency_data.items %}
-          <dt class="has-text-weight-semibold">
-            {{ field }}
-          </dt>
-          <dd class="mb-4">
-            <pre>{{ value|default_if_none:'' }}</pre>
-          </dd>
-        {% endfor %}
-      </dl>
-    </section>
+    {% include 'scanpipe/tabset/tabset.html' %}
   </div>
 {% endblock %}
