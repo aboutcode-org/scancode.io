@@ -23,7 +23,7 @@ def migrate_dependency_uids_to_purl_fields(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scanpipe', '0025_discovereddependency_name_and_more'),
+        ('scanpipe', '0023_migrate_dependencies'),
     ]
 
     operations = [

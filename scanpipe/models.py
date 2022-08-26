@@ -2026,6 +2026,7 @@ class DiscoveredDependency(
             "dependency_uid",
             "for_package",
             "datafile_resource",
+            "datasource_id",
         ]
         constraints = [
             models.UniqueConstraint(

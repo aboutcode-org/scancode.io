@@ -44,4 +44,50 @@ class Migration(migrations.Migration):
             model_name='discovereddependency',
             constraint=models.UniqueConstraint(condition=models.Q(('dependency_uid', ''), _negated=True), fields=('project', 'dependency_uid'), name='scanpipe_discovereddependency_unique_dependency_uid_within_project'),
         ),
+        migrations.AddField(
+            model_name='discovereddependency',
+            name='name',
+            field=models.CharField(blank=True, help_text='Name of the package.', max_length=100),
+        ),
+        migrations.AddField(
+            model_name='discovereddependency',
+            name='namespace',
+            field=models.CharField(blank=True, help_text='Package name prefix, such as Maven groupid, Docker image owner, GitHub user or organization, etc.', max_length=255),
+        ),
+        migrations.AddField(
+            model_name='discovereddependency',
+            name='qualifiers',
+            field=models.CharField(blank=True, help_text='Extra qualifying data for a package such as the name of an OS, architecture, distro, etc.', max_length=1024),
+        ),
+        migrations.AddField(
+            model_name='discovereddependency',
+            name='subpath',
+            field=models.CharField(blank=True, help_text='Extra subpath within a package, relative to the package root.', max_length=200),
+        ),
+        migrations.AddField(
+            model_name='discovereddependency',
+            name='type',
+            field=models.CharField(blank=True, help_text='A short code to identify the type of this package. For example: gem for a Rubygem, docker for a container, pypi for a Python Wheel or Egg, maven for a Maven Jar, deb for a Debian package, etc.', max_length=16),
+        ),
+        migrations.AddField(
+            model_name='discovereddependency',
+            name='version',
+            field=models.CharField(blank=True, help_text='Version of the package.', max_length=100),
+        ),
+        migrations.AlterModelOptions(
+            name="discovereddependency",
+            options={
+                "ordering": [
+                    "-is_runtime",
+                    "-is_resolved",
+                    "is_optional",
+                    "dependency_uid",
+                    "for_package",
+                    "datafile_resource",
+                    "datasource_id",
+                ],
+                "verbose_name": "discovered dependency",
+                "verbose_name_plural": "discovered dependencies",
+            },
+        ),
     ]
