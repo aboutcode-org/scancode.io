@@ -128,17 +128,19 @@
       </h3>
       <div class="columns is-gapless">
         <div class="column">
-          <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_runtime"></div>
+          <div id="dependency_package_type_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="package_type"></div>
         </div>
         <div class="column">
-          <div id="dependency_is_optional_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_optional"></div>
+          <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_runtime"></div>
         </div>
       </div>
       <div class="columns is-gapless">
         <div class="column">
+          <div id="dependency_is_optional_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_optional"></div>
+        </div>
+        <div class="column">
           <div id="dependency_is_resolved_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_resolved"></div>
         </div>
-        <div class="column"></div>
       </div>
     {% endif %}
 
@@ -197,6 +199,7 @@
     {{ package_types|json_script:"package_types" }}
   {% endif %}
   {% if project.dependency_count %}
+    {{ dependency_package_type|json_script:"dependency_package_type" }}
     {{ dependency_is_runtime|json_script:"dependency_is_runtime" }}
     {{ dependency_is_optional|json_script:"dependency_is_optional" }}
     {{ dependency_is_resolved|json_script:"dependency_is_resolved" }}
@@ -273,6 +276,7 @@
     makeChart("package_types", "#package_type_chart", "Package\nType");
     makeChart("package_licenses", "#package_license_chart", "Package\nLicense\nExpression");
     // Dependencies
+    makeChart("dependency_package_type", "#dependency_package_type_chart", "Package\nType");
     makeChart("dependency_is_runtime", "#dependency_is_runtime_chart", "Runtime\nDependencies");
     makeChart("dependency_is_optional", "#dependency_is_optional_chart", "Optional\nDependencies");
     makeChart("dependency_is_resolved", "#dependency_is_resolved_chart", "Resolved\nDependencies");

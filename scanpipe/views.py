@@ -585,6 +585,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
 
+        dependency_package_type = dependencies.values_list("type", flat=True)
         dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
         dependency_is_optional = dependencies.values_list("is_optional", flat=True)
         dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
@@ -624,6 +625,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
+                "dependency_package_type": self.get_summary(dependency_package_type),
                 "dependency_is_runtime": self.get_summary(dependency_is_runtime),
                 "dependency_is_optional": self.get_summary(dependency_is_optional),
                 "dependency_is_resolved": self.get_summary(dependency_is_resolved),
