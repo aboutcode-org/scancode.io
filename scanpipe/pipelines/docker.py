@@ -52,6 +52,8 @@ class Docker(RootFS):
         Extracts images from input tarballs.
         """
         self.images, errors = docker.extract_images_from_inputs(self.project)
+        if not self.images:
+            raise Exception("No images found in project input files.")
         if errors:
             self.add_error("\n".join(errors))
 

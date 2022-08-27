@@ -9,6 +9,8 @@
       {% endif %}
       {% if current %}
         <li class="is-active"><a href="#" aria-current="page">{{ current }}</a></li>
+      {% else %}
+        <li class="is-active"><a href="#" aria-current="page">{{ project.name }}</a></li>
       {% endif %}
     {% endif %}
   </ul>

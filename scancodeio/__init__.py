@@ -25,14 +25,14 @@ import sys
 import warnings
 from pathlib import Path
 
-__version__ = "30.2.0"
+__version__ = "31.0.0"
 
 SCAN_NOTICE = Path(__file__).resolve().parent.joinpath("scan.NOTICE").read_text()
 
 
-# Turn off the warnings from the `parameter_expansion` and `cluecode` modules.
-warnings.filterwarnings("ignore", module="parameter_expansion")
-warnings.filterwarnings("ignore", module="cluecode")
+# Turn off the warnings for the following modules.
+warnings.filterwarnings("ignore", module="extractcode")
+warnings.filterwarnings("ignore", module="typecode")
 
 
 def command_line():

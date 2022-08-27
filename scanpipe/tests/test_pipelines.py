@@ -234,6 +234,8 @@ class PipelinesIntegrationTest(TestCase):
         # system_environment differs between systems
         "system_environment",
         "file_type",
+        # mime type is inconsistent across systems
+        "mime_type",
     ]
 
     def _without_keys(self, data, exclude_keys):
@@ -363,7 +365,7 @@ class PipelinesIntegrationTest(TestCase):
         project1 = Project.objects.create(name="Analysis")
 
         filename = "is-npm-1.0.0.tgz"
-        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        input_location = self.data_location / filename
         project1.copy_input_from(input_location)
         project1.add_input_source(filename, "https://download.url", save=True)
 
@@ -378,6 +380,30 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
+        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+
+    def test_scanpipe_scan_codebase_can_process_wheel(self):
+        pipeline_name = "scan_codebase"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "daglib-0.6.0-py3-none-any.whl"
+        input_location = self.data_location / filename
+        project1.copy_input_from(input_location)
+        project1.add_input_source(filename, "https://download.url", save=True)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(11, project1.codebaseresources.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
+
+        result_file = output.to_json(project1)
+        expected_file = (
+            self.data_location / "daglib-0.6.0-py3-none-any.whl_scan_codebase.json"
+        )
         self.assertPipelineResultEqual(expected_file, result_file, regen=False)
 
     def test_scanpipe_docker_pipeline_alpine_integration_test(self):
@@ -442,7 +468,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(25, project1.codebaseresources.count())
+        self.assertEqual(29, project1.codebaseresources.count())
         self.assertEqual(101, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
@@ -464,7 +490,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(16, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
@@ -548,7 +574,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(6, project1.codebaseresources.count())
-        self.assertEqual(4, project1.discoveredpackages.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"

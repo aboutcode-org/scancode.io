@@ -434,6 +434,24 @@ class ScanPipeModelsTest(TestCase):
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
 
+    def test_scanpipe_project_queryset_with_counts(self):
+        self.project_asgiref.add_error("error 1", "model")
+        self.project_asgiref.add_error("error 2", "model")
+
+        project_qs = Project.objects.with_counts(
+            "codebaseresources",
+            "discoveredpackages",
+            "projecterrors",
+        )
+
+        project = project_qs.get(pk=self.project_asgiref.pk)
+        self.assertEqual(18, project.codebaseresources_count)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages_count)
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(2, project.projecterrors_count)
+        self.assertEqual(2, project.projecterrors.count())
+
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)
@@ -1197,6 +1215,33 @@ class ScanPipeModelsTest(TestCase):
             "asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
+
+        # Test parent-related methods
+        asgiref_resource = self.project_asgiref.codebaseresources.get(
+            path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
+        )
+        expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
+        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertTrue(asgiref_resource.has_parent())
+        expected_parent = self.project_asgiref.codebaseresources.get(
+            path=expected_parent_path
+        )
+        self.assertEqual(expected_parent, asgiref_resource.parent())
+
+        # Test sibling-related methods
+        expected_siblings = [
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+        ]
+        asgiref_resource_siblings = [r.path for r in asgiref_resource.siblings()]
+        self.assertEqual(sorted(expected_siblings), sorted(asgiref_resource_siblings))
 
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_send_method(self, mock_post):

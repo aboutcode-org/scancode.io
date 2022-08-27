@@ -16,14 +16,7 @@
   <div class="container is-fluid mb-3">
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>Message</th>
-            <th>Details</th>
-            <th>Traceback</th>
-          </tr>
-        </thead>
+        {% include 'scanpipe/includes/list_view_thead.html' %}
         <tbody>
           {% for error in object_list %}
             <tr>

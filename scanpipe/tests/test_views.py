@@ -59,6 +59,62 @@ class ScanPipeViewsTest(TestCase):
         self.assertNotContains(response, self.project1.name)
         self.assertContains(response, project2.name)
 
+    def test_scanpipe_views_project_list_filters(self):
+        url = reverse("project_list")
+        response = self.client.get(url)
+
+        is_archived_filters = """
+        <li>
+          <a href="?is_archived=" class=" is-active">
+            <i class="fas fa-seedling"></i> 1 Active
+          </a>
+        </li>
+        <li>
+          <a href="?is_archived=true" class="">
+            <i class="fas fa-dice-d6"></i> 0 Archived
+          </a>
+        </li>
+        """
+        self.assertContains(response, is_archived_filters, html=True)
+
+        pipeline_filters = """
+        <li><a href="?pipeline=" class="dropdown-item is-active">All</a></li>
+        <li><a href="?pipeline=docker" class="dropdown-item">docker</a></li>
+        <li>
+          <a href="?pipeline=docker_windows" class="dropdown-item">docker_windows</a>
+        </li>
+        <li>
+          <a href="?pipeline=load_inventory" class="dropdown-item">load_inventory</a>
+        </li>
+        <li>
+          <a href="?pipeline=root_filesystems" class="dropdown-item">
+            root_filesystems
+          </a>
+        </li>
+        <li>
+          <a href="?pipeline=scan_codebase" class="dropdown-item">scan_codebase</a></li>
+        <li><a href="?pipeline=scan_package" class="dropdown-item">scan_package</a></li>
+        """
+        self.assertContains(response, pipeline_filters, html=True)
+
+        status_filters = """
+        <li><a href="?status=" class="dropdown-item is-active">All</a></li>
+        <li><a href="?status=not_started" class="dropdown-item">Not started</a></li>
+        <li><a href="?status=queued" class="dropdown-item">Queued</a></li>
+        <li><a href="?status=running" class="dropdown-item">Running</a></li>
+        <li><a href="?status=succeed" class="dropdown-item">Success</a></li>
+        <li><a href="?status=failed" class="dropdown-item">Failure</a></li>
+        """
+        self.assertContains(response, status_filters, html=True)
+
+        sort_filters = """
+        <li><a href="?sort=" class="dropdown-item is-active">Newest</a></li>
+        <li><a href="?sort=created_date" class="dropdown-item">Oldest</a></li>
+        <li><a href="?sort=name" class="dropdown-item">Name (A-z)</a></li>
+        <li><a href="?sort=-name" class="dropdown-item">Name (z-A)</a></li>
+        """
+        self.assertContains(response, sort_filters, html=True)
+
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
@@ -364,7 +420,6 @@ class ScanPipeViewsTest(TestCase):
 
         response = self.client.get(url)
         expected = (
-            '{"licenses": [{"start_line": 1, "end_line": 2, "text": null, '
-            '"type": "info"}]'
+            '{"start_line": 1, "end_line": 2, "text": null, "className": "ace_info"}'
         )
         self.assertContains(response, expected)
