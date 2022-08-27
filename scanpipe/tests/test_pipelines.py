@@ -402,6 +402,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(11, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
+        self.assertEqual(8, project1.discovereddependencys.count())
 
         result_file = output.to_json(project1)
         expected_file = (

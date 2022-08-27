@@ -113,8 +113,8 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
-      "datasource_id": "pypi_wheel_metadata"
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
+      "datasource_id": "pypi_wheel"
     },
     {
       "purl": "pkg:pypi/dask",
@@ -126,8 +126,8 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/dask?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
-      "datasource_id": "pypi_wheel"
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+      "datasource_id": "pypi_wheel_metadata"
     },
     {
       "purl": "pkg:pypi/graphviz",
@@ -165,8 +165,8 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
-      "datasource_id": "pypi_wheel_metadata"
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
+      "datasource_id": "pypi_wheel"
     },
     {
       "purl": "pkg:pypi/ipycytoscape",
@@ -178,19 +178,6 @@
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/ipycytoscape?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datafile_path": "daglib-0.6.0-py3-none-any.whl",
-      "datasource_id": "pypi_wheel"
-    },
-    {
-      "purl": "pkg:pypi/networkx",
-      "package_type": "pypi",
-      "extracted_requirement": "networkx<3.0.0,>=2.8.5",
-      "scope": "install",
-      "is_runtime": true,
-      "is_optional": false,
-      "is_resolved": false,
-      "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata"
     },
@@ -206,6 +193,19 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel"
+    },
+    {
+      "purl": "pkg:pypi/networkx",
+      "package_type": "pypi",
+      "extracted_requirement": "networkx<3.0.0,>=2.8.5",
+      "scope": "install",
+      "is_runtime": true,
+      "is_optional": false,
+      "is_resolved": false,
+      "dependency_uid": "pkg:pypi/networkx?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
+      "datasource_id": "pypi_wheel_metadata"
     }
   ],
   "files": [
