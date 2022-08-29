@@ -83,6 +83,10 @@ class RunInProgressError(Exception):
     """Run are in progress or queued on this project."""
 
 
+# PackageURL._fields
+PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
+
+
 class UUIDPKModel(models.Model):
     uuid = models.UUIDField(
         verbose_name=_("UUID"),
@@ -1006,6 +1010,39 @@ class SaveProjectErrorMixin:
             self.add_error(error)
 
 
+class UpdateFromDataMixin:
+    """
+    Adds a method to update an object instance from a `data` dict.
+    """
+
+    def update_from_data(self, data, override=False):
+        """
+        Update this object instance with the provided `data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = self.__class__.model_fields()
+        updated_fields = []
+
+        for field_name, value in data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+                field_name in PURL_FIELDS,
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if not current_value or (current_value != value and override):
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
+
+
 class RunQuerySet(ProjectRelatedQuerySet):
     def not_started(self):
         """
@@ -1814,6 +1851,7 @@ class DiscoveredPackage(
     ProjectRelatedModel,
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
+    UpdateFromDataMixin,
     AbstractPackage,
 ):
     """
@@ -1874,14 +1912,10 @@ class DiscoveredPackage(
         return self.package_url
 
     @classmethod
-    def purl_fields(cls):
-        return PackageURL._fields
-
-    @classmethod
     def extract_purl_data(cls, package_data):
         purl_data = {}
 
-        for field_name in cls.purl_fields():
+        for field_name in PURL_FIELDS:
             value = package_data.get(field_name)
             if field_name == "qualifiers":
                 value = normalize_qualifiers(value, encode=True)
@@ -1928,33 +1962,6 @@ class DiscoveredPackage(
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
-
-    def update_from_data(self, package_data, override=False):
-        """
-        Update this discovered package instance with the provided `package_data`.
-        The `save()` is called only if at least one field was modified.
-        """
-        model_fields = DiscoveredPackage.model_fields()
-        updated_fields = []
-
-        for field_name, value in package_data.items():
-            skip_reasons = [
-                not value,
-                field_name not in model_fields,
-                field_name in self.purl_fields(),
-            ]
-            if any(skip_reasons):
-                continue
-
-            current_value = getattr(self, field_name, None)
-            if not current_value or (current_value != value and override):
-                setattr(self, field_name, value)
-                updated_fields.append(field_name)
-
-        if updated_fields:
-            self.save()
-
-        return updated_fields
 
 
 class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
@@ -2140,15 +2147,15 @@ class DiscoveredDependency(
 
         return discovered_dependency
 
-    def update_from_data(self, dependency_data):
+    def update_from_data(self, data):
         """
-        Update this discovered dependency instance with the provided `dependency_data`.
+        Update this object instance with the provided `data`.
         The `save()` is called only if at least one field was modified.
         """
-        model_fields = DiscoveredDependency.model_fields()
+        model_fields = self.__class__.model_fields()
         updated_fields = []
 
-        for field_name, value in dependency_data.items():
+        for field_name, value in data.items():
             skip_reasons = [
                 not value,
                 field_name not in model_fields,

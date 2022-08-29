@@ -1261,10 +1261,6 @@ class ScanPipeModelsTest(TestCase):
         webhook.refresh_from_db()
         self.assertTrue(webhook.sent)
 
-    def test_scanpipe_discovered_package_model_purl_fields(self):
-        expected = ("type", "namespace", "name", "version", "qualifiers", "subpath")
-        self.assertEqual(expected, DiscoveredPackage.purl_fields())
-
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
         expected = {
