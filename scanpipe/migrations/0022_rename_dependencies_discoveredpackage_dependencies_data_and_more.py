@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('datasource_id', models.CharField(blank=True, help_text='The identifier for the datafile handler used to obtain this dependency.', max_length=64)),
                 ('datafile_resource', models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='dependencies', to='scanpipe.codebaseresource')),
                 ('for_package', models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='dependencies', to='scanpipe.discoveredpackage')),
-                ('project', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='scanpipe.project')),
+                ('project', models.ForeignKey(editable=False, on_delete=django.db.models.deletion.CASCADE, related_name='discovereddependencies', to='scanpipe.project')),
             ],
             options={
                 'verbose_name': 'discovered dependency',

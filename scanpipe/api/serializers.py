@@ -113,8 +113,8 @@ class ProjectSerializer(
     runs = RunSerializer(many=True, read_only=True)
     input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
     codebase_resources_summary = serializers.SerializerMethodField()
-    discovered_package_summary = serializers.SerializerMethodField()
-    discovered_dependency_summary = serializers.SerializerMethodField()
+    discovered_packages_summary = serializers.SerializerMethodField()
+    discovered_dependencies_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -161,7 +161,7 @@ class ProjectSerializer(
         queryset = project.codebaseresources.all()
         return count_group_by(queryset, "status")
 
-    def get_discovered_package_summary(self, project):
+    def get_discovered_packages_summary(self, project):
         base_qs = project.discoveredpackages
         return {
             "total": base_qs.count(),
@@ -169,8 +169,8 @@ class ProjectSerializer(
             "with_modified_resources": base_qs.exclude(modified_resources=[]).count(),
         }
 
-    def get_discovered_dependency_summary(self, project):
-        base_qs = project.discovereddependencys
+    def get_discovered_dependencies_summary(self, project):
+        base_qs = project.discovereddependencies
         return {
             "total": base_qs.count(),
             "is_runtime": base_qs.filter(is_runtime=True).count(),

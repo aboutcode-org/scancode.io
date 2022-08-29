@@ -82,7 +82,7 @@ def to_csv(project):
 
     querysets = [
         project.discoveredpackages.all(),
-        project.discovereddependencys.all().prefetch_related(
+        project.discovereddependencies.all().prefetch_related(
             "for_package", "datafile_resource"
         ),
         project.codebaseresources.without_symlinks(),
@@ -186,7 +186,7 @@ class JSONResultsGenerator:
         from scanpipe.api.serializers import DiscoveredDependencySerializer
 
         dependencies = (
-            project.discovereddependencys.all()
+            project.discovereddependencies.all()
             .prefetch_related("for_package", "datafile_resource")
             .order_by(
                 "type",
@@ -403,7 +403,7 @@ def to_xlsx(project):
 
     querysets = [
         project.discoveredpackages.all(),
-        project.discovereddependencys.all().prefetch_related(
+        project.discovereddependencies.all().prefetch_related(
             "for_package", "datafile_resource"
         ),
         project.codebaseresources.without_symlinks(),

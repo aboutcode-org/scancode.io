@@ -512,7 +512,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             self.projecterrors,
             self.runs,
             self.discoveredpackages,
-            self.discovereddependencys,
+            self.discovereddependencies,
             self.codebaseresources,
         ]
 
@@ -884,7 +884,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         Returns the number of dependencies related to this project.
         """
-        return self.discovereddependencys.count()
+        return self.discovereddependencies.count()
 
     @cached_property
     def error_count(self):
@@ -1970,6 +1970,15 @@ class DiscoveredDependency(
     A project's Discovered Dependencies are records of the dependencies used by
     system and application packages discovered in the code under analysis.
     """
+
+    # Overrides the `project` field from `ProjectRelatedModel` to set the proper
+    # `related_name`.
+    project = models.ForeignKey(
+        Project,
+        related_name="discovereddependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
 
     dependency_uid = models.CharField(
         max_length=1024,

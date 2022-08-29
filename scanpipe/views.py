@@ -440,7 +440,7 @@ class ProjectListView(
             .with_counts(
                 "codebaseresources",
                 "discoveredpackages",
-                "discovereddependencys",
+                "discovereddependencies",
                 "projecterrors",
             )
         )
@@ -563,7 +563,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             "type",
             "license_expression",
         )
-        dependencies = project.discovereddependencys.all().only(
+        dependencies = project.discovereddependencies.all().only(
             "is_runtime",
             "is_optional",
             "is_resolved",

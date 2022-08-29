@@ -316,7 +316,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(4, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
-        self.assertEqual(1, project1.discovereddependencys.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "is-npm-1.0.0_scan_package.json"
@@ -350,7 +350,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(9, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
-        self.assertEqual(2, project1.discovereddependencys.count())
+        self.assertEqual(2, project1.discovereddependencies.count())
 
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
@@ -379,7 +379,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(1, project1.discoveredpackages.count())
-        self.assertEqual(1, project1.discovereddependencys.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
@@ -402,7 +402,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(11, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
-        self.assertEqual(8, project1.discovereddependencys.count())
+        self.assertEqual(8, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = (
@@ -427,7 +427,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(510, project1.codebaseresources.count())
         self.assertEqual(14, project1.discoveredpackages.count())
-        self.assertEqual(0, project1.discovereddependencys.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "alpine_3_15_4_scan_codebase.json"
@@ -478,7 +478,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(29, project1.codebaseresources.count())
         self.assertEqual(101, project1.discoveredpackages.count())
-        self.assertEqual(0, project1.discovereddependencys.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "centos_scan_codebase.json"
@@ -501,7 +501,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(16, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
-        self.assertEqual(0, project1.discovereddependencys.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "debian_scan_codebase.json"
@@ -524,7 +524,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(2458, project1.codebaseresources.count())
         self.assertEqual(6, project1.discoveredpackages.count())
-        self.assertEqual(0, project1.discovereddependencys.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "gcr_io_distroless_base_scan_codebase.json"
@@ -545,7 +545,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
-        self.assertEqual(0, project1.discovereddependencys.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
@@ -566,7 +566,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(18, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
-        self.assertEqual(4, project1.discovereddependencys.count())
+        self.assertEqual(4, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = (

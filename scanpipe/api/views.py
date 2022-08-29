@@ -184,7 +184,7 @@ class ProjectViewSet(
     @action(detail=True)
     def dependencies(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = project.discovereddependencys.all()
+        queryset = project.discovereddependencies.all()
 
         paginated_qs = self.paginate_queryset(queryset)
         serializer = DiscoveredDependencySerializer(paginated_qs, many=True)

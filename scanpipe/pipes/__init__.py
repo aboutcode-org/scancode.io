@@ -121,7 +121,7 @@ def update_or_create_dependencies(
     root path segments are not stripped for `datafile_path`s.
     """
     try:
-        dependency = project.discovereddependencys.get(
+        dependency = project.discovereddependencies.get(
             dependency_uid=dependency_data.get("dependency_uid")
         )
     except DiscoveredDependency.DoesNotExist:
