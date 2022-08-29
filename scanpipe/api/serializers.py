@@ -140,8 +140,8 @@ class ProjectSerializer(
             "package_count",
             "dependency_count",
             "codebase_resources_summary",
-            "discovered_package_summary",
-            "discovered_dependency_summary",
+            "discovered_packages_summary",
+            "discovered_dependencies_summary",
         )
 
         exclude_from_list_view = [
@@ -153,8 +153,8 @@ class ProjectSerializer(
             "package_count",
             "dependency_count",
             "codebase_resources_summary",
-            "discovered_package_summary",
-            "discovered_dependency_summary",
+            "discovered_packages_summary",
+            "discovered_dependencies_summary",
         ]
 
     def get_codebase_resources_summary(self, project):
