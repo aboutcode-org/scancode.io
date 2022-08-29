@@ -170,14 +170,14 @@ class ScanPipeAPITest(TransactionTestCase):
             "with_missing_resources": 0,
             "with_modified_resources": 0,
         }
-        self.assertEqual(expected, response.data["discovered_package_summary"])
+        self.assertEqual(expected, response.data["discovered_packages_summary"])
         expected = {
             "total": 1,
             "is_runtime": 1,
             "is_optional": 0,
             "is_resolved": 0,
         }
-        self.assertEqual(expected, response.data["discovered_dependency_summary"])
+        self.assertEqual(expected, response.data["discovered_dependencies_summary"])
 
         self.project1.add_input_source(filename="file1", source="uploaded")
         self.project1.add_input_source(filename="file2", source="https://download.url")

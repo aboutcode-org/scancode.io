@@ -118,7 +118,7 @@ v31.0.0 (2022-08-25)
   - ``dependency_count``
     - The number of DiscoveredDependencies associated with the project.
 
-  - ``discovered_dependency_summary``
+  - ``discovered_dependencies_summary``
     - A mapping that contains following fields:
 
       - ``total``
