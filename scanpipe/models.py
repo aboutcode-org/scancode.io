@@ -1971,6 +1971,7 @@ class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
 class DiscoveredDependency(
     ProjectRelatedModel,
     SaveProjectErrorMixin,
+    UpdateFromDataMixin,
     PackageURLMixin,
 ):
     """
@@ -2146,32 +2147,6 @@ class DiscoveredDependency(
         discovered_dependency.save()
 
         return discovered_dependency
-
-    def update_from_data(self, data):
-        """
-        Update this object instance with the provided `data`.
-        The `save()` is called only if at least one field was modified.
-        """
-        model_fields = self.__class__.model_fields()
-        updated_fields = []
-
-        for field_name, value in data.items():
-            skip_reasons = [
-                not value,
-                field_name not in model_fields,
-            ]
-            if any(skip_reasons):
-                continue
-
-            current_value = getattr(self, field_name, None)
-            if not current_value or current_value != value:
-                setattr(self, field_name, value)
-                updated_fields.append(field_name)
-
-        if updated_fields:
-            self.save()
-
-        return updated_fields
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):

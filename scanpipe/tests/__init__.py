@@ -92,6 +92,7 @@ package_data1 = {
 for_package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
 dependency_data1 = {
     "purl": "pkg:pypi/dask",
+    "package_type": "pypi",
     "extracted_requirement": "dask<2023.0.0,>=2022.6.0",
     "scope": "install",
     "is_runtime": True,
@@ -101,6 +102,20 @@ dependency_data1 = {
     "for_package_uid": for_package_uid,
     "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
     "datasource_id": "pypi_sdist_pkginfo",
+}
+
+dependency_data2 = {
+    "purl": "pkg:gem/appraisal@2.2.0",
+    "package_type": "gem",
+    "extracted_requirement": "",
+    "scope": "dependencies",
+    "is_runtime": True,
+    "is_optional": False,
+    "is_resolved": True,
+    "dependency_uid": "pkg:gem/appraisal@2.2.0?uuid=1907f061-911b-4980-a2d4-ae1a9ed871a9",
+    "for_package_uid": for_package_uid,
+    "datafile_path": "data.tar.gz-extract/Gemfile.lock",
+    "datasource_id": "gemfile_lock",
 }
 
 license_policies = [

@@ -57,6 +57,7 @@ from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -1312,6 +1313,38 @@ class ScanPipeModelsTest(TestCase):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
         self.assertEqual(40, len(basic_user.auth_token.key))
+
+    def test_scanpipe_discovered_dependency_model_update_from_data(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        resource = CodebaseResource.objects.create(
+            project=self.project1, path="data.tar.gz-extract/Gemfile.lock"
+        )
+        dependency = DiscoveredDependency.create_from_data(
+            self.project1, dependency_data2
+        )
+
+        new_data = {
+            "name": "new name",
+            "extracted_requirement": "new requirement",
+            "scope": "new scope",
+            "unknown_field": "value",
+        }
+        updated_fields = dependency.update_from_data(new_data)
+        self.assertEqual(["extracted_requirement"], updated_fields)
+
+        dependency.refresh_from_db()
+        # PURL field, not updated
+        self.assertEqual(dependency_data2["name"], dependency.name)
+        # Empty field, updated
+        self.assertEqual(
+            new_data["extracted_requirement"], dependency.extracted_requirement
+        )
+        # Already a value, not updated
+        self.assertEqual(dependency_data2["scope"], dependency.scope)
+
+        updated_fields = dependency.update_from_data(new_data, override=True)
+        self.assertEqual(["scope"], updated_fields)
+        self.assertEqual(new_data["scope"], dependency.scope)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
