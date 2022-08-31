@@ -28,8 +28,8 @@ def migrate_dependencies_data_to_discovereddependencies_model(apps, schema_edito
 
             purl = dependency_data.pop("purl", None)
             if purl:
-                purl_mapping = PackageURL.from_string(purl).to_dict(empty="")
-                dependency_data.update(purl_mapping)
+                package_url_dict = PackageURL.from_string(purl).to_dict(encode=True, empty="")
+                dependency_data.update(package_url_dict)
 
             for_package_uid = dependency_data.pop("for_package_uid", None)
             try:
