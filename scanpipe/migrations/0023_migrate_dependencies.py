@@ -3,8 +3,10 @@
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import migrations
 
+from packageurl import PackageURL
 
-def migrate_dependencies_to_discovereddependencies(apps, schema_editor):
+
+def migrate_dependencies_data_to_discovereddependencies_model(apps, schema_editor):
     DiscoveredPackage = apps.get_model('scanpipe', 'DiscoveredPackage')
     DiscoveredDependency = apps.get_model('scanpipe', 'DiscoveredDependency')
 
@@ -18,13 +20,24 @@ def migrate_dependencies_to_discovereddependencies(apps, schema_editor):
             dependency_data.pop("extra_data", None)
             dependency_data.pop("resolved_package", None)
 
-            for_package_uid = dependency_data.get("for_package_uid")
+            # `extracted_requirement` was previously stored as `requirement` prior to
+            # https://github.com/nexB/scancode-toolkit/pull/2825/
+            requirement = dependency_data.pop("requirement", None)
+            if requirement:
+                dependency_data["extracted_requirement"] = requirement
+
+            purl = dependency_data.pop("purl", None)
+            if purl:
+                package_url_dict = PackageURL.from_string(purl).to_dict(encode=True, empty="")
+                dependency_data.update(package_url_dict)
+
+            for_package_uid = dependency_data.pop("for_package_uid", None)
             try:
                 for_package = project.discoveredpackages.get(package_uid=for_package_uid)
             except (ObjectDoesNotExist, MultipleObjectsReturned):
                 for_package = None
 
-            datafile_path = dependency_data.get("datafile_path")
+            datafile_path = dependency_data.pop("datafile_path", None)
             try:
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
             except (ObjectDoesNotExist, MultipleObjectsReturned):
@@ -41,9 +54,9 @@ def migrate_dependencies_to_discovereddependencies(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scanpipe', '0022_rename_dependencies_discoveredpackage_dependencies_data_and_more'),
+        ('scanpipe', '0022_create_discovereddependencies_model'),
     ]
 
     operations = [
-        migrations.RunPython(migrate_dependencies_to_discovereddependencies),
+        migrations.RunPython(migrate_dependencies_data_to_discovereddependencies_model),
     ]

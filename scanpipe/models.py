@@ -1964,7 +1964,7 @@ class DiscoveredPackage(
         return discovered_package
 
 
-class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
+class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
 
 
@@ -1987,7 +1987,6 @@ class DiscoveredDependency(
         on_delete=models.CASCADE,
         editable=False,
     )
-
     dependency_uid = models.CharField(
         max_length=1024,
         help_text=_("The unique identifier of this dependency."),
@@ -2009,7 +2008,7 @@ class DiscoveredDependency(
         null=True,
     )
     extracted_requirement = models.CharField(
-        max_length=64,
+        max_length=256,
         blank=True,
         help_text=_("The version requirements of this dependency."),
     )
@@ -2018,11 +2017,6 @@ class DiscoveredDependency(
         blank=True,
         help_text=_("The scope of this dependency, how it is used in a project."),
     )
-
-    is_runtime = models.BooleanField(default=False)
-    is_optional = models.BooleanField(default=False)
-    is_resolved = models.BooleanField(default=False)
-
     datasource_id = models.CharField(
         max_length=64,
         blank=True,
@@ -2030,6 +2024,9 @@ class DiscoveredDependency(
             "The identifier for the datafile handler used to obtain this dependency."
         ),
     )
+    is_runtime = models.BooleanField(default=False)
+    is_optional = models.BooleanField(default=False)
+    is_resolved = models.BooleanField(default=False)
 
     objects = DiscoveredDependencyQuerySet.as_manager()
 
