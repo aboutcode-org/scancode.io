@@ -18,13 +18,19 @@ def migrate_dependencies_to_discovereddependencies(apps, schema_editor):
             dependency_data.pop("extra_data", None)
             dependency_data.pop("resolved_package", None)
 
-            for_package_uid = dependency_data.get("for_package_uid")
+            # `extracted_requirement` was previously stored as `requirement` prior to
+            # https://github.com/nexB/scancode-toolkit/pull/2825/
+            requirement = dependency_data.pop("requirement", None)
+            if requirement:
+                dependency_data["extracted_requirement"] = requirement
+
+            for_package_uid = dependency_data.pop("for_package_uid")
             try:
                 for_package = project.discoveredpackages.get(package_uid=for_package_uid)
             except (ObjectDoesNotExist, MultipleObjectsReturned):
                 for_package = None
 
-            datafile_path = dependency_data.get("datafile_path")
+            datafile_path = dependency_data.pop("datafile_path")
             try:
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
             except (ObjectDoesNotExist, MultipleObjectsReturned):
