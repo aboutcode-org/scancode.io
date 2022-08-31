@@ -2008,7 +2008,7 @@ class DiscoveredDependency(
         null=True,
     )
     extracted_requirement = models.CharField(
-        max_length=64,
+        max_length=256,
         blank=True,
         help_text=_("The version requirements of this dependency."),
     )

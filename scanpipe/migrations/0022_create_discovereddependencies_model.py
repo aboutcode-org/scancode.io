@@ -85,7 +85,7 @@ class Migration(migrations.Migration):
                     models.CharField(
                         blank=True,
                         help_text="The version requirements of this dependency.",
-                        max_length=64,
+                        max_length=256,
                     ),
                 ),
                 (
