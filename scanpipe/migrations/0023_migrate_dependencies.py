@@ -31,13 +31,13 @@ def migrate_dependencies_data_to_discovereddependencies_model(apps, schema_edito
                 purl_mapping = PackageURL.from_string(purl).to_dict(empty="")
                 dependency_data.update(purl_mapping)
 
-            for_package_uid = dependency_data.pop("for_package_uid")
+            for_package_uid = dependency_data.pop("for_package_uid", None)
             try:
                 for_package = project.discoveredpackages.get(package_uid=for_package_uid)
             except (ObjectDoesNotExist, MultipleObjectsReturned):
                 for_package = None
 
-            datafile_path = dependency_data.pop("datafile_path")
+            datafile_path = dependency_data.pop("datafile_path", None)
             try:
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
             except (ObjectDoesNotExist, MultipleObjectsReturned):
