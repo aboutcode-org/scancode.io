@@ -112,7 +112,9 @@ dependency_data2 = {
     "is_runtime": True,
     "is_optional": False,
     "is_resolved": True,
-    "dependency_uid": "pkg:gem/appraisal@2.2.0?uuid=1907f061-911b-4980-a2d4-ae1a9ed871a9",
+    "dependency_uid": (
+        "pkg:gem/appraisal@2.2.0?uuid=1907f061-911b-4980-a2d4-ae1a9ed871a9"
+    ),
     "for_package_uid": for_package_uid,
     "datafile_path": "data.tar.gz-extract/Gemfile.lock",
     "datasource_id": "gemfile_lock",
