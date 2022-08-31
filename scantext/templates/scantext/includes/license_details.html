@@ -2,7 +2,7 @@
     <div class="column is-two-third">
         <p class="title is-5">Detected Licenses</p>
     </div>
-    {% for license in detected_licenses.licenses %}
+    {% for license in detected_licenses.license_matches %}
     <article class="panel is-info">
         <div class="panel-heading py-2 px-4">
             <p>{{ license.license_expression }}</p>
@@ -14,8 +14,14 @@
                     <td>{{ license.score }}</td>
                     <td><strong>Matched Line(s)</strong></td>
                     <td>{% if license.start_line == license.end_line %} {{ license.start_line }} {% else %} {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
-                    <td><strong>Rule Identifer</strong></td>
-                     <td>{{ license.rule_identifier }}</td>
+                    <td><strong>Rule Identifier</strong></td>
+                    <td>
+                    {% if license.rule_text_url %}
+                        <a href="{{ license.rule_text_url }}" target="_blank">{{ license.rule_identifier }}</a>
+                    {% else %}
+                        {{ license.rule_identifier }}
+                    {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <td><strong>Matcher</strong></td>
@@ -25,20 +31,16 @@
                     <td><strong>Matched Length</strong></td>
                     <td>{{ license.matched_length }}</td>
                 <tr>
-                    <td><strong>Data File</strong></td>
-                    <td><a href="https://github.com/nexB/scancode-toolkit/tree/add-license-detection/src/licensedcode/data/{% if '.RULE' in license.rule_identifier %}rules{% elif '.LICENSE' in license.rule_identifier %}licenses{% endif %}/{{ license.rule_identifier }}" target="_blank">{{ license.rule_identifier }}</a></td>
                     <td><strong>Key(s)</strong></td>
                     <td>
-                        {% for key in license.licenses %}
+                    {% for key in license.licenses %}
                         <a href="{{ key.reference_url }}" target="_blank"><span class="mr-2">{{ key.key }}</span></a>
-                        {% endfor %}
+                    {% endfor %}
                     </td>
-                </tr>
-                <tr>
-                    <td><strong>Rule Length</strong></td>
-                    <td>{{ license.rule_length }}</td>
                     <td><strong>Rule Relevance</strong></td>
                     <td>{{ license.rule_relevance }}</td>
+                    <td><strong>Rule Length</strong></td>
+                    <td>{{ license.rule_length }}</td>
                 </tr>
             </tbody>
         </table>

@@ -1,13 +1,12 @@
 <div class="columns mb-5 mx-1">
     <div class="column is-two-third">
-        <p class="title is-5">Input License Text</p>
-        <div class="license-match" style="font-size: 18px; white-space: pre-wrap; max-height: 70vh; overflow: scroll;">{% for match in detected_licenses.complete_text %}<span class="matched{{ match.1 }}">{{ match.0 }}</span>{% endfor %}
-        </div>
+        <p class="title is-5">Input Text</p>
+        <div class="license-match" style="font-size: 18px; white-space: pre-wrap; max-height: 70vh; overflow: scroll;">{% for token in detected_licenses.license_tokens %}<span class="matched{{ token.match_ids.0 }}">{{ token.value }}</span>{% endfor %}</div>
     </div>
     <div class="column is-one-third">
         <p class="title is-5">Detected Licenses</p>
         <div class="card">
-            {% for license in detected_licenses.licenses %}
+            {% for license in detected_licenses.license_matches %}
             <div class="licenses-card">
                 <div class="card-header is-flex is-justify-content-space-between">
                     <div class="card-header-title" title="{{ license.short_name }}">{{ license.license_expression }}</div>
