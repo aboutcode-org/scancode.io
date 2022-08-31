@@ -45,6 +45,7 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -311,11 +312,12 @@ def scan_for_files(project):
 
 def scan_for_application_packages(project):
     """
-    Runs a package scan on files without a status for a `project`, then create
-    DiscoveredPackage instances from the detected package data.
+    Runs a package scan on files without a status for a `project`,
+    then create DiscoveredPackage and DiscoveredDependency instances
+    from the detected package data
 
-    Multiprocessing is enabled by default on this pipe, the number of processes
-    can be controlled through the SCANCODEIO_PROCESSES setting.
+    Multiprocessing is enabled by default on this pipe, the number of processes can be
+    controlled through the SCANCODEIO_PROCESSES setting.
     """
     resource_qs = project.codebaseresources.no_status()
 
@@ -378,9 +380,11 @@ def assemble_packages(project):
                     package_data = item.to_dict()
                     pipes.update_or_create_package(project, package_data)
                 elif isinstance(item, packagedcode_models.Dependency):
-                    # We will handle Dependencies when we properly implement the
-                    # DiscoveredDependency model
-                    pass
+                    dependency_data = item.to_dict()
+                    pipes.update_or_create_dependencies(
+                        project,
+                        dependency_data,
+                    )
                 elif isinstance(item, CodebaseResource):
                     seen_resource_paths.add(item.path)
                 else:
@@ -475,6 +479,29 @@ def create_discovered_packages(project, scanned_codebase):
             pipes.update_or_create_package(project, package_data)
 
 
+def create_discovered_dependencies(
+    project, scanned_codebase, strip_datafile_path_root=False
+):
+    """
+    Saves the dependencies of a ScanCode `scanned_codebase` scancode.resource.Codebase
+    object to the database as a DiscoveredDependency of `project`.
+
+    If `strip_datafile_path_root` is True, then
+    `DiscoveredDependency.create_from_data()` will strip the root path segment
+    from the `datafile_path` of `dependency_data` before looking up the
+    corresponding CodebaseResource for `datafile_path`. This is used in the case
+    where Dependency data is imported from a scancode-toolkit scan, where the
+    root path segments are not stripped for `datafile_path`s.
+    """
+    if hasattr(scanned_codebase.attributes, "dependencies"):
+        for dependency_data in scanned_codebase.attributes.dependencies:
+            pipes.update_or_create_dependencies(
+                project,
+                dependency_data,
+                strip_datafile_path_root=strip_datafile_path_root,
+            )
+
+
 def set_codebase_resource_for_package(codebase_resource, discovered_package):
     """
     Assigns the `discovered_package` to the `codebase_resource` and set its
@@ -566,3 +593,6 @@ def create_inventory_from_scan(project, input_location):
     scanned_codebase = get_virtual_codebase(project, input_location)
     create_discovered_packages(project, scanned_codebase)
     create_codebase_resources(project, scanned_codebase)
+    create_discovered_dependencies(
+        project, scanned_codebase, strip_datafile_path_root=True
+    )

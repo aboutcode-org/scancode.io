@@ -62,6 +62,7 @@ from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
+from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
@@ -80,6 +81,10 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 class RunInProgressError(Exception):
     """Run are in progress or queued on this project."""
+
+
+# PackageURL._fields
+PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
 
 
 class UUIDPKModel(models.Model):
@@ -511,6 +516,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             self.projecterrors,
             self.runs,
             self.discoveredpackages,
+            self.discovereddependencies,
             self.codebaseresources,
         ]
 
@@ -878,6 +884,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return self.discoveredpackages.count()
 
     @cached_property
+    def dependency_count(self):
+        """
+        Returns the number of dependencies related to this project.
+        """
+        return self.discovereddependencies.count()
+
+    @cached_property
     def error_count(self):
         """
         Returns the number of errors related to this project.
@@ -995,6 +1008,39 @@ class SaveProjectErrorMixin:
         """
         for error in errors:
             self.add_error(error)
+
+
+class UpdateFromDataMixin:
+    """
+    Adds a method to update an object instance from a `data` dict.
+    """
+
+    def update_from_data(self, data, override=False):
+        """
+        Update this object instance with the provided `data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = self.__class__.model_fields()
+        updated_fields = []
+
+        for field_name, value in data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+                field_name in PURL_FIELDS,
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if not current_value or (current_value != value and override):
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
 
 
 class RunQuerySet(ProjectRelatedQuerySet):
@@ -1508,6 +1554,7 @@ class CodebaseResource(
             "provided policies."
         ),
     )
+
     package_data = models.JSONField(
         default=list,
         blank=True,
@@ -1804,6 +1851,7 @@ class DiscoveredPackage(
     ProjectRelatedModel,
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
+    UpdateFromDataMixin,
     AbstractPackage,
 ):
     """
@@ -1820,11 +1868,6 @@ class DiscoveredPackage(
     )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
-    dependencies = models.JSONField(
-        default=list,
-        blank=True,
-        help_text=_("A list of dependencies for this package."),
-    )
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
@@ -1869,14 +1912,10 @@ class DiscoveredPackage(
         return self.package_url
 
     @classmethod
-    def purl_fields(cls):
-        return PackageURL._fields
-
-    @classmethod
     def extract_purl_data(cls, package_data):
         purl_data = {}
 
-        for field_name in cls.purl_fields():
+        for field_name in PURL_FIELDS:
             value = package_data.get(field_name)
             if field_name == "qualifiers":
                 value = normalize_qualifiers(value, encode=True)
@@ -1924,32 +1963,190 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
-    def update_from_data(self, package_data, override=False):
+
+class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
+    pass
+
+
+class DiscoveredDependency(
+    ProjectRelatedModel,
+    SaveProjectErrorMixin,
+    UpdateFromDataMixin,
+    PackageURLMixin,
+):
+    """
+    A project's Discovered Dependencies are records of the dependencies used by
+    system and application packages discovered in the code under analysis.
+    """
+
+    # Overrides the `project` field from `ProjectRelatedModel` to set the proper
+    # `related_name`.
+    project = models.ForeignKey(
+        Project,
+        related_name="discovereddependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+
+    dependency_uid = models.CharField(
+        max_length=1024,
+        help_text=_("The unique identifier of this dependency."),
+    )
+    for_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="dependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    datafile_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="dependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    extracted_requirement = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_("The version requirements of this dependency."),
+    )
+    scope = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_("The scope of this dependency, how it is used in a project."),
+    )
+
+    is_runtime = models.BooleanField(default=False)
+    is_optional = models.BooleanField(default=False)
+    is_resolved = models.BooleanField(default=False)
+
+    datasource_id = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_(
+            "The identifier for the datafile handler used to obtain this dependency."
+        ),
+    )
+
+    objects = DiscoveredDependencyQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "discovered dependency"
+        verbose_name_plural = "discovered dependencies"
+        ordering = [
+            "-is_runtime",
+            "-is_resolved",
+            "is_optional",
+            "dependency_uid",
+            "for_package",
+            "datafile_resource",
+            "datasource_id",
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "dependency_uid"],
+                condition=~Q(dependency_uid=""),
+                name="%(app_label)s_%(class)s_unique_dependency_uid_within_project",
+            ),
+        ]
+
+    def __str__(self):
+        return self.dependency_uid
+
+    def get_absolute_url(self):
+        return reverse("dependency_detail", args=[self.project_id, self.pk])
+
+    @property
+    def purl(self):
+        return self.package_url
+
+    @property
+    def package_type(self):
+        return self.type
+
+    @cached_property
+    def for_package_uid(self):
+        if self.for_package:
+            return self.for_package.package_uid
+
+    @cached_property
+    def datafile_path(self):
+        if self.datafile_resource:
+            return self.datafile_resource.path
+
+    @classmethod
+    def create_from_data(
+        cls,
+        project,
+        dependency_data,
+        for_package=None,
+        datafile_resource=None,
+        strip_datafile_path_root=False,
+    ):
         """
-        Update this discovered package instance with the provided `package_data`.
-        The `save()` is called only if at least one field was modified.
+        Creates and returns a DiscoveredDependency for a `project` from the
+        `dependency_data`.
+
+        If `strip_datafile_path_root` is True, then `create_from_data()` will
+        strip the root path segment from the `datafile_path` of
+        `dependency_data` before looking up the corresponding CodebaseResource
+        for `datafile_path`. This is used in the case where Dependency data is
+        imported from a scancode-toolkit scan, where the root path segments are
+        not stripped for `datafile_path`s.
         """
-        model_fields = DiscoveredPackage.model_fields()
-        updated_fields = []
+        required_fields = ["purl", "dependency_uid"]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not dependency_data.get(field_name)
+        ]
 
-        for field_name, value in package_data.items():
-            skip_reasons = [
-                not value,
-                field_name not in model_fields,
-                field_name in self.purl_fields(),
-            ]
-            if any(skip_reasons):
-                continue
+        if missing_values:
+            message = (
+                f"No values for the following required fields: "
+                f"{', '.join(missing_values)}"
+            )
 
-            current_value = getattr(self, field_name, None)
-            if not current_value or (current_value != value and override):
-                setattr(self, field_name, value)
-                updated_fields.append(field_name)
+            project.add_error(error=message, model=cls, details=dependency_data)
+            return
 
-        if updated_fields:
-            self.save()
+        if not for_package:
+            for_package_uid = dependency_data.get("for_package_uid")
+            if for_package_uid:
+                for_package = project.discoveredpackages.get(
+                    package_uid=for_package_uid
+                )
 
-        return updated_fields
+        if not datafile_resource:
+            datafile_path = dependency_data.get("datafile_path")
+            if datafile_path:
+                if strip_datafile_path_root:
+                    segments = datafile_path.split("/")
+                    datafile_path = "/".join(segments[1:])
+                datafile_resource = project.codebaseresources.get(path=datafile_path)
+
+        # Set purl fields from `purl`
+        purl = dependency_data.get("purl")
+        purl_mapping = PackageURL.from_string(purl).to_dict()
+        dependency_data.update(**purl_mapping)
+
+        cleaned_dependency_data = {
+            field_name: value
+            for field_name, value in dependency_data.items()
+            if field_name in DiscoveredDependency.model_fields() and value
+        }
+        discovered_dependency = cls(
+            project=project,
+            for_package=for_package,
+            datafile_resource=datafile_resource,
+            **cleaned_dependency_data,
+        )
+        discovered_dependency.save()
+
+        return discovered_dependency
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):

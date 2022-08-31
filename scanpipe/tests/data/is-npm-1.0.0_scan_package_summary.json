@@ -312,7 +312,6 @@
       "extra_data": {},
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "npm",

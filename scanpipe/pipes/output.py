@@ -82,6 +82,9 @@ def to_csv(project):
 
     querysets = [
         project.discoveredpackages.all(),
+        project.discovereddependencies.all().prefetch_related(
+            "for_package", "datafile_resource"
+        ),
         project.codebaseresources.without_symlinks(),
     ]
 
@@ -125,6 +128,7 @@ class JSONResultsGenerator:
         yield "{\n"
         yield from self.serialize(label="headers", generator=self.get_headers)
         yield from self.serialize(label="packages", generator=self.get_packages)
+        yield from self.serialize(label="dependencies", generator=self.get_dependencies)
         yield from self.serialize(label="files", generator=self.get_files, latest=True)
         yield "}"
 
@@ -177,6 +181,24 @@ class JSONResultsGenerator:
 
         for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)
+
+    def get_dependencies(self, project):
+        from scanpipe.api.serializers import DiscoveredDependencySerializer
+
+        dependencies = (
+            project.discovereddependencies.all()
+            .prefetch_related("for_package", "datafile_resource")
+            .order_by(
+                "type",
+                "namespace",
+                "name",
+                "version",
+                "datasource_id",
+            )
+        )
+
+        for obj in dependencies.iterator():
+            yield self.encode(DiscoveredDependencySerializer(obj).data)
 
     def get_files(self, project):
         from scanpipe.api.serializers import CodebaseResourceSerializer
@@ -381,6 +403,9 @@ def to_xlsx(project):
 
     querysets = [
         project.discoveredpackages.all(),
+        project.discovereddependencies.all().prefetch_related(
+            "for_package", "datafile_resource"
+        ),
         project.codebaseresources.without_symlinks(),
         project.projecterrors.all(),
     ]

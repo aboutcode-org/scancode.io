@@ -41,6 +41,7 @@ from scancode.cli_test_utils import purl_with_fake_uuid
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -186,6 +187,7 @@ class ScanPipePipesTest(TestCase):
         output_files = output.to_csv(project=project1)
         expected = [
             "codebaseresource-2010-10-10-10-10-10.csv",
+            "discovereddependency-2010-10-10-10-10-10.csv",
             "discoveredpackage-2010-10-10-10-10-10.csv",
         ]
         self.assertEqual(sorted(expected), sorted(project1.output_root))
@@ -205,7 +207,7 @@ class ScanPipePipesTest(TestCase):
         with output_file.open() as f:
             results = json.loads(f.read())
 
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["headers"]))
@@ -529,11 +531,13 @@ class ScanPipePipesTest(TestCase):
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_dependencies(project, virtual_codebase)
 
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertEqual(1, DiscoveredDependency.objects.count())
         # Make sure the root is not created as a CodebaseResource, walk(skip_root=True)
         self.assertFalse(CodebaseResource.objects.filter(path="codebase").exists())
 
@@ -548,10 +552,12 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected, package.codebase_resources.get().path)
 
         # The functions can be called again and existing objects are skipped
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_dependencies(project, virtual_codebase)
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertEqual(1, DiscoveredDependency.objects.count())
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
         project = Project.objects.create(name="asgiref")
@@ -564,6 +570,9 @@ class ScanPipePipesTest(TestCase):
         scanpipe_app.license_policies_index = license_policies_index
         scancode.create_discovered_packages(project, virtual_codebase)
         scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_dependencies(
+            project, virtual_codebase, strip_datafile_path_root=True
+        )
         resources = project.codebaseresources
 
         resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")

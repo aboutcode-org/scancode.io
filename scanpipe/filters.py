@@ -32,6 +32,7 @@ from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -159,6 +160,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "created_date",
             "name",
             "discoveredpackages_count",
+            "discovereddependencies_count",
             "codebaseresources_count",
             "projecterrors_count",
         ],
@@ -169,6 +171,8 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ("-name", "Name (z-A)"),
             ("-discoveredpackages_count", "Packages (+)"),
             ("discoveredpackages_count", "Packages (-)"),
+            ("-discovereddependencies_count", "Dependencies (+)"),
+            ("discovereddependencies_count", "Dependencies (-)"),
             ("-codebaseresources_count", "Resources (+)"),
             ("codebaseresources_count", "Resources (-)"),
             ("-projecterrors_count", "Errors (+)"),
@@ -361,6 +365,32 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyright",
             "manifest_path",
             "contains_source_code",
+        ]
+
+
+class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    purl = PackageURLFilter(label="Package URL")
+
+    class Meta:
+        model = DiscoveredDependency
+        fields = [
+            "search",
+            "purl",
+            "dependency_uid",
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+            "datasource_id",
         ]
 
 

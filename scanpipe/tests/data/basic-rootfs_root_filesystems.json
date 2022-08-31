@@ -79,7 +79,6 @@
         "/basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright"
       ],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/libncurses5@6.1-1ubuntu1.18.04?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "libs"
@@ -119,7 +118,6 @@
         "/basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright"
       ],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "libs"
@@ -129,6 +127,7 @@
       ]
     }
   ],
+  "dependencies": [],
   "files": [
     {
       "for_packages": [],

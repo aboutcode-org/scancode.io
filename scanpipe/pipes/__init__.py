@@ -30,6 +30,7 @@ from time import sleep
 from django.db.models import Count
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
 
@@ -102,6 +103,40 @@ def update_or_create_package(project, package_data, codebase_resource=None):
             package = DiscoveredPackage.create_from_data(project, package_data)
 
     return package
+
+
+def update_or_create_dependencies(
+    project, dependency_data, strip_datafile_path_root=False
+):
+    """
+    Gets, updates or creates a DiscoveredDependency then returns it.
+    Uses the `project` and `dependency_data` mapping to lookup and creates the
+    DiscoveredDependency using its dependency_uid and for_package_uid as a unique key.
+
+    If `strip_datafile_path_root` is True, then
+    `DiscoveredDependency.create_from_data()` will strip the root path segment
+    from the `datafile_path` of `dependency_data` before looking up the
+    corresponding CodebaseResource for `datafile_path`. This is used in the case
+    where Dependency data is imported from a scancode-toolkit scan, where the
+    root path segments are not stripped for `datafile_path`s.
+    """
+    try:
+        dependency = project.discovereddependencies.get(
+            dependency_uid=dependency_data.get("dependency_uid")
+        )
+    except DiscoveredDependency.DoesNotExist:
+        dependency = None
+
+    if dependency:
+        dependency.update_from_data(dependency_data)
+    else:
+        dependency = DiscoveredDependency.create_from_data(
+            project,
+            dependency_data,
+            strip_datafile_path_root=strip_datafile_path_root,
+        )
+
+    return dependency
 
 
 def analyze_scanned_files(project):

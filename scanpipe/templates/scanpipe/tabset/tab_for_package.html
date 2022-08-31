@@ -1,0 +1,10 @@
+<div class="content">
+  <strong>{{ tab_data.fields.for_package.label }}</strong>
+  {% if tab_data.fields.for_package.value %}
+    <ul>
+      <li>
+        <a href="{{ tab_data.fields.for_package.value.get_absolute_url }}" title="{{ tab_data.fields.for_package.value.package_uid }}">{{ tab_data.fields.for_package.value }}</a>
+      </li>
+    </ul>
+  {% endif %}
+</div>
