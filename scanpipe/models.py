@@ -1964,7 +1964,7 @@ class DiscoveredPackage(
         return discovered_package
 
 
-class DiscoveredDependencyQuerySet(ProjectRelatedQuerySet):
+class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
 
 

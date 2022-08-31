@@ -22,7 +22,7 @@
         <tbody>
           {% for dependency in object_list %}
             <tr class="break-word">
-              <td style="min-width: 500px;" title="{{ dependency.dependency_uid }}">
+              <td style="min-width: 300px;" title="{{ dependency.dependency_uid }}">
                 <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
               </td>
               <td>
@@ -31,7 +31,7 @@
               <td>
                 {{ dependency.extracted_requirement }}
               </td>
-              <td>
+              <td class="break-normal">
                 {{ dependency.scope }}
               </td>
               <td>
