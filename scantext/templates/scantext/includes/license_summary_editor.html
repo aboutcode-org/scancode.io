@@ -5,7 +5,7 @@
     </div>
     <div class="column is-one-third">
         <p class="title is-5">Detected Licenses</p>
-        <div class="card">
+        <div class="card is-shadowless">
             {% for license in detected_licenses.license_matches %}
             <div class="licenses-card">
                 <div class="card-header is-flex is-justify-content-space-between">
@@ -22,7 +22,10 @@
                 </div>
                 <div class="card-content is-hidden">
                     <div class="content">
-                        <p class="title is-5">Details</p>
+                        <div class="is-flex is-justify-content-space-between">
+                            <p class="title is-5">Details</p>
+                            {% include 'scantext/includes/license_report.html' with license=license %}
+                        </div>
                         <div class="table-container mt-3">
                             <table class="table is-striped is-narrow is-hoverable is-fullwidth">
                                 <tr>
