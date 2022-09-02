@@ -35,6 +35,9 @@ v31.1.0 (unreleased)
 
 - The ``dependencies`` field has been removed from the DiscoveredPackage model.
 
+- Create directory CodebaseResources in the rootfs pipeline.
+  https://github.com/nexB/scancode.io/issues/515
+
 v31.0.0 (2022-08-25)
 --------------------
 
