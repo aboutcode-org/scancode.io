@@ -4,6 +4,15 @@
 {% block extrahead %}
 <style>
     {% for mcolor in detected_licenses.match_colors %}{{ mcolor }}{% endfor %}
+
+    .license-match {
+        font-size: 18px;
+        white-space: pre-wrap;
+        max-height: 80vh;
+        overflow: scroll;
+        border: 1px solid #efefef;
+        border-radius: 4px;
+    }
 </style>
 {% endblock %}
 
@@ -11,130 +20,37 @@
 <div class="container is-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
 
-    <section class="mx-5 mb-0">
-        <div class="is-flex is-justify-content-space-between">
-            <h1 class="title is-4">License Detection Summary</h1>
-            <a href="{% url 'license_scan' %}" class="button is-link">New Scan</a>
-        </div>
-    </section>
-    <div class="tabs">
-        <ul class="nav">
-            <li class="is-active"><a>Summary In Ace</a></li>
-            <li><a>Summary with Highlighted Text</a></li>
-            <li><a>License Details</a></li>
-        </ul>
-    </div>
-
     {% include 'scantext/includes/license_summary_header.html' with detected_licenses=detected_licenses %}
     <hr class="mx-1">
 
     <section class="tab-container">
-        {% include 'scantext/includes/license_summary_editor.html' with detected_licenses=detected_licenses %}        
-    </section>
-
-    <section class="tab-container is-hidden">
         {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
     </section>
 
-    <section class="tab-container is-hidden">
-        {% include 'scantext/includes/license_details.html' with detected_licenses=detected_licenses %}
-    </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'ace-1.9.5.min.js' %}" crossorigin="anonymous"></script>
-<script src="{% static 'billboard-3.0.1.pkgd.min.js' %}" crossorigin="anonymous"></script>
 <script type="text/javascript">
-    let editor = ace.edit("editor", {
-        mode: "ace/mode/text",
-        autoScrollEditorIntoView: true,
-        wrap: true,
-        readOnly: true,
-        showPrintMargin: false,
-        highlightActiveLine: false,
-        highlightGutterLine: false,
-        fontSize: 15,
-        foldStyle: "manual",
-        fontFamily: "SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace",
-    });
+    const detailBtns = document.querySelectorAll('.license-details-btn')
+    const modalCards = document.querySelectorAll('.license-details-modal')
+    const closeModalBtns = document.querySelectorAll('.license-details-close-modal')
 
-    const cards = document.querySelectorAll('.card-header-icon')
-    const tabContent = document.querySelectorAll('.tab-container')
-
-    document.querySelectorAll('.nav li').forEach((li, index) => {
-        li.addEventListener('click', (event) => {
-         if (!li.classList.contains('is-active')) {
-            document.querySelectorAll('li').forEach(listItem => {
-                listItem.classList.remove('is-active')
+    detailBtns.forEach((btn, index) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            modalCards.forEach(modalcard => {
+              modalcard.style.display= 'none'
             })
-            li.classList.add('is-active')
-         }
-
-         tabContent.forEach(section => {
-            section.classList.add('is-hidden')
-         })
-         tabContent[index].classList.remove('is-hidden')
+            modalCards[index].style.display= 'block'
         })
     })
 
-    cards.forEach(card => {
-      card.addEventListener('click', (event) => {
-        event.preventDefault()
-        content = card.parentElement.parentElement.parentElement.querySelector('.card-content').classList
-        lineTag= card.parentElement.querySelector('.lines').classList
-        if (content.contains('is-hidden')) {
-            cards.forEach(eachcard => {
-                eachcard.parentElement.querySelector('.lines').classList.remove('is-hidden')
-                eachcard.parentElement.parentElement.parentElement.querySelector('.card-content').classList.add('is-hidden')
-            })
-            content.remove('is-hidden')
-            lineTag.add('is-hidden')
-        } else {
-            content.add('is-hidden')
-            lineTag.remove('is-hidden')
-        }
-
-        let key = card.getAttribute('data-key')
-        let start_line = card.getAttribute('data-startline')
-        let end_line = card.getAttribute('data-endline')
-
-        setDetectedValues(key, start_line, end_line);
-      })
+    closeModalBtns.forEach((btn, index) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            modalCards[index].style.display = 'none'
+        })
     })
-
-    // Range(startRow, startColumn, endRow, endColumn)
-    const Range = require("ace/range").Range
-
-    let setDetectedValues = (key, start_line, end_line) => {
-      let annotations = [];
-      removeAllMarkers();
-
-        // Indexes a 0-based in ace.js
-        let start_row = start_line - 1;
-        let start_column = 0;
-        let end_row = end_line - 1;
-        let end_column = 10000;
-
-        let range = new Range(start_row, start_column, end_row, end_column);
-        editor.session.addMarker(range, "ace-marker", "line");
-        annotations.push({
-          row: start_row,
-          column: 0,
-          text: key,
-          type: "info",
-        });
-
-      editor.getSession().setAnnotations(annotations);
-      editor.renderer.scrollToLine(start_row);
-    }
-
-    function removeAllMarkers() {
-      let session = editor.getSession();
-      let markers = session.getMarkers();
-        for (const [key, value] of Object.entries(markers)) {
-          session.removeMarker(value.id);
-        }
-    }
 </script>
 {% endblock %}

@@ -1,3 +1,2 @@
-<a href="https://github.com/nexB/scancode.io/issues/new?labels=bug&title=SCIO+License+Detection+Error&body=Scancode.io+detected+incorrect+or+false+license%0A```python%0A{{ license }}```%0A" target="_blank">
-    <span class="tag is-danger is-light">Report <i class="fa fa-flag ml-2"></i></span>
-</a>
+<a class="has-text-danger" href="https://github.com/nexB/scancode.io/issues/new?labels=bug&title=License+detection+error+as+`{{ license.license_expression|pprint }}`
+&body=Detection+level+details%0A```python%0A{%0A%20%20%20%20score+:+{{ license.score }}+%0A%20%20%20%20start_line+:+{{ license.start_line }}+%0A%20%20%20%20end_line+:+{{ license.end_line }}+%0A%20%20%20%20matched_length+:+{{ license.matched_length }}+%0A%20%20%20%20match_coverage+:+{{ license.match_coverage }}+%0A%20%20%20%20rule_identifier+:+{{ license.rule_identifier }}%0A}%0A```+%0A%0AMatched+Text%0A```%0A{{ license.matched_text }}%0A```+%0A%0AInput+Text%0A```%0A{{ license.matched_text }}%0A```" target="_blank">Report on Github</a>
