@@ -47,6 +47,8 @@ from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
+from scanpipe.api.serializers import DiscoveredDependencySerializer
+from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -56,6 +58,7 @@ from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -406,6 +409,11 @@ class ProjectListView(
             "sort_name": "discoveredpackages_count",
         },
         {
+            "field_name": "discovereddependencies",
+            "label": "Dependencies",
+            "sort_name": "discovereddependencies_count",
+        },
+        {
             "field_name": "codebaseresources",
             "label": "Resources",
             "sort_name": "codebaseresources_count",
@@ -432,6 +440,7 @@ class ProjectListView(
             .with_counts(
                 "codebaseresources",
                 "discoveredpackages",
+                "discovereddependencies",
                 "projecterrors",
             )
         )
@@ -554,6 +563,11 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             "type",
             "license_expression",
         )
+        dependencies = project.discovereddependencies.all().only(
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+        )
 
         file_languages = files.values_list("programming_language", flat=True)
         file_mime_types = files.values_list("mime_type", flat=True)
@@ -570,6 +584,11 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
+
+        dependency_package_type = dependencies.values_list("type", flat=True)
+        dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
+        dependency_is_optional = dependencies.values_list("is_optional", flat=True)
+        dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
 
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
@@ -606,6 +625,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
+                "dependency_package_type": self.get_summary(dependency_package_type),
+                "dependency_is_runtime": self.get_summary(dependency_is_runtime),
+                "dependency_is_optional": self.get_summary(dependency_is_optional),
+                "dependency_is_resolved": self.get_summary(dependency_is_resolved),
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
@@ -868,6 +891,33 @@ class DiscoveredPackageListView(
     ]
 
 
+class DiscoveredDependencyListView(
+    ConditionalLoginRequired,
+    PrefetchRelatedViewMixin,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
+    PaginatedFilterView,
+):
+    model = DiscoveredDependency
+    filterset_class = DependencyFilterSet
+    template_name = "scanpipe/dependency_list.html"
+    paginate_by = 100
+    prefetch_related = ["for_package", "datafile_resource"]
+    table_columns = [
+        "package_url",
+        "package_type",
+        "extracted_requirement",
+        "scope",
+        "is_runtime",
+        "is_optional",
+        "is_resolved",
+        "for_package",
+        "datafile_resource",
+        "datasource_id",
+    ]
+
+
 class ProjectErrorListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
@@ -1000,10 +1050,9 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_resources.html",
         },
         "dependencies": {
-            "fields": [
-                {"field_name": "dependencies", "render_func": render_as_yaml},
-            ],
+            "fields": ["dependencies"],
             "icon_class": "fas fa-layer-group",
+            "template": "scanpipe/tabset/tab_dependencies.html",
         },
         "others": {
             "fields": [
@@ -1026,6 +1075,51 @@ class DiscoveredPackageDetailsView(
             "icon_class": "fas fa-database",
         },
     }
+
+
+class DiscoveredDependencyDetailsView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    PrefetchRelatedViewMixin,
+    generic.DetailView,
+):
+    model = DiscoveredDependency
+    template_name = "scanpipe/dependency_detail.html"
+    prefetch_related = ["for_package", "datafile_resource"]
+    tabset = {
+        "essentials": {
+            "fields": [
+                "dependency_uid",
+                "package_url",
+                "package_type",
+                "extracted_requirement",
+                "scope",
+                "is_runtime",
+                "is_optional",
+                "is_resolved",
+                "for_package_uid",
+                "datafile_path",
+                "datasource_id",
+            ],
+            "icon_class": "fas fa-info-circle",
+        },
+        "For package": {
+            "fields": ["for_package"],
+            "icon_class": "fas fa-layer-group",
+            "template": "scanpipe/tabset/tab_for_package.html",
+        },
+        "Datafile resource": {
+            "fields": ["datafile_resource"],
+            "icon_class": "fas fa-folder-open",
+            "template": "scanpipe/tabset/tab_datafile_resource.html",
+        },
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["dependency_data"] = DiscoveredDependencySerializer(self.object).data
+        return context
 
 
 @conditional_login_required

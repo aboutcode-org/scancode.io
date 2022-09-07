@@ -42,6 +42,11 @@ urlpatterns = [
         name="package_detail",
     ),
     path(
+        "project/<uuid:uuid>/dependencies/<int:pk>/",
+        views.DiscoveredDependencyDetailsView.as_view(),
+        name="dependency_detail",
+    ),
+    path(
         "project/<uuid:uuid>/resources/",
         views.CodebaseResourceListView.as_view(),
         name="project_resources",
@@ -50,6 +55,11 @@ urlpatterns = [
         "project/<uuid:uuid>/packages/",
         views.DiscoveredPackageListView.as_view(),
         name="project_packages",
+    ),
+    path(
+        "project/<uuid:uuid>/dependencies/",
+        views.DiscoveredDependencyListView.as_view(),
+        name="project_dependencies",
     ),
     path(
         "project/<uuid:uuid>/errors/",

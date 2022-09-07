@@ -145,7 +145,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/distroless/base-files@11.1%2Bdeb11u3?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "admin"
@@ -181,7 +180,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/distroless/libc6@2.31-13%2Bdeb11u3?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "libs"
@@ -219,7 +217,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/distroless/libssl1.1@1.1.1n-0%2Bdeb11u2?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "libs"
@@ -257,7 +254,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/distroless/netbase@6.3?architecture=all&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "admin"
@@ -293,7 +289,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/distroless/openssl@1.1.1n-0%2Bdeb11u2?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "utils"
@@ -329,7 +324,6 @@
       },
       "missing_resources": [],
       "modified_resources": [],
-      "dependencies": [],
       "package_uid": "pkg:deb/distroless/tzdata@2021a-1%2Bdeb11u4?architecture=all&uuid=fixed-uid-done-for-testing-5642512d1758",
       "keywords": [
         "localization"
@@ -337,6 +331,7 @@
       "source_packages": []
     }
   ],
+  "dependencies": [],
   "files": [
     {
       "for_packages": [],
