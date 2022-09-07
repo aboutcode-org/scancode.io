@@ -208,8 +208,8 @@ def get_licenses(
 
 def get_percentage_of_license_text(query, matches):
     """
-    Return percentage of license text matched in ``query`` Query by a list of ``matches``
-    percentage is a float between 0 and 100.
+    Return percentage of license text matched in ``query`` Query by
+    a list of ``matches`` percentage is a float between 0 and 100.
     """
 
     # TODO: percentage of license text should be done by scancode-toolkit.
@@ -274,7 +274,9 @@ def build_colors(matches_by_id):
     .matched3 {background-color: rgba(220, 90, 30, 0.3);}
     """
     return [
-        f".matched{mid} {{background-color: rgba({(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255}, 0.3);}}"
+        f""".matched{mid} {{background-color: rgba(
+        {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255},
+        0.3);}}"""
         for mid in matches_by_id
     ]
 

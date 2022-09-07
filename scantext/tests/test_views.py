@@ -19,6 +19,10 @@ from scantext.views import get_rule_text_url
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
+SCANCODE_BASE_URL = (
+    "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data"
+)
+
 
 class TestScantextViews(FileBasedTesting):
     test_data_dir = TEST_DATA_DIR
@@ -67,6 +71,6 @@ class TestScantextViews(FileBasedTesting):
         rule1 = models.Rule(license_expression="apache-2.0 or mit", stored_text="1")
         rule1.identifier = "apache-2.0_or_mit_48.RULE"
         result = get_rule_text_url(rule=rule1)
-        expected = "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_or_mit_48.RULE"
+        expected = SCANCODE_BASE_URL + "/rules/apache-2.0_or_mit_48.RULE"
 
         assert result == expected
