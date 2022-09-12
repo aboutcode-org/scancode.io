@@ -23,12 +23,16 @@
 from django.apps import apps
 from django.core.validators import EMPTY_VALUES
 from django.db import models
+from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils.http import urlencode
+from django.utils.translation import gettext as _
 
 import django_filters
 from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -115,18 +119,31 @@ class BulmaLinkWidget(LinkWidget):
     extra_css_class = ""
 
     def render_option(self, name, selected_choices, option_value, option_label):
-        option = super().render_option(
-            name, selected_choices, option_value, option_label
-        )
-        css_class = str(self.extra_css_class)
+        option_value = str(option_value)
+        if option_label == BLANK_CHOICE_DASH[0][1]:
+            option_label = _("All")
 
-        selected_class = ' class="selected"'
-        if selected_class in option:
-            option = option.replace(selected_class, "")
+        data = self.data.copy()
+        data[name] = option_value
+        selected = data == self.data or option_value in selected_choices
+
+        css_class = str(self.extra_css_class)
+        if selected:
             css_class += " is-active"
 
-        option = option.replace("<a", f'<a class="{css_class}"')
-        return option
+        try:
+            url = data.urlencode()
+        except AttributeError:
+            url = urlencode(data, doseq=True)
+
+        return self.option_string().format(
+            css_class=css_class,
+            query_string=url,
+            label=str(option_label),
+        )
+
+    def option_string(self):
+        return '<li><a href="?{query_string}" class="{css_class}">{label}</a></li>'
 
 
 class BulmaDropdownWidget(BulmaLinkWidget):
@@ -139,12 +156,27 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
-        fields=["created_date", "name"],
+        fields=[
+            "created_date",
+            "name",
+            "discoveredpackages_count",
+            "discovereddependencies_count",
+            "codebaseresources_count",
+            "projecterrors_count",
+        ],
         empty_label="Newest",
         choices=(
             ("created_date", "Oldest"),
-            ("name", "Name (a-Z)"),
-            ("-name", "Name (Z-a)"),
+            ("name", "Name (A-z)"),
+            ("-name", "Name (z-A)"),
+            ("-discoveredpackages_count", "Packages (+)"),
+            ("discoveredpackages_count", "Packages (-)"),
+            ("-discovereddependencies_count", "Dependencies (+)"),
+            ("discovereddependencies_count", "Dependencies (-)"),
+            ("-codebaseresources_count", "Resources (+)"),
+            ("codebaseresources_count", "Resources (-)"),
+            ("-projecterrors_count", "Errors (+)"),
+            ("projecterrors_count", "Errors (-)"),
         ),
         widget=BulmaDropdownWidget,
     )
@@ -233,6 +265,21 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search", field_name="path", lookup_expr="icontains"
     )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "path",
+            "status",
+            "type",
+            "size",
+            "name",
+            "extension",
+            "programming_language",
+            "mime_type",
+            "tag",
+            "compliance_alert",
+        ],
+    )
     in_package = InPackageFilter(label="In a Package")
 
     class Meta:
@@ -280,6 +327,14 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "license_expression",
+            "copyright",
+            "primary_language",
+        ],
+    )
     purl = PackageURLFilter(label="Package URL")
 
     class Meta:
@@ -313,9 +368,41 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ]
 
 
+class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    purl = PackageURLFilter(label="Package URL")
+
+    class Meta:
+        model = DiscoveredDependency
+        fields = [
+            "search",
+            "purl",
+            "dependency_uid",
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+            "datasource_id",
+        ]
+
+
 class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search", field_name="message", lookup_expr="icontains"
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "model",
+        ],
     )
 
     class Meta:

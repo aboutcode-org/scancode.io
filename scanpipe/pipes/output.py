@@ -82,6 +82,9 @@ def to_csv(project):
 
     querysets = [
         project.discoveredpackages.all(),
+        project.discovereddependencies.all().prefetch_related(
+            "for_package", "datafile_resource"
+        ),
         project.codebaseresources.without_symlinks(),
     ]
 
@@ -125,6 +128,7 @@ class JSONResultsGenerator:
         yield "{\n"
         yield from self.serialize(label="headers", generator=self.get_headers)
         yield from self.serialize(label="packages", generator=self.get_packages)
+        yield from self.serialize(label="dependencies", generator=self.get_dependencies)
         yield from self.serialize(label="files", generator=self.get_files, latest=True)
         yield "}"
 
@@ -178,6 +182,24 @@ class JSONResultsGenerator:
         for obj in packages.iterator():
             yield self.encode(DiscoveredPackageSerializer(obj).data)
 
+    def get_dependencies(self, project):
+        from scanpipe.api.serializers import DiscoveredDependencySerializer
+
+        dependencies = (
+            project.discovereddependencies.all()
+            .prefetch_related("for_package", "datafile_resource")
+            .order_by(
+                "type",
+                "namespace",
+                "name",
+                "version",
+                "datasource_id",
+            )
+        )
+
+        for obj in dependencies.iterator():
+            yield self.encode(DiscoveredDependencySerializer(obj).data)
+
     def get_files(self, project):
         from scanpipe.api.serializers import CodebaseResourceSerializer
 
@@ -203,7 +225,15 @@ def to_json(project):
     return output_file
 
 
-def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
+model_name_to_worksheet_name = {
+    "discoveredpackage": "PACKAGES",
+    "discovereddependency": "DEPENDENCIES",
+    "codebaseresource": "RESOURCES",
+    "projecterror": "ERRORS",
+}
+
+
+def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     """
     Adds a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
@@ -217,7 +247,8 @@ def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model
-    model_name = model_class._meta.verbose_name_plural.title()
+    model_name = model_class._meta.model_name
+    worksheet_name = model_name_to_worksheet_name.get(model_name)
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
@@ -225,7 +256,7 @@ def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
     return _add_xlsx_worksheet(
         workbook=workbook,
-        worksheet_name=model_name,
+        worksheet_name=worksheet_name,
         rows=queryset,
         fields=fields,
     )
@@ -372,12 +403,16 @@ def to_xlsx(project):
 
     querysets = [
         project.discoveredpackages.all(),
+        project.discovereddependencies.all().prefetch_related(
+            "for_package", "datafile_resource"
+        ),
         project.codebaseresources.without_symlinks(),
         project.projecterrors.all(),
     ]
 
     with xlsxwriter.Workbook(output_file) as workbook:
         for queryset in querysets:
-            _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
+            name = ""
+            queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
     return output_file

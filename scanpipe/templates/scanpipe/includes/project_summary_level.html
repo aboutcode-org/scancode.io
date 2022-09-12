@@ -18,6 +18,22 @@
   </div>
   <div class="level-item has-text-centered">
     <div>
+      <p class="heading">Dependencies</p>
+      <p class="{{ title_class }}">
+        {% if project.dependency_count %}
+          <a href="{% url 'project_dependencies' project.uuid %}">
+            {{ project.dependency_count|intcomma }}
+          </a>
+        {% else %}
+          <span>
+            {{ project.dependency_count|intcomma }}
+          </span>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
       <p class="heading">Resources</p>
       <p class="{{ title_class }}">
         {% if project.resource_count %}

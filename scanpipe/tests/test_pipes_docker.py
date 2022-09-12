@@ -30,6 +30,7 @@ from django.test import TestCase
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import docker
+from scanpipe.pipes.input import copy_inputs
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -122,3 +123,18 @@ class ScanPipeDockerPipesTest(TestCase):
             self.data_path / "image-with-symlinks/minitag.tar-expected-data-2.json"
         )
         self.assertResultsEqual(expected_location, results, regen=False)
+
+    def test_pipes_docker_get_tarballs_from_inputs(self):
+        p1 = Project.objects.create(name="Analysis")
+        _, tar = tempfile.mkstemp(suffix=".tar")
+        _, tar_gz = tempfile.mkstemp(suffix=".tar.gz")
+        _, tgz = tempfile.mkstemp(suffix=".tgz")
+        _, zip = tempfile.mkstemp(suffix=".zip")
+        _, rar = tempfile.mkstemp(suffix=".rar")
+        copy_inputs([tar, tar_gz, tgz, zip, rar], p1.input_path)
+
+        expected_extensions = ("tar", "tar.gz", "tgz")
+        tarballs = docker.get_tarballs_from_inputs(project=p1)
+        self.assertEqual(3, len(tarballs))
+        for path in tarballs:
+            self.assertTrue(path.name.endswith(expected_extensions))

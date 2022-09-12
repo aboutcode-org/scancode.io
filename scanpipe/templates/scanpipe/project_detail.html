@@ -120,6 +120,30 @@
       </div>
     {% endif %}
 
+    {% if project.dependency_count %}
+      <hr class="mx-5">
+      <h3 class="title is-4 has-text-centered">
+        Discovered Dependencies
+        <span class="tag is-link is-light is-rounded ml-1">{{ project.dependency_count|intcomma }}</span>
+      </h3>
+      <div class="columns is-gapless">
+        <div class="column">
+          <div id="dependency_package_type_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="package_type"></div>
+        </div>
+        <div class="column">
+          <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_runtime"></div>
+        </div>
+      </div>
+      <div class="columns is-gapless">
+        <div class="column">
+          <div id="dependency_is_optional_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_optional"></div>
+        </div>
+        <div class="column">
+          <div id="dependency_is_resolved_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_resolved"></div>
+        </div>
+      </div>
+    {% endif %}
+
     {% if project.resource_count %}
       <hr class="mx-5">
       <h3 id="resource-charts" class="title is-4 has-text-centered mb-3">
@@ -177,6 +201,12 @@
   {% if project.package_count %}
     {{ package_licenses|json_script:"package_licenses" }}
     {{ package_types|json_script:"package_types" }}
+  {% endif %}
+  {% if project.dependency_count %}
+    {{ dependency_package_type|json_script:"dependency_package_type" }}
+    {{ dependency_is_runtime|json_script:"dependency_is_runtime" }}
+    {{ dependency_is_optional|json_script:"dependency_is_optional" }}
+    {{ dependency_is_resolved|json_script:"dependency_is_resolved" }}
   {% endif %}
   <script>
     hljs.highlightAll();
@@ -249,6 +279,11 @@
     // Packages
     makeChart("package_types", "#package_type_chart", "Package\nType");
     makeChart("package_licenses", "#package_license_chart", "Package\nLicense\nExpression");
+    // Dependencies
+    makeChart("dependency_package_type", "#dependency_package_type_chart", "Package\nType");
+    makeChart("dependency_is_runtime", "#dependency_is_runtime_chart", "Runtime\nDependencies");
+    makeChart("dependency_is_optional", "#dependency_is_optional_chart", "Optional\nDependencies");
+    makeChart("dependency_is_resolved", "#dependency_is_resolved_chart", "Resolved\nDependencies");
     // Resources
     makeChart("programming_languages", "#programming_language_chart", "Programming\nLanguage");
     makeChart("mime_types", "#mime_type_chart", "Mime\nType");

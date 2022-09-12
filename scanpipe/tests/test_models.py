@@ -46,6 +46,7 @@ from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -55,6 +56,8 @@ from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import dependency_data1
+from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -433,6 +436,24 @@ class ScanPipeModelsTest(TestCase):
 
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
+
+    def test_scanpipe_project_queryset_with_counts(self):
+        self.project_asgiref.add_error("error 1", "model")
+        self.project_asgiref.add_error("error 2", "model")
+
+        project_qs = Project.objects.with_counts(
+            "codebaseresources",
+            "discoveredpackages",
+            "projecterrors",
+        )
+
+        project = project_qs.get(pk=self.project_asgiref.pk)
+        self.assertEqual(18, project.codebaseresources_count)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages_count)
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(2, project.projecterrors_count)
+        self.assertEqual(2, project.projecterrors.count())
 
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
@@ -1198,6 +1219,33 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
+        # Test parent-related methods
+        asgiref_resource = self.project_asgiref.codebaseresources.get(
+            path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
+        )
+        expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
+        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertTrue(asgiref_resource.has_parent())
+        expected_parent = self.project_asgiref.codebaseresources.get(
+            path="asgiref-3.3.0.whl-extract/asgiref"
+        )
+        self.assertEqual(expected_parent, asgiref_resource.parent())
+
+        # Test sibling-related methods
+        expected_siblings = [
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+        ]
+        asgiref_resource_siblings = [r.path for r in asgiref_resource.siblings()]
+        self.assertEqual(sorted(expected_siblings), sorted(asgiref_resource_siblings))
+
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_send_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")
@@ -1213,10 +1261,6 @@ class ScanPipeModelsTest(TestCase):
         webhook.send(pipeline_run=run1)
         webhook.refresh_from_db()
         self.assertTrue(webhook.sent)
-
-    def test_scanpipe_discovered_package_model_purl_fields(self):
-        expected = ("type", "namespace", "name", "version", "qualifiers", "subpath")
-        self.assertEqual(expected, DiscoveredPackage.purl_fields())
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
@@ -1269,6 +1313,38 @@ class ScanPipeModelsTest(TestCase):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
         self.assertEqual(40, len(basic_user.auth_token.key))
+
+    def test_scanpipe_discovered_dependency_model_update_from_data(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        resource = CodebaseResource.objects.create(
+            project=self.project1, path="data.tar.gz-extract/Gemfile.lock"
+        )
+        dependency = DiscoveredDependency.create_from_data(
+            self.project1, dependency_data2
+        )
+
+        new_data = {
+            "name": "new name",
+            "extracted_requirement": "new requirement",
+            "scope": "new scope",
+            "unknown_field": "value",
+        }
+        updated_fields = dependency.update_from_data(new_data)
+        self.assertEqual(["extracted_requirement"], updated_fields)
+
+        dependency.refresh_from_db()
+        # PURL field, not updated
+        self.assertEqual(dependency_data2["name"], dependency.name)
+        # Empty field, updated
+        self.assertEqual(
+            new_data["extracted_requirement"], dependency.extracted_requirement
+        )
+        # Already a value, not updated
+        self.assertEqual(dependency_data2["scope"], dependency.scope)
+
+        updated_fields = dependency.update_from_data(new_data, override=True)
+        self.assertEqual(["scope"], updated_fields)
+        self.assertEqual(new_data["scope"], dependency.scope)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
@@ -1415,6 +1491,54 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         self.assertEqual(project_error_count, ProjectError.objects.count())
+
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
+    def test_scanpipe_discovered_dependency_model_create_from_data(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        package = DiscoveredPackage.create_from_data(project1, package_data1)
+        resource = CodebaseResource.objects.create(
+            project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
+        )
+        dependency = DiscoveredDependency.create_from_data(
+            project1, dependency_data1, strip_datafile_path_root=False
+        )
+        self.assertEqual(project1, dependency.project)
+        self.assertEqual("pkg:pypi/dask", dependency.purl)
+        self.assertEqual("dask<2023.0.0,>=2022.6.0", dependency.extracted_requirement)
+        self.assertEqual("install", dependency.scope)
+        self.assertTrue(dependency.is_runtime)
+        self.assertFalse(dependency.is_optional)
+        self.assertFalse(dependency.is_resolved)
+        self.assertEqual(
+            "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+            dependency.dependency_uid,
+        )
+        self.assertEqual(
+            "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b",
+            dependency.for_package_uid,
+        )
+        self.assertEqual(
+            "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            dependency.datafile_path,
+        )
+        self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
+
+        # Test field validation when using create_from_data
+        dependency_count = DiscoveredDependency.objects.count()
+        incomplete_data = dict(dependency_data1)
+        incomplete_data["dependency_uid"] = ""
+        self.assertIsNone(
+            DiscoveredDependency.create_from_data(project1, incomplete_data)
+        )
+        self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("DiscoveredDependency", error.model)
+        expected_message = "No values for the following required fields: dependency_uid"
+        self.assertEqual(expected_message, error.message)
+        self.assertEqual(dependency_data1["purl"], error.details["purl"])
+        self.assertEqual("", error.details["dependency_uid"])
+        self.assertEqual("", error.traceback)
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")

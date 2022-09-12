@@ -22,7 +22,6 @@
 
 import uuid
 
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
@@ -96,7 +95,7 @@ class ScanCodeIOAuthTest(TestCase):
         self.assertContains(response, expected, html=True)
         expected = f'<a class="navbar-item" href="{profile_url}">Profile settings</a>'
         self.assertContains(response, expected, html=True)
-        eexpected = f'<a class="navbar-item" href="{logout_url}">Sign out</a>'
+        expected = f'<a class="navbar-item" href="{logout_url}">Sign out</a>'
         self.assertContains(response, expected, html=True)
 
     def test_scancodeio_auth_logout_view(self):

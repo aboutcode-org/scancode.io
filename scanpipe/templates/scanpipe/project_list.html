@@ -1,6 +1,8 @@
 {% extends "scanpipe/base.html" %}
 {% load humanize %}
 
+{% block title %}ScanCode.io: Projects{% endblock %}
+
 {% block extrahead %}
   <style>
     ul#id_is_archived {display: inline-flex;}
@@ -42,7 +44,7 @@
       </div>
 
       {% if object_list %}
-        {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
+        {% include 'scanpipe/includes/project_list_table.html' with projects=object_list %}
       {% else %}
         <div class="tile is-ancestor">
           <div class="tile is-parent">

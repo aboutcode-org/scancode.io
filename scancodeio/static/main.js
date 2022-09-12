@@ -72,8 +72,8 @@ function setupTabs() {
 
       activeLink.classList.remove('is-active');
       $el.parentNode.classList.add('is-active');
-      activeTabContent.classList.remove('is-active');
-      targetTabContent.classList.add('is-active');
+      if (activeTabContent) activeTabContent.classList.remove('is-active');
+      if (targetTabContent) targetTabContent.classList.add('is-active');
     });
   });
 }

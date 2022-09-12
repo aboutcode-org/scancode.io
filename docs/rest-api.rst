@@ -188,7 +188,7 @@ The project details view returns all information available about a project.
         "codebase_resources_summary": {
             "application-package": 1
         },
-        "discovered_package_summary": {
+        "discovered_packages_summary": {
             "total": 1,
             "with_missing_resources": 0,
             "with_modified_resources": 0

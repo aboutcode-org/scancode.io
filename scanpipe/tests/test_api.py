@@ -38,16 +38,19 @@ from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
 
 from scanpipe.api.serializers import CodebaseResourceSerializer
+from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
+from scanpipe.tests import dependency_data1
 from scanpipe.tests import package_data1
 
 
@@ -59,9 +62,13 @@ class ScanPipeAPITest(TransactionTestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
         self.resource1 = CodebaseResource.objects.create(
-            project=self.project1, path="filename.ext"
+            project=self.project1,
+            path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         )
         self.discovered_package1 = self.resource1.create_and_add_package(package_data1)
+        self.discovered_dependency1 = DiscoveredDependency.create_from_data(
+            self.project1, dependency_data1
+        )
 
         self.project_list_url = reverse("project-list")
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
@@ -82,6 +89,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertNotContains(response, "error_count")
         self.assertNotContains(response, "resource_count")
         self.assertNotContains(response, "package_count")
+        self.assertNotContains(response, "dependency_count")
 
     def test_scanpipe_api_project_list_filters(self):
         project2 = Project.objects.create(name="pro2ject", is_archived=True)
@@ -153,6 +161,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(0, response.data["error_count"])
         self.assertEqual(1, response.data["resource_count"])
         self.assertEqual(1, response.data["package_count"])
+        self.assertEqual(1, response.data["dependency_count"])
 
         expected = {"": 1}
         self.assertEqual(expected, response.data["codebase_resources_summary"])
@@ -161,7 +170,14 @@ class ScanPipeAPITest(TransactionTestCase):
             "with_missing_resources": 0,
             "with_modified_resources": 0,
         }
-        self.assertEqual(expected, response.data["discovered_package_summary"])
+        self.assertEqual(expected, response.data["discovered_packages_summary"])
+        expected = {
+            "total": 1,
+            "is_runtime": 1,
+            "is_optional": 0,
+            "is_resolved": 0,
+        }
+        self.assertEqual(expected, response.data["discovered_dependencies_summary"])
 
         self.project1.add_input_source(filename="file1", source="uploaded")
         self.project1.add_input_source(filename="file2", source="https://download.url")
@@ -269,9 +285,10 @@ class ScanPipeAPITest(TransactionTestCase):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))
 
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
+        self.assertEqual(1, len(results["dependencies"]))
         self.assertEqual(1, len(results["headers"]))
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
@@ -282,9 +299,10 @@ class ScanPipeAPITest(TransactionTestCase):
         response_value = response.getvalue()
         results = json.loads(response_value)
 
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
+        self.assertEqual(1, len(results["dependencies"]))
         self.assertEqual(1, len(results["headers"]))
         self.assertEqual(1, len(results["files"]))
         self.assertEqual(1, len(results["packages"]))
@@ -299,7 +317,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response_value = response.getvalue()
         results = json.loads(response_value)
-        expected = ["files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages"]
         self.assertEqual(expected, sorted(results.keys()))
 
     def test_scanpipe_api_project_action_pipelines(self):
@@ -315,9 +333,12 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, len(response.data))
         resource = response.data[0]
         self.assertEqual(
-            ["pkg:deb/debian/adduser@3.118?arch=all"], resource["for_packages"]
+            ["pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"],
+            resource["for_packages"],
         )
-        self.assertEqual("filename.ext", resource["path"])
+        self.assertEqual(
+            "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO", resource["path"]
+        )
 
         self.assertEqual("", resource["compliance_alert"])
         self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR
@@ -621,14 +642,18 @@ class ScanPipeAPITest(TransactionTestCase):
             DiscoveredPackageSerializer, get_model_serializer(DiscoveredPackage)
         )
         self.assertEqual(
+            DiscoveredDependencySerializer, get_model_serializer(DiscoveredDependency)
+        )
+        self.assertEqual(
             CodebaseResourceSerializer, get_model_serializer(CodebaseResource)
         )
         with self.assertRaises(LookupError):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(31, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(27, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(30, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(11, len(get_serializer_fields(DiscoveredDependency)))
+        self.assertEqual(28, len(get_serializer_fields(CodebaseResource)))
 
         with self.assertRaises(LookupError):
             get_serializer_fields(None)

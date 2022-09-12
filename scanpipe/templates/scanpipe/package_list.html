@@ -1,5 +1,7 @@
 {% extends "scanpipe/base.html" %}
 
+{% block title %}ScanCode.io: {{ project.name }} - Packages{% endblock %}
+
 {% block content %}
   <div id="content-header" class="container is-max-desktop mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
@@ -16,14 +18,7 @@
   <div class="container is-fluid mb-3">
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        <thead>
-          <tr>
-            <th>Package URL</th>
-            <th>License expression</th>
-            <th>Copyright</th>
-            <th>Resources</th>
-          </tr>
-        </thead>
+        {% include 'scanpipe/includes/list_view_thead.html' %}
         <tbody>
           {% for package in object_list %}
             <tr class="break-word">
@@ -35,6 +30,9 @@
               </td>
               <td title="{{ package.copyright }}">
                 {{ package.copyright|truncatechars:150|linebreaksbr }}
+              </td>
+              <td>
+                {{ package.primary_language }}
               </td>
               <td class="is-clipped-list">
                 <ul>

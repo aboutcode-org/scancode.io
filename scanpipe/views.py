@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import io
 import json
 from collections import Counter
 from contextlib import suppress
@@ -33,18 +34,22 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
+from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
+from django.utils.http import urlencode
 from django.views import generic
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 
 import saneyaml
+import xlsxwriter
 from django_filters.views import FilterView
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
-from scanpipe.api.serializers import DiscoveredPackageSerializer
+from scanpipe.api.serializers import DiscoveredDependencySerializer
+from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
@@ -54,6 +59,7 @@ from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import InputSource
 from scanpipe.models import Project
@@ -160,6 +166,212 @@ class ProjectViewMixin:
     slug_field = "uuid"
 
 
+def render_as_yaml(value):
+    if value:
+        return saneyaml.dump(value, indent=2)
+
+
+class TabSetMixin:
+    """
+    tabset = {
+        "<tab_label>": {
+            "fields": [
+                "<field_name>",
+                "<field_name>",
+                {
+                    "field_name": "<field_name>",
+                    "label": None,
+                    "render_func": None,
+                },
+            ]
+            "template": "",
+            "icon_class": "",
+        }
+    }
+    """
+
+    tabset = {}
+
+    def get_tabset_data(self):
+        """
+        Returns the tabset data structure used in template rendering.
+        """
+        tabset_data = {}
+
+        for label, tab_definition in self.tabset.items():
+            tab_data = {
+                "icon_class": tab_definition.get("icon_class"),
+                "template": tab_definition.get("template"),
+                "fields": self.get_fields_data(tab_definition.get("fields")),
+            }
+            tabset_data[label] = tab_data
+
+        return tabset_data
+
+    def get_fields_data(self, fields):
+        """
+        Returns the tab fields including their values for display.
+        """
+        fields_data = {}
+
+        for field_definition in fields:
+            # Support for single "field_name" entry in fields list.
+            if not isinstance(field_definition, dict):
+                field_name = field_definition
+                field_data = {"field_name": field_name}
+            else:
+                field_name = field_definition.get("field_name")
+                field_data = field_definition.copy()
+
+            if "label" not in field_data:
+                field_data["label"] = self.get_field_label(field_name)
+
+            render_func = field_data.get("render_func")
+            field_data["value"] = self.get_field_value(field_name, render_func)
+
+            fields_data[field_name] = field_data
+
+        return fields_data
+
+    def get_field_value(self, field_name, render_func=None):
+        """
+        Returns the formatted value for the given `field_name` on the current object.
+        """
+        field_value = getattr(self.object, field_name, None)
+
+        if field_value and render_func:
+            return render_func(field_value)
+
+        if isinstance(field_value, list):
+            field_value = "\n".join(field_value)
+
+        return field_value
+
+    @staticmethod
+    def get_field_label(field_name):
+        """
+        Returns a formatted label for display based on the `field_name`.
+        """
+        return field_name.replace("_", " ").capitalize().replace("url", "URL")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tabset_data"] = self.get_tabset_data()
+        return context
+
+
+class TableColumnsMixin:
+    """
+    table_columns = [
+        "<field_name>",
+        "<field_name>",
+        {
+            "field_name": "<field_name>",
+            "label": None,
+            "condition": None,
+            "sort_name": None,
+            "css_class": None,
+        },
+    ]
+    """
+
+    table_columns = []
+
+    def get_columns_data(self):
+        """
+        Returns the columns data structure used in template rendering.
+        """
+        columns_data = []
+
+        sortable_fields = []
+        active_sort = ""
+        filterset = getattr(self, "filterset", None)
+        if filterset and "sort" in filterset.filters:
+            sortable_fields = list(filterset.filters["sort"].param_map.keys())
+            active_sort = filterset.data.get("sort", "")
+
+        for column_definition in self.table_columns:
+            # Support for single "field_name" entry in columns list.
+            if not isinstance(column_definition, dict):
+                field_name = column_definition
+                column_data = {"field_name": field_name}
+            else:
+                field_name = column_definition.get("field_name")
+                column_data = column_definition.copy()
+
+            condition = column_data.get("condition", None)
+            if condition is not None and not bool(condition):
+                continue
+
+            if "label" not in column_data:
+                column_data["label"] = self.get_field_label(field_name)
+
+            sort_name = column_data.get("sort_name") or field_name
+            if sort_name in sortable_fields:
+                sort_direction = ""
+
+                if active_sort.endswith(sort_name):
+                    if not active_sort.startswith("-"):
+                        sort_direction = "-"
+
+                column_data["sort_direction"] = sort_direction
+                query_dict = self.request.GET.copy()
+                query_dict["sort"] = f"{sort_direction}{sort_name}"
+                column_data["sort_query"] = query_dict.urlencode()
+
+            columns_data.append(column_data)
+
+        return columns_data
+
+    @staticmethod
+    def get_field_label(field_name):
+        """
+        Returns a formatted label for display based on the `field_name`.
+        """
+        return field_name.replace("_", " ").capitalize().replace("url", "URL")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["columns_data"] = self.get_columns_data()
+        return context
+
+
+class ExportXLSXMixin:
+    """
+    Adds the ability to export the current filtered QuerySet of a `FilterView` into
+    the XLSX format.
+    """
+
+    export_xlsx_query_param = "export_xlsx"
+
+    def export_xlsx_file_response(self):
+        filtered_qs = self.filterset.qs
+        output_file = io.BytesIO()
+        with xlsxwriter.Workbook(output_file) as workbook:
+            output.queryset_to_xlsx_worksheet(filtered_qs, workbook)
+
+        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+        output_file.seek(0)
+        return FileResponse(output_file, as_attachment=True, filename=filename)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        query_dict = self.request.GET.copy()
+        query_dict[self.export_xlsx_query_param] = True
+        context["export_xlsx_url_query"] = query_dict.urlencode()
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+
+        if request.GET.get(self.export_xlsx_query_param):
+            return self.export_xlsx_file_response()
+
+        return response
+
+
 class PaginatedFilterView(FilterView):
     """
     Adds a `url_params_without_page` value in the template context to include the
@@ -181,13 +393,59 @@ class AccountProfileView(LoginRequiredMixin, generic.TemplateView):
 
 
 class ProjectListView(
-    ConditionalLoginRequired, PrefetchRelatedViewMixin, PaginatedFilterView
+    ConditionalLoginRequired,
+    PrefetchRelatedViewMixin,
+    TableColumnsMixin,
+    PaginatedFilterView,
 ):
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
     paginate_by = 20
+    table_columns = [
+        "name",
+        {
+            "field_name": "discoveredpackages",
+            "label": "Packages",
+            "sort_name": "discoveredpackages_count",
+        },
+        {
+            "field_name": "discovereddependencies",
+            "label": "Dependencies",
+            "sort_name": "discovereddependencies_count",
+        },
+        {
+            "field_name": "codebaseresources",
+            "label": "Resources",
+            "sort_name": "codebaseresources_count",
+        },
+        {
+            "field_name": "projecterrors",
+            "label": "Errors",
+            "sort_name": "projecterrors_count",
+        },
+        {
+            "field_name": "runs",
+            "label": "Pipelines",
+        },
+        {
+            "label": "",
+            "css_class": "is-narrow",
+        },
+    ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .with_counts(
+                "codebaseresources",
+                "discoveredpackages",
+                "discovereddependencies",
+                "projecterrors",
+            )
+        )
 
 
 class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
@@ -307,11 +565,16 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             "type",
             "license_expression",
         )
+        dependencies = project.discovereddependencies.all().only(
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+        )
 
         file_languages = files.values_list("programming_language", flat=True)
         file_mime_types = files.values_list("mime_type", flat=True)
-        file_holders = self.data_from_model_field(files, "holders", "value")
-        file_copyrights = self.data_from_model_field(files, "copyrights", "value")
+        file_holders = self.data_from_model_field(files, "holders", "holder")
+        file_copyrights = self.data_from_model_field(files, "copyrights", "copyright")
         file_license_keys = self.data_from_model_field(files, "licenses", "key")
         file_license_categories = self.data_from_model_field(
             files, "licenses", "category"
@@ -323,6 +586,20 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         package_licenses = packages.values_list("license_expression", flat=True)
         package_types = packages.values_list("type", flat=True)
+
+        dependency_package_type = dependencies.values_list("type", flat=True)
+        dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
+        dependency_is_optional = dependencies.values_list("is_optional", flat=True)
+        dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
+
+        inputs, missing_inputs = project.inputs_with_source
+        if missing_inputs:
+            missing_files = "\n- ".join(missing_inputs.keys())
+            message = (
+                f"The following input files are not available on disk anymore:\n"
+                f"- {missing_files}"
+            )
+            messages.error(self.request, message)
 
         if project.is_archived:
             message = "WARNING: This project is archived and read-only."
@@ -350,6 +627,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
+                "dependency_package_type": self.get_summary(dependency_package_type),
+                "dependency_is_runtime": self.get_summary(dependency_is_runtime),
+                "dependency_is_optional": self.get_summary(dependency_is_optional),
+                "dependency_is_resolved": self.get_summary(dependency_is_resolved),
                 "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
@@ -360,7 +641,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         )
 
         if project.extra_data:
-            context["extra_data_yaml"] = saneyaml.dump(project.extra_data, indent=2)
+            context["extra_data_yaml"] = render_as_yaml(project.extra_data)
 
         return context
 
@@ -571,6 +852,8 @@ class CodebaseResourceListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
     PaginatedFilterView,
 ):
     model = CodebaseResource
@@ -578,14 +861,26 @@ class CodebaseResourceListView(
     template_name = "scanpipe/resource_list.html"
     paginate_by = 100
     prefetch_related = ["discovered_packages"]
+    table_columns = [
+        "path",
+        "status",
+        "type",
+        "size",
+        "name",
+        "extension",
+        "programming_language",
+        "mime_type",
+        "tag",
+        "license_expressions",
+        {
+            "field_name": "compliance_alert",
+            "condition": scanpipe_app.policies_enabled,
+        },
+        "packages",
+    ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        query_dict = self.request.GET.copy()
-        query_dict.pop("page", None)
-        context["url_params_without_page"] = query_dict.urlencode()
-
         context["include_compliance_alert"] = scanpipe_app.policies_enabled
         return context
 
@@ -594,6 +889,8 @@ class DiscoveredPackageListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
     PaginatedFilterView,
 ):
     model = DiscoveredPackage
@@ -601,15 +898,59 @@ class DiscoveredPackageListView(
     template_name = "scanpipe/package_list.html"
     paginate_by = 100
     prefetch_related = ["codebase_resources"]
+    table_columns = [
+        "package_url",
+        "license_expression",
+        "copyright",
+        "primary_language",
+        "resources",
+    ]
+
+
+class DiscoveredDependencyListView(
+    ConditionalLoginRequired,
+    PrefetchRelatedViewMixin,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
+    PaginatedFilterView,
+):
+    model = DiscoveredDependency
+    filterset_class = DependencyFilterSet
+    template_name = "scanpipe/dependency_list.html"
+    paginate_by = 100
+    prefetch_related = ["for_package", "datafile_resource"]
+    table_columns = [
+        "package_url",
+        "package_type",
+        "extracted_requirement",
+        "scope",
+        "is_runtime",
+        "is_optional",
+        "is_resolved",
+        "for_package",
+        "datafile_resource",
+        "datasource_id",
+    ]
 
 
 class ProjectErrorListView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, FilterView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TableColumnsMixin,
+    ExportXLSXMixin,
+    FilterView,
 ):
     model = ProjectError
     filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
     paginate_by = 50
+    table_columns = [
+        "model",
+        "message",
+        "details",
+        "traceback",
+    ]
 
 
 class CodebaseResourceDetailsView(
@@ -617,6 +958,14 @@ class CodebaseResourceDetailsView(
 ):
     model = CodebaseResource
     template_name = "scanpipe/resource_detail.html"
+    annotation_types = {
+        CodebaseResource.Compliance.OK: "ok",
+        CodebaseResource.Compliance.WARNING: "warning",
+        CodebaseResource.Compliance.ERROR: "error",
+        CodebaseResource.Compliance.MISSING: "missing",
+        "": "ok",
+        None: "info",
+    }
 
     @staticmethod
     def get_annotation_text(entry, field_name, value_key):
@@ -639,14 +988,15 @@ class CodebaseResourceDetailsView(
             # Customize the annotation icon based on the policy compliance_alert
             policy = entry.get("policy")
             if policy:
-                annotation_type = policy.get("compliance_alert")
+                compliance_alert = policy.get("compliance_alert", None)
+                annotation_type = self.annotation_types.get(compliance_alert)
 
             annotations.append(
                 {
                     "start_line": entry.get("start_line"),
                     "end_line": entry.get("end_line"),
                     "text": self.get_annotation_text(entry, field_name, value_key),
-                    "type": annotation_type,
+                    "className": f"ace_{annotation_type}",
                 }
             )
 
@@ -658,7 +1008,9 @@ class CodebaseResourceDetailsView(
         try:
             context["file_content"] = self.object.file_content
         except OSError:
-            raise Http404("File not found.")
+            context["missing_file_content"] = True
+            message = "WARNING: This resource is not available on disk."
+            messages.warning(self.request, message)
 
         context["detected_values"] = {
             "licenses": self.get_annotations("licenses"),
@@ -673,14 +1025,116 @@ class CodebaseResourceDetailsView(
 
 
 class DiscoveredPackageDetailsView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    PrefetchRelatedViewMixin,
+    generic.DetailView,
 ):
     model = DiscoveredPackage
     template_name = "scanpipe/package_detail.html"
+    prefetch_related = ["codebase_resources"]
+    tabset = {
+        "essentials": {
+            "fields": [
+                "package_url",
+                "license_expression",
+                "primary_language",
+                "homepage_url",
+                "download_url",
+                "bug_tracking_url",
+                "code_view_url",
+                "vcs_url",
+                "source_packages",
+                "keywords",
+                "description",
+            ],
+            "icon_class": "fas fa-info-circle",
+        },
+        "terms": {
+            "fields": [
+                "license_expression",
+                "declared_license",
+                "copyright",
+                "notice_text",
+            ],
+            "icon_class": "fas fa-file-contract",
+        },
+        "resources": {
+            "fields": ["codebase_resources"],
+            "icon_class": "fas fa-folder-open",
+            "template": "scanpipe/tabset/tab_resources.html",
+        },
+        "dependencies": {
+            "fields": ["dependencies"],
+            "icon_class": "fas fa-layer-group",
+            "template": "scanpipe/tabset/tab_dependencies.html",
+        },
+        "others": {
+            "fields": [
+                {"field_name": "size", "render_func": filesizeformat},
+                "release_date",
+                "sha1",
+                "md5",
+                "missing_resources",
+                "modified_resources",
+                "manifest_path",
+                "contains_source_code",
+                "package_uid",
+            ],
+            "icon_class": "fas fa-plus-square",
+        },
+        "extra data": {
+            "fields": [
+                {"field_name": "extra_data", "render_func": render_as_yaml},
+            ],
+            "icon_class": "fas fa-database",
+        },
+    }
+
+
+class DiscoveredDependencyDetailsView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    PrefetchRelatedViewMixin,
+    generic.DetailView,
+):
+    model = DiscoveredDependency
+    template_name = "scanpipe/dependency_detail.html"
+    prefetch_related = ["for_package", "datafile_resource"]
+    tabset = {
+        "essentials": {
+            "fields": [
+                "dependency_uid",
+                "package_url",
+                "package_type",
+                "extracted_requirement",
+                "scope",
+                "is_runtime",
+                "is_optional",
+                "is_resolved",
+                "for_package_uid",
+                "datafile_path",
+                "datasource_id",
+            ],
+            "icon_class": "fas fa-info-circle",
+        },
+        "For package": {
+            "fields": ["for_package"],
+            "icon_class": "fas fa-layer-group",
+            "template": "scanpipe/tabset/tab_for_package.html",
+        },
+        "Datafile resource": {
+            "fields": ["datafile_resource"],
+            "icon_class": "fas fa-folder-open",
+            "template": "scanpipe/tabset/tab_datafile_resource.html",
+        },
+    }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["package_data"] = DiscoveredPackageSerializer(self.object).data
+        context["dependency_data"] = DiscoveredDependencySerializer(self.object).data
         return context
 
 
