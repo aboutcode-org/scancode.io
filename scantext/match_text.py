@@ -1,62 +1,38 @@
-#
-# Copyright (c) nexB Inc. and others. All rights reserved.
-# ScanCode is a trademark of nexB Inc.
 # SPDX-License-Identifier: Apache-2.0
-# See http://www.apache.org/licenses/LICENSE-2.0 for the license text.
-# See https://github.com/nexB/scancode-toolkit for support or download.
-# See https://aboutcode.org for more information about nexB OSS projects.
 #
+# http://nexb.com and https://github.com/nexB/scancode.io
+# The ScanCode.io software is licensed under the Apache License version 2.0.
+# Data generated with ScanCode.io is provided as-is without warranties.
+# ScanCode is a trademark of nexB Inc.
+#
+# You may not use this software except in compliance with the License.
+# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
+# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
+# ScanCode.io should be considered or used as legal advice. Consult an Attorney
+# for any legal advice.
+#
+# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
+# Visit https://github.com/nexB/scancode.io for support and download.
 
 import attr
+from licensedcode import models
 from licensedcode import query
 from licensedcode.spans import Span
 from licensedcode.stopwords import STOPWORDS
 from licensedcode.tokenize import index_tokenizer
 from licensedcode.tokenize import matched_query_text_tokenizer
 
-TRACE = False
-TRACE_MATCHED_TEXT = False
-TRACE_MATCHED_TEXT_DETAILS = False
-
-
-def logger_debug(*args):
-    pass
-
-
-if TRACE or TRACE_MATCHED_TEXT or TRACE_MATCHED_TEXT_DETAILS:
-
-    use_print = True
-    if use_print:
-        prn = print
-    else:
-        import logging
-        import sys
-
-        logger = logging.getLogger(__name__)
-        # logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-        logging.basicConfig(stream=sys.stdout)
-        logger.setLevel(logging.DEBUG)
-        prn = logger.debug
-
-    def logger_debug(*args):
-        return prn(" ".join(isinstance(a, str) and a or repr(a) for a in args))
-
-    def _debug_print_matched_query_text(match, extras=5):
-        """
-        Print a matched query text including `extras` tokens before and after
-        the match. Used for debugging license matches.
-        """
-        # Create a fake new match with extra tokens before and after
-        new_match = match.combine(match)
-        new_qstart = max([0, match.qstart - extras])
-        new_qend = min([match.qend + extras, len(match.query.tokens)])
-        new_qspan = Span(new_qstart, new_qend)
-        new_match.qspan = new_qspan
-
-        logger_debug(new_match)
-        logger_debug(" MATCHED QUERY TEXT with extras")
-        qt = new_match.matched_text(whole_lines=False)
-        logger_debug(qt)
+SCANCODE_BASE_URL = (
+    "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data"
+)
+SPDX_LICENSE_URL = "https://spdx.org/licenses/{}"
+SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
 
 
 @attr.s(slots=True)
@@ -103,13 +79,168 @@ class Token:
     match_ids = attr.ib(attr.Factory(list))
 
 
-def tokenize_matched_text(
-    location,
-    query_string,
-    dictionary,
-    start_line=1,
-    trace=TRACE_MATCHED_TEXT_DETAILS,
-):
+def get_match_details(mid, match, license_url_template, spdx_license_url):
+    """
+    Return a mapping of license data built from a LicenseMatch ``match``.
+    """
+    from licensedcode import cache
+
+    licenses = cache.get_licenses_db()
+
+    # TODO: decide whether the text should be highlighted or not.
+    matched_text = match.matched_text(whole_lines=False, highlight=False)
+
+    SCANCODE_LICENSE_TEXT_URL = SCANCODE_BASE_URL + "/{}.LICENSE"
+    SCANCODE_LICENSE_DATA_URL = SCANCODE_BASE_URL + "/{}.yml"
+
+    result = {}
+
+    result["mid"] = mid
+    # Detection Level Information
+    result["score"] = int(match.score())
+    result["start_line"] = match.start_line
+    result["end_line"] = match.end_line
+    result["matched_length"] = match.len()
+    result["match_coverage"] = match.coverage()
+    result["matcher"] = match.matcher
+
+    # LicenseDB Level Information (Rule that was matched)
+    result["license_expression"] = match.rule.license_expression
+    result["rule_text_url"] = get_rule_text_url(match.rule)
+    result["rule_identifier"] = match.rule.identifier
+    result["referenced_filenames"] = match.rule.referenced_filenames
+    result["is_license_text"] = match.rule.is_license_text
+    result["is_license_notice"] = match.rule.is_license_notice
+    result["is_license_reference"] = match.rule.is_license_reference
+    result["is_license_tag"] = match.rule.is_license_tag
+    result["is_license_intro"] = match.rule.is_license_intro
+    result["rule_length"] = match.rule.length
+    result["rule_relevance"] = match.rule.relevance
+    result["matched_text"] = matched_text
+
+    # License Level Information (Individual licenses that this rule refers to)
+    result["licenses"] = detected_licenses = []
+    for license_key in match.rule.license_keys():
+        detected_license = {}
+        detected_licenses.append(detected_license)
+
+        lic = licenses.get(license_key)
+
+        detected_license["key"] = lic.key
+        detected_license["name"] = lic.name
+        detected_license["short_name"] = lic.short_name
+        detected_license["category"] = lic.category
+        detected_license["is_exception"] = lic.is_exception
+        detected_license["is_unknown"] = lic.is_unknown
+        detected_license["owner"] = lic.owner
+        detected_license["homepage_url"] = lic.homepage_url
+        detected_license["text_url"] = lic.text_urls[0] if lic.text_urls else ""
+        detected_license["reference_url"] = license_url_template.format(lic.key)
+        detected_license["scancode_text_url"] = SCANCODE_LICENSE_TEXT_URL.format(
+            lic.key
+        )
+        detected_license["scancode_data_url"] = SCANCODE_LICENSE_DATA_URL.format(
+            lic.key
+        )
+
+        spdx_key = lic.spdx_license_key
+        detected_license["spdx_license_key"] = spdx_key
+
+        if spdx_key:
+            is_license_ref = spdx_key.lower().startswith("licenseref-")
+            if is_license_ref:
+                spdx_url = SCANCODE_LICENSE_TEXT_URL.format(lic.key)
+            else:
+                # TODO: Is this replacing spdx_key???
+                spdx_key = lic.spdx_license_key.rstrip("+")
+                spdx_url = spdx_license_url.format(spdx_key)
+        else:
+            spdx_url = ""
+        detected_license["spdx_url"] = spdx_url
+
+    return result
+
+
+def get_licenses(location, license_url_template=SCANCODE_LICENSEDB_URL, **kwargs):
+    """
+    Return a mapping of license match data from detecting license
+    in the file at ``location`` suitable for use in template.
+
+    The mapping can be empty if there are no matches.
+    """
+    from licensedcode.cache import get_index
+
+    idx = get_index()
+
+    # gets matches from a license file
+    matches = idx.match(
+        location=location,
+        unknown_licenses=True,
+        **kwargs,
+    )
+
+    if not matches:
+        return {}
+
+    query = matches[0].query
+
+    # Assign a numeric id to every match.
+    matches_by_id = dict(enumerate(matches))
+
+    del matches
+
+    license_matches = []
+
+    for mid, match in matches_by_id.items():
+        license_matches.append(
+            get_match_details(
+                mid=mid,
+                match=match,
+                license_url_template=license_url_template,
+                spdx_license_url=SPDX_LICENSE_URL,
+            )
+        )
+
+    license_tokens = get_license_tokens(
+        query=query,
+        matches_by_id=matches_by_id,
+        stopwords=STOPWORDS,
+    )
+
+    match_colors = get_build_colors(matches_by_id=matches_by_id)
+
+    return {
+        "license_matches": license_matches,
+        "license_tokens": license_tokens,
+        "match_colors": match_colors,
+        "license_keys_count": get_license_keys_count(matches=matches_by_id.values()),
+        "percentage_of_license_text": get_percentage_of_license_text(
+            query=query, matches=matches_by_id.values()
+        ),
+    }
+
+
+def get_license_tokens(query, matches_by_id, stopwords=STOPWORDS):
+    """
+    Return a list of tokens from the list of ``matches`` in ``query``.
+    """
+    # Token(value="", pos=3, is_text=True, is_matched=True, match_ids=[mid, mid, mid])
+    tokens = list(
+        tokenize_matched_text(
+            location=query.location,
+            query_string=query.query_string,
+            dictionary=query.idx.dictionary,
+            start_line=query.start_line,
+        )
+    )
+
+    for mid, match in matches_by_id.items():
+        tag_matched_tokens(tokens=tokens, match_qspan=match.qspan, mid=mid)
+
+    return tokens
+
+
+def tokenize_matched_text(location, query_string, dictionary, start_line=1):
     """
     Yield Token objects with pos and line number collected from the file at
     `location` or the `query_string` string. `dictionary` is the index mapping
@@ -123,15 +254,7 @@ def tokenize_matched_text(
         start_line=start_line,
     )
     for line_num, line in qls:
-        if trace:
-            logger_debug(
-                "  tokenize_matched_text:", "line_num:", line_num, "line:", line
-            )
-
         for is_text, token_str in matched_query_text_tokenizer(line):
-            if trace:
-                logger_debug("     is_text:", is_text, "token_str:", repr(token_str))
-
             # Determine if a token is is_known in the license index or not. This
             # is essential as we need to realign the query-time tokenization
             # with the full text to report proper matches.
@@ -196,3 +319,80 @@ def tokenize_matched_text(
                     is_known=False,
                     pos=-1,
                 )
+
+
+def tag_matched_tokens(tokens, match_qspan, mid):
+    """
+    Tag an iterable of ``tokens`` tagging each token with ``mid`` match id
+    if matched meaning the token is in the ``match_qspan``.
+    """
+    previous_is_matched = False
+    for tok in tokens:
+        if previous_is_matched and not tok.is_text:
+            tok.match_ids.append(mid)
+            tok = attr.evolve(tok, is_matched=True)
+            previous_is_matched = False
+        elif tok.pos != -1 and tok.is_known and tok.pos in match_qspan:
+            tok.match_ids.append(mid)
+            tok = attr.evolve(tok, is_matched=True)
+            previous_is_matched = True
+
+
+def get_build_colors(matches_by_id):
+    """
+    Return a mapping of mid to css color code.
+
+    .matched1 {background-color: rgba(30, 220, 90, 0.3);}
+    .matched2 {background-color: rgba(30, 90, 220, 0.3);}
+    .matched3 {background-color: rgba(220, 90, 30, 0.3);}
+    """
+    return [
+        f""".matched{mid} {{background-color: rgba(
+        {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255},
+        0.3);}}"""
+        for mid in matches_by_id
+    ]
+
+
+def get_percentage_of_license_text(query, matches):
+    """
+    Return percentage of license text matched in ``query`` Query by
+    a list of ``matches`` percentage is a float between 0 and 100.
+    """
+
+    # TODO: percentage of license text should be done by scancode-toolkit.
+    if not matches:
+        return 0
+
+    qspans = (match.qspan for match in matches)
+
+    matched_tokens_length = len(Span().union(*qspans))
+    query_tokens_length = query.tokens_length(with_unknown=True)
+    return round((matched_tokens_length / query_tokens_length) * 100, 2)
+
+
+def get_rule_text_url(rule, base_url=SCANCODE_BASE_URL):
+    """
+    Return a URL to the text file of a ``rule`` Rule.
+    Return None if there is no URL for the ``rule``.
+    """
+
+    if isinstance(rule, (models.SpdxRule, models.UnknownRule)):
+        return
+
+    if rule.is_from_license:
+        return f"{base_url}/licenses/{rule.identifier}"
+
+    else:
+        return f"{base_url}/rules/{rule.identifier}"
+
+
+def get_license_keys_count(matches):
+    """
+    Return the number of unique license keys found in a list of license matches.
+    """
+    keys = set()
+    for match in matches:
+        keys.update(match.rule.license_keys())
+
+    return len(keys)

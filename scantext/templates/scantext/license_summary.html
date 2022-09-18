@@ -2,55 +2,60 @@
 {% load static humanize %}
 
 {% block extrahead %}
-<style>
+  <style>
     {% for mcolor in detected_licenses.match_colors %}{{ mcolor }}{% endfor %}
 
     .license-match {
-        font-size: 18px;
-        white-space: pre-wrap;
-        max-height: 80vh;
-        overflow: scroll;
-        border: 1px solid #efefef;
-        border-radius: 4px;
+      font-size: 18px;
+      white-space: pre-wrap;
+      overflow: scroll;
+      border: 1px solid #efefef;
+      border-radius: 4px;
     }
-</style>
+
+    .panel {
+      position: sticky;
+      top: 3vh;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
-<div class="container is-widescreen">
-    {% include 'scanpipe/includes/navbar_header.html' %}
+<div class="container is-fullwidth">
+  {% include 'scanpipe/includes/navbar_header.html' %}
 
-    {% include 'scantext/includes/license_summary_header.html' with detected_licenses=detected_licenses %}
-    <hr class="mx-1">
+  {% include 'scantext/includes/license_summary_header.html' with detected_licenses=detected_licenses %}
+  <hr class="mx-1">
 
-    <section class="tab-container">
-        {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
-    </section>
+  <section class="tab-container">
+    {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
+  </section>
 
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script type="text/javascript">
+  <script type="text/javascript">
     const detailBtns = document.querySelectorAll('.license-details-btn')
     const modalCards = document.querySelectorAll('.license-details-modal')
     const closeModalBtns = document.querySelectorAll('.license-details-close-modal')
 
     detailBtns.forEach((btn, index) => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault()
-            modalCards.forEach(modalcard => {
-              modalcard.style.display= 'none'
-            })
-            modalCards[index].style.display= 'block'
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        modalCards.forEach(modalcard => {
+          modalcard.style.display= 'none'
         })
+        modalCards[index].style.display= 'block'
+      })
     })
 
     closeModalBtns.forEach((btn, index) => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault()
-            modalCards[index].style.display = 'none'
-        })
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        modalCards[index].style.display = 'none'
+      })
     })
-</script>
+
+  </script>
 {% endblock %}
