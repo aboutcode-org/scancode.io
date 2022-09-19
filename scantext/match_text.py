@@ -78,6 +78,7 @@ class Token:
     # List of LicenseMatch ids that match this token
     match_ids = attr.ib(attr.Factory(list))
 
+    # Rules collected from license_matches using above match_ids
     match_rules = attr.ib(default=None)
 
 
