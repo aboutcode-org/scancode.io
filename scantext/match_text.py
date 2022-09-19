@@ -78,6 +78,8 @@ class Token:
     # List of LicenseMatch ids that match this token
     match_ids = attr.ib(attr.Factory(list))
 
+    match_rules = attr.ib(default=None)
+
 
 def get_match_details(mid, match, license_url_template, spdx_license_url):
     """
@@ -206,6 +208,16 @@ def get_licenses(location, license_url_template=SCANCODE_LICENSEDB_URL, **kwargs
         matches_by_id=matches_by_id,
         stopwords=STOPWORDS,
     )
+
+    for tkn in license_tokens:
+        if tkn.match_ids:
+            rules, seperator = [], ", "
+            for rule_id in tkn.match_ids:
+                rules.append(license_matches[rule_id]["license_expression"])
+            tkn.match_rules = seperator.join(rules)
+            del rules
+        else:
+            tkn.match_rules = "No match found."
 
     match_colors = get_build_colors(matches_by_id=matches_by_id)
 
@@ -347,9 +359,12 @@ def get_build_colors(matches_by_id):
     .matched3 {background-color: rgba(220, 90, 30, 0.3);}
     """
     return [
-        f""".matched{mid} {{background-color: rgba(
-        {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255},
-        0.3);}}"""
+        f""".matched{mid} {{
+        background-color: rgba(
+        {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255}, 0.3);
+        border-bottom: 3px solid rgba(
+        {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255}, 0.7);
+        }}"""
         for mid in matches_by_id
     ]
 
