@@ -353,20 +353,23 @@ def tag_matched_tokens(tokens, match_qspan, mid):
 
 def get_build_colors(matches_by_id):
     """
-    Return a mapping of mid to css color code.
+    Return a list of color codes.
 
     .matched1 {background-color: rgba(30, 220, 90, 0.3);}
     .matched2 {background-color: rgba(30, 90, 220, 0.3);}
     .matched3 {background-color: rgba(220, 90, 30, 0.3);}
     """
+    color_code_ids = []
 
-    return [
-        f""".matched{mid} {{
-        background-color: rgba(
-        {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255}, 0.3);
-        }}"""
-        for mid in matches_by_id
+    color_codes = [
+        ".matched{} {{background-color: rgba(30, 220, 90, 0.3);}}",
+        ".matched{} {{background-color: rgba(30, 90, 220, 0.3);}}",
+        ".matched{} {{background-color: rgba(220, 90, 30, 0.3);}}",
     ]
+
+    for mid in matches_by_id:
+        color_code_ids.append(color_codes[mid % 3].format(mid))
+    return color_code_ids
 
 
 def get_percentage_of_license_text(query, matches):
