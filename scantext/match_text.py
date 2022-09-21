@@ -359,12 +359,11 @@ def get_build_colors(matches_by_id):
     .matched2 {background-color: rgba(30, 90, 220, 0.3);}
     .matched3 {background-color: rgba(220, 90, 30, 0.3);}
     """
+
     return [
         f""".matched{mid} {{
         background-color: rgba(
         {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255}, 0.3);
-        border-bottom: 3px solid rgba(
-        {(244 * (mid+1)) % 255}, {(234 * (mid+1)) % 255}, {(130 * (mid+1)) % 255}, 0.7);
         }}"""
         for mid in matches_by_id
     ]

@@ -21,6 +21,10 @@
       position: sticky;
       top: 3vh;
     }
+
+    .underline {
+      border-bottom: 2px solid red;
+    }
   </style>
 {% endblock %}
 
@@ -41,6 +45,9 @@
 {% block scripts %}
   <script type="text/javascript">
     const detailBtns = document.querySelectorAll('.license-details-btn')
+    const panelBlocks = document.querySelectorAll('.license-block')
+    const panelBtns = document.querySelectorAll('.card-header-icon')
+    const tokens = document.querySelectorAll('.license-token')
     const modalCards = document.querySelectorAll('.license-details-modal')
     const closeModalBtns = document.querySelectorAll('.license-details-close-modal')
 
@@ -51,6 +58,44 @@
           modalcard.style.display= 'none'
         })
         modalCards[index].style.display= 'block'
+      })
+    })
+
+    // Click on panels => highlight both panel and tokens
+
+    panelBtns.forEach((btn, index) => {
+      btn.addEventListener('click', (e) => {
+        panelBlocks.forEach(blk => {
+          blk.querySelector('.selected').classList.add('is-hidden')
+        })
+
+        tokens.forEach((tkn, ind) => {
+          tkn.classList.remove('underline')
+          id = tkn.getAttribute('data-id')
+          if (id == index) {
+            tkn.classList.add('underline')
+          }
+        })
+        panelBlocks[index].querySelector('.selected').classList.remove('is-hidden')
+      })
+    })
+
+    // Click on tokens => highlight both panel and tokens
+
+    tokens.forEach((tkn, index) => {
+      tkn.addEventListener('click', (e) => {
+        panelBlocks.forEach(blk => {
+          blk.querySelector('.selected').classList.add('is-hidden')
+        })
+        id = tkn.getAttribute('data-id') 
+        tokens.forEach((tn, ind) => {
+          tn.classList.remove('underline')
+          tid = tn.getAttribute('data-id')
+          if (id && id == tid) {
+            tn.classList.add('underline')
+          }
+        })
+        panelBlocks[id].querySelector('.selected').classList.remove('is-hidden')
       })
     })
 
