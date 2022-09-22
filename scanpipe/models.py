@@ -1742,7 +1742,8 @@ class CodebaseResource(
         with the commoncode.resource.VirtualCodebase class API.
         """
         exactly_one_sub_directory = "[^/]+$"
-        children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
+        escaped_path = re.escape(self.path)
+        children_regex = rf"^{escaped_path}/{exactly_one_sub_directory}"
         return (
             self.descendants()
             .filter(path__regex=children_regex)

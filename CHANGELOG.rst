@@ -38,6 +38,9 @@ v31.1.0 (unreleased)
 - Create directory CodebaseResources in the rootfs pipeline.
   https://github.com/nexB/scancode.io/issues/515
 
+- Escape paths before using them in regular expressions in ``CodebaseResource.walk()``.
+  https://github.com/nexB/scancode.io/issues/525
+
 v31.0.0 (2022-08-25)
 --------------------
 
