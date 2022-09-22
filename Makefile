@@ -63,6 +63,7 @@ envfile:
 	@if test -f ${ENV_FILE}; then echo ".env file exists already"; exit 1; fi
 	@mkdir -p $(shell dirname ${ENV_FILE}) && touch ${ENV_FILE}
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
+	@if [[ "$OSTYPE" == "darwin"* ]]; then echo "SCANCODEIO_PROCESSES=-1" >> ${ENV_FILE}
 
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"
