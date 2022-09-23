@@ -41,6 +41,9 @@ v31.1.0 (unreleased)
 - Escape paths before using them in regular expressions in ``CodebaseResource.walk()``.
   https://github.com/nexB/scancode.io/issues/525
 
+- Disable multiprocessing and threading by default on macOS ("spawn" start method).
+  https://github.com/nexB/scancode.io/issues/522
+
 v31.0.0 (2022-08-25)
 --------------------
 
