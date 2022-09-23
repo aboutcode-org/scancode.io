@@ -61,16 +61,17 @@ def get_max_workers(keep_available):
     Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
     or returns a default value based on the number of available CPUs,
     minus the provided `keep_available` value.
+
     On operating system where the multiprocessing start method is not "fork",
-    but for example "spawn", such as on macOS, multiprocessing is disabled
-    by default returning 1 worker.
+    but for example "spawn", such as on macOS, multiprocessing and threading are
+    disabled by default returning -1 `max_workers`.
     """
     processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
     if processes is not None:
         return processes
 
     if multiprocessing.get_start_method() != "fork":
-        return 1
+        return -1
 
     max_workers = os.cpu_count() - keep_available
     if max_workers < 1:
