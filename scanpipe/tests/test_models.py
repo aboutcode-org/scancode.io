@@ -1246,6 +1246,21 @@ class ScanPipeModelsTest(TestCase):
         asgiref_resource_siblings = [r.path for r in asgiref_resource.siblings()]
         self.assertEqual(sorted(expected_siblings), sorted(asgiref_resource_siblings))
 
+    def test_scanpipe_codebase_resource_model_walk_method_problematic_filenames(self):
+        project = Project.objects.create(name="walk_test_problematic_filenames")
+        resource1 = CodebaseResource.objects.create(
+            project=project, path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin"
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=project,
+            path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin/flex++.exe",
+        )
+        expected_paths = [
+            "qt-everywhere-opensource-src-5.3.2/gnuwin32/bin/flex++.exe",
+        ]
+        result = [r.path for r in resource1.walk()]
+        self.assertEqual(expected_paths, result)
+
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_send_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")

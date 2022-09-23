@@ -1254,7 +1254,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projecterrors.count())
 
-    def test_scanpipe_add_to_package(self):
+    def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(
             project=project1,
@@ -1263,14 +1263,22 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         package1 = update_or_create_package(project1, package_data1)
         self.assertFalse(resource1.for_packages)
 
-        self.assertIsNone(scancode.add_to_package(None, resource1, project1))
+        self.assertIsNone(scancode.add_resource_to_package(None, resource1, project1))
         self.assertFalse(resource1.for_packages)
 
-        scancode.add_to_package(package1.package_uid, resource1, project1)
+        scancode.add_resource_to_package("not_available", resource1, project1)
+        self.assertFalse(resource1.for_packages)
+        self.assertEqual(1, project1.projecterrors.count())
+        error = project1.projecterrors.get()
+        self.assertEqual("assemble_package", error.model)
+        expected = {"resource": "filename.ext", "package_uid": "not_available"}
+        self.assertEqual(expected, error.details)
+
+        scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
         self.assertIn(package1.package_uid, resource1.for_packages)
 
         # Package will not be added twice since it is already associated with the
         # resource.
-        scancode.add_to_package(package1.package_uid, resource1, project1)
+        scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
