@@ -38,6 +38,9 @@ v31.1.0 (unreleased)
 - Create directory CodebaseResources in the rootfs pipeline.
   https://github.com/nexB/scancode.io/issues/515
 
+- Disable multiprocessing by default on macOS.
+  https://github.com/nexB/scancode.io/issues/522
+
 v31.0.0 (2022-08-25)
 --------------------
 

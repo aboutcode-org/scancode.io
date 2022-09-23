@@ -24,6 +24,7 @@ import concurrent.futures
 import hashlib
 import json
 import logging
+import multiprocessing
 import os
 import shlex
 from collections import defaultdict
@@ -45,7 +46,6 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -61,10 +61,16 @@ def get_max_workers(keep_available):
     Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
     or returns a default value based on the number of available CPUs,
     minus the provided `keep_available` value.
+    On operating system where the multiprocessing start method is not "fork",
+    but for example "spawn", such as on macOS, multiprocessing is disabled
+    by default returning 1 worker.
     """
     processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
     if processes is not None:
         return processes
+
+    if multiprocessing.get_start_method() != "fork":
+        return 1
 
     max_workers = os.cpu_count() - keep_available
     if max_workers < 1:
