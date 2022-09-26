@@ -159,8 +159,8 @@
         {% include "scanpipe/includes/resource_chart_column.html" with field_name="copyrights" %}
       </div>
       <div class="columns is-gapless">
-        {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_key" lookup_field="licenses" %}
-        {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_category" lookup_field="licenses" %}
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_key" lookup_field="license_key" %}
+        {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_category" lookup_field="license_category" %}
       </div>
       {% if file_compliance_alert %}
         <hr class="mx-5">

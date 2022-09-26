@@ -4,6 +4,10 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Add support for filtering by "Other" values when filtering from the charts in the
+  Project details view.
+  https://github.com/nexB/scancode.io/issues/526
+
 - ``CodebaseResource.for_packages`` now returns a list of
   ``DiscoveredPackage.package_uid`` or ``DiscoveredPackage.package_url`` if
   ``DiscoveredPackage.package_uid`` is not present. This is done to reflect the

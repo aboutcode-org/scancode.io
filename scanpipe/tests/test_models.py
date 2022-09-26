@@ -1096,23 +1096,111 @@ class ScanPipeModelsTest(TestCase):
         expected = [resource1, resource2]
         self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
 
-    def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
+    def _create_resources_for_queryset_methods(self):
         resource1 = CodebaseResource.objects.create(project=self.project1, path="1")
         resource1.holders = [
-            {"value": "H1", "end_line": 51, "start_line": 50},
-            {"value": "H2", "end_line": 61, "start_line": 60},
+            {"holder": "H1", "end_line": 51, "start_line": 50},
+            {"holder": "H2", "end_line": 61, "start_line": 60},
         ]
+        resource1.mime_type = "application/zip"
         resource1.save()
 
         resource2 = CodebaseResource.objects.create(project=self.project1, path="2")
-        resource2.holders = [{"value": "H3", "end_line": 558, "start_line": 556}]
+        resource2.holders = [{"holder": "H3", "end_line": 558, "start_line": 556}]
+        resource2.mime_type = "application/zip"
         resource2.save()
+
+        resource3 = CodebaseResource.objects.create(project=self.project1, path="3")
+        resource3.mime_type = "text/plain"
+        resource3.save()
+
+        return resource1, resource2, resource3
+
+    def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
+        resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
 
         qs = CodebaseResource.objects
         self.assertQuerysetEqual([resource2], qs.json_field_contains("holders", "H3"))
         self.assertQuerysetEqual([resource1], qs.json_field_contains("holders", "H1"))
         expected = [resource1, resource2]
         self.assertQuerysetEqual(expected, qs.json_field_contains("holders", "H"))
+
+    def test_scanpipe_codebase_resource_queryset_json_list_contains(self):
+        resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
+        qs = CodebaseResource.objects
+
+        results = qs.json_list_contains("holders", "holder", ["H3"])
+        self.assertQuerysetEqual([resource2], results)
+
+        results = qs.json_list_contains("holders", "holder", ["H1"])
+        self.assertQuerysetEqual([resource1], results)
+        results = qs.json_list_contains("holders", "holder", ["H2"])
+        self.assertQuerysetEqual([resource1], results)
+        results = qs.json_list_contains("holders", "holder", ["H1", "H2"])
+        self.assertQuerysetEqual([resource1], results)
+
+        results = qs.json_list_contains("holders", "holder", ["H1", "H2", "H3"])
+        self.assertQuerysetEqual([resource1, resource2], results)
+
+        results = qs.json_list_contains("holders", "holder", ["H"])
+        self.assertQuerysetEqual([], results)
+
+    def test_scanpipe_codebase_resource_queryset_values_from_json_field(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        qs = CodebaseResource.objects
+
+        results = qs.values_from_json_field("holders", "nothing")
+        self.assertEqual(["", "", "", ""], results)
+
+        results = qs.values_from_json_field("holders", "holder")
+        self.assertEqual(["H1", "H2", "H3", ""], results)
+
+    def test_scanpipe_codebase_resource_queryset_group_by(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        expected = [
+            {"mime_type": "application/zip", "count": 2},
+            {"mime_type": "text/plain", "count": 1},
+        ]
+        self.assertEqual(expected, list(CodebaseResource.objects.group_by("mime_type")))
+
+    def test_scanpipe_codebase_resource_queryset_most_common_values(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        results = CodebaseResource.objects.most_common_values("mime_type", limit=1)
+        self.assertQuerysetEqual(["application/zip"], results)
+
+    def test_scanpipe_codebase_resource_queryset_less_common_values(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        CodebaseResource.objects.create(
+            project=self.project1, path="4", mime_type="text/x-script.python"
+        )
+
+        results = CodebaseResource.objects.less_common_values("mime_type", limit=1)
+        self.assertQuerysetEqual(["text/plain", "text/x-script.python"], results)
+
+    def test_scanpipe_codebase_resource_queryset_less_common(self):
+        CodebaseResource.objects.all().delete()
+        resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
+        resource4 = CodebaseResource.objects.create(
+            project=self.project1, path="4", mime_type="text/x-script.python"
+        )
+        resource4.holders = [
+            {"holder": "H1", "end_line": 51, "start_line": 50},
+            {"holder": "H1", "end_line": 51, "start_line": 50},
+            {"holder": "H2", "end_line": 51, "start_line": 50},
+            {"holder": "H2", "end_line": 51, "start_line": 50},
+        ]
+        resource4.save()
+
+        qs = CodebaseResource.objects
+        results = qs.less_common("mime_type", limit=1)
+        self.assertQuerysetEqual([resource3, resource4], results)
+
+        results = qs.less_common("holders", limit=2)
+        self.assertQuerysetEqual([resource2], results)
 
     def test_scanpipe_codebase_resource_descendants(self):
         path = "asgiref-3.3.0-py3-none-any.whl-extract/asgiref"

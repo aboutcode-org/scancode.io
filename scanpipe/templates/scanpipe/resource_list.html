@@ -22,7 +22,7 @@
         <tbody>
           {% for resource in object_list %}
             <tr>
-              <td class="break-all">
+              <td class="break-all" style="min-width: 200px;">
                 {% if resource.is_dir %}
                   {{ resource.path }}
                 {% else %}
@@ -40,7 +40,7 @@
                   {{ resource.size|filesizeformat|default_if_none:"" }}
                 {% endif %}
               </td>
-              <td class="break-all">
+              <td class="break-all" style="min-width: 100px;">
                 <a href="?name={{ resource.name }}" class="is-black-link">{{ resource.name }}</a>
               </td>
               <td>
