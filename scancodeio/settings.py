@@ -74,6 +74,9 @@ SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 # Default to 24 hours.
 SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
 
+# Default limit for "most common" entries in QuerySets.
+SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
+
 # Application definition
 
 INSTALLED_APPS = (
