@@ -9,10 +9,10 @@
       max-height: 90vh;
       white-space: pre-wrap;
       overflow: scroll;
-      border: 1px solid #efefef;
+      border: 1px solid #cdcdcd;
       border-radius: 4px;
       color: rgb(14, 16, 26);
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 400;
       cursor: help;
     }
@@ -22,8 +22,16 @@
       top: 3vh;
     }
 
-    .underline {
-      border-bottom: 2px solid red;
+    .license-token {
+      opacity: 0.6;
+    }
+
+    .highlight {
+      opacity: 1;
+    }
+
+    a {
+      display: block;
     }
   </style>
 {% endblock %}
@@ -46,7 +54,7 @@
   <script type="text/javascript">
     const detailBtns = document.querySelectorAll('.license-details-btn')
     const panelBlocks = document.querySelectorAll('.license-block')
-    const panelBtns = document.querySelectorAll('.card-header-icon')
+    const panelBtns = document.querySelectorAll('.card-header-title')
     const tokens = document.querySelectorAll('.license-token')
     const modalCards = document.querySelectorAll('.license-details-modal')
     const closeModalBtns = document.querySelectorAll('.license-details-close-modal')
@@ -66,17 +74,18 @@
     panelBtns.forEach((btn, index) => {
       btn.addEventListener('click', (e) => {
         panelBlocks.forEach(blk => {
-          blk.querySelector('.selected').classList.add('is-hidden')
+          blk.classList.remove('has-background-info')
+          blk.classList.remove('has-text-white')
         })
 
         tokens.forEach((tkn, ind) => {
-          tkn.classList.remove('underline')
+          tkn.classList.remove('highlight')
           id = tkn.getAttribute('data-id')
-          if (id == index) {
-            tkn.classList.add('underline')
+          if (id && id == index) {
+            tkn.classList.add('highlight')
           }
         })
-        panelBlocks[index].querySelector('.selected').classList.remove('is-hidden')
+        panelBlocks[index].classList.add('has-background-info')
       })
     })
 
@@ -85,17 +94,17 @@
     tokens.forEach((tkn, index) => {
       tkn.addEventListener('click', (e) => {
         panelBlocks.forEach(blk => {
-          blk.querySelector('.selected').classList.add('is-hidden')
+          blk.classList.remove('has-background-info')
         })
         id = tkn.getAttribute('data-id') 
         tokens.forEach((tn, ind) => {
-          tn.classList.remove('underline')
+          tn.classList.remove('highlight')
           tid = tn.getAttribute('data-id')
           if (id && id == tid) {
-            tn.classList.add('underline')
+            tn.classList.add('highlight')
+            panelBlocks[tid].classList.add('has-background-info')
           }
         })
-        panelBlocks[id].querySelector('.selected').classList.remove('is-hidden')
       })
     })
 

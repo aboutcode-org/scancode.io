@@ -362,13 +362,18 @@ def get_build_colors(matches_by_id):
     color_code_ids = []
 
     color_codes = [
-        ".matched{} {{background-color: rgba(30, 220, 90, 0.3);}}",
-        ".matched{} {{background-color: rgba(30, 90, 220, 0.3);}}",
-        ".matched{} {{background-color: rgba(220, 90, 30, 0.3);}}",
+        ".matched{} {{background-color: rgba(255, 176, 0, 1);}}",
+        ".matched{} {{background-color: rgba(98, 160, 234, 1);}}",
+        ".matched{} {{background-color: rgba(100, 143, 255, 1);}}",
+        ".matched{} {{background-color: rgba(120, 94, 240, 1);}}",
+        ".matched{} {{background-color: rgba(220, 38, 127, 1);}}",
+        ".matched{} {{background-color: rgba(254, 97, 0, 1);}}",
+        ".matched{} {{background-color: rgba(204, 121, 167, 1);}}",
+        ".matched{} {{background-color: rgba(68, 170, 153, 1);}}",
     ]
 
     for mid in matches_by_id:
-        color_code_ids.append(color_codes[mid % 3].format(mid))
+        color_code_ids.append(color_codes[mid % 8].format(mid))
     return color_code_ids
 
 

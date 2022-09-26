@@ -4,18 +4,19 @@
     <div class="panel is-light is-shadowless">
     {% for license in detected_licenses.license_matches %}
       <div class="license-block panel-block is-flex is-justify-content-space-between p-0" data-match="matched{{ license.mid }}">
-        <div class="card-header-title"><span class="has-text-link mr-2">{{ license.mid|add:1 }}.</span> {{ license.license_expression }}</div>
+        <a class="atag" href="#{{ license.mid }}">
+          <div class="card-header-title">
+            <span class="mr-2">{{ license.mid|add:1 }}.</span>{{ license.license_expression }}
+          </div>
+        </a>
         <div class="is-flex is-justify-content-row is-align-items-center">
-          <p class="selected tag is-info is-hidden">selected</p>
           <p class="tag is-6 mx-1 is-light {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}%</p>
-          <div class="dropdown is-hoverable" title="Click to scrolldown to the matched line.">
-            <a href="#{{ license.mid }}">
+          <div class="dropdown is-hoverable is-right">
               <p class="card-header-icon">
                 <span class="icon">
-                  <i class="fa fa-angle-down" aria-hidden="true"></i>
+                  <i class="fa fa-info-circle" aria-hidden="true"></i>
                 </span>
               </p>
-            </a>
             <div class="dropdown-menu">
               <div class="dropdown-content py-0">
                 <table class="panel-block table is-striped is-size-6 is-hoverable mb-0" style="white-space: nowrap;">
