@@ -108,7 +108,7 @@ class FilterSetUtilsMixin:
             if value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.other_value:
-                return queryset.less_common(field_name)
+                return queryset.less_common(name)
             else:
                 queryset = self.filters[name].filter(queryset, value)
 

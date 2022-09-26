@@ -938,24 +938,22 @@ class GroupingQuerySetMixin:
         Return a QuerySet filtered by the less common values for the provided
         `field_name` starting at the `limit`.
         """
-        field = self.model._meta.get_field(field_name)
-
-        if not isinstance(field, models.JSONField):
-            less_common_values = self.less_common_values(field_name, limit)
-            return self.filter(**{f"{field_name}__in": less_common_values})
-
-        field_name, data_field = {
+        json_fields_mapping = {
             "license_key": ("licenses", "key"),
             "license_category": ("licenses", "category"),
             "copyrights": ("copyrights", "copyright"),
             "holders": ("holders", "holder"),
-        }.get(field_name)
+        }
 
-        values_list = self.values_from_json_field(field_name, data_field)
-        sorted_by_occurrence = list(dict(Counter(values_list).most_common()).keys())
-        less_common_values = sorted_by_occurrence[limit:]
+        if field_name in json_fields_mapping:
+            field_name, data_field = json_fields_mapping.get(field_name)
+            values_list = self.values_from_json_field(field_name, data_field)
+            sorted_by_occurrence = list(dict(Counter(values_list).most_common()).keys())
+            less_common_values = sorted_by_occurrence[limit:]
+            return self.json_list_contains(field_name, data_field, less_common_values)
 
-        return self.json_list_contains(field_name, data_field, less_common_values)
+        less_common_values = self.less_common_values(field_name, limit)
+        return self.filter(**{f"{field_name}__in": less_common_values})
 
 
 class JSONFieldQuerySetMixin:
