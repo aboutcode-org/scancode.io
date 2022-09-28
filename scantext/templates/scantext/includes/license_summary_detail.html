@@ -30,28 +30,48 @@
                   </tr>
                   <tr>
                     <td><strong>Matched Line(s)</strong></td>
-                    <td>{% if license.start_line == license.end_line %}{{ license.start_line }}{% else %}{{ license.start_line }}-{{ license.end_line }} {% endif %}</td>
+                    <td>{% if license.start_line == license.end_line %} {{ license.start_line }} {% else %} {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
                   </tr>
                   <tr>
-                    <td><strong>Matched Length</strong></td>
-                    <td>{{ license.matched_length }}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Matched Coverage</strong></td>
-                    <td>{{ license.match_coverage }}</td>
+                    <td><strong>Rule Identifier</strong></td>
+                    <td>
+                    {% if license.rule_text_url %}
+                        <a href="{{ license.rule_text_url }}" target="_blank">{{ license.rule_identifier }}</a>
+                    {% else %}
+                        {{ license.rule_identifier }}
+                    {% endif %}
+                    </td>
                   </tr>
                   <tr>
                     <td><strong>Matcher</strong></td>
                     <td>{{ license.matcher }}</td>
                   </tr>
                   <tr>
-                    <td><strong>Rule Identifer</strong></td>
-                    <td>{{ license.rule_identifier }}</td>
+                    <td><strong>Match Coverage</strong></td>
+                    <td>{{ license.match_coverage }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Matched Length</strong></td>
+                    <td>{{ license.matched_length }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Key(s)</strong></td>
+                    <td>
+                    {% for key in license.licenses %}
+                        <a href="{{ key.reference_url }}" target="_blank"><span class="mr-2">{{ key.key }}</span></a>
+                    {% endfor %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rule Relevance</strong></td>
+                    <td>{{ license.rule_relevance }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rule Length</strong></td>
+                    <td>{{ license.rule_length }}</td>
                   </tr>
                 </table>
-                <div class="panel-heading py-2 is-size-7 is-dark is-flex is-justify-content-space-between has-background-white">
-                  <span class="license-details-btn has-text-link" style="cursor: pointer;">View more details</span>
-                  {% include 'scantext/includes/license_detail_modal.html' with license=license %}
+                <div class="panel-heading py-2 is-size-7 is-dark is-flex has-background-white">
                   <!-- report license hyperlink -->
                   {% include 'scantext/includes/license_report.html' with license=license %}
                 </div>
