@@ -43,6 +43,7 @@ from django.db import transaction
 from django.db.models import Count
 from django.db.models import IntegerField
 from django.db.models import OuterRef
+from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
@@ -1396,6 +1397,21 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
+    def prefetch_for_serializer(self):
+        """
+        Optimized prefetching for a QuerySet to be consumed by the
+        `CodebaseResourceSerializer`.
+        Only the fields required by the serializer are fetched on the relations.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "discovered_packages",
+                queryset=DiscoveredPackage.objects.only(
+                    "package_uid", "uuid", *PURL_FIELDS
+                ),
+            ),
+        )
+
     def status(self, status=None):
         if status:
             return self.filter(status=status)
@@ -1911,7 +1927,7 @@ class CodebaseResource(
         Returns the list of all discovered packages associated to this resource.
         """
         return [
-            package.package_uid if package.package_uid else str(package)
+            package.package_uid or str(package)
             for package in self.discovered_packages.all()
         ]
 
@@ -2038,7 +2054,20 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
-    pass
+    def prefetch_for_serializer(self):
+        """
+        Optimized prefetching for a QuerySet to be consumed by the
+        `DiscoveredDependencySerializer`.
+        Only the fields required by the serializer are fetched on the relations.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "for_package", queryset=DiscoveredPackage.objects.only("package_uid")
+            ),
+            Prefetch(
+                "datafile_resource", queryset=CodebaseResource.objects.only("path")
+            ),
+        )
 
 
 class DiscoveredDependency(

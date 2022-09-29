@@ -59,6 +59,8 @@ SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default
 
 SCANCODE_TOOLKIT_CLI_OPTIONS = env.list("SCANCODE_TOOLKIT_CLI_OPTIONS", default=[])
 
+SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
+
 # Set the number of parallel processes to use for ScanCode related scan execution.
 # If the SCANCODEIO_PROCESSES argument is not set, defaults to an optimal number of CPUs
 # available on the machine.
@@ -226,12 +228,16 @@ LOGGING = {
     "loggers": {
         "scanpipe": {
             "handlers": ["null"] if IS_TESTS else ["console"],
-            "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
+            "level": SCANCODEIO_LOG_LEVEL,
             "propagate": False,
         },
         "django": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "propagate": False,
+        },
+        # Set SCANCODEIO_LOG_LEVEL=DEBUG to display all SQL queries in the console.
+        "django.db.backends": {
+            "level": SCANCODEIO_LOG_LEVEL,
         },
     },
 }
