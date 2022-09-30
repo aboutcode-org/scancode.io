@@ -35,6 +35,11 @@ Build the Image
 ScanCode.io is distributed with ``Dockerfile`` and ``docker-compose.yml`` files
 required for the creation of the Docker image.
 
+.. note::
+    If you are using Windows Operating System, before cloning the repository ensure that git's autocrlf is set to false
+    by using ``git config --global core.autocrlf false``.
+
+
 **Clone the git** `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
 create an **environment file**, and **build the Docker image**::
 
