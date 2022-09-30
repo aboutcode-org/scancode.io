@@ -26,6 +26,7 @@ from collections import Counter
 from contextlib import suppress
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import FileResponse
@@ -36,7 +37,6 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
-from django.utils.http import urlencode
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
@@ -486,7 +486,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
     template_name = "scanpipe/project_detail.html"
 
     @staticmethod
-    def get_summary(values_list, limit=7):
+    def get_summary(values_list, limit=settings.SCANCODEIO_MOST_COMMON_LIMIT):
         most_common = dict(Counter(values_list).most_common(limit))
 
         other = len(values_list) - sum(most_common.values())
@@ -498,16 +498,6 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             most_common["(No value detected)"] = most_common.pop("")
 
         return most_common
-
-    @staticmethod
-    def data_from_model_field(queryset, model_field, data_field):
-        results = []
-        for model_values in queryset.values_list(model_field, flat=True):
-            if not model_values:
-                results.append("")
-            else:
-                results.extend(entry.get(data_field) for entry in model_values)
-        return results
 
     @staticmethod
     def get_license_clarity_data(scan_summary_json):
@@ -571,12 +561,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         file_languages = files.values_list("programming_language", flat=True)
         file_mime_types = files.values_list("mime_type", flat=True)
-        file_holders = self.data_from_model_field(files, "holders", "holder")
-        file_copyrights = self.data_from_model_field(files, "copyrights", "copyright")
-        file_license_keys = self.data_from_model_field(files, "licenses", "key")
-        file_license_categories = self.data_from_model_field(
-            files, "licenses", "category"
-        )
+        file_holders = files.values_from_json_field("holders", "holder")
+        file_copyrights = files.values_from_json_field("copyrights", "copyright")
+        file_license_keys = files.values_from_json_field("licenses", "key")
+        file_license_categories = files.values_from_json_field("licenses", "category")
 
         file_compliance_alert = []
         if scanpipe_app.policies_enabled:

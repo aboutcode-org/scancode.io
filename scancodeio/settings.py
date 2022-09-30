@@ -59,6 +59,8 @@ SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default
 
 SCANCODE_TOOLKIT_CLI_OPTIONS = env.list("SCANCODE_TOOLKIT_CLI_OPTIONS", default=[])
 
+SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
+
 # Set the number of parallel processes to use for ScanCode related scan execution.
 # If the SCANCODEIO_PROCESSES argument is not set, defaults to an optimal number of CPUs
 # available on the machine.
@@ -73,6 +75,9 @@ SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 
 # Default to 24 hours.
 SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
+
+# Default limit for "most common" entries in QuerySets.
+SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 
 # Application definition
 
@@ -223,12 +228,16 @@ LOGGING = {
     "loggers": {
         "scanpipe": {
             "handlers": ["null"] if IS_TESTS else ["console"],
-            "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
+            "level": SCANCODEIO_LOG_LEVEL,
             "propagate": False,
         },
         "django": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "propagate": False,
+        },
+        # Set SCANCODEIO_LOG_LEVEL=DEBUG to display all SQL queries in the console.
+        "django.db.backends": {
+            "level": SCANCODEIO_LOG_LEVEL,
         },
     },
 }
