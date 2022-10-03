@@ -182,8 +182,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("docker", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
-    def test_scanpipe_views_project_details_compliance_alert(self):
-        url = self.project1.get_absolute_url()
+    def test_scanpipe_views_project_details_charts_compliance_alert(self):
+        url = reverse("project_charts", args=[self.project1.uuid])
         expected = 'id="compliance_alert_chart"'
 
         scanpipe_app.license_policies_index = None

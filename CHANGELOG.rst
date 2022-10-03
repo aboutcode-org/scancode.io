@@ -4,6 +4,11 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Improve the performances of the project details view to load faster by deferring the
+  the charts rendering. This is especially noticeable on projects with a large amount
+  of codebase resources and discovered packages.
+  https://github.com/nexB/scancode.io/issues/193
+
 - Add support for filtering by "Other" values when filtering from the charts in the
   Project details view.
   https://github.com/nexB/scancode.io/issues/526
