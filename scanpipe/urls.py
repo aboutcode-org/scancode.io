@@ -122,6 +122,11 @@ urlpatterns = [
         name="project_add",
     ),
     path(
+        "project/<uuid:uuid>/charts/",
+        views.ProjectChartsView.as_view(),
+        name="project_charts",
+    ),
+    path(
         "project/<uuid:uuid>/",
         views.ProjectDetailView.as_view(),
         name="project_detail",
