@@ -338,6 +338,55 @@ class Package:
 
 
 @dataclass
+class File:
+    """
+    Files referenced in the SPDX document
+    """
+
+    spdx_id: str
+    name: str
+    checksums: list[Checksum] = field(default_factory=list)
+
+    license_concluded: str = "NOASSERTION"
+    copyright_text: str = "NOASSERTION"
+    license_in_files: list[str] = field(default_factory=list)
+    contributors: list[str] = field(default_factory=list)
+    notice_text: str = ""
+    # Supported values:
+    # SOURCE | BINARY | ARCHIVE | APPLICATION | AUDIO | IMAGE | TEXT | VIDEO |
+    # DOCUMENTATION | SPDX | OTHER
+    types: list[str] = field(default_factory=list)
+    attribution_texts: list[str] = field(default_factory=list)
+    comment: str = ""
+    license_comments: str = ""
+
+    def as_dict(self):
+        """
+        Return the data as a serializable dict.
+        """
+        required_data = {
+            "SPDXID": self.spdx_id,
+            "fileName": self.name,
+            "checksums": [checksum.as_dict() for checksum in self.checksums],
+        }
+
+        optional_data = {
+            "fileTypes": self.types,
+            "copyrightText": self.copyright_text or "NOASSERTION",
+            "fileContributors": self.contributors,
+            "licenseConcluded": self.license_concluded or "NOASSERTION",
+            "licenseInfoInFiles": self.license_in_files,
+            "noticeText": self.notice_text,
+            "comment": self.comment,
+            "licenseComments": self.license_comments,
+            "attributionTexts": self.attribution_texts,
+        }
+
+        optional_data = {key: value for key, value in optional_data.items() if value}
+        return {**required_data, **optional_data}
+
+
+@dataclass
 class Relationship:
     """
     This field provides information about the relationship between two SPDX elements.
@@ -385,6 +434,7 @@ class Document:
     data_license: str = "CC0-1.0"
     comment: str = ""
 
+    files: list[File] = field(default_factory=list)
     extracted_licenses: list[ExtractedLicensingInfo] = field(default_factory=list)
     relationships: list[Relationship] = field(default_factory=list)
 
@@ -392,8 +442,6 @@ class Document:
         """
         Return the SPDX document as a serializable dict.
         """
-        packages = [package.as_dict() for package in self.packages]
-
         data = {
             "spdxVersion": f"SPDX-{self.version}",
             "dataLicense": self.data_license,
@@ -401,7 +449,8 @@ class Document:
             "name": self.safe_document_name(self.name),
             "documentNamespace": self.namespace,
             "creationInfo": self.creation_info.as_dict(),
-            "packages": packages,
+            "packages": [package.as_dict() for package in self.packages],
+            "files": [file.as_dict() for file in self.files],
             "documentDescribes": [self.spdx_id],
         }
 

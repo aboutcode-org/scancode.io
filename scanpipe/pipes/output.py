@@ -527,11 +527,17 @@ def to_spdx(project):
         if dep.for_package
     ]
 
+    files_as_spdx = [
+        resource.as_spdx()
+        for resource in get_queryset(project, "codebaseresource").files()
+    ]
+
     document = spdx.Document(
         name=f"scancodeio_{project.name}",
         namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
         creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
         packages=packages_as_spdx,
+        files=files_as_spdx,
         extracted_licenses=_get_spdx_extracted_licenses(license_expressions),
         relationships=relationships,
     )

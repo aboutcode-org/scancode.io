@@ -1933,6 +1933,41 @@ class CodebaseResource(
             for package in self.discovered_packages.all()
         ]
 
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.id}"
+
+    def get_spdx_types(self):
+        spdx_types = []
+
+        if self.is_binary:
+            spdx_types.append("BINARY")
+        if self.is_text:
+            spdx_types.append("TEXT")
+        if self.is_archive:
+            spdx_types.append("ARCHIVE")
+
+        return spdx_types
+
+    def as_spdx(self):
+        """
+        Return this CodebaseResource as an SPDX Package entry.
+        """
+        spdx_license_keys = [license["spdx_license_key"] for license in self.licenses]
+        copyrights = [copyright["copyright"] for copyright in self.copyrights]
+        holders = [holder["holder"] for holder in self.holders]
+        authors = [author["author"] for author in self.authors]
+
+        return spdx.File(
+            spdx_id=self.spdx_id,
+            name=f"./{self.path}",
+            checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
+            license_in_files=list(set(spdx_license_keys)),
+            copyright_text=", ".join(copyrights),
+            contributors=list(set(holders + authors)),
+            types=self.get_spdx_types(),
+        )
+
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
