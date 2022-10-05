@@ -4,6 +4,10 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Generate SBOM (Software Bill of Materials) compliant with the SPDX 2.3 specification
+  as a new downloadable output.
+  https://github.com/nexB/scancode.io/issues/389
+
 - Improve the performances of the project details view to load faster by deferring the
   the charts rendering. This is especially noticeable on projects with a large amount
   of codebase resources and discovered packages.

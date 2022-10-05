@@ -22,19 +22,31 @@
 
 import csv
 import json
+import re
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
 
 import saneyaml
 import xlsxwriter
+from license_expression import Licensing
 from license_expression import ordered_unique
+from licensedcode.cache import build_spdx_license_expression
+from licensedcode.cache import get_licenses_by_spdx_key
 from packagedcode.utils import combine_expressions
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
+
+
+def safe_filename(filename):
+    """
+    Convert provided `name` to a safe filename.
+    """
+    return re.sub("[^A-Za-z0-9.-]+", "_", filename).lower()
 
 
 def get_queryset(project, model_name):
@@ -431,5 +443,100 @@ def to_xlsx(project):
         for model_name in model_names:
             queryset = get_queryset(project, model_name)
             queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
+
+    return output_file
+
+
+def _get_spdx_extracted_licenses(license_expressions):
+    """
+    Generate and return the SPDX `extracted_licenses` from provided
+    `license_expressions` list of expressions.
+    """
+    licensing = Licensing()
+    license_index = get_licenses_by_spdx_key()
+    urls_fields = [
+        "faq_url",
+        "homepage_url",
+        "osi_url",
+        "ignorable_urls",
+        "other_urls",
+        "text_urls",
+    ]
+    spdx_license_refs = set()
+    extracted_licenses = []
+
+    for expression in license_expressions:
+        spdx_expression = build_spdx_license_expression(expression)
+        license_keys = licensing.license_keys(spdx_expression)
+        spdx_license_refs.update(
+            [key for key in license_keys if key.startswith("LicenseRef")]
+        )
+
+    for license_ref in spdx_license_refs:
+        license = license_index.get(license_ref.lower())
+
+        see_alsos = []
+        for field_name in urls_fields:
+            value = getattr(license, field_name)
+            if isinstance(value, list):
+                see_alsos.extend(value)
+            elif value:
+                see_alsos.append(value)
+
+        extracted_licenses.append(
+            spdx.ExtractedLicensingInfo(
+                license_id=license.spdx_license_key,
+                extracted_text=license.text or " ",
+                name=license.name,
+                see_alsos=see_alsos,
+            )
+        )
+
+    return extracted_licenses
+
+
+def to_spdx(project):
+    """
+    Generates output for the provided ``project`` in SPDX document format.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+
+    output_file = project.get_output_file_path("results", "spdx.json")
+
+    discovereddependencies_qs = get_queryset(project, "discovereddependency")
+    spdx_packages = [
+        *get_queryset(project, "discoveredpackage"),
+        *discovereddependencies_qs,
+    ]
+
+    packages_as_spdx = []
+    license_expressions = []
+    for spdx_package in spdx_packages:
+        packages_as_spdx.append(spdx_package.as_spdx())
+        if license_expression := getattr(spdx_package, "license_expression", None):
+            license_expressions.append(license_expression)
+
+    relationships = [
+        spdx.Relationship(
+            spdx_id=dep.spdx_id,
+            related_spdx_id=dep.for_package.spdx_id,
+            relationship="DEPENDENCY_OF",
+        )
+        for dep in discovereddependencies_qs
+        if dep.for_package
+    ]
+
+    document = spdx.Document(
+        name=f"scancodeio_{project.name}",
+        namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
+        creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
+        packages=packages_as_spdx,
+        extracted_licenses=_get_spdx_extracted_licenses(license_expressions),
+        relationships=relationships,
+    )
+
+    with output_file.open("w") as file:
+        file.write(document.as_json())
 
     return output_file

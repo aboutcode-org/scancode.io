@@ -62,6 +62,7 @@ import redis
 import requests
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
+from licensedcode.cache import build_spdx_license_expression
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -73,6 +74,7 @@ from rq.job import Job
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import spdx
 from scanpipe import tasks
 from scanpipe.packagedb_models import AbstractPackage
 from scanpipe.packagedb_models import AbstractResource
@@ -2052,6 +2054,51 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
+
+    def as_spdx(self):
+        """
+        Return this DiscoveredPackage as an SPDX Package entry.
+        """
+        checksums = [
+            spdx.Checksum(algorithm=algorithm, value=checksum_value)
+            for algorithm in ["sha1", "md5"]
+            if (checksum_value := getattr(self, algorithm))
+        ]
+
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        license_expression_spdx = ""
+        if self.license_expression:
+            build_spdx_license_expression(self.license_expression)
+
+        return spdx.Package(
+            name=self.name or self.filename,
+            spdx_id=self.spdx_id,
+            download_location=self.download_url,
+            license_declared=license_expression_spdx,
+            license_concluded=license_expression_spdx,
+            copyright_text=self.copyright,
+            version=self.version,
+            homepage=self.homepage_url,
+            filename=self.filename,
+            description=self.description,
+            release_date=str(self.release_date) if self.release_date else "",
+            checksums=checksums,
+            external_refs=external_refs,
+        )
+
 
 class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     def prefetch_for_serializer(self):
@@ -2246,6 +2293,32 @@ class DiscoveredDependency(
         discovered_dependency.save()
 
         return discovered_dependency
+
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+
+    def as_spdx(self):
+        """
+        Return this Package as an SPDX Package entry.
+        """
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        return spdx.Package(
+            name=self.name,
+            spdx_id=self.spdx_id,
+            version=self.version,
+            external_refs=external_refs,
+        )
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
