@@ -135,8 +135,15 @@ docker-images:
 	docker-compose build
 	@echo "-> Pull service images"
 	docker-compose pull
-	@echo "-> Save the service images to a compressed tar archive in the dist/ directory"
-	@mkdir -p dist/
-	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
+	@echo "-> Save the service images to a tar archive in the build/ directory"
+	@rm -rf build/
+	@mkdir -p build/
+	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > build/scancodeio-images.tar.gz
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb run test bump docs docker-images
+offline-package: docker-images
+	@echo "-> Build package for offline installation in dist/"
+	@cp -r etc docker-compose-offline.yml docker.env build/
+	@mkdir -p dist/
+	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
+
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb run test bump docs docker-images offline-package

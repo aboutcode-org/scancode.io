@@ -56,6 +56,6 @@ RUN mkdir -p /var/scancodeio/static/ \
 
 # Keep the dependencies installation before the COPY of the app/ for proper caching
 COPY setup.cfg setup.py /app/
-RUN pip install .
+RUN pip install .  && rm -rf /root/.cache/pip/
 
 COPY . /app

@@ -110,45 +110,51 @@ Offline installation with Docker
 --------------------------------
 
 It is possible to install and run ScanCode.io on a server which is not connected to
-internet.
+internet, e.g, an "airgapped" or isolated server.
 
-The Docker images are build on a machine with internet access and copied to the server.
+The Docker images are built on a machine with internet access and then copied to
+the "offline" server for isolated installation.
 
 .. note::
-    ``docker`` and ``docker-compose`` are required on both the local machine and the
-    server.
+    ``docker`` and ``docker-compose`` are required on both the local machine
+    and the server.
 
-Build the Images
-^^^^^^^^^^^^^^^^
+Build the offline installation package
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Build and save the docker images on your local machine::
+Build and save the offline installation package with docker images, configuration
+and scripts on your local machine::
 
-    make docker-images
+    make offline-package
 
-A compressed tarball ``scancodeio-images-VERSION.tar.gz`` containing all the docker
-images will be created in the :guilabel:`dist/` directory.
+A tarball ``scancodeio-offline-package-VERSION.tar`` will be
+created in the :guilabel:`dist/` directory.
 
-Copy Images and docker-compose files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install on an offline server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Copy the compressed tarball and the local ``docker-compose.yml`` file to the server.
+Copy the tarball to the server then extract it replacing VERSION with
+the actual version value::
 
-.. warning::
-    The ``docker-compose.yml`` file is required to run the application.
+    tar -xf scancodeio-offline-package-VERSION.tar
 
-Load the Images
-^^^^^^^^^^^^^^^
+Change to the extracted ``build/`` directory::
 
-Copy the tarball to the server and load the images::
+    cd build
 
-    docker load --input scancodeio-images-VERSION.tar.gz
+Load the docker Images::
 
-Run the App
-^^^^^^^^^^^
+    docker load --input scancodeio-images.tar.gz
 
-Start the ScanCode.io services::
 
-    docker-compose --file docker-compose.yml up
+Run on an offline server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Run the App by starting the ScanCode.io services::
+
+    docker-compose --file docker-compose-offline.yml up
+
+And visit the web UI at: http://localhost/project/
 
 
 .. _local_development_installation:
