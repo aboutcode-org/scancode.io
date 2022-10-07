@@ -40,6 +40,8 @@ from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
+PAGE_VAR = "page"
+
 
 class FilterSetUtilsMixin:
     empty_value = "EMPTY"
@@ -96,6 +98,22 @@ class FilterSetUtilsMixin:
     @classmethod
     def verbose_name_plural(cls):
         return cls.Meta.model._meta.verbose_name_plural
+
+    @property
+    def params(self):
+        return dict(self.data.items())
+
+    @property
+    def params_for_search(self):
+        """
+        Returns the current request query parameter used to keep the state
+        of the filters when using the search form.
+        The pagination and the search value is removed from those parameters.
+        """
+        params = self.params
+        params.pop(PAGE_VAR, None)
+        params.pop("search", None)
+        return params
 
     def filter_queryset(self, queryset):
         """

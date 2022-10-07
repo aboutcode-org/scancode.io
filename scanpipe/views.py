@@ -48,6 +48,7 @@ from django_filters.views import FilterView
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
 from scanpipe.api.serializers import DiscoveredDependencySerializer
+from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
@@ -380,7 +381,7 @@ class PaginatedFilterView(FilterView):
         context = super().get_context_data(**kwargs)
 
         query_dict = self.request.GET.copy()
-        query_dict.pop("page", None)
+        query_dict.pop(PAGE_VAR, None)
         context["url_params_without_page"] = query_dict.urlencode()
 
         return context
