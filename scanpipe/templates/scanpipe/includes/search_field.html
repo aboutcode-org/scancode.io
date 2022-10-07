@@ -5,4 +5,7 @@
       <i class="fas fa-search"></i>
     </span>
   </p>
+  {% for field_name, value in filter.params_for_search.items %}
+    <input type="hidden" name="{{ field_name }}" value="{{ value }}">
+  {% endfor %}
 </form>

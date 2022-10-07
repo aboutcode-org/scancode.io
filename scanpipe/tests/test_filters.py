@@ -108,3 +108,20 @@ class ScanPipeFiltersTest(TestCase):
         data = {"copyrights": "EMPTY"}
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
+
+    def test_scanpipe_filters_params_for_search(self):
+        data = {
+            "status": "succeed",
+            "search": "query",
+            "page": 2,
+        }
+        filterset = ProjectFilterSet(data)
+
+        self.assertEqual(
+            {"page": 2, "search": "query", "status": "succeed"},
+            filterset.params,
+        )
+        self.assertEqual(
+            {"status": "succeed"},
+            filterset.params_for_search,
+        )

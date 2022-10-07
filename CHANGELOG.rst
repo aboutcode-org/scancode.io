@@ -4,6 +4,9 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Keep the current filters state when submitting a search in list views.
+  https://github.com/nexB/scancode.io/issues/541
+
 - Improve the performances of the project details view to load faster by deferring the
   the charts rendering. This is especially noticeable on projects with a large amount
   of codebase resources and discovered packages.
