@@ -40,9 +40,12 @@ from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
+PAGE_VAR = "page"
+
 
 class FilterSetUtilsMixin:
     empty_value = "EMPTY"
+    other_value = "Other"
 
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
@@ -96,6 +99,22 @@ class FilterSetUtilsMixin:
     def verbose_name_plural(cls):
         return cls.Meta.model._meta.verbose_name_plural
 
+    @property
+    def params(self):
+        return dict(self.data.items())
+
+    @property
+    def params_for_search(self):
+        """
+        Returns the current request query parameter used to keep the state
+        of the filters when using the search form.
+        The pagination and the search value is removed from those parameters.
+        """
+        params = self.params
+        params.pop(PAGE_VAR, None)
+        params.pop("search", None)
+        return params
+
     def filter_queryset(self, queryset):
         """
         Adds the ability to filter by empty and none values providing the "magic"
@@ -103,8 +122,11 @@ class FilterSetUtilsMixin:
         """
 
         for name, value in self.form.cleaned_data.items():
+            field_name = self.filters[name].field_name
             if value == self.empty_value:
-                queryset = queryset.filter(**{f"{name}__in": EMPTY_VALUES})
+                queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
+            elif value == self.other_value:
+                return queryset.less_common(name)
             else:
                 queryset = self.filters[name].filter(queryset, value)
 
@@ -263,7 +285,9 @@ class InPackageFilter(django_filters.ChoiceFilter):
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
-        label="Search", field_name="path", lookup_expr="icontains"
+        label="Search",
+        field_name="path",
+        lookup_expr="icontains",
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
@@ -279,6 +303,17 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "tag",
             "compliance_alert",
         ],
+    )
+    license_key = JSONContainsFilter(
+        label="License key",
+        field_name="licenses",
+    )
+    license_category = JSONContainsFilter(
+        label="License category",
+        field_name="licenses",
+    )
+    compliance_alert = django_filters.ChoiceFilter(
+        choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
     )
     in_package = InPackageFilter(label="In a Package")
 
@@ -306,6 +341,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "holders",
             "authors",
             "licenses",
+            "license_category",
             "license_expressions",
             "emails",
             "urls",

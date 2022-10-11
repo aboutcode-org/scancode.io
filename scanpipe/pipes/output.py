@@ -37,6 +37,39 @@ from scancodeio import __version__ as scancodeio_version
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+def get_queryset(project, model_name):
+    """
+    Common source for getting consistent QuerySets across all supported outputs
+    (json, xlsx, csv, ...)
+    """
+    querysets = {
+        "discoveredpackage": (
+            project.discoveredpackages.all().order_by(
+                "type",
+                "namespace",
+                "name",
+                "version",
+            )
+        ),
+        "discovereddependency": (
+            project.discovereddependencies.all()
+            .prefetch_for_serializer()
+            .order_by(
+                "type",
+                "namespace",
+                "name",
+                "version",
+                "datasource_id",
+            )
+        ),
+        "codebaseresource": (
+            project.codebaseresources.without_symlinks().prefetch_for_serializer()
+        ),
+        "projecterror": project.projecterrors.all(),
+    }
+    return querysets.get(model_name)
+
+
 def queryset_to_csv_file(queryset, fieldnames, output_file):
     """
     Outputs csv content generated from the provided `queryset` objects to the
@@ -47,7 +80,7 @@ def queryset_to_csv_file(queryset, fieldnames, output_file):
     writer = csv.DictWriter(output_file, fieldnames)
     writer.writeheader()
 
-    for record in queryset.iterator():
+    for record in queryset.iterator(chunk_size=2000):
         row = {field: getattr(record, field) for field in fieldnames}
         writer.writerow(row)
 
@@ -65,7 +98,7 @@ def queryset_to_csv_stream(queryset, fieldnames, output_stream):
     header = dict(zip(fieldnames, fieldnames))
     yield writer.writerow(header)
 
-    for record in queryset.iterator():
+    for record in queryset.iterator(chunk_size=2000):
         row = {field: getattr(record, field) for field in fieldnames}
         yield writer.writerow(row)
 
@@ -80,20 +113,19 @@ def to_csv(project):
     """
     from scanpipe.api.serializers import get_serializer_fields
 
-    querysets = [
-        project.discoveredpackages.all(),
-        project.discovereddependencies.all().prefetch_related(
-            "for_package", "datafile_resource"
-        ),
-        project.codebaseresources.without_symlinks(),
+    model_names = [
+        "discoveredpackage",
+        "discovereddependency",
+        "codebaseresource",
+        "projecterror",
     ]
 
     output_files = []
-    for queryset in querysets:
+
+    for model_name in model_names:
+        queryset = get_queryset(project, model_name)
         model_class = queryset.model
         fieldnames = get_serializer_fields(model_class)
-
-        model_name = model_class._meta.model_name
         output_filename = project.get_output_file_path(f"{model_name}", "csv")
 
         with output_filename.open("w") as output_file:
@@ -169,44 +201,31 @@ class JSONResultsGenerator:
         }
         yield self.encode(headers)
 
+    def encode_queryset(self, project, model_name, serializer):
+        queryset = get_queryset(project, model_name)
+        for obj in queryset.iterator(chunk_size=2000):
+            yield self.encode(serializer(obj).data)
+
     def get_packages(self, project):
         from scanpipe.api.serializers import DiscoveredPackageSerializer
 
-        packages = project.discoveredpackages.all().order_by(
-            "type",
-            "namespace",
-            "name",
-            "version",
+        yield from self.encode_queryset(
+            project, "discoveredpackage", DiscoveredPackageSerializer
         )
-
-        for obj in packages.iterator():
-            yield self.encode(DiscoveredPackageSerializer(obj).data)
 
     def get_dependencies(self, project):
         from scanpipe.api.serializers import DiscoveredDependencySerializer
 
-        dependencies = (
-            project.discovereddependencies.all()
-            .prefetch_related("for_package", "datafile_resource")
-            .order_by(
-                "type",
-                "namespace",
-                "name",
-                "version",
-                "datasource_id",
-            )
+        yield from self.encode_queryset(
+            project, "discovereddependency", DiscoveredDependencySerializer
         )
-
-        for obj in dependencies.iterator():
-            yield self.encode(DiscoveredDependencySerializer(obj).data)
 
     def get_files(self, project):
         from scanpipe.api.serializers import CodebaseResourceSerializer
 
-        resources = project.codebaseresources.without_symlinks()
-
-        for obj in resources.iterator():
-            yield self.encode(CodebaseResourceSerializer(obj).data)
+        yield from self.encode_queryset(
+            project, "codebaseresource", CodebaseResourceSerializer
+        )
 
 
 def to_json(project):
@@ -401,18 +420,16 @@ def to_xlsx(project):
     if not scanpipe_app.policies_enabled:
         exclude_fields.append("compliance_alert")
 
-    querysets = [
-        project.discoveredpackages.all(),
-        project.discovereddependencies.all().prefetch_related(
-            "for_package", "datafile_resource"
-        ),
-        project.codebaseresources.without_symlinks(),
-        project.projecterrors.all(),
+    model_names = [
+        "discoveredpackage",
+        "discovereddependency",
+        "codebaseresource",
+        "projecterror",
     ]
 
     with xlsxwriter.Workbook(output_file) as workbook:
-        for queryset in querysets:
-            name = ""
+        for model_name in model_names:
+            queryset = get_queryset(project, model_name)
             queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
     return output_file

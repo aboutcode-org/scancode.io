@@ -26,6 +26,7 @@ from collections import Counter
 from contextlib import suppress
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import FileResponse
@@ -36,7 +37,6 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
-from django.utils.http import urlencode
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
@@ -48,6 +48,7 @@ from django_filters.views import FilterView
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
 from scanpipe.api.serializers import DiscoveredDependencySerializer
+from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
@@ -380,7 +381,7 @@ class PaginatedFilterView(FilterView):
         context = super().get_context_data(**kwargs)
 
         query_dict = self.request.GET.copy()
-        query_dict.pop("page", None)
+        query_dict.pop(PAGE_VAR, None)
         context["url_params_without_page"] = query_dict.urlencode()
 
         return context
@@ -486,30 +487,6 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
     template_name = "scanpipe/project_detail.html"
 
     @staticmethod
-    def get_summary(values_list, limit=7):
-        most_common = dict(Counter(values_list).most_common(limit))
-
-        other = len(values_list) - sum(most_common.values())
-        if other > 0:
-            most_common["Other"] = other
-
-        # Set a label for empty string value and move to last entry in the dict
-        if "" in most_common:
-            most_common["(No value detected)"] = most_common.pop("")
-
-        return most_common
-
-    @staticmethod
-    def data_from_model_field(queryset, model_field, data_field):
-        results = []
-        for model_values in queryset.values_list(model_field, flat=True):
-            if not model_values:
-                results.append("")
-            else:
-                results.extend(entry.get(data_field) for entry in model_values)
-        return results
-
-    @staticmethod
     def get_license_clarity_data(scan_summary_json):
         license_clarity_score = scan_summary_json.get("license_clarity_score", {})
         return [
@@ -544,52 +521,6 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        files_qs = project.codebaseresources.files()
-
-        file_filter = self.request.GET.get("file-filter", "all")
-        if file_filter == "in-a-package":
-            files_qs = files_qs.in_package()
-        elif file_filter == "not-in-a-package":
-            files_qs = files_qs.not_in_package()
-
-        files = files_qs.only(
-            "programming_language",
-            "mime_type",
-            "holders",
-            "copyrights",
-            "license_expressions",
-        )
-        packages = project.discoveredpackages.all().only(
-            "type",
-            "license_expression",
-        )
-        dependencies = project.discovereddependencies.all().only(
-            "is_runtime",
-            "is_optional",
-            "is_resolved",
-        )
-
-        file_languages = files.values_list("programming_language", flat=True)
-        file_mime_types = files.values_list("mime_type", flat=True)
-        file_holders = self.data_from_model_field(files, "holders", "holder")
-        file_copyrights = self.data_from_model_field(files, "copyrights", "copyright")
-        file_license_keys = self.data_from_model_field(files, "licenses", "key")
-        file_license_categories = self.data_from_model_field(
-            files, "licenses", "category"
-        )
-
-        file_compliance_alert = []
-        if scanpipe_app.policies_enabled:
-            file_compliance_alert = files.values_list("compliance_alert", flat=True)
-
-        package_licenses = packages.values_list("license_expression", flat=True)
-        package_types = packages.values_list("type", flat=True)
-
-        dependency_package_type = dependencies.values_list("type", flat=True)
-        dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
-        dependency_is_optional = dependencies.values_list("is_optional", flat=True)
-        dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
-
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
             missing_files = "\n- ".join(missing_inputs.keys())
@@ -616,20 +547,6 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         context.update(
             {
                 "inputs_with_source": inputs,
-                "programming_languages": self.get_summary(file_languages),
-                "mime_types": self.get_summary(file_mime_types),
-                "holders": self.get_summary(file_holders),
-                "copyrights": self.get_summary(file_copyrights),
-                "file_license_keys": self.get_summary(file_license_keys),
-                "file_license_categories": self.get_summary(file_license_categories),
-                "file_compliance_alert": self.get_summary(file_compliance_alert),
-                "package_licenses": self.get_summary(package_licenses),
-                "package_types": self.get_summary(package_types),
-                "dependency_package_type": self.get_summary(dependency_package_type),
-                "dependency_is_runtime": self.get_summary(dependency_is_runtime),
-                "dependency_is_optional": self.get_summary(dependency_is_optional),
-                "dependency_is_resolved": self.get_summary(dependency_is_resolved),
-                "file_filter": file_filter,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "archive_form": ArchiveProjectForm(),
@@ -664,6 +581,95 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             messages.error(request, error_message)
 
         return redirect(project)
+
+
+class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
+    template_name = "scanpipe/project_charts.html"
+
+    @staticmethod
+    def get_summary(values_list, limit=settings.SCANCODEIO_MOST_COMMON_LIMIT):
+        most_common = dict(Counter(values_list).most_common(limit))
+
+        other = len(values_list) - sum(most_common.values())
+        if other > 0:
+            most_common["Other"] = other
+
+        # Set a label for empty string value and move to last entry in the dict
+        if "" in most_common:
+            most_common["(No value detected)"] = most_common.pop("")
+
+        return most_common
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.object
+
+        files_qs = project.codebaseresources.files()
+
+        file_filter = self.request.GET.get("file-filter", "all")
+        if file_filter == "in-a-package":
+            files_qs = files_qs.in_package()
+        elif file_filter == "not-in-a-package":
+            files_qs = files_qs.not_in_package()
+
+        files = files_qs.only(
+            "programming_language",
+            "mime_type",
+            "holders",
+            "copyrights",
+            "license_expressions",
+        )
+
+        packages = project.discoveredpackages.all().only(
+            "type",
+            "license_expression",
+        )
+
+        dependencies = project.discovereddependencies.all().only(
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+        )
+
+        file_languages = files.values_list("programming_language", flat=True)
+        file_mime_types = files.values_list("mime_type", flat=True)
+        file_holders = files.values_from_json_field("holders", "holder")
+        file_copyrights = files.values_from_json_field("copyrights", "copyright")
+        file_license_keys = files.values_from_json_field("licenses", "key")
+        file_license_categories = files.values_from_json_field("licenses", "category")
+
+        file_compliance_alert = []
+        if scanpipe_app.policies_enabled:
+            file_compliance_alert = files.values_list("compliance_alert", flat=True)
+
+        package_licenses = packages.values_list("license_expression", flat=True)
+        package_types = packages.values_list("type", flat=True)
+
+        dependency_package_type = dependencies.values_list("type", flat=True)
+        dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
+        dependency_is_optional = dependencies.values_list("is_optional", flat=True)
+        dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
+
+        context.update(
+            {
+                "programming_languages": self.get_summary(file_languages),
+                "mime_types": self.get_summary(file_mime_types),
+                "holders": self.get_summary(file_holders),
+                "copyrights": self.get_summary(file_copyrights),
+                "file_license_keys": self.get_summary(file_license_keys),
+                "file_license_categories": self.get_summary(file_license_categories),
+                "file_compliance_alert": self.get_summary(file_compliance_alert),
+                "package_licenses": self.get_summary(package_licenses),
+                "package_types": self.get_summary(package_types),
+                "dependency_package_type": self.get_summary(dependency_package_type),
+                "dependency_is_runtime": self.get_summary(dependency_is_runtime),
+                "dependency_is_optional": self.get_summary(dependency_is_optional),
+                "dependency_is_resolved": self.get_summary(dependency_is_resolved),
+                "file_filter": file_filter,
+            }
+        )
+
+        return context
 
 
 class ProjectArchiveView(

@@ -24,6 +24,7 @@ import concurrent.futures
 import hashlib
 import json
 import logging
+import multiprocessing
 import os
 import shlex
 from collections import defaultdict
@@ -32,6 +33,7 @@ from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
+from django.db.models import ObjectDoesNotExist
 
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
@@ -45,7 +47,6 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -61,10 +62,17 @@ def get_max_workers(keep_available):
     Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
     or returns a default value based on the number of available CPUs,
     minus the provided `keep_available` value.
+
+    On operating system where the multiprocessing start method is not "fork",
+    but for example "spawn", such as on macOS, multiprocessing and threading are
+    disabled by default returning -1 `max_workers`.
     """
     processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
     if processes is not None:
         return processes
+
+    if multiprocessing.get_start_method() != "fork":
+        return -1
 
     max_workers = os.cpu_count() - keep_available
     if max_workers < 1:
@@ -334,17 +342,31 @@ def scan_for_application_packages(project):
     assemble_packages(project=project)
 
 
-def add_to_package(package_uid, resource, project):
+def add_resource_to_package(package_uid, resource, project):
     """
     Relate a DiscoveredPackage to `resource` from `project` using `package_uid`.
+
+    Add a ProjectError when the DiscoveredPackage could not be fetched using the
+    provided `package_uid`.
     """
     if not package_uid:
         return
 
     resource_package = resource.discovered_packages.filter(package_uid=package_uid)
-    if not resource_package.exists():
+    if resource_package.exists():
+        return
+
+    try:
         package = project.discoveredpackages.get(package_uid=package_uid)
-        resource.discovered_packages.add(package)
+    except ObjectDoesNotExist as error:
+        details = {
+            "package_uid": str(package_uid),
+            "resource": str(resource),
+        }
+        project.add_error(error, model="assemble_package", details=details)
+        return
+
+    resource.discovered_packages.add(package)
 
 
 def assemble_packages(project):
@@ -371,7 +393,7 @@ def assemble_packages(project):
                 package_data=pd,
                 resource=resource,
                 codebase=project,
-                package_adder=add_to_package,
+                package_adder=add_resource_to_package,
             )
 
             for item in items:

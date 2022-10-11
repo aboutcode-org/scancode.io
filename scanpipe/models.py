@@ -26,6 +26,7 @@ import logging
 import re
 import shutil
 import uuid
+from collections import Counter
 from contextlib import suppress
 from itertools import groupby
 from operator import itemgetter
@@ -42,6 +43,7 @@ from django.db import transaction
 from django.db.models import Count
 from django.db.models import IntegerField
 from django.db.models import OuterRef
+from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
@@ -906,7 +908,103 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return self.codebaseresources.count() == 1
 
 
-class ProjectRelatedQuerySet(models.QuerySet):
+class GroupingQuerySetMixin:
+    most_common_limit = settings.SCANCODEIO_MOST_COMMON_LIMIT
+
+    def group_by(self, field_name):
+        """
+        Return a list of grouped values with their count, DESC ordered by count
+        for the provided `field_name`.
+        """
+        return (
+            self.values(field_name).annotate(count=Count(field_name)).order_by("-count")
+        )
+
+    def most_common_values(self, field_name, limit=most_common_limit):
+        """
+        Return a list of the most common values for the `field_name` ending at the
+        provided `limit`.
+        """
+        return self.group_by(field_name)[:limit].values_list(field_name, flat=True)
+
+    def less_common_values(self, field_name, limit=most_common_limit):
+        """
+        Return a list of the less common values for the `field_name` starting at the
+        provided `limit`.
+        """
+        return self.group_by(field_name)[limit:].values_list(field_name, flat=True)
+
+    def less_common(self, field_name, limit=most_common_limit):
+        """
+        Return a QuerySet filtered by the less common values for the provided
+        `field_name` starting at the `limit`.
+        """
+        json_fields_mapping = {
+            "license_key": ("licenses", "key"),
+            "license_category": ("licenses", "category"),
+            "copyrights": ("copyrights", "copyright"),
+            "holders": ("holders", "holder"),
+        }
+
+        if field_name in json_fields_mapping:
+            field_name, data_field = json_fields_mapping.get(field_name)
+            values_list = self.values_from_json_field(field_name, data_field)
+            sorted_by_occurrence = list(dict(Counter(values_list).most_common()).keys())
+            less_common_values = sorted_by_occurrence[limit:]
+            return self.json_list_contains(field_name, data_field, less_common_values)
+
+        less_common_values = self.less_common_values(field_name, limit)
+        return self.filter(**{f"{field_name}__in": less_common_values})
+
+
+class JSONFieldQuerySetMixin:
+    def json_field_contains(self, field_name, value):
+        """
+        Filters the QuerySet looking for the `value` string in the `field_name` JSON
+        field converted into text.
+        Empty values are excluded as there's no need to cast those into text.
+        """
+        return (
+            self.filter(~Q(**{field_name: []}))
+            .annotate(**{f"{field_name}_as_text": Cast(field_name, TextField())})
+            .filter(**{f"{field_name}_as_text__contains": value})
+        )
+
+    def json_list_contains(self, field_name, key, values):
+        """
+        Filters on the JSONField `field_name` that stores a list of dictionaries.
+
+        json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
+        """
+        lookups = Q()
+
+        for value in values:
+            lookups |= Q(**{f"{field_name}__contains": [{key: value}]})
+
+        return self.filter(lookups)
+
+    def values_from_json_field(self, field_name, data_field):
+        """
+        Extract and return `data_field` values from each object of a JSONField
+        `field_name` that stores a list of dictionaries.
+        Empty value are kept in the return results as empty strings.
+        """
+        values = []
+
+        for objects in self.values_list(field_name, flat=True):
+            if not objects:
+                values.append("")
+            else:
+                values.extend(
+                    object_dict.get(data_field, "") for object_dict in objects
+                )
+
+        return values
+
+
+class ProjectRelatedQuerySet(
+    GroupingQuerySetMixin, JSONFieldQuerySetMixin, models.QuerySet
+):
     def project(self, project):
         return self.filter(project=project)
 
@@ -1299,6 +1397,21 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
+    def prefetch_for_serializer(self):
+        """
+        Optimized prefetching for a QuerySet to be consumed by the
+        `CodebaseResourceSerializer`.
+        Only the fields required by the serializer are fetched on the relations.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "discovered_packages",
+                queryset=DiscoveredPackage.objects.only(
+                    "package_uid", "uuid", *PURL_FIELDS
+                ),
+            ),
+        )
+
     def status(self, status=None):
         if status:
             return self.filter(status=status)
@@ -1346,31 +1459,6 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def unknown_license(self):
         return self.json_field_contains("license_expressions", "unknown")
-
-    def json_field_contains(self, field_name, value):
-        """
-        Filters the QuerySet looking for the `value` string in the `field_name` JSON
-        field converted into text.
-        Empty values are excluded as there's no need to cast those into text.
-        """
-        return (
-            self.filter(~Q(**{field_name: []}))
-            .annotate(**{f"{field_name}_as_text": Cast(field_name, TextField())})
-            .filter(**{f"{field_name}_as_text__contains": value})
-        )
-
-    def json_list_contains(self, field_name, key, values):
-        """
-        Filters on the JSONField `field_name` that stores a list of dictionaries.
-
-        json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
-        """
-        lookups = Q()
-
-        for value in values:
-            lookups |= Q(**{f"{field_name}__contains": [{key: value}]})
-
-        return self.filter(lookups)
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -1742,7 +1830,8 @@ class CodebaseResource(
         with the commoncode.resource.VirtualCodebase class API.
         """
         exactly_one_sub_directory = "[^/]+$"
-        children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
+        escaped_path = re.escape(self.path)
+        children_regex = rf"^{escaped_path}/{exactly_one_sub_directory}"
         return (
             self.descendants()
             .filter(path__regex=children_regex)
@@ -1838,7 +1927,7 @@ class CodebaseResource(
         Returns the list of all discovered packages associated to this resource.
         """
         return [
-            package.package_uid if package.package_uid else str(package)
+            package.package_uid or str(package)
             for package in self.discovered_packages.all()
         ]
 
@@ -1965,7 +2054,20 @@ class DiscoveredPackage(
 
 
 class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
-    pass
+    def prefetch_for_serializer(self):
+        """
+        Optimized prefetching for a QuerySet to be consumed by the
+        `DiscoveredDependencySerializer`.
+        Only the fields required by the serializer are fetched on the relations.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "for_package", queryset=DiscoveredPackage.objects.only("package_uid")
+            ),
+            Prefetch(
+                "datafile_resource", queryset=CodebaseResource.objects.only("path")
+            ),
+        )
 
 
 class DiscoveredDependency(

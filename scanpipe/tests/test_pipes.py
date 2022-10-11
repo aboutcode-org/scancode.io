@@ -20,11 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import collections
 import json
 import os
-import re
-import shutil
 import tempfile
 from pathlib import Path
 from unittest import expectedFailure
@@ -37,19 +34,16 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 
 from commoncode.archive import extract_tar
-from scancode.cli_test_utils import purl_with_fake_uuid
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import make_codebase_resource
-from scanpipe.pipes import output
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
@@ -101,144 +95,6 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", filename_now())
-
-    def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-
-        queryset = project1.discoveredpackages.all()
-        fieldnames = ["purl", "name", "version"]
-
-        output_file_path = project1.get_output_file_path("packages", "csv")
-        with output_file_path.open("w") as output_file:
-            output.queryset_to_csv_file(queryset, fieldnames, output_file)
-
-        expected = [
-            "purl,name,version\n",
-            "pkg:deb/debian/adduser@3.118?arch=all,adduser,3.118\n",
-        ]
-        with output_file_path.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-        queryset = project1.codebaseresources.all()
-        fieldnames = ["for_packages", "path"]
-        output_file_path = project1.get_output_file_path("resources", "csv")
-        with output_file_path.open("w") as output_file:
-            output.queryset_to_csv_file(queryset, fieldnames, output_file)
-
-        package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
-        expected = [
-            "for_packages,path\n",
-            f"['{package_uid}'],filename.ext\n",
-        ]
-        with output_file_path.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-    def test_scanpipe_pipes_outputs_queryset_to_csv_stream(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-
-        queryset = project1.discoveredpackages.all()
-        fieldnames = ["purl", "name", "version"]
-
-        output_file = project1.get_output_file_path("packages", "csv")
-        with output_file.open("w") as output_stream:
-            generator = output.queryset_to_csv_stream(
-                queryset, fieldnames, output_stream
-            )
-            collections.deque(generator, maxlen=0)  # Exhaust the generator
-
-        expected = [
-            "purl,name,version\n",
-            "pkg:deb/debian/adduser@3.118?arch=all,adduser,3.118\n",
-        ]
-        with output_file.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-        queryset = project1.codebaseresources.all()
-        fieldnames = ["for_packages", "path"]
-        output_file = project1.get_output_file_path("resources", "csv")
-        with output_file.open("w") as output_stream:
-            generator = output.queryset_to_csv_stream(
-                queryset, fieldnames, output_stream
-            )
-            collections.deque(generator, maxlen=0)  # Exhaust the generator
-
-        output.queryset_to_csv_stream(queryset, fieldnames, output_file)
-        package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
-        expected = [
-            "for_packages,path\n",
-            f"['{package_uid}'],filename.ext\n",
-        ]
-        with output_file.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-    @mock.patch("scanpipe.pipes.datetime", mocked_now)
-    def test_scanpipe_pipes_outputs_to_csv(self):
-        project1 = Project.objects.create(name="Analysis")
-        output_files = output.to_csv(project=project1)
-        expected = [
-            "codebaseresource-2010-10-10-10-10-10.csv",
-            "discovereddependency-2010-10-10-10-10-10.csv",
-            "discoveredpackage-2010-10-10-10-10-10.csv",
-        ]
-        self.assertEqual(sorted(expected), sorted(project1.output_root))
-        self.assertEqual(sorted(expected), sorted([f.name for f in output_files]))
-
-    def test_scanpipe_pipes_outputs_to_json(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-
-        output_file = output.to_json(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
-
-        with output_file.open() as f:
-            results = json.loads(f.read())
-
-        expected = ["dependencies", "files", "headers", "packages"]
-        self.assertEqual(expected, sorted(results.keys()))
-
-        self.assertEqual(1, len(results["headers"]))
-        self.assertEqual(1, len(results["files"]))
-        self.assertEqual(1, len(results["packages"]))
-
-        self.assertIn("compliance_alert", results["files"][0])
-
-        # Make sure the output can be generated even if the work_directory was wiped
-        shutil.rmtree(project1.work_directory)
-        output_file = output.to_json(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
-
-    def test_scanpipe_pipes_outputs_to_xlsx(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-        ProjectError.objects.create(
-            project=project1, model="Model", details={}, message="Error"
-        )
-
-        output_file = output.to_xlsx(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
-
-        # Make sure the output can be generated even if the work_directory was wiped
-        shutil.rmtree(project1.work_directory)
-        output_file = output.to_xlsx(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
 
     def test_scanpipe_pipes_scancode_extract_archive(self):
         target = tempfile.mkdtemp()
@@ -1254,7 +1110,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projecterrors.count())
 
-    def test_scanpipe_add_to_package(self):
+    def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(
             project=project1,
@@ -1263,14 +1119,22 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         package1 = update_or_create_package(project1, package_data1)
         self.assertFalse(resource1.for_packages)
 
-        self.assertIsNone(scancode.add_to_package(None, resource1, project1))
+        self.assertIsNone(scancode.add_resource_to_package(None, resource1, project1))
         self.assertFalse(resource1.for_packages)
 
-        scancode.add_to_package(package1.package_uid, resource1, project1)
+        scancode.add_resource_to_package("not_available", resource1, project1)
+        self.assertFalse(resource1.for_packages)
+        self.assertEqual(1, project1.projecterrors.count())
+        error = project1.projecterrors.get()
+        self.assertEqual("assemble_package", error.model)
+        expected = {"resource": "filename.ext", "package_uid": "not_available"}
+        self.assertEqual(expected, error.details)
+
+        scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
         self.assertIn(package1.package_uid, resource1.for_packages)
 
         # Package will not be added twice since it is already associated with the
         # resource.
-        scancode.add_to_package(package1.package_uid, resource1, project1)
+        scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)

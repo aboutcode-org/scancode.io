@@ -115,6 +115,23 @@ class ScanPipeViewsTest(TestCase):
         """
         self.assertContains(response, sort_filters, html=True)
 
+    def test_scanpipe_views_project_list_state_of_filters_in_search_form(self):
+        url = reverse("project_list")
+        data = {
+            "status": "failed",
+            "search": "query",
+        }
+        response = self.client.get(url, data=data)
+
+        expected = (
+            '<input class="input " type="text" placeholder="Search projects" '
+            'name="search" value="query">'
+        )
+        self.assertContains(response, expected, html=True)
+
+        expected = '<input type="hidden" name="status" value="failed">'
+        self.assertContains(response, expected, html=True)
+
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
@@ -182,8 +199,8 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("docker", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
-    def test_scanpipe_views_project_details_compliance_alert(self):
-        url = self.project1.get_absolute_url()
+    def test_scanpipe_views_project_details_charts_compliance_alert(self):
+        url = reverse("project_charts", args=[self.project1.uuid])
         expected = 'id="compliance_alert_chart"'
 
         scanpipe_app.license_policies_index = None
