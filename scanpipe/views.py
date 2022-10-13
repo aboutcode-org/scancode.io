@@ -1073,7 +1073,7 @@ class DiscoveredPackageDetailsView(
                 "sha512",
                 "datasource_id",
                 "file_references",
-                "parties",
+                {"field_name": "parties", "render_func": render_as_yaml},
                 "missing_resources",
                 "modified_resources",
                 "manifest_path",
