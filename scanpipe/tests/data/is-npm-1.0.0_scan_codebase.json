@@ -35,23 +35,39 @@
       "version": "1.0.0",
       "qualifiers": "",
       "subpath": "",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "extra_data": {},
       "primary_language": "JavaScript",
       "description": "Check if your code is running as an npm script",
       "release_date": null,
       "homepage_url": "",
       "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-      "sha1": "",
-      "md5": "",
       "bug_tracking_url": "",
       "code_view_url": "",
       "vcs_url": "https://github.com/sindresorhus/is-npm",
+      "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
+      "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
       "copyright": "",
       "license_expression": "mit",
       "declared_license": "['MIT']",
       "notice_text": "",
       "manifest_path": "",
       "contains_source_code": null,
-      "extra_data": {},
+      "datasource_id": "",
+      "file_references": [],
+      "parties": [
+        {
+          "url": "http://sindresorhus.com",
+          "name": "Sindre Sorhus",
+          "role": "author",
+          "type": "person",
+          "email": "sindresorhus@gmail.com"
+        }
+      ],
       "missing_resources": [],
       "modified_resources": [],
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -84,9 +100,8 @@
   "files": [
     {
       "for_packages": [],
-      "path": "is-npm-1.0.0.tgz",
-      "sha1": "f2fb63a65e4905b406c86072765a1a4dc793b9f4",
       "md5": "effb58881c1aca12da9d3a18335bdc3f",
+      "sha1": "f2fb63a65e4905b406c86072765a1a4dc793b9f4",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -95,6 +110,7 @@
       "license_expressions": [],
       "emails": [],
       "urls": [],
+      "path": "is-npm-1.0.0.tgz",
       "status": "scanned",
       "tag": "",
       "type": "file",
@@ -110,9 +126,8 @@
     },
     {
       "for_packages": [],
-      "path": "is-npm-1.0.0.tgz-extract",
-      "sha1": "",
       "md5": "",
+      "sha1": "",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -121,6 +136,7 @@
       "license_expressions": [],
       "emails": [],
       "urls": [],
+      "path": "is-npm-1.0.0.tgz-extract",
       "status": "scanned",
       "tag": "",
       "type": "directory",
@@ -136,9 +152,8 @@
     },
     {
       "for_packages": [],
-      "path": "is-npm-1.0.0.tgz-extract/package",
-      "sha1": "",
       "md5": "",
+      "sha1": "",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -147,6 +162,7 @@
       "license_expressions": [],
       "emails": [],
       "urls": [],
+      "path": "is-npm-1.0.0.tgz-extract/package",
       "status": "scanned",
       "tag": "",
       "type": "directory",
@@ -164,9 +180,8 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "path": "is-npm-1.0.0.tgz-extract/package/index.js",
-      "sha1": "ecce1fc677fa7d20fc5593b63db45e45c5e8768a",
       "md5": "bc4b18b0c8c32b94883d6fc1d675e919",
+      "sha1": "ecce1fc677fa7d20fc5593b63db45e45c5e8768a",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -175,6 +190,7 @@
       "license_expressions": [],
       "emails": [],
       "urls": [],
+      "path": "is-npm-1.0.0.tgz-extract/package/index.js",
       "status": "scanned",
       "tag": "",
       "type": "file",
@@ -192,9 +208,8 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "path": "is-npm-1.0.0.tgz-extract/package/package.json",
-      "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
+      "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -203,6 +218,7 @@
       "license_expressions": [],
       "emails": [],
       "urls": [],
+      "path": "is-npm-1.0.0.tgz-extract/package/package.json",
       "status": "application-package",
       "tag": "",
       "type": "file",
@@ -284,9 +300,8 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "path": "is-npm-1.0.0.tgz-extract/package/readme.md",
-      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
+      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "extra_data": {},
       "copyrights": [
         {
@@ -370,6 +385,7 @@
           "start_line": 30
         }
       ],
+      "path": "is-npm-1.0.0.tgz-extract/package/readme.md",
       "status": "scanned",
       "tag": "",
       "type": "file",

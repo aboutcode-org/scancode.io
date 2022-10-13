@@ -36,9 +36,8 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "path": "package/package.json",
-      "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
+      "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "extra_data": {},
       "copyrights": [],
       "holders": [],
@@ -101,6 +100,7 @@
           "start_line": 10
         }
       ],
+      "path": "package/package.json",
       "status": "application-package",
       "tag": "",
       "type": "file",
@@ -183,9 +183,8 @@
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
       ],
-      "path": "package/readme.md",
-      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
+      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "extra_data": {},
       "copyrights": [
         {
@@ -269,6 +268,7 @@
           "start_line": 30
         }
       ],
+      "path": "package/readme.md",
       "status": "application-package",
       "tag": "",
       "type": "file",
@@ -293,23 +293,39 @@
       "version": "1.0.0",
       "qualifiers": "",
       "subpath": "",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "extra_data": {},
       "primary_language": "JavaScript",
       "description": "Check if your code is running as an npm script",
       "release_date": null,
       "homepage_url": "",
       "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-      "sha1": "",
-      "md5": "",
       "bug_tracking_url": "",
       "code_view_url": "",
       "vcs_url": "https://github.com/sindresorhus/is-npm",
+      "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
+      "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
       "copyright": "",
       "license_expression": "mit",
       "declared_license": "['MIT']",
       "notice_text": "",
       "manifest_path": "",
       "contains_source_code": null,
-      "extra_data": {},
+      "datasource_id": "",
+      "file_references": [],
+      "parties": [
+        {
+          "url": "http://sindresorhus.com",
+          "name": "Sindre Sorhus",
+          "role": "author",
+          "type": "person",
+          "email": "sindresorhus@gmail.com"
+        }
+      ],
       "missing_resources": [],
       "modified_resources": [],
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",

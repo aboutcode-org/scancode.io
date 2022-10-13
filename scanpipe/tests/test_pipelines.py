@@ -213,7 +213,8 @@ class PipelinesIntegrationTest(TestCase):
     Set of integration tests to ensure the proper output for each built-in Pipelines.
     """
 
-    maxDiff = None
+    # Un-comment the following to display full diffs:
+    # maxDiff = None
     data_location = Path(__file__).parent / "data"
     exclude_from_diff = [
         "start_timestamp",
@@ -335,7 +336,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("pkg:npm/is-npm@1.0.0", key_file_package_purl)
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
-    def test_scanpipe_scan_package_pipeline_integration_test_multiple_packages(self):
+    def test_scanpipe_scan_package_pipeline_integration_multiple_packages_test(self):
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
