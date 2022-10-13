@@ -2015,7 +2015,7 @@ class AbstractPackage(models.Model):
             "By convention the first line should be a summary when available."
         ),
     )
-    release_date = models.DateTimeField(
+    release_date = models.DateField(
         blank=True,
         null=True,
         help_text=_(
