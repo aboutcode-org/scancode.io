@@ -74,8 +74,7 @@ from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe import tasks
-from scanpipe.packagedb_models import AbstractPackage
-from scanpipe.packagedb_models import AbstractResource
+from scanpipe.packagedcode_models import AbstractPackage
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -107,6 +106,48 @@ class UUIDPKModel(models.Model):
     @property
     def short_uuid(self):
         return str(self.uuid)[0:8]
+
+
+class HashFieldsMixin(models.Model):
+    """
+    The hash fields are not indexed by default, use the `indexes` in Meta as needed:
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['md5']),
+            models.Index(fields=['sha1']),
+            models.Index(fields=['sha256']),
+            models.Index(fields=['sha512']),
+        ]
+    """
+
+    md5 = models.CharField(
+        _("MD5"),
+        max_length=32,
+        blank=True,
+        help_text=_("MD5 checksum hex-encoded, as in md5sum."),
+    )
+    sha1 = models.CharField(
+        _("SHA1"),
+        max_length=40,
+        blank=True,
+        help_text=_("SHA1 checksum hex-encoded, as in sha1sum."),
+    )
+    sha256 = models.CharField(
+        _("SHA256"),
+        max_length=64,
+        blank=True,
+        help_text=_("SHA256 checksum hex-encoded, as in sha256sum."),
+    )
+    sha512 = models.CharField(
+        _("SHA512"),
+        max_length=128,
+        blank=True,
+        help_text=_("SHA512 checksum hex-encoded, as in sha512sum."),
+    )
+
+    class Meta:
+        abstract = True
 
 
 class AbstractTaskFieldsModel(models.Model):
@@ -1544,13 +1585,23 @@ class CodebaseResource(
     ScanFieldsModelMixin,
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
-    AbstractResource,
+    HashFieldsMixin,
+    models.Model,
 ):
     """
     A project Codebase Resources are records of its code files and directories.
     Each record is identified by its path under the project workspace.
+
+    These model fields should be kept in line with `scancode.resource.Resource`.
     """
 
+    path = models.CharField(
+        max_length=2000,
+        help_text=_(
+            "The full path value of a resource (file or directory) in the "
+            "archive it is from."
+        ),
+    )
     rootfs_path = models.CharField(
         max_length=2000,
         blank=True,
@@ -1564,6 +1615,11 @@ class CodebaseResource(
         blank=True,
         max_length=30,
         help_text=_("Analysis status for this resource."),
+    )
+    size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Size in bytes."),
     )
     tag = models.CharField(
         blank=True,
@@ -1642,7 +1698,6 @@ class CodebaseResource(
             "provided policies."
         ),
     )
-
     package_data = models.JSONField(
         default=list,
         blank=True,
@@ -1941,6 +1996,8 @@ class DiscoveredPackage(
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
     UpdateFromDataMixin,
+    HashFieldsMixin,
+    PackageURLMixin,
     AbstractPackage,
 ):
     """
@@ -1952,6 +2009,9 @@ class DiscoveredPackage(
     See https://github.com/package-url for more details.
     """
 
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
+    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -1963,8 +2023,6 @@ class DiscoveredPackage(
         db_index=True,
         help_text=_("Unique identifier for this package."),
     )
-
-    # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
 
@@ -1972,6 +2030,15 @@ class DiscoveredPackage(
 
     class Meta:
         ordering = ["uuid"]
+        indexes = [
+            models.Index(fields=["filename"]),
+            models.Index(fields=["primary_language"]),
+            models.Index(fields=["size"]),
+            models.Index(fields=["md5"]),
+            models.Index(fields=["sha1"]),
+            models.Index(fields=["sha256"]),
+            models.Index(fields=["sha512"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "package_uid"],

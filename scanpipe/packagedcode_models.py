@@ -20,40 +20,28 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import uuid
-
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from packageurl.contrib.django.models import PackageURLMixin
 
-
-class AbstractPackage(PackageURLMixin, models.Model):
-    uuid = models.UUIDField(
-        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
-    )
-
-    last_modified_date = models.DateTimeField(
-        null=True,
-        blank=True,
-        db_index=True,
-        help_text=_("Timestamp set when a Package is created or modified"),
-    )
+class AbstractPackage(models.Model):
+    """
+    These model fields should be kept in line with `packagedcode.models.PackageData`.
+    """
 
     filename = models.CharField(
         max_length=255,
         blank=True,
-        db_index=True,
         help_text=_(
             "File name of a Resource sometimes part of the URI proper"
             "and sometimes only available through an HTTP header."
         ),
     )
-
     primary_language = models.CharField(
-        max_length=50, blank=True, help_text=_("Primary programming language")
+        max_length=50,
+        blank=True,
+        help_text=_("Primary programming language."),
     )
-
     description = models.TextField(
         blank=True,
         help_text=_(
@@ -61,76 +49,87 @@ class AbstractPackage(PackageURLMixin, models.Model):
             "By convention the first line should be a summary when available."
         ),
     )
-
-    release_date = models.DateField(
+    release_date = models.DateTimeField(
         blank=True,
         null=True,
-        db_index=True,
         help_text=_(
             "The date that the package file was created, or when "
             "it was posted to its original download source."
         ),
     )
-
     homepage_url = models.CharField(
+        _("Homepage URL"),
         max_length=1024,
         blank=True,
         help_text=_("URL to the homepage for this package."),
     )
-
     download_url = models.CharField(
-        max_length=2048, blank=True, help_text=_("A direct download URL.")
+        _("Download URL"),
+        max_length=2048,
+        blank=True,
+        help_text=_("A direct download URL."),
     )
-
     size = models.BigIntegerField(
-        blank=True, null=True, db_index=True, help_text=_("Size in bytes.")
-    )
-
-    sha1 = models.CharField(
-        verbose_name=_("download SHA1"),
-        max_length=40,
         blank=True,
-        db_index=True,
-        help_text=_("SHA1 checksum hex-encoded, as in sha1sum."),
+        null=True,
+        help_text=_("Size in bytes."),
     )
-
-    md5 = models.CharField(
-        verbose_name=_("download MD5"),
-        max_length=32,
-        blank=True,
-        db_index=True,
-        help_text=_("MD5 checksum hex-encoded, as in md5sum."),
-    )
-
     bug_tracking_url = models.CharField(
+        _("Bug tracking URL"),
         max_length=1024,
         blank=True,
-        help_text=_("URL to the issue or bug tracker for this package"),
+        help_text=_("URL to the issue or bug tracker for this package."),
     )
-
     code_view_url = models.CharField(
+        _("Code view URL"),
         max_length=1024,
         blank=True,
-        help_text=_("a URL where the code can be browsed online"),
+        help_text=_("a URL where the code can be browsed online."),
     )
-
     vcs_url = models.CharField(
+        _("VCS URL"),
         max_length=1024,
         blank=True,
         help_text=_(
-            "a URL to the VCS repository in the SPDX form of: "
+            "A URL to the VCS repository in the SPDX form of: "
             '"git", "svn", "hg", "bzr", "cvs", '
             "https://github.com/nexb/scancode-toolkit.git@405aaa4b3 "
             'See SPDX specification "Package Download Location" '
-            "at https://spdx.org/spdx-specification-21-web-version#h.49x2ik5 "
+            "at https://spdx.org/spdx-specification-21-web-version#h.49x2ik5"
         ),
     )
-
+    repository_homepage_url = models.CharField(
+        _("Repository homepage URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "URL to the page for this package in its package repository. "
+            "This is typically different from the package homepage URL proper."
+        ),
+    )
+    repository_download_url = models.CharField(
+        _("Repository download URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "Download URL to download the actual archive of code of this "
+            "package in its package repository. "
+            "This may be different from the actual download URL."
+        ),
+    )
+    api_data_url = models.CharField(
+        _("API data URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "API URL to obtain structured data for this package such as the "
+            "URL to a JSON or XML api its package repository."
+        ),
+    )
     copyright = models.TextField(
         blank=True,
         help_text=_("Copyright statements for this package. Typically one per line."),
     )
-
     license_expression = models.TextField(
         blank=True,
         help_text=_(
@@ -138,7 +137,6 @@ class AbstractPackage(PackageURLMixin, models.Model):
             "from its declared license."
         ),
     )
-
     declared_license = models.TextField(
         blank=True,
         help_text=_(
@@ -146,11 +144,10 @@ class AbstractPackage(PackageURLMixin, models.Model):
             "package manifest."
         ),
     )
-
     notice_text = models.TextField(
-        blank=True, help_text=_("A notice text for this package.")
+        blank=True,
+        help_text=_("A notice text for this package."),
     )
-
     manifest_path = models.CharField(
         max_length=1024,
         blank=True,
@@ -159,54 +156,29 @@ class AbstractPackage(PackageURLMixin, models.Model):
             "Maven .pom or a npm package.json."
         ),
     )
-
     contains_source_code = models.BooleanField(null=True, blank=True)
-
-    class Meta:
-        abstract = True
-
-
-class AbstractResource(models.Model):
-    """
-    These model fields should be kept in line with scancode.resource.Resource
-    """
-
-    path = models.CharField(
-        max_length=2000,
-        help_text=_(
-            "The full path value of a resource (file or directory) in the "
-            "archive it is from."
-        ),
-    )
-
-    size = models.BigIntegerField(blank=True, null=True, help_text=_("Size in bytes."))
-
-    sha1 = models.CharField(
-        max_length=40,
-        blank=True,
-        help_text=_("SHA1 checksum hex-encoded, as in sha1sum."),
-    )
-
-    md5 = models.CharField(
-        max_length=32,
-        blank=True,
-        help_text=_("MD5 checksum hex-encoded, as in md5sum."),
-    )
-
-    sha256 = models.CharField(
+    datasource_id = models.CharField(
         max_length=64,
         blank=True,
-        help_text=_("SHA256 checksum hex-encoded, as in sha256sum."),
+        help_text=_(
+            "The identifier for the datafile handler used to obtain this package."
+        ),
     )
-
-    sha512 = models.CharField(
-        max_length=128,
+    file_references = models.JSONField(
+        default=list,
         blank=True,
-        help_text=_("SHA512 checksum hex-encoded, as in sha512sum."),
+        help_text=_(
+            "List of file paths and details for files referenced in a package "
+            "manifest. These may not actually exist on the filesystem. "
+            "The exact semantics and base of these paths is specific to a "
+            "package type or datafile format."
+        ),
     )
-
-    def __str__(self):
-        return self.path
+    parties = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("A list of parties such as a person, project or organization."),
+    )
 
     class Meta:
         abstract = True
