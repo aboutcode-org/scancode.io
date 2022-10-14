@@ -22,6 +22,7 @@
 
 import io
 import shutil
+import sys
 import tempfile
 import uuid
 from contextlib import redirect_stdout
@@ -1258,6 +1259,7 @@ class ScanPipeModelsTest(TestCase):
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
 
+    @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
         fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
