@@ -48,6 +48,7 @@ from django_filters.views import FilterView
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
 from scanpipe.api.serializers import DiscoveredDependencySerializer
+from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
@@ -380,7 +381,7 @@ class PaginatedFilterView(FilterView):
         context = super().get_context_data(**kwargs)
 
         query_dict = self.request.GET.copy()
-        query_dict.pop("page", None)
+        query_dict.pop(PAGE_VAR, None)
         context["url_params_without_page"] = query_dict.urlencode()
 
         return context
@@ -1043,6 +1044,9 @@ class DiscoveredPackageDetailsView(
                 "bug_tracking_url",
                 "code_view_url",
                 "vcs_url",
+                "api_data_url",
+                "repository_homepage_url",
+                "repository_download_url",
                 "source_packages",
                 "keywords",
                 "description",
@@ -1072,8 +1076,13 @@ class DiscoveredPackageDetailsView(
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
                 "release_date",
-                "sha1",
                 "md5",
+                "sha1",
+                "sha256",
+                "sha512",
+                "datasource_id",
+                "file_references",
+                {"field_name": "parties", "render_func": render_as_yaml},
                 "missing_resources",
                 "modified_resources",
                 "manifest_path",
