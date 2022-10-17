@@ -23,15 +23,17 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 SCANCODE_BASE_URL = (
     "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data"
 )
+SPDX_LICENSE_URL = "https://spdx.org/licenses/{}"
+SCANCODE_LICENSEDB_URL = "https://scancode-licensedb.aboutcode.org/{}"
 
 
 class TestScantextViews(FileBasedTesting):
     test_data_dir = TEST_DATA_DIR
 
     def test_get_license_keys_count(self):
-        rule1 = models.Rule(license_expression="Apache-2.0", stored_text="1")
-        rule2 = models.Rule(license_expression="Apache-2.0 OR MIT", stored_text="2")
-        rule3 = models.Rule(license_expression="BSD AND GPL", stored_text="3")
+        rule1 = models.Rule(license_expression="Apache-2.0", text="1")
+        rule2 = models.Rule(license_expression="Apache-2.0 OR MIT", text="2")
+        rule3 = models.Rule(license_expression="BSD AND GPL", text="3")
 
         match1 = match.LicenseMatch(rule=rule1, ispan=Span(), qspan=Span())
         match2 = match.LicenseMatch(rule=rule2, ispan=Span(), qspan=Span())
@@ -43,7 +45,7 @@ class TestScantextViews(FileBasedTesting):
         self.assertEqual(response, expected)
 
     def test_get_rule_text_url_for_rule(self):
-        rule1 = models.Rule(license_expression="Apache-2.0", stored_text="1")
+        rule1 = models.Rule(license_expression="Apache-2.0", text="1")
         rule1.identifier = "Apache-2.0.RULE"
 
         response = get_rule_text_url(rule=rule1, base_url="http://example.com")
@@ -52,7 +54,7 @@ class TestScantextViews(FileBasedTesting):
 
     def test_get_rule_text_url_for_license(self):
         rule1 = models.Rule(
-            license_expression="Apache-2.0", stored_text="1", is_from_license=True
+            license_expression="Apache-2.0", text="1", is_from_license=True
         )
         rule1.identifier = "Apache-2.0.LICENSE"
 
@@ -61,17 +63,17 @@ class TestScantextViews(FileBasedTesting):
         self.assertEqual(response, expected)
 
     def test_get_rule_text_url_for_spdx(self):
-        rule1 = models.SpdxRule(license_expression="Apache-2.0", stored_text="1")
+        rule1 = models.SpdxRule(license_expression="Apache-2.0", text="1")
         response = get_rule_text_url(rule=rule1, base_url="http://example.com")
         self.assertIsNone(response)
 
     def test_get_rule_text_url_for_unknown(self):
-        rule1 = models.UnknownRule(license_expression="Apache-2.0", stored_text="1")
+        rule1 = models.UnknownRule(license_expression="Apache-2.0", text="1")
         response = get_rule_text_url(rule=rule1, base_url="http://example.com")
         self.assertIsNone(response)
 
     def test_get_rule_text_url_with_default_base_url(self):
-        rule1 = models.Rule(license_expression="apache-2.0 or mit", stored_text="1")
+        rule1 = models.Rule(license_expression="apache-2.0 or mit", text="1")
         rule1.identifier = "apache-2.0_or_mit_48.RULE"
 
         response = get_rule_text_url(rule=rule1)
