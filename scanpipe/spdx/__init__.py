@@ -450,9 +450,11 @@ class Document:
             "documentNamespace": self.namespace,
             "creationInfo": self.creation_info.as_dict(),
             "packages": [package.as_dict() for package in self.packages],
-            "files": [file.as_dict() for file in self.files],
             "documentDescribes": [self.spdx_id],
         }
+
+        if self.files:
+            data["files"] = [file.as_dict() for file in self.files]
 
         if self.extracted_licenses:
             data["hasExtractedLicensingInfos"] = [
