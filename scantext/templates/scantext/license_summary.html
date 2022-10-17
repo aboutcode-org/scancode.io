@@ -34,6 +34,24 @@
     a {
       display: block;
     }
+
+    .dropdown-content, table {
+       width: 330px;
+       max-width: 430px;
+    }
+
+    tr {
+      display: flex;
+      justify-content: stretch;
+    }
+
+    td {
+      flex: 1;
+    }
+
+    td:nth-child(2) {
+      word-break: break-all;
+    }
   </style>
 {% endblock %}
 
