@@ -485,13 +485,13 @@ def _get_spdx_extracted_licenses(license_expressions):
                 see_alsos.extend(value)
             elif value:
                 see_alsos.append(value)
-
+        print(see_alsos)
         extracted_licenses.append(
             spdx.ExtractedLicensingInfo(
                 license_id=license.spdx_license_key,
                 extracted_text=license.text or " ",
                 name=license.name,
-                see_alsos=see_alsos,
+                # see_alsos=see_alsos,
             )
         )
 
