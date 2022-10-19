@@ -64,6 +64,7 @@ from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
@@ -2385,6 +2386,13 @@ class DiscoveredPackage(
             if (hash_value := getattr(self, field_name))
         ]
 
+        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        external_references = [
+            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
+            for field_name, reference_type in cyclonedx_url_to_type.items()
+            if (url := getattr(self, field_name))
+        ]
+
         purl = self.package_url
         return cyclonedx_component.Component(
             name=self.name,
@@ -2395,6 +2403,7 @@ class DiscoveredPackage(
             copyright_=self.copyright,
             description=self.description,
             hashes=hashes,
+            external_references=external_references,
         )
 
 
