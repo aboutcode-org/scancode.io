@@ -29,6 +29,9 @@ from django.core.serializers.json import DjangoJSONEncoder
 
 import saneyaml
 import xlsxwriter
+from cyclonedx import output as cyclonedx_output
+from cyclonedx.model import bom as cyclonedx_bom
+from cyclonedx.model import component as cyclonedx_component
 from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
@@ -544,5 +547,70 @@ def to_spdx(project):
 
     with output_file.open("w") as file:
         file.write(document.as_json())
+
+    return output_file
+
+
+def get_cyclonedx_bom(project):
+    """
+    https://cyclonedx.org/use-cases/#dependency-graph
+    """
+    discovereddependencies_qs = get_queryset(project, "discovereddependency")
+    components = [
+        *get_queryset(project, "discoveredpackage"),
+        # *discovereddependencies_qs,
+    ]
+
+    cyclonedx_components = [component.as_cyclonedx() for component in components]
+
+    bom = cyclonedx_bom.Bom(components=cyclonedx_components)
+
+    project_as_cyclonedx = cyclonedx_component.Component(
+        name=project.name,
+        bom_ref=str(project.uuid),
+    )
+
+    project_as_cyclonedx.dependencies.update(
+        [component.bom_ref for component in cyclonedx_components]
+    )
+
+    bom.metadata = cyclonedx_bom.BomMetaData(
+        component=project_as_cyclonedx,
+        tools=[
+            cyclonedx_bom.Tool(
+                name="ScanCode.io",
+                version=scancodeio_version,
+            )
+        ],
+        properties=[
+            cyclonedx_bom.Property(
+                name="notice",
+                value=SCAN_NOTICE,
+            )
+        ],
+    )
+
+    return bom
+
+
+def to_cyclonedx(project):
+    """
+    Generates output for the provided ``project`` in CycloneDX BOM format.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+
+    output_file = project.get_output_file_path("results", "bom.json")
+
+    cyclonedx_bom = get_cyclonedx_bom(project)
+
+    outputter = cyclonedx_output.get_instance(
+        bom=cyclonedx_bom,
+        output_format=cyclonedx_output.OutputFormat.JSON,
+    )
+
+    bom_json = outputter.output_as_string()
+    with output_file.open("w") as file:
+        file.write(bom_json)
 
     return output_file

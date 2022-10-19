@@ -819,6 +819,8 @@ class ProjectResultsView(
             output_file = output.to_xlsx(project)
         elif format == "spdx":
             output_file = output.to_spdx(project)
+        elif format == "cyclonedx":
+            output_file = output.to_cyclonedx(project)
         else:
             raise Http404("Format not supported.")
 

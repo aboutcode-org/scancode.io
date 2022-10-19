@@ -62,6 +62,8 @@ import redis
 import requests
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
+from cyclonedx import model as cyclonedx_model
+from cyclonedx.model import component as cyclonedx_component
 from licensedcode.cache import build_spdx_license_expression
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
@@ -2319,6 +2321,10 @@ class DiscoveredPackage(
     def spdx_id(self):
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
+    def get_license_expression_spdx_id(self):
+        if self.license_expression:
+            return build_spdx_license_expression(self.license_expression)
+
     def as_spdx(self):
         """
         Return this DiscoveredPackage as an SPDX Package entry.
@@ -2340,10 +2346,7 @@ class DiscoveredPackage(
                 )
             )
 
-        license_expression_spdx = ""
-        if self.license_expression:
-            build_spdx_license_expression(self.license_expression)
-
+        license_expression_spdx = self.get_license_expression_spdx_id()
         return spdx.Package(
             name=self.name or self.filename,
             spdx_id=self.spdx_id,
@@ -2358,6 +2361,40 @@ class DiscoveredPackage(
             release_date=str(self.release_date) if self.release_date else "",
             checksums=checksums,
             external_refs=external_refs,
+        )
+
+    def as_cyclonedx(self):
+        """
+        Return this DiscoveredPackage as an CycloneDX Component entry.
+        """
+        licenses = []
+        if expression_spdx := self.get_license_expression_spdx_id():
+            licenses = [
+                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
+            ]
+
+        hash_fields = {
+            "sha1": cyclonedx_model.HashAlgorithm.SHA_1,
+            "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
+            "md5": cyclonedx_model.HashAlgorithm.MD5,
+        }
+
+        hashes = [
+            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            for field_name, algorithm in hash_fields.items()
+            if (hash_value := getattr(self, field_name))
+        ]
+
+        purl = self.package_url
+        return cyclonedx_component.Component(
+            name=self.name,
+            version=self.version,
+            bom_ref=purl or str(self.uuid),
+            purl=purl,
+            licenses=licenses,
+            copyright_=self.copyright,
+            description=self.description,
+            hashes=hashes,
         )
 
 
