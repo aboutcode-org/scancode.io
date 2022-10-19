@@ -311,7 +311,7 @@ class ScanPipeAPITest(TransactionTestCase):
         url = reverse("project-results-download", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
 
-        expected = 'attachment; filename="Analysis.json"'
+        expected = 'attachment; filename="scancodeio_analysis.json"'
         self.assertEqual(expected, response["Content-Disposition"])
         self.assertEqual("application/json", response["Content-Type"])
 

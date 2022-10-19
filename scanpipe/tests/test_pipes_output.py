@@ -214,6 +214,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
         results = json.dumps(results_json, indent=2)
 
+        self.maxDiff = None
         expected_file = self.data_location / "asgiref-3.3.0.spdx.json"
         self.assertResultsEqual(expected_file, results, regen=False)
 
