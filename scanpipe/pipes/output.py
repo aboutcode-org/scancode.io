@@ -504,7 +504,6 @@ def to_spdx(project):
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """
-
     output_file = project.get_output_file_path("results", "spdx.json")
 
     discovereddependencies_qs = get_queryset(project, "discovereddependency")
@@ -543,6 +542,7 @@ def to_spdx(project):
         files=files_as_spdx,
         extracted_licenses=_get_spdx_extracted_licenses(license_expressions),
         relationships=relationships,
+        comment=SCAN_NOTICE,
     )
 
     with output_file.open("w") as file:
@@ -553,12 +553,12 @@ def to_spdx(project):
 
 def get_cyclonedx_bom(project):
     """
-    https://cyclonedx.org/use-cases/#dependency-graph
+    Return a CycloneDX `Bom` object filled with provided `project` data.
+
+    See https://cyclonedx.org/use-cases/#dependency-graph
     """
-    discovereddependencies_qs = get_queryset(project, "discovereddependency")
     components = [
         *get_queryset(project, "discoveredpackage"),
-        # *discovereddependencies_qs,
     ]
 
     cyclonedx_components = [component.as_cyclonedx() for component in components]
@@ -599,7 +599,6 @@ def to_cyclonedx(project):
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """
-
     output_file = project.get_output_file_path("results", "bom.json")
 
     cyclonedx_bom = get_cyclonedx_bom(project)
