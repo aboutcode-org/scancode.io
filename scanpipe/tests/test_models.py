@@ -22,6 +22,7 @@
 
 import io
 import shutil
+import sys
 import tempfile
 import uuid
 from contextlib import redirect_stdout
@@ -42,6 +43,7 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 from django.utils import timezone
 
+from packagedcode.models import PackageData
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
@@ -1258,6 +1260,7 @@ class ScanPipeModelsTest(TestCase):
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
 
+    @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
         fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -1680,3 +1683,11 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertTrue(error.details["codebase_resource_pk"])
         self.assertEqual(resource.path, error.details["codebase_resource_path"])
         self.assertIn("in save", error.traceback)
+
+    def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
+        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
+        discovered_packages_fields = [
+            field.name for field in DiscoveredPackage._meta.get_fields()
+        ]
+        for toolkit_field_name in toolkit_package_fields:
+            self.assertIn(toolkit_field_name, discovered_packages_fields)

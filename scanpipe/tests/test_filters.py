@@ -25,6 +25,7 @@ import uuid
 from django.test import TestCase
 from django.utils import timezone
 
+from scanpipe.filters import FilterSetUtilsMixin
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import CodebaseResource
@@ -93,7 +94,7 @@ class ScanPipeFiltersTest(TestCase):
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource1], list(filterset.qs))
 
-        data = {"programming_language": "EMPTY"}
+        data = {"programming_language": FilterSetUtilsMixin.empty_value}
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
 
@@ -105,7 +106,7 @@ class ScanPipeFiltersTest(TestCase):
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource1], list(filterset.qs))
 
-        data = {"copyrights": "EMPTY"}
+        data = {"copyrights": FilterSetUtilsMixin.empty_value}
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
 
@@ -125,3 +126,15 @@ class ScanPipeFiltersTest(TestCase):
             {"status": "succeed"},
             filterset.params_for_search,
         )
+
+        data = {
+            "search": FilterSetUtilsMixin.empty_value,
+        }
+        filterset = ProjectFilterSet(data)
+        self.assertEqual([], list(filterset.qs))
+
+        data = {
+            "search": FilterSetUtilsMixin.other_value,
+        }
+        filterset = ProjectFilterSet(data)
+        self.assertEqual([], list(filterset.qs))

@@ -44,8 +44,8 @@ PAGE_VAR = "page"
 
 
 class FilterSetUtilsMixin:
-    empty_value = "EMPTY"
-    other_value = "Other"
+    empty_value = "_EMPTY_"
+    other_value = "_OTHER_"
 
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
@@ -125,7 +125,7 @@ class FilterSetUtilsMixin:
             field_name = self.filters[name].field_name
             if value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
-            elif value == self.other_value:
+            elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
                 queryset = self.filters[name].filter(queryset, value)

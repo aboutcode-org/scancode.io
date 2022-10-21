@@ -229,7 +229,6 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "uuid",
             "project",
             "filename",
-            "last_modified_date",
             "codebase_resources",
         ]
 
