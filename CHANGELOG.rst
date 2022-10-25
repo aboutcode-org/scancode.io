@@ -4,6 +4,9 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Refine the fields ordering in API Serializers, based on the toolkit order,
+  https://github.com/nexB/scancode.io/issues/546
+
 - Keep the current filters state when submitting a search in list views.
   https://github.com/nexB/scancode.io/issues/541
 
