@@ -39,6 +39,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
 from scanpipe.pipes import output
+from scanpipe.tests import GLOBAL_REGEN
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
@@ -282,7 +283,7 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
-    def assertPipelineResultEqual(self, expected_file, result_file, regen=False):
+    def assertPipelineResultEqual(self, expected_file, result_file, regen=GLOBAL_REGEN):
         """
         Set `regen` to True to regenerate the expected results.
         """
@@ -321,11 +322,11 @@ class PipelinesIntegrationTest(TestCase):
 
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "is-npm-1.0.0_scan_package.json"
-        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, scancode_file)
 
         summary_file = project1.get_latest_output(filename="summary")
         expected_file = self.data_location / "is-npm-1.0.0_scan_package_summary.json"
-        self.assertPipelineResultEqual(expected_file, summary_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, summary_file)
 
         # Ensure that we only have one instance of is-npm in `key_files_packages`
         summary_data = json.loads(Path(summary_file).read_text())
@@ -355,13 +356,13 @@ class PipelinesIntegrationTest(TestCase):
 
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
-        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, scancode_file)
 
         summary_file = project1.get_latest_output(filename="summary")
         expected_file = (
             self.data_location / "multiple-is-npm-1.0.0_scan_package_summary.json"
         )
-        self.assertPipelineResultEqual(expected_file, summary_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, summary_file)
 
     def test_scanpipe_scan_codebase_pipeline_integration_test(self):
         pipeline_name = "scan_codebase"
@@ -384,7 +385,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"
@@ -409,7 +410,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = (
             self.data_location / "daglib-0.6.0-py3-none-any.whl_scan_codebase.json"
         )
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_alpine_integration_test(self):
         pipeline_name = "docker"
@@ -432,7 +433,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "alpine_3_15_4_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_does_not_report_errors_for_broken_symlinks(self):
         pipeline_name = "docker"
@@ -459,7 +460,7 @@ class PipelinesIntegrationTest(TestCase):
             / "image-with-symlinks"
             / (filename + "-expected-scan.json")
         )
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
     def test_scanpipe_docker_pipeline_rpm_integration_test(self):
@@ -483,7 +484,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "centos_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_debian_integration_test(self):
         pipeline_name = "docker"
@@ -506,7 +507,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "debian_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_distroless_debian_integration_test(self):
         pipeline_name = "docker"
@@ -529,7 +530,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "gcr_io_distroless_base_scan_codebase.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_rootfs_pipeline_integration_test(self):
         pipeline_name = "root_filesystems"
@@ -550,7 +551,7 @@ class PipelinesIntegrationTest(TestCase):
 
         result_file = output.to_json(project1)
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_load_inventory_pipeline_integration_test(self):
         pipeline_name = "load_inventory"
@@ -573,4 +574,4 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = (
             self.data_location / "asgiref-3.3.0_load_inventory_expected.json"
         )
-        self.assertPipelineResultEqual(expected_file, result_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, result_file)
