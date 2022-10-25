@@ -26,8 +26,8 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from unittest import mock
 from unittest import expectedFailure
+from unittest import mock
 from unittest import skipIf
 
 from django.test import TestCase
