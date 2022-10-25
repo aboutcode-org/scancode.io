@@ -39,7 +39,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
 from scanpipe.pipes import output
-from scanpipe.tests import GLOBAL_REGEN
+from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
@@ -283,7 +283,9 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
-    def assertPipelineResultEqual(self, expected_file, result_file, regen=GLOBAL_REGEN):
+    def assertPipelineResultEqual(
+        self, expected_file, result_file, regen=FIXTURES_REGEN
+    ):
         """
         Set `regen` to True to regenerate the expected results.
         """

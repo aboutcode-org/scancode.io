@@ -31,7 +31,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import docker
 from scanpipe.pipes.input import copy_inputs
-from scanpipe.tests import GLOBAL_REGEN
+from scanpipe.tests import FIXTURES_REGEN
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -40,7 +40,7 @@ class ScanPipeDockerPipesTest(TestCase):
     data_path = Path(__file__).parent / "data"
     maxDiff = None
 
-    def assertResultsEqual(self, expected_file, results, regen=GLOBAL_REGEN):
+    def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
         """
         Set `regen` to True to regenerate the expected results.
         """

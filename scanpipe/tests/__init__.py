@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import os
 from datetime import datetime
 from unittest import mock
 
@@ -35,7 +36,7 @@ scanpipe_app.register_pipeline("do_nothing", DoNothing)
 scanpipe_app.register_pipeline("profile_step", ProfileStep)
 scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
-GLOBAL_REGEN = False
+FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
