@@ -216,7 +216,38 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseResource
-        exclude = ["id", "project", "rootfs_path", "sha256", "sha512"]
+        fields = [
+            "path",
+            "type",
+            "name",
+            "status",
+            "tag",
+            "extension",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "mime_type",
+            "file_type",
+            "programming_language",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_key_file",
+            "licenses",
+            "license_expressions",
+            "compliance_alert",
+            "copyrights",
+            "holders",
+            "authors",
+            "package_data",
+            "for_packages",
+            "emails",
+            "urls",
+            "extra_data",
+        ]
 
 
 class DiscoveredPackageSerializer(serializers.ModelSerializer):
@@ -224,12 +255,45 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscoveredPackage
-        exclude = [
-            "id",
-            "uuid",
-            "project",
-            "filename",
-            "codebase_resources",
+        fields = [
+            "purl",
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "primary_language",
+            "description",
+            "release_date",
+            "parties",
+            "keywords",
+            "homepage_url",
+            "download_url",
+            "bug_tracking_url",
+            "code_view_url",
+            "vcs_url",
+            "repository_homepage_url",
+            "repository_download_url",
+            "api_data_url",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "copyright",
+            "license_expression",
+            "declared_license",
+            "notice_text",
+            "source_packages",
+            "extra_data",
+            "package_uid",
+            "manifest_path",
+            "contains_source_code",
+            "datasource_id",
+            "file_references",
+            "missing_resources",
+            "modified_resources",
         ]
 
 
@@ -243,7 +307,6 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
         model = DiscoveredDependency
         fields = [
             "purl",
-            "package_type",
             "extracted_requirement",
             "scope",
             "is_runtime",
@@ -253,6 +316,7 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "for_package_uid",
             "datafile_path",
             "datasource_id",
+            "package_type",
         ]
 
 

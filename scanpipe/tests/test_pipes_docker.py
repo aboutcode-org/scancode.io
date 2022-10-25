@@ -31,6 +31,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import docker
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import FIXTURES_REGEN
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -39,7 +40,7 @@ class ScanPipeDockerPipesTest(TestCase):
     data_path = Path(__file__).parent / "data"
     maxDiff = None
 
-    def assertResultsEqual(self, expected_file, results, regen=False):
+    def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
         """
         Set `regen` to True to regenerate the expected results.
         """
@@ -64,7 +65,7 @@ class ScanPipeDockerPipesTest(TestCase):
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
         expected_location = self.data_path / "docker-images.tar.gz-expected-data-1.json"
-        self.assertResultsEqual(expected_location, results, regen=False)
+        self.assertResultsEqual(expected_location, results)
 
         # Extract the layers second
         errors = docker.extract_layers_from_images_to_base_path(
@@ -76,7 +77,7 @@ class ScanPipeDockerPipesTest(TestCase):
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
         expected_location = self.data_path / "docker-images.tar.gz-expected-data-2.json"
-        self.assertResultsEqual(expected_location, results, regen=False)
+        self.assertResultsEqual(expected_location, results)
 
     def test_pipes_docker_tag_whiteout_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
@@ -108,7 +109,7 @@ class ScanPipeDockerPipesTest(TestCase):
         expected_location = (
             self.data_path / "image-with-symlinks/minitag.tar-expected-data-1.json"
         )
-        self.assertResultsEqual(expected_location, results, regen=False)
+        self.assertResultsEqual(expected_location, results)
 
         # Extract the layers second
         errors = docker.extract_layers_from_images_to_base_path(
@@ -122,7 +123,7 @@ class ScanPipeDockerPipesTest(TestCase):
         expected_location = (
             self.data_path / "image-with-symlinks/minitag.tar-expected-data-2.json"
         )
-        self.assertResultsEqual(expected_location, results, regen=False)
+        self.assertResultsEqual(expected_location, results)
 
     def test_pipes_docker_get_tarballs_from_inputs(self):
         p1 = Project.objects.create(name="Analysis")
