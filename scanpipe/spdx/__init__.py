@@ -25,6 +25,7 @@ import re
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
+from typing import List
 
 SPDX_SPEC_VERSION = "2.3"
 SPDX_LICENSE_LIST_VERSION = "3.18"
@@ -226,7 +227,7 @@ class ExtractedLicensingInfo:
 
     name: str = ""
     comment: str = ""
-    see_alsos: list[str] = field(default_factory=list)
+    see_alsos: List[str] = field(default_factory=list)
 
     def as_dict(self):
         """
@@ -280,9 +281,9 @@ class Package:
     comment: str = ""
     license_comments: str = ""
 
-    checksums: list[Checksum] = field(default_factory=list)
-    external_refs: list[ExternalRef] = field(default_factory=list)
-    attribution_texts: list[str] = field(default_factory=list)
+    checksums: List[Checksum] = field(default_factory=list)
+    external_refs: List[ExternalRef] = field(default_factory=list)
+    attribution_texts: List[str] = field(default_factory=list)
 
     def as_dict(self):
         """
@@ -345,18 +346,18 @@ class File:
 
     spdx_id: str
     name: str
-    checksums: list[Checksum] = field(default_factory=list)
+    checksums: List[Checksum] = field(default_factory=list)
 
     license_concluded: str = "NOASSERTION"
     copyright_text: str = "NOASSERTION"
-    license_in_files: list[str] = field(default_factory=list)
-    contributors: list[str] = field(default_factory=list)
+    license_in_files: List[str] = field(default_factory=list)
+    contributors: List[str] = field(default_factory=list)
     notice_text: str = ""
     # Supported values:
     # SOURCE | BINARY | ARCHIVE | APPLICATION | AUDIO | IMAGE | TEXT | VIDEO |
     # DOCUMENTATION | SPDX | OTHER
-    types: list[str] = field(default_factory=list)
-    attribution_texts: list[str] = field(default_factory=list)
+    types: List[str] = field(default_factory=list)
+    attribution_texts: List[str] = field(default_factory=list)
     comment: str = ""
     license_comments: str = ""
 
@@ -427,16 +428,16 @@ class Document:
     name: str
     namespace: str
     creation_info: CreationInfo
-    packages: list[Package]
+    packages: List[Package]
 
     spdx_id: str = "SPDXRef-DOCUMENT"
     version: str = SPDX_SPEC_VERSION
     data_license: str = "CC0-1.0"
     comment: str = ""
 
-    files: list[File] = field(default_factory=list)
-    extracted_licenses: list[ExtractedLicensingInfo] = field(default_factory=list)
-    relationships: list[Relationship] = field(default_factory=list)
+    files: List[File] = field(default_factory=list)
+    extracted_licenses: List[ExtractedLicensingInfo] = field(default_factory=list)
+    relationships: List[Relationship] = field(default_factory=list)
 
     def as_dict(self):
         """
