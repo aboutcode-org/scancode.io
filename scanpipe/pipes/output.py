@@ -46,8 +46,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 def safe_filename(filename):
-    """
-    Convert provided `name` to a safe filename.
+    """Convert the provided `filename` to a safe filename.
     """
     return re.sub("[^A-Za-z0-9.-]+", "_", filename).lower()
 

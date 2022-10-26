@@ -2323,6 +2323,9 @@ class DiscoveredPackage(
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
     def get_license_expression_spdx_id(self):
+        """
+        Return this DiscoveredPackage license expression using SPDX syntax and keys.
+        """
         if self.license_expression:
             return build_spdx_license_expression(self.license_expression)
 
@@ -2375,9 +2378,10 @@ class DiscoveredPackage(
             ]
 
         hash_fields = {
+            "md5": cyclonedx_model.HashAlgorithm.MD5,
             "sha1": cyclonedx_model.HashAlgorithm.SHA_1,
             "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
-            "md5": cyclonedx_model.HashAlgorithm.MD5,
+            "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
         }
 
         hashes = [
