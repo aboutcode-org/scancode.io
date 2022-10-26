@@ -797,8 +797,10 @@ def project_results_json_response(project, as_attachment=False):
         content_type="application/json",
     )
 
+    filename = output.safe_filename(f"scancodeio_{project.name}.json")
+
     if as_attachment:
-        response["Content-Disposition"] = f'attachment; filename="{project.name}.json"'
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     return response
 
@@ -813,13 +815,20 @@ class ProjectResultsView(
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
-
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
-            filename = f"{project.name}_{output_file.name}"
-            return FileResponse(output_file.open("rb"), filename=filename)
+        elif format == "cyclonedx":
+            output_file = output.to_cyclonedx(project)
+        else:
+            raise Http404("Format not supported.")
 
-        raise Http404("Format not supported.")
+        filename = output.safe_filename(f"scancodeio_{project.name}_{output_file.name}")
+
+        return FileResponse(
+            output_file.open("rb"),
+            filename=filename,
+            as_attachment=True,
+        )
 
 
 class ProjectRelatedViewMixin:

@@ -62,6 +62,10 @@ import redis
 import requests
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
+from cyclonedx import model as cyclonedx_model
+from cyclonedx.model import component as cyclonedx_component
+from formattedcode.output_cyclonedx import CycloneDxExternalRef
+from licensedcode.cache import build_spdx_license_expression
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -2277,6 +2281,55 @@ class DiscoveredPackage(
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
+
+    def get_license_expression_spdx_id(self):
+        """
+        Return this DiscoveredPackage license expression using SPDX syntax and keys.
+        """
+        if self.license_expression:
+            return build_spdx_license_expression(self.license_expression)
+
+    def as_cyclonedx(self):
+        """
+        Return this DiscoveredPackage as an CycloneDX Component entry.
+        """
+        licenses = []
+        if expression_spdx := self.get_license_expression_spdx_id():
+            licenses = [
+                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
+            ]
+
+        hash_fields = {
+            "sha1": cyclonedx_model.HashAlgorithm.SHA_1,
+            "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
+            "md5": cyclonedx_model.HashAlgorithm.MD5,
+        }
+
+        hashes = [
+            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            for field_name, algorithm in hash_fields.items()
+            if (hash_value := getattr(self, field_name))
+        ]
+
+        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        external_references = [
+            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
+            for field_name, reference_type in cyclonedx_url_to_type.items()
+            if (url := getattr(self, field_name))
+        ]
+
+        purl = self.package_url
+        return cyclonedx_component.Component(
+            name=self.name,
+            version=self.version,
+            bom_ref=purl or str(self.uuid),
+            purl=purl,
+            licenses=licenses,
+            copyright_=self.copyright,
+            description=self.description,
+            hashes=hashes,
+            external_references=external_references,
+        )
 
 
 class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
