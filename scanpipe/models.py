@@ -2300,9 +2300,10 @@ class DiscoveredPackage(
             ]
 
         hash_fields = {
+            "md5": cyclonedx_model.HashAlgorithm.MD5,
             "sha1": cyclonedx_model.HashAlgorithm.SHA_1,
             "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
-            "md5": cyclonedx_model.HashAlgorithm.MD5,
+            "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
         }
 
         hashes = [
