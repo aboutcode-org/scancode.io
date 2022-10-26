@@ -4,6 +4,9 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Generate CycloneDX SBOM (Software Bill of Materials) as a new downloadable output.
+  https://github.com/nexB/scancode.io/issues/389
+
 - Refine the fields ordering in API Serializers based on the toolkit order.
   https://github.com/nexB/scancode.io/issues/546
 

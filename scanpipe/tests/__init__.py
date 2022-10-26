@@ -60,11 +60,11 @@ package_data1 = {
         }
     ],
     "keywords": ["admin"],
-    "homepage_url": None,
+    "homepage_url": "https://packages.debian.org",
     "download_url": None,
     "size": "849",
     "sha1": None,
-    "md5": None,
+    "md5": "76cf50f29e47676962645632737365a7",
     "sha256": None,
     "sha512": None,
     "bug_tracking_url": None,
