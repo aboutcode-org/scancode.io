@@ -226,7 +226,7 @@ class ExtractedLicensingInfo:
 
     name: str = ""
     comment: str = ""
-    # see_alsos: list[str] = field(default_factory=list)
+    see_alsos: list[str] = field(default_factory=list)
 
     def as_dict(self):
         """
@@ -240,7 +240,7 @@ class ExtractedLicensingInfo:
         optional_data = {
             "name": self.name,
             "comment": self.comment,
-            # "seeAlsos": self.see_alsos,
+            "seeAlsos": self.see_alsos,
         }
 
         optional_data = {key: value for key, value in optional_data.items() if value}
