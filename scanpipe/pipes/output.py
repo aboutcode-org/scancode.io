@@ -491,7 +491,7 @@ def _get_spdx_extracted_licenses(license_expressions):
                 license_id=license.spdx_license_key,
                 extracted_text=license.text or " ",
                 name=license.name,
-                # see_alsos=see_alsos,
+                see_alsos=see_alsos,
             )
         )
 
