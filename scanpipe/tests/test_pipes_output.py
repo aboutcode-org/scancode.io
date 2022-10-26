@@ -194,13 +194,11 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
 
-        with (
-            mock.patch("cyclonedx.model.bom.uuid4") as mock_uuid4,
-            mock.patch("cyclonedx.model.bom.datetime") as mock_datetime,
-        ):
-            mock_uuid4.return_value = "b74fe5df-e965-415e-ba65-f38421a0695d"
-            mock_datetime.now = lambda tz: ""
-            output_file = output.to_cyclonedx(project=project)
+        with mock.patch("cyclonedx.model.bom.uuid4") as mock_uuid4:
+            with mock.patch("cyclonedx.model.bom.datetime") as mock_datetime:
+                mock_uuid4.return_value = "b74fe5df-e965-415e-ba65-f38421a0695d"
+                mock_datetime.now = lambda tz: ""
+                output_file = output.to_cyclonedx(project=project)
 
         self.assertIn(output_file.name, project.output_root)
 
