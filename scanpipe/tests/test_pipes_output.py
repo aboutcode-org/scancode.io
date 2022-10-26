@@ -227,17 +227,18 @@ class ScanPipeOutputPipesTest(TestCase):
         output_file = output.to_spdx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
-        # with output_file.open() as f:
-        #     results = f.read()
-        #
-        # # Patch the `created` date
-        # results_json = json.loads(results)
-        # results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
-        # results = json.dumps(results_json, indent=2)
+        with output_file.open() as f:
+            results = f.read()
 
-        # self.maxDiff = None
-        # expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
-        # self.assertResultsEqual(expected_file, results, regen=False)
+        # Patch the `created` date
+        results_json = json.loads(results)
+        results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
+        # Files ordering is system dependent, excluded for now
+        results_json["files"] = []
+        results = json.dumps(results_json, indent=2)
+
+        expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
+        self.assertResultsEqual(expected_file, results, regen=False)
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
