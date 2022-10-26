@@ -25,7 +25,7 @@ import re
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
-from typing import List
+from typing import List  # Python 3.8 compatibility
 
 SPDX_SPEC_VERSION = "2.3"
 SPDX_LICENSE_LIST_VERSION = "3.18"

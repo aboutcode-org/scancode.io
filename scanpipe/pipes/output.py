@@ -46,7 +46,9 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 def safe_filename(filename):
-    """Convert the provided `filename` to a safe filename."""
+    """
+    Convert the provided `filename` to a safe filename.
+    """
     return re.sub("[^A-Za-z0-9.-]+", "_", filename).lower()
 
 
@@ -552,7 +554,6 @@ def to_spdx(project):
 def get_cyclonedx_bom(project):
     """
     Return a CycloneDX `Bom` object filled with provided `project` data.
-
     See https://cyclonedx.org/use-cases/#dependency-graph
     """
     components = [
