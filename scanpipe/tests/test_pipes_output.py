@@ -44,6 +44,16 @@ from scanpipe.tests import package_data1
 class ScanPipeOutputPipesTest(TestCase):
     data_path = Path(__file__).parent / "data"
 
+    def assertResultsEqual(self, expected_file, results, regen=False):
+        """
+        Set `regen` to True to regenerate the expected results.
+        """
+        if regen:
+            expected_file.write_text(results)
+
+        expected_data = expected_file.read_text()
+        self.assertEqual(expected_data, results)
+
     def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource = CodebaseResource.objects.create(
@@ -208,6 +218,33 @@ class ScanPipeOutputPipesTest(TestCase):
             expected_location.write_text(json.dumps(cyclonedx_json, indent=2))
 
         self.assertJSONEqual(output_file.read_text(), expected_location.read_text())
+
+    def test_scanpipe_pipes_outputs_to_spdx(self):
+        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        output_file = output.to_spdx(project=project)
+        self.assertIn(output_file.name, project.output_root)
+
+        with output_file.open() as f:
+            results = f.read()
+
+        # Patch the `created` date
+        results_json = json.loads(results)
+        results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
+        # Files ordering is system dependent, excluded for now
+        results_json["files"] = []
+        results = json.dumps(results_json, indent=2)
+
+        expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
+        self.assertResultsEqual(expected_file, results, regen=False)
+
+        # Make sure the output can be generated even if the work_directory was wiped
+        shutil.rmtree(project.work_directory)
+        with self.assertNumQueries(8):
+            output_file = output.to_spdx(project=project)
+        self.assertIn(output_file.name, project.output_root)
 
 
 class ScanPipeXLSXOutputPipesTest(TestCase):

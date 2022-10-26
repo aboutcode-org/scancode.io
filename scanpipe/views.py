@@ -817,6 +817,8 @@ class ProjectResultsView(
             return project_results_json_response(project, as_attachment=True)
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
+        elif format == "spdx":
+            output_file = output.to_spdx(project)
         elif format == "cyclonedx":
             output_file = output.to_cyclonedx(project)
         else:

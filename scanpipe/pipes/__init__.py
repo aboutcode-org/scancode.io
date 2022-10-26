@@ -118,7 +118,7 @@ def update_or_create_dependencies(
     from the `datafile_path` of `dependency_data` before looking up the
     corresponding CodebaseResource for `datafile_path`. This is used in the case
     where Dependency data is imported from a scancode-toolkit scan, where the
-    root path segments are not stripped for `datafile_path`s.
+    root path segments are not stripped for `datafile_path`.
     """
     try:
         dependency = project.discovereddependencies.get(

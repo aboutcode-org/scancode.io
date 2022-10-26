@@ -77,6 +77,7 @@ from rq.job import Job
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import spdx
 from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
@@ -1989,6 +1990,41 @@ class CodebaseResource(
             for package in self.discovered_packages.all()
         ]
 
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.id}"
+
+    def get_spdx_types(self):
+        spdx_types = []
+
+        if self.is_binary:
+            spdx_types.append("BINARY")
+        if self.is_text:
+            spdx_types.append("TEXT")
+        if self.is_archive:
+            spdx_types.append("ARCHIVE")
+
+        return spdx_types
+
+    def as_spdx(self):
+        """
+        Return this CodebaseResource as an SPDX Package entry.
+        """
+        spdx_license_keys = [license["spdx_license_key"] for license in self.licenses]
+        copyrights = [copyright["copyright"] for copyright in self.copyrights]
+        holders = [holder["holder"] for holder in self.holders]
+        authors = [author["author"] for author in self.authors]
+
+        return spdx.File(
+            spdx_id=self.spdx_id,
+            name=f"./{self.path}",
+            checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
+            license_in_files=list(set(spdx_license_keys)),
+            copyright_text=", ".join(copyrights),
+            contributors=list(set(holders + authors)),
+            types=self.get_spdx_types(),
+        )
+
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
@@ -2282,12 +2318,54 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
+
     def get_license_expression_spdx_id(self):
         """
         Return this DiscoveredPackage license expression using SPDX syntax and keys.
         """
         if self.license_expression:
             return build_spdx_license_expression(self.license_expression)
+
+    def as_spdx(self):
+        """
+        Return this DiscoveredPackage as an SPDX Package entry.
+        """
+        checksums = [
+            spdx.Checksum(algorithm=algorithm, value=checksum_value)
+            for algorithm in ["sha1", "md5"]
+            if (checksum_value := getattr(self, algorithm))
+        ]
+
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        license_expression_spdx = self.get_license_expression_spdx_id()
+        return spdx.Package(
+            name=self.name or self.filename,
+            spdx_id=self.spdx_id,
+            download_location=self.download_url,
+            license_declared=license_expression_spdx,
+            license_concluded=license_expression_spdx,
+            copyright_text=self.copyright,
+            version=self.version,
+            homepage=self.homepage_url,
+            filename=self.filename,
+            description=self.description,
+            release_date=str(self.release_date) if self.release_date else "",
+            checksums=checksums,
+            external_refs=external_refs,
+        )
 
     def as_cyclonedx(self):
         """
@@ -2526,6 +2604,32 @@ class DiscoveredDependency(
         discovered_dependency.save()
 
         return discovered_dependency
+
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+
+    def as_spdx(self):
+        """
+        Return this Package as an SPDX Package entry.
+        """
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        return spdx.Package(
+            name=self.name,
+            spdx_id=self.spdx_id,
+            version=self.version,
+            external_refs=external_refs,
+        )
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
