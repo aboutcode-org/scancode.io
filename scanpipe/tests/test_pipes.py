@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import datetime
 import json
 import os
 import tempfile
@@ -1055,6 +1056,7 @@ class ScanPipePipesTest(TestCase):
         package = update_or_create_package(p1, package_data1)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.purl)
         self.assertEqual("", package.primary_language)
+        self.assertEqual(datetime.date(1999, 10, 10), package.release_date)
 
         updated_data = dict(package_data1)
         updated_data["primary_language"] = "Python"
@@ -1067,9 +1069,11 @@ class ScanPipePipesTest(TestCase):
         package_data2 = dict(package_data1)
         package_data2["name"] = "new name"
         package_data2["package_uid"] = ""
+        package_data2["release_date"] = "2020-11-01T01:40:20"
         package2 = update_or_create_package(p1, package_data2, resource1)
         self.assertNotEqual(package.pk, package2.pk)
         self.assertIn(resource1, package2.codebase_resources.all())
+        self.assertEqual(datetime.date(2020, 11, 1), package2.release_date)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):

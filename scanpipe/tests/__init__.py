@@ -49,7 +49,7 @@ package_data1 = {
     "subpath": None,
     "primary_language": None,
     "description": "add and remove users and groups",
-    "release_date": None,
+    "release_date": "1999-10-10",
     "parties": [
         {
             "type": None,
