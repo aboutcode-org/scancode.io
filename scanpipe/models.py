@@ -1075,7 +1075,7 @@ class ProjectRelatedModel(models.Model):
 
 class ProjectError(UUIDPKModel, ProjectRelatedModel):
     """
-    Stores errors and§ exceptions raised during a pipeline run.
+    Stores errors and exceptions raised during a pipeline run.
     """
 
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
@@ -2552,7 +2552,7 @@ class DiscoveredDependency(
         `dependency_data` before looking up the corresponding CodebaseResource
         for `datafile_path`. This is used in the case where Dependency data is
         imported from a scancode-toolkit scan, where the root path segments are
-        not stripped for `datafile_path`s.
+        not stripped for `datafile_path`.
         """
         required_fields = ["purl", "dependency_uid"]
         missing_values = [
