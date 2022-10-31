@@ -24,6 +24,11 @@
             <tr class="break-word">
               <td style="min-width: 500px;" title="{{ package.package_uid }}">
                 <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
+                {% if package.extra_data.discovered_vulnerabilities %}
+                  <a href="{{ package.get_absolute_url }}#extra_data">
+                    <i class="fas fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
+                  </a>
+                {% endif %}
               </td>
               <td style="min-width: 300px; max-width: 400px;">
                 {{ package.license_expression|linebreaksbr }}
