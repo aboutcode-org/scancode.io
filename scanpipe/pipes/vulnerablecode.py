@@ -58,32 +58,40 @@ def is_configured():
     return False
 
 
-def is_service_available(label, session, url, raise_exceptions):
-    """
-    Base function that checks if a configured integration service is available.
-    """
-    try:
-        response = session.head(url)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as request_exception:
-        logger.debug(f"{label} is_available() error: {request_exception}")
-        if raise_exceptions:
-            raise
-        return False
-
-    return response.status_code == requests.codes.ok
-
-
-def is_available(raise_exceptions=False):
+def is_available():
     """
     Returns True if the configured VulnerableCode server is available.
     """
     if not is_configured():
         return False
 
-    return is_service_available(
-        label, session, VULNERABLECODE_API_URL, raise_exceptions
-    )
+    try:
+        response = session.head(VULNERABLECODE_API_URL)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as request_exception:
+        logger.debug(f"{label} is_available() error: {request_exception}")
+        return False
+
+    return response.status_code == requests.codes.ok
+
+
+def get_base_purl(purl):
+    """
+    Returns the `purl` without qualifiers and subpath.
+    """
+    return purl.split("?")[0]
+
+
+def get_purls(packages, base=False):
+    """
+    Returns the PURLs for the given list of `packages`.
+    Do not include qualifiers nor subpath when `base` is provided.
+    """
+    return [
+        get_base_purl(package_url) if base else package_url
+        for package in packages
+        if (package_url := package.package_url)
+    ]
 
 
 def request_get(
@@ -121,13 +129,6 @@ def request_post(
         return response.json()
     except (requests.RequestException, ValueError, TypeError) as exception:
         logger.debug(f"{label} [Exception] {exception}")
-
-
-def get_base_purl(purl):
-    """
-    Returns the `purl` without the qualifiers and the subpath.
-    """
-    return purl.split("?")[0]
 
 
 def _get_vulnerabilities(
@@ -213,62 +214,3 @@ def bulk_search_by_cpes(
 
     logger.debug(f"VulnerableCode: url={url} cpes_count={len(cpes)}")
     return request_post(url, data, timeout)
-
-
-def get_purls(packages):
-    """
-    Returns the PURLs for the given list of `packages`.
-    List comprehension is not used on purpose to avoid crafting each
-    PURL twice.
-    """
-    purls = []
-    for package in packages:
-        package_url = package.package_url
-        if package_url:
-            purls.append(package_url)
-    return purls
-
-
-def get_vulnerable_purls(packages):
-    """
-    Returns a list of PURLs for which at least one `affected_by_vulnerabilities`
-    was found in the VulnerableCodeDB for the given list of `packages`.
-    """
-    purls = get_purls(packages)
-
-    if not purls:
-        return []
-
-    search_results = bulk_search_by_purl(purls, timeout=5)
-    if not search_results:
-        return []
-
-    return [
-        entry.get("purl")
-        for entry in search_results
-        if entry.get("affected_by_vulnerabilities")
-    ]
-
-
-def get_vulnerable_cpes(components):
-    """
-    Returns a list of vulnerable CPEs found in the VulnerableCodeDB for the given list
-    of `components`.
-    """
-    cpes = [component.cpe for component in components if component.cpe]
-
-    if not cpes:
-        return []
-
-    search_results = bulk_search_by_cpes(cpes, timeout=5)
-    if not search_results:
-        return []
-
-    vulnerable_cpes = [
-        reference.get("reference_id")
-        for entry in search_results
-        for reference in entry.get("references")
-        if reference.get("reference_id").startswith("cpe")
-    ]
-
-    return list(set(vulnerable_cpes))
