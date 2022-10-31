@@ -77,25 +77,16 @@ class ScanPipeViewsTest(TestCase):
         """
         self.assertContains(response, is_archived_filters, html=True)
 
-        pipeline_filters = """
-        <li><a href="?pipeline=" class="dropdown-item is-active">All</a></li>
-        <li><a href="?pipeline=docker" class="dropdown-item">docker</a></li>
-        <li>
-          <a href="?pipeline=docker_windows" class="dropdown-item">docker_windows</a>
-        </li>
-        <li>
-          <a href="?pipeline=load_inventory" class="dropdown-item">load_inventory</a>
-        </li>
-        <li>
-          <a href="?pipeline=root_filesystems" class="dropdown-item">
-            root_filesystems
-          </a>
-        </li>
-        <li>
-          <a href="?pipeline=scan_codebase" class="dropdown-item">scan_codebase</a></li>
-        <li><a href="?pipeline=scan_package" class="dropdown-item">scan_package</a></li>
-        """
-        self.assertContains(response, pipeline_filters, html=True)
+        pipeline_filters = [
+            "?pipeline=docker",
+            "?pipeline=docker_windows",
+            "?pipeline=load_inventory",
+            "?pipeline=root_filesystems",
+            "?pipeline=scan_codebase",
+            "?pipeline=scan_package",
+        ]
+        for pipeline_filter in pipeline_filters:
+            self.assertContains(response, pipeline_filter)
 
         status_filters = """
         <li><a href="?status=" class="dropdown-item is-active">All</a></li>
