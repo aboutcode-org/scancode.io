@@ -63,17 +63,32 @@ function setupCloseModalButtons() {
 function setupTabs() {
   const $tabLinks = getAll('.tabs a');
 
-  $tabLinks.forEach(function ($el) {
-    $el.addEventListener('click', function (event) {
-      const activeLink = document.querySelector('.tabs .is-active');
-      const activeTabContent = document.querySelector('.tab-content.is-active');
-      const target_id = $el.dataset.target;
-      const targetTabContent = document.getElementById(target_id);
+  function activateTab($tabLink) {
+    const activeLink = document.querySelector('.tabs .is-active');
+    const activeTabContent = document.querySelector('.tab-content.is-active');
+    const targetId = $tabLink.dataset.target;
+    const targetTabContent = document.getElementById(targetId);
 
-      activeLink.classList.remove('is-active');
-      $el.parentNode.classList.add('is-active');
-      if (activeTabContent) activeTabContent.classList.remove('is-active');
-      if (targetTabContent) targetTabContent.classList.add('is-active');
+    activeLink.classList.remove('is-active');
+    $tabLink.parentNode.classList.add('is-active');
+    if (activeTabContent) activeTabContent.classList.remove('is-active');
+    if (targetTabContent) targetTabContent.classList.add('is-active');
+
+    // Set the active tab in the URL hash. The "tab-" prefix is removed to avoid
+    // un-wanted scrolling to the related "id" element
+    document.location.hash = targetId.replace('tab-', '');
+  }
+
+  // Activate the related tab if hash is present in URL
+  if (document.location.hash !== "") {
+    let tabName = document.location.hash.slice(1);
+    let tabLink = document.querySelector(`a[data-target="tab-${tabName}"]`);
+    if (tabLink) activateTab(tabLink);
+  }
+
+  $tabLinks.forEach(function ($el) {
+    $el.addEventListener('click', function () {
+      activateTab($el)
     });
   });
 }
