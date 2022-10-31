@@ -113,6 +113,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
 
+        self.assertTrue(self.project1.tmp_path.exists())
+        shutil.rmtree(self.project1.work_path, ignore_errors=True)
+        self.assertFalse(self.project1.tmp_path.exists())
+        self.project1.clear_tmp_directory()
+        self.assertTrue(self.project1.tmp_path.exists())
+
     def test_scanpipe_project_model_archive(self):
         (self.project1.input_path / "input_file").touch()
         (self.project1.codebase_path / "codebase_file").touch()

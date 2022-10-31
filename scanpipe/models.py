@@ -649,7 +649,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         pipeline Run.
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
-        self.tmp_path.mkdir(exist_ok=True)
+        self.tmp_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def input_sources_list(self):
