@@ -311,3 +311,10 @@ if not SCANCODEIO_REQUIRE_AUTHENTICATION:
     REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (
         "rest_framework.permissions.AllowAny",
     )
+
+# VulnerableCode integration
+
+VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="")
+VULNERABLECODE_USER = env.str("VULNERABLECODE_USER", default="")
+VULNERABLECODE_PASSWORD = env.str("VULNERABLECODE_PASSWORD", default="")
+VULNERABLECODE_API_KEY = env.str("VULNERABLECODE_API_KEY", default="")
