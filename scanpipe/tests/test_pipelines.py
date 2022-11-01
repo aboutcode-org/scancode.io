@@ -35,12 +35,14 @@ from django.test import tag
 
 from scancode.cli_test_utils import purl_with_fake_uuid
 
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
 from scanpipe.pipes import output
 from scanpipe.tests import FIXTURES_REGEN
+from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
@@ -580,3 +582,45 @@ class PipelinesIntegrationTest(TestCase):
             self.data_location / "asgiref-3.3.0_load_inventory_expected.json"
         )
         self.assertPipelineResultEqual(expected_file, result_file)
+
+    @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
+    @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
+    @mock.patch("scanpipe.pipes.vulnerablecode.get_vulnerabilities_by_purl")
+    def test_scanpipe_check_vulnerabilities_pipeline_integration_test(
+        self, mock_get_vulnerabilities, mock_is_configured, mock_is_available
+    ):
+        pipeline_name = "check_vulnerabilities"
+        project1 = Project.objects.create(name="Analysis")
+        package1 = DiscoveredPackage.create_from_data(project1, package_data1)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_is_configured.return_value = False
+        mock_is_available.return_value = False
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode, msg=out)
+        self.assertIn("VulnerableCode is not configured.", out)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        mock_is_configured.return_value = True
+        mock_is_available.return_value = True
+        vulnerability_data = [
+            {
+                "purl": "pkg:deb/debian/adduser@3.118",
+                "affected_by_vulnerabilities": [
+                    {
+                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "summary": "An issue was discovered.",
+                    }
+                ],
+            }
+        ]
+        mock_get_vulnerabilities.return_value = vulnerability_data
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        package1.refresh_from_db()
+        expected = {"discovered_vulnerabilities": vulnerability_data}
+        self.assertEqual(expected, package1.extra_data)

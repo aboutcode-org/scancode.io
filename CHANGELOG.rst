@@ -4,6 +4,12 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Add a new "check vulnerabilities" pipeline to lookup vulnerabilities in the
+  VulnerableCode database for all project discovered packages.
+  Vulnerability data is stored in the extra_data field of each package.
+  More details about VulnerableCode at https://github.com/nexB/vulnerablecode/
+  https://github.com/nexB/scancode.io/issues/101
+
 - Generate SBOM (Software Bill of Materials) compliant with the SPDX 2.3 specification
   as a new downloadable output.
   https://github.com/nexB/scancode.io/issues/389

@@ -199,6 +199,7 @@ class TabSetMixin:
 
         for label, tab_definition in self.tabset.items():
             tab_data = {
+                "verbose_name": tab_definition.get("verbose_name"),
                 "icon_class": tab_definition.get("icon_class"),
                 "template": tab_definition.get("template"),
                 "fields": self.get_fields_data(tab_definition.get("fields")),
@@ -1093,10 +1094,11 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fas fa-plus-square",
         },
-        "extra data": {
+        "extra_data": {
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
+            "verbose_name": "Extra data",
             "icon_class": "fas fa-database",
         },
     }
