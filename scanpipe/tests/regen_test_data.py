@@ -46,7 +46,7 @@ class RegenTestData(TestCase):
     $ ./manage.py test --pattern "regen*.py"
 
     - Docker:
-    $ docker-compose run --volume "$(pwd)":/app web \
+    $ docker compose run --volume "$(pwd)":/app web \
         ./manage.py test --pattern "regen*.py"
     """
 

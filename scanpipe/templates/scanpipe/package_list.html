@@ -40,15 +40,17 @@
                 {{ package.primary_language }}
               </td>
               <td class="is-clipped-list">
-                <ul>
-                  {% for resource in package.resources %}
-                    <li>
-                      <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
-                    </li>
-                  {% endfor %}
-                </ul>
-                {% if package.resources|length > 5 %}
-                  <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
+                {% if package.resources %}
+                  <ul>
+                    {% for resource in package.resources %}
+                      <li>
+                        <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                  {% if package.resources|length > 5 %}
+                    <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
+                  {% endif %}
                 {% endif %}
               </td>
             </tr>
