@@ -1173,6 +1173,8 @@ def run_status_view(request, uuid):
     if current_status and current_status != run.status:
         context["status_changed"] = True
 
+    context["display_current_step"] = request.GET.get("display_current_step")
+
     return render(request, template, context)
 
 

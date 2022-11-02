@@ -113,7 +113,8 @@ class Pipeline:
             step_name = step.__name__
 
             # The `current_step` value is saved in the DB during the `self.log` call.
-            self.run.current_step = f"{current_index}/{steps_count} {step_name}"
+            self.run.current_step = f"{current_index}/{steps_count} {step_name}"[:256]
+
             self.log(f"Step [{step_name}] starting")
             start_time = timeit.default_timer()
 
