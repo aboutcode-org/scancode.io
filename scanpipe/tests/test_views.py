@@ -386,7 +386,7 @@ class ScanPipeViewsTest(TestCase):
         run.set_task_queued()
         run.refresh_from_db()
         response = self.client.get(url)
-        expected = 'Queued <i class="fas fa-clock ml-1"></i>'
+        expected = '<i class="fas fa-clock mr-1"></i>Queued'
         self.assertContains(response, expected)
         self.assertContains(response, f'hx-get="{url}?current_status={run.status}"')
 
@@ -394,10 +394,16 @@ class ScanPipeViewsTest(TestCase):
         run.refresh_from_db()
         response = self.client.get(url)
         expected = (
-            'Running <i class="fas fa-spinner fa-pulse ml-1" aria-hidden="true"></i>'
+            '<i class="fas fa-spinner fa-pulse mr-1" aria-hidden="true"></i>Running'
         )
         self.assertContains(response, expected)
         self.assertContains(response, f'hx-get="{url}?current_status={run.status}"')
+
+        response = self.client.get(url, data={"display_current_step": True})
+        expected = (
+            f'hx-get="{url}?current_status={run.status}&display_current_step=True"'
+        )
+        self.assertContains(response, expected)
 
         run.set_task_ended(exitcode=1)
         response = self.client.get(url)
