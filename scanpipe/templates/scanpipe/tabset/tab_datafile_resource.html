@@ -1,0 +1,10 @@
+<div class="content">
+  <strong>{{ tab_data.fields.datafile_resource.label }}</strong>
+  {% if tab_data.fields.datafile_resource.value %}
+    <ul>
+      <li>
+        <a href="{{ tab_data.fields.datafile_resource.value.get_absolute_url }}">{{ tab_data.fields.datafile_resource.value }}</a>
+      </li>
+    </ul>
+  {% endif %}
+</div>

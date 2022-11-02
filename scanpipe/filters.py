@@ -21,22 +21,32 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
+from django.core.validators import EMPTY_VALUES
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils.http import urlencode
+from django.utils.translation import gettext as _
 
 import django_filters
 from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
+from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
+PAGE_VAR = "page"
+
 
 class FilterSetUtilsMixin:
+    empty_value = "_EMPTY_"
+    other_value = "_OTHER_"
+
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
         """
@@ -89,6 +99,39 @@ class FilterSetUtilsMixin:
     def verbose_name_plural(cls):
         return cls.Meta.model._meta.verbose_name_plural
 
+    @property
+    def params(self):
+        return dict(self.data.items())
+
+    @property
+    def params_for_search(self):
+        """
+        Returns the current request query parameter used to keep the state
+        of the filters when using the search form.
+        The pagination and the search value is removed from those parameters.
+        """
+        params = self.params
+        params.pop(PAGE_VAR, None)
+        params.pop("search", None)
+        return params
+
+    def filter_queryset(self, queryset):
+        """
+        Adds the ability to filter by empty and none values providing the "magic"
+        `empty_value` to any filters.
+        """
+
+        for name, value in self.form.cleaned_data.items():
+            field_name = self.filters[name].field_name
+            if value == self.empty_value:
+                queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
+            elif value == self.other_value and hasattr(queryset, "less_common"):
+                return queryset.less_common(name)
+            else:
+                queryset = self.filters[name].filter(queryset, value)
+
+        return queryset
+
 
 class BulmaLinkWidget(LinkWidget):
     """
@@ -98,18 +141,31 @@ class BulmaLinkWidget(LinkWidget):
     extra_css_class = ""
 
     def render_option(self, name, selected_choices, option_value, option_label):
-        option = super().render_option(
-            name, selected_choices, option_value, option_label
-        )
-        css_class = str(self.extra_css_class)
+        option_value = str(option_value)
+        if option_label == BLANK_CHOICE_DASH[0][1]:
+            option_label = _("All")
 
-        selected_class = ' class="selected"'
-        if selected_class in option:
-            option = option.replace(selected_class, "")
+        data = self.data.copy()
+        data[name] = option_value
+        selected = data == self.data or option_value in selected_choices
+
+        css_class = str(self.extra_css_class)
+        if selected:
             css_class += " is-active"
 
-        option = option.replace("<a", f'<a class="{css_class}"')
-        return option
+        try:
+            url = data.urlencode()
+        except AttributeError:
+            url = urlencode(data, doseq=True)
+
+        return self.option_string().format(
+            css_class=css_class,
+            query_string=url,
+            label=str(option_label),
+        )
+
+    def option_string(self):
+        return '<li><a href="?{query_string}" class="{css_class}">{label}</a></li>'
 
 
 class BulmaDropdownWidget(BulmaLinkWidget):
@@ -117,22 +173,51 @@ class BulmaDropdownWidget(BulmaLinkWidget):
 
 
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
     sort = django_filters.OrderingFilter(
-        label=_("Sort"),
-        fields=["created_date", "name"],
+        label="Sort",
+        fields=[
+            "created_date",
+            "name",
+            "discoveredpackages_count",
+            "discovereddependencies_count",
+            "codebaseresources_count",
+            "projecterrors_count",
+        ],
         empty_label="Newest",
         choices=(
             ("created_date", "Oldest"),
-            ("name", "Name (a-Z)"),
-            ("-name", "Name (Z-a)"),
+            ("name", "Name (A-z)"),
+            ("-name", "Name (z-A)"),
+            ("-discoveredpackages_count", "Packages (+)"),
+            ("discoveredpackages_count", "Packages (-)"),
+            ("-discovereddependencies_count", "Dependencies (+)"),
+            ("discovereddependencies_count", "Dependencies (-)"),
+            ("-codebaseresources_count", "Resources (+)"),
+            ("codebaseresources_count", "Resources (-)"),
+            ("-projecterrors_count", "Errors (+)"),
+            ("projecterrors_count", "Errors (-)"),
         ),
         widget=BulmaDropdownWidget,
     )
     pipeline = django_filters.ChoiceFilter(
-        label=_("Pipeline"),
+        label="Pipeline",
         field_name="runs__pipeline_name",
         choices=scanpipe_app.get_pipeline_choices(include_blank=False),
+        widget=BulmaDropdownWidget,
+    )
+    status = django_filters.ChoiceFilter(
+        label="Status",
+        method="filter_run_status",
+        choices=[
+            ("not_started", "Not started"),
+            ("queued", "Queued"),
+            ("running", "Running"),
+            ("succeed", "Success"),
+            ("failed", "Failure"),
+        ],
         widget=BulmaDropdownWidget,
     )
 
@@ -159,6 +244,14 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ]
         )
 
+    def filter_run_status(self, queryset, name, value):
+        """
+        Filter by Run status using the `RunQuerySet` methods.
+        """
+        run_queryset_method = value
+        run_queryset = getattr(Run.objects, run_queryset_method)()
+        return queryset.filter(runs__in=run_queryset)
+
 
 class JSONContainsFilter(django_filters.CharFilter):
     """
@@ -177,8 +270,8 @@ class JSONContainsFilter(django_filters.CharFilter):
 class InPackageFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
-            ("true", _("Yes")),
-            ("false", _("No")),
+            ("true", "Yes"),
+            ("false", "No"),
         )
         super().__init__(*args, **kwargs)
 
@@ -191,7 +284,37 @@ class InPackageFilter(django_filters.ChoiceFilter):
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="path", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search",
+        field_name="path",
+        lookup_expr="icontains",
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "path",
+            "status",
+            "type",
+            "size",
+            "name",
+            "extension",
+            "programming_language",
+            "mime_type",
+            "tag",
+            "compliance_alert",
+        ],
+    )
+    license_key = JSONContainsFilter(
+        label="License key",
+        field_name="licenses",
+    )
+    license_category = JSONContainsFilter(
+        label="License category",
+        field_name="licenses",
+    )
+    compliance_alert = django_filters.ChoiceFilter(
+        choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
+    )
     in_package = InPackageFilter(label="In a Package")
 
     class Meta:
@@ -218,6 +341,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "holders",
             "authors",
             "licenses",
+            "license_category",
             "license_expressions",
             "emails",
             "urls",
@@ -236,8 +360,18 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
-    purl = PackageURLFilter()
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "license_expression",
+            "copyright",
+            "primary_language",
+        ],
+    )
+    purl = PackageURLFilter(label="Package URL")
 
     class Meta:
         model = DiscoveredPackage
@@ -270,8 +404,42 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ]
 
 
+class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = django_filters.CharFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    purl = PackageURLFilter(label="Package URL")
+
+    class Meta:
+        model = DiscoveredDependency
+        fields = [
+            "search",
+            "purl",
+            "dependency_uid",
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+            "datasource_id",
+        ]
+
+
 class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name="message", lookup_expr="icontains")
+    search = django_filters.CharFilter(
+        label="Search", field_name="message", lookup_expr="icontains"
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "model",
+        ],
+    )
 
     class Meta:
         model = ProjectError

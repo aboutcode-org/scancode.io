@@ -22,19 +22,67 @@
 
 import csv
 import json
+import re
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
 
 import saneyaml
 import xlsxwriter
+from cyclonedx import output as cyclonedx_output
+from cyclonedx.model import bom as cyclonedx_bom
+from cyclonedx.model import component as cyclonedx_component
+from license_expression import Licensing
 from license_expression import ordered_unique
+from licensedcode.cache import build_spdx_license_expression
+from licensedcode.cache import get_licenses_by_spdx_key
 from packagedcode.utils import combine_expressions
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
+
+
+def safe_filename(filename):
+    """
+    Convert the provided `filename` to a safe filename.
+    """
+    return re.sub("[^A-Za-z0-9.-]+", "_", filename).lower()
+
+
+def get_queryset(project, model_name):
+    """
+    Common source for getting consistent QuerySets across all supported outputs
+    (json, xlsx, csv, ...)
+    """
+    querysets = {
+        "discoveredpackage": (
+            project.discoveredpackages.all().order_by(
+                "type",
+                "namespace",
+                "name",
+                "version",
+            )
+        ),
+        "discovereddependency": (
+            project.discovereddependencies.all()
+            .prefetch_for_serializer()
+            .order_by(
+                "type",
+                "namespace",
+                "name",
+                "version",
+                "datasource_id",
+            )
+        ),
+        "codebaseresource": (
+            project.codebaseresources.without_symlinks().prefetch_for_serializer()
+        ),
+        "projecterror": project.projecterrors.all(),
+    }
+    return querysets.get(model_name)
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
@@ -47,7 +95,7 @@ def queryset_to_csv_file(queryset, fieldnames, output_file):
     writer = csv.DictWriter(output_file, fieldnames)
     writer.writeheader()
 
-    for record in queryset.iterator():
+    for record in queryset.iterator(chunk_size=2000):
         row = {field: getattr(record, field) for field in fieldnames}
         writer.writerow(row)
 
@@ -65,7 +113,7 @@ def queryset_to_csv_stream(queryset, fieldnames, output_stream):
     header = dict(zip(fieldnames, fieldnames))
     yield writer.writerow(header)
 
-    for record in queryset.iterator():
+    for record in queryset.iterator(chunk_size=2000):
         row = {field: getattr(record, field) for field in fieldnames}
         yield writer.writerow(row)
 
@@ -80,17 +128,19 @@ def to_csv(project):
     """
     from scanpipe.api.serializers import get_serializer_fields
 
-    querysets = [
-        project.discoveredpackages.all(),
-        project.codebaseresources.without_symlinks(),
+    model_names = [
+        "discoveredpackage",
+        "discovereddependency",
+        "codebaseresource",
+        "projecterror",
     ]
 
     output_files = []
-    for queryset in querysets:
+
+    for model_name in model_names:
+        queryset = get_queryset(project, model_name)
         model_class = queryset.model
         fieldnames = get_serializer_fields(model_class)
-
-        model_name = model_class._meta.model_name
         output_filename = project.get_output_file_path(f"{model_name}", "csv")
 
         with output_filename.open("w") as output_file:
@@ -125,6 +175,7 @@ class JSONResultsGenerator:
         yield "{\n"
         yield from self.serialize(label="headers", generator=self.get_headers)
         yield from self.serialize(label="packages", generator=self.get_packages)
+        yield from self.serialize(label="dependencies", generator=self.get_dependencies)
         yield from self.serialize(label="files", generator=self.get_files, latest=True)
         yield "}"
 
@@ -165,26 +216,31 @@ class JSONResultsGenerator:
         }
         yield self.encode(headers)
 
+    def encode_queryset(self, project, model_name, serializer):
+        queryset = get_queryset(project, model_name)
+        for obj in queryset.iterator(chunk_size=2000):
+            yield self.encode(serializer(obj).data)
+
     def get_packages(self, project):
         from scanpipe.api.serializers import DiscoveredPackageSerializer
 
-        packages = project.discoveredpackages.all().order_by(
-            "type",
-            "namespace",
-            "name",
-            "version",
+        yield from self.encode_queryset(
+            project, "discoveredpackage", DiscoveredPackageSerializer
         )
 
-        for obj in packages.iterator():
-            yield self.encode(DiscoveredPackageSerializer(obj).data)
+    def get_dependencies(self, project):
+        from scanpipe.api.serializers import DiscoveredDependencySerializer
+
+        yield from self.encode_queryset(
+            project, "discovereddependency", DiscoveredDependencySerializer
+        )
 
     def get_files(self, project):
         from scanpipe.api.serializers import CodebaseResourceSerializer
 
-        resources = project.codebaseresources.without_symlinks()
-
-        for obj in resources.iterator():
-            yield self.encode(CodebaseResourceSerializer(obj).data)
+        yield from self.encode_queryset(
+            project, "codebaseresource", CodebaseResourceSerializer
+        )
 
 
 def to_json(project):
@@ -203,7 +259,15 @@ def to_json(project):
     return output_file
 
 
-def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
+model_name_to_worksheet_name = {
+    "discoveredpackage": "PACKAGES",
+    "discovereddependency": "DEPENDENCIES",
+    "codebaseresource": "RESOURCES",
+    "projecterror": "ERRORS",
+}
+
+
+def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     """
     Adds a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
@@ -217,7 +281,8 @@ def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model
-    model_name = model_class._meta.verbose_name_plural.title()
+    model_name = model_class._meta.model_name
+    worksheet_name = model_name_to_worksheet_name.get(model_name)
 
     fields = get_serializer_fields(model_class)
     exclude_fields = exclude_fields or []
@@ -225,7 +290,7 @@ def _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
     return _add_xlsx_worksheet(
         workbook=workbook,
-        worksheet_name=model_name,
+        worksheet_name=worksheet_name,
         rows=queryset,
         fields=fields,
     )
@@ -370,14 +435,180 @@ def to_xlsx(project):
     if not scanpipe_app.policies_enabled:
         exclude_fields.append("compliance_alert")
 
-    querysets = [
-        project.discoveredpackages.all(),
-        project.codebaseresources.without_symlinks(),
-        project.projecterrors.all(),
+    model_names = [
+        "discoveredpackage",
+        "discovereddependency",
+        "codebaseresource",
+        "projecterror",
     ]
 
     with xlsxwriter.Workbook(output_file) as workbook:
-        for queryset in querysets:
-            _queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
+        for model_name in model_names:
+            queryset = get_queryset(project, model_name)
+            queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
+
+    return output_file
+
+
+def _get_spdx_extracted_licenses(license_expressions):
+    """
+    Generate and return the SPDX `extracted_licenses` from provided
+    `license_expressions` list of expressions.
+    """
+    licensing = Licensing()
+    license_index = get_licenses_by_spdx_key()
+    urls_fields = [
+        "faq_url",
+        "homepage_url",
+        "osi_url",
+        "ignorable_urls",
+        "other_urls",
+        "text_urls",
+    ]
+    spdx_license_refs = set()
+    extracted_licenses = []
+
+    for expression in license_expressions:
+        spdx_expression = build_spdx_license_expression(expression)
+        license_keys = licensing.license_keys(spdx_expression)
+        spdx_license_refs.update(
+            [key for key in license_keys if key.startswith("LicenseRef")]
+        )
+
+    for license_ref in spdx_license_refs:
+        license = license_index.get(license_ref.lower())
+
+        see_alsos = []
+        for field_name in urls_fields:
+            value = getattr(license, field_name)
+            if isinstance(value, list):
+                see_alsos.extend(value)
+            elif value:
+                see_alsos.append(value)
+
+        extracted_licenses.append(
+            spdx.ExtractedLicensingInfo(
+                license_id=license.spdx_license_key,
+                extracted_text=license.text or " ",
+                name=license.name,
+                see_alsos=see_alsos,
+            )
+        )
+
+    return extracted_licenses
+
+
+def to_spdx(project):
+    """
+    Generates output for the provided ``project`` in SPDX document format.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "spdx.json")
+
+    discovereddependencies_qs = get_queryset(project, "discovereddependency")
+    spdx_packages = [
+        *get_queryset(project, "discoveredpackage"),
+        *discovereddependencies_qs,
+    ]
+
+    packages_as_spdx = []
+    license_expressions = []
+    for spdx_package in spdx_packages:
+        packages_as_spdx.append(spdx_package.as_spdx())
+        if license_expression := getattr(spdx_package, "license_expression", None):
+            license_expressions.append(license_expression)
+
+    relationships = [
+        spdx.Relationship(
+            spdx_id=dep.spdx_id,
+            related_spdx_id=dep.for_package.spdx_id,
+            relationship="DEPENDENCY_OF",
+        )
+        for dep in discovereddependencies_qs
+        if dep.for_package
+    ]
+
+    files_as_spdx = [
+        resource.as_spdx()
+        for resource in get_queryset(project, "codebaseresource").files()
+    ]
+
+    document = spdx.Document(
+        name=f"scancodeio_{project.name}",
+        namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
+        creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
+        packages=packages_as_spdx,
+        files=files_as_spdx,
+        extracted_licenses=_get_spdx_extracted_licenses(license_expressions),
+        relationships=relationships,
+        comment=SCAN_NOTICE,
+    )
+
+    with output_file.open("w") as file:
+        file.write(document.as_json())
+
+    return output_file
+
+
+def get_cyclonedx_bom(project):
+    """
+    Return a CycloneDX `Bom` object filled with provided `project` data.
+    See https://cyclonedx.org/use-cases/#dependency-graph
+    """
+    components = [
+        *get_queryset(project, "discoveredpackage"),
+    ]
+
+    cyclonedx_components = [component.as_cyclonedx() for component in components]
+
+    bom = cyclonedx_bom.Bom(components=cyclonedx_components)
+
+    project_as_cyclonedx = cyclonedx_component.Component(
+        name=project.name,
+        bom_ref=str(project.uuid),
+    )
+
+    project_as_cyclonedx.dependencies.update(
+        [component.bom_ref for component in cyclonedx_components]
+    )
+
+    bom.metadata = cyclonedx_bom.BomMetaData(
+        component=project_as_cyclonedx,
+        tools=[
+            cyclonedx_bom.Tool(
+                name="ScanCode.io",
+                version=scancodeio_version,
+            )
+        ],
+        properties=[
+            cyclonedx_bom.Property(
+                name="notice",
+                value=SCAN_NOTICE,
+            )
+        ],
+    )
+
+    return bom
+
+
+def to_cyclonedx(project):
+    """
+    Generates output for the provided ``project`` in CycloneDX BOM format.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "bom.json")
+
+    cyclonedx_bom = get_cyclonedx_bom(project)
+
+    outputter = cyclonedx_output.get_instance(
+        bom=cyclonedx_bom,
+        output_format=cyclonedx_output.OutputFormat.JSON,
+    )
+
+    bom_json = outputter.output_as_string()
+    with output_file.open("w") as file:
+        file.write(bom_json)
 
     return output_file

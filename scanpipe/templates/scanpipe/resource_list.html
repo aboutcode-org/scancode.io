@@ -1,14 +1,16 @@
 {% extends "scanpipe/base.html" %}
 
+{% block title %}ScanCode.io: {{ project.name }} - Resources{% endblock %}
+
 {% block content %}
   <div id="content-header" class="container is-max-desktop mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True %}
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Resources" %}
         {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
       </div>
-      {% include 'scanpipe/includes/pagination_header.html' with verbose_name="Resources" %}
+      {% include 'scanpipe/includes/pagination_header.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
     </section>
   </div>
@@ -16,29 +18,16 @@
   <div class="container is-fluid mb-3">
     <div class="table-container">
       <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        <thead>
-          <tr>
-            <th>Path</th>
-            <th>Status</th>
-            <th>Type</th>
-            <th>Size</th>
-            <th>Name</th>
-            <th>Extension</th>
-            <th>Programming language</th>
-            <th>Mime type</th>
-            <th>Tag</th>
-            <th>License expressions</th>
-            {% if include_compliance_alert %}
-              <th>Compliance alert</th>
-            {% endif %}
-            <th>Packages</th>
-          </tr>
-        </thead>
+        {% include 'scanpipe/includes/list_view_thead.html' %}
         <tbody>
           {% for resource in object_list %}
             <tr>
-              <td class="break-all">
-                <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+              <td class="break-all" style="min-width: 200px;">
+                {% if resource.is_dir %}
+                  {{ resource.path }}
+                {% else %}
+                  <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+                {% endif %}
               </td>
               <td>
                 <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
@@ -46,8 +35,12 @@
               <td>
                  <a href="?type={{ resource.type }}" class="is-black-link">{{ resource.type }}</a>
               </td>
-              <td>{{ resource.size|default_if_none:"" }}</td>
-              <td class="break-all">
+              <td>
+                {% if resource.is_file %}
+                  {{ resource.size|filesizeformat|default_if_none:"" }}
+                {% endif %}
+              </td>
+              <td class="break-all" style="min-width: 100px;">
                 <a href="?name={{ resource.name }}" class="is-black-link">{{ resource.name }}</a>
               </td>
               <td>

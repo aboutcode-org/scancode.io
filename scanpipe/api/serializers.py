@@ -26,6 +26,7 @@ from rest_framework import serializers
 
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -112,7 +113,8 @@ class ProjectSerializer(
     runs = RunSerializer(many=True, read_only=True)
     input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
     codebase_resources_summary = serializers.SerializerMethodField()
-    discovered_package_summary = serializers.SerializerMethodField()
+    discovered_packages_summary = serializers.SerializerMethodField()
+    discovered_dependencies_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -136,8 +138,10 @@ class ProjectSerializer(
             "error_count",
             "resource_count",
             "package_count",
+            "dependency_count",
             "codebase_resources_summary",
-            "discovered_package_summary",
+            "discovered_packages_summary",
+            "discovered_dependencies_summary",
         )
 
         exclude_from_list_view = [
@@ -147,20 +151,31 @@ class ProjectSerializer(
             "error_count",
             "resource_count",
             "package_count",
+            "dependency_count",
             "codebase_resources_summary",
-            "discovered_package_summary",
+            "discovered_packages_summary",
+            "discovered_dependencies_summary",
         ]
 
     def get_codebase_resources_summary(self, project):
         queryset = project.codebaseresources.all()
         return count_group_by(queryset, "status")
 
-    def get_discovered_package_summary(self, project):
+    def get_discovered_packages_summary(self, project):
         base_qs = project.discoveredpackages
         return {
             "total": base_qs.count(),
             "with_missing_resources": base_qs.exclude(missing_resources=[]).count(),
             "with_modified_resources": base_qs.exclude(modified_resources=[]).count(),
+        }
+
+    def get_discovered_dependencies_summary(self, project):
+        base_qs = project.discovereddependencies
+        return {
+            "total": base_qs.count(),
+            "is_runtime": base_qs.filter(is_runtime=True).count(),
+            "is_optional": base_qs.filter(is_optional=True).count(),
+            "is_resolved": base_qs.filter(is_resolved=True).count(),
         }
 
     def create(self, validated_data):
@@ -201,7 +216,38 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseResource
-        exclude = ["id", "project", "rootfs_path", "sha256", "sha512"]
+        fields = [
+            "path",
+            "type",
+            "name",
+            "status",
+            "tag",
+            "extension",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "mime_type",
+            "file_type",
+            "programming_language",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_key_file",
+            "licenses",
+            "license_expressions",
+            "compliance_alert",
+            "copyrights",
+            "holders",
+            "authors",
+            "package_data",
+            "for_packages",
+            "emails",
+            "urls",
+            "extra_data",
+        ]
 
 
 class DiscoveredPackageSerializer(serializers.ModelSerializer):
@@ -209,13 +255,68 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscoveredPackage
-        exclude = [
-            "id",
-            "uuid",
-            "project",
-            "filename",
-            "last_modified_date",
-            "codebase_resources",
+        fields = [
+            "purl",
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "primary_language",
+            "description",
+            "release_date",
+            "parties",
+            "keywords",
+            "homepage_url",
+            "download_url",
+            "bug_tracking_url",
+            "code_view_url",
+            "vcs_url",
+            "repository_homepage_url",
+            "repository_download_url",
+            "api_data_url",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "copyright",
+            "license_expression",
+            "declared_license",
+            "notice_text",
+            "source_packages",
+            "extra_data",
+            "package_uid",
+            "manifest_path",
+            "contains_source_code",
+            "datasource_id",
+            "file_references",
+            "missing_resources",
+            "modified_resources",
+        ]
+
+
+class DiscoveredDependencySerializer(serializers.ModelSerializer):
+    purl = serializers.ReadOnlyField()
+    for_package_uid = serializers.ReadOnlyField()
+    datafile_path = serializers.ReadOnlyField()
+    package_type = serializers.ReadOnlyField(source="type")
+
+    class Meta:
+        model = DiscoveredDependency
+        fields = [
+            "purl",
+            "extracted_requirement",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+            "dependency_uid",
+            "for_package_uid",
+            "datafile_path",
+            "datasource_id",
+            "package_type",
         ]
 
 
@@ -257,6 +358,7 @@ def get_model_serializer(model_class):
     serializer = {
         CodebaseResource: CodebaseResourceSerializer,
         DiscoveredPackage: DiscoveredPackageSerializer,
+        DiscoveredDependency: DiscoveredDependencySerializer,
         ProjectError: ProjectErrorSerializer,
     }.get(model_class, None)
 

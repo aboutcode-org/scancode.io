@@ -1,6 +1,8 @@
 {% extends "scanpipe/base.html" %}
 {% load humanize %}
 
+{% block title %}ScanCode.io: Projects{% endblock %}
+
 {% block extrahead %}
   <style>
     ul#id_is_archived {display: inline-flex;}
@@ -21,6 +23,11 @@
         <div>
           {% include 'scanpipe/includes/breadcrumb.html' %}
           {{ filter.form.is_archived }}
+          {% if filter.is_active %}
+            <a class="is-grey-link" href="{% url 'project_list' %}">
+              <i class="fas fa-times"></i> Clear search and filters
+            </a>
+          {% endif %}
         </div>
         <a href="{% url 'project_add' %}" class="button is-link">New Project</a>
       </div>
@@ -31,18 +38,19 @@
         </div>
         <div>
           {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
+          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.status only %}
           {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
         </div>
       </div>
 
       {% if object_list %}
-        {% include 'scanpipe/includes/project_list_table.html' with projects=object_list only %}
+        {% include 'scanpipe/includes/project_list_table.html' with projects=object_list %}
       {% else %}
         <div class="tile is-ancestor">
           <div class="tile is-parent">
             <article class="tile is-child box has-text-centered border-dashed">
-              {% if filter.form.search.value %}
-                No Projects found. <a href="{% url 'project_list' %}">Clear the search</a>
+              {% if filter.is_active %}
+                No Projects found. <a href="{% url 'project_list' %}">Clear search and filters</a>
               {% else %}
                 <a href="{% url 'project_add' %}">New Project</a>
               {% endif %}

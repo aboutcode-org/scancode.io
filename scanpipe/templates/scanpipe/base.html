@@ -20,11 +20,13 @@
       .tag-header {border-radius: 4px 4px 0 0!important;}
       .border-bottom-radius {border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;}
       .tabs .border-left-radius {border-bottom-left-radius: 4px; border-top-left-radius: 4px;}
+      .tab-content pre {border-radius: 4px;}
       .border-no-top-left-radius {border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;}
       .border-dashed {border-width: 2px; border-style: dashed; border-color: rgb(229, 231, 235);}
       .is-height-auto {height: auto;}
       pre.log {color: #f1f1f1; background-color: #222; font-family: monospace;}
       pre.wrap {white-space: pre-wrap;}
+      pre.is-small {padding: 0.75rem 1rem;}
       .nexb-orange {color:#f7bf3c;}
       .bb-legend-item-hidden {text-decoration: line-through; opacity: 0.7!important;}
       .bb-chart .bb-chart-arcs .bb-chart-arcs-title {font-size: 15px !important; fill: #4a4a4a !important; text-transform: uppercase;}
@@ -36,7 +38,7 @@
       .is-grey-link {color: #7a7a7a;}
       .is-black-link:hover, .is-grey-link:hover {color: #3273dc; text-decoration: underline;}
       #project-extra-data figure.highlight {max-height: 300px; overflow-y: scroll;}
-      #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap;}
+      #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap; word-break: break-all;}
       #inputs-panel .panel-block.dropdown:hover {background-color: #f5f5f5;}
       #inputs-panel .dropdown-menu {width: 85%;}
       .is-wider .dropdown-menu {min-width: 18rem;}
@@ -45,10 +47,16 @@
       .ace-marker {position: absolute; z-index: 3; background: #ffe9b3;}
       .break-all {word-break: break-all;}
       .break-word {word-break: break-word;}
+      .break-normal {word-break: normal;}
+      .nowrap {white-space: nowrap;}
       #content-header input[name="search"] {width: 205px;}
       button.as-link {height: auto; line-height: initial; font-size: inherit;}
       .file.is-boxed.has-name .file-cta {border-width: medium; border-style: dashed;}
       progress.file-upload::before {content: 'Files upload: 'attr(value)'%'; position: absolute; top: -14%; left: 43%; color: black; font-weight: 400;}
+      .is-clipped-list ul {--snippet-spacing: 0.95rem; height: calc(8 * var(--snippet-spacing)); overflow: hidden;}
+      .tab-content {display: none;}
+      .tab-content.is-active {display: revert !important;}
+      .breadcrumb a {padding: 0 0.25em;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>

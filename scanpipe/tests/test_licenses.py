@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from unittest import mock
-
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse

@@ -1,0 +1,24 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+    <section class="mx-5 mb-3">
+      <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
+        <ul>
+          <li><a href="{% url 'project_list' %}">Projects</a></li>
+          <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+          <li><a href="{% url 'project_packages' project.uuid %}">Packages</a></li>
+          <li class="is-active"><a href="#" aria-current="page">{{ object.package_url }}</a></li>
+        </ul>
+      </nav>
+    </section>
+
+    {% include 'scanpipe/tabset/tabset.html' %}
+  </div>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% load humanize %}
+
+{% if project.package_count %}
+  <hr>
+  <h3 class="title is-4 has-text-centered">
+    Discovered Packages
+    <span class="tag is-link is-light is-rounded ml-1">{{ project.package_count|intcomma }}</span>
+  </h3>
+  <div class="columns is-gapless">
+    <div class="column">
+      <div id="package_type_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="type"></div>
+    </div>
+    <div class="column">
+      <div id="package_license_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="license_expression"></div>
+    </div>
+  </div>
+{% endif %}
+
+{% if project.dependency_count %}
+  <hr>
+  <h3 class="title is-4 has-text-centered">
+    Discovered Dependencies
+    <span class="tag is-link is-light is-rounded ml-1">{{ project.dependency_count|intcomma }}</span>
+  </h3>
+  <div class="columns is-gapless">
+    <div class="column">
+      <div id="dependency_package_type_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="package_type"></div>
+    </div>
+    <div class="column">
+      <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_runtime"></div>
+    </div>
+  </div>
+  <div class="columns is-gapless">
+    <div class="column">
+      <div id="dependency_is_optional_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_optional"></div>
+    </div>
+    <div class="column">
+      <div id="dependency_is_resolved_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_resolved"></div>
+    </div>
+  </div>
+{% endif %}
+
+{% if project.resource_count %}
+  <hr>
+  <h3 id="resource-charts" class="title is-4 has-text-centered mb-3">
+    Codebase Resources
+  </h3>
+  {% include "scanpipe/includes/file_filter.html" with project=project file_filter=file_filter only %}
+  <div class="columns is-gapless">
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="programming_language" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="mime_type" %}
+  </div>
+  <div class="columns is-gapless">
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="holders" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="copyrights" %}
+  </div>
+  <div class="columns is-gapless">
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_key" lookup_field="license_key" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_category" lookup_field="license_category" %}
+  </div>
+  {% if file_compliance_alert %}
+    <hr>
+    <h3 class="title is-4 has-text-centered mb-3">
+      Policies
+    </h3>
+    <div class="columns is-gapless">
+      {% include "scanpipe/includes/resource_chart_column.html" with field_name="compliance_alert" %}
+      <div class="column"></div>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% block scripts %}
+  {% if project.file_count %}
+    {{ programming_languages|json_script:"programming_languages" }}
+    {{ mime_types|json_script:"mime_types" }}
+    {{ holders|json_script:"holders" }}
+    {{ copyrights|json_script:"copyrights" }}
+    {{ file_license_keys|json_script:"file_license_keys" }}
+    {{ file_license_categories|json_script:"file_license_categories" }}
+    {{ file_compliance_alert|json_script:"file_compliance_alert" }}
+  {% endif %}
+  {% if project.package_count %}
+    {{ package_licenses|json_script:"package_licenses" }}
+    {{ package_types|json_script:"package_types" }}
+  {% endif %}
+  {% if project.dependency_count %}
+    {{ dependency_package_type|json_script:"dependency_package_type" }}
+    {{ dependency_is_runtime|json_script:"dependency_is_runtime" }}
+    {{ dependency_is_optional|json_script:"dependency_is_optional" }}
+    {{ dependency_is_resolved|json_script:"dependency_is_resolved" }}
+  {% endif %}
+  <script>
+    let makeChart = function(data_source_id, element_id, title) {
+      let data_source = document.getElementById(data_source_id);
+      if (!data_source) return false;
+
+      let data = JSON.parse(data_source.textContent);
+      if (Object.keys(data).length === 0) return false;
+
+      bb.generate({
+        data: {
+          columns: Object.entries(data),
+          type: "donut",
+          colors: {
+            "(No value detected)": "rgba(201, 203, 207, 0.5)",
+            "ok": "rgb(42, 196, 179)",
+            "error": "rgb(255, 97, 123)",
+            "warning": "rgb(254, 175, 41)",
+            "missing": "rgb(177, 128, 208)",
+          },
+          hide: "(No value detected)"
+        },
+        legend: {
+          position: 'inset',
+          inset: {
+            anchor: 'top-left',
+            x: 400,
+            y: 50
+          }
+        },
+        donut: {
+          title: title,
+        },
+        tooltip: {
+          format: {
+            value: function(value, ratio, id) {
+              let percent = (ratio * 100).toFixed(1);
+              return `${value} (${percent}%)`;
+            }
+          }
+        },
+        bindto: element_id,
+        onafterinit: function() {
+          // Open a filtered list based on the clicked data.
+          // Ctrl/Meta + click will open in a _blank target.
+          // Using onafterinit to attach click event handler manually
+          // in place of using data.onclick: function(data, element)
+          // as the event is not provided there but required for the metaKey support.
+          this.$.main.on("click", function(event) {
+            let base_chart_div = event.target.closest(".bb");
+            let base_url = base_chart_div.dataset.url;
+            let field = base_chart_div.dataset.lookup_field;
+            let in_package = base_chart_div.dataset.in_package;
+            // Retrieve the data ("name" value for filtering) from the .bb-tooltip section
+            let name = document.querySelector(`#${base_chart_div.id} .bb-tooltip .name`).textContent;
+            if (base_url && field) {
+              // Keep in sync with FilterSetUtilsMixin.(empty_value|other_value)
+              if (name === "(No value detected)") name = "_EMPTY_";
+              if (name === "Other") name = "_OTHER_";
+              let full_url = `${base_url}?${field}=${name}`;
+              if (in_package) full_url += `&in_package=${in_package}`;
+              if (event.ctrlKey || event.metaKey) window.open(full_url, '_blank');
+              else window.location.href = full_url;
+            }
+          });
+        }
+     });
+    };
+
+    // Packages
+    makeChart("package_types", "#package_type_chart", "Package\nType");
+    makeChart("package_licenses", "#package_license_chart", "Package\nLicense\nExpression");
+    // Dependencies
+    makeChart("dependency_package_type", "#dependency_package_type_chart", "Package\nType");
+    makeChart("dependency_is_runtime", "#dependency_is_runtime_chart", "Runtime\nDependencies");
+    makeChart("dependency_is_optional", "#dependency_is_optional_chart", "Optional\nDependencies");
+    makeChart("dependency_is_resolved", "#dependency_is_resolved_chart", "Resolved\nDependencies");
+    // Resources
+    makeChart("programming_languages", "#programming_language_chart", "Programming\nLanguage");
+    makeChart("mime_types", "#mime_type_chart", "Mime\nType");
+    makeChart("holders", "#holders_chart", "Holder");
+    makeChart("copyrights", "#copyrights_chart", "Copyright");
+    makeChart("file_license_keys", "#license_key_chart", "License\nKey");
+    makeChart("file_license_categories", "#license_category_chart", "License\nCategory");
+    makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
+  </script>
+{% endblock %}

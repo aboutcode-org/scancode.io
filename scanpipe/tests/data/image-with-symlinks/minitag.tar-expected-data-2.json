@@ -1,0 +1,47 @@
+[
+  {
+    "sha256": null,
+    "docker_version": "18.09.7",
+    "os": "linux",
+    "os_version": null,
+    "architecture": "amd64",
+    "variant": null,
+    "created": "2022-07-30T14:18:12.008793231Z",
+    "author": null,
+    "comment": null,
+    "labels": {},
+    "image_format": "docker",
+    "image_id": "592e8d0af99bd06a02a15d12d19807787402c85c3cdc893b317875c8ae8ab1bf",
+    "config_digest": "sha256:592e8d0af99bd06a02a15d12d19807787402c85c3cdc893b317875c8ae8ab1bf",
+    "tags": [
+      "minitag:latest"
+    ],
+    "distro": null,
+    "layers": [
+      {
+        "extracted_location": "tempdir/887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0",
+        "archive_location": "604aec9f478368eea9bec62fcb2d66aed8bccedd33713c568bb80a6f360fa903/layer.tar",
+        "sha256": "887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0",
+        "docker_version": null,
+        "os": null,
+        "os_version": null,
+        "architecture": null,
+        "variant": null,
+        "labels": [],
+        "layer_id": "887ac3b73f9a48d1324380c8d1ef033873a6cb882a5a9170fba51fa69fd5e5f0",
+        "size": 9728,
+        "is_empty_layer": false,
+        "author": null,
+        "created": "2022-07-30T14:18:12.008793231Z",
+        "created_by": "/bin/sh -c #(nop) ADD file:783bda715f24a7fcabfe87ca07ae47e5cca3d35b99dd78e3155748e41477acb2 in / ",
+        "comment": null
+      }
+    ],
+    "history": [
+      {
+        "created": "2022-07-30T14:18:12.008793231Z",
+        "created_by": "/bin/sh -c #(nop) ADD file:783bda715f24a7fcabfe87ca07ae47e5cca3d35b99dd78e3155748e41477acb2 in / "
+      }
+    ]
+  }
+]

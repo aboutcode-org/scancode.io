@@ -20,10 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import collections
 import json
 import os
-import shutil
 import tempfile
 from pathlib import Path
 from unittest import expectedFailure
@@ -39,14 +37,13 @@ from commoncode.archive import extract_tar
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import make_codebase_resource
-from scanpipe.pipes import output
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
@@ -98,142 +95,6 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", filename_now())
-
-    def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-
-        queryset = project1.discoveredpackages.all()
-        fieldnames = ["purl", "name", "version"]
-
-        output_file_path = project1.get_output_file_path("packages", "csv")
-        with output_file_path.open("w") as output_file:
-            output.queryset_to_csv_file(queryset, fieldnames, output_file)
-
-        expected = [
-            "purl,name,version\n",
-            "pkg:deb/debian/adduser@3.118?arch=all,adduser,3.118\n",
-        ]
-        with output_file_path.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-        queryset = project1.codebaseresources.all()
-        fieldnames = ["for_packages", "path"]
-        output_file_path = project1.get_output_file_path("resources", "csv")
-        with output_file_path.open("w") as output_file:
-            output.queryset_to_csv_file(queryset, fieldnames, output_file)
-
-        expected = [
-            "for_packages,path\n",
-            "['pkg:deb/debian/adduser@3.118?arch=all'],filename.ext\n",
-        ]
-        with output_file_path.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-    def test_scanpipe_pipes_outputs_queryset_to_csv_stream(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-
-        queryset = project1.discoveredpackages.all()
-        fieldnames = ["purl", "name", "version"]
-
-        output_file = project1.get_output_file_path("packages", "csv")
-        with output_file.open("w") as output_stream:
-            generator = output.queryset_to_csv_stream(
-                queryset, fieldnames, output_stream
-            )
-            collections.deque(generator, maxlen=0)  # Exhaust the generator
-
-        expected = [
-            "purl,name,version\n",
-            "pkg:deb/debian/adduser@3.118?arch=all,adduser,3.118\n",
-        ]
-        with output_file.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-        queryset = project1.codebaseresources.all()
-        fieldnames = ["for_packages", "path"]
-        output_file = project1.get_output_file_path("resources", "csv")
-        with output_file.open("w") as output_stream:
-            generator = output.queryset_to_csv_stream(
-                queryset, fieldnames, output_stream
-            )
-            collections.deque(generator, maxlen=0)  # Exhaust the generator
-
-        output.queryset_to_csv_stream(queryset, fieldnames, output_file)
-
-        expected = [
-            "for_packages,path\n",
-            "['pkg:deb/debian/adduser@3.118?arch=all'],filename.ext\n",
-        ]
-        with output_file.open() as f:
-            self.assertEqual(expected, f.readlines())
-
-    @mock.patch("scanpipe.pipes.datetime", mocked_now)
-    def test_scanpipe_pipes_outputs_to_csv(self):
-        project1 = Project.objects.create(name="Analysis")
-        output_files = output.to_csv(project=project1)
-        expected = [
-            "codebaseresource-2010-10-10-10-10-10.csv",
-            "discoveredpackage-2010-10-10-10-10-10.csv",
-        ]
-        self.assertEqual(sorted(expected), sorted(project1.output_root))
-        self.assertEqual(sorted(expected), sorted([f.name for f in output_files]))
-
-    def test_scanpipe_pipes_outputs_to_json(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-
-        output_file = output.to_json(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
-
-        with output_file.open() as f:
-            results = json.loads(f.read())
-
-        expected = ["files", "headers", "packages"]
-        self.assertEqual(expected, sorted(results.keys()))
-
-        self.assertEqual(1, len(results["headers"]))
-        self.assertEqual(1, len(results["files"]))
-        self.assertEqual(1, len(results["packages"]))
-
-        self.assertIn("compliance_alert", results["files"][0])
-
-        # Make sure the output can be generated even if the work_directory was wiped
-        shutil.rmtree(project1.work_directory)
-        output_file = output.to_json(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
-
-    def test_scanpipe_pipes_outputs_to_xlsx(self):
-        project1 = Project.objects.create(name="Analysis")
-        codebase_resource = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
-        codebase_resource.create_and_add_package(package_data1)
-        ProjectError.objects.create(
-            project=project1, model="Model", details={}, message="Error"
-        )
-
-        output_file = output.to_xlsx(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
-
-        # Make sure the output can be generated even if the work_directory was wiped
-        shutil.rmtree(project1.work_directory)
-        output_file = output.to_xlsx(project=project1)
-        self.assertEqual([output_file.name], project1.output_root)
 
     def test_scanpipe_pipes_scancode_extract_archive(self):
         target = tempfile.mkdtemp()
@@ -313,7 +174,7 @@ class ScanPipePipesTest(TestCase):
         sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
         expected = {
             "type": CodebaseResource.Type.FILE,
-            "name": "notice",
+            "name": "notice.NOTICE",
             "extension": ".NOTICE",
             "is_text": True,
             "size": 1178,
@@ -526,11 +387,13 @@ class ScanPipePipesTest(TestCase):
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_dependencies(project, virtual_codebase)
 
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertEqual(1, DiscoveredDependency.objects.count())
         # Make sure the root is not created as a CodebaseResource, walk(skip_root=True)
         self.assertFalse(CodebaseResource.objects.filter(path="codebase").exists())
 
@@ -545,10 +408,12 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(expected, package.codebase_resources.get().path)
 
         # The functions can be called again and existing objects are skipped
-        scancode.create_codebase_resources(project, virtual_codebase)
         scancode.create_discovered_packages(project, virtual_codebase)
+        scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_dependencies(project, virtual_codebase)
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
+        self.assertEqual(1, DiscoveredDependency.objects.count())
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
         project = Project.objects.create(name="asgiref")
@@ -561,6 +426,9 @@ class ScanPipePipesTest(TestCase):
         scanpipe_app.license_policies_index = license_policies_index
         scancode.create_discovered_packages(project, virtual_codebase)
         scancode.create_codebase_resources(project, virtual_codebase)
+        scancode.create_discovered_dependencies(
+            project, virtual_codebase, strip_datafile_path_root=True
+        )
         resources = project.codebaseresources
 
         resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")
@@ -611,6 +479,25 @@ class ScanPipePipesTest(TestCase):
         )
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
+
+    def test_scanpipe_pipes_scancode_assemble_packages(self):
+        project = Project.objects.create(name="Analysis")
+        project_scan_location = self.data_location / "package_assembly_codebase.json"
+        scancode.create_inventory_from_scan(project, project_scan_location)
+
+        self.assertEqual(0, project.discoveredpackages.count())
+        scancode.assemble_packages(project)
+        self.assertEqual(1, project.discoveredpackages.count())
+
+        package = project.discoveredpackages.all()[0]
+        self.assertEqual("pkg:npm/test@0.1.0", package.package_url)
+
+        associated_resources = [r.path for r in package.codebase_resources.all()]
+        expected_resources = [
+            "get_package_resources/package.json",
+            "get_package_resources/this-should-be-returned",
+        ]
+        self.assertEquals(sorted(expected_resources), sorted(associated_resources))
 
     @expectedFailure
     def test_scanpipe_pipes_codebase_get_tree(self):
@@ -1222,3 +1109,32 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projecterrors.count())
+
+    def test_scanpipe_add_resource_to_package(self):
+        project1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(
+            project=project1,
+            path="filename.ext",
+        )
+        package1 = update_or_create_package(project1, package_data1)
+        self.assertFalse(resource1.for_packages)
+
+        self.assertIsNone(scancode.add_resource_to_package(None, resource1, project1))
+        self.assertFalse(resource1.for_packages)
+
+        scancode.add_resource_to_package("not_available", resource1, project1)
+        self.assertFalse(resource1.for_packages)
+        self.assertEqual(1, project1.projecterrors.count())
+        error = project1.projecterrors.get()
+        self.assertEqual("assemble_package", error.model)
+        expected = {"resource": "filename.ext", "package_uid": "not_available"}
+        self.assertEqual(expected, error.details)
+
+        scancode.add_resource_to_package(package1.package_uid, resource1, project1)
+        self.assertEqual(len(resource1.for_packages), 1)
+        self.assertIn(package1.package_uid, resource1.for_packages)
+
+        # Package will not be added twice since it is already associated with the
+        # resource.
+        scancode.add_resource_to_package(package1.package_uid, resource1, project1)
+        self.assertEqual(len(resource1.for_packages), 1)

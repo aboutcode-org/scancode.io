@@ -44,6 +44,8 @@ SECRET_KEY = env.str("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
 
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
 # SECURITY WARNING: don't run with debug turned on in production
 DEBUG = env.bool("SCANCODEIO_DEBUG", default=False)
 
@@ -56,6 +58,8 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
 
 SCANCODE_TOOLKIT_CLI_OPTIONS = env.list("SCANCODE_TOOLKIT_CLI_OPTIONS", default=[])
+
+SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
 
 # Set the number of parallel processes to use for ScanCode related scan execution.
 # If the SCANCODEIO_PROCESSES argument is not set, defaults to an optimal number of CPUs
@@ -71,6 +75,9 @@ SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 
 # Default to 24 hours.
 SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
+
+# Default limit for "most common" entries in QuerySets.
+SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 
 # Application definition
 
@@ -221,12 +228,16 @@ LOGGING = {
     "loggers": {
         "scanpipe": {
             "handlers": ["null"] if IS_TESTS else ["console"],
-            "level": env.str("SCANCODEIO_LOG_LEVEL", "INFO"),
+            "level": SCANCODEIO_LOG_LEVEL,
             "propagate": False,
         },
         "django": {
             "handlers": ["null"] if IS_TESTS else ["console"],
             "propagate": False,
+        },
+        # Set SCANCODEIO_LOG_LEVEL=DEBUG to display all SQL queries in the console.
+        "django.db.backends": {
+            "level": SCANCODEIO_LOG_LEVEL,
         },
     },
 }
@@ -300,3 +311,10 @@ if not SCANCODEIO_REQUIRE_AUTHENTICATION:
     REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (
         "rest_framework.permissions.AllowAny",
     )
+
+# VulnerableCode integration
+
+VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="")
+VULNERABLECODE_USER = env.str("VULNERABLECODE_USER", default="")
+VULNERABLECODE_PASSWORD = env.str("VULNERABLECODE_PASSWORD", default="")
+VULNERABLECODE_API_KEY = env.str("VULNERABLECODE_API_KEY", default="")

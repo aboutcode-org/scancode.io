@@ -30,14 +30,17 @@ from django.test import TestCase
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import docker
+from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import FIXTURES_REGEN
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeDockerPipesTest(TestCase):
     data_path = Path(__file__).parent / "data"
+    maxDiff = None
 
-    def assertResultsEqual(self, expected_file, results, regen=False):
+    def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
         """
         Set `regen` to True to regenerate the expected results.
         """
@@ -62,7 +65,7 @@ class ScanPipeDockerPipesTest(TestCase):
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
         expected_location = self.data_path / "docker-images.tar.gz-expected-data-1.json"
-        self.assertResultsEqual(expected_location, results, regen=False)
+        self.assertResultsEqual(expected_location, results)
 
         # Extract the layers second
         errors = docker.extract_layers_from_images_to_base_path(
@@ -74,7 +77,7 @@ class ScanPipeDockerPipesTest(TestCase):
         images_data = [docker.get_image_data(i) for i in images]
         results = json.dumps(images_data, indent=2)
         expected_location = self.data_path / "docker-images.tar.gz-expected-data-2.json"
-        self.assertResultsEqual(expected_location, results, regen=False)
+        self.assertResultsEqual(expected_location, results)
 
     def test_pipes_docker_tag_whiteout_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
@@ -86,3 +89,53 @@ class ScanPipeDockerPipesTest(TestCase):
         resource2.refresh_from_db()
         self.assertEqual("", resource1.status)
         self.assertEqual("ignored-whiteout", resource2.status)
+
+    def test_pipes_docker_extract_image_from_tarball_with_broken_symlinks(
+        self,
+    ):
+        extract_target = str(Path(tempfile.mkdtemp()) / "tempdir")
+        input_tarball = str(self.data_path / "image-with-symlinks/minitag.tar")
+
+        # Extract the image first
+        images, errors = docker.extract_image_from_tarball(
+            input_tarball,
+            extract_target,
+            verify=False,
+        )
+        self.assertEqual([], errors)
+
+        images_data = [docker.get_image_data(i) for i in images]
+        results = json.dumps(images_data, indent=2)
+        expected_location = (
+            self.data_path / "image-with-symlinks/minitag.tar-expected-data-1.json"
+        )
+        self.assertResultsEqual(expected_location, results)
+
+        # Extract the layers second
+        errors = docker.extract_layers_from_images_to_base_path(
+            base_path=extract_target,
+            images=images,
+        )
+        self.assertEqual([], errors)
+
+        images_data = [docker.get_image_data(i) for i in images]
+        results = json.dumps(images_data, indent=2)
+        expected_location = (
+            self.data_path / "image-with-symlinks/minitag.tar-expected-data-2.json"
+        )
+        self.assertResultsEqual(expected_location, results)
+
+    def test_pipes_docker_get_tarballs_from_inputs(self):
+        p1 = Project.objects.create(name="Analysis")
+        _, tar = tempfile.mkstemp(suffix=".tar")
+        _, tar_gz = tempfile.mkstemp(suffix=".tar.gz")
+        _, tgz = tempfile.mkstemp(suffix=".tgz")
+        _, zip = tempfile.mkstemp(suffix=".zip")
+        _, rar = tempfile.mkstemp(suffix=".rar")
+        copy_inputs([tar, tar_gz, tgz, zip, rar], p1.input_path)
+
+        expected_extensions = ("tar", "tar.gz", "tgz")
+        tarballs = docker.get_tarballs_from_inputs(project=p1)
+        self.assertEqual(3, len(tarballs))
+        for path in tarballs:
+            self.assertTrue(path.name.endswith(expected_extensions))

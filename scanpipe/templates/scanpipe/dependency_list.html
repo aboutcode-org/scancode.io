@@ -1,0 +1,69 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Dependencies{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-desktop mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Dependencies" %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+      </div>
+      {% include 'scanpipe/includes/pagination_header.html' %}
+      {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
+    </section>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <div class="table-container">
+      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+        {% include 'scanpipe/includes/list_view_thead.html' %}
+        <tbody>
+          {% for dependency in object_list %}
+            <tr class="break-word">
+              <td style="min-width: 300px;" title="{{ dependency.dependency_uid }}">
+                <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
+              </td>
+              <td>
+                {{ dependency.type }}
+              </td>
+              <td>
+                {{ dependency.extracted_requirement }}
+              </td>
+              <td class="break-normal">
+                {{ dependency.scope }}
+              </td>
+              <td>
+                {{ dependency.is_runtime }}
+              </td>
+              <td>
+                {{ dependency.is_optional }}
+              </td>
+              <td>
+                {{ dependency.is_resolved }}
+              </td>
+              <td>
+                {% if dependency.for_package %}
+                  <a href="{{ dependency.for_package.get_absolute_url }}" title="{{ dependency.for_package.purl }}">{{ dependency.for_package.purl }}</a>
+                {% endif %}
+              </td>
+              <td>
+                {% if dependency.datafile_resource %}
+                  <a href="{{ dependency.datafile_resource.get_absolute_url }}" title="{{ dependency.datafile_resource.path }}">{{ dependency.datafile_resource.name }}</a>
+                {% endif %}
+              </td>
+              <td>
+                {{ dependency.datasource_id }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+    {% endif %}
+  </div>
+{% endblock %}

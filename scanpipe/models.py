@@ -26,6 +26,7 @@ import logging
 import re
 import shutil
 import uuid
+from collections import Counter
 from contextlib import suppress
 from itertools import groupby
 from operator import itemgetter
@@ -39,7 +40,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
+from django.db.models import Count
+from django.db.models import IntegerField
+from django.db.models import OuterRef
+from django.db.models import Prefetch
 from django.db.models import Q
+from django.db.models import Subquery
 from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.db.models.functions import Lower
@@ -54,9 +60,15 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
+from cyclonedx import model as cyclonedx_model
+from cyclonedx.model import component as cyclonedx_component
+from formattedcode.output_cyclonedx import CycloneDxExternalRef
+from licensedcode.cache import build_spdx_license_expression
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
+from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rest_framework.authtoken.models import Token
 from rq.command import send_stop_job_command
@@ -65,9 +77,8 @@ from rq.job import Job
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import spdx
 from scanpipe import tasks
-from scanpipe.packagedb_models import AbstractPackage
-from scanpipe.packagedb_models import AbstractResource
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -75,6 +86,10 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 class RunInProgressError(Exception):
     """Run are in progress or queued on this project."""
+
+
+# PackageURL._fields
+PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
 
 
 class UUIDPKModel(models.Model):
@@ -95,6 +110,48 @@ class UUIDPKModel(models.Model):
     @property
     def short_uuid(self):
         return str(self.uuid)[0:8]
+
+
+class HashFieldsMixin(models.Model):
+    """
+    The hash fields are not indexed by default, use the `indexes` in Meta as needed:
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['md5']),
+            models.Index(fields=['sha1']),
+            models.Index(fields=['sha256']),
+            models.Index(fields=['sha512']),
+        ]
+    """
+
+    md5 = models.CharField(
+        _("MD5"),
+        max_length=32,
+        blank=True,
+        help_text=_("MD5 checksum hex-encoded, as in md5sum."),
+    )
+    sha1 = models.CharField(
+        _("SHA1"),
+        max_length=40,
+        blank=True,
+        help_text=_("SHA1 checksum hex-encoded, as in sha1sum."),
+    )
+    sha256 = models.CharField(
+        _("SHA256"),
+        max_length=64,
+        blank=True,
+        help_text=_("SHA256 checksum hex-encoded, as in sha256sum."),
+    )
+    sha512 = models.CharField(
+        _("SHA512"),
+        max_length=128,
+        blank=True,
+        help_text=_("SHA512 checksum hex-encoded, as in sha512sum."),
+    )
+
+    class Meta:
+        abstract = True
 
 
 class AbstractTaskFieldsModel(models.Model):
@@ -382,6 +439,31 @@ def get_project_work_directory(project):
     return f"{scanpipe_app.workspace_path}/projects/{project_workspace_id}"
 
 
+class ProjectQuerySet(models.QuerySet):
+    def with_counts(self, *fields):
+        """
+        Annotate the QuerySet with counts of provided relational `fields`.
+        Using `Subquery` in place of the `Count` aggregate function as it results in
+        poor query performances when combining multiple counts.
+
+        Usage:
+            project_queryset.with_counts("codebaseresources", "discoveredpackages")
+        """
+        annotations = {}
+        for field_name in fields:
+            count_label = f"{field_name}_count"
+            subquery_qs = self.model.objects.annotate(
+                **{count_label: Count(field_name)}
+            ).filter(pk=OuterRef("pk"))
+
+            annotations[count_label] = Subquery(
+                subquery_qs.values(count_label),
+                output_field=IntegerField(),
+            )
+
+        return self.annotate(**annotations)
+
+
 class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     """
     The Project encapsulates all analysis processing.
@@ -415,6 +497,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             "happened during the archive operation."
         ),
     )
+
+    objects = ProjectQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_date"]
@@ -479,6 +563,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             self.projecterrors,
             self.runs,
             self.discoveredpackages,
+            self.discovereddependencies,
             self.codebaseresources,
         ]
 
@@ -564,7 +649,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         pipeline Run.
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
-        self.tmp_path.mkdir(exist_ok=True)
+        self.tmp_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def input_sources_list(self):
@@ -846,14 +931,125 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return self.discoveredpackages.count()
 
     @cached_property
+    def dependency_count(self):
+        """
+        Returns the number of dependencies related to this project.
+        """
+        return self.discovereddependencies.count()
+
+    @cached_property
     def error_count(self):
         """
         Returns the number of errors related to this project.
         """
         return self.projecterrors.count()
 
+    @cached_property
+    def has_single_resource(self):
+        """
+        Return True if we only have a single CodebaseResource associated to this
+        project, False otherwise.
+        """
+        return self.codebaseresources.count() == 1
 
-class ProjectRelatedQuerySet(models.QuerySet):
+
+class GroupingQuerySetMixin:
+    most_common_limit = settings.SCANCODEIO_MOST_COMMON_LIMIT
+
+    def group_by(self, field_name):
+        """
+        Return a list of grouped values with their count, DESC ordered by count
+        for the provided `field_name`.
+        """
+        return (
+            self.values(field_name).annotate(count=Count(field_name)).order_by("-count")
+        )
+
+    def most_common_values(self, field_name, limit=most_common_limit):
+        """
+        Return a list of the most common values for the `field_name` ending at the
+        provided `limit`.
+        """
+        return self.group_by(field_name)[:limit].values_list(field_name, flat=True)
+
+    def less_common_values(self, field_name, limit=most_common_limit):
+        """
+        Return a list of the less common values for the `field_name` starting at the
+        provided `limit`.
+        """
+        return self.group_by(field_name)[limit:].values_list(field_name, flat=True)
+
+    def less_common(self, field_name, limit=most_common_limit):
+        """
+        Return a QuerySet filtered by the less common values for the provided
+        `field_name` starting at the `limit`.
+        """
+        json_fields_mapping = {
+            "license_key": ("licenses", "key"),
+            "license_category": ("licenses", "category"),
+            "copyrights": ("copyrights", "copyright"),
+            "holders": ("holders", "holder"),
+        }
+
+        if field_name in json_fields_mapping:
+            field_name, data_field = json_fields_mapping.get(field_name)
+            values_list = self.values_from_json_field(field_name, data_field)
+            sorted_by_occurrence = list(dict(Counter(values_list).most_common()).keys())
+            less_common_values = sorted_by_occurrence[limit:]
+            return self.json_list_contains(field_name, data_field, less_common_values)
+
+        less_common_values = self.less_common_values(field_name, limit)
+        return self.filter(**{f"{field_name}__in": less_common_values})
+
+
+class JSONFieldQuerySetMixin:
+    def json_field_contains(self, field_name, value):
+        """
+        Filters the QuerySet looking for the `value` string in the `field_name` JSON
+        field converted into text.
+        Empty values are excluded as there's no need to cast those into text.
+        """
+        return (
+            self.filter(~Q(**{field_name: []}))
+            .annotate(**{f"{field_name}_as_text": Cast(field_name, TextField())})
+            .filter(**{f"{field_name}_as_text__contains": value})
+        )
+
+    def json_list_contains(self, field_name, key, values):
+        """
+        Filters on the JSONField `field_name` that stores a list of dictionaries.
+
+        json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
+        """
+        lookups = Q()
+
+        for value in values:
+            lookups |= Q(**{f"{field_name}__contains": [{key: value}]})
+
+        return self.filter(lookups)
+
+    def values_from_json_field(self, field_name, data_field):
+        """
+        Extract and return `data_field` values from each object of a JSONField
+        `field_name` that stores a list of dictionaries.
+        Empty value are kept in the return results as empty strings.
+        """
+        values = []
+
+        for objects in self.values_list(field_name, flat=True):
+            if not objects:
+                values.append("")
+            else:
+                values.extend(
+                    object_dict.get(data_field, "") for object_dict in objects
+                )
+
+        return values
+
+
+class ProjectRelatedQuerySet(
+    GroupingQuerySetMixin, JSONFieldQuerySetMixin, models.QuerySet
+):
     def project(self, project):
         return self.filter(project=project)
 
@@ -879,7 +1075,7 @@ class ProjectRelatedModel(models.Model):
 
 class ProjectError(UUIDPKModel, ProjectRelatedModel):
     """
-    Stores errors and§ exceptions raised during a pipeline run.
+    Stores errors and exceptions raised during a pipeline run.
     """
 
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
@@ -955,6 +1151,39 @@ class SaveProjectErrorMixin:
         """
         for error in errors:
             self.add_error(error)
+
+
+class UpdateFromDataMixin:
+    """
+    Adds a method to update an object instance from a `data` dict.
+    """
+
+    def update_from_data(self, data, override=False):
+        """
+        Update this object instance with the provided `data`.
+        The `save()` is called only if at least one field was modified.
+        """
+        model_fields = self.__class__.model_fields()
+        updated_fields = []
+
+        for field_name, value in data.items():
+            skip_reasons = [
+                not value,
+                field_name not in model_fields,
+                field_name in PURL_FIELDS,
+            ]
+            if any(skip_reasons):
+                continue
+
+            current_value = getattr(self, field_name, None)
+            if not current_value or (current_value != value and override):
+                setattr(self, field_name, value)
+                updated_fields.append(field_name)
+
+        if updated_fields:
+            self.save()
+
+        return updated_fields
 
 
 class RunQuerySet(ProjectRelatedQuerySet):
@@ -1214,6 +1443,21 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
+    def prefetch_for_serializer(self):
+        """
+        Optimized prefetching for a QuerySet to be consumed by the
+        `CodebaseResourceSerializer`.
+        Only the fields required by the serializer are fetched on the relations.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "discovered_packages",
+                queryset=DiscoveredPackage.objects.only(
+                    "package_uid", "uuid", *PURL_FIELDS
+                ),
+            ),
+        )
+
     def status(self, status=None):
         if status:
             return self.filter(status=status)
@@ -1249,6 +1493,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_no_licenses(self):
         return self.filter(licenses=[])
 
+    def has_package_data(self):
+        return self.filter(~Q(package_data=[]))
+
     def licenses_categories(self, categories):
         return self.json_list_contains(
             field_name="licenses",
@@ -1258,31 +1505,6 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def unknown_license(self):
         return self.json_field_contains("license_expressions", "unknown")
-
-    def json_field_contains(self, field_name, value):
-        """
-        Filters the QuerySet looking for the `value` string in the `field_name` JSON
-        field converted into text.
-        Empty values are excluded as there's no need to cast those into text.
-        """
-        return (
-            self.filter(~Q(**{field_name: []}))
-            .annotate(**{f"{field_name}_as_text": Cast(field_name, TextField())})
-            .filter(**{f"{field_name}_as_text__contains": value})
-        )
-
-    def json_list_contains(self, field_name, key, values):
-        """
-        Filters on the JSONField `field_name` that stores a list of dictionaries.
-
-        json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
-        """
-        lookups = Q()
-
-        for value in values:
-            lookups |= Q(**{f"{field_name}__contains": [{key: value}]})
-
-        return self.filter(lookups)
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -1368,13 +1590,23 @@ class CodebaseResource(
     ScanFieldsModelMixin,
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
-    AbstractResource,
+    HashFieldsMixin,
+    models.Model,
 ):
     """
     A project Codebase Resources are records of its code files and directories.
     Each record is identified by its path under the project workspace.
+
+    These model fields should be kept in line with `scancode.resource.Resource`.
     """
 
+    path = models.CharField(
+        max_length=2000,
+        help_text=_(
+            "The full path value of a resource (file or directory) in the "
+            "archive it is from."
+        ),
+    )
     rootfs_path = models.CharField(
         max_length=2000,
         blank=True,
@@ -1388,6 +1620,11 @@ class CodebaseResource(
         blank=True,
         max_length=30,
         help_text=_("Analysis status for this resource."),
+    )
+    size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Size in bytes."),
     )
     tag = models.CharField(
         blank=True,
@@ -1413,7 +1650,7 @@ class CodebaseResource(
     name = models.CharField(
         max_length=255,
         blank=True,
-        help_text=_("File or directory name of this resource."),
+        help_text=_("File or directory name of this resource with its extension."),
     )
     extension = models.CharField(
         max_length=100,
@@ -1466,6 +1703,11 @@ class CodebaseResource(
             "provided policies."
         ),
     )
+    package_data = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("List of Package data detected from this CodebaseResource"),
+    )
 
     objects = CodebaseResourceQuerySet.as_manager()
 
@@ -1489,11 +1731,14 @@ class CodebaseResource(
 
         return new
 
-    def save(self, *args, **kwargs):
+    def save(self, codebase=None, *args, **kwargs):
         """
         Saves the current resource instance.
         Injects policies—if the feature is enabled—when the `licenses` field value is
         changed.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
         """
         if scanpipe_app.policies_enabled:
             loaded_licenses = getattr(self, "loaded_licenses", [])
@@ -1583,6 +1828,47 @@ class CodebaseResource(
         """
         return sorted(set(self.license_expressions))
 
+    def parent_path(self):
+        """
+        Return the parent path for this CodebaseResource or None.
+        """
+        return parent_directory(self.path, with_trail=False)
+
+    def has_parent(self):
+        """
+        Return True if this CodebaseResource has a parent CodebaseResource or
+        False otherwise.
+        """
+        parent_path = self.parent_path()
+        if not parent_path:
+            return False
+        if self.project.codebaseresources.filter(path=parent_path).exists():
+            return True
+        return False
+
+    def parent(self, codebase=None):
+        """
+        Return the parent CodebaseResource object for this CodebaseResource or
+        None.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        parent_path = self.parent_path()
+        return parent_path and self.project.codebaseresources.get(path=parent_path)
+
+    def siblings(self, codebase=None):
+        """
+        Return a sequence of sibling Resource objects for this Resource
+        or an empty sequence.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        if self.has_parent():
+            return self.parent(codebase).children(codebase)
+        return []
+
     def descendants(self):
         """
         Returns a QuerySet of descendant CodebaseResource objects using a
@@ -1604,7 +1890,8 @@ class CodebaseResource(
         with the commoncode.resource.VirtualCodebase class API.
         """
         exactly_one_sub_directory = "[^/]+$"
-        children_regex = rf"^{self.path}/{exactly_one_sub_directory}"
+        escaped_path = re.escape(self.path)
+        children_regex = rf"^{escaped_path}/{exactly_one_sub_directory}"
         return (
             self.descendants()
             .filter(path__regex=children_regex)
@@ -1699,17 +1986,218 @@ class CodebaseResource(
         """
         Returns the list of all discovered packages associated to this resource.
         """
-        return [str(package) for package in self.discovered_packages.all()]
+        return [
+            package.package_uid or str(package)
+            for package in self.discovered_packages.all()
+        ]
+
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.id}"
+
+    def get_spdx_types(self):
+        spdx_types = []
+
+        if self.is_binary:
+            spdx_types.append("BINARY")
+        if self.is_text:
+            spdx_types.append("TEXT")
+        if self.is_archive:
+            spdx_types.append("ARCHIVE")
+
+        return spdx_types
+
+    def as_spdx(self):
+        """
+        Return this CodebaseResource as an SPDX Package entry.
+        """
+        spdx_license_keys = [license["spdx_license_key"] for license in self.licenses]
+        copyrights = [copyright["copyright"] for copyright in self.copyrights]
+        holders = [holder["holder"] for holder in self.holders]
+        authors = [author["author"] for author in self.authors]
+
+        return spdx.File(
+            spdx_id=self.spdx_id,
+            name=f"./{self.path}",
+            checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
+            license_in_files=list(set(spdx_license_keys)),
+            copyright_text=", ".join(copyrights),
+            contributors=list(set(holders + authors)),
+            types=self.get_spdx_types(),
+        )
 
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
 
 
+class AbstractPackage(models.Model):
+    """
+    These model fields should be kept in line with `packagedcode.models.PackageData`.
+    """
+
+    filename = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "File name of a Resource sometimes part of the URI proper"
+            "and sometimes only available through an HTTP header."
+        ),
+    )
+    primary_language = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text=_("Primary programming language."),
+    )
+    description = models.TextField(
+        blank=True,
+        help_text=_(
+            "Description for this package. "
+            "By convention the first line should be a summary when available."
+        ),
+    )
+    release_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "The date that the package file was created, or when "
+            "it was posted to its original download source."
+        ),
+    )
+    homepage_url = models.CharField(
+        _("Homepage URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_("URL to the homepage for this package."),
+    )
+    download_url = models.CharField(
+        _("Download URL"),
+        max_length=2048,
+        blank=True,
+        help_text=_("A direct download URL."),
+    )
+    size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Size in bytes."),
+    )
+    bug_tracking_url = models.CharField(
+        _("Bug tracking URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_("URL to the issue or bug tracker for this package."),
+    )
+    code_view_url = models.CharField(
+        _("Code view URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_("a URL where the code can be browsed online."),
+    )
+    vcs_url = models.CharField(
+        _("VCS URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "A URL to the VCS repository in the SPDX form of: "
+            '"git", "svn", "hg", "bzr", "cvs", '
+            "https://github.com/nexb/scancode-toolkit.git@405aaa4b3 "
+            'See SPDX specification "Package Download Location" '
+            "at https://spdx.org/spdx-specification-21-web-version#h.49x2ik5"
+        ),
+    )
+    repository_homepage_url = models.CharField(
+        _("Repository homepage URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "URL to the page for this package in its package repository. "
+            "This is typically different from the package homepage URL proper."
+        ),
+    )
+    repository_download_url = models.CharField(
+        _("Repository download URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "Download URL to download the actual archive of code of this "
+            "package in its package repository. "
+            "This may be different from the actual download URL."
+        ),
+    )
+    api_data_url = models.CharField(
+        _("API data URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "API URL to obtain structured data for this package such as the "
+            "URL to a JSON or XML api its package repository."
+        ),
+    )
+    copyright = models.TextField(
+        blank=True,
+        help_text=_("Copyright statements for this package. Typically one per line."),
+    )
+    license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "The normalized license expression for this package as derived "
+            "from its declared license."
+        ),
+    )
+    declared_license = models.TextField(
+        blank=True,
+        help_text=_(
+            "The declared license mention or tag or text as found in a "
+            "package manifest."
+        ),
+    )
+    notice_text = models.TextField(
+        blank=True,
+        help_text=_("A notice text for this package."),
+    )
+    manifest_path = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "A relative path to the manifest file if any, such as a "
+            "Maven .pom or a npm package.json."
+        ),
+    )
+    contains_source_code = models.BooleanField(null=True, blank=True)
+    datasource_id = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_(
+            "The identifier for the datafile handler used to obtain this package."
+        ),
+    )
+    file_references = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "List of file paths and details for files referenced in a package "
+            "manifest. These may not actually exist on the filesystem. "
+            "The exact semantics and base of these paths is specific to a "
+            "package type or datafile format."
+        ),
+    )
+    parties = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("A list of parties such as a person, project or organization."),
+    )
+
+    class Meta:
+        abstract = True
+
+
 class DiscoveredPackage(
     ProjectRelatedModel,
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
+    UpdateFromDataMixin,
+    HashFieldsMixin,
+    PackageURLMixin,
     AbstractPackage,
 ):
     """
@@ -1721,24 +2209,20 @@ class DiscoveredPackage(
     See https://github.com/package-url for more details.
     """
 
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
+    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
     missing_resources = models.JSONField(default=list, blank=True)
     modified_resources = models.JSONField(default=list, blank=True)
-    dependencies = models.JSONField(
-        default=list,
-        blank=True,
-        help_text=_("A list of dependencies for this package."),
-    )
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
         db_index=True,
         help_text=_("Unique identifier for this package."),
     )
-
-    # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
 
@@ -1746,6 +2230,15 @@ class DiscoveredPackage(
 
     class Meta:
         ordering = ["uuid"]
+        indexes = [
+            models.Index(fields=["filename"]),
+            models.Index(fields=["primary_language"]),
+            models.Index(fields=["size"]),
+            models.Index(fields=["md5"]),
+            models.Index(fields=["sha1"]),
+            models.Index(fields=["sha256"]),
+            models.Index(fields=["sha512"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "package_uid"],
@@ -1757,6 +2250,16 @@ class DiscoveredPackage(
     def __str__(self):
         return self.package_url or str(self.uuid)
 
+    def get_absolute_url(self):
+        return reverse("package_detail", args=[self.project_id, self.pk])
+
+    @cached_property
+    def resources(self):
+        """
+        Returns the assigned codebase_resources QuerySet as a list.
+        """
+        return list(self.codebase_resources.all())
+
     @property
     def purl(self):
         """
@@ -1765,14 +2268,10 @@ class DiscoveredPackage(
         return self.package_url
 
     @classmethod
-    def purl_fields(cls):
-        return PackageURL._fields
-
-    @classmethod
     def extract_purl_data(cls, package_data):
         purl_data = {}
 
-        for field_name in cls.purl_fields():
+        for field_name in PURL_FIELDS:
             value = package_data.get(field_name)
             if field_name == "qualifiers":
                 value = normalize_qualifiers(value, encode=True)
@@ -1820,32 +2319,318 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
-    def update_from_data(self, package_data, override=False):
-        """
-        Update this discovered package instance with the provided `package_data`.
-        The `save()` is called only if at least one field was modified.
-        """
-        model_fields = DiscoveredPackage.model_fields()
-        updated_fields = []
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
-        for field_name, value in package_data.items():
-            skip_reasons = [
-                not value,
-                field_name not in model_fields,
-                field_name in self.purl_fields(),
+    def get_license_expression_spdx_id(self):
+        """
+        Return this DiscoveredPackage license expression using SPDX syntax and keys.
+        """
+        if self.license_expression:
+            return build_spdx_license_expression(self.license_expression)
+
+    def as_spdx(self):
+        """
+        Return this DiscoveredPackage as an SPDX Package entry.
+        """
+        checksums = [
+            spdx.Checksum(algorithm=algorithm, value=checksum_value)
+            for algorithm in ["sha1", "md5"]
+            if (checksum_value := getattr(self, algorithm))
+        ]
+
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        license_expression_spdx = self.get_license_expression_spdx_id()
+        return spdx.Package(
+            name=self.name or self.filename,
+            spdx_id=self.spdx_id,
+            download_location=self.download_url,
+            license_declared=license_expression_spdx,
+            license_concluded=license_expression_spdx,
+            copyright_text=self.copyright,
+            version=self.version,
+            homepage=self.homepage_url,
+            filename=self.filename,
+            description=self.description,
+            release_date=str(self.release_date) if self.release_date else "",
+            checksums=checksums,
+            external_refs=external_refs,
+        )
+
+    def as_cyclonedx(self):
+        """
+        Return this DiscoveredPackage as an CycloneDX Component entry.
+        """
+        licenses = []
+        if expression_spdx := self.get_license_expression_spdx_id():
+            licenses = [
+                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
             ]
-            if any(skip_reasons):
-                continue
 
-            current_value = getattr(self, field_name, None)
-            if not current_value or (current_value != value and override):
-                setattr(self, field_name, value)
-                updated_fields.append(field_name)
+        hash_fields = {
+            "md5": cyclonedx_model.HashAlgorithm.MD5,
+            "sha1": cyclonedx_model.HashAlgorithm.SHA_1,
+            "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
+            "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
+        }
 
-        if updated_fields:
-            self.save()
+        hashes = [
+            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            for field_name, algorithm in hash_fields.items()
+            if (hash_value := getattr(self, field_name))
+        ]
 
-        return updated_fields
+        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        external_references = [
+            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
+            for field_name, reference_type in cyclonedx_url_to_type.items()
+            if (url := getattr(self, field_name))
+        ]
+
+        purl = self.package_url
+        return cyclonedx_component.Component(
+            name=self.name,
+            version=self.version,
+            bom_ref=purl or str(self.uuid),
+            purl=purl,
+            licenses=licenses,
+            copyright_=self.copyright,
+            description=self.description,
+            hashes=hashes,
+            external_references=external_references,
+        )
+
+
+class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+    def prefetch_for_serializer(self):
+        """
+        Optimized prefetching for a QuerySet to be consumed by the
+        `DiscoveredDependencySerializer`.
+        Only the fields required by the serializer are fetched on the relations.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "for_package", queryset=DiscoveredPackage.objects.only("package_uid")
+            ),
+            Prefetch(
+                "datafile_resource", queryset=CodebaseResource.objects.only("path")
+            ),
+        )
+
+
+class DiscoveredDependency(
+    ProjectRelatedModel,
+    SaveProjectErrorMixin,
+    UpdateFromDataMixin,
+    PackageURLMixin,
+):
+    """
+    A project's Discovered Dependencies are records of the dependencies used by
+    system and application packages discovered in the code under analysis.
+    """
+
+    # Overrides the `project` field from `ProjectRelatedModel` to set the proper
+    # `related_name`.
+    project = models.ForeignKey(
+        Project,
+        related_name="discovereddependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    dependency_uid = models.CharField(
+        max_length=1024,
+        help_text=_("The unique identifier of this dependency."),
+    )
+    for_package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="dependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    datafile_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="dependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    extracted_requirement = models.CharField(
+        max_length=256,
+        blank=True,
+        help_text=_("The version requirements of this dependency."),
+    )
+    scope = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_("The scope of this dependency, how it is used in a project."),
+    )
+    datasource_id = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_(
+            "The identifier for the datafile handler used to obtain this dependency."
+        ),
+    )
+    is_runtime = models.BooleanField(default=False)
+    is_optional = models.BooleanField(default=False)
+    is_resolved = models.BooleanField(default=False)
+
+    objects = DiscoveredDependencyQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = "discovered dependency"
+        verbose_name_plural = "discovered dependencies"
+        ordering = [
+            "-is_runtime",
+            "-is_resolved",
+            "is_optional",
+            "dependency_uid",
+            "for_package",
+            "datafile_resource",
+            "datasource_id",
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "dependency_uid"],
+                condition=~Q(dependency_uid=""),
+                name="%(app_label)s_%(class)s_unique_dependency_uid_within_project",
+            ),
+        ]
+
+    def __str__(self):
+        return self.dependency_uid
+
+    def get_absolute_url(self):
+        return reverse("dependency_detail", args=[self.project_id, self.pk])
+
+    @property
+    def purl(self):
+        return self.package_url
+
+    @property
+    def package_type(self):
+        return self.type
+
+    @cached_property
+    def for_package_uid(self):
+        if self.for_package:
+            return self.for_package.package_uid
+
+    @cached_property
+    def datafile_path(self):
+        if self.datafile_resource:
+            return self.datafile_resource.path
+
+    @classmethod
+    def create_from_data(
+        cls,
+        project,
+        dependency_data,
+        for_package=None,
+        datafile_resource=None,
+        strip_datafile_path_root=False,
+    ):
+        """
+        Creates and returns a DiscoveredDependency for a `project` from the
+        `dependency_data`.
+
+        If `strip_datafile_path_root` is True, then `create_from_data()` will
+        strip the root path segment from the `datafile_path` of
+        `dependency_data` before looking up the corresponding CodebaseResource
+        for `datafile_path`. This is used in the case where Dependency data is
+        imported from a scancode-toolkit scan, where the root path segments are
+        not stripped for `datafile_path`.
+        """
+        required_fields = ["purl", "dependency_uid"]
+        missing_values = [
+            field_name
+            for field_name in required_fields
+            if not dependency_data.get(field_name)
+        ]
+
+        if missing_values:
+            message = (
+                f"No values for the following required fields: "
+                f"{', '.join(missing_values)}"
+            )
+
+            project.add_error(error=message, model=cls, details=dependency_data)
+            return
+
+        if not for_package:
+            for_package_uid = dependency_data.get("for_package_uid")
+            if for_package_uid:
+                for_package = project.discoveredpackages.get(
+                    package_uid=for_package_uid
+                )
+
+        if not datafile_resource:
+            datafile_path = dependency_data.get("datafile_path")
+            if datafile_path:
+                if strip_datafile_path_root:
+                    segments = datafile_path.split("/")
+                    datafile_path = "/".join(segments[1:])
+                datafile_resource = project.codebaseresources.get(path=datafile_path)
+
+        # Set purl fields from `purl`
+        purl = dependency_data.get("purl")
+        purl_mapping = PackageURL.from_string(purl).to_dict()
+        dependency_data.update(**purl_mapping)
+
+        cleaned_dependency_data = {
+            field_name: value
+            for field_name, value in dependency_data.items()
+            if field_name in DiscoveredDependency.model_fields() and value
+        }
+        discovered_dependency = cls(
+            project=project,
+            for_package=for_package,
+            datafile_resource=datafile_resource,
+            **cleaned_dependency_data,
+        )
+        discovered_dependency.save()
+
+        return discovered_dependency
+
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+
+    def as_spdx(self):
+        """
+        Return this Package as an SPDX Package entry.
+        """
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        return spdx.Package(
+            name=self.name,
+            spdx_id=self.spdx_id,
+            version=self.version,
+            external_refs=external_refs,
+        )
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):

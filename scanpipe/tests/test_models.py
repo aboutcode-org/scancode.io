@@ -22,6 +22,7 @@
 
 import io
 import shutil
+import sys
 import tempfile
 import uuid
 from contextlib import redirect_stdout
@@ -42,10 +43,12 @@ from django.test import TransactionTestCase
 from django.test import override_settings
 from django.utils import timezone
 
+from packagedcode.models import PackageData
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
@@ -55,6 +58,8 @@ from scanpipe.models import get_project_work_directory
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import dependency_data1
+from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -107,6 +112,12 @@ class ScanPipeModelsTest(TestCase):
         self.project1.clear_tmp_directory()
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
+
+        self.assertTrue(self.project1.tmp_path.exists())
+        shutil.rmtree(self.project1.work_path, ignore_errors=True)
+        self.assertFalse(self.project1.tmp_path.exists())
+        self.project1.clear_tmp_directory()
+        self.assertTrue(self.project1.tmp_path.exists())
 
     def test_scanpipe_project_model_archive(self):
         (self.project1.input_path / "input_file").touch()
@@ -433,6 +444,24 @@ class ScanPipeModelsTest(TestCase):
 
         with self.assertRaises(RunInProgressError):
             self.project1.reset()
+
+    def test_scanpipe_project_queryset_with_counts(self):
+        self.project_asgiref.add_error("error 1", "model")
+        self.project_asgiref.add_error("error 2", "model")
+
+        project_qs = Project.objects.with_counts(
+            "codebaseresources",
+            "discoveredpackages",
+            "projecterrors",
+        )
+
+        project = project_qs.get(pk=self.project_asgiref.pk)
+        self.assertEqual(18, project.codebaseresources_count)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages_count)
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(2, project.projecterrors_count)
+        self.assertEqual(2, project.projecterrors.count())
 
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
@@ -1075,23 +1104,111 @@ class ScanPipeModelsTest(TestCase):
         expected = [resource1, resource2]
         self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
 
-    def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
+    def _create_resources_for_queryset_methods(self):
         resource1 = CodebaseResource.objects.create(project=self.project1, path="1")
         resource1.holders = [
-            {"value": "H1", "end_line": 51, "start_line": 50},
-            {"value": "H2", "end_line": 61, "start_line": 60},
+            {"holder": "H1", "end_line": 51, "start_line": 50},
+            {"holder": "H2", "end_line": 61, "start_line": 60},
         ]
+        resource1.mime_type = "application/zip"
         resource1.save()
 
         resource2 = CodebaseResource.objects.create(project=self.project1, path="2")
-        resource2.holders = [{"value": "H3", "end_line": 558, "start_line": 556}]
+        resource2.holders = [{"holder": "H3", "end_line": 558, "start_line": 556}]
+        resource2.mime_type = "application/zip"
         resource2.save()
+
+        resource3 = CodebaseResource.objects.create(project=self.project1, path="3")
+        resource3.mime_type = "text/plain"
+        resource3.save()
+
+        return resource1, resource2, resource3
+
+    def test_scanpipe_codebase_resource_queryset_json_field_contains(self):
+        resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
 
         qs = CodebaseResource.objects
         self.assertQuerysetEqual([resource2], qs.json_field_contains("holders", "H3"))
         self.assertQuerysetEqual([resource1], qs.json_field_contains("holders", "H1"))
         expected = [resource1, resource2]
         self.assertQuerysetEqual(expected, qs.json_field_contains("holders", "H"))
+
+    def test_scanpipe_codebase_resource_queryset_json_list_contains(self):
+        resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
+        qs = CodebaseResource.objects
+
+        results = qs.json_list_contains("holders", "holder", ["H3"])
+        self.assertQuerysetEqual([resource2], results)
+
+        results = qs.json_list_contains("holders", "holder", ["H1"])
+        self.assertQuerysetEqual([resource1], results)
+        results = qs.json_list_contains("holders", "holder", ["H2"])
+        self.assertQuerysetEqual([resource1], results)
+        results = qs.json_list_contains("holders", "holder", ["H1", "H2"])
+        self.assertQuerysetEqual([resource1], results)
+
+        results = qs.json_list_contains("holders", "holder", ["H1", "H2", "H3"])
+        self.assertQuerysetEqual([resource1, resource2], results)
+
+        results = qs.json_list_contains("holders", "holder", ["H"])
+        self.assertQuerysetEqual([], results)
+
+    def test_scanpipe_codebase_resource_queryset_values_from_json_field(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        qs = CodebaseResource.objects
+
+        results = qs.values_from_json_field("holders", "nothing")
+        self.assertEqual(["", "", "", ""], results)
+
+        results = qs.values_from_json_field("holders", "holder")
+        self.assertEqual(["H1", "H2", "H3", ""], results)
+
+    def test_scanpipe_codebase_resource_queryset_group_by(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        expected = [
+            {"mime_type": "application/zip", "count": 2},
+            {"mime_type": "text/plain", "count": 1},
+        ]
+        self.assertEqual(expected, list(CodebaseResource.objects.group_by("mime_type")))
+
+    def test_scanpipe_codebase_resource_queryset_most_common_values(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        results = CodebaseResource.objects.most_common_values("mime_type", limit=1)
+        self.assertQuerysetEqual(["application/zip"], results)
+
+    def test_scanpipe_codebase_resource_queryset_less_common_values(self):
+        CodebaseResource.objects.all().delete()
+        self._create_resources_for_queryset_methods()
+        CodebaseResource.objects.create(
+            project=self.project1, path="4", mime_type="text/x-script.python"
+        )
+
+        results = CodebaseResource.objects.less_common_values("mime_type", limit=1)
+        self.assertQuerysetEqual(["text/plain", "text/x-script.python"], results)
+
+    def test_scanpipe_codebase_resource_queryset_less_common(self):
+        CodebaseResource.objects.all().delete()
+        resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
+        resource4 = CodebaseResource.objects.create(
+            project=self.project1, path="4", mime_type="text/x-script.python"
+        )
+        resource4.holders = [
+            {"holder": "H1", "end_line": 51, "start_line": 50},
+            {"holder": "H1", "end_line": 51, "start_line": 50},
+            {"holder": "H2", "end_line": 51, "start_line": 50},
+            {"holder": "H2", "end_line": 51, "start_line": 50},
+        ]
+        resource4.save()
+
+        qs = CodebaseResource.objects
+        results = qs.less_common("mime_type", limit=1)
+        self.assertQuerysetEqual([resource3, resource4], results)
+
+        results = qs.less_common("holders", limit=2)
+        self.assertQuerysetEqual([resource2], results)
 
     def test_scanpipe_codebase_resource_descendants(self):
         path = "asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
@@ -1149,6 +1266,7 @@ class ScanPipeModelsTest(TestCase):
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
 
+    @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
         fixtures = self.data_location / "asgiref-3.3.0_walk_test_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -1198,6 +1316,48 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
+        # Test parent-related methods
+        asgiref_resource = self.project_asgiref.codebaseresources.get(
+            path="asgiref-3.3.0.whl-extract/asgiref/compatibility.py"
+        )
+        expected_parent_path = "asgiref-3.3.0.whl-extract/asgiref"
+        self.assertEqual(expected_parent_path, asgiref_resource.parent_path())
+        self.assertTrue(asgiref_resource.has_parent())
+        expected_parent = self.project_asgiref.codebaseresources.get(
+            path="asgiref-3.3.0.whl-extract/asgiref"
+        )
+        self.assertEqual(expected_parent, asgiref_resource.parent())
+
+        # Test sibling-related methods
+        expected_siblings = [
+            "asgiref-3.3.0.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
+        ]
+        asgiref_resource_siblings = [r.path for r in asgiref_resource.siblings()]
+        self.assertEqual(sorted(expected_siblings), sorted(asgiref_resource_siblings))
+
+    def test_scanpipe_codebase_resource_model_walk_method_problematic_filenames(self):
+        project = Project.objects.create(name="walk_test_problematic_filenames")
+        resource1 = CodebaseResource.objects.create(
+            project=project, path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin"
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=project,
+            path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin/flex++.exe",
+        )
+        expected_paths = [
+            "qt-everywhere-opensource-src-5.3.2/gnuwin32/bin/flex++.exe",
+        ]
+        result = [r.path for r in resource1.walk()]
+        self.assertEqual(expected_paths, result)
+
     @mock.patch("requests.post")
     def test_scanpipe_webhook_subscription_send_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")
@@ -1213,10 +1373,6 @@ class ScanPipeModelsTest(TestCase):
         webhook.send(pipeline_run=run1)
         webhook.refresh_from_db()
         self.assertTrue(webhook.sent)
-
-    def test_scanpipe_discovered_package_model_purl_fields(self):
-        expected = ("type", "namespace", "name", "version", "qualifiers", "subpath")
-        self.assertEqual(expected, DiscoveredPackage.purl_fields())
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
@@ -1265,10 +1421,69 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["description"], updated_fields)
         self.assertEqual(new_data["description"], package.description)
 
+    def test_scanpipe_discovered_package_model_as_cyclonedx(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        expected_repr = (
+            "<Component group=None, name=adduser, version=3.118, type=library>"
+        )
+        cyclonedx_component = package.as_cyclonedx()
+        self.assertEqual(expected_repr, repr(cyclonedx_component))
+
+        self.assertEqual(package_data1["name"], cyclonedx_component.name)
+        self.assertEqual(package_data1["version"], cyclonedx_component.version)
+        purl = "pkg:deb/debian/adduser@3.118?arch=all"
+        self.assertEqual(purl, str(cyclonedx_component.bom_ref))
+        self.assertEqual(purl, cyclonedx_component.purl)
+        self.assertEqual(1, len(cyclonedx_component.licenses))
+        self.assertEqual(
+            "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown",
+            cyclonedx_component.licenses[0].expression,
+        )
+        self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
+        self.assertEqual(package_data1["description"], cyclonedx_component.description)
+        self.assertEqual(1, len(cyclonedx_component.hashes))
+        self.assertEqual(package_data1["md5"], cyclonedx_component.hashes[0].content)
+        external_references = cyclonedx_component.external_references
+        self.assertEqual(1, len(external_references))
+        self.assertEqual("website", external_references[0].type)
+        self.assertEqual("https://packages.debian.org", external_references[0].url)
+
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
         self.assertEqual(40, len(basic_user.auth_token.key))
+
+    def test_scanpipe_discovered_dependency_model_update_from_data(self):
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
+        CodebaseResource.objects.create(
+            project=self.project1, path="data.tar.gz-extract/Gemfile.lock"
+        )
+        dependency = DiscoveredDependency.create_from_data(
+            self.project1, dependency_data2
+        )
+
+        new_data = {
+            "name": "new name",
+            "extracted_requirement": "new requirement",
+            "scope": "new scope",
+            "unknown_field": "value",
+        }
+        updated_fields = dependency.update_from_data(new_data)
+        self.assertEqual(["extracted_requirement"], updated_fields)
+
+        dependency.refresh_from_db()
+        # PURL field, not updated
+        self.assertEqual(dependency_data2["name"], dependency.name)
+        # Empty field, updated
+        self.assertEqual(
+            new_data["extracted_requirement"], dependency.extracted_requirement
+        )
+        # Already a value, not updated
+        self.assertEqual(dependency_data2["scope"], dependency.scope)
+
+        updated_fields = dependency.update_from_data(new_data, override=True)
+        self.assertEqual(["scope"], updated_fields)
+        self.assertEqual(new_data["scope"], dependency.scope)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
@@ -1416,6 +1631,54 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         self.assertEqual(project_error_count, ProjectError.objects.count())
 
+    @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
+    def test_scanpipe_discovered_dependency_model_create_from_data(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        package = DiscoveredPackage.create_from_data(project1, package_data1)
+        resource = CodebaseResource.objects.create(
+            project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
+        )
+        dependency = DiscoveredDependency.create_from_data(
+            project1, dependency_data1, strip_datafile_path_root=False
+        )
+        self.assertEqual(project1, dependency.project)
+        self.assertEqual("pkg:pypi/dask", dependency.purl)
+        self.assertEqual("dask<2023.0.0,>=2022.6.0", dependency.extracted_requirement)
+        self.assertEqual("install", dependency.scope)
+        self.assertTrue(dependency.is_runtime)
+        self.assertFalse(dependency.is_optional)
+        self.assertFalse(dependency.is_resolved)
+        self.assertEqual(
+            "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+            dependency.dependency_uid,
+        )
+        self.assertEqual(
+            "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b",
+            dependency.for_package_uid,
+        )
+        self.assertEqual(
+            "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            dependency.datafile_path,
+        )
+        self.assertEqual("pypi_sdist_pkginfo", dependency.datasource_id)
+
+        # Test field validation when using create_from_data
+        dependency_count = DiscoveredDependency.objects.count()
+        incomplete_data = dict(dependency_data1)
+        incomplete_data["dependency_uid"] = ""
+        self.assertIsNone(
+            DiscoveredDependency.create_from_data(project1, incomplete_data)
+        )
+        self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
+        error = project1.projecterrors.latest("created_date")
+        self.assertEqual("DiscoveredDependency", error.model)
+        expected_message = "No values for the following required fields: dependency_uid"
+        self.assertEqual(expected_message, error.message)
+        self.assertEqual(dependency_data1["purl"], error.details["purl"])
+        self.assertEqual("", error.details["dependency_uid"])
+        self.assertEqual("", error.traceback)
+
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")
 
@@ -1453,3 +1716,11 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertTrue(error.details["codebase_resource_pk"])
         self.assertEqual(resource.path, error.details["codebase_resource_path"])
         self.assertIn("in save", error.traceback)
+
+    def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
+        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
+        discovered_packages_fields = [
+            field.name for field in DiscoveredPackage._meta.get_fields()
+        ]
+        for toolkit_field_name in toolkit_package_fields:
+            self.assertIn(toolkit_field_name, discovered_packages_fields)

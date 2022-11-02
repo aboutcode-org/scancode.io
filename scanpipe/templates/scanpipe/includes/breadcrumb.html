@@ -6,6 +6,9 @@
       <li><a href="{% url 'project_list' %}">Projects</a></li>
       {% if linked_project %}
         <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
+      {% endif %}
+      {% if current %}
+        <li class="is-active"><a href="#" aria-current="page">{{ current }}</a></li>
       {% else %}
         <li class="is-active"><a href="#" aria-current="page">{{ project.name }}</a></li>
       {% endif %}

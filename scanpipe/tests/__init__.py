@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import os
 from datetime import datetime
 from unittest import mock
 
@@ -35,7 +36,7 @@ scanpipe_app.register_pipeline("do_nothing", DoNothing)
 scanpipe_app.register_pipeline("profile_step", ProfileStep)
 scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
-
+FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
 
@@ -59,11 +60,11 @@ package_data1 = {
         }
     ],
     "keywords": ["admin"],
-    "homepage_url": None,
+    "homepage_url": "https://packages.debian.org",
     "download_url": None,
     "size": "849",
     "sha1": None,
-    "md5": None,
+    "md5": "76cf50f29e47676962645632737365a7",
     "sha256": None,
     "sha512": None,
     "bug_tracking_url": None,
@@ -87,6 +88,37 @@ package_data1 = {
     "repository_download_url": None,
     "api_data_url": None,
     "package_uid": "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b",
+}
+
+for_package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
+dependency_data1 = {
+    "purl": "pkg:pypi/dask",
+    "package_type": "pypi",
+    "extracted_requirement": "dask<2023.0.0,>=2022.6.0",
+    "scope": "install",
+    "is_runtime": True,
+    "is_optional": False,
+    "is_resolved": False,
+    "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+    "for_package_uid": for_package_uid,
+    "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+    "datasource_id": "pypi_sdist_pkginfo",
+}
+
+dependency_data2 = {
+    "purl": "pkg:gem/appraisal@2.2.0",
+    "package_type": "gem",
+    "extracted_requirement": "",
+    "scope": "dependencies",
+    "is_runtime": True,
+    "is_optional": False,
+    "is_resolved": True,
+    "dependency_uid": (
+        "pkg:gem/appraisal@2.2.0?uuid=1907f061-911b-4980-a2d4-ae1a9ed871a9"
+    ),
+    "for_package_uid": for_package_uid,
+    "datafile_path": "data.tar.gz-extract/Gemfile.lock",
+    "datasource_id": "gemfile_lock",
 }
 
 license_policies = [

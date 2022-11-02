@@ -24,6 +24,7 @@ import concurrent.futures
 import hashlib
 import json
 import logging
+import multiprocessing
 import os
 import shlex
 from collections import defaultdict
@@ -32,10 +33,13 @@ from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
+from django.db.models import ObjectDoesNotExist
 
 from commoncode import fileutils
 from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
+from packagedcode import get_package_handler
+from packagedcode import models as packagedcode_models
 from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
@@ -58,10 +62,17 @@ def get_max_workers(keep_available):
     Returns the `SCANCODEIO_PROCESSES` if defined in the setting,
     or returns a default value based on the number of available CPUs,
     minus the provided `keep_available` value.
+
+    On operating system where the multiprocessing start method is not "fork",
+    but for example "spawn", such as on macOS, multiprocessing and threading are
+    disabled by default returning -1 `max_workers`.
     """
     processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
     if processes is not None:
         return processes
+
+    if multiprocessing.get_start_method() != "fork":
+        return -1
 
     max_workers = os.cpu_count() - keep_available
     if max_workers < 1:
@@ -136,7 +147,7 @@ def get_resource_info(location):
     file_info.update(
         {
             "type": resource_type,
-            "name": fileutils.file_base_name(location),
+            "name": fileutils.file_name(location),
             "extension": fileutils.file_extension(location),
         }
     )
@@ -230,10 +241,9 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Saves the resource scan package results in the database.
     Creates project errors if any occurred during the scan.
     """
-    packages = scan_results.get("package_data", [])
-    if packages:
-        for package_data in packages:
-            codebase_resource.create_and_add_package(package_data)
+    package_data = scan_results.get("package_data", [])
+    if package_data:
+        codebase_resource.package_data = package_data
         codebase_resource.status = "application-package"
         codebase_resource.save()
 
@@ -310,17 +320,97 @@ def scan_for_files(project):
 
 def scan_for_application_packages(project):
     """
-    Runs a package scan on files without a status for a `project`.
+    Runs a package scan on files without a status for a `project`,
+    then create DiscoveredPackage and DiscoveredDependency instances
+    from the detected package data
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     resource_qs = project.codebaseresources.no_status()
+
+    # Collect detected Package data and save it to the CodebaseResource it was
+    # detected from.
     _scan_and_save(
         resource_qs=resource_qs,
         scan_func=scan_for_package_data,
         save_func=save_scan_package_results,
     )
+
+    # Iterate through CodebaseResources with Package data and handle them using
+    # the proper Package handler from packagedcode.
+    assemble_packages(project=project)
+
+
+def add_resource_to_package(package_uid, resource, project):
+    """
+    Relate a DiscoveredPackage to `resource` from `project` using `package_uid`.
+
+    Add a ProjectError when the DiscoveredPackage could not be fetched using the
+    provided `package_uid`.
+    """
+    if not package_uid:
+        return
+
+    resource_package = resource.discovered_packages.filter(package_uid=package_uid)
+    if resource_package.exists():
+        return
+
+    try:
+        package = project.discoveredpackages.get(package_uid=package_uid)
+    except ObjectDoesNotExist as error:
+        details = {
+            "package_uid": str(package_uid),
+            "resource": str(resource),
+        }
+        project.add_error(error, model="assemble_package", details=details)
+        return
+
+    resource.discovered_packages.add(package)
+
+
+def assemble_packages(project):
+    """
+    Create instances of DiscoveredPackage and DiscoveredDependency for `project`
+    from the parsed package data present in the CodebaseResources of `project`.
+    """
+    logger.info(f"Project {project} assemble_packages:")
+    seen_resource_paths = set()
+
+    for resource in project.codebaseresources.has_package_data():
+        if resource.path in seen_resource_paths:
+            continue
+
+        logger.info(f"  Processing: {resource.path}")
+        for package_mapping in resource.package_data:
+            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+            logger.info(f"  Package data: {pd.purl}")
+
+            handler = get_package_handler(pd)
+            logger.info(f"  Selected package handler: {handler.__name__}")
+
+            items = handler.assemble(
+                package_data=pd,
+                resource=resource,
+                codebase=project,
+                package_adder=add_resource_to_package,
+            )
+
+            for item in items:
+                logger.info(f"    Processing item: {item}")
+                if isinstance(item, packagedcode_models.Package):
+                    package_data = item.to_dict()
+                    pipes.update_or_create_package(project, package_data)
+                elif isinstance(item, packagedcode_models.Dependency):
+                    dependency_data = item.to_dict()
+                    pipes.update_or_create_dependencies(
+                        project,
+                        dependency_data,
+                    )
+                elif isinstance(item, CodebaseResource):
+                    seen_resource_paths.add(item.path)
+                else:
+                    logger.info(f"Unknown Package assembly item type: {item!r}")
 
 
 def run_scancode(location, output_file, options, raise_on_error=False):
@@ -409,6 +499,29 @@ def create_discovered_packages(project, scanned_codebase):
     if hasattr(scanned_codebase.attributes, "packages"):
         for package_data in scanned_codebase.attributes.packages:
             pipes.update_or_create_package(project, package_data)
+
+
+def create_discovered_dependencies(
+    project, scanned_codebase, strip_datafile_path_root=False
+):
+    """
+    Saves the dependencies of a ScanCode `scanned_codebase` scancode.resource.Codebase
+    object to the database as a DiscoveredDependency of `project`.
+
+    If `strip_datafile_path_root` is True, then
+    `DiscoveredDependency.create_from_data()` will strip the root path segment
+    from the `datafile_path` of `dependency_data` before looking up the
+    corresponding CodebaseResource for `datafile_path`. This is used in the case
+    where Dependency data is imported from a scancode-toolkit scan, where the
+    root path segments are not stripped for `datafile_path`.
+    """
+    if hasattr(scanned_codebase.attributes, "dependencies"):
+        for dependency_data in scanned_codebase.attributes.dependencies:
+            pipes.update_or_create_dependencies(
+                project,
+                dependency_data,
+                strip_datafile_path_root=strip_datafile_path_root,
+            )
 
 
 def set_codebase_resource_for_package(codebase_resource, discovered_package):
@@ -502,3 +615,6 @@ def create_inventory_from_scan(project, input_location):
     scanned_codebase = get_virtual_codebase(project, input_location)
     create_discovered_packages(project, scanned_codebase)
     create_codebase_resources(project, scanned_codebase)
+    create_discovered_dependencies(
+        project, scanned_codebase, strip_datafile_path_root=True
+    )

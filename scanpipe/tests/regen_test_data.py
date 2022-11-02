@@ -46,7 +46,7 @@ class RegenTestData(TestCase):
     $ ./manage.py test --pattern "regen*.py"
 
     - Docker:
-    $ docker-compose run --volume "$(pwd)":/app web \
+    $ docker compose run --volume "$(pwd)":/app web \
         ./manage.py test --pattern "regen*.py"
     """
 
@@ -80,6 +80,7 @@ class RegenTestData(TestCase):
             "scanpipe.run",
             "scanpipe.codebaseresource",
             "scanpipe.discoveredpackage",
+            "scanpipe.discovereddependency",
         ]
         call_command("dumpdata", models, indent=2, output=fixtures_test_file_location)
 

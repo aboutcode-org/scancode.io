@@ -82,6 +82,10 @@ To disable both multiprocessing and threading, use "-1"::
 
     SCANCODEIO_PROCESSES=-1
 
+.. note::
+    Multiprocessing and threading are disabled by default on operating system
+    where the multiprocessing start method is not "fork", such as on macOS.
+
 .. _scancodeio_settings_async:
 
 SCANCODEIO_ASYNC

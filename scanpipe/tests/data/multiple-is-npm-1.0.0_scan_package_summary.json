@@ -41,16 +41,22 @@
   },
   "key_files": [
     {
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "path": "is-npm/package.json",
-      "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
+      "type": "file",
+      "name": "package.json",
+      "status": "application-package",
+      "tag": "",
+      "extension": ".json",
       "md5": "c843e88ecb274d5d573c71be330bff8b",
-      "extra_data": {},
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
+      "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
+      "sha256": "522879426298e078881de533b9b3a82fa3bece1336a84bddacf4620008b5d0a3",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_key_file": true,
       "licenses": [
         {
           "key": "mit",
@@ -95,6 +101,77 @@
       "license_expressions": [
         "mit"
       ],
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [
+        {
+          "md5": null,
+          "name": "is-npm",
+          "purl": "pkg:npm/is-npm@1.0.0",
+          "sha1": null,
+          "type": "npm",
+          "sha256": null,
+          "sha512": null,
+          "parties": [
+            {
+              "url": "http://sindresorhus.com",
+              "name": "Sindre Sorhus",
+              "role": "author",
+              "type": "person",
+              "email": "sindresorhus@gmail.com"
+            }
+          ],
+          "subpath": null,
+          "vcs_url": "https://github.com/sindresorhus/is-npm",
+          "version": "1.0.0",
+          "keywords": [
+            "npm",
+            "is",
+            "check",
+            "detect",
+            "env",
+            "environment"
+          ],
+          "copyright": null,
+          "namespace": null,
+          "extra_data": {},
+          "qualifiers": {},
+          "description": "Check if your code is running as an npm script",
+          "notice_text": null,
+          "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+          "dependencies": [
+            {
+              "purl": "pkg:npm/ava",
+              "scope": "devDependencies",
+              "extra_data": {},
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": false,
+              "resolved_package": {},
+              "extracted_requirement": "0.0.3"
+            }
+          ],
+          "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "homepage_url": null,
+          "release_date": null,
+          "code_view_url": null,
+          "datasource_id": "npm_package_json",
+          "file_references": [],
+          "source_packages": [],
+          "bug_tracking_url": null,
+          "declared_license": [
+            "MIT"
+          ],
+          "primary_language": "JavaScript",
+          "license_expression": "mit",
+          "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+          "repository_homepage_url": "https://www.npmjs.com/package/is-npm"
+        }
+      ],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [
         {
           "email": "sindresorhus@gmail.com",
@@ -109,44 +186,26 @@
           "start_line": 10
         }
       ],
-      "status": "application-package",
-      "tag": "",
-      "type": "file",
-      "name": "package.json",
-      "extension": ".json",
-      "programming_language": "",
-      "mime_type": "application/json",
-      "file_type": "JSON data",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_key_file": true,
-      "is_media": false,
+      "extra_data": {},
       "content": "{\n  \"name\": \"is-npm\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Check if your code is running as an npm script\",\n  \"license\": \"MIT\",\n  \"repository\": \"sindresorhus/is-npm\",\n  \"author\": {\n    \"name\": \"Sindre Sorhus\",\n    \"email\": \"sindresorhus@gmail.com\",\n    \"url\": \"http://sindresorhus.com\"\n  },\n  \"engines\": {\n    \"node\": \">=0.10.0\"\n  },\n  \"scripts\": {\n    \"test\": \"node test.js\"\n  },\n  \"files\": [\n    \"index.js\"\n  ],\n  \"keywords\": [\n    \"npm\",\n    \"is\",\n    \"check\",\n    \"detect\",\n    \"env\",\n    \"environment\"\n  ],\n  \"devDependencies\": {\n    \"ava\": \"0.0.3\"\n  }\n}\n"
     },
     {
-      "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
-      ],
       "path": "is-npm/readme.md",
-      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
+      "type": "file",
+      "name": "readme.md",
+      "status": "application-package",
+      "tag": "",
+      "extension": ".md",
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
-      "extra_data": {},
-      "copyrights": [
-        {
-          "end_line": 30,
-          "copyright": "(c) Sindre Sorhus (http://sindresorhus.com)",
-          "start_line": 30
-        }
-      ],
-      "holders": [
-        {
-          "holder": "Sindre Sorhus",
-          "end_line": 30,
-          "start_line": 30
-        }
-      ],
-      "authors": [],
+      "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
+      "sha256": "e98b263545fe62a00c73b57412cbdbcd0792e013a76f9c88342623ab5e8467c1",
+      "sha512": "",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_key_file": true,
       "licenses": [
         {
           "key": "mit",
@@ -191,6 +250,25 @@
       "license_expressions": [
         "mit"
       ],
+      "copyrights": [
+        {
+          "end_line": 30,
+          "copyright": "(c) Sindre Sorhus (http://sindresorhus.com)",
+          "start_line": 30
+        }
+      ],
+      "holders": [
+        {
+          "holder": "Sindre Sorhus",
+          "end_line": 30,
+          "start_line": 30
+        }
+      ],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [
         {
@@ -214,19 +292,7 @@
           "start_line": 30
         }
       ],
-      "status": "application-package",
-      "tag": "",
-      "type": "file",
-      "name": "readme.md",
-      "extension": ".md",
-      "programming_language": "",
-      "mime_type": "text/plain",
-      "file_type": "UTF-8 Unicode text",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_key_file": true,
-      "is_media": false,
+      "extra_data": {},
       "content": "# is-npm [![Build Status](https://travis-ci.org/sindresorhus/is-npm.svg?branch=master)](https://travis-ci.org/sindresorhus/is-npm)\n\n> Check if your code is running as an [npm script](https://www.npmjs.org/doc/misc/npm-scripts.html)\n\n\n## Install\n\n```sh\n$ npm install --save is-npm\n```\n\n\n## Usage\n\n```js\nvar isNpm = require('is-npm');\nconsole.log(isNpm);\n```\n\n```sh\n$ node foo.js\n#=> false\n$ npm run foo\n#=> true\n```\n\n\n## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)\n"
     }
   ],
@@ -242,24 +308,15 @@
       "primary_language": "JavaScript",
       "description": "Check if your code is running as an npm script",
       "release_date": null,
-      "homepage_url": "",
-      "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-      "sha1": "",
-      "md5": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "https://github.com/sindresorhus/is-npm",
-      "copyright": "",
-      "license_expression": "mit",
-      "declared_license": "['MIT']",
-      "notice_text": "",
-      "manifest_path": "",
-      "contains_source_code": null,
-      "extra_data": {},
-      "missing_resources": [],
-      "modified_resources": [],
-      "dependencies": [],
-      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "parties": [
+        {
+          "url": "http://sindresorhus.com",
+          "name": "Sindre Sorhus",
+          "role": "author",
+          "type": "person",
+          "email": "sindresorhus@gmail.com"
+        }
+      ],
       "keywords": [
         "npm",
         "is",
@@ -268,7 +325,31 @@
         "env",
         "environment"
       ],
-      "source_packages": []
+      "homepage_url": "",
+      "download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "https://github.com/sindresorhus/is-npm",
+      "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
+      "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
+      "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "license_expression": "mit",
+      "declared_license": "['MIT']",
+      "notice_text": "",
+      "source_packages": [],
+      "extra_data": {},
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "manifest_path": "",
+      "contains_source_code": null,
+      "datasource_id": "",
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": []
     }
   ]
 }

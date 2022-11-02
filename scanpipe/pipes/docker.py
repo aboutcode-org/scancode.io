@@ -33,6 +33,18 @@ from scanpipe.pipes import rootfs
 logger = logging.getLogger(__name__)
 
 
+def get_tarballs_from_inputs(project):
+    """
+    Returns the tarballs from the `project` input/ work directory.
+    Supported file extensions: `.tar`, `.tar.gz`, `.tgz`.
+    """
+    return [
+        tarball
+        for pattern in ("*.tar*", "*.tgz")
+        for tarball in project.inputs(pattern=pattern)
+    ]
+
+
 def extract_images_from_inputs(project):
     """
     Collects all the tarballs from the `project` input/ work directory, extracts
@@ -45,9 +57,9 @@ def extract_images_from_inputs(project):
     images = []
     errors = []
 
-    for input_tarball in project.inputs(pattern="*.tar*"):
-        extract_target = target_path / f"{input_tarball.name}-extract"
-        imgs, errs = extract_image_from_tarball(input_tarball, extract_target)
+    for tarball in get_tarballs_from_inputs(project):
+        extract_target = target_path / f"{tarball.name}-extract"
+        imgs, errs = extract_image_from_tarball(tarball, extract_target)
         images.extend(imgs)
         errors.extend(errs)
 
@@ -62,7 +74,12 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=True):
     Returns the `images` and an `errors` list of error messages that may have
     happened during the extraction.
     """
-    errors = extract_tar(location=input_tarball, target_dir=extract_target)
+    errors = extract_tar(
+        location=input_tarball,
+        target_dir=extract_target,
+        skip_symlinks=False,
+        as_events=False,
+    )
     images = Image.get_images_from_dir(
         extracted_location=str(extract_target),
         verify=verify,
@@ -104,6 +121,8 @@ def extract_layers_from_images_to_base_path(base_path, images):
             extract_errors = extract_tar(
                 location=layer.archive_location,
                 target_dir=extract_target,
+                skip_symlinks=False,
+                as_events=False,
             )
             errors.extend(extract_errors)
             layer.extracted_location = str(extract_target)
@@ -154,7 +173,7 @@ def create_codebase_resources(project, image):
     for layer_index, layer in enumerate(image.layers, start=1):
         layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
 
-        for resource in layer.get_resources():
+        for resource in layer.get_resources(with_dir=True):
             pipes.make_codebase_resource(
                 project=project,
                 location=resource.location,
