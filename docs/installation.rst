@@ -35,12 +35,17 @@ Build the Image
 ScanCode.io is distributed with ``Dockerfile`` and ``docker-compose.yml`` files
 required for the creation of the Docker image.
 
+.. warning:: On **Windows**, ensure that git ``autocrlf`` configuration is set to
+   ``false`` before cloning the repository::
+
+    git config --global core.autocrlf false
+
 **Clone the git** `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
 create an **environment file**, and **build the Docker image**::
 
     git clone https://github.com/nexB/scancode.io.git && cd scancode.io
     make envfile
-    docker-compose build
+    docker compose build
 
 .. note::
     You need to rebuild the image whenever ScanCode.io's source code has been
@@ -51,7 +56,7 @@ Run the App
 
 **Run your image** as a container::
 
-    docker-compose up
+    docker compose up
 
 At this point, the ScanCode.io app should be running at port 80 on your Docker host.
 Go to http://localhost/ on a web browser to **access the web UI**.
@@ -92,7 +97,7 @@ Execute a Command
 You can execute a one of ``scanpipe`` commands through the Docker command line
 interface, for example::
 
-    docker-compose run web ./manage.py create-project project_name
+    docker compose run web ./manage.py create-project project_name
 
 .. note::
     Refer to the :ref:`command_line_interface` section for the full list of commands.
@@ -100,7 +105,7 @@ interface, for example::
 Alternatively, you can connect to the Docker container ``bash`` and run commands
 from there::
 
-    docker-compose run web bash
+    docker compose run web bash
     ./manage.py create-project project_name
 
 
@@ -115,8 +120,7 @@ internet.
 The Docker images are build on a machine with internet access and copied to the server.
 
 .. note::
-    ``docker`` and ``docker-compose`` are required on both the local machine and the
-    server.
+    The ``docker`` command is required on both the local machine and the server.
 
 Build the Images
 ^^^^^^^^^^^^^^^^
@@ -148,7 +152,7 @@ Run the App
 
 Start the ScanCode.io services::
 
-    docker-compose --file docker-compose.yml up
+    docker compose --file docker-compose.yml up
 
 
 .. _local_development_installation:
