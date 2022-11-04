@@ -586,10 +586,10 @@ class PipelinesIntegrationTest(TestCase):
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
     @mock.patch("scanpipe.pipes.vulnerablecode.get_vulnerabilities_by_purl")
-    def test_scanpipe_check_vulnerabilities_pipeline_integration_test(
+    def test_scanpipe_find_vulnerabilities_pipeline_integration_test(
         self, mock_get_vulnerabilities, mock_is_configured, mock_is_available
     ):
-        pipeline_name = "check_vulnerabilities"
+        pipeline_name = "find_vulnerabilities"
         project1 = Project.objects.create(name="Analysis")
         package1 = DiscoveredPackage.create_from_data(project1, package_data1)
 

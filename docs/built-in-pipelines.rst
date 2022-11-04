@@ -15,14 +15,6 @@ Pipeline Base Class
     :members:
     :member-order: bysource
 
-.. _pipeline_check_vulnerabilities:
-
-Check Vulnerabilities
----------------------
-.. autoclass:: scanpipe.pipelines.check_vulnerabilities.CheckVulnerabilities()
-    :members:
-    :member-order: bysource
-
 .. _pipeline_docker:
 
 Docker Image Analysis
@@ -36,6 +28,14 @@ Docker Image Analysis
 Docker Windows Image Analysis
 -----------------------------
 .. autoclass:: scanpipe.pipelines.docker_windows.DockerWindows()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_find_vulnerabilities:
+
+Find Vulnerabilities
+--------------------
+.. autoclass:: scanpipe.pipelines.find_vulnerabilities.FindVulnerabilities()
     :members:
     :member-order: bysource
 
