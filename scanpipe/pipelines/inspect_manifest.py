@@ -20,41 +20,18 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
-from python_inspector.resolve_cli import resolver_api
-
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import resolve
 from scanpipe.pipes import update_or_create_package
-
-
-def resolve_pypi_packages(input_location):
-    """
-    Resolve the PyPI packages from the `input_location` requirements file.
-    """
-    inspector_output = resolver_api(
-        requirement_files=[input_location],
-        prefer_source=True,
-    )
-    return inspector_output.packages
-
-
-# Mapping between the `default_package_type` its related resolver function
-resolver_registry = {
-    "pypi": resolve_pypi_packages,
-}
-
-
-def get_default_package_type(input_location):
-    for handler in APPLICATION_PACKAGE_DATAFILE_HANDLERS:
-        if handler.is_datafile(input_location):
-            return handler.default_package_type
 
 
 class InspectManifest(Pipeline):
     """
     A pipeline to inspect one or more manifest files and resolve its packages.
 
-    Only PyPI requirements file are supported.
+    Supports:
+    - PyPI "requirements.txt" files
+    - AboutCode ".ABOUT" files
     """
 
     @classmethod
@@ -77,18 +54,20 @@ class InspectManifest(Pipeline):
         Resolves manifest files into packages.
         """
         for input_location in self.input_locations:
-            default_package_type = get_default_package_type(input_location)
+            default_package_type = resolve.get_default_package_type(input_location)
             if not default_package_type:
                 raise Exception(f"No package type found for {input_location}")
 
-            resolver = resolver_registry.get(default_package_type)
+            resolver = resolve.resolver_registry.get(default_package_type)
             if not resolver:
-                raise Exception(f"No resolver for {default_package_type}")
+                raise Exception(
+                    f'No resolver for package type "{default_package_type}" for '
+                    f"{input_location}"
+                )
 
             resolved_packages = resolver(input_location=input_location)
-
             if not resolved_packages:
-                raise Exception("No packages could be resolved.")
+                raise Exception(f"No packages could be resolved for {input_location}")
 
             for package_data in resolved_packages:
                 update_or_create_package(self.project, package_data)

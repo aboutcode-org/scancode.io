@@ -23,10 +23,6 @@ Docker
 .. automodule:: scanpipe.pipes.docker
     :members:
 
-Windows
--------
-.. automodule:: scanpipe.pipes.windows
-    :members:
 
 Fetch
 -----
@@ -45,13 +41,27 @@ Output
     :members:
     :exclude-members: JSONResultsGenerator
 
+Resolve
+-------
+.. automodule:: scanpipe.pipes.resolve
+    :members:
+
 RootFS
 ------
-
 .. automodule:: scanpipe.pipes.rootfs
     :members:
 
 ScanCode
 --------
 .. automodule:: scanpipe.pipes.scancode
+    :members:
+
+VulnerableCode
+--------------
+.. automodule:: scanpipe.pipes.vulnerablecode
+    :members:
+
+Windows
+-------
+.. automodule:: scanpipe.pipes.windows
     :members:
