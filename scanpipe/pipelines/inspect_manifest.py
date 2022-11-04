@@ -29,15 +29,16 @@ from scanpipe.pipes import update_or_create_package
 
 def resolve_pypi_packages(input_location):
     """
-    https://github.com/nexB/scancode-toolkit/blob/develop/requirements.txt
-    https://raw.githubusercontent.com/nexB/python-inspector/main/requirements.txt
+    Resolve the PyPI packages from the `input_location` requirements file.
     """
-    inspector_output = resolver_api(requirement_files=[input_location])
-    resolved_packages = inspector_output.packages
-    return resolved_packages
+    inspector_output = resolver_api(
+        requirement_files=[input_location],
+        prefer_source=True,
+    )
+    return inspector_output.packages
 
 
-# `default_package_type`: resolver callable
+# Mapping between the `default_package_type` its related resolver function
 resolver_registry = {
     "pypi": resolve_pypi_packages,
 }
@@ -52,6 +53,8 @@ def get_default_package_type(input_location):
 class InspectManifest(Pipeline):
     """
     A pipeline to inspect one or more manifest files and resolve its packages.
+
+    Only PyPI requirements file are supported.
     """
 
     @classmethod
@@ -75,6 +78,8 @@ class InspectManifest(Pipeline):
         """
         for input_location in self.input_locations:
             default_package_type = get_default_package_type(input_location)
+            if not default_package_type:
+                raise Exception(f"No package type found for {input_location}")
 
             resolver = resolver_registry.get(default_package_type)
             if not resolver:
