@@ -624,3 +624,62 @@ class PipelinesIntegrationTest(TestCase):
         package1.refresh_from_db()
         expected = {"discovered_vulnerabilities": vulnerability_data}
         self.assertEqual(expected, package1.extra_data)
+
+    def test_scanpipe_inspect_manifest_pipeline_integration_test(self):
+        pipeline_name = "inspect_manifest"
+        project1 = Project.objects.create(name="Analysis")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        project1.move_input_from(tempfile.mkstemp()[1])
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode, msg=out)
+        self.assertIn("No package type found for", out)
+
+    @mock.patch("scanpipe.pipes.resolve.resolver_api")
+    def test_scanpipe_inspect_manifest_pipeline_pypi_integration_test(
+        self, resolver_api
+    ):
+        pipeline_name = "inspect_manifest"
+        project1 = Project.objects.create(name="Analysis")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        resolver_api.return_value = mock.Mock(packages=[])
+        project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
+        exitcode, out = pipeline.execute()
+        self.assertEqual(1, exitcode, msg=out)
+        self.assertIn("No packages could be resolved", out)
+
+        resolver_api.return_value = mock.Mock(packages=[package_data1])
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        discoveredpackage = project1.discoveredpackages.get()
+        exclude_fields = ["qualifiers", "release_date", "size"]
+        for field_name, value in package_data1.items():
+            if value and field_name not in exclude_fields:
+                self.assertEqual(value, getattr(discoveredpackage, field_name))
+
+    def test_scanpipe_inspect_manifest_pipeline_aboutfile_integration_test(self):
+        pipeline_name = "inspect_manifest"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        discoveredpackage = project1.discoveredpackages.get()
+        self.assertEqual("pypi", discoveredpackage.type)
+        self.assertEqual("django", discoveredpackage.name)
+        self.assertEqual("4.0.8", discoveredpackage.version)
+        self.assertEqual("bsd-new", discoveredpackage.license_expression)
