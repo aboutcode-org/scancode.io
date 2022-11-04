@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import sys
+
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packageurl import PackageURL
@@ -36,10 +38,16 @@ def resolve_pypi_packages(input_location):
     """
     Resolve the PyPI packages from the `input_location` requirements file.
     """
+    python_version = f"{sys.version_info.major}{sys.version_info.minor}"
+    operating_system = "linux"
+
     inspector_output = resolver_api(
         requirement_files=[input_location],
+        python_version=python_version,
+        operating_system=operating_system,
         prefer_source=True,
     )
+
     return inspector_output.packages
 
 
