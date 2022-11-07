@@ -75,6 +75,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
             "url",
             "pipeline_name",
             "status",
+            "current_step",
             "description",
             "project",
             "uuid",

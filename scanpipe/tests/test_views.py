@@ -390,6 +390,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
         self.assertContains(response, f'hx-get="{url}?current_status={run.status}"')
 
+        run.current_step = "1/2 Step A"
         run.set_task_started(run.pk)
         run.refresh_from_db()
         response = self.client.get(url)
@@ -404,6 +405,7 @@ class ScanPipeViewsTest(TestCase):
             f'hx-get="{url}?current_status={run.status}&display_current_step=True"'
         )
         self.assertContains(response, expected)
+        self.assertContains(response, '1/2 Step A')
 
         run.set_task_ended(exitcode=1)
         response = self.client.get(url)
