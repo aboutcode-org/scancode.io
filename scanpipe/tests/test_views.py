@@ -405,7 +405,7 @@ class ScanPipeViewsTest(TestCase):
             f'hx-get="{url}?current_status={run.status}&display_current_step=True"'
         )
         self.assertContains(response, expected)
-        self.assertContains(response, '1/2 Step A')
+        self.assertContains(response, "1/2 Step A")
 
         run.set_task_ended(exitcode=1)
         response = self.client.get(url)
