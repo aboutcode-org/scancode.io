@@ -3,9 +3,9 @@
     Pipelines
   </p>
   {% for run in project.runs.all %}
-    <a class="panel-block modal-button is-flex is-justify-content-space-between" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
+    <a class="panel-block modal-button is-justify-content-space-between" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
       <span class="mr-1">{{ run.pipeline_name }}</span>
-      {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
+      {% include "scanpipe/includes/run_status_tag.html" with run=run display_current_step=True only %}
     </a>
   {% endfor %}
   <div class="panel-block">
