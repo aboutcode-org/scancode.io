@@ -294,7 +294,7 @@ Helm Chart [Beta]
 
 .. warning::
     The Helm Chart support for ScanCode.io is a community contribution effort.
-    It is only tested on a few configurations and still under developpement.
+    It is only tested on a few configurations and still under development.
     We welcome improvement suggestions and issue reports at
     `ScanCode.io GitHub repo <https://github.com/nexB/scancode.io/issues>`_.
 
@@ -368,3 +368,39 @@ Once Helm is properly set up, add the ``scancode-kube`` repo as follows::
 
     # expose nginx frontend
     minikube service --url=true -n scancode scancode-nginx
+
+
+Gitpod
+------
+
+.. warning::
+    The Gitpod support for ScanCode.io is a community contribution effort.
+    We welcome improvement suggestions and issue reports at
+    `ScanCode.io GitHub repo <https://github.com/nexB/scancode.io/issues>`_.
+
+Installation
+^^^^^^^^^^^^
+
+* Create a new Workspace and open it in VSCode Browser or your preferred IDE.
+  Provide the ScanCode.io GitHub repo URL: https://github.com/nexB/scancode.io
+
+* Open the "TERMINAL" window and create the ``.env`` file with::
+
+    make envfile
+
+* Open the generated ``.env`` file and add the following settings::
+
+    ALLOWED_HOSTS=.gitpod.io
+    CSRF_TRUSTED_ORIGINS=https://*.gitpod.io
+
+Run the App
+^^^^^^^^^^^
+
+* Build and run the app container::
+
+    docker compose build
+    docker compose up
+
+At this stage, the ScanCode.io app is up and running.
+To access the app, open the "PORTS" window and open the address for port 80 in your
+browser.
