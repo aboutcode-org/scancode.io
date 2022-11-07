@@ -4,7 +4,7 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
-- Add a new "check vulnerabilities" pipeline to lookup vulnerabilities in the
+- Add a new "find vulnerabilities" pipeline to lookup vulnerabilities in the
   VulnerableCode database for all project discovered packages.
   Vulnerability data is stored in the extra_data field of each package.
   More details about VulnerableCode at https://github.com/nexB/vulnerablecode/

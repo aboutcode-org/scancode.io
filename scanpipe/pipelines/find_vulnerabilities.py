@@ -24,9 +24,9 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import vulnerablecode
 
 
-class CheckVulnerabilities(Pipeline):
+class FindVulnerabilities(Pipeline):
     """
-    A pipeline to check for discovered packages vulnerabilities in the VulnerableCode
+    A pipeline to find vulnerabilities for discovered packages in the VulnerableCode
     database.
 
     Vulnerability data is stored in the extra_data field of each package.

@@ -2319,6 +2319,17 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
+    @classmethod
+    def clean_data(cls, data, include_none=False):
+        """
+        Returns the `data` dict keeping only entries for fields available in the model.
+        """
+        return {
+            field_name: value
+            for field_name, value in data.items()
+            if field_name in cls.model_fields()  # and value
+        }
+
     @property
     def spdx_id(self):
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
