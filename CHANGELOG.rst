@@ -21,6 +21,8 @@ v31.1.0 (unreleased)
   the project details view, inside the run status tag.
   https://github.com/nexB/scancode.io/issues/300
 
+- Add proper pagination for API actions: resources, packages, dependencies, and errors.
+
 - Refine the fields ordering in API Serializers based on the toolkit order.
   https://github.com/nexB/scancode.io/issues/546
 

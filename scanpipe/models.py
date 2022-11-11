@@ -38,6 +38,7 @@ from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db import transaction
 from django.db.models import Count
@@ -1163,12 +1164,12 @@ class UpdateFromDataMixin:
         Update this object instance with the provided `data`.
         The `save()` is called only if at least one field was modified.
         """
-        model_fields = self.__class__.model_fields()
+        model_fields = self.model_fields()
         updated_fields = []
 
         for field_name, value in data.items():
             skip_reasons = [
-                not value,
+                value in EMPTY_VALUES,
                 field_name not in model_fields,
                 field_name in PURL_FIELDS,
             ]
