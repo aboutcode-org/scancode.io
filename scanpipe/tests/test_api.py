@@ -374,7 +374,9 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(dependency_data1["purl"], dependency["purl"])
         self.assertEqual(dependency_data1["scope"], dependency["scope"])
         self.assertEqual(dependency_data1["is_runtime"], dependency["is_runtime"])
-        self.assertEqual(dependency_data1["dependency_uid"], dependency["dependency_uid"])
+        self.assertEqual(
+            dependency_data1["dependency_uid"], dependency["dependency_uid"]
+        )
 
     def test_scanpipe_api_project_action_errors(self):
         url = reverse("project-errors", args=[self.project1.uuid])
