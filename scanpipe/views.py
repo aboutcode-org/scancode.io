@@ -1152,11 +1152,17 @@ class DiscoveredDependencyDetailsView(
 @conditional_login_required
 def run_detail_view(request, uuid):
     template = "scanpipe/includes/run_modal_content.html"
-    run = get_object_or_404(Run, uuid=uuid)
-    status_summary = count_group_by(run.project.codebaseresources, "status")
+    run_qs = Run.objects.select_related("project").prefetch_related(
+        "project__webhooksubscriptions",
+    )
+    run = get_object_or_404(run_qs, uuid=uuid)
+    project = run.project
+    status_summary = count_group_by(project.codebaseresources, "status")
 
     context = {
         "run": run,
+        "project": project,
+        "webhook_subscriptions": project.webhooksubscriptions.all(),
         "status_summary": status_summary,
     }
 

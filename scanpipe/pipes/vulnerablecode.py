@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 session = requests.Session()
 
 
+# Only VULNERABLECODE_URL can be provided through setting
 VULNERABLECODE_API_URL = None
 VULNERABLECODE_URL = settings.VULNERABLECODE_URL
 if VULNERABLECODE_URL:
