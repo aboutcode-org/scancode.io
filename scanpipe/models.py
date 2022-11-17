@@ -2653,11 +2653,8 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     def __str__(self):
         return str(self.uuid)
 
-    def send(self, pipeline_run):
-        """
-        Sends this WebhookSubscription by POSTing an HTTP request on the `target_url`.
-        """
-        payload = {
+    def get_payload(self, pipeline_run):
+        return {
             "project": {
                 "uuid": self.project.uuid,
                 "name": self.project.name,
@@ -2670,6 +2667,12 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
                 "scancodeio_version": pipeline_run.scancodeio_version,
             },
         }
+
+    def send(self, pipeline_run):
+        """
+        Sends this WebhookSubscription by POSTing an HTTP request on the `target_url`.
+        """
+        payload = self.get_payload(pipeline_run)
 
         logger.info(f"Sending Webhook uuid={self.uuid}.")
         try:
