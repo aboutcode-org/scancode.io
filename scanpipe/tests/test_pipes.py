@@ -45,6 +45,7 @@ from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
 from scanpipe.pipes import make_codebase_resource
+from scanpipe.pipes import resolve
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 from scanpipe.pipes import strip_root
@@ -734,6 +735,23 @@ class ScanPipePipesTest(TestCase):
         install_file = mock.Mock(sha256="sha256", md5="md5")
         codebase_resource = CodebaseResource(sha256="sha256", md5="md5")
         self.assertFalse(rootfs.has_hash_diff(install_file, codebase_resource))
+
+    def test_scanpipe_pipes_resolve_set_license_expression(self):
+        declared_license = {"license": "MIT"}
+        data = resolve.set_license_expression({"declared_license": declared_license})
+        self.assertEqual("mit", data.get("license_expression"))
+
+        declared_license = {
+            "classifiers": [
+                "License :: OSI Approved :: Python Software Foundation License"
+            ]
+        }
+        data = resolve.set_license_expression({"declared_license": declared_license})
+        self.assertEqual("python", data.get("license_expression"))
+
+        declared_license = "GPL 2.0"
+        data = resolve.set_license_expression({"declared_license": declared_license})
+        self.assertEqual("gpl-2.0", data.get("license_expression"))
 
     def test_scanpipe_pipes_windows_tag_uninteresting_windows_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")

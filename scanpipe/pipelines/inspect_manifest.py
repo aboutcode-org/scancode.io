@@ -70,4 +70,5 @@ class InspectManifest(Pipeline):
                 raise Exception(f"No packages could be resolved for {input_location}")
 
             for package_data in resolved_packages:
+                package_data = resolve.set_license_expression(package_data)
                 update_or_create_package(self.project, package_data)

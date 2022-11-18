@@ -24,6 +24,7 @@ import sys
 
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
+from packagedcode.licensing import get_normalized_expression
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 
@@ -83,3 +84,27 @@ resolver_registry = {
     "about": resolve_about_packages,
     "pypi": resolve_pypi_packages,
 }
+
+
+def set_license_expression(package_data):
+    """
+    Sets the license expression from a detected license dict/str in provided
+    `package_data`.
+    """
+    declared_license = package_data.get("declared_license")
+    license_expression = package_data.get("license_expression")
+
+    if declared_license and not license_expression:
+        license_str = ""
+
+        if isinstance(declared_license, dict):
+            license_str = declared_license.get("license")
+
+        if not license_str:
+            license_str = repr(declared_license)
+
+        license_expression = get_normalized_expression(query_string=license_str)
+        if license_expression:
+            package_data["license_expression"] = license_expression
+
+    return package_data
