@@ -20,13 +20,17 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 import sys
+from pathlib import Path
 
 from attributecode.model import About
+from licensedcode.match_spdx_lid import get_spdx_expression
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 
+from scanpipe import spdx
 from scanpipe.models import DiscoveredPackage
 
 """
@@ -68,6 +72,58 @@ def resolve_about_packages(input_location):
     return [package_data]
 
 
+def spdx_package_to_discovered_package_data(spdx_package):
+    package_url_dict = {}
+    for ref in spdx_package.external_refs:
+        if ref.type == "purl":
+            purl = ref.locator
+            package_url_dict = PackageURL.from_string(purl).to_dict(encode=True)
+
+    checksum_data = {
+        checksum.algorithm.lower(): checksum.value
+        for checksum in spdx_package.checksums
+    }
+
+    package_data = {
+        "name": spdx_package.name,
+        "download_url": spdx_package.download_location,
+        "declared_license": spdx_package.license_declared,
+        "license_expression": get_spdx_expression(spdx_package.license_concluded or ""),
+        "copyright": spdx_package.copyright_text,
+        "version": spdx_package.version,
+        "homepage_url": spdx_package.homepage,
+        "filename": spdx_package.filename,
+        "description": spdx_package.description,
+        "release_date": spdx_package.release_date,
+        **package_url_dict,
+        **checksum_data,
+    }
+
+    return {
+        key: value
+        for key, value in package_data.items()
+        if value not in [None, "", "NOASSERTION"]
+    }
+
+
+def resolve_spdx_packages(input_location):
+    """
+    Resolve the packages from the `input_location` SPDX document file.
+    """
+    input_path = Path(input_location)
+    spdx_document = json.loads(input_path.read_text())
+
+    try:
+        spdx.validate_document(spdx_document)
+    except Exception as e:
+        raise Exception(f'SPDX document "{input_path.name}" is not valid: {e.message}')
+
+    return [
+        spdx_package_to_discovered_package_data(spdx.Package.from_data(spdx_package))
+        for spdx_package in spdx_document.get("packages", [])
+    ]
+
+
 def get_default_package_type(input_location):
     """
     Return the package type associated with the provided `input_location`.
@@ -76,10 +132,13 @@ def get_default_package_type(input_location):
     for handler in APPLICATION_PACKAGE_DATAFILE_HANDLERS:
         if handler.is_datafile(input_location):
             return handler.default_package_type
+        if input_location.endswith((".spdx", ".spdx.json")):
+            return "spdx"
 
 
 # Mapping between the `default_package_type` its related resolver function
 resolver_registry = {
     "about": resolve_about_packages,
     "pypi": resolve_pypi_packages,
+    "spdx": resolve_spdx_packages,
 }

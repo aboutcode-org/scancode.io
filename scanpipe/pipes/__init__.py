@@ -97,6 +97,8 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     package_data = package_data.copy()
     if release_date := package_data.get("release_date"):
         if type(release_date) is str:
+            if release_date.endswith("Z"):
+                release_date = release_date[:-1]
             package_data["release_date"] = datetime.fromisoformat(release_date).date()
 
     if package:

@@ -40,9 +40,23 @@ class SPDXTestCase(TestCase):
             "comment": "Generated with SPDXCode",
             "created": "2022-09-21T13:50:20Z",
         }
+        self.creation_info_spdx_data = {
+            "created": "2022-09-21T13:50:20Z",
+            "creators": [
+                "Person: John Doe (john@starship.space)",
+                "Organization: Starship ()",
+                "Tool: SPDXCode-1.0",
+            ],
+            "licenseListVersion": "3.18",
+            "comment": "Generated with SPDXCode",
+        }
         self.checksum_sha1_data = {
             "algorithm": "SHA1",
             "value": "10c72b88de4c5f3095ebe20b4d8afbedb32b8f",
+        }
+        self.checksum_sha1_spdx_data = {
+            "algorithm": "SHA1",
+            "checksumValue": "10c72b88de4c5f3095ebe20b4d8afbedb32b8f",
         }
         self.checksum_md5_data = {
             "algorithm": "MD5",
@@ -53,11 +67,25 @@ class SPDXTestCase(TestCase):
             "type": "purl",
             "locator": "pkg:pypi/lxml@3.3.5",
         }
+        self.external_ref_purl_spdx_data = {
+            "referenceCategory": "PACKAGE-MANAGER",
+            "referenceType": "purl",
+            "referenceLocator": "pkg:pypi/lxml@3.3.5",
+        }
         self.licensing_info_data = {
             "license_id": "LicenseRef-1",
             "extracted_text": "License Text",
             "name": "License 1",
             "see_alsos": [
+                "https://license1.text",
+                "https://license1.homepage",
+            ],
+        }
+        self.licensing_info_spdx_data = {
+            "licenseId": "LicenseRef-1",
+            "extractedText": "License Text",
+            "name": "License 1",
+            "seeAlsos": [
                 "https://license1.text",
                 "https://license1.homepage",
             ],
@@ -74,94 +102,7 @@ class SPDXTestCase(TestCase):
             ],
             "external_refs": [spdx.ExternalRef(**self.external_ref_purl_data)],
         }
-        self.file_data = {
-            "spdx_id": "SPDXRef-file1",
-            "name": "file.txt",
-            "license_concluded": "LicenseRef-1",
-            "checksums": [
-                spdx.Checksum(**self.checksum_sha1_data),
-            ],
-            "types": ["TEXT"],
-            "comment": "comment",
-            "license_comments": "license_comments",
-        }
-        self.relationship_data = {
-            "spdx_id": self.package_data["spdx_id"],
-            "related_spdx_id": self.file_data["spdx_id"],
-            "relationship": "CONTAINS",
-        }
-        self.document_data = {
-            "name": "Document name",
-            "namespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
-            "creation_info": spdx.CreationInfo(**self.creation_info_data),
-            "packages": [
-                spdx.Package(**self.package_data),
-            ],
-            "extracted_licenses": [
-                spdx.ExtractedLicensingInfo(**self.licensing_info_data),
-            ],
-            "files": [
-                spdx.File(**self.file_data),
-            ],
-            "relationships": [
-                spdx.Relationship(**self.relationship_data),
-            ],
-            "comment": "This document was created using SPDXCode-1.0",
-        }
-
-    def test_spdx_creation_info_as_dict(self):
-        creation_info = spdx.CreationInfo(**self.creation_info_data)
-        expected = {
-            "created": "2022-09-21T13:50:20Z",
-            "creators": [
-                "Person: John Doe (john@starship.space)",
-                "Organization: Starship ()",
-                "Tool: SPDXCode-1.0",
-            ],
-            "licenseListVersion": "3.18",
-            "comment": "Generated with SPDXCode",
-        }
-        assert expected == creation_info.as_dict()
-
-    def test_spdx_creation_info_missing_data(self):
-        creation_info = spdx.CreationInfo()
-        with self.assertRaises(ValueError) as error:
-            creation_info.as_dict()
-        assert "Missing values to build `creators` list." == str(error.exception)
-
-    def test_spdx_checksum_as_dict(self):
-        checksum = spdx.Checksum(**self.checksum_sha1_data)
-        expected = {
-            "algorithm": "SHA1",
-            "checksumValue": "10c72b88de4c5f3095ebe20b4d8afbedb32b8f",
-        }
-        assert expected == checksum.as_dict()
-
-    def test_spdx_external_ref_as_dict(self):
-        external_ref = spdx.ExternalRef(**self.external_ref_purl_data)
-        expected = {
-            "referenceCategory": "PACKAGE-MANAGER",
-            "referenceType": "purl",
-            "referenceLocator": "pkg:pypi/lxml@3.3.5",
-        }
-        assert expected == external_ref.as_dict()
-
-    def test_spdx_extracted_licensing_info_as_dict(self):
-        licensing_info = spdx.ExtractedLicensingInfo(**self.licensing_info_data)
-        expected = {
-            "licenseId": "LicenseRef-1",
-            "extractedText": "License Text",
-            "name": "License 1",
-            "seeAlsos": [
-                "https://license1.text",
-                "https://license1.homepage",
-            ],
-        }
-        assert expected == licensing_info.as_dict()
-
-    def test_spdx_package_as_dict(self):
-        package = spdx.Package(**self.package_data)
-        expected = {
+        self.package_spdx_data = {
             "name": "lxml",
             "SPDXID": "SPDXRef-package1",
             "downloadLocation": "NOASSERTION",
@@ -189,24 +130,18 @@ class SPDXTestCase(TestCase):
                 }
             ],
         }
-        assert expected == package.as_dict()
-
-    def test_spdx_package_date_to_iso(self):
-        date_to_iso = spdx.Package.date_to_iso
-        assert None is date_to_iso(None)
-        assert None is date_to_iso("")
-        assert "2000-01-01T00:00:00Z" == date_to_iso("2000-01-01")
-        assert "2000-01-01T10:00:00Z" == date_to_iso("2000-01-01 10")
-        assert "2000-01-01T10:20:00Z" == date_to_iso("2000-01-01 10:20")
-        assert "2000-01-01T10:20:30Z" == date_to_iso("2000-01-01 10:20:30")
-
-        with self.assertRaises(ValueError) as error:
-            date_to_iso("not_a_date")
-        assert "Invalid isoformat string: 'not_a_date'" == str(error.exception)
-
-    def test_spdx_file_as_dict(self):
-        spdx_file = spdx.File(**self.file_data)
-        expected = {
+        self.file_data = {
+            "spdx_id": "SPDXRef-file1",
+            "name": "file.txt",
+            "license_concluded": "LicenseRef-1",
+            "checksums": [
+                spdx.Checksum(**self.checksum_sha1_data),
+            ],
+            "types": ["TEXT"],
+            "comment": "comment",
+            "license_comments": "license_comments",
+        }
+        self.file_spdx_data = {
             "SPDXID": "SPDXRef-file1",
             "fileName": "file.txt",
             "checksums": [
@@ -221,20 +156,35 @@ class SPDXTestCase(TestCase):
             "comment": "comment",
             "licenseComments": "license_comments",
         }
-        assert expected == spdx_file.as_dict()
-
-    def test_spdx_relationship_as_dict(self):
-        relationship = spdx.Relationship(**self.relationship_data)
-        expected = {
+        self.relationship_data = {
+            "spdx_id": self.package_data["spdx_id"],
+            "related_spdx_id": self.file_data["spdx_id"],
+            "relationship": "CONTAINS",
+        }
+        self.relationship_spdx_data = {
             "spdxElementId": "SPDXRef-package1",
             "relatedSpdxElement": "SPDXRef-file1",
             "relationshipType": "CONTAINS",
         }
-        assert expected == relationship.as_dict()
-
-    def test_spdx_document_as_dict(self):
-        document = spdx.Document(**self.document_data)
-        expected = {
+        self.document_data = {
+            "name": "Document name",
+            "namespace": "https://[CreatorWebsite]/[DocumentName]-[UUID]",
+            "creation_info": spdx.CreationInfo(**self.creation_info_data),
+            "packages": [
+                spdx.Package(**self.package_data),
+            ],
+            "extracted_licenses": [
+                spdx.ExtractedLicensingInfo(**self.licensing_info_data),
+            ],
+            "files": [
+                spdx.File(**self.file_data),
+            ],
+            "relationships": [
+                spdx.Relationship(**self.relationship_data),
+            ],
+            "comment": "This document was created using SPDXCode-1.0",
+        }
+        self.document_spdx_data = {
             "spdxVersion": "SPDX-2.3",
             "dataLicense": "CC0-1.0",
             "SPDXID": "SPDXRef-DOCUMENT",
@@ -315,7 +265,92 @@ class SPDXTestCase(TestCase):
             ],
             "comment": "This document was created using SPDXCode-1.0",
         }
-        assert expected == document.as_dict()
+
+    def test_spdx_creation_info_as_dict(self):
+        creation_info = spdx.CreationInfo(**self.creation_info_data)
+        assert self.creation_info_spdx_data == creation_info.as_dict()
+
+    def test_spdx_creation_info_from_data(self):
+        creation_info = spdx.CreationInfo.from_data(self.creation_info_spdx_data)
+        assert self.creation_info_spdx_data == creation_info.as_dict()
+
+    def test_spdx_creation_info_missing_data(self):
+        creation_info = spdx.CreationInfo()
+        with self.assertRaises(ValueError) as error:
+            creation_info.as_dict()
+        assert "Missing values to build `creators` list." == str(error.exception)
+
+    def test_spdx_checksum_as_dict(self):
+        checksum = spdx.Checksum(**self.checksum_sha1_data)
+        assert self.checksum_sha1_spdx_data == checksum.as_dict()
+
+    def test_spdx_checksum_from_data(self):
+        checksum = spdx.Checksum.from_data(self.checksum_sha1_spdx_data)
+        assert self.checksum_sha1_spdx_data == checksum.as_dict()
+
+    def test_spdx_external_ref_as_dict(self):
+        external_ref = spdx.ExternalRef(**self.external_ref_purl_data)
+        assert self.external_ref_purl_spdx_data == external_ref.as_dict()
+
+    def test_spdx_external_ref_from_data(self):
+        external_ref = spdx.ExternalRef.from_data(self.external_ref_purl_spdx_data)
+        assert self.external_ref_purl_spdx_data == external_ref.as_dict()
+
+    def test_spdx_extracted_licensing_info_as_dict(self):
+        licensing_info = spdx.ExtractedLicensingInfo(**self.licensing_info_data)
+        assert self.licensing_info_spdx_data == licensing_info.as_dict()
+
+    def test_spdx_extracted_licensing_info_from_data(self):
+        licensing_info = spdx.ExtractedLicensingInfo.from_data(
+            self.licensing_info_spdx_data
+        )
+        assert self.licensing_info_spdx_data == licensing_info.as_dict()
+
+    def test_spdx_package_as_dict(self):
+        package = spdx.Package(**self.package_data)
+        assert self.package_spdx_data == package.as_dict()
+
+    def test_spdx_package_from_data(self):
+        package = spdx.Package.from_data(self.package_spdx_data)
+        assert self.package_spdx_data == package.as_dict()
+
+    def test_spdx_package_date_to_iso(self):
+        date_to_iso = spdx.Package.date_to_iso
+        assert None is date_to_iso(None)
+        assert None is date_to_iso("")
+        assert "2000-01-01T00:00:00Z" == date_to_iso("2000-01-01")
+        assert "2000-01-01T10:00:00Z" == date_to_iso("2000-01-01 10")
+        assert "2000-01-01T10:20:00Z" == date_to_iso("2000-01-01 10:20")
+        assert "2000-01-01T10:20:30Z" == date_to_iso("2000-01-01 10:20:30")
+        assert "2000-01-01T10:20:30Z" == date_to_iso("2000-01-01T10:20:30Z")
+
+        with self.assertRaises(ValueError) as error:
+            date_to_iso("not_a_date")
+        assert "Invalid isoformat string: 'not_a_date'" == str(error.exception)
+
+    def test_spdx_file_as_dict(self):
+        spdx_file = spdx.File(**self.file_data)
+        assert self.file_spdx_data == spdx_file.as_dict()
+
+    def test_spdx_file_from_data(self):
+        file = spdx.File.from_data(self.file_spdx_data)
+        assert self.file_spdx_data == file.as_dict()
+
+    def test_spdx_relationship_as_dict(self):
+        relationship = spdx.Relationship(**self.relationship_data)
+        assert self.relationship_spdx_data == relationship.as_dict()
+
+    def test_spdx_relationship_from_data(self):
+        relationship = spdx.Relationship.from_data(self.relationship_spdx_data)
+        assert self.relationship_spdx_data == relationship.as_dict()
+
+    def test_spdx_document_as_dict(self):
+        document = spdx.Document(**self.document_data)
+        assert self.document_spdx_data == document.as_dict()
+
+    def test_spdx_document_from_data(self):
+        document = spdx.Document.from_data(self.document_spdx_data)
+        assert self.document_spdx_data == document.as_dict()
 
     def test_spdx_document_as_json(self):
         document = spdx.Document(**self.document_data)
@@ -332,3 +367,6 @@ class SPDXTestCase(TestCase):
     def test_spdx_validate_document(self):
         document = spdx.Document(**self.document_data)
         spdx.validate_document(document, self.schema)
+
+        with self.assertRaises(Exception):
+            spdx.validate_document({}, self.schema)
