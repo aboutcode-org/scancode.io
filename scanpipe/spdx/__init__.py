@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import pathlib
 import re
 from dataclasses import dataclass
 from dataclasses import field
@@ -30,6 +31,7 @@ from typing import List  # Python 3.8 compatibility
 SPDX_SPEC_VERSION = "2.3"
 SPDX_LICENSE_LIST_VERSION = "3.18"
 SPDX_JSON_SCHEMA_LOCATION = "spdx-schema-2.3.json"
+SPDX_JSON_SCHEMA_PATH = pathlib.Path(__file__).parent / SPDX_JSON_SCHEMA_LOCATION
 SPDX_JSON_SCHEMA_URL = (
     "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json"
 )
@@ -129,7 +131,7 @@ class CreationInfo:
         """
         data = {
             "created": self.created,
-            "creators": self.get_creators(),
+            "creators": self.get_creators_spdx(),
         }
 
         if self.license_list_version:
@@ -140,7 +142,16 @@ class CreationInfo:
 
         return data
 
-    def get_creators(self):
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            **cls.get_creators_dict(data.get("creators", [])),
+            license_list_version=data.get("licenseListVersion"),
+            comment=data.get("comment"),
+            created=data.get("created"),
+        )
+
+    def get_creators_spdx(self):
         """
         Return the `creators` list from related field values.
         """
@@ -162,6 +173,30 @@ class CreationInfo:
 
         return creators
 
+    @staticmethod
+    def get_creators_dict(creators_data):
+        """
+        Return the `creators` dict from SPDX data.
+        """
+        creators_dict = {}
+
+        for creator in creators_data:
+            creator_type, value = creator.split(": ")
+            creator_type = creator_type.lower()
+
+            if creator_type == "tool":
+                creators_dict["tool"] = value
+
+            else:
+                if "(" in value:
+                    name, email = value.split(" (")
+                    creators_dict[f"{creator_type}_name"] = name
+                    creators_dict[f"{creator_type}_email"] = email.split(")")[0]
+                else:
+                    creators_dict[f"{creator_type}_name"] = value
+
+        return creators_dict
+
 
 @dataclass
 class Checksum:
@@ -181,6 +216,13 @@ class Checksum:
             "algorithm": self.algorithm.upper(),
             "checksumValue": self.value,
         }
+
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            algorithm=data.get("algorithm"),
+            value=data.get("checksumValue"),
+        )
 
 
 @dataclass
@@ -211,6 +253,15 @@ class ExternalRef:
             data["comment"] = self.comment
 
         return data
+
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            category=data.get("referenceCategory"),
+            type=data.get("referenceType"),
+            locator=data.get("referenceLocator"),
+            comment=data.get("comment"),
+        )
 
 
 @dataclass
@@ -246,6 +297,16 @@ class ExtractedLicensingInfo:
 
         optional_data = {key: value for key, value in optional_data.items() if value}
         return {**required_data, **optional_data}
+
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            license_id=data.get("licenseId"),
+            extracted_text=data.get("extractedText"),
+            name=data.get("name"),
+            comment=data.get("comment"),
+            see_alsos=data.get("seeAlsos"),
+        )
 
 
 @dataclass
@@ -334,8 +395,45 @@ class Package:
         if not date_str:
             return
 
+        if date_str.endswith("Z"):
+            date_str = date_str[:-1]
+
         as_datetime = datetime.fromisoformat(date_str)
         return as_datetime.isoformat(timespec="seconds") + "Z"
+
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            spdx_id=data.get("SPDXID"),
+            name=data.get("name"),
+            download_location=data.get("downloadLocation"),
+            license_concluded=data.get("licenseConcluded"),
+            copyright_text=data.get("copyrightText"),
+            version=data.get("versionInfo"),
+            license_declared=data.get("licenseDeclared"),
+            supplier=data.get("supplier"),
+            originator=data.get("originator"),
+            homepage=data.get("homepage"),
+            filename=data.get("packageFileName"),
+            description=data.get("description"),
+            summary=data.get("summary"),
+            source_info=data.get("sourceInfo"),
+            release_date=data.get("releaseDate"),
+            built_date=data.get("builtDate"),
+            valid_until_date=data.get("validUntilDate"),
+            primary_package_purpose=data.get("primaryPackagePurpose"),
+            comment=data.get("comment"),
+            license_comments=data.get("licenseComments"),
+            attribution_texts=data.get("attributionTexts"),
+            checksums=[
+                Checksum.from_data(checksum_data)
+                for checksum_data in data.get("checksums", [])
+            ],
+            external_refs=[
+                ExternalRef.from_data(external_ref_data)
+                for external_ref_data in data.get("externalRefs", [])
+            ],
+        )
 
 
 @dataclass
@@ -386,6 +484,26 @@ class File:
         optional_data = {key: value for key, value in optional_data.items() if value}
         return {**required_data, **optional_data}
 
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            spdx_id=data.get("SPDXID"),
+            name=data.get("fileName"),
+            checksums=[
+                Checksum.from_data(checksum_data)
+                for checksum_data in data.get("checksums", [])
+            ],
+            types=data.get("fileTypes"),
+            copyright_text=data.get("copyrightText"),
+            contributors=data.get("fileContributors"),
+            license_concluded=data.get("licenseConcluded"),
+            license_in_files=data.get("licenseInfoInFiles"),
+            notice_text=data.get("noticeText"),
+            comment=data.get("comment"),
+            license_comments=data.get("licenseComments"),
+            attribution_texts=data.get("attributionTexts"),
+        )
+
 
 @dataclass
 class Relationship:
@@ -416,6 +534,15 @@ class Relationship:
             data["comment"] = self.comment
 
         return data
+
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            spdx_id=data.get("spdxElementId"),
+            related_spdx_id=data.get("relatedSpdxElement"),
+            relationship=data.get("relationshipType"),
+            comment=data.get("comment"),
+        )
 
 
 @dataclass
@@ -478,6 +605,31 @@ class Document:
         """
         return json.dumps(self.as_dict(), indent=indent)
 
+    @classmethod
+    def from_data(cls, data):
+        return cls(
+            spdx_id=data.get("SPDXID"),
+            version=data.get("spdxVersion", "").split("SPDX-")[-1],
+            data_license=data.get("dataLicense"),
+            name=data.get("name"),
+            namespace=data.get("documentNamespace"),
+            creation_info=CreationInfo.from_data(data.get("creationInfo", {})),
+            packages=[
+                Package.from_data(package_data)
+                for package_data in data.get("packages", [])
+            ],
+            files=[File.from_data(file_data) for file_data in data.get("files", [])],
+            extracted_licenses=[
+                ExtractedLicensingInfo.from_data(license_info_data)
+                for license_info_data in data.get("hasExtractedLicensingInfos", [])
+            ],
+            relationships=[
+                Relationship.from_data(relationship_data)
+                for relationship_data in data.get("relationships", [])
+            ],
+            comment=data.get("comment"),
+        )
+
     @staticmethod
     def safe_document_name(name):
         """
@@ -492,7 +644,7 @@ class Document:
         return validate_document(document=self.as_dict(), schema=schema)
 
 
-def validate_document(document, schema):
+def validate_document(document, schema=SPDX_JSON_SCHEMA_PATH):
     """
     SPDX document validation.
     Requires the `jsonschema` library.
@@ -511,6 +663,8 @@ def validate_document(document, schema):
     if isinstance(document, Document):
         document = document.as_dict()
 
+    if isinstance(schema, pathlib.Path):
+        schema = schema.read_text()
     if isinstance(schema, str):
         schema = json.loads(schema)
 

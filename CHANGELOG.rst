@@ -10,6 +10,12 @@ v31.1.0 (unreleased)
   More details about VulnerableCode at https://github.com/nexB/vulnerablecode/
   https://github.com/nexB/scancode.io/issues/101
 
+- Add a new "inspect manifest" pipeline to resolve packages from manifest, lockfile,
+  and SBOM. The resolved packages are created as discovered packages.
+  Support PyPI "requirements.txt" files, SPDX document as JSON ".spdx.json",
+  and AboutCode ".ABOUT" files.
+  https://github.com/nexB/scancode.io/issues/284
+
 - Generate SBOM (Software Bill of Materials) compliant with the SPDX 2.3 specification
   as a new downloadable output.
   https://github.com/nexB/scancode.io/issues/389

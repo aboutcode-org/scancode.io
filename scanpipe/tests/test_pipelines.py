@@ -683,3 +683,25 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("django", discoveredpackage.name)
         self.assertEqual("4.0.8", discoveredpackage.version)
         self.assertEqual("bsd-new", discoveredpackage.license_expression)
+
+    def test_scanpipe_inspect_manifest_pipeline_spdx_document_integration_test(self):
+        pipeline_name = "inspect_manifest"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "toml.spdx.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        discoveredpackage = project1.discoveredpackages.get()
+        self.assertEqual("pypi", discoveredpackage.type)
+        self.assertEqual("toml", discoveredpackage.name)
+        self.assertEqual("0.10.2", discoveredpackage.version)
+        self.assertEqual("https://github.com/uiri/toml", discoveredpackage.homepage_url)
+        self.assertEqual("MIT", discoveredpackage.declared_license)
+        self.assertEqual("mit", discoveredpackage.license_expression)
