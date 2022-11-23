@@ -145,7 +145,7 @@ class CreationInfo:
     @classmethod
     def from_data(cls, data):
         return cls(
-            **cls.get_creators_dict(data.get("creators")),
+            **cls.get_creators_dict(data.get("creators", [])),
             license_list_version=data.get("licenseListVersion"),
             comment=data.get("comment"),
             created=data.get("created"),
@@ -427,11 +427,11 @@ class Package:
             attribution_texts=data.get("attributionTexts"),
             checksums=[
                 Checksum.from_data(checksum_data)
-                for checksum_data in data.get("checksums")
+                for checksum_data in data.get("checksums", [])
             ],
             external_refs=[
                 ExternalRef.from_data(external_ref_data)
-                for external_ref_data in data.get("externalRefs")
+                for external_ref_data in data.get("externalRefs", [])
             ],
         )
 
@@ -491,7 +491,7 @@ class File:
             name=data.get("fileName"),
             checksums=[
                 Checksum.from_data(checksum_data)
-                for checksum_data in data.get("checksums")
+                for checksum_data in data.get("checksums", [])
             ],
             types=data.get("fileTypes"),
             copyright_text=data.get("copyrightText"),
@@ -613,18 +613,19 @@ class Document:
             data_license=data.get("dataLicense"),
             name=data.get("name"),
             namespace=data.get("documentNamespace"),
-            creation_info=CreationInfo.from_data(data.get("creationInfo")),
+            creation_info=CreationInfo.from_data(data.get("creationInfo", {})),
             packages=[
-                Package.from_data(package_data) for package_data in data.get("packages")
+                Package.from_data(package_data)
+                for package_data in data.get("packages", [])
             ],
-            files=[File.from_data(file_data) for file_data in data.get("files")],
+            files=[File.from_data(file_data) for file_data in data.get("files", [])],
             extracted_licenses=[
                 ExtractedLicensingInfo.from_data(license_info_data)
-                for license_info_data in data.get("hasExtractedLicensingInfos")
+                for license_info_data in data.get("hasExtractedLicensingInfos", [])
             ],
             relationships=[
                 Relationship.from_data(relationship_data)
-                for relationship_data in data.get("relationships")
+                for relationship_data in data.get("relationships", [])
             ],
             comment=data.get("comment"),
         )

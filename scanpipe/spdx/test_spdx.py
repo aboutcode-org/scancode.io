@@ -271,6 +271,7 @@ class SPDXTestCase(TestCase):
         assert self.creation_info_spdx_data == creation_info.as_dict()
 
     def test_spdx_creation_info_from_data(self):
+        assert spdx.CreationInfo.from_data({})
         creation_info = spdx.CreationInfo.from_data(self.creation_info_spdx_data)
         assert self.creation_info_spdx_data == creation_info.as_dict()
 
@@ -285,6 +286,7 @@ class SPDXTestCase(TestCase):
         assert self.checksum_sha1_spdx_data == checksum.as_dict()
 
     def test_spdx_checksum_from_data(self):
+        assert spdx.Checksum.from_data({})
         checksum = spdx.Checksum.from_data(self.checksum_sha1_spdx_data)
         assert self.checksum_sha1_spdx_data == checksum.as_dict()
 
@@ -293,6 +295,7 @@ class SPDXTestCase(TestCase):
         assert self.external_ref_purl_spdx_data == external_ref.as_dict()
 
     def test_spdx_external_ref_from_data(self):
+        assert spdx.ExternalRef.from_data({})
         external_ref = spdx.ExternalRef.from_data(self.external_ref_purl_spdx_data)
         assert self.external_ref_purl_spdx_data == external_ref.as_dict()
 
@@ -301,6 +304,7 @@ class SPDXTestCase(TestCase):
         assert self.licensing_info_spdx_data == licensing_info.as_dict()
 
     def test_spdx_extracted_licensing_info_from_data(self):
+        assert spdx.ExtractedLicensingInfo.from_data({})
         licensing_info = spdx.ExtractedLicensingInfo.from_data(
             self.licensing_info_spdx_data
         )
@@ -311,6 +315,7 @@ class SPDXTestCase(TestCase):
         assert self.package_spdx_data == package.as_dict()
 
     def test_spdx_package_from_data(self):
+        assert spdx.Package.from_data({})
         package = spdx.Package.from_data(self.package_spdx_data)
         assert self.package_spdx_data == package.as_dict()
 
@@ -333,6 +338,7 @@ class SPDXTestCase(TestCase):
         assert self.file_spdx_data == spdx_file.as_dict()
 
     def test_spdx_file_from_data(self):
+        assert spdx.File.from_data({})
         file = spdx.File.from_data(self.file_spdx_data)
         assert self.file_spdx_data == file.as_dict()
 
@@ -341,6 +347,7 @@ class SPDXTestCase(TestCase):
         assert self.relationship_spdx_data == relationship.as_dict()
 
     def test_spdx_relationship_from_data(self):
+        assert spdx.Relationship.from_data({})
         relationship = spdx.Relationship.from_data(self.relationship_spdx_data)
         assert self.relationship_spdx_data == relationship.as_dict()
 
@@ -349,6 +356,7 @@ class SPDXTestCase(TestCase):
         assert self.document_spdx_data == document.as_dict()
 
     def test_spdx_document_from_data(self):
+        assert spdx.Document.from_data({})
         document = spdx.Document.from_data(self.document_spdx_data)
         assert self.document_spdx_data == document.as_dict()
 
