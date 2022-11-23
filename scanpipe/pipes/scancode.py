@@ -513,7 +513,7 @@ def create_discovered_dependencies(
     from the `datafile_path` of `dependency_data` before looking up the
     corresponding CodebaseResource for `datafile_path`. This is used in the case
     where Dependency data is imported from a scancode-toolkit scan, where the
-    root path segments are not stripped for `datafile_path`s.
+    root path segments are not stripped for `datafile_path`.
     """
     if hasattr(scanned_codebase.attributes, "dependencies"):
         for dependency_data in scanned_codebase.attributes.dependencies:

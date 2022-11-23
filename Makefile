@@ -25,7 +25,7 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude="migrations|data|lib|bin|var"
+BLACK_ARGS=--exclude=".cache|migrations|data|lib|bin|var"
 PYCODESTYLE_ARGS=--max-line-length=88 \
   --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var
 # Do not depend on Python to generate the SECRET_KEY
@@ -132,9 +132,9 @@ docs:
 
 docker-images:
 	@echo "-> Build Docker services"
-	docker-compose build
+	docker compose build
 	@echo "-> Pull service images"
-	docker-compose pull
+	docker compose pull
 	@echo "-> Save the service images to a compressed tar archive in the dist/ directory"
 	@mkdir -p dist/
 	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz

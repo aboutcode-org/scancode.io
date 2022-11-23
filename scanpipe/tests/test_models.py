@@ -113,6 +113,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
 
+        self.assertTrue(self.project1.tmp_path.exists())
+        shutil.rmtree(self.project1.work_path, ignore_errors=True)
+        self.assertFalse(self.project1.tmp_path.exists())
+        self.project1.clear_tmp_directory()
+        self.assertTrue(self.project1.tmp_path.exists())
+
     def test_scanpipe_project_model_archive(self):
         (self.project1.input_path / "input_file").touch()
         (self.project1.codebase_path / "codebase_file").touch()
@@ -1415,14 +1421,41 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["description"], updated_fields)
         self.assertEqual(new_data["description"], package.description)
 
+    def test_scanpipe_discovered_package_model_as_cyclonedx(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        expected_repr = (
+            "<Component group=None, name=adduser, version=3.118, type=library>"
+        )
+        cyclonedx_component = package.as_cyclonedx()
+        self.assertEqual(expected_repr, repr(cyclonedx_component))
+
+        self.assertEqual(package_data1["name"], cyclonedx_component.name)
+        self.assertEqual(package_data1["version"], cyclonedx_component.version)
+        purl = "pkg:deb/debian/adduser@3.118?arch=all"
+        self.assertEqual(purl, str(cyclonedx_component.bom_ref))
+        self.assertEqual(purl, cyclonedx_component.purl)
+        self.assertEqual(1, len(cyclonedx_component.licenses))
+        self.assertEqual(
+            "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown",
+            cyclonedx_component.licenses[0].expression,
+        )
+        self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
+        self.assertEqual(package_data1["description"], cyclonedx_component.description)
+        self.assertEqual(1, len(cyclonedx_component.hashes))
+        self.assertEqual(package_data1["md5"], cyclonedx_component.hashes[0].content)
+        external_references = cyclonedx_component.external_references
+        self.assertEqual(1, len(external_references))
+        self.assertEqual("website", external_references[0].type)
+        self.assertEqual("https://packages.debian.org", external_references[0].url)
+
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
         self.assertEqual(40, len(basic_user.auth_token.key))
 
     def test_scanpipe_discovered_dependency_model_update_from_data(self):
-        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        resource = CodebaseResource.objects.create(
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
+        CodebaseResource.objects.create(
             project=self.project1, path="data.tar.gz-extract/Gemfile.lock"
         )
         dependency = DiscoveredDependency.create_from_data(

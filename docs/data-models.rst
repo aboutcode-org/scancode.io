@@ -28,6 +28,13 @@ DiscoveredPackage
     :undoc-members:
     :member-order: groupwise
 
+DiscoveredDependency
+--------------------
+.. autoclass:: scanpipe.models.DiscoveredDependency()
+    :members:
+    :undoc-members:
+    :member-order: groupwise
+
 ProjectError
 ------------
 .. autoclass:: scanpipe.models.ProjectError()

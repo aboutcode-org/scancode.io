@@ -38,6 +38,7 @@ from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db import transaction
 from django.db.models import Count
@@ -62,6 +63,10 @@ import redis
 import requests
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
+from cyclonedx import model as cyclonedx_model
+from cyclonedx.model import component as cyclonedx_component
+from formattedcode.output_cyclonedx import CycloneDxExternalRef
+from licensedcode.cache import build_spdx_license_expression
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -73,6 +78,7 @@ from rq.job import Job
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import spdx
 from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
@@ -644,7 +650,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         pipeline Run.
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
-        self.tmp_path.mkdir(exist_ok=True)
+        self.tmp_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def input_sources_list(self):
@@ -1070,7 +1076,7 @@ class ProjectRelatedModel(models.Model):
 
 class ProjectError(UUIDPKModel, ProjectRelatedModel):
     """
-    Stores errors and§ exceptions raised during a pipeline run.
+    Stores errors and exceptions raised during a pipeline run.
     """
 
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
@@ -1158,12 +1164,12 @@ class UpdateFromDataMixin:
         Update this object instance with the provided `data`.
         The `save()` is called only if at least one field was modified.
         """
-        model_fields = self.__class__.model_fields()
+        model_fields = self.model_fields()
         updated_fields = []
 
         for field_name, value in data.items():
             skip_reasons = [
-                not value,
+                value in EMPTY_VALUES,
                 field_name not in model_fields,
                 field_name in PURL_FIELDS,
             ]
@@ -1255,6 +1261,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
+    current_step = models.CharField(max_length=256, blank=True)
     log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
@@ -1985,6 +1992,41 @@ class CodebaseResource(
             for package in self.discovered_packages.all()
         ]
 
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.id}"
+
+    def get_spdx_types(self):
+        spdx_types = []
+
+        if self.is_binary:
+            spdx_types.append("BINARY")
+        if self.is_text:
+            spdx_types.append("TEXT")
+        if self.is_archive:
+            spdx_types.append("ARCHIVE")
+
+        return spdx_types
+
+    def as_spdx(self):
+        """
+        Return this CodebaseResource as an SPDX Package entry.
+        """
+        spdx_license_keys = [license["spdx_license_key"] for license in self.licenses]
+        copyrights = [copyright["copyright"] for copyright in self.copyrights]
+        holders = [holder["holder"] for holder in self.holders]
+        authors = [author["author"] for author in self.authors]
+
+        return spdx.File(
+            spdx_id=self.spdx_id,
+            name=f"./{self.path}",
+            checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
+            license_in_files=list(set(spdx_license_keys)),
+            copyright_text=", ".join(copyrights),
+            contributors=list(set(holders + authors)),
+            types=self.get_spdx_types(),
+        )
+
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
@@ -2278,6 +2320,109 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
+    @classmethod
+    def clean_data(cls, data, include_none=False):
+        """
+        Returns the `data` dict keeping only entries for fields available in the model.
+        """
+        return {
+            field_name: value
+            for field_name, value in data.items()
+            if field_name in cls.model_fields()  # and value
+        }
+
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
+
+    def get_license_expression_spdx_id(self):
+        """
+        Return this DiscoveredPackage license expression using SPDX syntax and keys.
+        """
+        if self.license_expression:
+            return build_spdx_license_expression(self.license_expression)
+
+    def as_spdx(self):
+        """
+        Return this DiscoveredPackage as an SPDX Package entry.
+        """
+        checksums = [
+            spdx.Checksum(algorithm=algorithm, value=checksum_value)
+            for algorithm in ["sha1", "md5"]
+            if (checksum_value := getattr(self, algorithm))
+        ]
+
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        license_expression_spdx = self.get_license_expression_spdx_id()
+        return spdx.Package(
+            name=self.name or self.filename,
+            spdx_id=self.spdx_id,
+            download_location=self.download_url,
+            license_declared=license_expression_spdx,
+            license_concluded=license_expression_spdx,
+            copyright_text=self.copyright,
+            version=self.version,
+            homepage=self.homepage_url,
+            filename=self.filename,
+            description=self.description,
+            release_date=str(self.release_date) if self.release_date else "",
+            checksums=checksums,
+            external_refs=external_refs,
+        )
+
+    def as_cyclonedx(self):
+        """
+        Return this DiscoveredPackage as an CycloneDX Component entry.
+        """
+        licenses = []
+        if expression_spdx := self.get_license_expression_spdx_id():
+            licenses = [
+                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
+            ]
+
+        hash_fields = {
+            "md5": cyclonedx_model.HashAlgorithm.MD5,
+            "sha1": cyclonedx_model.HashAlgorithm.SHA_1,
+            "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
+            "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
+        }
+
+        hashes = [
+            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            for field_name, algorithm in hash_fields.items()
+            if (hash_value := getattr(self, field_name))
+        ]
+
+        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        external_references = [
+            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
+            for field_name, reference_type in cyclonedx_url_to_type.items()
+            if (url := getattr(self, field_name))
+        ]
+
+        purl = self.package_url
+        return cyclonedx_component.Component(
+            name=self.name,
+            version=self.version,
+            bom_ref=purl or str(self.uuid),
+            purl=purl,
+            licenses=licenses,
+            copyright_=self.copyright,
+            description=self.description,
+            hashes=hashes,
+            external_references=external_references,
+        )
+
 
 class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     def prefetch_for_serializer(self):
@@ -2420,7 +2565,7 @@ class DiscoveredDependency(
         `dependency_data` before looking up the corresponding CodebaseResource
         for `datafile_path`. This is used in the case where Dependency data is
         imported from a scancode-toolkit scan, where the root path segments are
-        not stripped for `datafile_path`s.
+        not stripped for `datafile_path`.
         """
         required_fields = ["purl", "dependency_uid"]
         missing_values = [
@@ -2472,6 +2617,32 @@ class DiscoveredDependency(
         discovered_dependency.save()
 
         return discovered_dependency
+
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+
+    def as_spdx(self):
+        """
+        Return this Package as an SPDX Package entry.
+        """
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        return spdx.Package(
+            name=self.name,
+            spdx_id=self.spdx_id,
+            version=self.version,
+            external_refs=external_refs,
+        )
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):

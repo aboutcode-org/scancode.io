@@ -87,7 +87,7 @@ class Pipeline:
     @classmethod
     def get_info(cls):
         """
-        Returns a dictctionary of combined data about the current pipeline.
+        Returns a dictionary of combined data about the current pipeline.
         """
         return {
             "description": cls.get_doc(),
@@ -106,9 +106,16 @@ class Pipeline:
 
     def execute(self):
         self.log(f"Pipeline [{self.pipeline_name}] starting")
+        steps = self.get_steps()
+        steps_count = len(steps)
 
-        for step in self.get_steps():
-            self.log(f"Step [{step.__name__}] starting")
+        for current_index, step in enumerate(steps, start=1):
+            step_name = step.__name__
+
+            # The `current_step` value is saved in the DB during the `self.log` call.
+            self.run.current_step = f"{current_index}/{steps_count} {step_name}"[:256]
+
+            self.log(f"Step [{step_name}] starting")
             start_time = timeit.default_timer()
 
             try:
@@ -121,6 +128,7 @@ class Pipeline:
             run_time = timeit.default_timer() - start_time
             self.log(f"Step [{step.__name__}] completed in {run_time:.2f} seconds")
 
+        self.run.current_step = ""
         self.log(f"Pipeline completed")
 
         return 0, ""

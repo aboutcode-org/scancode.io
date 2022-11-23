@@ -42,7 +42,17 @@ from scanpipe.tests import package_data1
 
 
 class ScanPipeOutputPipesTest(TestCase):
-    data_location = Path(__file__).parent / "data"
+    data_path = Path(__file__).parent / "data"
+
+    def assertResultsEqual(self, expected_file, results, regen=False):
+        """
+        Set `regen` to True to regenerate the expected results.
+        """
+        if regen:
+            expected_file.write_text(results)
+
+        expected_data = expected_file.read_text()
+        self.assertEqual(expected_data, results)
 
     def test_scanpipe_pipes_outputs_queryset_to_csv_file(self):
         project1 = Project.objects.create(name="Analysis")
@@ -125,7 +135,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_outputs_to_csv(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -144,7 +154,7 @@ class ScanPipeOutputPipesTest(TestCase):
             self.assertIn(csv_file, [f.name for f in output_files])
 
     def test_scanpipe_pipes_outputs_to_json(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
@@ -168,10 +178,10 @@ class ScanPipeOutputPipesTest(TestCase):
         shutil.rmtree(project.work_directory)
         with self.assertNumQueries(7):
             output_file = output.to_json(project=project)
-        self.assertEqual([output_file.name], project.output_root)
+        self.assertIn(output_file.name, project.output_root)
 
     def test_scanpipe_pipes_outputs_to_xlsx(self):
-        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
@@ -186,7 +196,55 @@ class ScanPipeOutputPipesTest(TestCase):
         shutil.rmtree(project.work_directory)
         with self.assertNumQueries(7):
             output_file = output.to_xlsx(project=project)
-        self.assertEqual([output_file.name], project.output_root)
+        self.assertIn(output_file.name, project.output_root)
+
+    def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=False):
+        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+
+        project = Project.objects.get(name="asgiref")
+
+        with mock.patch("cyclonedx.model.bom.uuid4") as mock_uuid4:
+            with mock.patch("cyclonedx.model.bom.datetime") as mock_datetime:
+                mock_uuid4.return_value = "b74fe5df-e965-415e-ba65-f38421a0695d"
+                mock_datetime.now = lambda tz: ""
+                output_file = output.to_cyclonedx(project=project)
+
+        self.assertIn(output_file.name, project.output_root)
+
+        expected_location = self.data_path / "cyclonedx" / "asgiref-3.3.0.bom.json"
+        if regen:
+            cyclonedx_json = json.loads(output_file.read_text())
+            expected_location.write_text(json.dumps(cyclonedx_json, indent=2))
+
+        self.assertJSONEqual(output_file.read_text(), expected_location.read_text())
+
+    def test_scanpipe_pipes_outputs_to_spdx(self):
+        fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+
+        output_file = output.to_spdx(project=project)
+        self.assertIn(output_file.name, project.output_root)
+
+        with output_file.open() as f:
+            results = f.read()
+
+        # Patch the `created` date
+        results_json = json.loads(results)
+        results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
+        # Files ordering is system dependent, excluded for now
+        results_json["files"] = []
+        results = json.dumps(results_json, indent=2)
+
+        expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
+        self.assertResultsEqual(expected_file, results, regen=False)
+
+        # Make sure the output can be generated even if the work_directory was wiped
+        shutil.rmtree(project.work_directory)
+        with self.assertNumQueries(8):
+            output_file = output.to_spdx(project=project)
+        self.assertIn(output_file.name, project.output_root)
 
 
 class ScanPipeXLSXOutputPipesTest(TestCase):

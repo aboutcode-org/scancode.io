@@ -169,7 +169,7 @@ class ProjectViewSet(
         paginated_qs = self.paginate_queryset(queryset)
         serializer = CodebaseResourceSerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
     def packages(self, request, *args, **kwargs):
@@ -179,7 +179,7 @@ class ProjectViewSet(
         paginated_qs = self.paginate_queryset(queryset)
         serializer = DiscoveredPackageSerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
     def dependencies(self, request, *args, **kwargs):
@@ -189,7 +189,7 @@ class ProjectViewSet(
         paginated_qs = self.paginate_queryset(queryset)
         serializer = DiscoveredDependencySerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
     def errors(self, request, *args, **kwargs):
@@ -199,7 +199,7 @@ class ProjectViewSet(
         paginated_qs = self.paginate_queryset(queryset)
         serializer = ProjectErrorSerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["get"])
     def file_content(self, request, *args, **kwargs):

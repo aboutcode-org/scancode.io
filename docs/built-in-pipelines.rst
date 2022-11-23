@@ -31,6 +31,24 @@ Docker Windows Image Analysis
     :members:
     :member-order: bysource
 
+.. _pipeline_find_vulnerabilities:
+
+Find Vulnerabilities
+--------------------
+.. autoclass:: scanpipe.pipelines.find_vulnerabilities.FindVulnerabilities()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_inspect_manifest:
+
+Inspect Manifest
+----------------
+.. autoclass:: scanpipe.pipelines.inspect_manifest.InspectManifest()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_load_inventory:
+
 Load Inventory From Scan
 ------------------------
 .. autoclass:: scanpipe.pipelines.load_inventory.LoadInventory()

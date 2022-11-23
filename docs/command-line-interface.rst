@@ -9,7 +9,7 @@ directly when you are in the activated virtualenv or at this path:
 
 .. warning::
     In order to add local input files to a project using the Command Line Interface,
-    extra arguments need to be passed to the docker-compose command.
+    extra arguments need to be passed to the ``docker compose`` command.
 
     For instance ``--volume /path/on/host:/target/path/in/container:ro``
     will mount and make available the host path inside the container (``:ro`` stands
@@ -17,7 +17,7 @@ directly when you are in the activated virtualenv or at this path:
 
     .. code-block:: bash
 
-        docker-compose run --volume /home/sources:/sources:ro \
+        docker compose run --volume /home/sources:/sources:ro \
             web ./manage.py create-project my-project --input-file="/sources/image.tar"
 
 

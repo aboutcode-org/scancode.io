@@ -4,6 +4,34 @@ Changelog
 v31.1.0 (unreleased)
 --------------------
 
+- Add a new "find vulnerabilities" pipeline to lookup vulnerabilities in the
+  VulnerableCode database for all project discovered packages.
+  Vulnerability data is stored in the extra_data field of each package.
+  More details about VulnerableCode at https://github.com/nexB/vulnerablecode/
+  https://github.com/nexB/scancode.io/issues/101
+
+- Add a new "inspect manifest" pipeline to resolve packages from manifest, lockfile,
+  and SBOM. The resolved packages are created as discovered packages.
+  Support PyPI "requirements.txt" files, SPDX document as JSON ".spdx.json",
+  and AboutCode ".ABOUT" files.
+  https://github.com/nexB/scancode.io/issues/284
+
+- Generate SBOM (Software Bill of Materials) compliant with the SPDX 2.3 specification
+  as a new downloadable output.
+  https://github.com/nexB/scancode.io/issues/389
+
+- Generate CycloneDX SBOM (Software Bill of Materials) as a new downloadable output.
+  https://github.com/nexB/scancode.io/issues/389
+
+- Display the current active step of a running pipeline in the "Pipeline" section of
+  the project details view, inside the run status tag.
+  https://github.com/nexB/scancode.io/issues/300
+
+- Add proper pagination for API actions: resources, packages, dependencies, and errors.
+
+- Refine the fields ordering in API Serializers based on the toolkit order.
+  https://github.com/nexB/scancode.io/issues/546
+
 - Keep the current filters state when submitting a search in list views.
   https://github.com/nexB/scancode.io/issues/541
 
