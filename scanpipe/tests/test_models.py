@@ -44,6 +44,7 @@ from django.test import override_settings
 from django.utils import timezone
 
 from packagedcode.models import PackageData
+from requests.exceptions import RequestException
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
@@ -729,12 +730,12 @@ class ScanPipeModelsTest(TestCase):
         run1.refresh_from_db()
         self.assertEqual("line1\nline2\n", run1.log)
 
-    @mock.patch("scanpipe.models.WebhookSubscription.send")
-    def test_scanpipe_run_model_send_project_subscriptions(self, mock_send):
+    @mock.patch("scanpipe.models.WebhookSubscription.deliver")
+    def test_scanpipe_run_model_deliver_project_subscriptions(self, mock_deliver):
         self.project1.add_webhook_subscription("https://localhost")
         run1 = self.create_run()
-        run1.send_project_subscriptions()
-        mock_send.assert_called_once_with(pipeline_run=run1)
+        run1.deliver_project_subscriptions()
+        mock_deliver.assert_called_once_with(pipeline_run=run1)
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
@@ -1359,20 +1360,30 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected_paths, result)
 
     @mock.patch("requests.post")
-    def test_scanpipe_webhook_subscription_send_method(self, mock_post):
+    def test_scanpipe_webhook_subscription_deliver_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")
-        self.assertFalse(webhook.sent)
+        self.assertFalse(webhook.delivered)
         run1 = self.create_run()
 
-        mock_post.return_value = mock.Mock(status_code=404)
-        webhook.send(pipeline_run=run1)
+        mock_post.side_effect = RequestException("Error from exception")
+        self.assertFalse(webhook.deliver(pipeline_run=run1))
         webhook.refresh_from_db()
-        self.assertFalse(webhook.sent)
+        self.assertEqual("Error from exception", webhook.delivery_error)
+        self.assertFalse(webhook.delivered)
+        self.assertFalse(webhook.success)
+
+        mock_post.side_effect = None
+        mock_post.return_value = mock.Mock(status_code=404)
+        self.assertTrue(webhook.deliver(pipeline_run=run1))
+        webhook.refresh_from_db()
+        self.assertTrue(webhook.delivered)
+        self.assertFalse(webhook.success)
 
         mock_post.return_value = mock.Mock(status_code=200)
-        webhook.send(pipeline_run=run1)
+        self.assertTrue(webhook.deliver(pipeline_run=run1))
         webhook.refresh_from_db()
-        self.assertTrue(webhook.sent)
+        self.assertTrue(webhook.delivered)
+        self.assertTrue(webhook.success)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}

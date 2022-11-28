@@ -84,17 +84,6 @@
         </div>
       {% endif %}
     </div>
-
-    <div class="field is-grouped is-grouped-multiline mb-4">
-      {% for webhook in webhook_subscriptions %}
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Webhook sent</span>
-            <span class="tag is-info">{{ webhook.sent }}</span>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
     {% if status_summary %}
       <div class="columns">
         <div class="column is-one-third">
@@ -122,6 +111,53 @@
       <figure class="highlight log border-no-top-left-radius">
         <pre class="language-python wrap p-1"><code>{{ run.task_output }}</code></pre>
       </figure>
+    {% endif %}
+    {% if webhook_subscriptions %}
+      <hr>
+      {% for webhook in webhook_subscriptions %}
+        <div class="field is-grouped is-grouped-multiline">
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Webhook</span>
+              <span class="tag is-info">{{ webhook.uuid }}</span>
+            </div>
+          </div>
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Target URL</span>
+              <span class="tag is-info">{{ webhook.target_url|truncatechars:30 }}</span>
+            </div>
+          </div>
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">Delivered</span>
+              <span class="tag is-info">{{ delivered|yesno }}</span>
+            </div>
+          </div>
+          {% if webhook.delivery_error %}
+            <span class="tag is-dark tag-header">Delivery error</span>
+            <figure class="highlight log border-no-top-left-radius">
+              <pre class="language-toml wrap p-1"><code>{{ webhook.delivery_error }}</code></pre>
+            </figure>
+          {% endif %}
+          {% if webhook.delivered %}
+            <div class="control">
+              <div class="tags has-addons">
+                <span class="tag is-dark">HTTP code</span>
+                <span class="tag {% if webhook.success %}is-success{% else %}is-danger{% endif %}">
+                  {{ webhook.response_status_code }}
+                </span>
+              </div>
+            </div>
+            {% if webhook.response_text %}
+              <span class="tag is-dark tag-header">Response</span>
+              <figure class="highlight log border-no-top-left-radius">
+                <pre class="language-toml wrap p-1"><code>{{ webhook.response_text }}</code></pre>
+              </figure>
+            {% endif %}
+          {% endif %}
+        </div>
+      {% endfor %}
     {% endif %}
   </section>
   <footer class="modal-card-foot">

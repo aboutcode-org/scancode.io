@@ -1404,12 +1404,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         if save:
             self.save()
 
-    def send_project_subscriptions(self):
+    def deliver_project_subscriptions(self):
         """
         Triggers related project webhook subscriptions.
         """
         for subscription in self.project.webhooksubscriptions.all():
-            subscription.send(pipeline_run=self)
+            subscription.deliver(pipeline_run=self)
 
     def profile(self, print_results=False):
         """
@@ -2647,8 +2647,10 @@ class DiscoveredDependency(
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     target_url = models.URLField(_("Target URL"), max_length=1024)
-    sent = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
+    response_status_code = models.PositiveIntegerField(null=True, blank=True)
+    response_text = models.TextField(blank=True)
+    delivery_error = models.TextField(blank=True)
 
     def __str__(self):
         return str(self.uuid)
@@ -2668,9 +2670,9 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             },
         }
 
-    def send(self, pipeline_run):
+    def deliver(self, pipeline_run):
         """
-        Sends this WebhookSubscription by POSTing an HTTP request on the `target_url`.
+        Delivers this WebhookSubscription by POSTing a HTTP request on the `target_url`.
         """
         payload = self.get_payload(pipeline_run)
 
@@ -2684,14 +2686,28 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             )
         except requests.exceptions.RequestException as exception:
             logger.info(exception)
-            return
-
-        if response.status_code in (200, 201, 202):
-            logger.info(f"Webhook uuid={self.uuid} sent and received.")
-            self.sent = True
+            self.delivery_error = str(exception)
             self.save()
+            return False
+
+        self.response_status_code = response.status_code
+        self.response_text = response.text
+        self.save()
+
+        if self.success:
+            logger.info(f"Webhook uuid={self.uuid} delivered and received.")
         else:
             logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")
+
+        return True
+
+    @property
+    def delivered(self):
+        return bool(self.response_status_code)
+
+    @property
+    def success(self):
+        return self.response_status_code in (200, 201, 202)
 
 
 @receiver(models.signals.post_save, sender=settings.AUTH_USER_MODEL)
