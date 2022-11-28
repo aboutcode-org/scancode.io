@@ -31,6 +31,7 @@ class InspectManifest(Pipeline):
 
     Supports:
     - PyPI "requirements.txt" files
+    - SPDX document as JSON ".spdx.json"
     - AboutCode ".ABOUT" files
     """
 
@@ -65,9 +66,11 @@ class InspectManifest(Pipeline):
                     f"{input_location}"
                 )
 
+            self.log(f"`{default_package_type}` input detected for {input_location}")
             resolved_packages = resolver(input_location=input_location)
             if not resolved_packages:
                 raise Exception(f"No packages could be resolved for {input_location}")
 
             for package_data in resolved_packages:
+                package_data = resolve.set_license_expression(package_data)
                 update_or_create_package(self.project, package_data)
