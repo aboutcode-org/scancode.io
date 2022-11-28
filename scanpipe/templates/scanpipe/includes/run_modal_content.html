@@ -131,7 +131,7 @@
           <div class="control">
             <div class="tags has-addons">
               <span class="tag is-dark">Delivered</span>
-              <span class="tag is-info">{{ delivered|yesno }}</span>
+              <span class="tag is-info">{{ webhook.delivered|yesno }}</span>
             </div>
           </div>
           {% if webhook.delivery_error %}
