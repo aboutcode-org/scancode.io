@@ -23,6 +23,10 @@ v31.1.0 (unreleased)
 - Generate CycloneDX SBOM (Software Bill of Materials) as a new downloadable output.
   https://github.com/nexB/scancode.io/issues/389
 
+- Display Webhook status in the Run modal.
+  The WebhookSubscription model was refined to capture delivery data.
+  https://github.com/nexB/scancode.io/issues/389
+
 - Display the current active step of a running pipeline in the "Pipeline" section of
   the project details view, inside the run status tag.
   https://github.com/nexB/scancode.io/issues/300
