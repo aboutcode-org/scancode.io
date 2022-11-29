@@ -1373,17 +1373,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(webhook.success)
 
         mock_post.side_effect = None
-        mock_post.return_value = mock.Mock(status_code=404)
+        mock_post.return_value = mock.Mock(status_code=404, text="text")
         self.assertTrue(webhook.deliver(pipeline_run=run1))
         webhook.refresh_from_db()
         self.assertTrue(webhook.delivered)
         self.assertFalse(webhook.success)
+        self.assertEqual("text", webhook.response_text)
 
-        mock_post.return_value = mock.Mock(status_code=200)
+        mock_post.return_value = mock.Mock(status_code=200, text="text")
         self.assertTrue(webhook.deliver(pipeline_run=run1))
         webhook.refresh_from_db()
         self.assertTrue(webhook.delivered)
         self.assertTrue(webhook.success)
+        self.assertEqual("text", webhook.response_text)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
