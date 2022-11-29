@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v31.1.0 (unreleased)
+v32.0.0 (2022-11-29)
 --------------------
 
 - Add a new "find vulnerabilities" pipeline to lookup vulnerabilities in the
