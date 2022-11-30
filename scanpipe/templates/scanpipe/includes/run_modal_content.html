@@ -134,29 +134,29 @@
               <span class="tag is-info">{{ webhook.delivered|yesno }}</span>
             </div>
           </div>
-          {% if webhook.delivery_error %}
-            <span class="tag is-dark tag-header">Delivery error</span>
+        </div>
+        {% if webhook.delivery_error %}
+          <span class="tag is-dark tag-header">Delivery error</span>
+          <figure class="highlight log border-no-top-left-radius">
+            <pre class="language-toml wrap p-1"><code>{{ webhook.delivery_error }}</code></pre>
+          </figure>
+        {% endif %}
+        {% if webhook.delivered %}
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">HTTP code</span>
+              <span class="tag {% if webhook.success %}is-success{% else %}is-danger{% endif %}">
+                {{ webhook.response_status_code }}
+              </span>
+            </div>
+          </div>
+          {% if webhook.response_text %}
+            <span class="tag is-dark tag-header">Response</span>
             <figure class="highlight log border-no-top-left-radius">
-              <pre class="language-toml wrap p-1"><code>{{ webhook.delivery_error }}</code></pre>
+              <pre class="language-toml wrap p-1"><code>{{ webhook.response_text }}</code></pre>
             </figure>
           {% endif %}
-          {% if webhook.delivered %}
-            <div class="control">
-              <div class="tags has-addons">
-                <span class="tag is-dark">HTTP code</span>
-                <span class="tag {% if webhook.success %}is-success{% else %}is-danger{% endif %}">
-                  {{ webhook.response_status_code }}
-                </span>
-              </div>
-            </div>
-            {% if webhook.response_text %}
-              <span class="tag is-dark tag-header">Response</span>
-              <figure class="highlight log border-no-top-left-radius">
-                <pre class="language-toml wrap p-1"><code>{{ webhook.response_text }}</code></pre>
-              </figure>
-            {% endif %}
-          {% endif %}
-        </div>
+        {% endif %}
       {% endfor %}
     {% endif %}
   </section>
