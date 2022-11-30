@@ -212,12 +212,16 @@ class ScanPipeOutputPipesTest(TestCase):
 
         self.assertIn(output_file.name, project.output_root)
 
+        # Patch the tool version
+        results_json = json.loads(output_file.read_text())
+        results_json["metadata"]["tools"][0]["version"] = "31.0.0"
+        results = json.dumps(results_json, indent=2)
+
         expected_location = self.data_path / "cyclonedx" / "asgiref-3.3.0.bom.json"
         if regen:
-            cyclonedx_json = json.loads(output_file.read_text())
-            expected_location.write_text(json.dumps(cyclonedx_json, indent=2))
+            expected_location.write_text(results)
 
-        self.assertJSONEqual(output_file.read_text(), expected_location.read_text())
+        self.assertJSONEqual(results, expected_location.read_text())
 
     def test_scanpipe_pipes_outputs_to_spdx(self):
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
@@ -227,12 +231,10 @@ class ScanPipeOutputPipesTest(TestCase):
         output_file = output.to_spdx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
-        with output_file.open() as f:
-            results = f.read()
-
-        # Patch the `created` date
-        results_json = json.loads(results)
+        # Patch the `created` date and tool version
+        results_json = json.loads(output_file.read_text())
         results_json["creationInfo"]["created"] = "2000-01-01T01:02:03Z"
+        results_json["creationInfo"]["creators"] = ["Tool: ScanCode.io-31.0.0"]
         # Files ordering is system dependent, excluded for now
         results_json["files"] = []
         results = json.dumps(results_json, indent=2)
