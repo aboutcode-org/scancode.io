@@ -17,7 +17,7 @@
 
   <div class="container is-fluid mb-3">
     <div class="table-container">
-      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth break-word">
         {% include 'scanpipe/includes/list_view_thead.html' %}
         <tbody>
           {% for error in object_list %}
@@ -25,7 +25,7 @@
               <td style="max-width: 130px;">
                 <a href="?model={{ error.model }}" class="is-black-link">{{ error.model }}</a>
               </td>
-              <td class="break-word" style="max-width: 250px;">
+              <td style="max-width: 250px;">
                 <div style="max-height: 200px; overflow-y: scroll;">
                   {% if error.message|length < 100 %}
                     <a href="?message={{ error.message }}" class="is-black-link">{{ error.message }}</a>
