@@ -247,7 +247,7 @@ class SPDXTestCase(TestCase):
                     "licenseComments": "license_comments",
                 }
             ],
-            "documentDescribes": ["SPDXRef-DOCUMENT"],
+            "documentDescribes": ["SPDXRef-package1"],
             "hasExtractedLicensingInfos": [
                 {
                     "licenseId": "LicenseRef-1",

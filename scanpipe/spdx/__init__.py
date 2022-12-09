@@ -578,7 +578,7 @@ class Document:
             "documentNamespace": self.namespace,
             "creationInfo": self.creation_info.as_dict(),
             "packages": [package.as_dict() for package in self.packages],
-            "documentDescribes": [self.spdx_id],
+            "documentDescribes": [package.spdx_id for package in self.packages],
         }
 
         if self.files:

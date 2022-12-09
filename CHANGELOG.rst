@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v33.0.0 (unreleased)
+--------------------
+
+- Populate ``documentDescribes`` field with Package and Dependency SPDX IDs in
+  SPDX BOM output.
+  https://github.com/nexB/scancode.io/issues/564
+
 v32.0.0 (2022-11-29)
 --------------------
 
