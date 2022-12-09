@@ -116,7 +116,12 @@
     }
   ],
   "documentDescribes": [
-    "SPDXRef-DOCUMENT"
+    "SPDXRef-scancodeio-discoveredpackage-7f975593-4bdd-4217-8d04-3554d691f310",
+    "SPDXRef-scancodeio-discoveredpackage-edf75850-316d-4a46-9ca1-bde1f4fc3aab",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=6ef94d27-ae57-408e-baa4-e20e3dc1f1aa",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest?uuid=4b195723-fe04-47c9-8b65-c08c60423c18",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=87beebac-2c45-4adf-a700-a9a6ad1724e9",
+    "SPDXRef-scancodeio-discovereddependency-pkg:pypi/pytest-asyncio?uuid=26af7b66-1034-4e21-9a2a-6dc1616a34ec"
   ],
   "files": [],
   "relationships": [
