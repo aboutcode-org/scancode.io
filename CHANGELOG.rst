@@ -1,7 +1,14 @@
 Changelog
 =========
 
-v31.1.0 (unreleased)
+v33.0.0 (unreleased)
+--------------------
+
+- Populate ``documentDescribes`` field with Package and Dependency SPDX IDs in
+  SPDX BOM output.
+  https://github.com/nexB/scancode.io/issues/564
+
+v32.0.0 (2022-11-29)
 --------------------
 
 - Add a new "find vulnerabilities" pipeline to lookup vulnerabilities in the
@@ -21,6 +28,10 @@ v31.1.0 (unreleased)
   https://github.com/nexB/scancode.io/issues/389
 
 - Generate CycloneDX SBOM (Software Bill of Materials) as a new downloadable output.
+  https://github.com/nexB/scancode.io/issues/389
+
+- Display Webhook status in the Run modal.
+  The WebhookSubscription model was refined to capture delivery data.
   https://github.com/nexB/scancode.io/issues/389
 
 - Display the current active step of a running pipeline in the "Pipeline" section of
