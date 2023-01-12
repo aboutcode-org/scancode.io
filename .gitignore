@@ -53,3 +53,8 @@ policies.yml
 
 # This is only created when packaging for external redistribution
 /thirdparty/
+
+# AppImage and AppImage building workspace
+/etc/scripts/appimage-build/out/
+/etc/scripts/appimage-build/scancodeio
+/etc/scripts/appimage-build/pkg2appimage.AppImage
