@@ -7,15 +7,9 @@ Requirements
 Building
 --------
 
-Ensure that the present directory has the following files:
-    - Dockerfile
-    - docker-compose.yml
-    - scancodeio.yml
-    - scancodeio.desktop
-    - python.png
-
 Run ``docker-compose run builder`` to build the scancode.io AppImage. The built appimage will be located in the ``out/`` directory.
 
+You can also run ``make build`` to build the scancode.io AppImage without the use of Docker.
 
 Usage
 -----

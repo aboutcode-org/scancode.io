@@ -25,6 +25,8 @@ GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
 ENV_FILE=.env
 PKG2APPIMAGE_FILE=pkg2appimage.AppImage
+PYTHON_LINUX_SUPPORT_DIR=Python-Linux-support
+BUILT_PYTHON_ARCHIVE=Python-3.10-linux-x86_64-support.custom.tar.gz
 
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
@@ -33,9 +35,19 @@ envfile:
 	@echo SECRET_KEY=\"${GET_SECRET_KEY}\" > ${ENV_FILE}
 	@echo SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\" >> ${ENV_FILE}
 
-build:
+python:
+	@echo "-> Build Python"
+	@if ! test -f ${BUILT_PYTHON_ARCHIVE}; then \
+		mkdir ${PYTHON_LINUX_SUPPORT_DIR} \
+		&& wget https://github.com/beeware/Python-Linux-support/archive/refs/heads/main.tar.gz -O - | tar xzv --directory ${PYTHON_LINUX_SUPPORT_DIR} --strip-components=1 \
+		&& cp resources/${PYTHON_LINUX_SUPPORT_DIR}/Makefile resources/${PYTHON_LINUX_SUPPORT_DIR}/exclude.list ${PYTHON_LINUX_SUPPORT_DIR} \
+		&& cd ${PYTHON_LINUX_SUPPORT_DIR} && $(MAKE) && cd .. \
+		&& cp ${PYTHON_LINUX_SUPPORT_DIR}/dist/${BUILT_PYTHON_ARCHIVE} . ;\
+	fi
+
+build: python
 	@echo "-> Build ScanCode.io AppImage"
 	@if ! test -f ${PKG2APPIMAGE_FILE}; then wget https://github.com/AppImageCommunity/pkg2appimage/releases/download/continuous/pkg2appimage-1807-x86_64.AppImage -O ${PKG2APPIMAGE_FILE}; chmod u+x ${PKG2APPIMAGE_FILE}; fi
 	@./${PKG2APPIMAGE_FILE} scancodeio.yml
 
-.PHONY: envfile
+.PHONY: envfile python build

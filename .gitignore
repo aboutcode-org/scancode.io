@@ -58,3 +58,4 @@ policies.yml
 /etc/scripts/appimage-build/out/
 /etc/scripts/appimage-build/scancodeio
 /etc/scripts/appimage-build/pkg2appimage.AppImage
+/etc/scripts/appimage-build/Python-Linux-support

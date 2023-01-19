@@ -2,7 +2,7 @@
 Type=Application
 Icon=python
 Name=scancodeio
-Exec=./usr/bin/python3.8 ./share/scancodeio/manage.py %F
+Exec=./usr/bin/python3.10 ./share/scancodeio/manage.py %F
 Terminal=true
 Categories=Application;
 Keywords=Python;
