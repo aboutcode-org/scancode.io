@@ -48,7 +48,6 @@ RUN wget https://github.com/AppImageCommunity/pkg2appimage/releases/download/con
     cd /opt && /tmp/pkg2appimage.AppImage --appimage-extract || true && \
     mv squashfs-root pkg2appimage.AppDir && \
     ln -s /opt/pkg2appimage.AppDir/AppRun /usr/bin/pkg2appimage && \
-    sed 's|AI\x02|\x00\x00\x00|g' -i /opt/pkg2appimage.AppDir/usr/bin/appimagetool && \
     rm /tmp/pkg2appimage.AppImage
 
 WORKDIR /

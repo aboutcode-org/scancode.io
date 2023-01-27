@@ -56,6 +56,6 @@ policies.yml
 
 # AppImage and AppImage building workspace
 /etc/scripts/appimage-build/out/
-/etc/scripts/appimage-build/scancodeio
-/etc/scripts/appimage-build/pkg2appimage.AppImage
-/etc/scripts/appimage-build/Python-Linux-support
+/etc/scripts/appimage-build/scancodeio/
+/etc/scripts/appimage-build/*.AppImage
+/etc/scripts/appimage-build/*.AppDir

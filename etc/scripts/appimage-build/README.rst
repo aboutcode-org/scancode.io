@@ -7,9 +7,15 @@ Requirements
 Building
 --------
 
+Ensure that the present directory has the following files:
+    - Dockerfile
+    - docker-compose.yml
+    - scancodeio.yml
+    - scancodeio.desktop
+    - python.png
+
 Run ``docker-compose run builder`` to build the scancode.io AppImage. The built appimage will be located in the ``out/`` directory.
 
-You can also run ``make build`` to build the scancode.io AppImage without the use of Docker.
 
 Usage
 -----
@@ -17,7 +23,7 @@ Usage
 Note: scancode.io will be run using the Django development server. The entry point of the scancode.io AppImage points to ``manage.py`` of scancode.io.
 
 Ensure that the AppImage is executable:
-    - ``chmod +x scancodeio-.glibc2.29-x86_64.AppImage``
+    - ``chmod +x scancodeio-.glibc2.27-x86_64.AppImage``
 
 To use the scancode.io AppImage, you will need to have some environmental variables set:
     - ``SCANCODEIO_DB_NAME``

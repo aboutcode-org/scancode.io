@@ -1,0 +1,28 @@
+#! /bin/bash
+
+# If running from an extracted image, then export ARGV0 and APPDIR
+if [ -z "${APPIMAGE}" ]; then
+    export ARGV0="$0"
+
+    self=$(readlink -f -- "$0") # Protect spaces (issue 55)
+    here="${self%/*}"
+    tmp="${here%/*}"
+    export APPDIR="${tmp%/*}"
+fi
+
+# Resolve the calling command (preserving symbolic links).
+export APPIMAGE_COMMAND=$(command -v -- "$ARGV0")
+
+# Export TCl/Tk
+export TCL_LIBRARY="${APPDIR}/usr/share/tcltk/tcl8.6"
+export TK_LIBRARY="${APPDIR}/usr/share/tcltk/tk8.6"
+export TKPATH="${TK_LIBRARY}"
+
+# Export SSL certificate
+export SSL_CERT_FILE="${APPDIR}/opt/_internal/certs.pem"
+
+export PYTHONHOME="${APPDIR}/opt/python3.10"
+export PYTHONPATH="${APPDIR}/opt/python3.10/lib/python3.10/site-packages"
+
+# Call Python
+"$APPDIR/opt/python3.10/bin/python3.10" "$@"

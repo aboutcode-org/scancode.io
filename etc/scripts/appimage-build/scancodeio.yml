@@ -13,18 +13,33 @@ ingredients:
     - libxml2-dev
     - libxslt1-dev
     - libpopt0
+    - build-essential
+    - libssl-dev
+    - libpq-dev
+    - libgpgme11
+    - libdevmapper1.02.1
+    - libguestfs-tools
+  script:
+  #   - wget -c https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage
+  #   - chmod u+x python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage
+  #   - ./python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage --appimage-extract
+  #   - mv squashfs-root python3.10.AppDir
+  #   - wget -c https://github.com/nexB/scancode.io/archive/refs/heads/scancode.io-appimage.tar.gz
+  #   - tar xzvf scancode.io-appimage.tar.gz
+  #   - mv scancode.io-scancode.io-appimage scancodeio
+  #   - mv scancodeio python3.10.AppDir/opt/
+  #   - python3.10.AppDir/AppRun -m pip install python3.10.AppDir/opt/scancodeio
+  #   - python3.10.AppDir/AppRun -m pip install --upgrade https://github.com/nexB/python-inspector/archive/refs/heads/update-cache-location.zip
+  #   - python3.10.AppDir/AppRun -m pip install --upgrade packaging==21.3
+    - cd .. && make envfile && mv .env scancodeio && cd scancodeio
+
 
 script:
   - env
-  - mkdir -p usr/share/scancodeio
-  - wget -c https://github.com/nexB/scancode.io/archive/refs/heads/scancode.io-appimage.tar.gz -O - | tar xz --directory=./usr/share/scancodeio --strip-components=1
-  - make -f ../../Makefile envfile
-  - mv .env ./usr/share/scancodeio/.env
+  - cp -r ../../python3.10.AppDir/usr/. usr
+  - cp -r ../../python3.10.AppDir/opt .
+  - cp ../.env opt/scancodeio/
   - cp ../../resources/python.png .
-  - tar xz --directory=./usr -f ../../Python-3.10-linux-x86_64-support.custom.tar.gz
-  - ./usr/bin/python3.10 -m ensurepip
-  - ./usr/bin/python3.10 -m pip install ./usr/share/scancodeio
-  - ./usr/bin/python3.10 -m pip install --upgrade https://github.com/nexB/python-inspector/archive/refs/heads/update-cache-location.zip
-  - ./usr/bin/python3.10 -m pip install --upgrade packaging==21.3
   - cp ../../resources/scancodeio.desktop .
+  - cp ../../resources/python3.10 usr/bin
   - cp ../../resources/scancodeio.desktop usr/share/applications/scancodeio.desktop

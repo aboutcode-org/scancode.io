@@ -27,6 +27,7 @@ ENV_FILE=.env
 PKG2APPIMAGE_FILE=pkg2appimage.AppImage
 PYTHON_LINUX_SUPPORT_DIR=Python-Linux-support
 BUILT_PYTHON_ARCHIVE=Python-3.10-linux-x86_64-support.custom.tar.gz
+PYTHON_APPIMAGE=python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage
 
 envfile:
 	@echo "-> Create the .env file and generate a secret key"
@@ -37,17 +38,21 @@ envfile:
 
 python:
 	@echo "-> Build Python"
-	@if ! test -f ${BUILT_PYTHON_ARCHIVE}; then \
-		mkdir ${PYTHON_LINUX_SUPPORT_DIR} \
-		&& wget https://github.com/beeware/Python-Linux-support/archive/refs/heads/main.tar.gz -O - | tar xzv --directory ${PYTHON_LINUX_SUPPORT_DIR} --strip-components=1 \
-		&& cp resources/${PYTHON_LINUX_SUPPORT_DIR}/Makefile resources/${PYTHON_LINUX_SUPPORT_DIR}/exclude.list ${PYTHON_LINUX_SUPPORT_DIR} \
-		&& cd ${PYTHON_LINUX_SUPPORT_DIR} && $(MAKE) && cd .. \
-		&& cp ${PYTHON_LINUX_SUPPORT_DIR}/dist/${BUILT_PYTHON_ARCHIVE} . ;\
+	@if ! test -f ${PYTHON_APPIMAGE}; then \
+		wget https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage \
+		&& chmod u+x ${PYTHON_APPIMAGE} \
+		&& ./${PYTHON_APPIMAGE} --appimage-extract \
+		&& mv squashfs-root python3.10.AppDir;\
 	fi
+	mkdir -p python3.10.AppDir/opt/scancodeio
+	wget -c https://github.com/nexB/scancode.io/archive/refs/heads/scancode.io-appimage.tar.gz -O - | tar xz --directory=python3.10.AppDir/opt/scancodeio --strip-components=1
+	python3.10.AppDir/AppRun -m pip install python3.10.AppDir/opt/scancodeio
+	python3.10.AppDir/AppRun -m pip install --upgrade https://github.com/nexB/python-inspector/archive/refs/heads/update-cache-location.zip
+	python3.10.AppDir/AppRun -m pip install --upgrade packaging==21.3
 
 build: python
 	@echo "-> Build ScanCode.io AppImage"
 	@if ! test -f ${PKG2APPIMAGE_FILE}; then wget https://github.com/AppImageCommunity/pkg2appimage/releases/download/continuous/pkg2appimage-1807-x86_64.AppImage -O ${PKG2APPIMAGE_FILE}; chmod u+x ${PKG2APPIMAGE_FILE}; fi
-	@./${PKG2APPIMAGE_FILE} scancodeio.yml
+	@ARCH=x86_64 ./${PKG2APPIMAGE_FILE} scancodeio.yml
 
 .PHONY: envfile python build
