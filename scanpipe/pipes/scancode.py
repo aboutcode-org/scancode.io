@@ -423,8 +423,14 @@ def run_scancode(location, output_file, options, raise_on_error=False):
     options_from_settings = getattr(settings, "SCANCODE_TOOLKIT_CLI_OPTIONS", [])
     max_workers = get_max_workers(keep_available=1)
 
+    app_dir = os.environ.get('APPDIR')
+    if app_dir:
+        # We are in an AppImage, and should look for scancode at usr/bin/scancode
+        scancode_executable_path = str(Path(app_dir) / "usr/bin/scancode")
+    else:
+        scancode_executable_path = pipes.get_bin_executable("scancode")
     scancode_args = [
-        pipes.get_bin_executable("scancode"),
+        scancode_executable_path,
         shlex.quote(location),
         *options_from_settings,
         *options,
