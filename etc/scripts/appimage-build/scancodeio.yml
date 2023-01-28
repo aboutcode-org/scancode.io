@@ -20,19 +20,7 @@ ingredients:
     - libdevmapper1.02.1
     - libguestfs-tools
   script:
-  #   - wget -c https://github.com/niess/python-appimage/releases/download/python3.10/python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage
-  #   - chmod u+x python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage
-  #   - ./python3.10.9-cp310-cp310-manylinux2014_x86_64.AppImage --appimage-extract
-  #   - mv squashfs-root python3.10.AppDir
-  #   - wget -c https://github.com/nexB/scancode.io/archive/refs/heads/scancode.io-appimage.tar.gz
-  #   - tar xzvf scancode.io-appimage.tar.gz
-  #   - mv scancode.io-scancode.io-appimage scancodeio
-  #   - mv scancodeio python3.10.AppDir/opt/
-  #   - python3.10.AppDir/AppRun -m pip install python3.10.AppDir/opt/scancodeio
-  #   - python3.10.AppDir/AppRun -m pip install --upgrade https://github.com/nexB/python-inspector/archive/refs/heads/update-cache-location.zip
-  #   - python3.10.AppDir/AppRun -m pip install --upgrade packaging==21.3
     - cd .. && make envfile && mv .env scancodeio && cd scancodeio
-
 
 script:
   - env
