@@ -3,6 +3,6 @@ version: "3"
 services:
   builder:
     build: .
-    command: sh -c "cd /data && ARCH=x86_64 pkg2appimage scancodeio.yml && exit"
+    command: sh -c "cd /data && make python && ARCH=x86_64 pkg2appimage scancodeio.yml"
     volumes:
       - .:/data

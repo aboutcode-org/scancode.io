@@ -51,7 +51,6 @@ python:
 		&& mkdir -p ${PYTHON_APPDIR}/opt/scancodeio \
 		&& wget -c https://github.com/nexB/scancode.io/archive/refs/heads/scancode.io-appimage.tar.gz -O - | tar xz --directory=${PYTHON_APPDIR}/opt/scancodeio --strip-components=1 \
 		&& ${PYTHON_APPDIR}/AppRun -m pip install ${PYTHON_APPDIR}/opt/scancodeio \
-		&& ${PYTHON_APPDIR}/AppRun -m pip install --upgrade https://github.com/nexB/python-inspector/archive/refs/heads/update-cache-location.zip \
 		&& ${PYTHON_APPDIR}/AppRun -m pip install --upgrade packaging==21.3; \
 	fi
 
@@ -59,5 +58,9 @@ build: python
 	@echo "-> Build ScanCode.io AppImage"
 	@if ! test -f ${PKG2APPIMAGE_FILE}; then wget ${PKG2APPIMAGE_DOWNLOAD_URL} -O ${PKG2APPIMAGE_FILE}; chmod u+x ${PKG2APPIMAGE_FILE}; fi
 	@ARCH=x86_64 ./${PKG2APPIMAGE_FILE} scancodeio.yml
+
+build_docker: python
+	@echo "-> Build ScanCode.io AppImage using Docker"
+	@docker-compose run builder
 
 .PHONY: clean envfile python build
