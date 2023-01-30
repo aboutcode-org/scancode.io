@@ -50,4 +50,7 @@ RUN wget https://github.com/AppImageCommunity/pkg2appimage/releases/download/con
     ln -s /opt/pkg2appimage.AppDir/AppRun /usr/bin/pkg2appimage && \
     rm /tmp/pkg2appimage.AppImage
 
+WORKDIR /opt/pkg2appimage.AppDir/usr/share/pkg2appimage
+ADD resources/functions.sh .
+
 WORKDIR /

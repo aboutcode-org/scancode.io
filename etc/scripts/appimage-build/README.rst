@@ -7,9 +7,9 @@ Requirements
 Building
 --------
 
-Run ``make build`` to build the scancode.io AppImage. The built appimage will be located in the ``out/`` directory.
+Run ``make build_docker`` to build the scancode.io AppImage. You can also run ``make build`` to build the AppImage if you do not want to use Docker.
 
-You can also run ``docker-compose run builder`` to build the AppImage using Docker.
+The built appimage will be located in the ``out/`` directory.
 
 
 Usage
