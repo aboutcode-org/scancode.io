@@ -705,3 +705,69 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("https://github.com/uiri/toml", discoveredpackage.homepage_url)
         self.assertEqual("MIT", discoveredpackage.declared_license)
         self.assertEqual("mit", discoveredpackage.license_expression)
+
+    def test_scanpipe_inspect_manifest_pipeline_cyclonedx_document_integration_test(
+        self,
+    ):
+        pipeline_name = "inspect_manifest"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "cyclonedx/nested.bom.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(3, project1.discoveredpackages.count())
+        packages = project1.discoveredpackages.all()
+        expected_data = {
+            "pkg:pypi/toml@0.10.2?extension=tar.gz": {
+                "type": "pypi",
+                "name": "toml",
+                "version": "0.10.2",
+                "declared_license": "OFL-1.1\nApache-2.0",
+                "license_expression": "ofl-1.1 AND unknown",
+                "homepage_url": "https://cyclonedx.org/website",
+                "bug_tracking_url": "https://cyclonedx.org/issue-tracker",
+                "vcs_url": "https://cyclonedx.org/vcs",
+            },
+            "pkg:pypi/billiard@3.6.3.0": {
+                "type": "pypi",
+                "name": "billiard",
+                "version": "3.6.3.0",
+                "declared_license": "BSD-3-Clause",
+                "license_expression": "bsd-new",
+                "homepage_url": "",
+                "bug_tracking_url": "",
+                "vcs_url": "",
+                "extra_data": "",
+            },
+            "pkg:pypi/fictional@9.10.2": {
+                "type": "pypi",
+                "name": "fictional",
+                "version": "9.10.2",
+                "declared_license": (
+                    "LGPL-3.0-or-later"
+                    " AND "
+                    "LicenseRef-scancode-openssl-exception-lgpl3.0plus"
+                ),
+                "license_expression": (
+                    "lgpl-3.0-plus AND openssl-exception-lgpl-3.0-plus"
+                ),
+                "homepage_url": "",
+                "bug_tracking_url": "",
+                "vcs_url": "",
+                "extra_data": "",
+            },
+        }
+        for package in packages:
+            expected = expected_data[str(package)]
+            self.assertEqual(expected["type"], package.type)
+            self.assertEqual(expected["name"], package.name)
+            self.assertEqual(expected["version"], package.version)
+            self.assertEqual(expected["homepage_url"], package.homepage_url)
+            self.assertEqual(expected["declared_license"], package.declared_license)
+            self.assertEqual(expected["license_expression"], package.license_expression)
