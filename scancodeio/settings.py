@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import os
+import secrets
 import sys
 import tempfile
 from pathlib import Path
@@ -31,7 +33,25 @@ ROOT_DIR = PROJECT_DIR - 1
 
 # Environment
 
-ENV_FILE = "/etc/scancodeio/.env"
+ENV_FILE = os.environ.get("ENV_FILE")
+APPDIR = os.environ.get("APPDIR")
+
+if not ENV_FILE:
+    ENV_FILE = str(Path.home() / ".env-scancodeio")
+    # If we are in an AppImage and the .env file doesn't exist,
+    # then create a new envfile with settings specific for running
+    # scancode.io in an AppImage
+    if APPDIR and not Path(ENV_FILE).exists():
+        sqlite_db_location = str(Path.home() / "scancodeio.db")
+        workspace_location = str(Path.home() / "scancodeio-workspace")
+        # 37 bytes gives you a string of 50 characters
+        secret_key = secrets.token_urlsafe(37)
+        with open(ENV_FILE, "w") as f:
+            f.write(f"SECRET_KEY=\"{secret_key}\"\n")
+            f.write("SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\"\n")
+            f.write(f"SCANCODEIO_DB_NAME=\"{sqlite_db_location}\"\n")
+            f.write(f"SCANCODEIO_WORKSPACE_LOCATION=\"{workspace_location}\"\n")
+
 if not Path(ENV_FILE).exists():
     ENV_FILE = ROOT_DIR(".env")
 
