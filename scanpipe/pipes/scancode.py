@@ -177,7 +177,9 @@ def get_resource_info(location):
     return file_info
 
 
-def _scan_resource(location, scanners, with_threading=True):
+def _scan_resource(
+    location, scanners, timeout=scancode_cli.DEFAULT_TIMEOUT, with_threading=True
+):
     """
     Wraps the scancode-toolkit `scan_resource` method to support timeout on direct
     scanner functions calls.
@@ -189,6 +191,7 @@ def _scan_resource(location, scanners, with_threading=True):
     _, _, errors, _, results, _ = scancode_cli.scan_resource(
         location_rid,
         scanners,
+        timeout=timeout,
         with_threading=with_threading,
     )
     return results, errors
@@ -201,13 +204,22 @@ def scan_file(location, with_threading=True):
 
     Returns a dictionary of scan `results` and a list of `errors`.
     """
+    timeout = getattr(
+        settings, "SCANCODEIO_SCAN_FILE_TIMEOUT", scancode_cli.DEFAULT_TIMEOUT
+    )
+    print("timeout: " + str(timeout))
     scanners = [
         Scanner("copyrights", scancode_api.get_copyrights),
         Scanner("licenses", partial(scancode_api.get_licenses, include_text=True)),
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
-    return _scan_resource(location, scanners, with_threading)
+    return _scan_resource(
+        location=location,
+        scanners=scanners,
+        timeout=timeout,
+        with_threading=with_threading,
+    )
 
 
 def scan_for_package_data(location, with_threading=True):
@@ -423,7 +435,7 @@ def run_scancode(location, output_file, options, raise_on_error=False):
     options_from_settings = getattr(settings, "SCANCODE_TOOLKIT_CLI_OPTIONS", [])
     max_workers = get_max_workers(keep_available=1)
 
-    app_dir = os.environ.get('APPDIR')
+    app_dir = os.environ.get("APPDIR")
     if app_dir:
         # We are in an AppImage, and should look for scancode at usr/bin/scancode
         scancode_executable_path = str(Path(app_dir) / "usr/bin/scancode")

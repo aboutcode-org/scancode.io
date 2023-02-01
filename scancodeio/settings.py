@@ -47,10 +47,10 @@ if not ENV_FILE:
         # 37 bytes gives you a string of 50 characters
         secret_key = secrets.token_urlsafe(37)
         with open(ENV_FILE, "w") as f:
-            f.write(f"SECRET_KEY=\"{secret_key}\"\n")
-            f.write("SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\"\n")
-            f.write(f"SCANCODEIO_DB_NAME=\"{sqlite_db_location}\"\n")
-            f.write(f"SCANCODEIO_WORKSPACE_LOCATION=\"{workspace_location}\"\n")
+            f.write(f'SECRET_KEY="{secret_key}"\n')
+            f.write('SCANCODEIO_DB_ENGINE="django.db.backends.sqlite3"\n')
+            f.write(f'SCANCODEIO_DB_NAME="{sqlite_db_location}"\n')
+            f.write(f'SCANCODEIO_WORKSPACE_LOCATION="{workspace_location}"\n')
 
 if not Path(ENV_FILE).exists():
     ENV_FILE = ROOT_DIR(".env")
@@ -98,6 +98,9 @@ SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
 
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
+
+# Default to 2 minutes
+SCANCODEIO_SCAN_FILE_TIMEOUT = env.int("SCANCODEIO_SCAN_FILE_TIMEOUT", default=120)
 
 # Application definition
 
