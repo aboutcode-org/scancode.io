@@ -127,6 +127,9 @@ def resolve_spdx_packages(input_location):
 
 
 def cyclonedx_component_to_discovered_package_data(component_data):
+    """
+    Return package_data from CycloneDx component
+    """
     extra_data = {}
     component = component_data["cdx_package"]
 
@@ -169,9 +172,7 @@ def cyclonedx_component_to_discovered_package_data(component_data):
         **checksum_data,
     }
 
-    return {
-        key: value for key, value in package_data.items() if value not in [None, ""]
-    }
+    return {key: value for key, value in package_data.items() if value}
 
 
 def resolve_cyclonedx_packages(input_location):

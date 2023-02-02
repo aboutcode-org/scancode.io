@@ -24,6 +24,7 @@ import json
 import pathlib
 from typing import List
 
+import jsonschema
 from hoppr_cyclonedx_models.cyclonedx_1_4 import Component
 from hoppr_cyclonedx_models.cyclonedx_1_4 import (
     CyclonedxSoftwareBillOfMaterialsStandard as Bom_1_4,
@@ -42,6 +43,9 @@ CYCLONEDX_JSON_SCHEMA_URL = (
 
 
 def get_bom(cyclonedx_document: dict):
+    """
+    Return CycloneDx BOM object
+    """
     return Bom_1_4(**cyclonedx_document)
 
 
@@ -50,6 +54,9 @@ def get_components(bom: Bom_1_4):
 
 
 def bom_iterable_to_dict(iterable):
+    """
+    Return list dict from a list of CycloneDx item obj
+    """
     return [
         json.loads(obj.json(exclude_unset=True, by_alias=True))
         for obj in iterable or []
@@ -59,6 +66,9 @@ def bom_iterable_to_dict(iterable):
 def recursive_component_collector(
     root_component_list: List[Component], collected: List
 ):
+    """
+    Return list of components including the nested components
+    """
     for component in root_component_list or []:
         extra_data = (
             bom_iterable_to_dict(component.components)
@@ -71,6 +81,9 @@ def recursive_component_collector(
 
 
 def resolve_license(item):
+    """
+    Return license expression/id/name from license item
+    """
     return (
         item["expression"]
         if "expression" in item
@@ -83,6 +96,9 @@ def resolve_license(item):
 
 
 def get_declared_licenses(list_of_license_obj):
+    """
+    Return resolved license from list of LicenseChoice obj
+    """
     return "\n".join(
         [
             resolve_license(item)
@@ -92,6 +108,9 @@ def get_declared_licenses(list_of_license_obj):
 
 
 def get_checksums(component: Component):
+    """
+    Return dict of all the checksums from a component
+    """
     algorithm_map_cdx_scio = {
         "MD5": "md5",
         "SHA-1": "sha1",
@@ -106,6 +125,9 @@ def get_checksums(component: Component):
 
 
 def get_external_refrences(external_references):
+    """
+    Return dict of refrence urls from list of `externalRefrences` obj
+    """
     refrences = {
         "vcs": [],
         "issue-tracker": [],
@@ -133,17 +155,7 @@ def get_external_refrences(external_references):
 def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
     """
     CYCLONEDX document validation.
-    Requires the `jsonschema` library.
     """
-    try:
-        import jsonschema
-    except ModuleNotFoundError:
-        print(
-            "The `jsonschema` library is required to run the validation.\n"
-            "Install with: `pip install jsonschema`"
-        )
-        raise
-
     if isinstance(document, str):
         document = json.loads(document)
 
