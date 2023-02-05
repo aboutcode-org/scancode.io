@@ -20,12 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import tempfile
-
 from django.contrib import messages
 from django.shortcuts import render
 
 from scantext.forms import LicenseScanForm
+from scantext.forms import handle_input_file
+from scantext.forms import handle_input_text
 from scantext.match_text import get_licenses
 
 
@@ -66,33 +66,15 @@ def license_scanview(request):
             },
         )
 
-    # The flush in tempfile is required to ensure that the content is
-    # written to the disk before it's read by get_licenses function
     from commoncode.fileutils import get_temp_dir
 
     temp_dir = get_temp_dir(prefix="scantext_")
     if input_text:
-        with tempfile.NamedTemporaryFile(mode="w", dir=temp_dir) as temp_file:
-            temp_file.write(input_text)
-            temp_file.flush()
-            expressions = get_licenses(location=temp_file.name)
+        file_path = handle_input_text(input_text, temp_dir)
     elif input_file:
-        try:
-            with tempfile.NamedTemporaryFile(mode="w", dir=temp_dir) as temp_file:
-                input_text = str(input_file.read(), "UTF-8")
-                temp_file.write(input_text)
-                temp_file.flush()
-                expressions = get_licenses(location=temp_file.name)
-        except UnicodeDecodeError:
-            message = "Please upload a valid text file."
-            messages.warning(request, message)
-            return render(
-                request,
-                "scantext/license_scan_form.html",
-                {
-                    "form": LicenseScanForm(),
-                },
-            )
+        file_path = handle_input_file(input_file, temp_dir)
+
+    expressions = get_licenses(location=file_path)
 
     if not expressions:
         message = "Could not detect any license."

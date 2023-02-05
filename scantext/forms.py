@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import tempfile
+
 from django import forms
 
 
@@ -41,3 +43,24 @@ class LicenseScanForm(forms.Form):
             attrs={"class": "file-input", "multiple": False},
         ),
     )
+
+
+def handle_input_text(input_text, temp_dir):
+    # The flush in tempfile is required to ensure that the content is
+    # written to the disk before it's read by get_licenses function
+    with tempfile.NamedTemporaryFile(mode="w", dir=temp_dir, delete=False) as temp_file:
+        temp_file.write(input_text)
+        temp_file.flush()
+
+    return temp_file.name
+
+
+def handle_input_file(input_file, temp_dir):
+    # Save the input file to the temporary directory
+    with tempfile.NamedTemporaryFile(
+        mode="wb", dir=temp_dir, delete=False
+    ) as temp_file:
+        for chunk in input_file.chunks():
+            temp_file.write(chunk)
+
+    return temp_file.name
