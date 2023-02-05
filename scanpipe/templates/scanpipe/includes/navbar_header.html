@@ -9,9 +9,16 @@
       <a class="navbar-item" href="{% url 'project_list' %}">
         Projects
       </a>
-      <a class="navbar-item" href="{% url 'license_scan' %}">
-        Scan
-      </a>
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          Utilities
+        </a>
+        <div class="navbar-dropdown is-right">
+          <a class="navbar-item" href="{% url 'license_scan' %}">
+            Detect License
+          </a>
+        </div>
+      </div>
       <a class="navbar-item" href="https://scancodeio.readthedocs.org/" target="_blank">
         Documentation
       </a>
