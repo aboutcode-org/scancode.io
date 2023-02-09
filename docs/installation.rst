@@ -152,8 +152,16 @@ Run the App
 
 Start the ScanCode.io services::
 
-    docker compose --file docker-compose.yml up
+    docker-compose --file docker-compose.yml up
 
+ .. note::
+    You may encouter the following error due to the port 80 is in use::
+
+        ERROR: for build_nginx_1 Cannot start service nginx: driver failed programming ...
+
+    You can try the following command to fix it::
+
+         sudo systemctl stop nginx
 
 .. _local_development_installation:
 
