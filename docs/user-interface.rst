@@ -105,7 +105,8 @@ Archiving projects also makes navigating existing projects easier as the archive
 projects are hidden by default from the project list.
 
 Data cleanup of the project's :guilabel:`input/`, :guilabel:`codebase/`, and
-:guilabel:`output/` directories is available during the archive operation.
+:guilabel:`output/` directories is available during the archive operation. 
+(see :ref:`project_workspace` for folder details)
 
 .. tip::
     The project results are stored in the database and available to generate outputs
@@ -123,8 +124,8 @@ Data cleanup of the project's :guilabel:`input/`, :guilabel:`codebase/`, and
 Reset a Project
 ---------------
 
-The reset allows to wipe all database entrie and all data on disks related to a
-project while keeping the input files.
+The reset allows to wipe all database entries and all data on disks related to a
+project while keeping the :guilabel:`input/` files.
 It can be used to re-run pipelines on a clean slate of the project without having to
 re-upload input files.
 
