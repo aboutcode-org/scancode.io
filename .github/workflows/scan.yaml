@@ -1,0 +1,27 @@
+name: Scan Dependencies
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup scancode.io
+      run: |
+        wget https://github.com/nexB/scancode-toolkit/releases/download/v3.3.3/scancode-toolkit-3.3.3.tar.bz2
+        tar -xjf scancode-toolkit-3.3.3.tar.bz2
+        export PATH=$PATH:$PWD/scancode-toolkit-3.3.3
+    - name: Scan dependencies
+      run: |
+        scancode --sbom -f SPDX --json-pp results.json $GITHUB_WORKSPACE
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: sbom
+        path: results.json
