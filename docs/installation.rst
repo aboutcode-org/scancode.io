@@ -47,6 +47,10 @@ create an **environment file**, and **build the Docker image**::
     make envfile
     docker compose build
 
+.. warning::
+    As the ``docker-compose`` v1 command is officially deprecated by Docker, you will
+    only find references to the ``docker compose`` v2 command in this documentation.
+
 .. note::
     You need to rebuild the image whenever ScanCode.io's source code has been
     modified or updated.
