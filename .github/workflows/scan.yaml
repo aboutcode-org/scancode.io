@@ -1,4 +1,5 @@
-name: Scan Dependencies
+name: Scan Dependencies with ScanCode.io
+
 on:
   push:
     branches:
@@ -6,22 +7,27 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup scancode.io
-      run: |
-        wget https://github.com/nexB/scancode-toolkit/releases/download/v31.2.4/scancode-toolkit-v31.2.4_py3.8-linux.tar.gz
-        tar -xjf scancode-toolkit-v31.2.4_py3.8-linux.tar.gz
-        export PATH=$PATH:$PWD/scancode-toolkit-v31.2.4_py3.8-linux
-    - name: Scan dependencies
-      run: |
-        scancode --sbom -f SPDX --json-pp results.json $GITHUB_WORKSPACE
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: sbom
-        path: results.json
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup ScanCode.io
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          sudo pip3 install scancode-toolkit
+          sudo pip3 install scancodeio
+
+      - name: Scan dependencies
+        run: |
+          scancode --processes 2 -clp -f spdx -o results.json $GITHUB_WORKSPACE
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: sbom
+          path: results.json
