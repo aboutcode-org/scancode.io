@@ -14,8 +14,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Setup scancode.io
       run: |
-        wget https://github.com/nexB/scancode-toolkit/releases/download/v3.3.3/scancode-toolkit-3.3.3.tar.bz2
-        tar -xjf scancode-toolkit-3.3.3.tar.bz2
+        wget https://github.com/nexB/scancode-toolkit/releases/download/v31.2.4/scancode-toolkit-v31.2.4_py3.8-linux.tar.gz
+        tar -xjf scancode-toolkit-v31.2.4_py3.8-linux.tar.gz
         export PATH=$PATH:$PWD/scancode-toolkit-3.3.3
     - name: Scan dependencies
       run: |
