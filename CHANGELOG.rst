@@ -4,6 +4,8 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Add support for Python 3.11
+
 - Populate ``documentDescribes`` field with Package and Dependency SPDX IDs in
   SPDX BOM output.
   https://github.com/nexB/scancode.io/issues/564
