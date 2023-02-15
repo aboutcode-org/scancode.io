@@ -95,6 +95,7 @@ INSTALLED_APPS = (
     "django.contrib.humanize",
     # Third-party apps
     "crispy_forms",
+    "crispy_bootstrap3",  # required for the djangorestframework browsable API
     "django_filters",
     "rest_framework",
     "rest_framework.authtoken",

@@ -33,7 +33,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
 
@@ -78,6 +77,14 @@ class ScanPipeAPITest(TransactionTestCase):
 
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)
+
+    def test_scanpipe_api_browsable_formats_available(self):
+        response = self.csrf_client.get(self.project_list_url + "?format=api")
+        self.assertContains(response, self.project1_detail_url)
+        response = self.csrf_client.get(self.project_list_url + "?format=admin")
+        self.assertContains(response, self.project1_detail_url)
+        response = self.csrf_client.get(self.project_list_url + "?format=json")
+        self.assertContains(response, self.project1_detail_url)
 
     def test_scanpipe_api_project_list(self):
         response = self.csrf_client.get(self.project_list_url)
