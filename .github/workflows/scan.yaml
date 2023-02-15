@@ -16,7 +16,7 @@ jobs:
       run: |
         wget https://github.com/nexB/scancode-toolkit/releases/download/v31.2.4/scancode-toolkit-v31.2.4_py3.8-linux.tar.gz
         tar -xjf scancode-toolkit-v31.2.4_py3.8-linux.tar.gz
-        export PATH=$PATH:$PWD/scancode-toolkit-3.3.3
+        export PATH=$PATH:$PWD/scancode-toolkit-v31.2.4_py3.8-linux
     - name: Scan dependencies
       run: |
         scancode --sbom -f SPDX --json-pp results.json $GITHUB_WORKSPACE
