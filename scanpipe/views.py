@@ -199,6 +199,7 @@ class TabSetMixin:
 
         for label, tab_definition in self.tabset.items():
             tab_data = {
+                "verbose_name": tab_definition.get("verbose_name"),
                 "icon_class": tab_definition.get("icon_class"),
                 "template": tab_definition.get("template"),
                 "fields": self.get_fields_data(tab_definition.get("fields")),
@@ -797,8 +798,10 @@ def project_results_json_response(project, as_attachment=False):
         content_type="application/json",
     )
 
+    filename = output.safe_filename(f"scancodeio_{project.name}.json")
+
     if as_attachment:
-        response["Content-Disposition"] = f'attachment; filename="{project.name}.json"'
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     return response
 
@@ -813,13 +816,22 @@ class ProjectResultsView(
 
         if format == "json":
             return project_results_json_response(project, as_attachment=True)
-
         elif format == "xlsx":
             output_file = output.to_xlsx(project)
-            filename = f"{project.name}_{output_file.name}"
-            return FileResponse(output_file.open("rb"), filename=filename)
+        elif format == "spdx":
+            output_file = output.to_spdx(project)
+        elif format == "cyclonedx":
+            output_file = output.to_cyclonedx(project)
+        else:
+            raise Http404("Format not supported.")
 
-        raise Http404("Format not supported.")
+        filename = output.safe_filename(f"scancodeio_{project.name}_{output_file.name}")
+
+        return FileResponse(
+            output_file.open("rb"),
+            filename=filename,
+            as_attachment=True,
+        )
 
 
 class ProjectRelatedViewMixin:
@@ -1082,10 +1094,11 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fas fa-plus-square",
         },
-        "extra data": {
+        "extra_data": {
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
+            "verbose_name": "Extra data",
             "icon_class": "fas fa-database",
         },
     }
@@ -1139,11 +1152,17 @@ class DiscoveredDependencyDetailsView(
 @conditional_login_required
 def run_detail_view(request, uuid):
     template = "scanpipe/includes/run_modal_content.html"
-    run = get_object_or_404(Run, uuid=uuid)
-    status_summary = count_group_by(run.project.codebaseresources, "status")
+    run_qs = Run.objects.select_related("project").prefetch_related(
+        "project__webhooksubscriptions",
+    )
+    run = get_object_or_404(run_qs, uuid=uuid)
+    project = run.project
+    status_summary = count_group_by(project.codebaseresources, "status")
 
     context = {
         "run": run,
+        "project": project,
+        "webhook_subscriptions": project.webhooksubscriptions.all(),
         "status_summary": status_summary,
     }
 
@@ -1159,6 +1178,8 @@ def run_status_view(request, uuid):
     current_status = request.GET.get("current_status")
     if current_status and current_status != run.status:
         context["status_changed"] = True
+
+    context["display_current_step"] = request.GET.get("display_current_step")
 
     return render(request, template, context)
 

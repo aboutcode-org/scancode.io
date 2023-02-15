@@ -51,6 +51,12 @@
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
               XLSX <i class="fas fa-download ml-1"></i>
             </a>
+            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'spdx' %}">
+              SPDX <i class="fas fa-download ml-1"></i>
+            </a>
+            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'cyclonedx' %}">
+              CycloneDX <i class="fas fa-download ml-1"></i>
+            </a>
           </div>
         </article>
       {% elif not project.runs.all %}
@@ -104,10 +110,12 @@
       {% endif %}
     </section>
 
-    <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.uuid %}" hx-trigger="load">
-      <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
-      Loading the charts...
-    </section>
+    {% if project.resource_count or project.package_count %}
+      <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.uuid %}" hx-trigger="load">
+        <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
+        Loading the charts...
+      </section>
+    {% endif %}
   </div>
 
   {% include 'scanpipe/includes/run_modal.html' %}

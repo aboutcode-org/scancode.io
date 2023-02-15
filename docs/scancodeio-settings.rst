@@ -109,6 +109,10 @@ synchronously in the web server process.
     The ASYNC mode required a **Redis server** and running a **tasks worker** using
     ``$ make worker``.
 
+    On macOS, the ASYNC mode requires the following line in your environment::
+
+        export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+
 SCANCODE_TOOLKIT_CLI_OPTIONS
 ----------------------------
 

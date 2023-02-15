@@ -6,7 +6,13 @@
           {% if tab_data.icon_class %}
             <span class="icon is-small"><i class="{{ tab_data.icon_class }}"></i></span>
           {% endif %}
-          <span>{{ label|capfirst }}</span>
+          <span>
+            {% if tab_data.verbose_name %}
+              {{ tab_data.verbose_name }}
+            {% else %}
+              {{ label|capfirst }}
+            {% endif %}
+          </span>
         </a>
       </li>
     {% endfor %}

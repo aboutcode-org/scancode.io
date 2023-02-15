@@ -33,7 +33,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
 
@@ -78,6 +77,14 @@ class ScanPipeAPITest(TransactionTestCase):
 
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)
+
+    def test_scanpipe_api_browsable_formats_available(self):
+        response = self.csrf_client.get(self.project_list_url + "?format=api")
+        self.assertContains(response, self.project1_detail_url)
+        response = self.csrf_client.get(self.project_list_url + "?format=admin")
+        self.assertContains(response, self.project1_detail_url)
+        response = self.csrf_client.get(self.project_list_url + "?format=json")
+        self.assertContains(response, self.project1_detail_url)
 
     def test_scanpipe_api_project_list(self):
         response = self.csrf_client.get(self.project_list_url)
@@ -311,7 +318,7 @@ class ScanPipeAPITest(TransactionTestCase):
         url = reverse("project-results-download", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
 
-        expected = 'attachment; filename="Analysis.json"'
+        expected = 'attachment; filename="scancodeio_analysis.json"'
         self.assertEqual(expected, response["Content-Disposition"])
         self.assertEqual("application/json", response["Content-Type"])
 
@@ -330,8 +337,12 @@ class ScanPipeAPITest(TransactionTestCase):
         url = reverse("project-resources", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
 
-        self.assertEqual(1, len(response.data))
-        resource = response.data[0]
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        resource = response.data["results"][0]
         self.assertEqual(
             ["pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"],
             resource["for_packages"],
@@ -344,16 +355,35 @@ class ScanPipeAPITest(TransactionTestCase):
         self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR
         self.resource1.save()
         response = self.csrf_client.get(url)
-        self.assertEqual("error", response.data[0]["compliance_alert"])
+        self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
 
-        self.assertEqual(1, len(response.data))
-        package = response.data[0]
+        package = response.data["results"][0]
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package["purl"])
         self.assertEqual("adduser", package["name"])
+
+    def test_scanpipe_api_project_action_dependencies(self):
+        url = reverse("project-dependencies", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        dependency = response.data["results"][0]
+        self.assertEqual(dependency_data1["purl"], dependency["purl"])
+        self.assertEqual(dependency_data1["scope"], dependency["scope"])
+        self.assertEqual(dependency_data1["is_runtime"], dependency["is_runtime"])
+        self.assertEqual(
+            dependency_data1["dependency_uid"], dependency["dependency_uid"]
+        )
 
     def test_scanpipe_api_project_action_errors(self):
         url = reverse("project-errors", args=[self.project1.uuid])
@@ -362,8 +392,12 @@ class ScanPipeAPITest(TransactionTestCase):
         )
 
         response = self.csrf_client.get(url)
-        self.assertEqual(1, len(response.data))
-        error = response.data[0]
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        error = response.data["results"][0]
         self.assertEqual("ModelName", error["model"])
         self.assertEqual({}, error["details"])
         self.assertEqual("Error", error["message"])

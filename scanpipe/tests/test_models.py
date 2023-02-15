@@ -44,6 +44,7 @@ from django.test import override_settings
 from django.utils import timezone
 
 from packagedcode.models import PackageData
+from requests.exceptions import RequestException
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
@@ -112,6 +113,12 @@ class ScanPipeModelsTest(TestCase):
         self.project1.clear_tmp_directory()
         self.assertTrue(self.project1.tmp_path.exists())
         self.assertEqual([], list(self.project1.tmp_path.glob("*")))
+
+        self.assertTrue(self.project1.tmp_path.exists())
+        shutil.rmtree(self.project1.work_path, ignore_errors=True)
+        self.assertFalse(self.project1.tmp_path.exists())
+        self.project1.clear_tmp_directory()
+        self.assertTrue(self.project1.tmp_path.exists())
 
     def test_scanpipe_project_model_archive(self):
         (self.project1.input_path / "input_file").touch()
@@ -723,12 +730,12 @@ class ScanPipeModelsTest(TestCase):
         run1.refresh_from_db()
         self.assertEqual("line1\nline2\n", run1.log)
 
-    @mock.patch("scanpipe.models.WebhookSubscription.send")
-    def test_scanpipe_run_model_send_project_subscriptions(self, mock_send):
+    @mock.patch("scanpipe.models.WebhookSubscription.deliver")
+    def test_scanpipe_run_model_deliver_project_subscriptions(self, mock_deliver):
         self.project1.add_webhook_subscription("https://localhost")
         run1 = self.create_run()
-        run1.send_project_subscriptions()
-        mock_send.assert_called_once_with(pipeline_run=run1)
+        run1.deliver_project_subscriptions()
+        mock_deliver.assert_called_once_with(pipeline_run=run1)
 
     def test_scanpipe_run_model_profile_method(self):
         run1 = self.create_run()
@@ -1353,20 +1360,32 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected_paths, result)
 
     @mock.patch("requests.post")
-    def test_scanpipe_webhook_subscription_send_method(self, mock_post):
+    def test_scanpipe_webhook_subscription_deliver_method(self, mock_post):
         webhook = self.project1.add_webhook_subscription("https://localhost")
-        self.assertFalse(webhook.sent)
+        self.assertFalse(webhook.delivered)
         run1 = self.create_run()
 
-        mock_post.return_value = mock.Mock(status_code=404)
-        webhook.send(pipeline_run=run1)
+        mock_post.side_effect = RequestException("Error from exception")
+        self.assertFalse(webhook.deliver(pipeline_run=run1))
         webhook.refresh_from_db()
-        self.assertFalse(webhook.sent)
+        self.assertEqual("Error from exception", webhook.delivery_error)
+        self.assertFalse(webhook.delivered)
+        self.assertFalse(webhook.success)
 
-        mock_post.return_value = mock.Mock(status_code=200)
-        webhook.send(pipeline_run=run1)
+        mock_post.side_effect = None
+        mock_post.return_value = mock.Mock(status_code=404, text="text")
+        self.assertTrue(webhook.deliver(pipeline_run=run1))
         webhook.refresh_from_db()
-        self.assertTrue(webhook.sent)
+        self.assertTrue(webhook.delivered)
+        self.assertFalse(webhook.success)
+        self.assertEqual("text", webhook.response_text)
+
+        mock_post.return_value = mock.Mock(status_code=200, text="text")
+        self.assertTrue(webhook.deliver(pipeline_run=run1))
+        webhook.refresh_from_db()
+        self.assertTrue(webhook.delivered)
+        self.assertTrue(webhook.success)
+        self.assertEqual("text", webhook.response_text)
 
     def test_scanpipe_discovered_package_model_extract_purl_data(self):
         package_data = {}
@@ -1415,14 +1434,41 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["description"], updated_fields)
         self.assertEqual(new_data["description"], package.description)
 
+    def test_scanpipe_discovered_package_model_as_cyclonedx(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        expected_repr = (
+            "<Component group=None, name=adduser, version=3.118, type=library>"
+        )
+        cyclonedx_component = package.as_cyclonedx()
+        self.assertEqual(expected_repr, repr(cyclonedx_component))
+
+        self.assertEqual(package_data1["name"], cyclonedx_component.name)
+        self.assertEqual(package_data1["version"], cyclonedx_component.version)
+        purl = "pkg:deb/debian/adduser@3.118?arch=all"
+        self.assertEqual(purl, str(cyclonedx_component.bom_ref))
+        self.assertEqual(purl, cyclonedx_component.purl)
+        self.assertEqual(1, len(cyclonedx_component.licenses))
+        self.assertEqual(
+            "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown",
+            cyclonedx_component.licenses[0].expression,
+        )
+        self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
+        self.assertEqual(package_data1["description"], cyclonedx_component.description)
+        self.assertEqual(1, len(cyclonedx_component.hashes))
+        self.assertEqual(package_data1["md5"], cyclonedx_component.hashes[0].content)
+        external_references = cyclonedx_component.external_references
+        self.assertEqual(1, len(external_references))
+        self.assertEqual("website", external_references[0].type)
+        self.assertEqual("https://packages.debian.org", external_references[0].url)
+
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
         self.assertEqual(40, len(basic_user.auth_token.key))
 
     def test_scanpipe_discovered_dependency_model_update_from_data(self):
-        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        resource = CodebaseResource.objects.create(
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
+        CodebaseResource.objects.create(
             project=self.project1, path="data.tar.gz-extract/Gemfile.lock"
         )
         dependency = DiscoveredDependency.create_from_data(
