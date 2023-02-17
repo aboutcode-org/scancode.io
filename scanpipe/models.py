@@ -1360,7 +1360,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 )
                 self.set_task_ended(
                     exitcode=1,
-                    output=f"Job was moved to the FailedJobRegistry during cleanup",
+                    output="Job was moved to the FailedJobRegistry during cleanup",
                 )
 
             else:

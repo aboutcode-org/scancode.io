@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
-from django.conf import settings
 
 from rq.queue import Queue
 from rq.worker import Worker

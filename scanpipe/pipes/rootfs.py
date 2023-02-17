@@ -214,7 +214,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     DiscoveredPackage; otherwise, keep that as a missing file.
     """
     if not rootfs.distro:
-        raise DistroNotFound(f"Distro not found.")
+        raise DistroNotFound("Distro not found.")
 
     distro_id = rootfs.distro.identifier
     if distro_id not in SUPPORTED_DISTROS:

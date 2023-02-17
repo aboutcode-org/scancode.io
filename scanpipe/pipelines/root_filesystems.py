@@ -119,7 +119,8 @@ class RootFS(Pipeline):
 
     def match_not_analyzed_to_system_packages(self):
         """
-        Matches "not-yet-analyzed" files to files already belong to system packages.
+        Matches files with "not-yet-analyzed" status to files already belonging to
+        system packages.
         """
         rootfs.match_not_analyzed(
             self.project,
@@ -129,7 +130,8 @@ class RootFS(Pipeline):
 
     def match_not_analyzed_to_application_packages(self):
         """
-        Matches "not-yet-analyzed" files to files already belong to application packages.
+        Matches files with "not-yet-analyzed" status to files already belonging to
+        application packages.
         """
         # TODO: do it one rootfs at a time e.g. for rfs in self.root_filesystems:
         rootfs.match_not_analyzed(

@@ -192,7 +192,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
     DiscoveredPackage; otherwise, keep that as a missing file.
     """
     if not image.distro:
-        raise rootfs.DistroNotFound(f"Distro not found.")
+        raise rootfs.DistroNotFound("Distro not found.")
 
     distro_id = image.distro.identifier
     if distro_id not in rootfs.SUPPORTED_DISTROS:

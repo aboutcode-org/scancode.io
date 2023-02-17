@@ -183,7 +183,7 @@ class ScanPipeConfig(AppConfig):
                 )
 
             else:
-                logger.debug(style.WARNING(f"Policies file not found."))
+                logger.debug(style.WARNING("Policies file not found."))
 
     @staticmethod
     def get_policies_index(policies_list, key):
