@@ -66,7 +66,7 @@ envfile:
 
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"
-	@${ACTIVATE} isort .
+	@${ACTIVATE} isort --profile black .
 
 black:
 	@echo "-> Apply black code formatter"
@@ -82,7 +82,7 @@ check: doc8
 	@echo "-> Run pycodestyle (PEP8) validation"
 	@${ACTIVATE} pycodestyle ${PYCODESTYLE_ARGS} .
 	@echo "-> Run isort imports ordering validation"
-	@${ACTIVATE} isort --check-only .
+	@${ACTIVATE} isort --profile black --check-only .
 	@echo "-> Run black validation"
 	@${ACTIVATE} black --check ${BLACK_ARGS} .
 
