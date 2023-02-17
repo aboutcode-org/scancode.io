@@ -56,7 +56,7 @@ class Pipeline:
     @classmethod
     def get_steps(cls):
         """
-        Raises a deprecation warning when the steps are defined as a tuple instead of
+        Raise a deprecation warning when the steps are defined as a tuple instead of
         a classmethod.
         """
         if callable(cls.steps):
@@ -71,14 +71,14 @@ class Pipeline:
     @classmethod
     def get_doc(cls):
         """
-        Returns a docstring.
+        Return a docstring.
         """
         return getdoc(cls)
 
     @classmethod
     def get_graph(cls):
         """
-        Returns a graph of steps.
+        Return a graph of steps.
         """
         return [
             {"name": step.__name__, "doc": getdoc(step)} for step in cls.get_steps()
@@ -87,7 +87,7 @@ class Pipeline:
     @classmethod
     def get_info(cls):
         """
-        Returns a dictionary of combined data about the current pipeline.
+        Return a dictionary of combined data about the current pipeline.
         """
         return {
             "description": cls.get_doc(),
@@ -96,7 +96,7 @@ class Pipeline:
 
     def log(self, message):
         """
-        Logs the given `message` to the current module logger and Run instance.
+        Log the given `message` to the current module logger and Run instance.
         """
         now_as_localtime = timezone.localtime(timezone.now())
         timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
@@ -105,6 +105,9 @@ class Pipeline:
         self.run.append_to_log(message, save=True)
 
     def execute(self):
+        """
+        Execute each steps in the order defined on this pipeline class.
+        """
         self.log(f"Pipeline [{self.pipeline_name}] starting")
         steps = self.get_steps()
         steps_count = len(steps)
@@ -134,6 +137,9 @@ class Pipeline:
         return 0, ""
 
     def add_error(self, error):
+        """
+        Create a `ProjectError` record on the current `project`.
+        """
         self.project.add_error(error, model=self.pipeline_name)
 
     @contextmanager
@@ -154,7 +160,7 @@ class Pipeline:
 
 def is_pipeline(obj):
     """
-    Returns True if the `obj` is a subclass of `Pipeline` except for the
+    Return True if the `obj` is a subclass of `Pipeline` except for the
     `Pipeline` class itself.
     """
     return inspect.isclass(obj) and issubclass(obj, Pipeline) and obj is not Pipeline
@@ -162,7 +168,7 @@ def is_pipeline(obj):
 
 def profile(step):
     """
-    Profiles a Pipeline step and save the results as HTML file in the project output
+    Profile a Pipeline step and save the results as HTML file in the project output
     directory.
 
     Usage:

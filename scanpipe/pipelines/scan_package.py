@@ -63,7 +63,7 @@ class ScanPackage(Pipeline):
 
     def get_package_archive_input(self):
         """
-        Locates the input package archive in the project's input/ directory.
+        Locate the input package archive in the project's input/ directory.
         """
         input_files = self.project.input_files
         inputs = list(self.project.inputs())
@@ -75,7 +75,7 @@ class ScanPackage(Pipeline):
 
     def collect_archive_information(self):
         """
-        Collects and store information about the input archive in the project.
+        Collect and store information about the input archive in the project.
         """
         self.project.update_extra_data(
             {
@@ -87,7 +87,7 @@ class ScanPackage(Pipeline):
 
     def extract_archive_to_codebase_directory(self):
         """
-        Extracts package archive with extractcode.
+        Extract package archive with extractcode.
         """
         extract_errors = extract_archive(self.archive_path, self.project.codebase_path)
 
@@ -96,7 +96,7 @@ class ScanPackage(Pipeline):
 
     def run_scancode(self):
         """
-        Scans extracted codebase/ content.
+        Scan extracted codebase/ content.
         """
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
@@ -114,13 +114,13 @@ class ScanPackage(Pipeline):
 
     def build_inventory_from_scan(self):
         """
-        Processes a JSON Scan results file to populate codebase resources and packages.
+        Process a JSON Scan results file to populate codebase resources and packages.
         """
         scancode.create_inventory_from_scan(self.project, self.scan_output_location)
 
     def make_summary_from_scan_results(self):
         """
-        Builds a summary in JSON format from the generated scan results.
+        Build a summary in JSON format from the generated scan results.
         """
         summary = scancode.make_results_summary(self.project, self.scan_output_location)
         output_file = self.project.get_output_file_path("summary", "json")

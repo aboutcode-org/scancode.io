@@ -53,14 +53,14 @@ class ScanCodebase(Pipeline):
 
     def copy_inputs_to_codebase_directory(self):
         """
-        Copies input files to the project's codebase/ directory.
+        Copy input files to the project's codebase/ directory.
         The code can also be copied there prior to running the Pipeline.
         """
         copy_inputs(self.project.inputs(), self.project.codebase_path)
 
     def extract_archives(self):
         """
-        Extracts archives with extractcode.
+        Extract archives with extractcode.
         """
         extract_errors = scancode.extract_archives(
             location=self.project.codebase_path,
@@ -72,7 +72,7 @@ class ScanCodebase(Pipeline):
 
     def collect_and_create_codebase_resources(self):
         """
-        Collects and create codebase resources.
+        Collect and create codebase resources.
         """
         for resource_path in self.project.walk_codebase_path():
             pipes.make_codebase_resource(
@@ -82,18 +82,18 @@ class ScanCodebase(Pipeline):
 
     def tag_empty_files(self):
         """
-        Flags empty files.
+        Flag empty files.
         """
         rootfs.tag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """
-        Scans unknown resources for packages information.
+        Scan unknown resources for packages information.
         """
         scancode.scan_for_application_packages(self.project)
 
     def scan_for_files(self):
         """
-        Scans unknown resources for copyrights, licenses, emails, and urls.
+        Scan unknown resources for copyrights, licenses, emails, and urls.
         """
         scancode.scan_for_files(self.project)

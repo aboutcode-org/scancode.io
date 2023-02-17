@@ -39,7 +39,7 @@ class LoadInventory(Pipeline):
 
     def get_scan_json_inputs(self):
         """
-        Locates all the ScanCode JSON scan results from the project's input/ directory.
+        Locate all the ScanCode JSON scan results from the project's input/ directory.
         This includes all files with a .json extension.
         """
         self.input_locations = [
@@ -49,7 +49,7 @@ class LoadInventory(Pipeline):
 
     def build_inventory_from_scans(self):
         """
-        Processes JSON scan results files to populate codebase resources and packages.
+        Process JSON scan results files to populate codebase resources and packages.
         """
         for input_location in self.input_locations:
             scancode.create_inventory_from_scan(self.project, input_location)

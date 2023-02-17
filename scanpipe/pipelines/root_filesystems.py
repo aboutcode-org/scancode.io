@@ -52,7 +52,7 @@ class RootFS(Pipeline):
 
     def extract_input_files_to_codebase_directory(self):
         """
-        Extracts root filesystem input archives with extractcode.
+        Extract root filesystem input archives with extractcode.
         """
         input_files = self.project.inputs("*")
         target_path = self.project.codebase_path
@@ -68,13 +68,13 @@ class RootFS(Pipeline):
 
     def find_root_filesystems(self):
         """
-        Finds root filesystems in the project's codebase/.
+        Find root filesystems in the project's codebase/.
         """
         self.root_filesystems = list(rootfs.RootFs.from_project_codebase(self.project))
 
     def collect_rootfs_information(self):
         """
-        Collects and stores rootfs information in the project.
+        Collect and stores rootfs information in the project.
         """
         rootfs_data = {}
         for rfs in self.root_filesystems:
@@ -85,14 +85,14 @@ class RootFS(Pipeline):
 
     def collect_and_create_codebase_resources(self):
         """
-        Collects and labels all image files as CodebaseResource.
+        Collect and label all image files as CodebaseResource.
         """
         for rfs in self.root_filesystems:
             rootfs.create_codebase_resources(self.project, rfs)
 
     def collect_and_create_system_packages(self):
         """
-        Collects installed system packages for each rootfs based on the distro.
+        Collect installed system packages for each rootfs based on the distro.
         The collection of system packages is only available for known distros.
         """
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
@@ -101,25 +101,25 @@ class RootFS(Pipeline):
 
     def tag_uninteresting_codebase_resources(self):
         """
-        Flags files—not worth tracking—that don’t belong to any system packages.
+        Flag files—not worth tracking—that don’t belong to any system packages.
         """
         rootfs.tag_uninteresting_codebase_resources(self.project)
 
     def tag_empty_files(self):
         """
-        Flags empty files.
+        Flag empty files.
         """
         rootfs.tag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """
-        Scans unknown resources for packages information.
+        Scan unknown resources for packages information.
         """
         scancode.scan_for_application_packages(self.project)
 
     def match_not_analyzed_to_system_packages(self):
         """
-        Matches files with "not-yet-analyzed" status to files already belonging to
+        Match files with "not-yet-analyzed" status to files already belonging to
         system packages.
         """
         rootfs.match_not_analyzed(
@@ -130,7 +130,7 @@ class RootFS(Pipeline):
 
     def match_not_analyzed_to_application_packages(self):
         """
-        Matches files with "not-yet-analyzed" status to files already belonging to
+        Match files with "not-yet-analyzed" status to files already belonging to
         application packages.
         """
         # TODO: do it one rootfs at a time e.g. for rfs in self.root_filesystems:
@@ -142,18 +142,18 @@ class RootFS(Pipeline):
 
     def scan_for_files(self):
         """
-        Scans unknown resources for copyrights, licenses, emails, and urls.
+        Scan unknown resources for copyrights, licenses, emails, and urls.
         """
         scancode.scan_for_files(self.project)
 
     def analyze_scanned_files(self):
         """
-        Analyzes single file scan results for completeness.
+        Analyze single file scan results for completeness.
         """
         pipes.analyze_scanned_files(self.project)
 
     def tag_not_analyzed_codebase_resources(self):
         """
-        Checks for any leftover files for sanity; there should be none.
+        Check for any leftover files for sanity; there should be none.
         """
         pipes.tag_not_analyzed_codebase_resources(self.project)
