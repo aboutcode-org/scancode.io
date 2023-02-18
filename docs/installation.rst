@@ -234,11 +234,16 @@ production servers.
 
     make postgresdb
 
+.. warning::
+   If after running ``make postgresdb``, getting error ``createdb: error: database creation failed: ERROR:  new collation (en_US.UTF-8) is incompatible with the collation of the template database (en_IN)``, then replace ``--lc-collate=en_IN.UTF-8`` with ``--lc-collate=en_US.UTF-8`` and ``--lc-ctype=en_IN.UTF-8`` with ``--lc-ctype=en_US.UTF-8``, or can follow the `Solution <https://stackoverflow.com/questions/18870775/how-to-change-the-template-database-collection-coding/60396581#60396581>`_ and `PostgreSQL documentation <https://www.postgresql.org/docs/current/manage-ag-templatedbs.html>`_ on Templates.
+
+
 .. note::
     You can also use a **SQLite** database for local development as a single user
     with::
 
         make sqlitedb
+
 
 .. warning::
     Choosing SQLite over PostgreSQL has some caveats. Check this `link
