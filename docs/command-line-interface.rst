@@ -3,9 +3,18 @@
 Command Line Interface
 ======================
 
-The main entry point is the :guilabel:`scanpipe` command which is available
-directly when you are in the activated virtualenv or at this path:
-``<scancode.io_root_dir>/bin/scanpipe``
+A ``scanpipe`` command can be executed through the ``docker compose`` command line
+interface with::
+
+    docker compose exec -it web scanpipe COMMAND
+
+Alternatively, you can start a ``bash`` session in a new Docker container to execute
+multiple ``scanpipe`` commands::
+
+    docker compose run web bash
+    scanpipe COMMAND
+    scanpipe COMMAND
+    ...
 
 .. warning::
     In order to add local input files to a project using the Command Line Interface,
@@ -18,8 +27,12 @@ directly when you are in the activated virtualenv or at this path:
     .. code-block:: bash
 
         docker compose run --volume /home/sources:/sources:ro \
-            web ./manage.py create-project my-project --input-file="/sources/image.tar"
+            web scanpipe create-project my_project --input-file="/sources/image.tar"
 
+.. note::
+    In a local development installation, the ``scanpipe`` command is directly
+    available as an entry point in your virtualenv and is located at
+    ``<scancode.io_root_dir>/bin/scanpipe``.
 
 `$ scanpipe --help`
 -------------------
