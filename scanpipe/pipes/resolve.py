@@ -128,7 +128,7 @@ def resolve_spdx_packages(input_location):
 
 def cyclonedx_component_to_discovered_package_data(component_data):
     """
-    Return package_data from CycloneDx component
+    Return package_data from CycloneDx component.
     """
     extra_data = {}
     component = component_data["cdx_package"]
@@ -141,26 +141,26 @@ def cyclonedx_component_to_discovered_package_data(component_data):
 
     checksum_data = cyclonedx.get_checksums(component)
     external_references = cyclonedx.get_external_refrences(component.externalReferences)
-    homepage_url = (
-        external_references["website"][0] if "website" in external_references else ""
-    )
-    bug_tracking_url = (
-        external_references["issue-tracker"][0]
-        if "issue-tracker" in external_references
-        else ""
-    )
-    vcs_url = external_references["vcs"][0] if "vcs" in external_references else ""
+
+    if homepage_url := external_references.get("website"):
+        homepage_url = homepage_url[0]
+
+    if bug_tracking_url := external_references.get("issue-tracker"):
+        bug_tracking_url = bug_tracking_url[0]
+
+    if vcs_url := external_references.get("vcs"):
+        vcs_url = vcs_url[0]
 
     if external_references:
         extra_data["externalReferences"] = external_references
     if component_data["nested_components"]:
         extra_data["nestedComponents"] = component_data["nested_components"]
 
+    declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
+
     package_data = {
         "name": component.name,
-        "declared_license": cyclonedx.get_declared_licenses(
-            list_of_license_obj=component.licenses
-        ),
+        "declared_license": declared_license,
         "copyright": component.copyright,
         "version": component.version,
         "description": component.description,

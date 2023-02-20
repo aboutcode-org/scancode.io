@@ -22,7 +22,6 @@
 
 import json
 import pathlib
-from typing import List
 
 import jsonschema
 from hoppr_cyclonedx_models.cyclonedx_1_4 import Component
@@ -35,7 +34,6 @@ CYCLONEDX_JSON_SCHEMA_LOCATION = "bom-1.4.schema.json"
 CYCLONEDX_JSON_SCHEMA_PATH = (
     pathlib.Path(__file__).parent / CYCLONEDX_JSON_SCHEMA_LOCATION
 )
-
 CYCLONEDX_JSON_SCHEMA_URL = (
     "https://raw.githubusercontent.com/"
     "CycloneDX/specification/master/schema/bom-1.4.schema.json"
@@ -44,34 +42,41 @@ CYCLONEDX_JSON_SCHEMA_URL = (
 
 def get_bom(cyclonedx_document: dict):
     """
-    Return CycloneDx BOM object
+    Return CycloneDx BOM object.
     """
     return Bom_1_4(**cyclonedx_document)
 
 
 def get_components(bom: Bom_1_4):
+    """
+    Return list of components from CycloneDx BOM.
+    """
     return recursive_component_collector(bom.components, [])
 
 
-def bom_iterable_to_dict(iterable):
+def bom_attributes_to_dict(cyclonedx_attributes):
     """
-    Return list dict from a list of CycloneDx item obj
+    Return list dict from a list of CycloneDx attributes.
     """
+    if not cyclonedx_attributes:
+        return {}
+
     return [
-        json.loads(obj.json(exclude_unset=True, by_alias=True))
-        for obj in iterable or []
+        json.loads(attribute.json(exclude_unset=True, by_alias=True))
+        for attribute in cyclonedx_attributes
     ]
 
 
-def recursive_component_collector(
-    root_component_list: List[Component], collected: List
-):
+def recursive_component_collector(root_component_list, collected):
     """
-    Return list of components including the nested components
+    Return list of components including the nested components.
     """
-    for component in root_component_list or []:
+    if not root_component_list:
+        return
+
+    for component in root_component_list:
         extra_data = (
-            bom_iterable_to_dict(component.components)
+            bom_attributes_to_dict(component.components)
             if component.components is not None
             else {}
         )
@@ -80,37 +85,37 @@ def recursive_component_collector(
     return collected
 
 
-def resolve_license(item):
+def resolve_license(license):
     """
-    Return license expression/id/name from license item
+    Return license expression/id/name from license item.
     """
-    return (
-        item["expression"]
-        if "expression" in item
-        else (
-            item["license"]["id"]
-            if "id" in item["license"]
-            else item["license"]["name"]
-        )
-    )
+    if "expression" in license:
+        return license["expression"]
+    elif "id" in license["license"]:
+        return license["license"]["id"]
+    else:
+        return license["license"]["name"]
 
 
-def get_declared_licenses(list_of_license_obj):
+def get_declared_licenses(licenses):
     """
-    Return resolved license from list of LicenseChoice obj
+    Return resolved license from list of LicenseChoice.
     """
+    if not licenses:
+        return ""
+
     return "\n".join(
-        [
-            resolve_license(item)
-            for item in bom_iterable_to_dict(list_of_license_obj) or []
-        ]
+        [resolve_license(license) for license in bom_attributes_to_dict(licenses)]
     )
 
 
 def get_checksums(component: Component):
     """
-    Return dict of all the checksums from a component
+    Return dict of all the checksums from a component.
     """
+    if not component.hashes:
+        return {}
+
     algorithm_map_cdx_scio = {
         "MD5": "md5",
         "SHA-1": "sha1",
@@ -118,16 +123,19 @@ def get_checksums(component: Component):
         "SHA-512": "sha512",
     }
     return {
-        algorithm_map_cdx_scio[hash_.alg.value]: hash_.content.__root__
-        for hash_ in component.hashes or []
-        if hash_.alg.value in algorithm_map_cdx_scio
+        algorithm_map_cdx_scio[algo_hash.alg.value]: algo_hash.content.__root__
+        for algo_hash in component.hashes
+        if algo_hash.alg.value in algorithm_map_cdx_scio
     }
 
 
 def get_external_refrences(external_references):
     """
-    Return dict of refrence urls from list of `externalRefrences` obj
+    Return dict of refrence urls from list of `externalRefrences`.
     """
+    if not external_references:
+        return {}
+
     refrences = {
         "vcs": [],
         "issue-tracker": [],
@@ -146,7 +154,7 @@ def get_external_refrences(external_references):
         "release-notes": [],
         "other": [],
     }
-    for ref in external_references or []:
+    for ref in external_references:
         refrences[ref.type.value].append(ref.url)
 
     return {key: value for key, value in refrences.items() if value}
@@ -164,4 +172,10 @@ def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
     if isinstance(schema, str):
         schema = json.loads(schema)
 
-    jsonschema.validate(instance=document, schema=schema)
+    resolver = jsonschema.RefResolver(
+        base_uri="file://" + str(pathlib.Path(__file__).parent), referrer=schema
+    )
+
+    validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
+
+    validator.validate(instance=document)
