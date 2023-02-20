@@ -1,10 +1,14 @@
 Changelog
 =========
 
-v33.0.0 (unreleased)
+v32.0.1 (2023-02-20)
 --------------------
 
+- Upgrade ScanCode-toolkit and related dependencies to solve installation issues.
+  https://github.com/nexB/scancode.io/pull/586
+
 - Add support for Python 3.11
+  https://github.com/nexB/scancode.io/pull/611
 
 - Populate ``documentDescribes`` field with Package and Dependency SPDX IDs in
   SPDX BOM output.
