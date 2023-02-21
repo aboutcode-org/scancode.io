@@ -98,20 +98,13 @@ An overview of the web application usage is available at :ref:`user_interface`.
 Execute a Command
 ^^^^^^^^^^^^^^^^^
 
-You can execute a one of ``scanpipe`` commands through the Docker command line
-interface, for example::
-
-    docker compose run web ./manage.py create-project project_name
-
 .. note::
     Refer to the :ref:`command_line_interface` section for the full list of commands.
 
-Alternatively, you can connect to the Docker container ``bash`` and run commands
-from there::
+A ``scanpipe`` command can be executed through the ``docker compose`` command line
+interface with::
 
-    docker compose run web bash
-    ./manage.py create-project project_name
-
+    docker compose exec -it web scanpipe COMMAND
 
 .. _offline_installation:
 
