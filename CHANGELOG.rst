@@ -4,6 +4,21 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Refine the "Command Line Interface" documentation about the ``scanpipe`` command
+  usages in the Docker context.
+  Add the /app workdir in the PYTHONPATH env of the Docker file to make the ``scanpipe``
+  entry point available while running ``docker compose`` commands.
+  https://github.com/nexB/scancode.io/issues/616
+
+v32.0.1 (2023-02-20)
+--------------------
+
+- Upgrade ScanCode-toolkit and related dependencies to solve installation issues.
+  https://github.com/nexB/scancode.io/pull/586
+
+- Add support for Python 3.11
+  https://github.com/nexB/scancode.io/pull/611
+
 - Populate ``documentDescribes`` field with Package and Dependency SPDX IDs in
   SPDX BOM output.
   https://github.com/nexB/scancode.io/issues/564

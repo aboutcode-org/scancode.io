@@ -47,6 +47,10 @@ create an **environment file**, and **build the Docker image**::
     make envfile
     docker compose build
 
+.. warning::
+    As the ``docker-compose`` v1 command is officially deprecated by Docker, you will
+    only find references to the ``docker compose`` v2 command in this documentation.
+
 .. note::
     You need to rebuild the image whenever ScanCode.io's source code has been
     modified or updated.
@@ -94,20 +98,13 @@ An overview of the web application usage is available at :ref:`user_interface`.
 Execute a Command
 ^^^^^^^^^^^^^^^^^
 
-You can execute a one of ``scanpipe`` commands through the Docker command line
-interface, for example::
-
-    docker compose run web ./manage.py create-project project_name
-
 .. note::
     Refer to the :ref:`command_line_interface` section for the full list of commands.
 
-Alternatively, you can connect to the Docker container ``bash`` and run commands
-from there::
+A ``scanpipe`` command can be executed through the ``docker compose`` command line
+interface with::
 
-    docker compose run web bash
-    ./manage.py create-project project_name
-
+    docker compose exec -it web scanpipe COMMAND
 
 .. _offline_installation:
 
@@ -176,7 +173,7 @@ Pre-installation Checklist
 
 Before you install ScanCode.io, make sure you have the following prerequisites:
 
- * **Python: versions 3.8 to 3.10** found at https://www.python.org/downloads/
+ * **Python: versions 3.8 to 3.11** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
  * **PostgreSQL**: release 11 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS

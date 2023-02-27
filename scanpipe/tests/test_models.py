@@ -1436,12 +1436,9 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_discovered_package_model_as_cyclonedx(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        expected_repr = (
-            "<Component group=None, name=adduser, version=3.118, type=library>"
-        )
         cyclonedx_component = package.as_cyclonedx()
-        self.assertEqual(expected_repr, repr(cyclonedx_component))
 
+        self.assertEqual("library", cyclonedx_component.type)
         self.assertEqual(package_data1["name"], cyclonedx_component.name)
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
         purl = "pkg:deb/debian/adduser@3.118?arch=all"
