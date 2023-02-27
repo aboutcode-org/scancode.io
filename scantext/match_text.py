@@ -272,7 +272,6 @@ def tokenize_matched_text(location, query_string, dictionary, start_line=1):
             # is essential as we need to realign the query-time tokenization
             # with the full text to report proper matches.
             if is_text and token_str and token_str.strip():
-
                 # we retokenize using the query tokenizer:
                 # 1. to lookup for is_known tokens in the index dictionary
 
@@ -281,7 +280,6 @@ def tokenize_matched_text(location, query_string, dictionary, start_line=1):
                 # regular query tokenizer ignores case and punctuations).
                 qtokenized = list(index_tokenizer(token_str))
                 if not qtokenized:
-
                     yield Token(
                         value=token_str,
                         line_num=line_num,
@@ -324,7 +322,6 @@ def tokenize_matched_text(location, query_string, dictionary, start_line=1):
                             pos=p,
                         )
             else:
-
                 yield Token(
                     value=token_str,
                     line_num=line_num,
