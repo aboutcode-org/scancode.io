@@ -7,31 +7,41 @@ The focus of this tutorial is to guide you through scanning a codebase package
 using ScanCode.io.
 
 .. note::
-    This tutorial assumes you have a current version of ScanCode.io installed
-    locally on your machine. If you do not have it installed,
-    see our :ref:`installation` guide for instructions.
+    This tutorial assumes you have a recent version of ScanCode.io installed
+    locally on your machine and **running with Docker**.
+    If you do not have it installed, see our :ref:`installation` guide for instructions.
 
 Requirements
 ------------
+
 Before you follow the instructions in this tutorial, you need to:
 
 - Install **ScanCode.io** locally
-- Download the following **package archive** and save it to your home directory: `asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
 - Have **Shell access** on the machine where ScanCode.io is installed
 
 Instructions
 ------------
 
-- Open a shell in the ScanCode.io installation directory and activate the
-  virtual environment - **virtualenv**:
+- Create a new directory in your home directory that will be used to put the input code
+  to be scanned.
 
 .. code-block:: console
 
-    $ source bin/activate
+    $ mkdir -p ~/codedrop/
+
+- Download the following **package archive** and save it to the :guilabel:`~/codedrop/`
+  directory: `asgiref-3.3.0-py3-none-any.whl <https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl>`_
 
 .. code-block:: console
 
-    >> (scancodeio) $
+    $ curl https://files.pythonhosted.org/packages/c0/e8/578887011652048c2d273bf98839a11020891917f3aa638a0bc9ac04d653/asgiref-3.3.0-py3-none-any.whl --output ~/codedrop/asgiref-3.3.0-py3-none-any.whl
+
+- Create an alias to the ``scanpipe`` command executed through the
+  ``docker compose`` command line interface with:
+
+.. code-block:: console
+
+    $ alias scanpipe="docker compose -f ${PWD}/docker-compose.yml run --volume ~/codedrop/:/codedrop:ro web scanpipe"
 
 - Create a new project named ``asgiref``:
 
@@ -41,14 +51,14 @@ Instructions
 
 .. code-block:: console
 
-    >> Project asgiref created with work directory projects/asgiref-072c89db
+    >> Project asgiref created with work directory /var/scancodeio/workspace/projects/asgiref-35519104
 
 - Add the package archive to the project workspace's :guilabel:`input/`
   directory:
 
 .. code-block:: bash
 
-    $ scanpipe add-input --project asgiref --input-file ~/asgiref-3.3.0-py3-none-any.whl
+    $ scanpipe add-input --project asgiref --input-file /codedrop/asgiref-3.3.0-py3-none-any.whl
 
 .. code-block:: console
 
@@ -83,26 +93,38 @@ Instructions
 .. code-block:: console
 
     >> Pipeline scan_codebase run in progress..
-       2021-07-12 17:45:53.85 Pipeline [scan_codebase] starting
-       2021-07-12 17:45:53.85 Step [copy_inputs_to_codebase_directory] starting
-       2021-07-12 17:45:53.86 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds
-       2021-07-12 17:45:53.86 Step [extract_archives] starting
+       Pipeline [scan_codebase] starting
+       Step [copy_inputs_to_codebase_directory] starting
+       Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds
+       Step [extract_archives] starting
        [...]
-       2021-07-12 17:46:01.61 Pipeline completed
+       Pipeline completed
+       scan_codebase successfully executed on project asgiref
 
-- Finally, you can view your scan results in JSON or CSV file formats inside
-  the project's :guilabel:`output/` directory.
+- Finally, export the scan results as JSON format::
+
+  $ scanpipe output --project asgiref --format json --print > asgiref-3.3.0_results.json
 
 .. tip::
     The ``inputs`` and ``pipelines`` can be provided at the same time when
     calling the ``create-project`` command. For instance, the following command
-    will create a new project named ``asgiref``, add the package archive as the
+    will create a new project named ``asgiref2``, add the package archive as the
     project input, add the ``scan_codebase`` pipeline to the project, and
     execute it:
 
 .. code-block:: bash
 
-    $ scanpipe create-project asgiref \
-        --input-file ~/asgiref-3.3.0-py3-none-any.whl \
+    $ scanpipe create-project asgiref2 \
+        --input-file /codedrop/asgiref-3.3.0-py3-none-any.whl \
         --pipeline scan_codebase \
         --execute
+
+.. code-block:: console
+
+    >> Project asgiref2 created with work directory /var/scancodeio/workspace/projects/asgiref2-bea7a5e9
+       File(s) copied to the project inputs directory:
+       - asgiref-3.3.0-py3-none-any.whl
+       Start the scan_codebase pipeline execution...
+       [...]
+       Pipeline completed
+       scan_codebase successfully executed on project asgiref2
