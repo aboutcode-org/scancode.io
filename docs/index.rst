@@ -44,6 +44,7 @@ you’ll find information on:
     output-files
     command-line-interface
     rest-api
+    vulnerablecode_integration
     scancodeio-settings
     distros-os-images
 
