@@ -13,7 +13,7 @@
     ],
     "component": {
       "type": "library",
-      "bom-ref": "694e35cd-7d28-40ba-b504-e9580b819427",
+      "bom-ref": "4c7f2e2e-0c41-45d2-a6cc-7bbde9a9f440",
       "name": "asgiref"
     },
     "properties": [
@@ -38,7 +38,19 @@
       "purl": "pkg:pypi/asgiref@3.3.0",
       "externalReferences": [
         {
+          "url": "https://pypi.org/pypi/asgiref/3.3.0/json",
+          "type": "bom"
+        },
+        {
+          "url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
+          "type": "distribution"
+        },
+        {
           "url": "https://github.com/django/asgiref/",
+          "type": "website"
+        },
+        {
+          "url": "https://pypi.org/project/asgiref",
           "type": "website"
         }
       ]
@@ -46,7 +58,7 @@
   ],
   "dependencies": [
     {
-      "ref": "694e35cd-7d28-40ba-b504-e9580b819427",
+      "ref": "4c7f2e2e-0c41-45d2-a6cc-7bbde9a9f440",
       "dependsOn": [
         "pkg:pypi/asgiref@3.3.0"
       ]
