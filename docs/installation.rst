@@ -82,6 +82,13 @@ An overview of the web application usage is available at :ref:`user_interface`.
     For example, if Docker is configured for 8 CPUs, a minimum of 8 GB of memory is
     required.
 
+.. tip::
+    If you run ScanCode.io on desktop or laptop, it may come handy to pause/unpause
+    or suspend your local ScanCode.io system. For this, use these commands::
+
+        docker-compose pause # to pause/suspend
+        docker-compose unpause # to unpause/resume
+
 .. warning::
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
     and ``CSRF_TRUSTED_ORIGINS`` settings need to be provided in your ``.env`` file,
