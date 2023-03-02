@@ -20,6 +20,16 @@ ScanCode.io offers several :ref:`built_in_pipelines` depending on your input:
 - Root filesystem
 - ScanCode-toolkit results
 
+Can I pause/resume a running pipeline?
+--------------------------------------
+
+You can stop/terminate a running pipeline but it will not be possible to resume it.
+Although, as a workaround if you run ScanCode.io on desktop or laptop,
+you can pause/unpause the running Docker containers with::
+
+    docker compose pause  # to pause/suspend
+    docker compose unpause  # to unpause/resume
+
 I am unable to run ScanCode.io on Windows?
 ------------------------------------------
 
