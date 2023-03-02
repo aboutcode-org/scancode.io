@@ -733,19 +733,6 @@ class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.Delet
         return redirect(project)
 
 
-class ProjectTreeView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
-    template_name = "scanpipe/project_tree.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        fields = ["name", "path"]
-        project_codebase = codebase.ProjectCodebase(self.object)
-        context["tree_data"] = [codebase.get_tree(project_codebase.root, fields)]
-
-        return context
-
-
 @conditional_login_required
 def execute_pipeline_view(request, uuid, run_uuid):
     project = get_object_or_404(Project, uuid=uuid)

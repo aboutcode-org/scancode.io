@@ -67,11 +67,6 @@ urlpatterns = [
         name="project_errors",
     ),
     path(
-        "project/<uuid:uuid>/tree/",
-        views.ProjectTreeView.as_view(),
-        name="project_tree",
-    ),
-    path(
         "project/<uuid:uuid>/archive/",
         views.ProjectArchiveView.as_view(),
         name="project_archive",
