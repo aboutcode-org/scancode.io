@@ -128,7 +128,7 @@ def resolve_spdx_packages(input_location):
 
 def cyclonedx_component_to_discovered_package_data(component_data):
     """
-    Return package_data from CycloneDx component.
+    Return package_data from CycloneDX component.
     """
     extra_data = {}
     component = component_data["cdx_package"]
@@ -140,7 +140,9 @@ def cyclonedx_component_to_discovered_package_data(component_data):
     )
 
     checksum_data = cyclonedx.get_checksums(component)
-    external_references = cyclonedx.get_external_refrences(component.externalReferences)
+    external_references = cyclonedx.get_external_references(
+        component.externalReferences
+    )
 
     if homepage_url := external_references.get("website"):
         homepage_url = homepage_url[0]
@@ -177,7 +179,7 @@ def cyclonedx_component_to_discovered_package_data(component_data):
 
 def resolve_cyclonedx_packages(input_location):
     """
-    Resolve the packages from the `input_location` CycloneDx document file.
+    Resolve the packages from the `input_location` CycloneDX document file.
     """
     input_path = Path(input_location)
     cyclonedx_document = json.loads(input_path.read_text())
@@ -186,7 +188,7 @@ def resolve_cyclonedx_packages(input_location):
         cyclonedx.validate_document(cyclonedx_document)
     except Exception as e:
         raise Exception(
-            f'CycloneDx document "{input_path.name}" is not valid: {e.message}'
+            f'CycloneDX document "{input_path.name}" is not valid: {e.message}'
         )
 
     cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)

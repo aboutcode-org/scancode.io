@@ -154,9 +154,9 @@ class CycloneDXUnitTest(TestCase):
 
         self.assertEqual(result, expected)
 
-    def test_scanpipe_cyclonedx_get_external_refrences(self):
+    def test_scanpipe_cyclonedx_get_external_references(self):
         component = self.bom.components[0]
-        result = cyclonedx.get_external_refrences(component.externalReferences)
+        result = cyclonedx.get_external_references(component.externalReferences)
         expected = {
             "vcs": ["https://cyclonedx.org/vcs"],
             "issue-tracker": ["https://cyclonedx.org/issue-tracker"],

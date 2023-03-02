@@ -22,6 +22,7 @@
 
 import json
 import pathlib
+from collections import defaultdict
 
 import jsonschema
 from hoppr_cyclonedx_models.cyclonedx_1_4 import Component
@@ -40,26 +41,26 @@ CYCLONEDX_JSON_SCHEMA_URL = (
 )
 
 
-def get_bom(cyclonedx_document: dict):
+def get_bom(cyclonedx_document):
     """
-    Return CycloneDx BOM object.
+    Return CycloneDX BOM object.
     """
     return Bom_1_4(**cyclonedx_document)
 
 
-def get_components(bom: Bom_1_4):
+def get_components(bom):
     """
-    Return list of components from CycloneDx BOM.
+    Return list of components from CycloneDX BOM.
     """
     return recursive_component_collector(bom.components, [])
 
 
 def bom_attributes_to_dict(cyclonedx_attributes):
     """
-    Return list dict from a list of CycloneDx attributes.
+    Return list of dict from a list of CycloneDX attributes.
     """
     if not cyclonedx_attributes:
-        return {}
+        return []
 
     return [
         json.loads(attribute.json(exclude_unset=True, by_alias=True))
@@ -75,11 +76,10 @@ def recursive_component_collector(root_component_list, collected):
         return
 
     for component in root_component_list:
-        extra_data = (
-            bom_attributes_to_dict(component.components)
-            if component.components is not None
-            else {}
-        )
+        extra_data = {}
+        if component.components is not None:
+            extra_data = bom_attributes_to_dict(component.components)
+
         collected.append({"cdx_package": component, "nested_components": extra_data})
         recursive_component_collector(component.components, collected)
     return collected
@@ -104,12 +104,13 @@ def get_declared_licenses(licenses):
     if not licenses:
         return ""
 
-    return "\n".join(
-        [resolve_license(license) for license in bom_attributes_to_dict(licenses)]
-    )
+    resolved_licenses = [
+        resolve_license(license) for license in bom_attributes_to_dict(licenses)
+    ]
+    return "\n".join(resolved_licenses)
 
 
-def get_checksums(component: Component):
+def get_checksums(component):
     """
     Return dict of all the checksums from a component.
     """
@@ -129,40 +130,24 @@ def get_checksums(component: Component):
     }
 
 
-def get_external_refrences(external_references):
+def get_external_references(external_references):
     """
-    Return dict of refrence urls from list of `externalRefrences`.
+    Return dict of reference urls from list of `externalReferences`.
     """
     if not external_references:
         return {}
 
-    refrences = {
-        "vcs": [],
-        "issue-tracker": [],
-        "website": [],
-        "advisories": [],
-        "bom": [],
-        "mailing-list": [],
-        "social": [],
-        "chat": [],
-        "documentation": [],
-        "support": [],
-        "distribution": [],
-        "license": [],
-        "build-meta": [],
-        "build-system": [],
-        "release-notes": [],
-        "other": [],
-    }
+    refrences = defaultdict(lambda: [])
+
     for ref in external_references:
         refrences[ref.type.value].append(ref.url)
 
-    return {key: value for key, value in refrences.items() if value}
+    return dict(refrences)
 
 
 def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
     """
-    CYCLONEDX document validation.
+    CycloneDX document validation.
     """
     if isinstance(document, str):
         document = json.loads(document)
