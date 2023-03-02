@@ -95,6 +95,13 @@ An overview of the web application usage is available at :ref:`user_interface`.
     <https://docs.djangoproject.com/en/dev/ref/settings/
     #std-setting-CSRF_TRUSTED_ORIGINS>`_ for more details.
 
+.. tip::
+    If you run ScanCode.io on desktop or laptop, it may come handy to pause/unpause
+    or suspend your local ScanCode.io system. For this, use these commands::
+
+        docker compose pause  # to pause/suspend
+        docker compose unpause  # to unpause/resume
+
 Execute a Command
 ^^^^^^^^^^^^^^^^^
 
