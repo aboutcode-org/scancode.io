@@ -158,6 +158,17 @@ Start the ScanCode.io services::
 
     docker compose --file docker-compose.yml up
 
+.. note::
+    The nginx service (webserver) requires the port 80 to be available on the host.
+    In case the port 80 is already in used, you will encounter the following error::
+
+        ERROR: for build_nginx_1 Cannot start service nginx: driver failed programming ...
+
+    You can attempt to stop potential running services blocking the port 80 with the
+    following commands on the host before starting ScanCode.io services::
+
+         sudo systemctl stop nginx
+         sudo systemctl stop apache2
 
 .. _local_development_installation:
 
