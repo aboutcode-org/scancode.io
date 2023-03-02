@@ -249,6 +249,19 @@ production servers.
 
     make postgresdb
 
+.. warning::
+    The ``make postgres`` command is assuming that your PostgreSQL database template is
+    using the ``en_US.UTF-8`` collation.
+    If you encounter database creation errors while running this command, it is
+    generally related to an incompatible database template.
+
+    You can either `update your template <https://stackoverflow.com/a/60396581/8254946>`_
+    to fit the ScanCode.io default, or provide custom values collation using the
+    ``POSTGRES_INITDB_ARGS`` variable such as::
+
+        make postgresdb POSTGRES_INITDB_ARGS=\
+            --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+
 .. note::
     You can also use a **SQLite** database for local development as a single user
     with::
