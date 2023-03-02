@@ -91,3 +91,14 @@ Instructions to run the ``find_vulnerabilities`` pipeline
 .. tip::
     Refer to the complementary :ref:`tutorial_web_ui_review_scan_results` page, to
     understand this tutorial's scan results/output.
+
+- Click on the **Packages** number field to get a detailed list of packages
+  with vulnerabilities like the one below:
+
+.. image:: images/tutorial-find-vulnerabilities-vulnerable-package.png
+
+- Click on the package which has the red bug icon in front of it
+  which will have declared vulnerabilities in
+  **Extra Data** field like the one below:
+
+.. image:: images/tutorial-find-vulnerabilities-extra-data.png
