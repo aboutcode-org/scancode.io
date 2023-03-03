@@ -31,7 +31,8 @@ class InspectManifest(Pipeline):
 
     Supports:
     - PyPI "requirements.txt" files
-    - SPDX document as JSON ".spdx.json"
+    - SPDX document as JSON ".spdx.json" files
+    - CycloneDX BOM as JSON ".bom.json" and ".cdx.json" files
     - AboutCode ".ABOUT" files
     """
 
