@@ -946,6 +946,8 @@ class CodebaseResourceDetailsView(
     ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
 ):
     model = CodebaseResource
+    slug_field = "path"
+    slug_url_kwarg = "path"
     template_name = "scanpipe/resource_detail.html"
     annotation_types = {
         CodebaseResource.Compliance.OK: "ok",
@@ -1178,6 +1180,8 @@ class CodebaseResourceRawView(
     generic.base.View,
 ):
     model = CodebaseResource
+    slug_field = "path"
+    slug_url_kwarg = "path"
 
     def get(self, request, *args, **kwargs):
         resource = self.get_object()

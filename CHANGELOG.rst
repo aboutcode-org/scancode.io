@@ -6,9 +6,12 @@ v33.0.0 (unreleased)
 
 - Refine the "Command Line Interface" documentation about the ``scanpipe`` command
   usages in the Docker context.
-  Add the /app workdir in the PYTHONPATH env of the Docker file to make the ``scanpipe``
-  entry point available while running ``docker compose`` commands.
+  Add the /app workdir in the "PYTHONPATH" env of the Docker file to make the
+  ``scanpipe`` entry point available while running ``docker compose`` commands.
   https://github.com/nexB/scancode.io/issues/616
+
+- Use CodebaseResource ``path`` instead of ``id`` as slug_field in URL navigation.
+  https://github.com/nexB/scancode.io/issues/242
 
 v32.0.1 (2023-02-20)
 --------------------

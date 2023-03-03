@@ -1915,13 +1915,13 @@ class CodebaseResource(
                 yield child
 
     def get_absolute_url(self):
-        return reverse("resource_detail", args=[self.project_id, self.pk])
+        return reverse("resource_detail", args=[self.project_id, self.path])
 
     def get_raw_url(self):
         """
         Returns the URL to access the RAW content of the resource.
         """
-        return reverse("resource_raw", args=[self.project_id, self.pk])
+        return reverse("resource_raw", args=[self.project_id, self.path])
 
     @property
     def file_content(self):
