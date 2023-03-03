@@ -508,7 +508,7 @@ class File:
 @dataclass
 class Relationship:
     """
-    This field provides information about the relationship between two SPDX elements.
+    Represent the relationship between two SPDX elements.
     For example, you can represent a relationship between two different Files,
     between a Package and a File, between two Packages,
     or between one SPDXDocument and another SPDXDocument.
