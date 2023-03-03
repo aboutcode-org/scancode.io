@@ -1349,7 +1349,7 @@ class ScanPipeModelsTest(TestCase):
         resource1 = CodebaseResource.objects.create(
             project=project, path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin"
         )
-        resource2 = CodebaseResource.objects.create(
+        CodebaseResource.objects.create(
             project=project,
             path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin/flex++.exe",
         )
@@ -1645,8 +1645,8 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
         project1 = Project.objects.create(name="Analysis")
 
-        package = DiscoveredPackage.create_from_data(project1, package_data1)
-        resource = CodebaseResource.objects.create(
+        DiscoveredPackage.create_from_data(project1, package_data1)
+        CodebaseResource.objects.create(
             project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
         )
         dependency = DiscoveredDependency.create_from_data(

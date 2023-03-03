@@ -102,8 +102,6 @@ class RegenTestData(TestCase):
 
         # Codebase tree
         test_file_location = self.data_location / "asgiref-3.3.0_tree.json"
-        root = project1.codebaseresources.get(
-            path="asgiref-3.3.0-py3-none-any.whl-extract",
-        )
-        project_tree = codebase.get_tree(resource=root, fields=["name", "path"])
+        pc = codebase.ProjectCodebase(project1)
+        project_tree = codebase.get_codebase_tree(codebase=pc, fields=["name", "path"])
         test_file_location.write_text(json.dumps(project_tree, indent=2))

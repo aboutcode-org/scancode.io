@@ -44,7 +44,7 @@ class InspectManifest(Pipeline):
 
     def get_manifest_inputs(self):
         """
-        Locates all the manifest files from the project's input/ directory.
+        Locate all the manifest files from the project's input/ directory.
         """
         self.input_locations = [
             str(input.absolute()) for input in self.project.inputs()
@@ -52,7 +52,7 @@ class InspectManifest(Pipeline):
 
     def create_packages_from_manifest(self):
         """
-        Resolves manifest files into packages.
+        Resolve manifest files into packages.
         """
         for input_location in self.input_locations:
             default_package_type = resolve.get_default_package_type(input_location)

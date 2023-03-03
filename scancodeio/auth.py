@@ -27,7 +27,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 
 def is_authenticated_when_required(user):
     """
-    Returns True if the `user` is authenticated when the
+    Return True if the `user` is authenticated when the
     `SCANCODEIO_REQUIRE_AUTHENTICATION` setting is enabled.
 
     Always True when the Authentication is not enabled.
@@ -43,7 +43,7 @@ def is_authenticated_when_required(user):
 
 def conditional_login_required(function=None):
     """
-    Decorator for views that checks that the current user is authenticated when
+    Decorate views that checks that the current user is authenticated when
     authentication is enabled.
     """
     actual_decorator = user_passes_test(is_authenticated_when_required)
