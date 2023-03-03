@@ -26,8 +26,6 @@ MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
 BLACK_ARGS=--exclude=".cache|migrations|data|lib|bin|var"
-PYCODESTYLE_ARGS=--max-line-length=88 \
-  --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -79,12 +77,14 @@ doc8:
 valid: isort black doc8 check
 
 check: doc8
-	@echo "-> Run pycodestyle (PEP8) validation"
-	@${ACTIVATE} pycodestyle ${PYCODESTYLE_ARGS} .
+	@echo "-> Run flake8 (pycodestyle, pyflakes, mccabe) validation"
+	@${ACTIVATE} flake8 .
 	@echo "-> Run isort imports ordering validation"
 	@${ACTIVATE} isort --profile black --check-only .
 	@echo "-> Run black validation"
 	@${ACTIVATE} black --check ${BLACK_ARGS} .
+	@echo "-> Run docstring validation"
+	@${ACTIVATE} pydocstyle --select=D401,D402,D403,D404 scanpipe scancodeio
 
 clean:
 	@echo "-> Clean the Python env"

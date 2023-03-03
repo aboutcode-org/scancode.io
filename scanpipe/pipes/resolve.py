@@ -147,7 +147,7 @@ resolver_registry = {
 
 def set_license_expression(package_data):
     """
-    Sets the license expression from a detected license dict/str in provided
+    Set the license expression from a detected license dict/str in provided
     `package_data`.
     """
     declared_license = package_data.get("declared_license")

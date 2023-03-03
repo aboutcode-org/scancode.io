@@ -33,7 +33,7 @@ from scanpipe.models import Project
 from scanpipe.models import Run
 
 
-class ScanPipeFiltersTest(TestCase):
+class ScanPipeFilterTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 

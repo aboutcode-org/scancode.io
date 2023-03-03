@@ -49,7 +49,7 @@ class Docker(RootFS):
 
     def extract_images(self):
         """
-        Extracts images from input tarballs.
+        Extract images from input tarballs.
         """
         self.images, errors = docker.extract_images_from_inputs(self.project)
         if not self.images:
@@ -59,7 +59,7 @@ class Docker(RootFS):
 
     def extract_layers(self):
         """
-        Extracts layers from input images.
+        Extract layers from input images.
         """
         errors = docker.extract_layers_from_images(self.project, self.images)
         if errors:
@@ -67,28 +67,28 @@ class Docker(RootFS):
 
     def find_images_os_and_distro(self):
         """
-        Finds the operating system and distro of input images.
+        Find the operating system and distro of input images.
         """
         for image in self.images:
             image.get_and_set_distro()
 
     def collect_images_information(self):
         """
-        Collects and stores image information in a project.
+        Collect and store image information in a project.
         """
         images_data = [docker.get_image_data(image) for image in self.images]
         self.project.update_extra_data({"images": images_data})
 
     def collect_and_create_codebase_resources(self):
         """
-        Collects and labels all image files as CodebaseResources.
+        Collect and labels all image files as CodebaseResources.
         """
         for image in self.images:
             docker.create_codebase_resources(self.project, image)
 
     def collect_and_create_system_packages(self):
         """
-        Collects installed system packages for each layer based on the distro.
+        Collect installed system packages for each layer based on the distro.
         """
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
             for image in self.images:
@@ -96,7 +96,7 @@ class Docker(RootFS):
 
     def tag_uninteresting_codebase_resources(self):
         """
-        Flags files that don't belong to any system package.
+        Flag files that don't belong to any system package.
         """
         docker.tag_whiteout_codebase_resources(self.project)
         rootfs.tag_uninteresting_codebase_resources(self.project)

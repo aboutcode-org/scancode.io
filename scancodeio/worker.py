@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
-from django.conf import settings
 
 from rq.queue import Queue
 from rq.worker import Worker
@@ -67,7 +66,7 @@ class ScanCodeIOQueue(Queue):
 
     def acquire_cleaning_lock(self):
         """
-        Returns a boolean indicating whether a lock to clean this queue is acquired.
+        Return a boolean indicating whether a lock to clean this queue is acquired.
         """
         return self.connection.set(
             self.registry_cleaning_key, 1, nx=1, ex=self.cleaning_lock_ttl

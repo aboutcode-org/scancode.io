@@ -52,7 +52,7 @@ if VULNERABLECODE_API_KEY:
 
 def is_configured():
     """
-    Returns True if the required VulnerableCode settings have been set.
+    Return True if the required VulnerableCode settings have been set.
     """
     if VULNERABLECODE_API_URL:
         return True
@@ -61,7 +61,7 @@ def is_configured():
 
 def is_available():
     """
-    Returns True if the configured VulnerableCode server is available.
+    Return True if the configured VulnerableCode server is available.
     """
     if not is_configured():
         return False
@@ -78,14 +78,14 @@ def is_available():
 
 def get_base_purl(purl):
     """
-    Returns the `purl` without qualifiers and subpath.
+    Return the `purl` without qualifiers and subpath.
     """
     return purl.split("?")[0]
 
 
 def get_purls(packages, base=False):
     """
-    Returns the PURLs for the given list of `packages`.
+    Return the PURLs for the given list of `packages`.
     Do not include qualifiers nor subpath when `base` is provided.
     """
     return [
@@ -101,7 +101,7 @@ def request_get(
     timeout=None,
 ):
     """
-    Wraps the HTTP request calls on the API.
+    Wrap the HTTP request calls on the API.
     """
     if not url:
         return
