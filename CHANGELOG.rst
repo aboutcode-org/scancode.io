@@ -10,6 +10,10 @@ v33.0.0 (unreleased)
   ``scanpipe`` entry point available while running ``docker compose`` commands.
   https://github.com/nexB/scancode.io/issues/616
 
+- Add new tutorial about the "find vulnerabilities" pipeline and the vulnerablecode
+  integration in the documentation.
+  https://github.com/nexB/scancode.io/issues/600
+
 - Use CodebaseResource ``path`` instead of ``id`` as slug_field in URL navigation.
   https://github.com/nexB/scancode.io/issues/242
 
