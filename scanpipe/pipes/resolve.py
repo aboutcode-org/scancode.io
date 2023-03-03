@@ -31,6 +31,7 @@ from packagedcode.licensing import get_normalized_expression
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 
+from scanpipe import cyclonedx
 from scanpipe import spdx
 from scanpipe.models import DiscoveredPackage
 
@@ -125,6 +126,79 @@ def resolve_spdx_packages(input_location):
     ]
 
 
+def cyclonedx_component_to_discovered_package_data(component_data):
+    """
+    Return package_data from CycloneDX component.
+    """
+    extra_data = {}
+    component = component_data["cdx_package"]
+
+    package_url_dict = (
+        PackageURL.from_string(component.purl).to_dict(encode=True)
+        if component.purl
+        else {}
+    )
+
+    checksum_data = cyclonedx.get_checksums(component)
+    external_references = cyclonedx.get_external_references(
+        component.externalReferences
+    )
+
+    if homepage_url := external_references.get("website"):
+        homepage_url = homepage_url[0]
+
+    if bug_tracking_url := external_references.get("issue-tracker"):
+        bug_tracking_url = bug_tracking_url[0]
+
+    if vcs_url := external_references.get("vcs"):
+        vcs_url = vcs_url[0]
+
+    if external_references:
+        extra_data["externalReferences"] = external_references
+    if component_data["nested_components"]:
+        extra_data["nestedComponents"] = component_data["nested_components"]
+
+    declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
+
+    package_data = {
+        "name": component.name,
+        "declared_license": declared_license,
+        "copyright": component.copyright,
+        "version": component.version,
+        "description": component.description,
+        "homepage_url": homepage_url,
+        "bug_tracking_url": bug_tracking_url,
+        "vcs_url": vcs_url,
+        "extra_data": extra_data,
+        **package_url_dict,
+        **checksum_data,
+    }
+
+    return {key: value for key, value in package_data.items() if value}
+
+
+def resolve_cyclonedx_packages(input_location):
+    """
+    Resolve the packages from the `input_location` CycloneDX document file.
+    """
+    input_path = Path(input_location)
+    cyclonedx_document = json.loads(input_path.read_text())
+
+    try:
+        cyclonedx.validate_document(cyclonedx_document)
+    except Exception as e:
+        raise Exception(
+            f'CycloneDX document "{input_path.name}" is not valid: {e.message}'
+        )
+
+    cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)
+
+    return [
+        cyclonedx_component_to_discovered_package_data(component_data)
+        for component_data in cyclonedx.get_components(cyclonedx_bom)
+    ]
+
+
 def get_default_package_type(input_location):
     """
     Return the package type associated with the provided `input_location`.
@@ -135,6 +209,8 @@ def get_default_package_type(input_location):
             return handler.default_package_type
         if input_location.endswith((".spdx", ".spdx.json")):
             return "spdx"
+        if input_location.endswith((".bom.json", ".cdx.json")):
+            return "cyclonedx"
 
 
 # Mapping between the `default_package_type` its related resolver function
@@ -142,6 +218,7 @@ resolver_registry = {
     "about": resolve_about_packages,
     "pypi": resolve_pypi_packages,
     "spdx": resolve_spdx_packages,
+    "cyclonedx": resolve_cyclonedx_packages,
 }
 
 
