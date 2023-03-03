@@ -1,104 +1,66 @@
-.. _vulnerablecode_integration:
+.. _tutorial_vulnerablecode_integration:
 
-Run find vulnerabilities in ScanCode.io
-=========================================
+Find vulnerabilities (Web UI)
+=============================
 
-This chapter describes how to integrate VulnerableCode
-with ScanCode.io and how to run the ``find_vulnerabilities`` pipeline.
-``find_vulnerabilities`` is a pipeline to find vulnerabilities for
-discovered packages in the VulnerableCode database.
-Vulnerability data is stored in the extra_data field of
-each package in JSON file format.
-
-Instructions to integrate VulnerableCode with ScanCode.io
-----------------------------------------------------------
+This tutorial aims to show you how to integrate VulnerableCode with ScanCode.io and
+how to discover vulnerable packages using the ``find_vulnerabilities`` pipeline.
 
 .. note::
     This tutorial assumes that you have a working installation of ScanCode.io.
     If you don't, please refer to the :ref:`installation` page.
 
-To run ``find_vulnerabilities`` pipeline with VulnerableCode, you need to
-have a public instance of VulnerableCode and a VulnerableCode API key.
+Configure VulnerableCode integration
+------------------------------------
 
-Here are the instructions to integrate VulnerableCode with Scancode.io:
+.. warning::
+    The ``find_vulnerabilities`` pipeline requires access to a VulnerableCode database.
 
-- First, you need a VulnerableCode installation. We assume that you use the public
-  instance at ``https://public.vulnerablecode.io/``
+You can either run your own instance of VulnerableCode or connect to the public one.
+Authentication is provided using an API key that you can obtain by registering at
+https://public.vulnerablecode.io/account/request_api_key/
 
-- Create an API user in this instance at https://public.vulnerablecode.io/account/request_api_key/
-  and make note of the API key.
+Set the VulnerableCode URL and API key in your local settings:
+  - in the ``docker.env`` file if your run with docker
+  - in the ``.env`` for a local development deployment
 
-Run SCIO with these settings:
-
-- In Scancode.io, you will need to add the environment variables in the ``docker.env``
-  file if your run with docker or in the ``.env`` for a local development deployment:
-
-  - Set the environment variable ``VULNERABLECODE_URL`` pointing to your
-    VulnerableCode URL, for example ``https://public.vulnerablecode.io/``
-
-  - Set the environment variable ``VULNERABLECODE_API_KEY`` with your API key.
-
-The resulting ``docker.env`` file should look like this::
+The resulting ``docker.env``/``.env`` file should contain the following::
 
     VULNERABLECODE_URL = "https://public.vulnerablecode.io/"
-    VULNERABLECODE_API_KEY = "paste your vulnerablecode API key here"
+    VULNERABLECODE_API_KEY = "<VulnerableCode API key>"
 
 .. note::
     Optionally contact nexB support at support@nexb.com with your API user email if
     you are doing a larger scale evaluation and need to ease API throttling limitations.
 
-Instructions to run the ``find_vulnerabilities`` pipeline
-----------------------------------------------------------
+Run the ``find_vulnerabilities`` pipeline
+-----------------------------------------
 
-- From the homepage, click on the “New Project” button to
-  create a new project named ``python-inspector``. You will be directed
-  to the “Create a Project” page where you need to fill in the new project’s details.
-- Upload the ``requirements.txt`` file in the **"Upload files"** section.
-- Use the **“Pipeline”** dropdown list, add the **“inspect_manifest”** pipeline to your project.
-- You can add and execute the pipeline in one operation by
-  checking the **“Execute pipeline now”** checkbox.
-
-.. image:: images/tutorial-find-vulnerabilities-project-form-inspect-manifest.png
+Open any of your existing projects containing a few detected packages.
 
 .. note::
-    You can create a new project while leaving the **Inputs** and
-    **Pipeline** fields blank; however, it's required to provide a project
-    **Name**!
+    If you do not have any projects available, please start with this tutorial:
+    :ref:`tutorial_web_ui_analyze_docker_image`
 
-- Finally, click the **"Create"** button
+- Click on the **"Add pipeline"** button and select the **"find_vulnerabilities"**
+  pipeline from the dropdown list.
+  Check the **"Execute pipeline now"** option and validate with the **"Add pipeline"**
+  button.
 
-.. image:: images/tutorial-find-vulnerabilities-projects-list-python-inspector.png
+- Once the pipeline run completes with success, you can reach the **Packages** list view
+  by clicking the count number under the **"PACKAGES"** header:
 
-.. note::
-    Please note that when you choose to create a new project and execute the
-    pipeline in one operation, the process may take few minutes before it
-    completes.
+.. image:: images/tutorial-find-vulnerabilities-packages-link.png
 
-- The previous screenshot shows the ScanCode.io home screen with the new
-  "python-inspector” project and other existing projects.
-  Select python-inspector to view the project details.
+- A red bug icon is displayed next to all packages for which declared vulnerabilities
+  were found:
 
-.. image:: images/tutorial-find-vulnerabilities-project-info.png
+.. image:: images/tutorial-find-vulnerabilities-icon-link.png
 
-- Click on the **"Add pipeline”** button and select
-  **“find_vulnerabilities”** from the dropdown list.
+- Click red bug icon to reach the vulnerability details for this package:
 
-.. image:: images/tutorial-find-vulnerabilities-add-vulnerabilities-pipeline.png
-
-- You can add and execute the pipeline in one operation by checking the **“Execute pipeline now”**
-  checkbox and click the **"Add pipeline"** button.
+.. image:: images/tutorial-find-vulnerabilities-extra-data.png
 
 .. tip::
     Refer to the complementary :ref:`tutorial_web_ui_review_scan_results` page, to
     understand this tutorial's scan results/output.
-
-- Click on the **Packages** number field to get a detailed list of packages
-  with vulnerabilities like the one below:
-
-.. image:: images/tutorial-find-vulnerabilities-vulnerable-package.png
-
-- Click on the package which has the red bug icon in front of it
-  which will have declared vulnerabilities in
-  **Extra Data** field like the one below:
-
-.. image:: images/tutorial-find-vulnerabilities-extra-data.png
