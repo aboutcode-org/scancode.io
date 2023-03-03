@@ -122,13 +122,21 @@ test:
 worker:
 	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
 
+docs:
+	rm -rf docs/_build/
+	@${ACTIVATE} sphinx-build docs/ docs/_build/
+
 bump:
 	@echo "-> Bump the version"
 	@${ACTIVATE} bumpver update --no-fetch --patch
 
-docs:
-	rm -rf docs/_build/
-	@${ACTIVATE} sphinx-build docs/ docs/_build/
+publish:
+	@echo "-> Cleanup dist/ and build/ directories"
+	rm -rf dist/ build/
+	@echo "-> Build source and wheel distribution packages"
+	@${ACTIVATE} python setup.py sdist bdist_wheel
+	@echo "-> Upload packages on pypi"
+	@${ACTIVATE} twine upload dist/*
 
 docker-images:
 	@echo "-> Build Docker services"
@@ -139,4 +147,4 @@ docker-images:
 	@mkdir -p dist/
 	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb run test bump docs docker-images
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb run test docs bump publish docker-images
