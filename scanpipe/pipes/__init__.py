@@ -77,9 +77,29 @@ def make_codebase_resource(project, location, **extra_fields):
     codebase_resource.save(save_error=False)
 
 
+def update_or_create_resource(project, resource_data):
+    """
+    Get, update or create a CodebaseResource then return it.
+    """
+    resource_path = resource_data.pop("path")
+    for_packages = resource_data.pop("for_packages", [])
+
+    codebase_resource, _ = CodebaseResource.objects.get_or_create(
+        project=project,
+        path=resource_path,
+        defaults=resource_data,
+    )
+
+    for package_uid in for_packages:
+        package = project.discoveredpackages.get(package_uid=package_uid)
+        codebase_resource.add_package(package)
+
+    return codebase_resource
+
+
 def update_or_create_package(project, package_data, codebase_resource=None):
     """
-    Get, update or create a DiscoveredPackage then returns it.
+    Get, update or create a DiscoveredPackage then return it.
     Use the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL and package_uid as a unique key.
     """

@@ -529,7 +529,7 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     Assign the `discovered_package` to the `codebase_resource` and set its
     status to "application-package".
     """
-    codebase_resource.discovered_packages.add(discovered_package)
+    codebase_resource.add_package(discovered_package)
     codebase_resource.status = "application-package"
     codebase_resource.save()
 
@@ -607,9 +607,9 @@ def make_results_summary(project, scan_results_location):
     return summary
 
 
-def create_inventory_from_scan(project, input_location):
+def load_inventory_from_scan(project, input_location):
     """
-    Create CodebaseResource and DiscoveredPackage instances loaded from the scan
+    Create packages, dependencies, and resources loaded from the ScanCode-toolkit scan
     results located at `input_location`.
     """
     scanned_codebase = get_virtual_codebase(project, input_location)
@@ -618,3 +618,18 @@ def create_inventory_from_scan(project, input_location):
     create_discovered_dependencies(
         project, scanned_codebase, strip_datafile_path_root=True
     )
+
+
+def load_inventory_from_scanpipe(project, scan_data):
+    """
+    Create packages, dependencies, and resources loaded from a ScanCode.io JSON output
+    provided as `scan_data`.
+    """
+    for package_data in scan_data.get("packages", []):
+        pipes.update_or_create_package(project, package_data)
+
+    for resource_data in scan_data.get("files", []):
+        pipes.update_or_create_resource(project, resource_data)
+
+    for dependency_data in scan_data.get("dependencies", []):
+        pipes.update_or_create_dependencies(project, dependency_data)

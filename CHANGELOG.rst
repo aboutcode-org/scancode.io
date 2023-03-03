@@ -4,6 +4,9 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Add support for ScanCode.io results in the "load_inventory" pipeline.
+  https://github.com/nexB/scancode.io/issues/609
+
 - Add support for CycloneDX 1.4 to the "inspect-manifest" pipeline to import SBOM into
   a Project.
   https://github.com/nexB/scancode.io/issues/583

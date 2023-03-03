@@ -1955,6 +1955,12 @@ class CodebaseResource(
         for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
             yield line_number, "".join(line for _, line in lines_group)
 
+    def add_package(self, discovered_package):
+        """
+        Assign the `discovered_package` to this `codebase_resource` instance.
+        """
+        self.discovered_packages.add(discovered_package)
+
     def create_and_add_package(self, package_data):
         """
         Create a DiscoveredPackage instance using the `package_data` and assigns
@@ -1976,10 +1982,8 @@ class CodebaseResource(
                     **package_data,
                 },
             )
-            return
-
-        if package:
-            self.discovered_packages.add(package)
+        else:
+            self.add_package(package)
             return package
 
     @property
@@ -2020,7 +2024,7 @@ class CodebaseResource(
         return spdx.File(
             spdx_id=self.spdx_id,
             name=f"./{self.path}",
-            checksums=[spdx.Checkum(algorithm="sha1", value=self.sha1)],
+            checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
             license_in_files=list(set(spdx_license_keys)),
             copyright_text=", ".join(copyrights),
             contributors=list(set(holders + authors)),
@@ -2347,7 +2351,7 @@ class DiscoveredPackage(
         Return this DiscoveredPackage as an SPDX Package entry.
         """
         checksums = [
-            spdx.Checkum(algorithm=algorithm, value=checksum_value)
+            spdx.Checksum(algorithm=algorithm, value=checksum_value)
             for algorithm in ["sha1", "md5"]
             if (checksum_value := getattr(self, algorithm))
         ]

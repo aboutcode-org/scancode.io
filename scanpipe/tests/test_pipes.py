@@ -44,6 +44,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
 from scanpipe.pipes import filename_now
+from scanpipe.pipes import input
 from scanpipe.pipes import make_codebase_resource
 from scanpipe.pipes import resolve
 from scanpipe.pipes import rootfs
@@ -97,6 +98,25 @@ class ScanPipePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", filename_now())
+
+    def test_scanpipe_pipes_input_get_tool_name_from_scan_headers(self):
+        tool_name = input.get_tool_name_from_scan_headers(scan_data={})
+        self.assertIsNone(tool_name)
+
+        tool_name = input.get_tool_name_from_scan_headers(scan_data={"headers": []})
+        self.assertIsNone(tool_name)
+
+        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        tool_name = input.get_tool_name_from_scan_headers(
+            scan_data=json.loads(input_location.read_text())
+        )
+        self.assertEqual("scanpipe", tool_name)
+
+        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
+        tool_name = input.get_tool_name_from_scan_headers(
+            scan_data=json.loads(input_location.read_text())
+        )
+        self.assertEqual("scancode-toolkit", tool_name)
 
     def test_scanpipe_pipes_scancode_extract_archive(self):
         target = tempfile.mkdtemp()
@@ -485,7 +505,7 @@ class ScanPipePipesTest(TestCase):
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
         project_scan_location = self.data_location / "package_assembly_codebase.json"
-        scancode.create_inventory_from_scan(project, project_scan_location)
+        scancode.load_inventory_from_scan(project, project_scan_location)
 
         self.assertEqual(0, project.discoveredpackages.count())
         scancode.assemble_packages(project)
