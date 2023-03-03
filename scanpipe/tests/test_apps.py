@@ -81,7 +81,7 @@ class ScanPipeAppsTest(TestCase):
 
     def test_scanpipe_apps_register_pipeline_from_file(self):
         path = self.pipelines_location / "do_nothing.py"
-        with self.assertRaise(ImproperlyConfigured):
+        with self.assertRaises(ImproperlyConfigured):
             scanpipe_app.register_pipeline_from_file(path)
 
         path = self.pipelines_location / "register_from_file.py"

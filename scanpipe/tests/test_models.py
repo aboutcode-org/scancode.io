@@ -434,16 +434,16 @@ class ScanPipeModelsTest(TestCase):
         self.assertIsNone(self.project1._raise_if_run_in_progress())
 
         run1.set_task_started(task_id=1)
-        with self.assertRaise(RunInProgressError):
+        with self.assertRaises(RunInProgressError):
             self.project1._raise_if_run_in_progress()
 
-        with self.assertRaise(RunInProgressError):
+        with self.assertRaises(RunInProgressError):
             self.project1.archive()
 
-        with self.assertRaise(RunInProgressError):
+        with self.assertRaises(RunInProgressError):
             self.project1.delete()
 
-        with self.assertRaise(RunInProgressError):
+        with self.assertRaises(RunInProgressError):
             self.project1.reset()
 
     def test_scanpipe_project_queryset_with_counts(self):
@@ -471,7 +471,7 @@ class ScanPipeModelsTest(TestCase):
         run1.set_scancodeio_version()
         self.assertEqual(scancodeio_version, run1.scancodeio_version)
 
-        with self.assertRaise(ValueError) as cm:
+        with self.assertRaises(ValueError) as cm:
             run1.set_scancodeio_version()
         self.assertIn("Field scancodeio_version already set to", str(cm.exception))
 
@@ -721,7 +721,7 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_run_model_append_to_log(self):
         run1 = self.create_run()
 
-        with self.assertRaise(ValueError):
+        with self.assertRaises(ValueError):
             run1.append_to_log("multiline\nmessage")
 
         run1.append_to_log("line1")
@@ -1535,7 +1535,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         project1 = Project.objects.create(name="Analysis")
         self.assertEqual({}, project1.extra_data)
 
-        with self.assertRaise(ValueError):
+        with self.assertRaises(ValueError):
             project1.update_extra_data("not_a_dict")
 
         data = {"key": "value"}
@@ -1635,7 +1635,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         # The exception are not capture at the DiscoveredPackage.create_from_data but
         # rather in the CodebaseResource.create_and_add_package method so resource data
         # can be injected in the ProjectError record.
-        with self.assertRaise(DataError):
+        with self.assertRaises(DataError):
             DiscoveredPackage.create_from_data(project1, bad_data)
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
@@ -1696,7 +1696,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         package = DiscoveredPackage.create_from_data(project1, package_data1)
         self.assertTrue(package.package_uid)
 
-        with self.assertRaise(IntegrityError):
+        with self.assertRaises(IntegrityError):
             DiscoveredPackage.create_from_data(project1, package_data1)
 
         package_data_no_uid = package_data1.copy()

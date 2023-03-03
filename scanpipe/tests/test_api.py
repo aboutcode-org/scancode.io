@@ -681,7 +681,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(
             CodebaseResourceSerializer, get_model_serializer(CodebaseResource)
         )
-        with self.assertRaise(LookupError):
+        with self.assertRaises(LookupError):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
@@ -689,5 +689,5 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(11, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(30, len(get_serializer_fields(CodebaseResource)))
 
-        with self.assertRaise(LookupError):
+        with self.assertRaises(LookupError):
             get_serializer_fields(None)

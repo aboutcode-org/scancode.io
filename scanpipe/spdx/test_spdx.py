@@ -277,7 +277,7 @@ class SPDXTestCase(TestCase):
 
     def test_spdx_creation_info_missing_data(self):
         creation_info = spdx.CreationInfo()
-        with self.assertRaise(ValueError) as error:
+        with self.assertRaises(ValueError) as error:
             creation_info.as_dict()
         assert "Missing values to build `creators` list." == str(error.exception)
 
@@ -329,7 +329,7 @@ class SPDXTestCase(TestCase):
         assert "2000-01-01T10:20:30Z" == date_to_iso("2000-01-01 10:20:30")
         assert "2000-01-01T10:20:30Z" == date_to_iso("2000-01-01T10:20:30Z")
 
-        with self.assertRaise(ValueError) as error:
+        with self.assertRaises(ValueError) as error:
             date_to_iso("not_a_date")
         assert "Invalid isoformat string: 'not_a_date'" == str(error.exception)
 
@@ -376,5 +376,5 @@ class SPDXTestCase(TestCase):
         document = spdx.Document(**self.document_data)
         spdx.validate_document(document, self.schema)
 
-        with self.assertRaise(Exception):
+        with self.assertRaises(Exception):
             spdx.validate_document({}, self.schema)
