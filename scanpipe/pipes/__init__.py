@@ -39,7 +39,7 @@ logger = logging.getLogger("scanpipe.pipes")
 
 def make_codebase_resource(project, location, **extra_fields):
     """
-    Creates a CodebaseResource instance in the database for the given `project`.
+    Create a CodebaseResource instance in the database for the given `project`.
 
     The provided `location` is the absolute path of this resource.
     It must be rooted in `project.codebase_path` as only the relative path within the
@@ -79,8 +79,8 @@ def make_codebase_resource(project, location, **extra_fields):
 
 def update_or_create_package(project, package_data, codebase_resource=None):
     """
-    Gets, updates or creates a DiscoveredPackage then returns it.
-    Uses the `project` and `package_data` mapping to lookup and creates the
+    Get, update or create a DiscoveredPackage then returns it.
+    Use the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL and package_uid as a unique key.
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
@@ -116,8 +116,8 @@ def update_or_create_dependencies(
     project, dependency_data, strip_datafile_path_root=False
 ):
     """
-    Gets, updates or creates a DiscoveredDependency then returns it.
-    Uses the `project` and `dependency_data` mapping to lookup and creates the
+    Get, update or create a DiscoveredDependency then returns it.
+    Use the `project` and `dependency_data` mapping to lookup and creates the
     DiscoveredDependency using its dependency_uid and for_package_uid as a unique key.
 
     If `strip_datafile_path_root` is True, then
@@ -148,7 +148,7 @@ def update_or_create_dependencies(
 
 def analyze_scanned_files(project):
     """
-    Sets the status for CodebaseResource to unknown or no license.
+    Set the status for CodebaseResource to unknown or no license.
     """
     scanned_files = project.codebaseresources.files().status("scanned")
 
@@ -158,28 +158,28 @@ def analyze_scanned_files(project):
 
 def tag_not_analyzed_codebase_resources(project):
     """
-    Flags any of the `project`'s '`CodebaseResource` without a status as "not-analyzed".
+    Flag any of the `project`'s '`CodebaseResource` without a status as "not-analyzed".
     """
     project.codebaseresources.no_status().update(status="not-analyzed")
 
 
 def normalize_path(path):
     """
-    Returns a normalized path from a `path` string.
+    Return a normalized path from a `path` string.
     """
     return "/" + path.strip("/")
 
 
 def strip_root(location):
     """
-    Returns the provided `location` without the root directory.
+    Return the provided `location` without the root directory.
     """
     return "/".join(str(location).strip("/").split("/")[1:])
 
 
 def filename_now(sep="-"):
     """
-    Returns the current date and time in iso format suitable for filename.
+    Return the current date and time in iso format suitable for filename.
     """
     now = datetime.now().isoformat(sep=sep, timespec="seconds")
     return now.replace(":", sep)
@@ -187,7 +187,7 @@ def filename_now(sep="-"):
 
 def count_group_by(queryset, field_name):
     """
-    Returns a summary of all existing values for the provided `field_name` on the
+    Return a summary of all existing values for the provided `field_name` on the
     `queryset`, including the count of each entry, as a dictionary.
     """
     counts = (
@@ -201,7 +201,7 @@ def count_group_by(queryset, field_name):
 
 def get_bin_executable(filename):
     """
-    Returns the location of the `filename` executable binary.
+    Return the location of the `filename` executable binary.
     """
     return str(Path(sys.executable).parent / filename)
 
@@ -218,7 +218,7 @@ def _stream_process(process, stream_to=logger.info):
 
 def run_command(cmd, log_output=False):
     """
-    Returns (exitcode, output) of executing the provided `cmd` in a shell.
+    Return (exitcode, output) of executing the provided `cmd` in a shell.
     `cmd` can be provided as a string or as a list of arguments.
 
     If `log_output` is True, the stdout and stderr of the process will be captured
@@ -248,7 +248,7 @@ def run_command(cmd, log_output=False):
 
 def remove_prefix(text, prefix):
     """
-    Removes the `prefix` from `text`.
+    Remove the `prefix` from `text`.
     """
     if text.startswith(prefix):
         prefix_len = len(prefix)

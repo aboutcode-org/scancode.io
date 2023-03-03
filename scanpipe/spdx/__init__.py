@@ -58,8 +58,8 @@ package1 = spdx.Package(
     version="3.3.5",
     license_concluded="LicenseRef-1",
     checksums=[
-        spdx.Checksum(algorithm="SHA1", value="10c72b88de4c5f3095ebe20b4d8afbedb32b8f"),
-        spdx.Checksum(algorithm="MD5", value="56770c1a2df6e0dc51c491f0a5b9d865"),
+        spdx.Checkum(algorithm="SHA1", value="10c72b88de4c5f3095ebe20b4d8afbedb32b8f"),
+        spdx.Checkum(algorithm="MD5", value="56770c1a2df6e0dc51c491f0a5b9d865"),
     ],
     external_refs=[
         spdx.ExternalRef(
@@ -199,7 +199,7 @@ class CreationInfo:
 
 
 @dataclass
-class Checksum:
+class Checkum:
     """
     The checksum provides a mechanism that can be used to verify that the contents of
     a File or Package have not changed.
@@ -342,7 +342,7 @@ class Package:
     comment: str = ""
     license_comments: str = ""
 
-    checksums: List[Checksum] = field(default_factory=list)
+    checksums: List[Checkum] = field(default_factory=list)
     external_refs: List[ExternalRef] = field(default_factory=list)
     attribution_texts: List[str] = field(default_factory=list)
 
@@ -426,7 +426,7 @@ class Package:
             license_comments=data.get("licenseComments"),
             attribution_texts=data.get("attributionTexts"),
             checksums=[
-                Checksum.from_data(checksum_data)
+                Checkum.from_data(checksum_data)
                 for checksum_data in data.get("checksums", [])
             ],
             external_refs=[
@@ -444,7 +444,7 @@ class File:
 
     spdx_id: str
     name: str
-    checksums: List[Checksum] = field(default_factory=list)
+    checksums: List[Checkum] = field(default_factory=list)
 
     license_concluded: str = "NOASSERTION"
     copyright_text: str = "NOASSERTION"
@@ -490,7 +490,7 @@ class File:
             spdx_id=data.get("SPDXID"),
             name=data.get("fileName"),
             checksums=[
-                Checksum.from_data(checksum_data)
+                Checkum.from_data(checksum_data)
                 for checksum_data in data.get("checksums", [])
             ],
             types=data.get("fileTypes"),

@@ -38,7 +38,7 @@ def analyze_licenses_and_sources(self):
 
 def tag_compliance_files(project):
     """
-    Tags compliance files status for the provided `project`.
+    Tag compliance files status for the provided `project`.
     """
     compliance_dirs = {
         "/licenses": "compliance-licenses",
@@ -53,7 +53,7 @@ def tag_compliance_files(project):
 
 def analyze_compliance_licenses(project):
     """
-    Scans compliance licenses status for the provided `project`.
+    Scan compliance licenses status for the provided `project`.
     """
     qs = project.codebaseresources.status("compliance-licenses")
 

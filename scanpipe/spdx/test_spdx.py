@@ -97,8 +97,8 @@ class SPDXTestCase(TestCase):
             "license_concluded": "LicenseRef-1",
             "release_date": "2000-01-01",
             "checksums": [
-                spdx.Checksum(**self.checksum_sha1_data),
-                spdx.Checksum(**self.checksum_md5_data),
+                spdx.Checkum(**self.checksum_sha1_data),
+                spdx.Checkum(**self.checksum_md5_data),
             ],
             "external_refs": [spdx.ExternalRef(**self.external_ref_purl_data)],
         }
@@ -135,7 +135,7 @@ class SPDXTestCase(TestCase):
             "name": "file.txt",
             "license_concluded": "LicenseRef-1",
             "checksums": [
-                spdx.Checksum(**self.checksum_sha1_data),
+                spdx.Checkum(**self.checksum_sha1_data),
             ],
             "types": ["TEXT"],
             "comment": "comment",
@@ -277,17 +277,17 @@ class SPDXTestCase(TestCase):
 
     def test_spdx_creation_info_missing_data(self):
         creation_info = spdx.CreationInfo()
-        with self.assertRaises(ValueError) as error:
+        with self.assertRaise(ValueError) as error:
             creation_info.as_dict()
         assert "Missing values to build `creators` list." == str(error.exception)
 
     def test_spdx_checksum_as_dict(self):
-        checksum = spdx.Checksum(**self.checksum_sha1_data)
+        checksum = spdx.Checkum(**self.checksum_sha1_data)
         assert self.checksum_sha1_spdx_data == checksum.as_dict()
 
     def test_spdx_checksum_from_data(self):
-        assert spdx.Checksum.from_data({})
-        checksum = spdx.Checksum.from_data(self.checksum_sha1_spdx_data)
+        assert spdx.Checkum.from_data({})
+        checksum = spdx.Checkum.from_data(self.checksum_sha1_spdx_data)
         assert self.checksum_sha1_spdx_data == checksum.as_dict()
 
     def test_spdx_external_ref_as_dict(self):
@@ -329,7 +329,7 @@ class SPDXTestCase(TestCase):
         assert "2000-01-01T10:20:30Z" == date_to_iso("2000-01-01 10:20:30")
         assert "2000-01-01T10:20:30Z" == date_to_iso("2000-01-01T10:20:30Z")
 
-        with self.assertRaises(ValueError) as error:
+        with self.assertRaise(ValueError) as error:
             date_to_iso("not_a_date")
         assert "Invalid isoformat string: 'not_a_date'" == str(error.exception)
 
@@ -376,5 +376,5 @@ class SPDXTestCase(TestCase):
         document = spdx.Document(**self.document_data)
         spdx.validate_document(document, self.schema)
 
-        with self.assertRaises(Exception):
+        with self.assertRaise(Exception):
             spdx.validate_document({}, self.schema)

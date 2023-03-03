@@ -74,7 +74,7 @@ class ListDisplayField:
 
 class FilterLink(ListDisplayField):
     """
-    Returns a given field as a link to filter by its value.
+    Return a given field as a link to filter by its value.
     """
 
     def __init__(self, name, filter_lookup=None, **kwargs):
@@ -95,7 +95,7 @@ class FilterLink(ListDisplayField):
 
 class JoinList(ListDisplayField):
     """
-    Returns field values as a list joined by the provided separator—`sep`.
+    Return field values as a list joined by the provided separator—`sep`.
     """
 
     def __init__(self, name, sep="<br>", **kwargs):
@@ -110,7 +110,7 @@ class JoinList(ListDisplayField):
 class InjectRequestChangeList(ChangeList):
     def get_results(self, request):
         """
-        Injects the `request` on each object of the results_list.
+        Inject the `request` on each object of the results_list.
         """
         super().get_results(request)
         for obj in self.result_list:
@@ -119,7 +119,7 @@ class InjectRequestChangeList(ChangeList):
 
 class PathListFilter(admin.SimpleListFilter):
     """
-    Filters by `path` using the `startswith` lookup.
+    Filter by `path` using the `startswith` lookup.
     Only the provided value is displayed as a choice for visual clue on filter
     activity.
     """
@@ -148,7 +148,7 @@ class Echo:
 
     def write(self, value):
         """
-        Writes a given value by returning it instead of storing it in a buffer.
+        Write a given value by returning it instead of storing it in a buffer.
         """
         return value
 
@@ -221,7 +221,7 @@ class AdminExportView(FormView):
 
 class ProjectRelatedModelAdmin(admin.ModelAdmin):
     """
-    Regroups the common ModelAdmin values for Project related models.
+    Regroup the common ModelAdmin values for Project related models.
     """
 
     list_select_related = True
@@ -287,7 +287,7 @@ class ProjectRelatedModelAdmin(admin.ModelAdmin):
 
 def get_admin_url(obj, view="change"):
     """
-    Returns an admin URL for a provided `obj` object.
+    Return an admin URL for a provided `obj` object.
     """
     opts = obj._meta
     viewname = f"admin:{opts.app_label}_{opts.model_name}_{view}"
@@ -321,7 +321,7 @@ class CodebaseResourceAdmin(ProjectRelatedModelAdmin):
     @admin.display(ordering="path", description="Path")
     def path_filter(self, obj):
         """
-        Splits the `obj.path` into clickable segments.
+        Split the `obj.path` into clickable segments.
         Each segment links to a filter by itself.
         The last segment links the target object form view.
         """

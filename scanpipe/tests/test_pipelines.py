@@ -245,7 +245,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def _without_keys(self, data, exclude_keys):
         """
-        Returns the `data` excluding the provided `exclude_keys`.
+        Return the `data` excluding the provided `exclude_keys`.
         """
         if type(data) == list:
             return [self._without_keys(entry, exclude_keys) for entry in data]
@@ -263,7 +263,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def _normalize_package_uids(self, data):
         """
-        Returns the `data`, where any `package_uid` value has been normalized
+        Return the `data`, where any `package_uid` value has been normalized
         with `purl_with_fake_uuid()`
         """
         if type(data) == list:

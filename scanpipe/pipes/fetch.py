@@ -44,7 +44,7 @@ Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 
 def fetch_http(uri, to=None):
     """
-    Downloads a given `uri` in a temporary directory and return the directory's path.
+    Download a given `uri` in a temporary directory and return the directory's path.
     """
     response = requests.get(uri)
 
@@ -91,11 +91,11 @@ FETCHCODE_SKOPEO_PATH_ENVVAR = "FETCHCODE_SKOPEO_PATH"
 
 def _get_skopeo_location(_cache=[]):
     """
-    Returns the path to the skopeo command line executable, trying:
+    Return the path to the skopeo command line executable, trying:
     - an environment variable ``FETCHCODE_SKOPEO_PATH``,
     - a plugin-provided path,
     - the system PATH.
-    Raises an Exception if the skopeo binary cannot be found.
+    Raise an Exception if the skopeo binary cannot be found.
     """
     if _cache:
         return _cache[0]
@@ -131,7 +131,7 @@ def _get_skopeo_location(_cache=[]):
 
 def get_docker_image_platform(docker_reference):
     """
-    Returns a platform mapping of a docker reference.
+    Return a platform mapping of a docker reference.
     If there are more than one, return the first one by default.
     """
     skopeo_executable = _get_skopeo_location()
@@ -183,7 +183,7 @@ def get_docker_image_platform(docker_reference):
 
 def fetch_docker_image(docker_reference, to=None):
     """
-    Fetches a docker image from the provided Docker image `docker_reference`
+    Fetch a docker image from the provided Docker image `docker_reference`
     docker:// reference URL. Return a `download` object.
 
     Docker references are documented here:
@@ -233,7 +233,7 @@ def fetch_docker_image(docker_reference, to=None):
 
 def _get_fetcher(url):
     """
-    Returns the fetcher function based on the provided `url`.
+    Return the fetcher function based on the provided `url`.
     """
     if url.startswith("docker://"):
         return fetch_docker_image
@@ -242,9 +242,9 @@ def _get_fetcher(url):
 
 def fetch_urls(urls):
     """
-    Fetches provided `urls` list.
+    Fetch provided `urls` list.
     The `urls` can also be provided as a string containing one URL per line.
-    Returns the fetched URLs as `downloads` objects and a list of `errors`.
+    Return the fetched URLs as `downloads` objects and a list of `errors`.
     """
     downloads = []
     errors = []

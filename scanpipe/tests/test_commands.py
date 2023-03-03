@@ -72,7 +72,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         if not is_graphviz_installed():
             expected = "Graphviz is not installed."
-            with self.assertRaisesMessage(CommandError, expected):
+            with self.assertRaiseMessage(CommandError, expected):
                 call_command("graph", self.pipeline_name)
             return
 
@@ -95,7 +95,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
 
         expected = "Error: the following arguments are required: name"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-project")
 
         call_command("create-project", "my_project", stdout=out)
@@ -103,7 +103,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertTrue(Project.objects.get(name="my_project"))
 
         expected = "Project with this Name already exists."
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-project", "my_project")
 
     def test_scanpipe_management_command_create_project_pipelines(self):
@@ -111,7 +111,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options = ["--pipeline", "non-existing"]
         expected = "non-existing is not a valid pipeline"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
         options = [
@@ -134,7 +134,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options = ["--input-file", "non-existing"]
         expected = "non-existing not found or not a file"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
         parent_path = Path(__file__).parent
@@ -153,7 +153,7 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_create_project_execute(self):
         options = ["--execute"]
         expected = "The --execute option requires one or more pipelines."
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-project", "my_project", *options)
 
         pipeline = "load_inventory"
@@ -175,7 +175,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         expected = "SCANCODEIO_ASYNC=False is not compatible with --async option."
         with override_settings(SCANCODEIO_ASYNC=False):
-            with self.assertRaisesMessage(CommandError, expected):
+            with self.assertRaiseMessage(CommandError, expected):
                 call_command("create-project", "other_project", *options, stdout=out)
         self.assertIn(
             "Project other_project created with work directory", out.getvalue()
@@ -194,7 +194,7 @@ class ScanPipeManagementCommandTest(TestCase):
         ]
 
         expected = "the following arguments are required: --project"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)
 
         options.extend(["--project", project.name])
@@ -205,7 +205,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options = ["--project", project.name, "--input-file", "non-existing.py"]
         expected = "non-existing.py not found or not a file"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)
 
     @mock.patch("requests.get")
@@ -244,7 +244,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options = pipelines[:]
         expected = "the following arguments are required: --project"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("add-pipeline", *options, stdout=out)
 
         options.extend(["--project", project.name])
@@ -254,7 +254,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options = ["--project", project.name, "non-existing"]
         expected = "non-existing is not a valid pipeline"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("add-pipeline", *options, stdout=out)
 
     def test_scanpipe_management_command_show_pipeline(self):
@@ -287,7 +287,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         out = StringIO()
         expected = "No pipelines to run on project my_project"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("execute", *options, stdout=out)
 
         out = StringIO()
@@ -308,7 +308,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         expected = "Error during docker execution:\nError log"
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
-            with self.assertRaisesMessage(CommandError, expected):
+            with self.assertRaiseMessage(CommandError, expected):
                 call_command("execute", *options, stdout=out, stderr=err)
         run2.refresh_from_db()
         self.assertTrue(run2.task_failed)
@@ -318,7 +318,7 @@ class ScanPipeManagementCommandTest(TestCase):
         err = StringIO()
         run3 = project.add_pipeline(self.pipeline_name)
         with mock.patch("scanpipe.tasks.execute_pipeline_task", raise_interrupt):
-            with self.assertRaisesMessage(CommandError, "Pipeline execution stopped."):
+            with self.assertRaiseMessage(CommandError, "Pipeline execution stopped."):
                 call_command("execute", *options, stdout=out, stderr=err)
         run3.refresh_from_db()
         run3 = Run.objects.get(pk=run3.pk)
@@ -424,7 +424,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "Error: argument --format: invalid choice: 'WRONG' "
             "(choose from 'json', 'csv', 'xlsx')"
         )
-        with self.assertRaisesMessage(CommandError, message):
+        with self.assertRaiseMessage(CommandError, message):
             call_command("output", *options, stdout=out)
 
     def test_scanpipe_management_command_delete_project(self):
@@ -510,7 +510,7 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
 
         expected = "Error: the following arguments are required: username"
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-user", "--no-input")
 
         username = "my_username"
@@ -520,7 +520,7 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertTrue(user.auth_token)
 
         expected = "Error: That username is already taken."
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
 
         username = "^&*"
@@ -528,5 +528,5 @@ class ScanPipeManagementCommandTest(TestCase):
             "Enter a valid username. This value may contain only letters, numbers, "
             "and @/./+/-/_ characters."
         )
-        with self.assertRaisesMessage(CommandError, expected):
+        with self.assertRaiseMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)

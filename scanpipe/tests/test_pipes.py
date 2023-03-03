@@ -663,7 +663,7 @@ class ScanPipePipesTest(TestCase):
         mock_skopeo.return_value = "skopeo"
         mock_run_command.return_value = 1, "error"
 
-        with self.assertRaises(fetch.FetchDockerImageError):
+        with self.assertRaise(fetch.FetchDockerImageError):
             fetch.fetch_docker_image(url)
 
         mock_run_command.assert_called_once()
@@ -1116,7 +1116,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         p1 = Project.objects.create(name="Analysis")
         resource_location = str(self.data_location / "notice.NOTICE")
 
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaise(ValueError) as cm:
             make_codebase_resource(p1, resource_location)
 
         self.assertIn("not", str(cm.exception))
