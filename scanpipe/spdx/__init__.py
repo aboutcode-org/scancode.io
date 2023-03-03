@@ -639,7 +639,7 @@ class Document:
 
     def validate(self, schema):
         """
-        Check the validation of this SPDX document.
+        Check the validity of this SPDX document.
         """
         return validate_document(document=self.as_dict(), schema=schema)
 

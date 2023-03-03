@@ -684,7 +684,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("4.0.8", discoveredpackage.version)
         self.assertEqual("bsd-new", discoveredpackage.license_expression)
 
-    def test_scanpipe_inspect_manifest_pipeline_spdx_document_integration_test(self):
+    def test_scanpipe_inspect_manifest_pipeline_spdx_integration_test(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 
@@ -706,9 +706,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("MIT", discoveredpackage.declared_license)
         self.assertEqual("mit", discoveredpackage.license_expression)
 
-    def test_scanpipe_inspect_manifest_pipeline_cyclonedx_document_integration_test(
-        self,
-    ):
+    def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration_test(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 

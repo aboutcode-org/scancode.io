@@ -25,7 +25,6 @@ import pathlib
 from collections import defaultdict
 
 import jsonschema
-from hoppr_cyclonedx_models.cyclonedx_1_4 import Component
 from hoppr_cyclonedx_models.cyclonedx_1_4 import (
     CyclonedxSoftwareBillOfMaterialsStandard as Bom_1_4,
 )
@@ -137,17 +136,17 @@ def get_external_references(external_references):
     if not external_references:
         return {}
 
-    refrences = defaultdict(lambda: [])
+    references = defaultdict(lambda: [])
 
     for ref in external_references:
-        refrences[ref.type.value].append(ref.url)
+        references[ref.type.value].append(ref.url)
 
-    return dict(refrences)
+    return dict(references)
 
 
 def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
     """
-    CycloneDX document validation.
+    Check the validity of this CycloneDX document.
     """
     if isinstance(document, str):
         document = json.loads(document)
