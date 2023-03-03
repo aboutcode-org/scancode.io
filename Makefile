@@ -84,7 +84,7 @@ check: doc8
 	@echo "-> Run black validation"
 	@${ACTIVATE} black --check ${BLACK_ARGS} .
 	@echo "-> Run docstring validation"
-	@${ACTIVATE} pydocstyle --select=D401 scanpipe
+	@${ACTIVATE} pydocstyle --select=D401 scanpipe scancodeio
 
 clean:
 	@echo "-> Clean the Python env"
