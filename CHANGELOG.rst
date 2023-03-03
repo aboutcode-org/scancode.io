@@ -10,6 +10,10 @@ v33.0.0 (unreleased)
   entry point available while running ``docker compose`` commands.
   https://github.com/nexB/scancode.io/issues/616
 
+- Add new tutorial about the "find vulnerabilities" pipeline and the vulnerablecode
+  integration in the documentation.
+  https://github.com/nexB/scancode.io/issues/600
+
 v32.0.1 (2023-02-20)
 --------------------
 
