@@ -181,7 +181,12 @@ class ProjectSerializer(
     def create(self, validated_data):
         """
         Creates a new `project` with `upload_file` and `pipeline` as optional.
+
         The `execute_now` parameter can be set to execute the Pipeline on creation.
+        Note that even when `execute_now` is True, the pipeline execution is always
+        delayed after the actual database save and commit of the Project creation
+        process, using the `transaction.on_commit` callback system.
+        This ensure the Project data integrity before running any pipelines.
         """
         upload_file = validated_data.pop("upload_file", None)
         input_urls = validated_data.pop("input_urls", [])
@@ -201,11 +206,11 @@ class ProjectSerializer(
         if downloads:
             project.add_downloads(downloads)
 
-        if pipeline:
-            project.add_pipeline(pipeline, execute_now)
-
         if webhook_url:
             project.add_webhook_subscription(webhook_url)
+
+        if pipeline:
+            project.add_pipeline(pipeline, execute_now)
 
         return project
 

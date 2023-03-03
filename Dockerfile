@@ -24,10 +24,12 @@ FROM --platform=linux/amd64 python:3.9
 
 WORKDIR /app
 
-# Python settings: Force unbuffered stdout and stderr (i.e. they are flushed to terminal immediately)
+# Python settings: force unbuffered stdout and stderr (i.e. they are flushed to terminal immediately)
 ENV PYTHONUNBUFFERED 1
 # Python settings: do not write pyc files
 ENV PYTHONDONTWRITEBYTECODE 1
+# Add the workdir in the Python path for scancodeio modules availability in entry points
+ENV PYTHONPATH "${PYTHONPATH}:/app"
 
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html

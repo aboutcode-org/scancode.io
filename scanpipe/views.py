@@ -65,7 +65,6 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
-from scanpipe.pipes import codebase
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
@@ -731,19 +730,6 @@ class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.Delet
             messages.success(self.request, self.success_message.format(project.name))
 
         return redirect(project)
-
-
-class ProjectTreeView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
-    template_name = "scanpipe/project_tree.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        fields = ["name", "path"]
-        project_codebase = codebase.ProjectCodebase(self.object)
-        context["tree_data"] = [codebase.get_tree(project_codebase.root, fields)]
-
-        return context
 
 
 @conditional_login_required

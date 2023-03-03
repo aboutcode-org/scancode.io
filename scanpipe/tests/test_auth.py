@@ -126,7 +126,6 @@ class ScanCodeIOAuthTest(TestCase):
             ("project_resources", [a_uuid]),
             ("project_packages", [a_uuid]),
             ("project_errors", [a_uuid]),
-            ("project_tree", [a_uuid]),
             ("project_archive", [a_uuid]),
             ("project_delete", [a_uuid]),
             ("project_reset", [a_uuid]),

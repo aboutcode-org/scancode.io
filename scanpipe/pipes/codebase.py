@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.core.exceptions import ObjectDoesNotExist
-
 from scanpipe.models import Project
 
 
@@ -29,7 +27,14 @@ def sort_by_lower_name(resource):
     return resource["name"].lower()
 
 
-def get_tree(resource, fields, codebase=None):
+def get_resource_fields(resource, fields):
+    """
+    Return a mapping of fields from `fields` and values from `resource`
+    """
+    return {field: getattr(resource, field) for field in fields}
+
+
+def get_resource_tree(resource, fields, codebase=None, seen_resources=set()):
     """
     Returns a tree as a dictionary structure starting from the provided `resource`.
 
@@ -38,23 +43,61 @@ def get_tree(resource, fields, codebase=None):
      - commoncode.resource.Resource
 
     The data included for each child is controlled with the `fields` argument.
+
     The `codebase` is only required in the context of a commoncode `Resource`
     input.
+
+    `seen_resources` is used when get_resource_tree() is used in the context of
+    get_codebase_tree(). We keep track of child Resources we visit in
+    `seen_resources`, so we don't visit them again in get_codebase_tree().
     """
-    resource_dict = {field: getattr(resource, field) for field in fields}
+    resource_dict = get_resource_fields(resource, fields)
 
     if resource.is_dir:
-        children = [
-            get_tree(child, fields, codebase) for child in resource.children(codebase)
-        ]
+        children = []
+        for child in resource.children(codebase):
+            seen_resources.add(child.path)
+            children.append(get_resource_tree(child, fields, codebase, seen_resources))
         if children:
             resource_dict["children"] = sorted(children, key=sort_by_lower_name)
 
     return resource_dict
 
 
-# TODO: Walking the ProjectCodebase is broken as we do not have a consistent way
-# to get the root of a codebase.
+def get_codebase_tree(codebase, fields):
+    """
+    Returns a tree as a dictionary structure starting from the root resources of
+    the provided `codebase`.
+
+    The following classes are supported for the input `codebase` object:
+     - scanpipe.pipes.codebase.ProjectCodebase
+     - commoncode.resource.Codebase
+     - commoncode.resource.VirtualCodebase
+
+    The data included for each child is controlled with the `fields` argument.
+    """
+    seen_resources = set()
+    codebase_dict = dict(children=[])
+    for resource in codebase.walk():
+        path = resource.path
+        if path in seen_resources:
+            continue
+        else:
+            seen_resources.add(path)
+        resource_dict = get_resource_fields(resource, fields)
+        if resource.is_dir:
+            children = []
+            for child in resource.children(codebase):
+                seen_resources.add(child.path)
+                children.append(
+                    get_resource_tree(child, fields, codebase, seen_resources)
+                )
+            if children:
+                resource_dict["children"] = sorted(children, key=sort_by_lower_name)
+        codebase_dict["children"].append(resource_dict)
+    return codebase_dict
+
+
 class ProjectCodebase:
     """
     Represents the codebase of a project stored in the database.
@@ -68,24 +111,21 @@ class ProjectCodebase:
         self.project = project
 
     @property
-    def root(self):
-        try:
-            return self.project.codebaseresources.get(path="codebase")
-        except ObjectDoesNotExist:
-            raise AttributeError("Codebase root cannot be determined.")
+    def root_resources(self):
+        return self.project.codebaseresources.exclude(path__contains="/")
 
     @property
     def resources(self):
         return self.project.codebaseresources.all()
 
     def walk(self, topdown=True):
-        root = self.root
-        if topdown:
-            yield root
-        for resource in root.walk(topdown=topdown):
-            yield resource
-        if not topdown:
-            yield root
+        for root_resource in self.root_resources:
+            if topdown:
+                yield root_resource
+            for resource in root_resource.walk(topdown=topdown):
+                yield resource
+            if not topdown:
+                yield root_resource
 
     def get_tree(self):
-        return get_tree(self.root, fields=["name", "path"])
+        return get_codebase_tree(self, fields=["name", "path"])

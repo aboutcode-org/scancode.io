@@ -501,8 +501,19 @@ class ScanPipePipesTest(TestCase):
         ]
         self.assertEquals(sorted(expected_resources), sorted(associated_resources))
 
-    @expectedFailure
-    def test_scanpipe_pipes_codebase_get_tree(self):
+    def test_scanpipe_pipes_codebase_get_codebase_tree(self):
+        def _replace_path(virtual_tree_children):
+            """
+            Given a list `virtual_tree_children` of mappings, remove instances
+            of "virtual_root/" from the paths of mappings and their children,
+            recursively.
+            """
+            for res in virtual_tree_children:
+                path = res["path"]
+                path = path.replace("virtual_root/", "")
+                res["path"] = path
+                _replace_path(res.get("children", []))
+
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
@@ -512,31 +523,29 @@ class ScanPipePipesTest(TestCase):
         project_codebase = codebase.ProjectCodebase(project)
 
         fields = ["name", "path"]
-        virtual_tree = codebase.get_tree(
-            virtual_codebase.root, fields, codebase=virtual_codebase
-        )
-        project_tree = codebase.get_tree(project_codebase.root, fields)
+
+        virtual_tree = codebase.get_codebase_tree(virtual_codebase, fields)
+        project_tree = codebase.get_codebase_tree(project_codebase, fields)
 
         with open(self.data_location / "asgiref-3.3.0_tree.json") as f:
             expected = json.loads(f.read())
 
         self.assertEqual(expected, project_tree)
-        self.assertEqual(expected, virtual_tree)
+
+        virtual_tree_children = virtual_tree["children"][0]["children"]
+        _replace_path(virtual_tree_children)
+
+        self.assertEqual(expected["children"], virtual_tree_children)
 
     def test_scanpipe_pipes_codebase_project_codebase_class_no_resources(self):
         project = Project.objects.create(name="project")
-
         project_codebase = codebase.ProjectCodebase(project)
-        with self.assertRaises(AttributeError):
-            project_codebase.root
 
+        self.assertEqual([], list(project_codebase.root_resources))
         self.assertEqual([], list(project_codebase.resources))
-        with self.assertRaises(AttributeError):
-            list(project_codebase.walk())
-        with self.assertRaises(AttributeError):
-            project_codebase.get_tree()
+        self.assertEqual([], list(project_codebase.walk()))
+        self.assertEqual(dict(children=[]), project_codebase.get_tree())
 
-    @expectedFailure
     def test_scanpipe_pipes_codebase_project_codebase_class_with_resources(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -544,16 +553,15 @@ class ScanPipePipesTest(TestCase):
         project = Project.objects.get(name="asgiref")
         project_codebase = codebase.ProjectCodebase(project)
 
-        expected_root = project.codebaseresources.get(path="codebase")
-        self.assertTrue(isinstance(project_codebase.root, CodebaseResource))
-        self.assertEqual(expected_root, project_codebase.root)
+        expected_root_resources = project.codebaseresources.exclude(path__contains="/")
+        expected_root_resources = list(expected_root_resources)
+        self.assertEqual(expected_root_resources, list(project_codebase.root_resources))
 
-        self.assertEqual(19, len(project_codebase.resources))
-        self.assertEqual(expected_root, project_codebase.resources[0])
+        self.assertEqual(18, len(project_codebase.resources))
 
         walk_gen = project_codebase.walk()
-        self.assertEqual(expected_root, next(walk_gen))
-        expected = "codebase/asgiref-3.3.0-py3-none-any.whl"
+        self.assertEqual(next(iter(expected_root_resources)), next(walk_gen))
+        expected = "asgiref-3.3.0-py3-none-any.whl-extract"
         self.assertEqual(expected, next(walk_gen).path)
 
         tree = project_codebase.get_tree()
@@ -562,7 +570,6 @@ class ScanPipePipesTest(TestCase):
 
         self.assertEqual(expected, tree)
 
-    @expectedFailure
     def test_scanpipe_pipes_codebase_project_codebase_class_walk(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -572,47 +579,49 @@ class ScanPipePipesTest(TestCase):
 
         topdown_paths = list(r.path for r in project_codebase.walk(topdown=True))
         expected_topdown_paths = [
-            "codebase",
-            "codebase/asgiref-3.3.0.whl",
-            "codebase/asgiref-3.3.0.whl-extract",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0-py3-none-any.whl",
+            "asgiref-3.3.0-py3-none-any.whl-extract",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/"
+            "top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
         ]
         self.assertEqual(expected_topdown_paths, topdown_paths)
 
         bottom_up_paths = list(r.path for r in project_codebase.walk(topdown=False))
         expected_bottom_up_paths = [
-            "codebase/asgiref-3.3.0.whl",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/compatibility.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/current_thread_executor.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/local.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/server.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/sync.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/testing.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/timeout.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref/wsgi.py",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/METADATA",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/RECORD",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
-            "codebase/asgiref-3.3.0.whl-extract/asgiref-3.3.0.dist-info",
-            "codebase/asgiref-3.3.0.whl-extract",
-            "codebase",
+            "asgiref-3.3.0-py3-none-any.whl",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/"
+            "top_level.txt",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+            "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+            "asgiref-3.3.0-py3-none-any.whl-extract",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
 
