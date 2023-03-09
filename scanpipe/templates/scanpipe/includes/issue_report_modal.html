@@ -1,0 +1,79 @@
+<div class="modal" id="modal-report">
+    <div class="modal-background"></div>
+    
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Report this issue on github!!!</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+  
+        <div class="field">
+          <div class="control">
+            <label class="label has-text-weight-semibold" for="{{ issue_report.issue_title.id_for_label }}">Issue Title:</label>
+            <div class="control">
+              <input class="input" value="{{ error.model }}" id="title">
+            </div> 
+          </div>
+        </div>
+  
+        <div class="field">
+          <div class="control">
+            <label class="label has-text-weight-semibold" for="{{ issue_report.project_name.id_for_label }}">Project Name:</label>
+            <div class="control">
+              <input class="input" value="{{ project.name }}" id="project">
+            </div>      
+          </div>
+        </div>
+  
+        <div class="field mt-5">
+          <div class="control">
+            <label class="label has-text-weight-semibold" for="{{ issue_report.project_name.id_for_pipeline }}">Pipeline(s) Used:</label>
+            <div class="control">
+              <input class="input" id="pipeline" value="{% for run in project.runs.all %} {{ run.pipeline_name }},{% endfor %}" >
+            </div>      
+          </div>
+        </div>
+  
+        <div class="field mt-5">
+          <label class="label has-text-weight-semibold" for="{{ issue_report.error.id_for_label }}">Error:</label>
+            <div class="control">
+              <input class="input" id="error">
+              <p class="help">Specify a link or Paste the part of the text</p>
+            </div>
+        </div>
+  
+        <div class="field mt-5">
+          <label class="label has-text-weight-semibold" for="{{ issue_report.description.id_for_label }}">Error Description:</label>
+            <div class="control">
+              <input class="input" id="error_desc">          
+            </div>
+        </div>
+  
+  
+  
+        
+  
+      </section>
+      
+        <footer class="modal-card-foot is-flex is-justify-content-space-between">
+          <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+          <button class="button is-warning is-no-close" type="submit" onclick="issueReport()">Yes, Report</button>
+        </footer>
+      
+    </div>
+  </div>
+  
+  {% block scripts %}
+    <script>
+      function issueReport() {
+        var title = document.getElementById("title").value;
+        var project = document.getElementById("project").value;
+        var pipeline = document.getElementById("pipeline").value;
+        var error = document.getElementById("error").value;
+        var error_desc = document.getElementById("error_desc").value;
+  
+        window.location.replace("https://github.com/nexB/scancode.io/issues/new?labels=bug&title=+"+title+"+&body=Error+details%0A%20%20%20%20Project+Name+:+"+project+"+%0A%20%20%20%20Pipeline(s)+Used+:+"+pipeline+"+%0A%20%20%20%20Error+:+```"+error+"```+%0A%20%20%20%20Description+:+"+error_desc+"")
+      };
+    </script>
+  {% endblock %}

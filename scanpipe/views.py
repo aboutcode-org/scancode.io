@@ -938,6 +938,7 @@ class ProjectErrorListView(
         "message",
         "details",
         "traceback",
+        "report",
     ]
 
 

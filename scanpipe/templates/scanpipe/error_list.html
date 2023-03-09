@@ -52,6 +52,9 @@
               <td style="max-width: 550px;">
                 <pre class="log wrap p-0" style="max-height: 150px;"><code>{{ error.traceback }}</code></pre>
               </td>
+              <td style="max-width: 550px;">
+                <a class="has-text-danger modal-button" data-target="modal-report" aria-haspopup="true">Github</a>
+              </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -60,6 +63,7 @@
 
     {% if is_paginated %}
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
-    {% endif %}
+    {% endif %}    
   </div>
+  {% include "scanpipe/includes/issue_report_modal.html" with error=error %}
 {% endblock %}
