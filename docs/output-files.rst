@@ -5,10 +5,11 @@ Output Files
 
 Whether you use the command line or the web application to run your
 scans, the generated results are available for review or export in
-**JSON** and **Excel (XLSX)** file formats.
+**JSON**, **Excel (XLSX)**, **SPDX**, and **CycloneDX** file formats.
 
 .. tip::
-    Check our :ref:`data_model` section for more details about all fields included in the output files.
+    Check our :ref:`data_model` section for more details about all fields included
+    in the output files.
 
 Creating Output Files
 ---------------------
@@ -20,11 +21,11 @@ the output file format with the ``–-format`` option:
 
 .. code-block:: console
 
-    $ scanpipe output --project PROJECT --format {json,xlsx}
+    $ scanpipe output --project PROJECT --format {json,xlsx,spdx,cyclonedx}
 
 .. note::
-    The previous command will output the scan results in a JSON or XLSX file
-    format – as specified – with the output files created in the
+    The previous command will output the scan results in a file format
+    – as specified – with the output files created in the
     ``PROJECT``'s :guilabel:`output/` directory. By default, JSON output
     files are created when no file format is given.
 

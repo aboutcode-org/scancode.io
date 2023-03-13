@@ -26,6 +26,7 @@ from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
+from django.template.defaultfilters import pluralize
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -154,7 +155,7 @@ class AddInputCommandMixin:
             copied.append(filename)
             self.project.add_input_source(filename, source="uploaded", save=True)
 
-        msg = "File(s) copied to the project inputs directory:"
+        msg = f"File{pluralize(inputs_files)} copied to the project inputs directory:"
         self.stdout.write(msg, self.style.SUCCESS)
         msg = "\n".join(["- " + filename for filename in copied])
         self.stdout.write(msg)

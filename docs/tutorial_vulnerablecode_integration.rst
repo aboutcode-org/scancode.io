@@ -60,7 +60,3 @@ Open any of your existing projects containing a few detected packages.
 - Click red bug icon to reach the vulnerability details for this package:
 
 .. image:: images/tutorial-find-vulnerabilities-extra-data.png
-
-.. tip::
-    Refer to the complementary :ref:`tutorial_web_ui_review_scan_results` page, to
-    understand this tutorial's scan results/output.
