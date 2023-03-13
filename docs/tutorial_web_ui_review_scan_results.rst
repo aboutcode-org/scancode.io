@@ -83,3 +83,7 @@ new window with some extra pipeline-specific details, such start and end date,
 launch, execution time and status, run log, etc.
 
 .. image:: images/tutorial-web-ui-run-log-modal.png
+
+.. tip::
+    The next tutorial chapter :ref:`tutorial_cli_analyze_docker_image` will explore
+    the interaction with ScanCode.io through a command line interface.

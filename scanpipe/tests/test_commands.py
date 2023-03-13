@@ -199,7 +199,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options.extend(["--project", project.name])
         call_command("add-input", *options, stdout=out)
-        self.assertIn("File(s) copied to the project inputs directory", out.getvalue())
+        self.assertIn("Files copied to the project inputs directory", out.getvalue())
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
 
@@ -249,7 +249,9 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
-        self.assertIn("Pipeline(s) added to the project", out.getvalue())
+        self.assertIn(
+            "Pipelines docker, root_filesystems added to the project", out.getvalue()
+        )
         self.assertEqual(pipelines, [run.pipeline_name for run in project.runs.all()])
 
         options = ["--project", project.name, "non-existing"]

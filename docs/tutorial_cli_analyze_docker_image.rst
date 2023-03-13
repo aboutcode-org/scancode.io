@@ -8,9 +8,9 @@ a test Docker image by following the steps below and, along the way,
 learn some of the ScanCode.io basic commands.
 
 .. note::
-    This tutorial assumes you have a current version of ScanCode.io installed
-    locally on your machine. If you do not have it installed,
-    see our :ref:`installation` guide for instructions.
+    This tutorial assumes you have a recent version of ScanCode.io installed
+    locally on your machine and **running with Docker**.
+    If you do not have it installed, see our :ref:`installation` guide for instructions.
 
 Requirements
 ------------
@@ -18,22 +18,32 @@ Requirements
 To successfully complete this tutorial, you first need to:
 
 - Install **ScanCode.io** locally
-- Download the following **test Docker image** and save it to your home directory: `30-alpine-nickolashkraus-staticbox-latest.tar <https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
 - Have **Shell access** on the machine where ScanCode.io is installed
 
 Instructions
 ------------
 
-- Open a shell in the ScanCode.io installation directory and activate the
-  virtual environment - **virtualenv**:
+- Create a new directory in your home directory that will be used to put the input code
+  to be scanned.
 
 .. code-block:: console
 
-    $ source bin/activate
+    $ mkdir -p ~/codedrop/
+
+- Download the following **test Docker image** and save it to the :guilabel:`~/codedrop/`
+  directory: `30-alpine-nickolashkraus-staticbox-latest.tar
+  <https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar>`_
 
 .. code-block:: console
 
-    >> (scancodeio) $
+    $ curl https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar --output ~/codedrop/30-alpine-nickolashkraus-staticbox-latest.tar
+
+- Create an alias to the ``scanpipe`` command executed through the
+  ``docker compose`` command line interface with:
+
+.. code-block:: console
+
+    $ alias scanpipe="docker compose -f ${PWD}/docker-compose.yml run --volume ~/codedrop/:/codedrop:ro web scanpipe"
 
 - Create a new project named ``staticbox``:
 
@@ -43,12 +53,12 @@ Instructions
 
 .. code-block:: console
 
-    >> Project staticbox created with work directory projects/staticbox-d4ed9405
+    >> Project staticbox created with work directory /var/scancodeio/workspace/projects/staticbox-d4ed9405
 
 .. note::
     New projects work directory are created inside the location defined in
     :ref:`scancodeio_settings_workspace_location` setting.
-    Default to a :guilabel:`var/` directory in the local ScanCode.io codebase.
+    Default to the :guilabel:`/var/scancodeio/workspace/` directory.
 
 - Add the test Docker image tarball to the project workspace's :guilabel:`input/`
   directory:
@@ -56,17 +66,16 @@ Instructions
 .. code-block:: bash
 
     $ scanpipe add-input --project staticbox \
-      --input-file ~/30-alpine-nickolashkraus-staticbox-latest.tar
+        --input-file /codedrop/30-alpine-nickolashkraus-staticbox-latest.tar
 
 .. code-block:: console
 
-    >> File(s) copied to the project inputs directory:
+    >> File copied to the project inputs directory:
        - 30-alpine-nickolashkraus-staticbox-latest.tar
 
 .. note::
     The command output will let you know that the Docker image file was
     copied to the project's :guilabel:`input/` directory.
-    You can also navigate to this directory and confirm your file is there.
     Alternatively, you can copy files manually to the :guilabel:`input/`
     directory to include entire directories.
 
@@ -78,7 +87,7 @@ Instructions
 
 .. code-block:: console
 
-    >> Pipeline(s) added to the project
+    >> Pipeline docker added to the project
 
 - Check the status of the pipeline added to your project:
 
@@ -107,12 +116,13 @@ Instructions
 .. code-block:: console
 
     >> Pipeline docker run in progress...
-       2021-07-07 10:39:26.49 Pipeline [docker] starting
-       2021-07-07 10:39:26.53 Step [extract_images] starting
-       2021-07-07 10:39:26.71 Step [extract_images] completed in 0.18 seconds
-       2021-07-07 10:39:26.71 Step [extract_layers] starting
+       Pipeline [docker] starting
+       Step [extract_images] starting
+       Step [extract_images] completed in 0.18 seconds
+       Step [extract_layers] starting
        [...]
-       2021-07-07 10:39:31.39 Pipeline completed
+       Pipeline completed
+       docker successfully executed on project staticbox
 
 - Executing the ``show-pipeline`` command again will also confirm the success
   of the pipeline execution - **"[SUCCESS] docker"** status:
@@ -129,14 +139,10 @@ Instructions
 
 .. code-block:: console
 
-    $ scanpipe output --project staticbox --format json
+    $ scanpipe output --project staticbox --format json --print > staticbox_results.json
 
-.. code-block:: console
-
-    >> projects/staticbox-d4ed9405/output/results-2021-07-07-08-54-02.json
-
-- Finally, open the ``output/results-<timestamp>.json`` file in your preferred
-  text editor/file viewer.
+- Finally, open the ``staticbox_results.json`` file in your preferred text
+  editor/file viewer.
 
 .. note::
     To understand the output of the pipeline execution, see our :ref:`output_files`
@@ -145,7 +151,7 @@ Instructions
 .. tip::
     The ``inputs`` and ``pipelines`` can be provided directly at once when
     calling the ``create-project`` command.
-    An ``execute`` option is also available to start the pipeline execution right
+    The ``--execute`` option is also available to start the pipeline execution right
     after the project creation.
     For example, the following command will create a project named ``staticbox2``,
     download the test Docker image to the project's :guilabel:`input/`
@@ -153,7 +159,7 @@ Instructions
 
     .. code-block:: bash
 
-      $ scanpipe create-project staticbox2 \
-        --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar \
-        --pipeline docker \
-        --execute
+        $ scanpipe create-project staticbox2 \
+            --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar \
+            --pipeline docker \
+            --execute

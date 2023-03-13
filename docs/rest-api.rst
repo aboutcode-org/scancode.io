@@ -316,7 +316,7 @@ the :guilabel:`input/` directory.
 Errors
 ^^^^^^
 
-This action lists all errors that were logged during any pipeline(s) execution
+This action lists all errors that were logged during any pipeline execution
 on a given ``project``.
 
 ``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/errors/``

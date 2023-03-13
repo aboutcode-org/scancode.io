@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.template.defaultfilters import pluralize
+
 from scanpipe.management.commands import ProjectCommand
 from scanpipe.management.commands import validate_pipelines
 
@@ -43,5 +45,8 @@ class Command(ProjectCommand):
         for pipeline_name in pipeline_names:
             self.project.add_pipeline(pipeline_name)
 
-        msg = "Pipeline(s) added to the project"
+        msg = (
+            f"Pipeline{pluralize(pipeline_names)} {', '.join(pipeline_names)} "
+            f"added to the project"
+        )
         self.stdout.write(msg, self.style.SUCCESS)

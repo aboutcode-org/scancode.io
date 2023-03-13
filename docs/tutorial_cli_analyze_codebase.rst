@@ -62,7 +62,7 @@ Instructions
 
 .. code-block:: console
 
-    >> File(s) copied to the project inputs directory:
+    >> File copied to the project inputs directory:
       - asgiref-3.3.0-py3-none-any.whl
 
 - Add the ``scan_codebase`` pipeline to your project:
@@ -73,7 +73,7 @@ Instructions
 
 .. code-block:: console
 
-    >> Pipeline(s) added to the project
+    >> Pipeline scan_codebase added to the project
 
 .. note::
     The content of the :guilabel:`input/` directory will be copied in the
@@ -122,7 +122,7 @@ Instructions
 .. code-block:: console
 
     >> Project asgiref2 created with work directory /var/scancodeio/workspace/projects/asgiref2-bea7a5e9
-       File(s) copied to the project inputs directory:
+       File copied to the project inputs directory:
        - asgiref-3.3.0-py3-none-any.whl
        Start the scan_codebase pipeline execution...
        [...]
