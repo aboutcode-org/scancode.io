@@ -20,6 +20,24 @@ ScanCode.io offers several :ref:`built_in_pipelines` depending on your input:
 - Root filesystem
 - ScanCode-toolkit results
 
+What is the difference between scan_codebase and scan_package pipelines?
+------------------------------------------------------------------------
+
+The key differences are that the ``scan_package`` pipeline treats the input
+as if it were a single package, such as a package archive, and computes a
+**License clarity** and a **Scan summary** to aggregate the package scan data:
+
+.. image:: images/license-clarity-scan-summary.png
+
+In contrast, the ``scan_codebase`` pipeline is more of a general purpose pipeline and
+make no such single package assumption. It does not not compute such summary.
+
+You can also have a look at the different steps for each pipeline from the
+:ref:`built_in_pipelines` documentation:
+
+ - :ref:`pipeline_scan_package`
+ - :ref:`pipeline_scan_codebase`
+
 Can I pause/resume a running pipeline?
 --------------------------------------
 
@@ -29,6 +47,29 @@ you can pause/unpause the running Docker containers with::
 
     docker compose pause  # to pause/suspend
     docker compose unpause  # to unpause/resume
+
+What tool does ScanCode.io use to analyze docker images?
+--------------------------------------------------------
+
+The following tools and libraries are used during the docker images analysis pipeline:
+
+ - `container-inspector <https://github.com/nexB/container-inspector>`_ and
+   `debian-inspector <https://github.com/nexB/debian-inspector>`_ for handling containers
+   and distros.
+ - `fetchcode-container <https://pypi.org/project/fetchcode-container/>`_ to download
+   containers and images.
+ - `scancode-toolkit <https://github.com/nexB/scancode-toolkit>`_ for application
+   package scans and system package scans.
+ - `extractcode <https://github.com/nexB/extractcode>`_ for universal and reliable
+   archive extraction.
+ - Specific handling of windows containers is done in
+   `scancode-toolkit <https://github.com/nexB/scancode-toolkit>`_ to process the windows registry.
+ - Secondary libraries and plugins from
+   `scancode-plugins <https://github.com/nexB/scancode-plugins>`_.
+
+The pipeline documentation is available at :ref:`pipeline_docker` and its source code
+at `docker.py <https://github.com/nexB/scancode.io/blob/main/scanpipe/pipelines/docker.py>`_.
+It is hopefully designed to be simple and readable code.
 
 I am unable to run ScanCode.io on Windows?
 ------------------------------------------
