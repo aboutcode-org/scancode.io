@@ -40,7 +40,7 @@ Using cURL
     curl -X POST "$api_url" -H "$content_type" -d "$data"
 
 .. note::
-    You have to set the api_url to http://127.0.0.1:8001/api/projects/ if you run on a
+    You have to set the api_url to http://localhost:8001/api/projects/ if you run on a
     local development setup.
 
 .. tip::

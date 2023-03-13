@@ -53,7 +53,9 @@ create an **environment file**, and **build the Docker image**::
 
 .. note::
     You need to rebuild the image whenever ScanCode.io's source code has been
-    modified or updated.
+    modified or updated::
+
+        docker compose build
 
 Run the App
 ^^^^^^^^^^^
@@ -87,7 +89,7 @@ An overview of the web application usage is available at :ref:`user_interface`.
     and ``CSRF_TRUSTED_ORIGINS`` settings need to be provided in your ``.env`` file,
     for example::
 
-        ALLOWED_HOSTS=.your-domain.com,127.0.0.1
+        ALLOWED_HOSTS=.your-domain.com,localhost,127.0.0.1
         CSRF_TRUSTED_ORIGINS=https://*.your-domain.com,http://127.0.0.1:8001
 
     Refer to `ALLOWED_HOSTS settings <https://docs.djangoproject.com/
@@ -288,7 +290,7 @@ you can start the local webserver and access the app with::
 
     make run
 
-Then open your web browser and visit: http://127.0.0.1:8001/ to access the web
+Then open your web browser and visit: http://localhost:8001/ to access the web
 application.
 
 .. warning::

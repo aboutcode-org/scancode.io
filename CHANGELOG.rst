@@ -21,6 +21,9 @@ v33.0.0 (unreleased)
   integration in the documentation.
   https://github.com/nexB/scancode.io/issues/600
 
+- Rewrite the CLI tutorials for a Docker-based installation.
+  https://github.com/nexB/scancode.io/issues/440
+
 - Use CodebaseResource ``path`` instead of ``id`` as slug_field in URL navigation.
   https://github.com/nexB/scancode.io/issues/242
 

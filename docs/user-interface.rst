@@ -8,7 +8,7 @@ create and manage your projects from a browser. You’ll get access to this
 visual interface when you successfully install ScanCode.io locally.
 
 To access the web application, open your web browser and visit http://localhost/ or
-http://127.0.0.1:8001/ if you run on a local development setup.
+http://localhost:8001/ if you run on a local development setup.
 
 .. note::
     All the capabilities offered by the ScanCode.io Web Interface are also available as
