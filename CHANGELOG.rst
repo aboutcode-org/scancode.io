@@ -24,6 +24,10 @@ v33.0.0 (unreleased)
 - Remove dead code related to the project_tree view
   https://github.com/nexB/scancode.io/issues/623
 
+- Update ``scanpipe.pipes.ProjectCodebase`` and related code to work properly
+  with current Project/CodebaseResource path scheme.
+  https://github.com/nexB/scancode.io/pull/624
+
 v32.0.1 (2023-02-20)
 --------------------
 
