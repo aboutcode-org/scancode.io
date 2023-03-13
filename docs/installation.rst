@@ -97,6 +97,13 @@ An overview of the web application usage is available at :ref:`user_interface`.
     <https://docs.djangoproject.com/en/dev/ref/settings/
     #std-setting-CSRF_TRUSTED_ORIGINS>`_ for more details.
 
+.. tip::
+    If you run ScanCode.io on desktop or laptop, it may come handy to pause/unpause
+    or suspend your local ScanCode.io system. For this, use these commands::
+
+        docker compose pause  # to pause/suspend
+        docker compose unpause  # to unpause/resume
+
 Execute a Command
 ^^^^^^^^^^^^^^^^^
 
@@ -153,6 +160,17 @@ Start the ScanCode.io services::
 
     docker compose --file docker-compose.yml up
 
+.. note::
+    The nginx service (webserver) requires the port 80 to be available on the host.
+    In case the port 80 is already in used, you will encounter the following error::
+
+        ERROR: for build_nginx_1 Cannot start service nginx: driver failed programming ...
+
+    You can attempt to stop potential running services blocking the port 80 with the
+    following commands on the host before starting ScanCode.io services::
+
+         sudo systemctl stop nginx
+         sudo systemctl stop apache2
 
 .. _local_development_installation:
 
@@ -232,6 +250,19 @@ production servers.
 * Create the PostgreSQL user, database, and table with::
 
     make postgresdb
+
+.. warning::
+    The ``make postgres`` command is assuming that your PostgreSQL database template is
+    using the ``en_US.UTF-8`` collation.
+    If you encounter database creation errors while running this command, it is
+    generally related to an incompatible database template.
+
+    You can either `update your template <https://stackoverflow.com/a/60396581/8254946>`_
+    to fit the ScanCode.io default, or provide custom values collation using the
+    ``POSTGRES_INITDB_ARGS`` variable such as::
+
+        make postgresdb POSTGRES_INITDB_ARGS=\
+            --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 
 .. note::
     You can also use a **SQLite** database for local development as a single user

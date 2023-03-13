@@ -19,6 +19,7 @@ graft etc
 graft .github/workflows
 
 prune scancodeio.egg-info
+prune docs/_build
 prune bin
 prune tmp
 prune lib

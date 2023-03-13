@@ -69,7 +69,7 @@ class FilterSetUtilsMixin:
 
     def is_active(self):
         """
-        Returns True, if any of the filters is active, except for the 'sort' filter.
+        Return True, if any of the filters is active, except for the 'sort' filter.
         """
         return bool(
             [
@@ -106,7 +106,7 @@ class FilterSetUtilsMixin:
     @property
     def params_for_search(self):
         """
-        Returns the current request query parameter used to keep the state
+        Return the current request query parameter used to keep the state
         of the filters when using the search form.
         The pagination and the search value is removed from those parameters.
         """
@@ -117,7 +117,7 @@ class FilterSetUtilsMixin:
 
     def filter_queryset(self, queryset):
         """
-        Adds the ability to filter by empty and none values providing the "magic"
+        Add the ability to filter by empty and none values providing the "magic"
         `empty_value` to any filters.
         """
 
@@ -351,7 +351,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
         """
-        Adds support for JSONField storing "list" using the JSONListFilter.
+        Add support for JSONField storing "list" using the JSONListFilter.
         """
         if isinstance(field, models.JSONField) and field.default == list:
             return JSONContainsFilter, {}
