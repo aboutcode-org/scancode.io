@@ -171,6 +171,14 @@ A valid policies file is required to enable compliance-related features.
     Check out the :ref:`tutorial_license_policies` tutorial for in-depth coverage of
     this feature.
 
+SCANCODEIO_PAGINATE_BY
+----------------------
+
+The number of objects display per page for each object type can be customized with the
+following setting::
+
+    SCANCODEIO_PAGINATE_BY=project=30,error=50,resource=100,package=100,dependency=100
+
 SCANCODEIO_REST_API_PAGE_SIZE
 -----------------------------
 

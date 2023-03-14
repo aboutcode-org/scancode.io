@@ -149,6 +149,9 @@ class BulmaLinkWidget(LinkWidget):
         data[name] = option_value
         selected = data == self.data or option_value in selected_choices
 
+        # Do not include the pagination in the filter query string.
+        data.pop(PAGE_VAR, None)
+
         css_class = str(self.extra_css_class)
         if selected:
             css_class += " is-active"
@@ -224,6 +227,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     class Meta:
         model = Project
         fields = ["is_archived"]
+        exclude = ["page"]
 
     def __init__(self, data=None, *args, **kwargs):
         """
