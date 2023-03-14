@@ -1243,15 +1243,20 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, [resource.path for resource in children])
 
+    def test_scanpipe_codebase_resource_add_package(self):
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        resource.add_package(package)
+        self.assertEqual(1, resource.discovered_packages.count())
+        self.assertEqual(package, resource.discovered_packages.get())
+
     def test_scanpipe_codebase_resource_create_and_add_package(self):
-        codebase_resource = CodebaseResource.objects.create(
-            project=self.project1, path="filename.ext"
-        )
-        package = codebase_resource.create_and_add_package(package_data1)
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        package = resource.create_and_add_package(package_data1)
         self.assertEqual(self.project1, package.project)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
-        self.assertEqual(1, codebase_resource.discovered_packages.count())
-        self.assertEqual(package, codebase_resource.discovered_packages.get())
+        self.assertEqual(1, resource.discovered_packages.count())
+        self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_discovered_package_model_queryset_methods(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)

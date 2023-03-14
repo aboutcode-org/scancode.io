@@ -144,9 +144,9 @@
       "notice_text": null,
       "source_packages": [],
       "extra_data": {
-        "Documentation": "Documentation, https://asgi.readthedocs.io/",
-        "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
-        "Changelog": "Changelog, https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
+        "Documentation": "https://asgi.readthedocs.io/",
+        "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
+        "Changelog": "https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
       },
       "repository_homepage_url": "https://pypi.org/project/asgiref",
       "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
@@ -214,9 +214,9 @@
       "notice_text": null,
       "source_packages": [],
       "extra_data": {
-        "Documentation": "Documentation, https://asgi.readthedocs.io/",
-        "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
-        "Changelog": "Changelog, https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
+        "Documentation": "https://asgi.readthedocs.io/",
+        "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
+        "Changelog": "https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
       },
       "repository_homepage_url": "https://pypi.org/project/asgiref",
       "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
@@ -474,9 +474,9 @@
             }
           ],
           "extra_data": {
-            "Documentation": "Documentation, https://asgi.readthedocs.io/",
-            "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
-            "Changelog": "Changelog, https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
+            "Documentation": "https://asgi.readthedocs.io/",
+            "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
+            "Changelog": "https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
           },
           "dependencies": [
             {
@@ -1331,9 +1331,9 @@
             }
           ],
           "extra_data": {
-            "Documentation": "Documentation, https://asgi.readthedocs.io/",
-            "Further Documentation": "Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
-            "Changelog": "Changelog, https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
+            "Documentation": "https://asgi.readthedocs.io/",
+            "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions",
+            "Changelog": "https://github.com/django/asgiref/blob/master/CHANGELOG.txt"
           },
           "dependencies": [
             {

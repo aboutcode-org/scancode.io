@@ -106,13 +106,13 @@ class ScanPipePipesTest(TestCase):
         tool_name = input.get_tool_name_from_scan_headers(scan_data={"headers": []})
         self.assertIsNone(tool_name)
 
-        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         tool_name = input.get_tool_name_from_scan_headers(
             scan_data=json.loads(input_location.read_text())
         )
         self.assertEqual("scanpipe", tool_name)
 
-        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
         tool_name = input.get_tool_name_from_scan_headers(
             scan_data=json.loads(input_location.read_text())
         )
@@ -405,7 +405,7 @@ class ScanPipePipesTest(TestCase):
     @expectedFailure
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
-        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
@@ -439,10 +439,10 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
         project = Project.objects.create(name="asgiref")
-        # We are using `asgiref-3.3.0_scancode_scan.json` instead of
-        # `asgiref-3.3.0_scan.json` because `asgiref-3.3.0_scan.json` is not
-        # exactly the same format as a scancode-toolkit scan
-        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
+        # We are using `asgiref-3.3.0_toolkit_scan.json` instead of
+        # `asgiref-3.3.0_scanpipe_output.json` because it is not exactly the same
+        # format as a scancode-toolkit scan
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
 
         scanpipe_app.license_policies_index = license_policies_index
@@ -502,10 +502,27 @@ class ScanPipePipesTest(TestCase):
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
 
+    def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
+        project = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
+        scancode.load_inventory_from_toolkit_scan(project, input_location)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(4, project.discovereddependencies.count())
+
+    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe(self):
+        project = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        scan_data = json.loads(input_location.read_text())
+        scancode.load_inventory_from_scanpipe(project, scan_data)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(4, project.discovereddependencies.count())
+
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
         project_scan_location = self.data_location / "package_assembly_codebase.json"
-        scancode.load_inventory_from_scan(project, project_scan_location)
+        scancode.load_inventory_from_toolkit_scan(project, project_scan_location)
 
         self.assertEqual(0, project.discoveredpackages.count())
         scancode.assemble_packages(project)
@@ -538,7 +555,7 @@ class ScanPipePipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
-        scan_results = self.data_location / "asgiref-3.3.0_scan.json"
+        scan_results = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         virtual_codebase = scancode.get_virtual_codebase(project, scan_results)
         project_codebase = codebase.ProjectCodebase(project)
 

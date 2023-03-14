@@ -607,7 +607,7 @@ def make_results_summary(project, scan_results_location):
     return summary
 
 
-def load_inventory_from_scan(project, input_location):
+def load_inventory_from_toolkit_scan(project, input_location):
     """
     Create packages, dependencies, and resources loaded from the ScanCode-toolkit scan
     results located at `input_location`.
