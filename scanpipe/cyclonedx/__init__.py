@@ -39,6 +39,12 @@ CYCLONEDX_JSON_SCHEMA_URL = (
     "CycloneDX/specification/master/schema/bom-1.4.schema.json"
 )
 
+SPDX_JSON_SCHEMA_LOCATION = "spdx.schema.json"
+SPDX_JSON_SCHEMA_PATH = pathlib.Path(__file__).parent / SPDX_JSON_SCHEMA_LOCATION
+
+JSF_JSON_SCHEMA_LOCATION = "jsf-0.82.schema.json"
+JSF_JSON_SCHEMA_PATH = pathlib.Path(__file__).parent / JSF_JSON_SCHEMA_LOCATION
+
 
 def get_bom(cyclonedx_document):
     """
@@ -156,9 +162,14 @@ def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
     if isinstance(schema, str):
         schema = json.loads(schema)
 
-    resolver = jsonschema.RefResolver(
-        base_uri="file://" + str(pathlib.Path(__file__).parent), referrer=schema
-    )
+    spdx_schema = SPDX_JSON_SCHEMA_PATH.read_text()
+    jsf_schema = JSF_JSON_SCHEMA_PATH.read_text()
+
+    store = {
+        "http://cyclonedx.org/schema/spdx.schema.json": json.loads(spdx_schema),
+        "http://cyclonedx.org/schema/jsf-0.82.schema.json": json.loads(jsf_schema),
+    }
+    resolver = jsonschema.RefResolver.from_schema(schema, store=store)
 
     validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
 
