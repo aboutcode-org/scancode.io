@@ -403,10 +403,7 @@ def assemble_packages(project):
                     pipes.update_or_create_package(project, package_data)
                 elif isinstance(item, packagedcode_models.Dependency):
                     dependency_data = item.to_dict()
-                    pipes.update_or_create_dependencies(
-                        project,
-                        dependency_data,
-                    )
+                    pipes.update_or_create_dependency(project, dependency_data)
                 elif isinstance(item, CodebaseResource):
                     seen_resource_paths.add(item.path)
                 else:
@@ -517,7 +514,7 @@ def create_discovered_dependencies(
     """
     if hasattr(scanned_codebase.attributes, "dependencies"):
         for dependency_data in scanned_codebase.attributes.dependencies:
-            pipes.update_or_create_dependencies(
+            pipes.update_or_create_dependency(
                 project,
                 dependency_data,
                 strip_datafile_path_root=strip_datafile_path_root,
@@ -632,4 +629,4 @@ def load_inventory_from_scanpipe(project, scan_data):
         pipes.update_or_create_resource(project, resource_data)
 
     for dependency_data in scan_data.get("dependencies", []):
-        pipes.update_or_create_dependencies(project, dependency_data)
+        pipes.update_or_create_dependency(project, dependency_data)

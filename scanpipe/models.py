@@ -1591,6 +1591,7 @@ class CodebaseResource(
     ScanFieldsModelMixin,
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
+    UpdateFromDataMixin,
     HashFieldsMixin,
     models.Model,
 ):
@@ -2291,6 +2292,7 @@ class DiscoveredPackage(
         If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
+        package_data = package_data.copy()
         required_fields = ["type", "name"]
         missing_values = [
             field_name
@@ -2314,7 +2316,8 @@ class DiscoveredPackage(
         cleaned_package_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in DiscoveredPackage.model_fields() and value
+            if field_name in DiscoveredPackage.model_fields()
+            and value not in EMPTY_VALUES
         }
 
         discovered_package = cls(project=project, **cleaned_package_data)
@@ -2571,6 +2574,7 @@ class DiscoveredDependency(
         imported from a scancode-toolkit scan, where the root path segments are
         not stripped for `datafile_path`.
         """
+        dependency_data = dependency_data.copy()
         required_fields = ["purl", "dependency_uid"]
         missing_values = [
             field_name
@@ -2610,7 +2614,8 @@ class DiscoveredDependency(
         cleaned_dependency_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in DiscoveredDependency.model_fields() and value
+            if field_name in DiscoveredDependency.model_fields()
+            and value not in EMPTY_VALUES
         }
         discovered_dependency = cls(
             project=project,

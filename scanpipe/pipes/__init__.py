@@ -90,6 +90,9 @@ def update_or_create_resource(project, resource_data):
         defaults=resource_data,
     )
 
+    if codebase_resource:
+        codebase_resource.update_from_data(resource_data)
+
     for package_uid in for_packages:
         package = project.discoveredpackages.get(package_uid=package_uid)
         codebase_resource.add_package(package)
@@ -132,7 +135,7 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     return package
 
 
-def update_or_create_dependencies(
+def update_or_create_dependency(
     project, dependency_data, strip_datafile_path_root=False
 ):
     """

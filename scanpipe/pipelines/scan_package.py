@@ -44,7 +44,7 @@ class ScanPackage(Pipeline):
             cls.collect_archive_information,
             cls.extract_archive_to_codebase_directory,
             cls.run_scancode,
-            cls.load_inventory_from_scan,
+            cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
         )
 

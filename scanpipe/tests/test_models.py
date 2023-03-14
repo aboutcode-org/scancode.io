@@ -1488,7 +1488,7 @@ class ScanPipeModelsTest(TestCase):
 
         dependency.refresh_from_db()
         # PURL field, not updated
-        self.assertEqual(dependency_data2["name"], dependency.name)
+        self.assertEqual("appraisal", dependency.name)
         # Empty field, updated
         self.assertEqual(
             new_data["extracted_requirement"], dependency.extracted_requirement
