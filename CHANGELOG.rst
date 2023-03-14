@@ -31,6 +31,10 @@ v33.0.0 (unreleased)
   with current Project/CodebaseResource path scheme.
   https://github.com/nexB/scancode.io/pull/624
 
+- Add ``SCANCODEIO_PAGINATE_BY`` setting to customize the number of items displayed per
+  page for each object type.
+  https://github.com/nexB/scancode.io/issues/563
+
 v32.0.1 (2023-02-20)
 --------------------
 

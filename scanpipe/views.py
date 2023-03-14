@@ -401,7 +401,7 @@ class ProjectListView(
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
-    paginate_by = 20
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
         {
@@ -847,7 +847,7 @@ class CodebaseResourceListView(
     model = CodebaseResource
     filterset_class = ResourceFilterSet
     template_name = "scanpipe/resource_list.html"
-    paginate_by = 100
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
     prefetch_related = ["discovered_packages"]
     table_columns = [
         "path",
@@ -884,7 +884,7 @@ class DiscoveredPackageListView(
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = 100
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
     prefetch_related = ["codebase_resources"]
     table_columns = [
         "package_url",
@@ -906,7 +906,7 @@ class DiscoveredDependencyListView(
     model = DiscoveredDependency
     filterset_class = DependencyFilterSet
     template_name = "scanpipe/dependency_list.html"
-    paginate_by = 100
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = ["for_package", "datafile_resource"]
     table_columns = [
         "package_url",
@@ -932,7 +932,7 @@ class ProjectErrorListView(
     model = ProjectError
     filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
-    paginate_by = 50
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("error", 50)
     table_columns = [
         "model",
         "message",
