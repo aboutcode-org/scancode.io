@@ -97,8 +97,8 @@ class SPDXTestCase(TestCase):
             "license_concluded": "LicenseRef-1",
             "release_date": "2000-01-01",
             "checksums": [
-                spdx.Checkum(**self.checksum_sha1_data),
-                spdx.Checkum(**self.checksum_md5_data),
+                spdx.Checksum(**self.checksum_sha1_data),
+                spdx.Checksum(**self.checksum_md5_data),
             ],
             "external_refs": [spdx.ExternalRef(**self.external_ref_purl_data)],
         }
@@ -135,7 +135,7 @@ class SPDXTestCase(TestCase):
             "name": "file.txt",
             "license_concluded": "LicenseRef-1",
             "checksums": [
-                spdx.Checkum(**self.checksum_sha1_data),
+                spdx.Checksum(**self.checksum_sha1_data),
             ],
             "types": ["TEXT"],
             "comment": "comment",
@@ -282,12 +282,12 @@ class SPDXTestCase(TestCase):
         assert "Missing values to build `creators` list." == str(error.exception)
 
     def test_spdx_checksum_as_dict(self):
-        checksum = spdx.Checkum(**self.checksum_sha1_data)
+        checksum = spdx.Checksum(**self.checksum_sha1_data)
         assert self.checksum_sha1_spdx_data == checksum.as_dict()
 
     def test_spdx_checksum_from_data(self):
-        assert spdx.Checkum.from_data({})
-        checksum = spdx.Checkum.from_data(self.checksum_sha1_spdx_data)
+        assert spdx.Checksum.from_data({})
+        checksum = spdx.Checksum.from_data(self.checksum_sha1_spdx_data)
         assert self.checksum_sha1_spdx_data == checksum.as_dict()
 
     def test_spdx_external_ref_as_dict(self):

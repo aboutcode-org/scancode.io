@@ -81,7 +81,7 @@
             "type" : "object",
             "properties" : {
               "algorithm" : {
-                "description" : "Identifies the algorithm used to produce the subject Checkum. Currently, SHA-1 is the only supported algorithm. It is anticipated that other algorithms will be supported at a later time.",
+                "description" : "Identifies the algorithm used to produce the subject Checksum. Currently, SHA-1 is the only supported algorithm. It is anticipated that other algorithms will be supported at a later time.",
                 "type" : "string",
                 "enum" : [ "SHA1", "BLAKE3", "SHA3-384", "SHA256", "SHA384", "BLAKE2b-512", "BLAKE2b-256", "SHA3-512", "MD2", "ADLER32", "MD4", "SHA3-256", "BLAKE2b-384", "SHA512", "MD6", "MD5", "SHA224" ]
               },
@@ -92,7 +92,7 @@
             },
             "required" : [ "algorithm", "checksumValue" ],
             "additionalProperties" : false,
-            "description" : "A Checkum is value that allows the contents of a file to be authenticated. Even small changes to the content of the file will change its checksum. This class allows the results of a variety of checksum and cryptographic message digest algorithms to be represented."
+            "description" : "A Checksum is value that allows the contents of a file to be authenticated. Even small changes to the content of the file will change its checksum. This class allows the results of a variety of checksum and cryptographic message digest algorithms to be represented."
           },
           "externalDocumentId" : {
             "description" : "externalDocumentId is a string containing letters, numbers, ., - and/or + which uniquely identifies an external document within this document.",
@@ -281,7 +281,7 @@
               "type" : "object",
               "properties" : {
                 "algorithm" : {
-                  "description" : "Identifies the algorithm used to produce the subject Checkum. Currently, SHA-1 is the only supported algorithm. It is anticipated that other algorithms will be supported at a later time.",
+                  "description" : "Identifies the algorithm used to produce the subject Checksum. Currently, SHA-1 is the only supported algorithm. It is anticipated that other algorithms will be supported at a later time.",
                   "type" : "string",
                   "enum" : [ "SHA1", "BLAKE3", "SHA3-384", "SHA256", "SHA384", "BLAKE2b-512", "BLAKE2b-256", "SHA3-512", "MD2", "ADLER32", "MD4", "SHA3-256", "BLAKE2b-384", "SHA512", "MD6", "MD5", "SHA224" ]
                 },
@@ -292,7 +292,7 @@
               },
               "required" : [ "algorithm", "checksumValue" ],
               "additionalProperties" : false,
-              "description" : "A Checkum is value that allows the contents of a file to be authenticated. Even small changes to the content of the file will change its checksum. This class allows the results of a variety of checksum and cryptographic message digest algorithms to be represented."
+              "description" : "A Checksum is value that allows the contents of a file to be authenticated. Even small changes to the content of the file will change its checksum. This class allows the results of a variety of checksum and cryptographic message digest algorithms to be represented."
             }
           },
           "comment" : {
@@ -500,7 +500,7 @@
               "type" : "object",
               "properties" : {
                 "algorithm" : {
-                  "description" : "Identifies the algorithm used to produce the subject Checkum. Currently, SHA-1 is the only supported algorithm. It is anticipated that other algorithms will be supported at a later time.",
+                  "description" : "Identifies the algorithm used to produce the subject Checksum. Currently, SHA-1 is the only supported algorithm. It is anticipated that other algorithms will be supported at a later time.",
                   "type" : "string",
                   "enum" : [ "SHA1", "BLAKE3", "SHA3-384", "SHA256", "SHA384", "BLAKE2b-512", "BLAKE2b-256", "SHA3-512", "MD2", "ADLER32", "MD4", "SHA3-256", "BLAKE2b-384", "SHA512", "MD6", "MD5", "SHA224" ]
                 },
@@ -511,7 +511,7 @@
               },
               "required" : [ "algorithm", "checksumValue" ],
               "additionalProperties" : false,
-              "description" : "A Checkum is value that allows the contents of a file to be authenticated. Even small changes to the content of the file will change its checksum. This class allows the results of a variety of checksum and cryptographic message digest algorithms to be represented."
+              "description" : "A Checksum is value that allows the contents of a file to be authenticated. Even small changes to the content of the file will change its checksum. This class allows the results of a variety of checksum and cryptographic message digest algorithms to be represented."
             }
           },
           "comment" : {

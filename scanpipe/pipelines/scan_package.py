@@ -44,7 +44,7 @@ class ScanPackage(Pipeline):
             cls.collect_archive_information,
             cls.extract_archive_to_codebase_directory,
             cls.run_scancode,
-            cls.build_inventory_from_scan,
+            cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
         )
 
@@ -112,11 +112,13 @@ class ScanPackage(Pipeline):
         if not scan_output_path.exists():
             raise FileNotFoundError("ScanCode output not available.")
 
-    def build_inventory_from_scan(self):
+    def load_inventory_from_toolkit_scan(self):
         """
         Process a JSON Scan results file to populate codebase resources and packages.
         """
-        scancode.create_inventory_from_scan(self.project, self.scan_output_location)
+        scancode.load_inventory_from_toolkit_scan(
+            self.project, self.scan_output_location
+        )
 
     def make_summary_from_scan_results(self):
         """

@@ -1591,6 +1591,7 @@ class CodebaseResource(
     ScanFieldsModelMixin,
     ExtraDataFieldMixin,
     SaveProjectErrorMixin,
+    UpdateFromDataMixin,
     HashFieldsMixin,
     models.Model,
 ):
@@ -1955,6 +1956,12 @@ class CodebaseResource(
         for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
             yield line_number, "".join(line for _, line in lines_group)
 
+    def add_package(self, discovered_package):
+        """
+        Assign the `discovered_package` to this `codebase_resource` instance.
+        """
+        self.discovered_packages.add(discovered_package)
+
     def create_and_add_package(self, package_data):
         """
         Create a DiscoveredPackage instance using the `package_data` and assigns
@@ -1976,10 +1983,8 @@ class CodebaseResource(
                     **package_data,
                 },
             )
-            return
-
-        if package:
-            self.discovered_packages.add(package)
+        else:
+            self.add_package(package)
             return package
 
     @property
@@ -2020,7 +2025,7 @@ class CodebaseResource(
         return spdx.File(
             spdx_id=self.spdx_id,
             name=f"./{self.path}",
-            checksums=[spdx.Checkum(algorithm="sha1", value=self.sha1)],
+            checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
             license_in_files=list(set(spdx_license_keys)),
             copyright_text=", ".join(copyrights),
             contributors=list(set(holders + authors)),
@@ -2287,6 +2292,7 @@ class DiscoveredPackage(
         If one of the values of the required fields is not available, a "ProjectError"
         is created instead of a new DiscoveredPackage instance.
         """
+        package_data = package_data.copy()
         required_fields = ["type", "name"]
         missing_values = [
             field_name
@@ -2310,7 +2316,8 @@ class DiscoveredPackage(
         cleaned_package_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in DiscoveredPackage.model_fields() and value
+            if field_name in DiscoveredPackage.model_fields()
+            and value not in EMPTY_VALUES
         }
 
         discovered_package = cls(project=project, **cleaned_package_data)
@@ -2347,7 +2354,7 @@ class DiscoveredPackage(
         Return this DiscoveredPackage as an SPDX Package entry.
         """
         checksums = [
-            spdx.Checkum(algorithm=algorithm, value=checksum_value)
+            spdx.Checksum(algorithm=algorithm, value=checksum_value)
             for algorithm in ["sha1", "md5"]
             if (checksum_value := getattr(self, algorithm))
         ]
@@ -2567,6 +2574,7 @@ class DiscoveredDependency(
         imported from a scancode-toolkit scan, where the root path segments are
         not stripped for `datafile_path`.
         """
+        dependency_data = dependency_data.copy()
         required_fields = ["purl", "dependency_uid"]
         missing_values = [
             field_name
@@ -2606,7 +2614,8 @@ class DiscoveredDependency(
         cleaned_dependency_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in DiscoveredDependency.model_fields() and value
+            if field_name in DiscoveredDependency.model_fields()
+            and value not in EMPTY_VALUES
         }
         discovered_dependency = cls(
             project=project,

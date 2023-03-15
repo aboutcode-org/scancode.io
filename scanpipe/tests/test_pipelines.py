@@ -562,9 +562,9 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_load_inventory_pipeline_integration_test(self):
         pipeline_name = "load_inventory"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = Project.objects.create(name="Tool: scancode-toolkit")
 
-        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -582,6 +582,22 @@ class PipelinesIntegrationTest(TestCase):
             self.data_location / "asgiref-3.3.0_load_inventory_expected.json"
         )
         self.assertPipelineResultEqual(expected_file, result_file)
+
+        # Using the ScanCode.io JSON output as the input
+        project2 = Project.objects.create(name="Tool: scanpipe")
+
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        project2.copy_input_from(input_location)
+
+        run = project2.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(18, project2.codebaseresources.count())
+        self.assertEqual(2, project2.discoveredpackages.count())
+        self.assertEqual(4, project2.discovereddependencies.count())
 
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")

@@ -20,14 +20,18 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
+
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 
 
 class LoadInventory(Pipeline):
     """
-    A pipeline to load one or more inventory of files and packages from a ScanCode JSON
-    scan results. (Presumably containing resource information and package scan data).
+    A pipeline to load one or more inventory from ScanCode-toolkit and ScanCode.io
+    JSON scan results.
+    An inventory is composed of packages, dependencies, and resources.
     """
 
     @classmethod
@@ -42,14 +46,20 @@ class LoadInventory(Pipeline):
         Locate all the ScanCode JSON scan results from the project's input/ directory.
         This includes all files with a .json extension.
         """
-        self.input_locations = [
-            str(scan_input.absolute())
-            for scan_input in self.project.inputs(pattern="*.json")
-        ]
+        self.json_input_paths = self.project.inputs(pattern="*.json")
 
     def build_inventory_from_scans(self):
         """
-        Process JSON scan results files to populate codebase resources and packages.
+        Process JSON scan results files to populate packages, dependencies, and
+        resources.
         """
-        for input_location in self.input_locations:
-            scancode.create_inventory_from_scan(self.project, input_location)
+        for input_path in self.json_input_paths:
+            scan_data = json.loads(input_path.read_text())
+            tool_name = input.get_tool_name_from_scan_headers(scan_data)
+
+            if tool_name == "scancode-toolkit":
+                scancode.load_inventory_from_toolkit_scan(self.project, input_path)
+            elif tool_name == "scanpipe":
+                scancode.load_inventory_from_scanpipe(self.project, scan_data)
+            else:
+                raise Exception(f"Input not supported: {str(input_path)} ")

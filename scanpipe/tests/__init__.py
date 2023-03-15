@@ -39,6 +39,38 @@ scanpipe_app.register_pipeline("raise_exception", RaiseException)
 FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
 
+resource_data1 = {
+    "path": "notice.NOTICE",
+    "type": "file",
+    "name": "notice.NOTICE",
+    "status": "",
+    "tag": "",
+    "extension": ".NOTICE",
+    "size": 1178,
+    "md5": "90cd416fd24df31f608249b77bae80f1",
+    "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
+    "sha256": "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757",
+    "sha512": "",
+    "mime_type": "text/plain",
+    "file_type": "ASCII text",
+    "programming_language": "",
+    "is_binary": False,
+    "is_text": True,
+    "is_archive": False,
+    "is_media": False,
+    "is_key_file": False,
+    "licenses": [],
+    "license_expressions": [],
+    "compliance_alert": "",
+    "copyrights": [],
+    "holders": [],
+    "authors": [],
+    "package_data": [],
+    "for_packages": [],
+    "emails": [],
+    "urls": [],
+    "extra_data": {},
+}
 
 package_data1 = {
     "type": "deb",
@@ -91,6 +123,7 @@ package_data1 = {
 }
 
 for_package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
+
 dependency_data1 = {
     "purl": "pkg:pypi/dask",
     "package_type": "pypi",
