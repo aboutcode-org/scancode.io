@@ -39,24 +39,18 @@ from django.test import override_settings
 from commoncode.archive import extract_tar
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
+from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
-from scanpipe.pipes import filename_now
 from scanpipe.pipes import input
-from scanpipe.pipes import make_codebase_resource
 from scanpipe.pipes import output
 from scanpipe.pipes import resolve
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
-from scanpipe.pipes import strip_root
-from scanpipe.pipes import tag_not_analyzed_codebase_resources
-from scanpipe.pipes import update_or_create_dependency
-from scanpipe.pipes import update_or_create_package
-from scanpipe.pipes import update_or_create_resource
 from scanpipe.pipes import windows
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
@@ -84,8 +78,8 @@ class ScanPipePipesTest(TestCase):
         expected = "dir/file"
 
         for path in input_paths:
-            self.assertEqual(expected, strip_root(path))
-            self.assertEqual(expected, strip_root(Path(path)))
+            self.assertEqual(expected, pipes.strip_root(path))
+            self.assertEqual(expected, pipes.strip_root(Path(path)))
 
     def test_scanpipe_pipes_tag_not_analyzed_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
@@ -96,7 +90,7 @@ class ScanPipePipesTest(TestCase):
             status="scanned",
         )
 
-        tag_not_analyzed_codebase_resources(p1)
+        pipes.tag_not_analyzed_codebase_resources(p1)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         self.assertEqual("not-analyzed", resource1.status)
@@ -104,7 +98,7 @@ class ScanPipePipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
-        self.assertEqual("2010-10-10-10-10-10", filename_now())
+        self.assertEqual("2010-10-10-10-10-10", pipes.filename_now())
 
     def test_scanpipe_pipes_input_get_tool_name_from_scan_headers(self):
         tool_name = input.get_tool_name_from_scan_headers(scan_data={})
@@ -1135,20 +1129,32 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_update_or_create_resource(self):
         p1 = Project.objects.create(name="Analysis")
-        resource = update_or_create_resource(p1, resource_data1)
-        for field_name, value in resource_data1.items():
+        package = pipes.update_or_create_package(p1, package_data1)
+        resource_data = dict(resource_data1)
+        resource_data["for_packages"] = [package.package_uid]
+
+        resource = pipes.update_or_create_resource(p1, resource_data)
+        for field_name, value in resource_data.items():
             self.assertEqual(value, getattr(resource, field_name), msg=field_name)
+
+        resource_data["status"] = "scanned"
+        resource = pipes.update_or_create_resource(p1, resource_data)
+        self.assertEqual("scanned", resource.status)
+
+        resource_data["for_packages"] = ["does_not_exists"]
+        with self.assertRaises(DiscoveredPackage.DoesNotExist):
+            pipes.update_or_create_resource(p1, resource_data)
 
     def test_scanpipe_pipes_update_or_create_package(self):
         p1 = Project.objects.create(name="Analysis")
-        package = update_or_create_package(p1, package_data1)
+        package = pipes.update_or_create_package(p1, package_data1)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.purl)
         self.assertEqual("", package.primary_language)
         self.assertEqual(datetime.date(1999, 10, 10), package.release_date)
 
         updated_data = dict(package_data1)
         updated_data["primary_language"] = "Python"
-        updated_package = update_or_create_package(p1, updated_data)
+        updated_package = pipes.update_or_create_package(p1, updated_data)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", updated_package.purl)
         self.assertEqual("Python", updated_package.primary_language)
         self.assertEqual(package.pk, updated_package.pk)
@@ -1158,7 +1164,7 @@ class ScanPipePipesTest(TestCase):
         package_data2["name"] = "new name"
         package_data2["package_uid"] = ""
         package_data2["release_date"] = "2020-11-01T01:40:20"
-        package2 = update_or_create_package(p1, package_data2, resource1)
+        package2 = pipes.update_or_create_package(p1, package_data2, resource1)
         self.assertNotEqual(package.pk, package2.pk)
         self.assertIn(resource1, package2.codebase_resources.all())
         self.assertEqual(datetime.date(2020, 11, 1), package2.release_date)
@@ -1169,16 +1175,16 @@ class ScanPipePipesTest(TestCase):
             project=p1,
             path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         )
-        update_or_create_package(p1, package_data1)
+        pipes.update_or_create_package(p1, package_data1)
 
         dependency_data = dict(dependency_data1)
         dependency_data["scope"] = ""
-        dependency = update_or_create_dependency(p1, dependency_data)
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
         for field_name, value in dependency_data.items():
             self.assertEqual(value, getattr(dependency, field_name), msg=field_name)
 
         dependency_data["scope"] = "install"
-        dependency = update_or_create_dependency(p1, dependency_data)
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
         self.assertEqual(dependency.scope, "install")
 
 
@@ -1196,7 +1202,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         resource_location = str(self.data_location / "notice.NOTICE")
 
         with self.assertRaises(ValueError) as cm:
-            make_codebase_resource(p1, resource_location)
+            pipes.make_codebase_resource(p1, resource_location)
 
         self.assertIn("not", str(cm.exception))
         self.assertIn(resource_location, str(cm.exception))
@@ -1204,7 +1210,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         copy_input(resource_location, p1.codebase_path)
         resource_location = str(p1.codebase_path / "notice.NOTICE")
-        make_codebase_resource(p1, resource_location)
+        pipes.make_codebase_resource(p1, resource_location)
 
         resource = p1.codebaseresources.get()
         self.assertEqual(1178, resource.size)
@@ -1216,7 +1222,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(CodebaseResource.Type.FILE, resource.type)
 
         # Duplicated path: skip the creation and no project error added
-        make_codebase_resource(p1, resource_location)
+        pipes.make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projecterrors.count())
 
@@ -1226,7 +1232,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
             project=project1,
             path="filename.ext",
         )
-        package1 = update_or_create_package(project1, package_data1)
+        package1 = pipes.update_or_create_package(project1, package_data1)
         self.assertFalse(resource1.for_packages)
 
         self.assertIsNone(scancode.add_resource_to_package(None, resource1, project1))

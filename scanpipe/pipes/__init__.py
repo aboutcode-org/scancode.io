@@ -81,7 +81,7 @@ def update_or_create_resource(project, resource_data):
     """
     Get, update or create a CodebaseResource then return it.
     """
-    resource_path = resource_data.pop("path")
+    resource_path = resource_data.get("path")
     for_packages = resource_data.pop("for_packages", [])
 
     codebase_resource, _ = CodebaseResource.objects.get_or_create(
