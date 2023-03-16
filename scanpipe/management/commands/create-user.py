@@ -100,9 +100,7 @@ class Command(BaseCommand):
         return password
 
     def _validate_username(self, username):
-        """
-        Validate username. If invalid, return a string error message.
-        """
+        """Validate username. If invalid, return a string error message."""
         if self.username_field.unique:
             try:
                 self.UserModel._default_manager.get_by_natural_key(username)

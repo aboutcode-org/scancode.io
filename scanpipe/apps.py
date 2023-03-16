@@ -106,9 +106,7 @@ class ScanPipeConfig(AppConfig):
                 self.register_pipeline_from_file(path)
 
     def register_pipeline(self, name, cls):
-        """
-        Register the provided `name` and `cls` as a valid pipeline.
-        """
+        """Register the provided `name` and `cls` as a valid pipeline."""
         if not is_pipeline(cls):
             raise ImproperlyConfigured(
                 f'The entry point "{cls}" is not a `Pipeline` subclass.'
@@ -153,9 +151,7 @@ class ScanPipeConfig(AppConfig):
         return dict(self._pipelines)
 
     def get_pipeline_choices(self, include_blank=True):
-        """
-        Return a `choices` list of tuple suitable for a Django ChoiceField.
-        """
+        """Return a `choices` list of tuple suitable for a Django ChoiceField."""
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
         choices.extend([(name, name) for name in self.pipelines.keys()])
         return choices
@@ -187,22 +183,16 @@ class ScanPipeConfig(AppConfig):
 
     @staticmethod
     def get_policies_index(policies_list, key):
-        """
-        Return an inverted index by `key` of the `policies_list`.
-        """
+        """Return an inverted index by `key` of the `policies_list`."""
         return {policy.get(key): policy for policy in policies_list}
 
     @property
     def policies_enabled(self):
-        """
-        Return True if the policies were provided and loaded properly.
-        """
+        """Return True if the policies were provided and loaded properly."""
         return bool(self.license_policies_index)
 
     def sync_runs_and_jobs(self):
-        """
-        Synchronize QUEUED and RUNNING Run with their related Jobs.
-        """
+        """Synchronize QUEUED and RUNNING Run with their related Jobs."""
         logger.info("Synchronizing QUEUED and RUNNING Run with their related Jobs...")
 
         run_model = self.get_model("Run")

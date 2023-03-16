@@ -44,7 +44,8 @@ Download = namedtuple("Download", "uri directory filename path size sha1 md5")
 
 def fetch_http(uri, to=None):
     """
-    Download a given `uri` in a temporary directory and return the directory's path.
+    Download a given `uri` in a temporary directory and return the directory's
+    path.
     """
     response = requests.get(uri)
 
@@ -232,9 +233,7 @@ def fetch_docker_image(docker_reference, to=None):
 
 
 def _get_fetcher(url):
-    """
-    Return the fetcher function based on the provided `url`.
-    """
+    """Return the fetcher function based on the provided `url`."""
     if url.startswith("docker://"):
         return fetch_docker_image
     return fetch_http

@@ -31,18 +31,14 @@ from scanpipe import pipes
 
 
 def package_getter(root_dir, **kwargs):
-    """
-    Return installed package objects.
-    """
+    """Return installed package objects."""
     packages = win_reg.get_installed_packages(root_dir)
     for package in packages:
         yield package.purl, package
 
 
 def tag_uninteresting_windows_codebase_resources(project):
-    """
-    Tag known uninteresting files as uninteresting
-    """
+    """Tag known uninteresting files as uninteresting."""
     uninteresting_files = (
         "DefaultUser_Delta",
         "Sam_Delta",

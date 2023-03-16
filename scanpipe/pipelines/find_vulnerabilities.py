@@ -40,9 +40,7 @@ class FindVulnerabilities(Pipeline):
         )
 
     def check_vulnerablecode_service_availability(self):
-        """
-        Check if the VulnerableCode service if configured and available.
-        """
+        """Check if the VulnerableCode service if configured and available."""
         if not vulnerablecode.is_configured():
             raise Exception("VulnerableCode is not configured.")
 
@@ -50,9 +48,7 @@ class FindVulnerabilities(Pipeline):
             raise Exception("VulnerableCode is not available.")
 
     def lookup_vulnerabilities(self):
-        """
-        Check for vulnerabilities on each of the project's discovered package.
-        """
+        """Check for vulnerabilities on each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
 
         for package in packages:

@@ -127,9 +127,7 @@ def extract_archives(location, recurse=False):
 
 
 def get_resource_info(location):
-    """
-    Return a mapping suitable for the creation of a new CodebaseResource.
-    """
+    """Return a mapping suitable for the creation of a new CodebaseResource."""
     file_info = {}
 
     location_path = Path(location)

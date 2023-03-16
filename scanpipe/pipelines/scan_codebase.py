@@ -59,9 +59,7 @@ class ScanCodebase(Pipeline):
         copy_inputs(self.project.inputs(), self.project.codebase_path)
 
     def extract_archives(self):
-        """
-        Extract archives with extractcode.
-        """
+        """Extract archives with extractcode."""
         extract_errors = scancode.extract_archives(
             location=self.project.codebase_path,
             recurse=self.extract_recursively,
@@ -71,9 +69,7 @@ class ScanCodebase(Pipeline):
             self.add_error("\n".join(extract_errors))
 
     def collect_and_create_codebase_resources(self):
-        """
-        Collect and create codebase resources.
-        """
+        """Collect and create codebase resources."""
         for resource_path in self.project.walk_codebase_path():
             pipes.make_codebase_resource(
                 project=self.project,
@@ -81,19 +77,13 @@ class ScanCodebase(Pipeline):
             )
 
     def tag_empty_files(self):
-        """
-        Flag empty files.
-        """
+        """Flag empty files."""
         rootfs.tag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
-        """
-        Scan unknown resources for packages information.
-        """
+        """Scan unknown resources for packages information."""
         scancode.scan_for_application_packages(self.project)
 
     def scan_for_files(self):
-        """
-        Scan unknown resources for copyrights, licenses, emails, and urls.
-        """
+        """Scan unknown resources for copyrights, licenses, emails, and urls."""
         scancode.scan_for_files(self.project)

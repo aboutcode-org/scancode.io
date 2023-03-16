@@ -46,16 +46,12 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 def safe_filename(filename):
-    """
-    Convert the provided `filename` to a safe filename.
-    """
+    """Convert the provided `filename` to a safe filename."""
     return re.sub("[^A-Za-z0-9.-]+", "_", filename).lower()
 
 
 def get_queryset(project, model_name):
-    """
-    Return a consistent QuerySet for all supported outputs (json, xlsx, csv, ...)
-    """
+    """Return a consistent QuerySet for all supported outputs (json, xlsx, csv, ...)"""
     querysets = {
         "discoveredpackage": (
             project.discoveredpackages.all().order_by(
@@ -276,7 +272,6 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     Add an extra trailing "xlsx_errors" column with conversion error messages if
     any. Return a number of conversion errors.
     """
-
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model

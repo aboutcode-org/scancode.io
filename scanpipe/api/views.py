@@ -132,9 +132,7 @@ class ProjectViewSet(
         detail=True, name="Results (download)", renderer_classes=[PassThroughRenderer]
     )
     def results_download(self, request, *args, **kwargs):
-        """
-        Return the results as an attachment.
-        """
+        """Return the results as an attachment."""
         return project_results_json_response(self.get_object(), as_attachment=True)
 
     @action(detail=True)
@@ -321,9 +319,7 @@ class ProjectViewSet(
 
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """
-    Add actions to the Run viewset.
-    """
+    """Add actions to the Run viewset."""
 
     queryset = Run.objects.all()
     serializer_class = RunSerializer

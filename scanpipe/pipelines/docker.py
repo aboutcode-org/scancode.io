@@ -26,9 +26,7 @@ from scanpipe.pipes import rootfs
 
 
 class Docker(RootFS):
-    """
-    A pipeline to analyze Docker images.
-    """
+    """A pipeline to analyze Docker images."""
 
     @classmethod
     def steps(cls):
@@ -48,9 +46,7 @@ class Docker(RootFS):
         )
 
     def extract_images(self):
-        """
-        Extract images from input tarballs.
-        """
+        """Extract images from input tarballs."""
         self.images, errors = docker.extract_images_from_inputs(self.project)
         if not self.images:
             raise Exception("No images found in project input files.")
@@ -58,45 +54,33 @@ class Docker(RootFS):
             self.add_error("\n".join(errors))
 
     def extract_layers(self):
-        """
-        Extract layers from input images.
-        """
+        """Extract layers from input images."""
         errors = docker.extract_layers_from_images(self.project, self.images)
         if errors:
             self.add_error("\n".join(errors))
 
     def find_images_os_and_distro(self):
-        """
-        Find the operating system and distro of input images.
-        """
+        """Find the operating system and distro of input images."""
         for image in self.images:
             image.get_and_set_distro()
 
     def collect_images_information(self):
-        """
-        Collect and store image information in a project.
-        """
+        """Collect and store image information in a project."""
         images_data = [docker.get_image_data(image) for image in self.images]
         self.project.update_extra_data({"images": images_data})
 
     def collect_and_create_codebase_resources(self):
-        """
-        Collect and labels all image files as CodebaseResources.
-        """
+        """Collect and labels all image files as CodebaseResources."""
         for image in self.images:
             docker.create_codebase_resources(self.project, image)
 
     def collect_and_create_system_packages(self):
-        """
-        Collect installed system packages for each layer based on the distro.
-        """
+        """Collect installed system packages for each layer based on the distro."""
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
             for image in self.images:
                 docker.scan_image_for_system_packages(self.project, image)
 
     def tag_uninteresting_codebase_resources(self):
-        """
-        Flag files that don't belong to any system package.
-        """
+        """Flag files that don't belong to any system package."""
         docker.tag_whiteout_codebase_resources(self.project)
         rootfs.tag_uninteresting_codebase_resources(self.project)

@@ -37,14 +37,10 @@ logger = logging.getLogger(__name__)
 
 
 class Pipeline:
-    """
-    Base class for all pipelines.
-    """
+    """Base class for all pipelines."""
 
     def __init__(self, run):
-        """
-        Load the Run and Project instances.
-        """
+        """Load the Run and Project instances."""
         self.run = run
         self.project = run.project
         self.pipeline_name = run.pipeline_name
@@ -70,34 +66,26 @@ class Pipeline:
 
     @classmethod
     def get_doc(cls):
-        """
-        Return a docstring.
-        """
+        """Return a docstring."""
         return getdoc(cls)
 
     @classmethod
     def get_graph(cls):
-        """
-        Return a graph of steps.
-        """
+        """Return a graph of steps."""
         return [
             {"name": step.__name__, "doc": getdoc(step)} for step in cls.get_steps()
         ]
 
     @classmethod
     def get_info(cls):
-        """
-        Return a dictionary of combined data about the current pipeline.
-        """
+        """Return a dictionary of combined data about the current pipeline."""
         return {
             "description": cls.get_doc(),
             "steps": cls.get_graph(),
         }
 
     def log(self, message):
-        """
-        Log the given `message` to the current module logger and Run instance.
-        """
+        """Log the given `message` to the current module logger and Run instance."""
         now_as_localtime = timezone.localtime(timezone.now())
         timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
         message = f"{timestamp} {message}"
@@ -105,9 +93,7 @@ class Pipeline:
         self.run.append_to_log(message, save=True)
 
     def execute(self):
-        """
-        Execute each steps in the order defined on this pipeline class.
-        """
+        """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
         steps = self.get_steps()
         steps_count = len(steps)
@@ -137,9 +123,7 @@ class Pipeline:
         return 0, ""
 
     def add_error(self, error):
-        """
-        Create a `ProjectError` record on the current `project`.
-        """
+        """Create a `ProjectError` record on the current `project`."""
         self.project.add_error(error, model=self.pipeline_name)
 
     @contextmanager

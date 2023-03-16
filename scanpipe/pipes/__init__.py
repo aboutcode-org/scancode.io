@@ -78,9 +78,7 @@ def make_codebase_resource(project, location, **extra_fields):
 
 
 def update_or_create_resource(project, resource_data):
-    """
-    Get, update or create a CodebaseResource then return it.
-    """
+    """Get, update or create a CodebaseResource then return it."""
     resource_path = resource_data.get("path")
     for_packages = resource_data.pop("for_packages", [])
 
@@ -170,40 +168,32 @@ def update_or_create_dependency(
 
 
 def analyze_scanned_files(project):
-    """
-    Set the status for CodebaseResource to unknown or no license.
-    """
+    """Set the status for CodebaseResource to unknown or no license."""
     scanned_files = project.codebaseresources.files().status("scanned")
-
     scanned_files.has_no_licenses().update(status="no-licenses")
     scanned_files.unknown_license().update(status="unknown-license")
 
 
 def tag_not_analyzed_codebase_resources(project):
     """
-    Flag any of the `project`'s '`CodebaseResource` without a status as "not-analyzed".
+    Flag any of the `project`'s '`CodebaseResource` without a status as
+    "not-analyzed".
     """
     project.codebaseresources.no_status().update(status="not-analyzed")
 
 
 def normalize_path(path):
-    """
-    Return a normalized path from a `path` string.
-    """
+    """Return a normalized path from a `path` string."""
     return "/" + path.strip("/")
 
 
 def strip_root(location):
-    """
-    Return the provided `location` without the root directory.
-    """
+    """Return the provided `location` without the root directory."""
     return "/".join(str(location).strip("/").split("/")[1:])
 
 
 def filename_now(sep="-"):
-    """
-    Return the current date and time in iso format suitable for filename.
-    """
+    """Return the current date and time in iso format suitable for filename."""
     now = datetime.now().isoformat(sep=sep, timespec="seconds")
     return now.replace(":", sep)
 
@@ -223,9 +213,7 @@ def count_group_by(queryset, field_name):
 
 
 def get_bin_executable(filename):
-    """
-    Return the location of the `filename` executable binary.
-    """
+    """Return the location of the `filename` executable binary."""
     return str(Path(sys.executable).parent / filename)
 
 

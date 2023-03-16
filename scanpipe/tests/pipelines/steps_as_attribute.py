@@ -24,9 +24,7 @@ from scanpipe.pipelines import Pipeline
 
 
 class StepsAsAttribute(Pipeline):
-    """
-    A pipeline that declares steps as attribute.
-    """
+    """A pipeline that declares steps as attribute."""
 
     def step1(self):
         return

@@ -144,9 +144,7 @@ class AddInputCommandMixin:
         )
 
     def handle_input_files(self, inputs_files):
-        """
-        Copy provided `inputs_files` to the project's `input` directory.
-        """
+        """Copy provided `inputs_files` to the project's `input` directory."""
         copied = []
 
         for file_location in inputs_files:
@@ -193,7 +191,8 @@ class AddInputCommandMixin:
 
 def validate_input_files(file_locations):
     """
-    Raise an error if one of the provided `file_locations` is not an existing file.
+    Raise an error if one of the provided `file_locations` is not an existing
+    file.
     """
     for file_location in file_locations:
         file_path = Path(file_location)
@@ -202,9 +201,7 @@ def validate_input_files(file_locations):
 
 
 def validate_pipelines(pipeline_names):
-    """
-    Raise an error if one of the `pipeline_names` is not available.
-    """
+    """Raise an error if one of the `pipeline_names` is not available."""
     for pipeline_name in pipeline_names:
         if pipeline_name not in scanpipe_app.pipelines:
             raise CommandError(

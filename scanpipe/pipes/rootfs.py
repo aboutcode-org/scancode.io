@@ -73,9 +73,7 @@ class Resource:
 
 @attr.attributes
 class RootFs:
-    """
-    A root filesystem.
-    """
+    """A root filesystem."""
 
     location = attr.attrib(
         metadata=dict(doc="The root directory location where this rootfs lives.")
@@ -100,9 +98,7 @@ class RootFs:
             yield RootFs(location=rootfs_location)
 
     def get_resources(self, with_dir=False):
-        """
-        Return a Resource for each file in this rootfs.
-        """
+        """Return a Resource for each file in this rootfs."""
         return get_resources(location=self.location, with_dir=with_dir)
 
     def get_installed_packages(self, packages_getter):
@@ -129,9 +125,7 @@ class RootFs:
 
 
 def get_resources(location, with_dir=False):
-    """
-    Return the Resource found in the `location` in root directory of a rootfs.
-    """
+    """Return the Resource found in the `location` in root directory of a rootfs."""
 
     def get_res(parent, fname):
         loc = os.path.join(parent, fname)
@@ -150,9 +144,7 @@ def get_resources(location, with_dir=False):
 
 
 def create_codebase_resources(project, rootfs):
-    """
-    Create the CodebaseResource for a `rootfs` in `project`.
-    """
+    """Create the CodebaseResource for a `rootfs` in `project`."""
     for resource in rootfs.get_resources(with_dir=True):
         pipes.make_codebase_resource(
             project=project,
@@ -196,9 +188,7 @@ def has_hash_diff(install_file, codebase_resource):
 
 
 def package_getter(root_dir, **kwargs):
-    """
-    Return installed package objects.
-    """
+    """Return installed package objects."""
     packages = plugin_package.get_installed_packages(root_dir)
     for package in packages:
         yield package.purl, package
@@ -324,9 +314,7 @@ def match_not_analyzed(
 
 
 def tag_empty_codebase_resources(project):
-    """
-    Tags empty files as ignored.
-    """
+    """Tags empty files as ignored."""
     qs = project.codebaseresources.files().empty()
     qs.filter(status__in=("", "not-analyzed")).update(status="ignored-empty-file")
 
@@ -395,8 +383,6 @@ def tag_data_files_with_no_clues(project):
 
 
 def tag_media_files_as_uninteresting(project):
-    """
-    Tags CodebaseResources that are media files to be uninteresting.
-    """
+    """Tags CodebaseResources that are media files to be uninteresting."""
     qs = project.codebaseresources.no_status()
     qs.filter(is_media=True).update(status="ignored-media-file")

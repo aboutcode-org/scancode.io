@@ -191,9 +191,7 @@ class TabSetMixin:
     tabset = {}
 
     def get_tabset_data(self):
-        """
-        Return the tabset data structure used in template rendering.
-        """
+        """Return the tabset data structure used in template rendering."""
         tabset_data = {}
 
         for label, tab_definition in self.tabset.items():
@@ -208,9 +206,7 @@ class TabSetMixin:
         return tabset_data
 
     def get_fields_data(self, fields):
-        """
-        Return the tab fields including their values for display.
-        """
+        """Return the tab fields including their values for display."""
         fields_data = {}
 
         for field_definition in fields:
@@ -233,9 +229,7 @@ class TabSetMixin:
         return fields_data
 
     def get_field_value(self, field_name, render_func=None):
-        """
-        Return the formatted value for the given `field_name` on the current object.
-        """
+        """Return the formatted value for the given `field_name` of the object."""
         field_value = getattr(self.object, field_name, None)
 
         if field_value and render_func:
@@ -248,9 +242,7 @@ class TabSetMixin:
 
     @staticmethod
     def get_field_label(field_name):
-        """
-        Return a formatted label for display based on the `field_name`.
-        """
+        """Return a formatted label for display based on the `field_name`."""
         return field_name.replace("_", " ").capitalize().replace("url", "URL")
 
     def get_context_data(self, **kwargs):
@@ -277,9 +269,7 @@ class TableColumnsMixin:
     table_columns = []
 
     def get_columns_data(self):
-        """
-        Return the columns data structure used in template rendering.
-        """
+        """Return the columns data structure used in template rendering."""
         columns_data = []
 
         sortable_fields = []
@@ -324,9 +314,7 @@ class TableColumnsMixin:
 
     @staticmethod
     def get_field_label(field_name):
-        """
-        Return a formatted label for display based on the `field_name`.
-        """
+        """Return a formatted label for display based on the `field_name`."""
         return field_name.replace("_", " ").capitalize().replace("url", "URL")
 
     def get_context_data(self, **kwargs):
@@ -718,9 +706,7 @@ class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.Delet
     success_message = 'All data, except inputs, for the "{}" project have been removed.'
 
     def form_valid(self, form):
-        """
-        Call the reset() method on the project.
-        """
+        """Call the reset() method on the project."""
         project = self.get_object()
         try:
             project.reset(keep_input=True)

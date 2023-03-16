@@ -43,9 +43,7 @@ Utilities to resolve packages from manifest, lockfile, and SBOM.
 
 
 def resolve_pypi_packages(input_location):
-    """
-    Resolve the PyPI packages from the `input_location` requirements file.
-    """
+    """Resolve the PyPI packages from the `input_location` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
@@ -60,9 +58,7 @@ def resolve_pypi_packages(input_location):
 
 
 def resolve_about_packages(input_location):
-    """
-    Resolve the packages from the `input_location` .ABOUT file.
-    """
+    """Resolve the packages from the `input_location` .ABOUT file."""
     about = About(location=input_location)
     about_data = about.as_dict()
 
@@ -111,9 +107,7 @@ def spdx_package_to_discovered_package_data(spdx_package):
 
 
 def resolve_spdx_packages(input_location):
-    """
-    Resolve the packages from the `input_location` SPDX document file.
-    """
+    """Resolve the packages from the `input_location` SPDX document file."""
     input_path = Path(input_location)
     spdx_document = json.loads(input_path.read_text())
 
@@ -129,9 +123,7 @@ def resolve_spdx_packages(input_location):
 
 
 def cyclonedx_component_to_package_data(component_data):
-    """
-    Return package_data from CycloneDX component.
-    """
+    """Return package_data from CycloneDX component."""
     extra_data = {}
     component = component_data["cdx_package"]
 
@@ -165,9 +157,7 @@ def cyclonedx_component_to_package_data(component_data):
 
 
 def resolve_cyclonedx_packages(input_location):
-    """
-    Resolve the packages from the `input_location` CycloneDX document file.
-    """
+    """Resolve the packages from the `input_location` CycloneDX document file."""
     input_path = Path(input_location)
     cyclonedx_document = json.loads(input_path.read_text())
 
