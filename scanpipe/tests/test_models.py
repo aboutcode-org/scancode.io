@@ -1450,18 +1450,26 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(purl, str(cyclonedx_component.bom_ref))
         self.assertEqual(purl, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
-        self.assertEqual(
-            "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown",
-            cyclonedx_component.licenses[0].expression,
-        )
+        expected = "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown"
+        self.assertEqual(expected, cyclonedx_component.licenses[0].expression)
         self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
         self.assertEqual(1, len(cyclonedx_component.hashes))
         self.assertEqual(package_data1["md5"], cyclonedx_component.hashes[0].content)
+
+        properties = {prop.name: prop.value for prop in cyclonedx_component.properties}
+        expected_properties = {
+            "aboutcode:download_url": "https://download.url/package.zip",
+            "aboutcode:filename": "package.zip",
+            "aboutcode:homepage_url": "https://packages.debian.org",
+            "aboutcode:primary_language": "bash",
+        }
+        self.assertEqual(expected_properties, properties)
+
         external_references = cyclonedx_component.external_references
         self.assertEqual(1, len(external_references))
-        self.assertEqual("website", external_references[0].type)
-        self.assertEqual("https://packages.debian.org", external_references[0].url)
+        self.assertEqual("vcs", external_references[0].type)
+        self.assertEqual("https://packages.vcs.url", external_references[0].url)
 
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")

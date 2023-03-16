@@ -747,6 +747,7 @@ class PipelinesIntegrationTest(TestCase):
                 "homepage_url": "https://cyclonedx.org/website",
                 "bug_tracking_url": "https://cyclonedx.org/issue-tracker",
                 "vcs_url": "https://cyclonedx.org/vcs",
+                "filename": "",
             },
             "pkg:pypi/billiard@3.6.3.0": {
                 "type": "pypi",
@@ -758,6 +759,7 @@ class PipelinesIntegrationTest(TestCase):
                 "bug_tracking_url": "",
                 "vcs_url": "",
                 "extra_data": "",
+                "filename": "",
             },
             "pkg:pypi/fictional@9.10.2": {
                 "type": "pypi",
@@ -771,17 +773,20 @@ class PipelinesIntegrationTest(TestCase):
                 "license_expression": (
                     "lgpl-3.0-plus AND openssl-exception-lgpl-3.0-plus"
                 ),
-                "homepage_url": "",
+                "homepage_url": "https://home.page",
                 "bug_tracking_url": "",
                 "vcs_url": "",
                 "extra_data": "",
+                "filename": "package.zip",
             },
         }
+
         for package in packages:
-            expected = expected_data[str(package)]
+            expected = expected_data.get(str(package))
             self.assertEqual(expected["type"], package.type)
             self.assertEqual(expected["name"], package.name)
             self.assertEqual(expected["version"], package.version)
             self.assertEqual(expected["homepage_url"], package.homepage_url)
             self.assertEqual(expected["declared_license"], package.declared_license)
             self.assertEqual(expected["license_expression"], package.license_expression)
+            self.assertEqual(expected["filename"], package.filename)

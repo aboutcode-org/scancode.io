@@ -2403,18 +2403,35 @@ class DiscoveredPackage(
             "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
             "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
         }
-
         hashes = [
             cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
             for field_name, algorithm in hash_fields.items()
             if (hash_value := getattr(self, field_name))
         ]
 
+        # Those fields are not supported natively by CycloneDX but are required to
+        # load the BOM without major data loss.
+        # See https://github.com/nexB/aboutcode-cyclonedx-taxonomy
+        property_prefix = "aboutcode"
+        property_fields = [
+            "filename",
+            "primary_language",
+            "download_url",
+            "homepage_url",
+        ]
+        properties = [
+            cyclonedx_model.Property(
+                name=f"{property_prefix}:{field_name}", value=value
+            )
+            for field_name in property_fields
+            if (value := getattr(self, field_name)) not in EMPTY_VALUES
+        ]
+
         cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
         external_references = [
             cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
             for field_name, reference_type in cyclonedx_url_to_type.items()
-            if (url := getattr(self, field_name))
+            if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
         purl = self.package_url
@@ -2427,6 +2444,7 @@ class DiscoveredPackage(
             copyright_=self.copyright,
             description=self.description,
             hashes=hashes,
+            properties=properties,
             external_references=external_references,
         )
 

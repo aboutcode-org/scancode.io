@@ -79,7 +79,7 @@ package_data1 = {
     "version": "3.118",
     "qualifiers": {"arch": "all"},
     "subpath": None,
-    "primary_language": None,
+    "primary_language": "bash",
     "description": "add and remove users and groups",
     "release_date": "1999-10-10",
     "parties": [
@@ -93,7 +93,8 @@ package_data1 = {
     ],
     "keywords": ["admin"],
     "homepage_url": "https://packages.debian.org",
-    "download_url": None,
+    "download_url": "https://download.url/package.zip",
+    "filename": "package.zip",
     "size": "849",
     "sha1": None,
     "md5": "76cf50f29e47676962645632737365a7",
@@ -101,7 +102,7 @@ package_data1 = {
     "sha512": None,
     "bug_tracking_url": None,
     "code_view_url": None,
-    "vcs_url": None,
+    "vcs_url": "https://packages.vcs.url",
     "copyright": (
         "Copyright (c) 2000 Roland Bauerschmidt <rb@debian.org>\n"
         "Copyright (c) 1997, 1998, 1999 Guy Maor <maor@debian.org>\n"
