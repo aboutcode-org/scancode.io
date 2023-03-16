@@ -46,12 +46,18 @@
           "type": "distribution"
         },
         {
-          "url": "https://github.com/django/asgiref/",
-          "type": "website"
-        },
-        {
           "url": "https://pypi.org/project/asgiref",
           "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://github.com/django/asgiref/"
+        },
+        {
+          "name": "aboutcode:primary_language",
+          "value": "Python"
         }
       ]
     }

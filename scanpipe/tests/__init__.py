@@ -101,7 +101,7 @@ package_data1 = {
     "sha512": None,
     "bug_tracking_url": None,
     "code_view_url": None,
-    "vcs_url": None,
+    "vcs_url": "https://packages.vcs.url",
     "copyright": (
         "Copyright (c) 2000 Roland Bauerschmidt <rb@debian.org>\n"
         "Copyright (c) 1997, 1998, 1999 Guy Maor <maor@debian.org>\n"

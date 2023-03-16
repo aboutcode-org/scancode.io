@@ -24,6 +24,8 @@ import json
 import pathlib
 from collections import defaultdict
 
+from django.core.validators import EMPTY_VALUES
+
 import jsonschema
 from hoppr_cyclonedx_models.cyclonedx_1_4 import (
     CyclonedxSoftwareBillOfMaterialsStandard as Bom_1_4,
@@ -135,19 +137,37 @@ def get_checksums(component):
     }
 
 
-def get_external_references(external_references):
+def get_external_references(component):
     """
-    Return dict of reference urls from list of `externalReferences`.
+    Return dict of reference urls from list of `component.externalReferences`.
     """
+    external_references = component.externalReferences
     if not external_references:
         return {}
 
-    references = defaultdict(lambda: [])
-
-    for ref in external_references:
-        references[ref.type.value].append(ref.url)
+    references = defaultdict(list)
+    for reference in external_references:
+        references[reference.type.value].append(reference.url)
 
     return dict(references)
+
+
+def get_properties_data(component):
+    """
+    Return
+    """
+    prefix = "aboutcode:"
+    properties_data = {}
+    properties = component.properties or []
+
+    for component_property in properties:
+        property_name = component_property.name
+        property_value = component_property.value
+        if property_name.startswith(prefix) and property_value not in EMPTY_VALUES:
+            field_name = property_name.removeprefix(prefix)
+            properties_data[field_name] = property_value
+
+    return properties_data
 
 
 def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
@@ -159,6 +179,7 @@ def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
 
     if isinstance(schema, pathlib.Path):
         schema = schema.read_text()
+
     if isinstance(schema, str):
         schema = json.loads(schema)
 
@@ -169,8 +190,7 @@ def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
         "http://cyclonedx.org/schema/spdx.schema.json": json.loads(spdx_schema),
         "http://cyclonedx.org/schema/jsf-0.82.schema.json": json.loads(jsf_schema),
     }
+
     resolver = jsonschema.RefResolver.from_schema(schema, store=store)
-
     validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
-
     validator.validate(instance=document)

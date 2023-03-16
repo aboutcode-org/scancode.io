@@ -1458,10 +1458,16 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
         self.assertEqual(1, len(cyclonedx_component.hashes))
         self.assertEqual(package_data1["md5"], cyclonedx_component.hashes[0].content)
+
+        properties = cyclonedx_component.properties
+        self.assertEqual(1, len(properties))
+        self.assertEqual("aboutcode:homepage_url", properties[0].name)
+        self.assertEqual("https://packages.debian.org", properties[0].value)
+
         external_references = cyclonedx_component.external_references
         self.assertEqual(1, len(external_references))
-        self.assertEqual("website", external_references[0].type)
-        self.assertEqual("https://packages.debian.org", external_references[0].url)
+        self.assertEqual("vcs", external_references[0].type)
+        self.assertEqual("https://packages.vcs.url", external_references[0].url)
 
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
