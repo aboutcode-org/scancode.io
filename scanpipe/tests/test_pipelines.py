@@ -773,7 +773,7 @@ class PipelinesIntegrationTest(TestCase):
                 "license_expression": (
                     "lgpl-3.0-plus AND openssl-exception-lgpl-3.0-plus"
                 ),
-                "homepage_url": "",
+                "homepage_url": "https://home.page",
                 "bug_tracking_url": "",
                 "vcs_url": "",
                 "extra_data": "",

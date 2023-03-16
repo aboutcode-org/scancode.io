@@ -73,8 +73,18 @@ class CycloneDXUnitTest(TestCase):
                         "name": "aboutcode:download_url",
                         "value": "https://download.url/package.zip",
                     },
-                    {"name": "aboutcode:filename", "value": "package.zip"},
-                    {"name": "aboutcode:primary_language", "value": "Python"},
+                    {
+                        "name": "aboutcode:filename",
+                        "value": "package.zip",
+                    },
+                    {
+                        "name": "aboutcode:primary_language",
+                        "value": "Python",
+                    },
+                    {
+                        "name": "aboutcode:homepage_url",
+                        "value": "https://home.page",
+                    },
                 ],
                 "licenses": [
                     {

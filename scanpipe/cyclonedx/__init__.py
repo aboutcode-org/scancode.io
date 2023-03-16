@@ -164,7 +164,7 @@ def get_properties_data(component):
         property_name = component_property.name
         property_value = component_property.value
         if property_name.startswith(prefix) and property_value not in EMPTY_VALUES:
-            field_name = property_name.removeprefix(prefix)
+            field_name = property_name.replace(prefix, "", 1)
             properties_data[field_name] = property_value
 
     return properties_data

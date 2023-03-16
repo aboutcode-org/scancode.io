@@ -12,6 +12,7 @@ v33.0.0 (unreleased)
   https://github.com/nexB/scancode.io/issues/583
 
 - Add fields in CycloneDX BOM output using the component properties.
+  See registered properties at https://github.com/nexB/aboutcode-cyclonedx-taxonomy
   https://github.com/nexB/scancode.io/issues/637
 
 - Refine the "Command Line Interface" documentation about the ``scanpipe`` command
