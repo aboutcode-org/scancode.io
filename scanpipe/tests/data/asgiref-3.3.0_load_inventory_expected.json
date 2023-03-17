@@ -8,7 +8,7 @@
         {
           "pipeline_name": "load_inventory",
           "status": "not_started",
-          "description": "A pipeline to load one or more inventory from ScanCode-toolkit and ScanCode.io\nJSON scan results.\nAn inventory is composed of packages, dependencies, and resources.",
+          "description": "Load one or more inventory from ScanCode-toolkit and ScanCode.io JSON scan results.\n\nAn inventory is composed of packages, dependencies, and resources.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
