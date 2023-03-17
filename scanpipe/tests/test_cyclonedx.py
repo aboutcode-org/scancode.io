@@ -117,6 +117,13 @@ class CycloneDXUnitTest(TestCase):
         result = cyclonedx.bom_attributes_to_dict(components)
         self.assertEqual(result, expected)
 
+    def test_scanpipe_cyclonedx_get_components(self):
+        empty_bom = Bom_1_4(bomFormat="CycloneDX", specVersion="1.4", version=1)
+        self.assertEqual([], cyclonedx.get_components(empty_bom))
+
+        components = cyclonedx.get_components(self.bom)
+        self.assertEqual(3, len(components))
+
     def test_scanpipe_cyclonedx_recursive_component_collector(self):
         component_level1 = self.bom.components[0]
         component_level2 = component_level1.components[0]

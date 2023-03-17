@@ -72,7 +72,7 @@ def bom_attributes_to_dict(cyclonedx_attributes):
 def recursive_component_collector(root_component_list, collected):
     """Return list of components including the nested components."""
     if not root_component_list:
-        return
+        return []
 
     for component in root_component_list:
         extra_data = {}
