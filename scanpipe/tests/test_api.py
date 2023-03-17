@@ -570,9 +570,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(str(run1.uuid), response.data["uuid"])
         self.assertIn(self.project1_detail_url, response.data["project"])
         self.assertEqual("docker", response.data["pipeline_name"])
-        self.assertEqual(
-            "A pipeline to analyze Docker images.", response.data["description"]
-        )
+        self.assertEqual("Analyze Docker images.", response.data["description"])
         self.assertEqual("", response.data["scancodeio_version"])
         self.assertIsNone(response.data["task_id"])
         self.assertIsNone(response.data["task_start_date"])

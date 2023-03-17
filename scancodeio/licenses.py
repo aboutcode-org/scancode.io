@@ -46,9 +46,7 @@ def get_licenses():
 
 @conditional_login_required
 def license_list_view(request):
-    """
-    Display a list of all licenses linked to their details.
-    """
+    """Display a list of all licenses linked to their details."""
     licenses = get_licenses()
     license_links = [
         f'<a href="{reverse("license_details", args=[key])}">{key}</a>'

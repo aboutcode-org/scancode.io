@@ -135,9 +135,7 @@ class AddInputsForm(InputsBaseForm, forms.Form):
 
 class AddPipelineForm(PipelineBaseForm):
     def __init__(self, *args, **kwargs):
-        """
-        Set the `pipeline` field as required for this form.
-        """
+        """Set the `pipeline` field as required for this form."""
         super().__init__(*args, **kwargs)
         self.fields["pipeline"].required = True
 

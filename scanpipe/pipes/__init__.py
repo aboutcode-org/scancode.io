@@ -77,9 +77,30 @@ def make_codebase_resource(project, location, **extra_fields):
     codebase_resource.save(save_error=False)
 
 
+def update_or_create_resource(project, resource_data):
+    """Get, update or create a CodebaseResource then return it."""
+    resource_path = resource_data.get("path")
+    for_packages = resource_data.pop("for_packages", [])
+
+    codebase_resource, _ = CodebaseResource.objects.get_or_create(
+        project=project,
+        path=resource_path,
+        defaults=resource_data,
+    )
+
+    if codebase_resource:
+        codebase_resource.update_from_data(resource_data)
+
+    for package_uid in for_packages:
+        package = project.discoveredpackages.get(package_uid=package_uid)
+        codebase_resource.add_package(package)
+
+    return codebase_resource
+
+
 def update_or_create_package(project, package_data, codebase_resource=None):
     """
-    Get, update or create a DiscoveredPackage then returns it.
+    Get, update or create a DiscoveredPackage then return it.
     Use the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL and package_uid as a unique key.
     """
@@ -112,7 +133,7 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     return package
 
 
-def update_or_create_dependencies(
+def update_or_create_dependency(
     project, dependency_data, strip_datafile_path_root=False
 ):
     """
@@ -147,40 +168,32 @@ def update_or_create_dependencies(
 
 
 def analyze_scanned_files(project):
-    """
-    Set the status for CodebaseResource to unknown or no license.
-    """
+    """Set the status for CodebaseResource to unknown or no license."""
     scanned_files = project.codebaseresources.files().status("scanned")
-
     scanned_files.has_no_licenses().update(status="no-licenses")
     scanned_files.unknown_license().update(status="unknown-license")
 
 
 def tag_not_analyzed_codebase_resources(project):
     """
-    Flag any of the `project`'s '`CodebaseResource` without a status as "not-analyzed".
+    Flag any of the `project`'s '`CodebaseResource` without a status as
+    "not-analyzed".
     """
     project.codebaseresources.no_status().update(status="not-analyzed")
 
 
 def normalize_path(path):
-    """
-    Return a normalized path from a `path` string.
-    """
+    """Return a normalized path from a `path` string."""
     return "/" + path.strip("/")
 
 
 def strip_root(location):
-    """
-    Return the provided `location` without the root directory.
-    """
+    """Return the provided `location` without the root directory."""
     return "/".join(str(location).strip("/").split("/")[1:])
 
 
 def filename_now(sep="-"):
-    """
-    Return the current date and time in iso format suitable for filename.
-    """
+    """Return the current date and time in iso format suitable for filename."""
     now = datetime.now().isoformat(sep=sep, timespec="seconds")
     return now.replace(":", sep)
 
@@ -200,9 +213,7 @@ def count_group_by(queryset, field_name):
 
 
 def get_bin_executable(filename):
-    """
-    Return the location of the `filename` executable binary.
-    """
+    """Return the location of the `filename` executable binary."""
     return str(Path(sys.executable).parent / filename)
 
 
@@ -249,6 +260,9 @@ def run_command(cmd, log_output=False):
 def remove_prefix(text, prefix):
     """
     Remove the `prefix` from `text`.
+    Note that build-in `removeprefix` was added in Python3.9 but we need to keep
+    this one for Python3.8 support.
+    https://docs.python.org/3.9/library/stdtypes.html#str.removeprefix
     """
     if text.startswith(prefix):
         prefix_len = len(prefix)

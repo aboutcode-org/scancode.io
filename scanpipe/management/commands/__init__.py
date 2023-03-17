@@ -26,6 +26,7 @@ from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
+from django.template.defaultfilters import pluralize
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -143,9 +144,7 @@ class AddInputCommandMixin:
         )
 
     def handle_input_files(self, inputs_files):
-        """
-        Copy provided `inputs_files` to the project's `input` directory.
-        """
+        """Copy provided `inputs_files` to the project's `input` directory."""
         copied = []
 
         for file_location in inputs_files:
@@ -154,7 +153,7 @@ class AddInputCommandMixin:
             copied.append(filename)
             self.project.add_input_source(filename, source="uploaded", save=True)
 
-        msg = "File(s) copied to the project inputs directory:"
+        msg = f"File{pluralize(inputs_files)} copied to the project inputs directory:"
         self.stdout.write(msg, self.style.SUCCESS)
         msg = "\n".join(["- " + filename for filename in copied])
         self.stdout.write(msg)
@@ -192,7 +191,8 @@ class AddInputCommandMixin:
 
 def validate_input_files(file_locations):
     """
-    Raise an error if one of the provided `file_locations` is not an existing file.
+    Raise an error if one of the provided `file_locations` is not an existing
+    file.
     """
     for file_location in file_locations:
         file_path = Path(file_location)
@@ -201,9 +201,7 @@ def validate_input_files(file_locations):
 
 
 def validate_pipelines(pipeline_names):
-    """
-    Raise an error if one of the `pipeline_names` is not available.
-    """
+    """Raise an error if one of the `pipeline_names` is not available."""
     for pipeline_name in pipeline_names:
         if pipeline_name not in scanpipe_app.pipelines:
             raise CommandError(

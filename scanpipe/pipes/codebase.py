@@ -28,9 +28,7 @@ def sort_by_lower_name(resource):
 
 
 def get_resource_fields(resource, fields):
-    """
-    Return a mapping of fields from `fields` and values from `resource`
-    """
+    """Return a mapping of fields from `fields` and values from `resource`"""
     return {field: getattr(resource, field) for field in fields}
 
 

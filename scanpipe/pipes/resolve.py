@@ -24,6 +24,8 @@ import json
 import sys
 from pathlib import Path
 
+from django.core.validators import EMPTY_VALUES
+
 from attributecode.model import About
 from licensedcode.match_spdx_lid import get_spdx_expression
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
@@ -41,9 +43,7 @@ Utilities to resolve packages from manifest, lockfile, and SBOM.
 
 
 def resolve_pypi_packages(input_location):
-    """
-    Resolve the PyPI packages from the `input_location` requirements file.
-    """
+    """Resolve the PyPI packages from the `input_location` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
@@ -58,9 +58,7 @@ def resolve_pypi_packages(input_location):
 
 
 def resolve_about_packages(input_location):
-    """
-    Resolve the packages from the `input_location` .ABOUT file.
-    """
+    """Resolve the packages from the `input_location` .ABOUT file."""
     about = About(location=input_location)
     about_data = about.as_dict()
 
@@ -109,9 +107,7 @@ def spdx_package_to_discovered_package_data(spdx_package):
 
 
 def resolve_spdx_packages(input_location):
-    """
-    Resolve the packages from the `input_location` SPDX document file.
-    """
+    """Resolve the packages from the `input_location` SPDX document file."""
     input_path = Path(input_location)
     spdx_document = json.loads(input_path.read_text())
 
@@ -126,39 +122,22 @@ def resolve_spdx_packages(input_location):
     ]
 
 
-def cyclonedx_component_to_discovered_package_data(component_data):
-    """
-    Return package_data from CycloneDX component.
-    """
+def cyclonedx_component_to_package_data(component_data):
+    """Return package_data from CycloneDX component."""
     extra_data = {}
     component = component_data["cdx_package"]
 
-    package_url_dict = (
-        PackageURL.from_string(component.purl).to_dict(encode=True)
-        if component.purl
-        else {}
-    )
-
-    checksum_data = cyclonedx.get_checksums(component)
-    external_references = cyclonedx.get_external_references(
-        component.externalReferences
-    )
-
-    if homepage_url := external_references.get("website"):
-        homepage_url = homepage_url[0]
-
-    if bug_tracking_url := external_references.get("issue-tracker"):
-        bug_tracking_url = bug_tracking_url[0]
-
-    if vcs_url := external_references.get("vcs"):
-        vcs_url = vcs_url[0]
-
-    if external_references:
-        extra_data["externalReferences"] = external_references
-    if component_data["nested_components"]:
-        extra_data["nestedComponents"] = component_data["nested_components"]
+    package_url_dict = {}
+    if component.purl:
+        package_url_dict = PackageURL.from_string(component.purl).to_dict(encode=True)
 
     declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
+
+    if external_references := cyclonedx.get_external_references(component):
+        extra_data["externalReferences"] = external_references
+
+    if nested_components := component_data.get("nested_components"):
+        extra_data["nestedComponents"] = nested_components
 
     package_data = {
         "name": component.name,
@@ -166,21 +145,19 @@ def cyclonedx_component_to_discovered_package_data(component_data):
         "copyright": component.copyright,
         "version": component.version,
         "description": component.description,
-        "homepage_url": homepage_url,
-        "bug_tracking_url": bug_tracking_url,
-        "vcs_url": vcs_url,
         "extra_data": extra_data,
         **package_url_dict,
-        **checksum_data,
+        **cyclonedx.get_checksums(component),
+        **cyclonedx.get_properties_data(component),
     }
 
-    return {key: value for key, value in package_data.items() if value}
+    return {
+        key: value for key, value in package_data.items() if value not in EMPTY_VALUES
+    }
 
 
 def resolve_cyclonedx_packages(input_location):
-    """
-    Resolve the packages from the `input_location` CycloneDX document file.
-    """
+    """Resolve the packages from the `input_location` CycloneDX document file."""
     input_path = Path(input_location)
     cyclonedx_document = json.loads(input_path.read_text())
 
@@ -194,7 +171,7 @@ def resolve_cyclonedx_packages(input_location):
     cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)
 
     return [
-        cyclonedx_component_to_discovered_package_data(component_data)
+        cyclonedx_component_to_package_data(component_data)
         for component_data in cyclonedx.get_components(cyclonedx_bom)
     ]
 

@@ -68,7 +68,7 @@ class RegenTestData(TestCase):
         self.assertEqual(0, exitcode)
 
         # Scan results
-        test_file_location = self.data_location / "asgiref-3.3.0_scan.json"
+        test_file_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         result_file = output.to_json(project1)
         result_json = json.loads(Path(result_file).read_text())
         test_file_location.write_text(json.dumps(result_json, indent=2))

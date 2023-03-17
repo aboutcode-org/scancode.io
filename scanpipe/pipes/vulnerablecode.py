@@ -51,18 +51,14 @@ if VULNERABLECODE_API_KEY:
 
 
 def is_configured():
-    """
-    Return True if the required VulnerableCode settings have been set.
-    """
+    """Return True if the required VulnerableCode settings have been set."""
     if VULNERABLECODE_API_URL:
         return True
     return False
 
 
 def is_available():
-    """
-    Return True if the configured VulnerableCode server is available.
-    """
+    """Return True if the configured VulnerableCode server is available."""
     if not is_configured():
         return False
 
@@ -77,9 +73,7 @@ def is_available():
 
 
 def get_base_purl(purl):
-    """
-    Return the `purl` without qualifiers and subpath.
-    """
+    """Return the `purl` without qualifiers and subpath."""
     return purl.split("?")[0]
 
 
@@ -100,9 +94,7 @@ def request_get(
     payload=None,
     timeout=None,
 ):
-    """
-    Wrap the HTTP request calls on the API.
-    """
+    """Wrap the HTTP request calls on the API."""
     if not url:
         return
 
@@ -138,9 +130,7 @@ def _get_vulnerabilities(
     field_value,
     timeout=None,
 ):
-    """
-    Get the list of vulnerabilities.
-    """
+    """Get the list of vulnerabilities."""
     payload = {field_name: field_value}
 
     response = request_get(url=url, payload=payload, timeout=timeout)
@@ -154,9 +144,7 @@ def get_vulnerabilities_by_purl(
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
-    """
-    Get the list of vulnerabilities providing a package `purl`.
-    """
+    """Get the list of vulnerabilities providing a package `purl`."""
     return _get_vulnerabilities(
         url=f"{api_url}packages/",
         field_name="purl",
@@ -170,9 +158,7 @@ def get_vulnerabilities_by_cpe(
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
-    """
-    Get the list of vulnerabilities providing a package or component `cpe`.
-    """
+    """Get the list of vulnerabilities providing a package or component `cpe`."""
     return _get_vulnerabilities(
         url=f"{api_url}cpes/",
         field_name="cpe",
@@ -186,9 +172,7 @@ def bulk_search_by_purl(
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
-    """
-    Bulk search of vulnerabilities using the provided list of `purls`.
-    """
+    """Bulk search of vulnerabilities using the provided list of `purls`."""
     url = f"{api_url}packages/bulk_search"
 
     data = {
@@ -204,9 +188,7 @@ def bulk_search_by_cpes(
     timeout=None,
     api_url=VULNERABLECODE_API_URL,
 ):
-    """
-    Bulk search of vulnerabilities using the provided list of `cpes`.
-    """
+    """Bulk search of vulnerabilities using the provided list of `cpes`."""
     url = f"{api_url}cpes/bulk_search"
 
     data = {

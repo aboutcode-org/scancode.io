@@ -58,8 +58,8 @@ package1 = spdx.Package(
     version="3.3.5",
     license_concluded="LicenseRef-1",
     checksums=[
-        spdx.Checkum(algorithm="SHA1", value="10c72b88de4c5f3095ebe20b4d8afbedb32b8f"),
-        spdx.Checkum(algorithm="MD5", value="56770c1a2df6e0dc51c491f0a5b9d865"),
+        spdx.Checksum(algorithm="SHA1", value="10c72b88de4c5f3095ebe20b4d8afbedb32b8f"),
+        spdx.Checksum(algorithm="MD5", value="56770c1a2df6e0dc51c491f0a5b9d865"),
     ],
     external_refs=[
         spdx.ExternalRef(
@@ -126,9 +126,7 @@ class CreationInfo:
     )
 
     def as_dict(self):
-        """
-        Return the data as a serializable dict.
-        """
+        """Return the data as a serializable dict."""
         data = {
             "created": self.created,
             "creators": self.get_creators_spdx(),
@@ -152,9 +150,7 @@ class CreationInfo:
         )
 
     def get_creators_spdx(self):
-        """
-        Return the `creators` list from related field values.
-        """
+        """Return the `creators` list from related field values."""
         creators = []
 
         if self.person_name:
@@ -175,9 +171,7 @@ class CreationInfo:
 
     @staticmethod
     def get_creators_dict(creators_data):
-        """
-        Return the `creators` dict from SPDX data.
-        """
+        """Return the `creators` dict from SPDX data."""
         creators_dict = {}
 
         for creator in creators_data:
@@ -199,7 +193,7 @@ class CreationInfo:
 
 
 @dataclass
-class Checkum:
+class Checksum:
     """
     The checksum provides a mechanism that can be used to verify that the contents of
     a File or Package have not changed.
@@ -209,9 +203,7 @@ class Checkum:
     value: str
 
     def as_dict(self):
-        """
-        Return the data as a serializable dict.
-        """
+        """Return the data as a serializable dict."""
         return {
             "algorithm": self.algorithm.upper(),
             "checksumValue": self.value,
@@ -240,9 +232,7 @@ class ExternalRef:
     comment: str = ""
 
     def as_dict(self):
-        """
-        Return the data as a serializable dict.
-        """
+        """Return the data as a serializable dict."""
         data = {
             "referenceCategory": self.category,
             "referenceType": self.type,
@@ -281,9 +271,7 @@ class ExtractedLicensingInfo:
     see_alsos: List[str] = field(default_factory=list)
 
     def as_dict(self):
-        """
-        Return the data as a serializable dict.
-        """
+        """Return the data as a serializable dict."""
         required_data = {
             "licenseId": self.license_id,
             "extractedText": self.extracted_text,
@@ -311,9 +299,7 @@ class ExtractedLicensingInfo:
 
 @dataclass
 class Package:
-    """
-    Packages referenced in the SPDX document.
-    """
+    """Packages referenced in the SPDX document."""
 
     spdx_id: str
     name: str
@@ -342,14 +328,12 @@ class Package:
     comment: str = ""
     license_comments: str = ""
 
-    checksums: List[Checkum] = field(default_factory=list)
+    checksums: List[Checksum] = field(default_factory=list)
     external_refs: List[ExternalRef] = field(default_factory=list)
     attribution_texts: List[str] = field(default_factory=list)
 
     def as_dict(self):
-        """
-        Return the data as a serializable dict.
-        """
+        """Return the data as a serializable dict."""
         spdx_id = str(self.spdx_id)
         if not spdx_id.startswith("SPDXRef-"):
             spdx_id = f"SPDXRef-{spdx_id}"
@@ -389,9 +373,7 @@ class Package:
 
     @staticmethod
     def date_to_iso(date_str):
-        """
-        Convert a provided `date_str` to the SPDX format: `YYYY-MM-DDThh:mm:ssZ`.
-        """
+        """Convert a provided `date_str` to the SPDX format: `YYYY-MM-DDThh:mm:ssZ`."""
         if not date_str:
             return
 
@@ -426,7 +408,7 @@ class Package:
             license_comments=data.get("licenseComments"),
             attribution_texts=data.get("attributionTexts"),
             checksums=[
-                Checkum.from_data(checksum_data)
+                Checksum.from_data(checksum_data)
                 for checksum_data in data.get("checksums", [])
             ],
             external_refs=[
@@ -438,13 +420,11 @@ class Package:
 
 @dataclass
 class File:
-    """
-    Files referenced in the SPDX document
-    """
+    """Files referenced in the SPDX document."""
 
     spdx_id: str
     name: str
-    checksums: List[Checkum] = field(default_factory=list)
+    checksums: List[Checksum] = field(default_factory=list)
 
     license_concluded: str = "NOASSERTION"
     copyright_text: str = "NOASSERTION"
@@ -460,9 +440,7 @@ class File:
     license_comments: str = ""
 
     def as_dict(self):
-        """
-        Return the data as a serializable dict.
-        """
+        """Return the data as a serializable dict."""
         required_data = {
             "SPDXID": self.spdx_id,
             "fileName": self.name,
@@ -490,7 +468,7 @@ class File:
             spdx_id=data.get("SPDXID"),
             name=data.get("fileName"),
             checksums=[
-                Checkum.from_data(checksum_data)
+                Checksum.from_data(checksum_data)
                 for checksum_data in data.get("checksums", [])
             ],
             types=data.get("fileTypes"),
@@ -521,9 +499,7 @@ class Relationship:
     comment: str = ""
 
     def as_dict(self):
-        """
-        Return the SPDX relationship as a serializable dict.
-        """
+        """Return the SPDX relationship as a serializable dict."""
         data = {
             "spdxElementId": self.spdx_id,
             "relatedSpdxElement": self.related_spdx_id,
@@ -567,9 +543,7 @@ class Document:
     relationships: List[Relationship] = field(default_factory=list)
 
     def as_dict(self):
-        """
-        Return the SPDX document as a serializable dict.
-        """
+        """Return the SPDX document as a serializable dict."""
         data = {
             "spdxVersion": f"SPDX-{self.version}",
             "dataLicense": self.data_license,
@@ -600,9 +574,7 @@ class Document:
         return data
 
     def as_json(self, indent=2):
-        """
-        Return the SPDX document as serialized JSON.
-        """
+        """Return the SPDX document as serialized JSON."""
         return json.dumps(self.as_dict(), indent=indent)
 
     @classmethod
@@ -632,15 +604,11 @@ class Document:
 
     @staticmethod
     def safe_document_name(name):
-        """
-        Convert provided `name` to a safe SPDX document name.
-        """
+        """Convert provided `name` to a safe SPDX document name."""
         return re.sub("[^A-Za-z0-9.]+", "_", name).lower()
 
     def validate(self, schema):
-        """
-        Check the validity of this SPDX document.
-        """
+        """Check the validity of this SPDX document."""
         return validate_document(document=self.as_dict(), schema=schema)
 
 

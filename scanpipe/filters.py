@@ -68,9 +68,7 @@ class FilterSetUtilsMixin:
         return data.urlencode()
 
     def is_active(self):
-        """
-        Return True, if any of the filters is active, except for the 'sort' filter.
-        """
+        """Return True if any of the filters is active except for the 'sort' filter."""
         return bool(
             [
                 field_name
@@ -120,7 +118,6 @@ class FilterSetUtilsMixin:
         Add the ability to filter by empty and none values providing the "magic"
         `empty_value` to any filters.
         """
-
         for name, value in self.form.cleaned_data.items():
             field_name = self.filters[name].field_name
             if value == self.empty_value:
@@ -134,9 +131,7 @@ class FilterSetUtilsMixin:
 
 
 class BulmaLinkWidget(LinkWidget):
-    """
-    Replace LinkWidget rendering with Bulma CSS classes.
-    """
+    """Replace LinkWidget rendering with Bulma CSS classes."""
 
     extra_css_class = ""
 
@@ -148,6 +143,9 @@ class BulmaLinkWidget(LinkWidget):
         data = self.data.copy()
         data[name] = option_value
         selected = data == self.data or option_value in selected_choices
+
+        # Do not include the pagination in the filter query string.
+        data.pop(PAGE_VAR, None)
 
         css_class = str(self.extra_css_class)
         if selected:
@@ -224,11 +222,10 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     class Meta:
         model = Project
         fields = ["is_archived"]
+        exclude = ["page"]
 
     def __init__(self, data=None, *args, **kwargs):
-        """
-        Filter out the archived projects by default.
-        """
+        """Filter out the archived projects by default."""
         super().__init__(data, *args, **kwargs)
 
         # Default filtering by "Active" projects.
@@ -245,9 +242,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         )
 
     def filter_run_status(self, queryset, name, value):
-        """
-        Filter by Run status using the `RunQuerySet` methods.
-        """
+        """Filter by Run status using the `RunQuerySet` methods."""
         run_queryset_method = value
         run_queryset = getattr(Run.objects, run_queryset_method)()
         return queryset.filter(runs__in=run_queryset)
@@ -350,9 +345,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
-        """
-        Add support for JSONField storing "list" using the JSONListFilter.
-        """
+        """Add support for JSONField storing "list" using the JSONListFilter."""
         if isinstance(field, models.JSONField) and field.default == list:
             return JSONContainsFilter, {}
 

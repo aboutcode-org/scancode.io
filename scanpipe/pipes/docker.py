@@ -167,9 +167,7 @@ def get_layer_tag(image_id, layer_id, layer_index, id_length=6):
 
 
 def create_codebase_resources(project, image):
-    """
-    Create the CodebaseResource for an `image` in a `project`.
-    """
+    """Create the CodebaseResource for an `image` in a `project`."""
     for layer_index, layer in enumerate(image.layers, start=1):
         layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
 

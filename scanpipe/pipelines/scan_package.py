@@ -33,7 +33,8 @@ from scanpipe.pipes.scancode import extract_archive
 
 class ScanPackage(Pipeline):
     """
-    A pipeline to scan a single package archive with ScanCode-toolkit.
+    Scan a single package archive with ScanCode-toolkit.
+
     The output is a summary of the scan results in JSON format.
     """
 
@@ -44,7 +45,7 @@ class ScanPackage(Pipeline):
             cls.collect_archive_information,
             cls.extract_archive_to_codebase_directory,
             cls.run_scancode,
-            cls.build_inventory_from_scan,
+            cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
         )
 
@@ -62,9 +63,7 @@ class ScanPackage(Pipeline):
     ]
 
     def get_package_archive_input(self):
-        """
-        Locate the input package archive in the project's input/ directory.
-        """
+        """Locate the input package archive in the project's input/ directory."""
         input_files = self.project.input_files
         inputs = list(self.project.inputs())
 
@@ -74,9 +73,7 @@ class ScanPackage(Pipeline):
         self.archive_path = inputs[0]
 
     def collect_archive_information(self):
-        """
-        Collect and store information about the input archive in the project.
-        """
+        """Collect and store information about the input archive in the project."""
         self.project.update_extra_data(
             {
                 "filename": self.archive_path.name,
@@ -86,18 +83,14 @@ class ScanPackage(Pipeline):
         )
 
     def extract_archive_to_codebase_directory(self):
-        """
-        Extract package archive with extractcode.
-        """
+        """Extract package archive with extractcode."""
         extract_errors = extract_archive(self.archive_path, self.project.codebase_path)
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
 
     def run_scancode(self):
-        """
-        Scan extracted codebase/ content.
-        """
+        """Scan extracted codebase/ content."""
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
 
@@ -112,16 +105,14 @@ class ScanPackage(Pipeline):
         if not scan_output_path.exists():
             raise FileNotFoundError("ScanCode output not available.")
 
-    def build_inventory_from_scan(self):
-        """
-        Process a JSON Scan results file to populate codebase resources and packages.
-        """
-        scancode.create_inventory_from_scan(self.project, self.scan_output_location)
+    def load_inventory_from_toolkit_scan(self):
+        """Process a JSON Scan results to populate codebase resources and packages."""
+        scancode.load_inventory_from_toolkit_scan(
+            self.project, self.scan_output_location
+        )
 
     def make_summary_from_scan_results(self):
-        """
-        Build a summary in JSON format from the generated scan results.
-        """
+        """Build a summary in JSON format from the generated scan results."""
         summary = scancode.make_results_summary(self.project, self.scan_output_location)
         output_file = self.project.get_output_file_path("summary", "json")
 

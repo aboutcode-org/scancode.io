@@ -71,6 +71,8 @@ Scan Codebase
     :members:
     :member-order: bysource
 
+.. _pipeline_scan_package:
+
 Scan Package
 ------------
 .. autoclass:: scanpipe.pipelines.scan_package.ScanPackage()

@@ -17,6 +17,12 @@
           "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
         }
       ],
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://cyclonedx.org/website"
+        }
+      ],
       "externalReferences": [
         {
           "type": "issue-tracker",
@@ -132,6 +138,24 @@
                 {
                   "alg": "SHA-256",
                   "content": "960343ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+                }
+              ],
+              "properties": [
+                {
+                  "name": "aboutcode:download_url",
+                  "value": "https://download.url/package.zip"
+                },
+                {
+                  "name": "aboutcode:filename",
+                  "value": "package.zip"
+                },
+                {
+                  "name": "aboutcode:primary_language",
+                  "value": "Python"
+                },
+                {
+                  "name": "aboutcode:homepage_url",
+                  "value": "https://home.page"
                 }
               ],
               "externalReferences": [

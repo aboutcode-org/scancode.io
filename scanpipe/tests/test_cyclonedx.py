@@ -68,6 +68,24 @@ class CycloneDXUnitTest(TestCase):
                         ),
                     }
                 ],
+                "properties": [
+                    {
+                        "name": "aboutcode:download_url",
+                        "value": "https://download.url/package.zip",
+                    },
+                    {
+                        "name": "aboutcode:filename",
+                        "value": "package.zip",
+                    },
+                    {
+                        "name": "aboutcode:primary_language",
+                        "value": "Python",
+                    },
+                    {
+                        "name": "aboutcode:homepage_url",
+                        "value": "https://home.page",
+                    },
+                ],
                 "licenses": [
                     {
                         "expression": (
@@ -95,8 +113,8 @@ class CycloneDXUnitTest(TestCase):
                 ],
             }
         ]
-        result = cyclonedx.bom_attributes_to_dict(components)
 
+        result = cyclonedx.bom_attributes_to_dict(components)
         self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_recursive_component_collector(self):
@@ -156,7 +174,7 @@ class CycloneDXUnitTest(TestCase):
 
     def test_scanpipe_cyclonedx_get_external_references(self):
         component = self.bom.components[0]
-        result = cyclonedx.get_external_references(component.externalReferences)
+        result = cyclonedx.get_external_references(component)
         expected = {
             "vcs": ["https://cyclonedx.org/vcs"],
             "issue-tracker": ["https://cyclonedx.org/issue-tracker"],

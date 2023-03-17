@@ -13,7 +13,7 @@
         {
           "pipeline_name": "scan_codebase",
           "status": "not_started",
-          "description": "A pipeline to scan a codebase resource with ScanCode-toolkit.\n\nInput files are copied to the project's codebase/ directory and are extracted\nin place before running the scan.\nAlternatively, the code can be manually copied to the project codebase/\ndirectory.",
+          "description": "Scan a codebase with ScanCode-toolkit.\n\nIf the codebase consists of several packages and dependencies, it will try to\nresolve and scan those too.\n\nInput files are copied to the project's codebase/ directory and are extracted\nin place before running the scan.\nAlternatively, the code can be manually copied to the project codebase/\ndirectory.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,

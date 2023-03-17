@@ -337,9 +337,7 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
 
 
 class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
-    """
-    Serializer used in the `ProjectViewSet.add_pipeline` action.
-    """
+    """Serializer used in the `ProjectViewSet.add_pipeline` action."""
 
     pipeline = serializers.ChoiceField(
         choices=(),
@@ -357,9 +355,7 @@ class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
 
 
 def get_model_serializer(model_class):
-    """
-    Return a Serializer class that ia related to a given `model_class`.
-    """
+    """Return a Serializer class that ia related to a given `model_class`."""
     serializer = {
         CodebaseResource: CodebaseResourceSerializer,
         DiscoveredPackage: DiscoveredPackageSerializer,

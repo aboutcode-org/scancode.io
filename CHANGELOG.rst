@@ -4,9 +4,16 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Add support for ScanCode.io results in the "load_inventory" pipeline.
+  https://github.com/nexB/scancode.io/issues/609
+
 - Add support for CycloneDX 1.4 to the "inspect-manifest" pipeline to import SBOM into
   a Project.
   https://github.com/nexB/scancode.io/issues/583
+
+- Add fields in CycloneDX BOM output using the component properties.
+  See registered properties at https://github.com/nexB/aboutcode-cyclonedx-taxonomy
+  https://github.com/nexB/scancode.io/issues/637
 
 - Refine the "Command Line Interface" documentation about the ``scanpipe`` command
   usages in the Docker context.
@@ -18,11 +25,22 @@ v33.0.0 (unreleased)
   integration in the documentation.
   https://github.com/nexB/scancode.io/issues/600
 
+- Rewrite the CLI tutorials for a Docker-based installation.
+  https://github.com/nexB/scancode.io/issues/440
+
 - Use CodebaseResource ``path`` instead of ``id`` as slug_field in URL navigation.
   https://github.com/nexB/scancode.io/issues/242
 
 - Remove dead code related to the project_tree view
   https://github.com/nexB/scancode.io/issues/623
+
+- Update ``scanpipe.pipes.ProjectCodebase`` and related code to work properly
+  with current Project/CodebaseResource path scheme.
+  https://github.com/nexB/scancode.io/pull/624
+
+- Add ``SCANCODEIO_PAGINATE_BY`` setting to customize the number of items displayed per
+  page for each object type.
+  https://github.com/nexB/scancode.io/issues/563
 
 v32.0.1 (2023-02-20)
 --------------------

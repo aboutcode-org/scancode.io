@@ -23,10 +23,12 @@
 import datetime
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from unittest import expectedFailure
 from unittest import mock
+from unittest import skipIf
 
 from django.apps import apps
 from django.core.management import call_command
@@ -37,25 +39,25 @@ from django.test import override_settings
 from commoncode.archive import extract_tar
 from scancode.interrupt import TimeoutError as InterruptTimeoutError
 
+from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import fetch
-from scanpipe.pipes import filename_now
-from scanpipe.pipes import make_codebase_resource
+from scanpipe.pipes import input
+from scanpipe.pipes import output
 from scanpipe.pipes import resolve
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
-from scanpipe.pipes import strip_root
-from scanpipe.pipes import tag_not_analyzed_codebase_resources
-from scanpipe.pipes import update_or_create_package
 from scanpipe.pipes import windows
 from scanpipe.pipes.input import copy_input
+from scanpipe.tests import dependency_data1
 from scanpipe.tests import license_policies_index
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
+from scanpipe.tests import resource_data1
 
 scanpipe_app = apps.get_app_config("scanpipe")
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
@@ -76,8 +78,8 @@ class ScanPipePipesTest(TestCase):
         expected = "dir/file"
 
         for path in input_paths:
-            self.assertEqual(expected, strip_root(path))
-            self.assertEqual(expected, strip_root(Path(path)))
+            self.assertEqual(expected, pipes.strip_root(path))
+            self.assertEqual(expected, pipes.strip_root(Path(path)))
 
     def test_scanpipe_pipes_tag_not_analyzed_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
@@ -88,7 +90,7 @@ class ScanPipePipesTest(TestCase):
             status="scanned",
         )
 
-        tag_not_analyzed_codebase_resources(p1)
+        pipes.tag_not_analyzed_codebase_resources(p1)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         self.assertEqual("not-analyzed", resource1.status)
@@ -96,7 +98,26 @@ class ScanPipePipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
-        self.assertEqual("2010-10-10-10-10-10", filename_now())
+        self.assertEqual("2010-10-10-10-10-10", pipes.filename_now())
+
+    def test_scanpipe_pipes_input_get_tool_name_from_scan_headers(self):
+        tool_name = input.get_tool_name_from_scan_headers(scan_data={})
+        self.assertIsNone(tool_name)
+
+        tool_name = input.get_tool_name_from_scan_headers(scan_data={"headers": []})
+        self.assertIsNone(tool_name)
+
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        tool_name = input.get_tool_name_from_scan_headers(
+            scan_data=json.loads(input_location.read_text())
+        )
+        self.assertEqual("scanpipe", tool_name)
+
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
+        tool_name = input.get_tool_name_from_scan_headers(
+            scan_data=json.loads(input_location.read_text())
+        )
+        self.assertEqual("scancode-toolkit", tool_name)
 
     def test_scanpipe_pipes_scancode_extract_archive(self):
         target = tempfile.mkdtemp()
@@ -137,6 +158,7 @@ class ScanPipePipesTest(TestCase):
         for path in expected:
             self.assertIn(path, results)
 
+    @skipIf(sys.platform != "linux", "QCOW2 extraction is not available on macOS.")
     def test_scanpipe_pipes_scancode_extract_archive_vmimage_qcow2(self):
         target = tempfile.mkdtemp()
         compressed_input_location = str(self.data_location / "foobar.qcow2.tar.gz")
@@ -385,7 +407,7 @@ class ScanPipePipesTest(TestCase):
     @expectedFailure
     def test_scanpipe_pipes_scancode_virtual_codebase(self):
         project = Project.objects.create(name="asgiref")
-        input_location = self.data_location / "asgiref-3.3.0_scan.json"
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
         self.assertEqual(19, len(virtual_codebase.resources.keys()))
 
@@ -419,10 +441,10 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
         project = Project.objects.create(name="asgiref")
-        # We are using `asgiref-3.3.0_scancode_scan.json` instead of
-        # `asgiref-3.3.0_scan.json` because `asgiref-3.3.0_scan.json` is not
-        # exactly the same format as a scancode-toolkit scan
-        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
+        # We are using `asgiref-3.3.0_toolkit_scan.json` instead of
+        # `asgiref-3.3.0_scanpipe_output.json` because it is not exactly the same
+        # format as a scancode-toolkit scan
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
         virtual_codebase = scancode.get_virtual_codebase(project, input_location)
 
         scanpipe_app.license_policies_index = license_policies_index
@@ -482,10 +504,36 @@ class ScanPipePipesTest(TestCase):
         summary = scancode.make_results_summary(project, scan_results_location)
         self.assertEqual(10, len(summary.keys()))
 
+    def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
+        project = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
+        scancode.load_inventory_from_toolkit_scan(project, input_location)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(4, project.discovereddependencies.count())
+
+    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe(self):
+        project = Project.objects.create(name="1")
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        scan_data = json.loads(input_location.read_text())
+        scancode.load_inventory_from_scanpipe(project, scan_data)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(4, project.discovereddependencies.count())
+
+        # Using the JSON output of project1 to load into project2
+        project2 = Project.objects.create(name="2")
+        output_file = output.to_json(project=project)
+        scan_data = json.loads(output_file.read_text())
+        scancode.load_inventory_from_scanpipe(project2, scan_data)
+        self.assertEqual(18, project2.codebaseresources.count())
+        self.assertEqual(2, project2.discoveredpackages.count())
+        self.assertEqual(4, project2.discovereddependencies.count())
+
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
         project_scan_location = self.data_location / "package_assembly_codebase.json"
-        scancode.create_inventory_from_scan(project, project_scan_location)
+        scancode.load_inventory_from_toolkit_scan(project, project_scan_location)
 
         self.assertEqual(0, project.discoveredpackages.count())
         scancode.assemble_packages(project)
@@ -518,7 +566,7 @@ class ScanPipePipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
-        scan_results = self.data_location / "asgiref-3.3.0_scan.json"
+        scan_results = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         virtual_codebase = scancode.get_virtual_codebase(project, scan_results)
         project_codebase = codebase.ProjectCodebase(project)
 
@@ -570,6 +618,7 @@ class ScanPipePipesTest(TestCase):
 
         self.assertEqual(expected, tree)
 
+    @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_pipes_codebase_project_codebase_class_walk(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
@@ -1078,18 +1127,36 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("ignored-media-file", resource2.status)
         self.assertEqual("", resource3.status)
 
+    def test_scanpipe_pipes_update_or_create_resource(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = pipes.update_or_create_package(p1, package_data1)
+        resource_data = dict(resource_data1)
+        resource_data["for_packages"] = [package.package_uid]
+
+        resource = pipes.update_or_create_resource(p1, resource_data)
+        for field_name, value in resource_data.items():
+            self.assertEqual(value, getattr(resource, field_name), msg=field_name)
+
+        resource_data["status"] = "scanned"
+        resource = pipes.update_or_create_resource(p1, resource_data)
+        self.assertEqual("scanned", resource.status)
+
+        resource_data["for_packages"] = ["does_not_exists"]
+        with self.assertRaises(DiscoveredPackage.DoesNotExist):
+            pipes.update_or_create_resource(p1, resource_data)
+
     def test_scanpipe_pipes_update_or_create_package(self):
         p1 = Project.objects.create(name="Analysis")
-        package = update_or_create_package(p1, package_data1)
+        package = pipes.update_or_create_package(p1, package_data1)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.purl)
-        self.assertEqual("", package.primary_language)
+        self.assertEqual("bash", package.primary_language)
         self.assertEqual(datetime.date(1999, 10, 10), package.release_date)
 
         updated_data = dict(package_data1)
-        updated_data["primary_language"] = "Python"
-        updated_package = update_or_create_package(p1, updated_data)
+        updated_data["notice_text"] = "NOTICE"
+        updated_package = pipes.update_or_create_package(p1, updated_data)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", updated_package.purl)
-        self.assertEqual("Python", updated_package.primary_language)
+        self.assertEqual("NOTICE", updated_package.notice_text)
         self.assertEqual(package.pk, updated_package.pk)
 
         resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
@@ -1097,10 +1164,28 @@ class ScanPipePipesTest(TestCase):
         package_data2["name"] = "new name"
         package_data2["package_uid"] = ""
         package_data2["release_date"] = "2020-11-01T01:40:20"
-        package2 = update_or_create_package(p1, package_data2, resource1)
+        package2 = pipes.update_or_create_package(p1, package_data2, resource1)
         self.assertNotEqual(package.pk, package2.pk)
         self.assertIn(resource1, package2.codebase_resources.all())
         self.assertEqual(datetime.date(2020, 11, 1), package2.release_date)
+
+    def test_scanpipe_pipes_update_or_create_dependency(self):
+        p1 = Project.objects.create(name="Analysis")
+        CodebaseResource.objects.create(
+            project=p1,
+            path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+        )
+        pipes.update_or_create_package(p1, package_data1)
+
+        dependency_data = dict(dependency_data1)
+        dependency_data["scope"] = ""
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        for field_name, value in dependency_data.items():
+            self.assertEqual(value, getattr(dependency, field_name), msg=field_name)
+
+        dependency_data["scope"] = "install"
+        dependency = pipes.update_or_create_dependency(p1, dependency_data)
+        self.assertEqual(dependency.scope, "install")
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
@@ -1117,7 +1202,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         resource_location = str(self.data_location / "notice.NOTICE")
 
         with self.assertRaises(ValueError) as cm:
-            make_codebase_resource(p1, resource_location)
+            pipes.make_codebase_resource(p1, resource_location)
 
         self.assertIn("not", str(cm.exception))
         self.assertIn(resource_location, str(cm.exception))
@@ -1125,7 +1210,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         copy_input(resource_location, p1.codebase_path)
         resource_location = str(p1.codebase_path / "notice.NOTICE")
-        make_codebase_resource(p1, resource_location)
+        pipes.make_codebase_resource(p1, resource_location)
 
         resource = p1.codebaseresources.get()
         self.assertEqual(1178, resource.size)
@@ -1137,7 +1222,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         self.assertEqual(CodebaseResource.Type.FILE, resource.type)
 
         # Duplicated path: skip the creation and no project error added
-        make_codebase_resource(p1, resource_location)
+        pipes.make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
         self.assertEqual(0, p1.projecterrors.count())
 
@@ -1147,7 +1232,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
             project=project1,
             path="filename.ext",
         )
-        package1 = update_or_create_package(project1, package_data1)
+        package1 = pipes.update_or_create_package(project1, package_data1)
         self.assertFalse(resource1.for_packages)
 
         self.assertIsNone(scancode.add_resource_to_package(None, resource1, project1))

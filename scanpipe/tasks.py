@@ -32,9 +32,7 @@ def info(message, pk):
 
 
 def get_run_instance(run_pk):
-    """
-    Return the run instance using the `run_pk`.
-    """
+    """Return the run instance using the `run_pk`."""
     run_model = apps.get_model("scanpipe", "Run")
     return run_model.objects.get(pk=run_pk)
 

@@ -123,6 +123,25 @@ class ScanPipeViewsTest(TestCase):
         expected = '<input type="hidden" name="status" value="failed">'
         self.assertContains(response, expected, html=True)
 
+    @mock.patch("scanpipe.views.ProjectListView.get_paginate_by")
+    def test_scanpipe_views_project_list_filters_exclude_page(self, mock_paginate_by):
+        url = reverse("project_list")
+        # Create another project to enable pagination
+        Project.objects.create(name="project2")
+        mock_paginate_by.return_value = 1
+
+        data = {"page": "2"}
+        response = self.client.get(url, data=data)
+
+        expected = '<a class="is-black-link" href="?page=2&amp;sort=name">Name</a>'
+        self.assertContains(response, expected)
+        expected = '<li><a href="?status=" class="dropdown-item is-active">All</a></li>'
+        self.assertContains(response, expected)
+        expected = '<a href="?pipeline=" class="dropdown-item is-active">All</a>'
+        self.assertContains(response, expected)
+        expected = '<a href="?sort=" class="dropdown-item is-active">Newest</a>'
+        self.assertContains(response, expected)
+
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
