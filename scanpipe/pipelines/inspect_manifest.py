@@ -27,7 +27,7 @@ from scanpipe.pipes import update_or_create_package
 
 class InspectManifest(Pipeline):
     """
-    A pipeline to inspect one or more manifest files and resolve its packages.
+    Inspect one or more manifest files and resolve its packages.
 
     Supports:
     - PyPI "requirements.txt" files

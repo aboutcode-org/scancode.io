@@ -33,7 +33,8 @@ from scanpipe.pipes.scancode import extract_archive
 
 class ScanPackage(Pipeline):
     """
-    A pipeline to scan a single package archive with ScanCode-toolkit.
+    Scan a single package archive with ScanCode-toolkit.
+
     The output is a summary of the scan results in JSON format.
     """
 

@@ -29,7 +29,10 @@ from scanpipe.pipes.input import copy_inputs
 
 class ScanCodebase(Pipeline):
     """
-    A pipeline to scan a codebase resource with ScanCode-toolkit.
+    Scan a codebase with ScanCode-toolkit.
+
+    If the codebase consists of several packages and dependencies, it will try to
+    resolve and scan those too.
 
     Input files are copied to the project's codebase/ directory and are extracted
     in place before running the scan.

@@ -29,8 +29,8 @@ from scanpipe.pipes import scancode
 
 class LoadInventory(Pipeline):
     """
-    A pipeline to load one or more inventory from ScanCode-toolkit and ScanCode.io
-    JSON scan results.
+    Load one or more inventory from ScanCode-toolkit and ScanCode.io JSON scan results.
+
     An inventory is composed of packages, dependencies, and resources.
     """
 

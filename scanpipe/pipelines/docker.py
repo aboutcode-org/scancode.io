@@ -26,7 +26,7 @@ from scanpipe.pipes import rootfs
 
 
 class Docker(RootFS):
-    """A pipeline to analyze Docker images."""
+    """Analyze Docker images."""
 
     @classmethod
     def steps(cls):

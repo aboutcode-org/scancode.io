@@ -27,7 +27,7 @@ from scanpipe.pipes import windows
 
 
 class DockerWindows(Docker):
-    """A pipeline to analyze Windows Docker images."""
+    """Analyze Windows Docker images."""
 
     @classmethod
     def steps(cls):
