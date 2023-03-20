@@ -114,7 +114,7 @@ def resolve_spdx_packages(input_location):
     try:
         spdx.validate_document(spdx_document)
     except Exception as e:
-        raise Exception(f'SPDX document "{input_path.name}" is not valid: {e.message}')
+        raise Exception(f'SPDX document "{input_path.name}" is not valid: {e}')
 
     return [
         spdx_package_to_discovered_package_data(spdx.Package.from_data(spdx_package))
@@ -164,16 +164,12 @@ def resolve_cyclonedx_packages(input_location):
     try:
         cyclonedx.validate_document(cyclonedx_document)
     except Exception as e:
-        raise Exception(
-            f'CycloneDX document "{input_path.name}" is not valid: {e.message}'
-        )
+        raise Exception(f'CycloneDX document "{input_path.name}" is not valid: {e}')
 
     cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)
+    components = cyclonedx.get_components(cyclonedx_bom)
 
-    return [
-        cyclonedx_component_to_package_data(component_data)
-        for component_data in cyclonedx.get_components(cyclonedx_bom)
-    ]
+    return [cyclonedx_component_to_package_data(component) for component in components]
 
 
 def get_default_package_type(input_location):
