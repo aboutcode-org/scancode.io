@@ -63,7 +63,7 @@
 
     {% if is_paginated %}
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
-    {% endif %}    
+    {% endif %}
   </div>
   {% include "scanpipe/includes/issue_report_modal.html" with error=error %}
 {% endblock %}
