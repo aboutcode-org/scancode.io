@@ -50,6 +50,9 @@ class FindVulnerabilities(Pipeline):
         """Check for vulnerabilities on each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
 
+        if not packages:
+            raise Exception("No package found")
+
         for package in packages:
             purl = vulnerablecode.get_base_purl(package.package_url)
             vulnerabilities = vulnerablecode.get_vulnerabilities_by_purl(purl)
