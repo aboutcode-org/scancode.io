@@ -49,16 +49,12 @@
               <input class="input" id="error_desc">          
             </div>
         </div>
-  
-  
-  
         
-  
       </section>
       
         <footer class="modal-card-foot is-flex is-justify-content-space-between">
           <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
-          <button class="button is-warning is-no-close" type="submit" onclick="issueReport()">Yes, Report</button>
+          <button class="button is-warning is-no-close" type="submit" onclick="formSubmit()">Yes, Report</button>
         </footer>
       
     </div>
@@ -66,7 +62,7 @@
   
   {% block scripts %}
     <script>
-      function issueReport() {
+      function formSubmit() {
         var title = document.getElementById("title").value;
         var project = document.getElementById("project").value;
         var pipeline = document.getElementById("pipeline").value;
