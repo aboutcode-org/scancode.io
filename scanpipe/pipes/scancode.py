@@ -67,7 +67,7 @@ def get_max_workers(keep_available):
     but for example "spawn", such as on macOS, multiprocessing and threading are
     disabled by default returning -1 `max_workers`.
     """
-    processes = getattr(settings, "SCANCODEIO_PROCESSES", None)
+    processes = settings.SCANCODEIO_PROCESSES
     if processes is not None:
         return processes
 
@@ -175,7 +175,12 @@ def get_resource_info(location):
     return file_info
 
 
-def _scan_resource(location, scanners, with_threading=True):
+def _scan_resource(
+    location,
+    scanners,
+    with_threading=True,
+    timeout=settings.SCANCODEIO_SCAN_FILE_TIMEOUT,
+):
     """
     Wrap the scancode-toolkit `scan_resource` method to support timeout on direct
     scanner functions calls.
@@ -187,6 +192,7 @@ def _scan_resource(location, scanners, with_threading=True):
     _, _, errors, _, results, _ = scancode_cli.scan_resource(
         location_rid,
         scanners,
+        timeout=timeout,
         with_threading=with_threading,
     )
     return results, errors
@@ -205,7 +211,7 @@ def scan_file(location, with_threading=True):
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
-    return _scan_resource(location, scanners, with_threading)
+    return _scan_resource(location, scanners, with_threading=with_threading)
 
 
 def scan_for_package_data(location, with_threading=True):
@@ -217,7 +223,7 @@ def scan_for_package_data(location, with_threading=True):
     scanners = [
         Scanner("package_data", scancode_api.get_package_data),
     ]
-    return _scan_resource(location, scanners, with_threading)
+    return _scan_resource(location, scanners, with_threading=with_threading)
 
 
 def save_scan_file_results(codebase_resource, scan_results, scan_errors):
@@ -415,7 +421,7 @@ def run_scancode(location, output_file, options, raise_on_error=False):
     If `raise_on_error` is enabled, a ScancodeError will be raised if the
     exitcode is greater than 0.
     """
-    options_from_settings = getattr(settings, "SCANCODE_TOOLKIT_CLI_OPTIONS", [])
+    options_from_settings = settings.SCANCODE_TOOLKIT_CLI_OPTIONS
     max_workers = get_max_workers(keep_available=1)
 
     scancode_args = [

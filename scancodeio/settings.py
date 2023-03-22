@@ -73,8 +73,11 @@ SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies
 # pipelines directories.
 SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 
-# Default to 24 hours.
-SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
+# Maximum time allowed for a pipeline to complete.
+SCANCODEIO_TASK_TIMEOUT = env.str("SCANCODEIO_TASK_TIMEOUT", default="24h")
+
+# Default to 2 minutes.
+SCANCODEIO_SCAN_FILE_TIMEOUT = env.int("SCANCODEIO_SCAN_FILE_TIMEOUT", default=120)
 
 # List views pagination, controls the number of items displayed per page.
 # Syntax in .env: SCANCODEIO_PAGINATE_BY=project=10,project_error=10
@@ -200,6 +203,7 @@ if IS_TESTS:
     # Do not pollute the workspace while running the tests
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
+    SCANCODEIO_SCAN_FILE_TIMEOUT = 120
 
 # Cache
 
