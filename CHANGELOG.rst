@@ -45,6 +45,12 @@ v33.0.0 (unreleased)
   page for each object type.
   https://github.com/nexB/scancode.io/issues/563
 
+- Add setting for per-file timeout. The maximum time allowed for a file to be
+  analyzed when scanning a codebase is configurable with SCANCODEIO_SCAN_FILE_TIMEOUT
+  while the maximum time allowed for a pipeline to complete can be defined using
+  SCANCODEIO_TASK_TIMEOUT.
+  https://github.com/nexB/scancode.io/issues/593
+
 v32.0.1 (2023-02-20)
 --------------------
 

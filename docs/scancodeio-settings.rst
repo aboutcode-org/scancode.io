@@ -128,6 +128,30 @@ The following example explicitly defines a timeout value of 60::
 
 .. _scancodeio_settings_pipelines_dirs:
 
+SCANCODEIO_TASK_TIMEOUT
+-----------------------
+
+Maximum time allowed for a pipeline to complete.
+The pipeline run will be stopped and marked as failed if that limit is reached.
+
+The value is a string with specify unit including hour, minute, second
+(e.g. "1h", "3m", "5s")::
+
+    SCANCODEIO_TASK_TIMEOUT=24h
+
+Default: ``24h``
+
+SCANCODEIO_SCAN_FILE_TIMEOUT
+----------------------------
+
+Maximum time allowed for a file to be analyzed when scanning a codebase.
+
+The value unit is second and is defined as an integer::
+
+    SCANCODEIO_SCAN_FILE_TIMEOUT=120
+
+Default: ``120`` (2 minutes)
+
 SCANCODEIO_PIPELINES_DIRS
 -------------------------
 
