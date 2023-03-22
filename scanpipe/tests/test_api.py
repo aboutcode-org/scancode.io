@@ -330,7 +330,7 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
         response = self.csrf_client.get(url)
-        expected = ["name", "description", "steps"]
+        expected = ["name", "summary", "description", "steps"]
         self.assertEqual(expected, list(response.data[0].keys()))
 
     def test_scanpipe_api_project_action_resources(self):

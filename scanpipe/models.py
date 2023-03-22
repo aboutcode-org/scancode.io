@@ -789,6 +789,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         run = Run.objects.create(
             project=self,
             pipeline_name=pipeline_name,
+            # TODO:
             description=pipeline_class.get_doc(),
         )
         if execute_now:

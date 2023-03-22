@@ -102,7 +102,10 @@
                       <button class="delete" aria-label="close"></button>
                     </header>
                     <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
-                      {{ pipeline_info.description|linebreaksbr }}
+                      <p>{{ pipeline_info.summary }}</p>
+                      {% if pipeline_info.description %}
+                        <p class="mt-3">{{ pipeline_info.description|linebreaks }}</p>
+                      {% endif %}
                     </div>
                     <section class="modal-card-body has-text-centered border-bottom-radius">
                       {% for step in pipeline_info.steps %}
@@ -114,7 +117,7 @@
                   </div>
                 </div>
               </div>
-              {{ pipeline_info.description }}
+              {{ pipeline_info.summary }}
             </div>
           {% endfor %}
         </div>

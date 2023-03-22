@@ -24,7 +24,11 @@ from scanpipe.pipelines import Pipeline
 
 
 class DoNothing(Pipeline):
-    """A pipeline that does nothing, in 2 steps."""
+    """
+    Do nothing, in 2 steps.
+
+    Description section of the doc string.
+    """
 
     @classmethod
     def steps(cls):
