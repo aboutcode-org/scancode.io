@@ -77,6 +77,13 @@ class ScanPipePipelinesTest(TestCase):
         }
         self.assertEqual(expected, ProfileStep.get_info())
 
+    def test_scanpipe_pipelines_class_get_summary(self):
+        expected = "Do nothing, in 2 steps."
+        self.assertEqual(expected, DoNothing.get_summary())
+
+        expected = "Profile a step using the @profile decorator."
+        self.assertEqual(expected, ProfileStep.get_summary())
+
     def test_scanpipe_pipeline_class_log(self):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")

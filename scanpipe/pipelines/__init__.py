@@ -87,6 +87,11 @@ class Pipeline:
             "steps": cls.get_graph(),
         }
 
+    @classmethod
+    def get_summary(cls):
+        """Get the doc string summary."""
+        return cls.get_info()["summary"]
+
     def log(self, message):
         """Log the given `message` to the current module logger and Run instance."""
         now_as_localtime = timezone.localtime(timezone.now())
