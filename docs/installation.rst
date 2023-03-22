@@ -232,7 +232,7 @@ Clone and Configure
     You can specify the Python version during the ``make dev`` step using the following
     command::
 
-         make dev PYTHON_EXE=python3.9
+        make dev PYTHON_EXE=python3.11
 
     When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is
     used.

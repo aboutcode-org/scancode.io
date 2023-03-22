@@ -15,6 +15,9 @@ v33.0.0 (unreleased)
   See registered properties at https://github.com/nexB/aboutcode-cyclonedx-taxonomy
   https://github.com/nexB/scancode.io/issues/637
 
+- Upgrade to Python 3.11 in the Dockerfile.
+  https://github.com/nexB/scancode.io/pull/611
+
 - Refine the "Command Line Interface" documentation about the ``scanpipe`` command
   usages in the Docker context.
   Add the /app workdir in the "PYTHONPATH" env of the Docker file to make the
