@@ -8,7 +8,7 @@ create and manage your projects from a browser. You’ll get access to this
 visual interface when you successfully install ScanCode.io locally.
 
 To access the web application, open your web browser and visit http://localhost/ or
-http://127.0.0.1:8001/ if you run on a local development setup.
+http://localhost:8001/ if you run on a local development setup.
 
 .. note::
     All the capabilities offered by the ScanCode.io Web Interface are also available as
@@ -104,8 +104,8 @@ modification to that project.
 Archiving projects also makes navigating existing projects easier as the archived
 projects are hidden by default from the project list.
 
-Data cleanup of the project's :guilabel:`input/`, :guilabel:`codebase/`, and
-:guilabel:`output/` directories is available during the archive operation.
+Selected :ref:`project_workspace` directories can be removed during the archive
+operation.
 
 .. tip::
     The project results are stored in the database and available to generate outputs
@@ -123,8 +123,8 @@ Data cleanup of the project's :guilabel:`input/`, :guilabel:`codebase/`, and
 Reset a Project
 ---------------
 
-The reset allows to wipe all database entrie and all data on disks related to a
-project while keeping the input files.
+The reset allows to **wipe all database entries and all data on disks** related to a
+project while keeping the :guilabel:`input/` files.
 It can be used to re-run pipelines on a clean slate of the project without having to
 re-upload input files.
 

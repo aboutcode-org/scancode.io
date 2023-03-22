@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 def get_tarballs_from_inputs(project):
     """
-    Returns the tarballs from the `project` input/ work directory.
+    Return the tarballs from the `project` input/ work directory.
     Supported file extensions: `.tar`, `.tar.gz`, `.tgz`.
     """
     return [
@@ -47,10 +47,10 @@ def get_tarballs_from_inputs(project):
 
 def extract_images_from_inputs(project):
     """
-    Collects all the tarballs from the `project` input/ work directory, extracts
+    Collect all the tarballs from the `project` input/ work directory, extracts
     each tarball to the tmp/ work directory and collects the images.
 
-    Returns the `images` and an `errors` list of error messages that may have
+    Return the `images` and an `errors` list of error messages that may have
     happen during the extraction.
     """
     target_path = project.tmp_path
@@ -71,7 +71,7 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=True):
     Extract images from an ``input_tarball`` to an ``extract_target`` directory
     Path object and collects the extracted images.
 
-    Returns the `images` and an `errors` list of error messages that may have
+    Return the `images` and an `errors` list of error messages that may have
     happened during the extraction.
     """
     errors = extract_tar(
@@ -89,10 +89,10 @@ def extract_image_from_tarball(input_tarball, extract_target, verify=True):
 
 def extract_layers_from_images(project, images):
     """
-    Extracts all layers from the provided `images` into the `project` codebase
+    Extract all layers from the provided `images` into the `project` codebase
     work directory.
 
-    Returns an `errors` list of error messages that may occur during the
+    Return an `errors` list of error messages that may occur during the
     extraction.
     """
     return extract_layers_from_images_to_base_path(
@@ -103,10 +103,10 @@ def extract_layers_from_images(project, images):
 
 def extract_layers_from_images_to_base_path(base_path, images):
     """
-    Extracts all layers from the provided `images` into the `base_path` work
+    Extract all layers from the provided `images` into the `base_path` work
     directory.
 
-    Returns an `errors` list of error messages that may occur during the
+    Return an `errors` list of error messages that may occur during the
     extraction.
     """
     errors = []
@@ -132,7 +132,7 @@ def extract_layers_from_images_to_base_path(base_path, images):
 
 def get_image_data(image, layer_path_segments=2):
     """
-    Returns a mapping of image-related data given an `image`.
+    Return a mapping of image-related data given an `image`.
     Keep only ``layer_path_segments`` trailing layer location segments (or keep
     the locations unmodified if ``layer_path_segments`` is 0).
     """
@@ -147,7 +147,7 @@ def get_image_data(image, layer_path_segments=2):
 
 def get_layer_tag(image_id, layer_id, layer_index, id_length=6):
     """
-    Returns a "tag" crafted from the provided `image_id`, `layer_id`, and `layer_index`.
+    Return a "tag" crafted from the provided `image_id`, `layer_id`, and `layer_index`.
     The purpose of this tag is to be short, clear and sortable.
 
     For instance, given an image with an id:
@@ -167,9 +167,7 @@ def get_layer_tag(image_id, layer_id, layer_index, id_length=6):
 
 
 def create_codebase_resources(project, image):
-    """
-    Creates the CodebaseResource for an `image` in a `project`.
-    """
+    """Create the CodebaseResource for an `image` in a `project`."""
     for layer_index, layer in enumerate(image.layers, start=1):
         layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
 
@@ -192,7 +190,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
     DiscoveredPackage; otherwise, keep that as a missing file.
     """
     if not image.distro:
-        raise rootfs.DistroNotFound(f"Distro not found.")
+        raise rootfs.DistroNotFound("Distro not found.")
 
     distro_id = image.distro.identifier
     if distro_id not in rootfs.SUPPORTED_DISTROS:
@@ -255,7 +253,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
 
 def tag_whiteout_codebase_resources(project):
     """
-    Marks overlayfs/AUFS whiteout special files CodebaseResource as "ignored-whiteout".
+    Tag overlayfs/AUFS whiteout special files CodebaseResource as "ignored-whiteout".
     See https://github.com/opencontainers/image-spec/blob/master/layer.md#whiteouts
     for details.
     """

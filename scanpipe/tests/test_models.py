@@ -1243,15 +1243,20 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, [resource.path for resource in children])
 
+    def test_scanpipe_codebase_resource_add_package(self):
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        resource.add_package(package)
+        self.assertEqual(1, resource.discovered_packages.count())
+        self.assertEqual(package, resource.discovered_packages.get())
+
     def test_scanpipe_codebase_resource_create_and_add_package(self):
-        codebase_resource = CodebaseResource.objects.create(
-            project=self.project1, path="filename.ext"
-        )
-        package = codebase_resource.create_and_add_package(package_data1)
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        package = resource.create_and_add_package(package_data1)
         self.assertEqual(self.project1, package.project)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
-        self.assertEqual(1, codebase_resource.discovered_packages.count())
-        self.assertEqual(package, codebase_resource.discovered_packages.get())
+        self.assertEqual(1, resource.discovered_packages.count())
+        self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_discovered_package_model_queryset_methods(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
@@ -1349,7 +1354,7 @@ class ScanPipeModelsTest(TestCase):
         resource1 = CodebaseResource.objects.create(
             project=project, path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin"
         )
-        resource2 = CodebaseResource.objects.create(
+        CodebaseResource.objects.create(
             project=project,
             path="qt-everywhere-opensource-src-5.3.2/gnuwin32/bin/flex++.exe",
         )
@@ -1445,18 +1450,26 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(purl, str(cyclonedx_component.bom_ref))
         self.assertEqual(purl, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
-        self.assertEqual(
-            "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown",
-            cyclonedx_component.licenses[0].expression,
-        )
+        expected = "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown"
+        self.assertEqual(expected, cyclonedx_component.licenses[0].expression)
         self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
         self.assertEqual(1, len(cyclonedx_component.hashes))
         self.assertEqual(package_data1["md5"], cyclonedx_component.hashes[0].content)
+
+        properties = {prop.name: prop.value for prop in cyclonedx_component.properties}
+        expected_properties = {
+            "aboutcode:download_url": "https://download.url/package.zip",
+            "aboutcode:filename": "package.zip",
+            "aboutcode:homepage_url": "https://packages.debian.org",
+            "aboutcode:primary_language": "bash",
+        }
+        self.assertEqual(expected_properties, properties)
+
         external_references = cyclonedx_component.external_references
         self.assertEqual(1, len(external_references))
-        self.assertEqual("website", external_references[0].type)
-        self.assertEqual("https://packages.debian.org", external_references[0].url)
+        self.assertEqual("vcs", external_references[0].type)
+        self.assertEqual("https://packages.vcs.url", external_references[0].url)
 
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
@@ -1483,7 +1496,7 @@ class ScanPipeModelsTest(TestCase):
 
         dependency.refresh_from_db()
         # PURL field, not updated
-        self.assertEqual(dependency_data2["name"], dependency.name)
+        self.assertEqual("appraisal", dependency.name)
         # Empty field, updated
         self.assertEqual(
             new_data["extracted_requirement"], dependency.extracted_requirement
@@ -1645,8 +1658,8 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
         project1 = Project.objects.create(name="Analysis")
 
-        package = DiscoveredPackage.create_from_data(project1, package_data1)
-        resource = CodebaseResource.objects.create(
+        DiscoveredPackage.create_from_data(project1, package_data1)
+        CodebaseResource.objects.create(
             project=project1, path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
         )
         dependency = DiscoveredDependency.create_from_data(

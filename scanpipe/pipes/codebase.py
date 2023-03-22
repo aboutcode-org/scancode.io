@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.core.exceptions import ObjectDoesNotExist
-
 from scanpipe.models import Project
 
 
@@ -30,15 +28,13 @@ def sort_by_lower_name(resource):
 
 
 def get_resource_fields(resource, fields):
-    """
-    Return a mapping of fields from `fields` and values from `resource`
-    """
+    """Return a mapping of fields from `fields` and values from `resource`"""
     return {field: getattr(resource, field) for field in fields}
 
 
 def get_resource_tree(resource, fields, codebase=None, seen_resources=set()):
     """
-    Returns a tree as a dictionary structure starting from the provided `resource`.
+    Return a tree as a dictionary structure starting from the provided `resource`.
 
     The following classes are supported for the input `resource` object:
      - scanpipe.models.CodebaseResource
@@ -68,7 +64,7 @@ def get_resource_tree(resource, fields, codebase=None, seen_resources=set()):
 
 def get_codebase_tree(codebase, fields):
     """
-    Returns a tree as a dictionary structure starting from the root resources of
+    Return a tree as a dictionary structure starting from the root resources of
     the provided `codebase`.
 
     The following classes are supported for the input `codebase` object:

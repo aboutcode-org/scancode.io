@@ -65,7 +65,6 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
-from scanpipe.pipes import codebase
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
@@ -192,9 +191,7 @@ class TabSetMixin:
     tabset = {}
 
     def get_tabset_data(self):
-        """
-        Returns the tabset data structure used in template rendering.
-        """
+        """Return the tabset data structure used in template rendering."""
         tabset_data = {}
 
         for label, tab_definition in self.tabset.items():
@@ -209,9 +206,7 @@ class TabSetMixin:
         return tabset_data
 
     def get_fields_data(self, fields):
-        """
-        Returns the tab fields including their values for display.
-        """
+        """Return the tab fields including their values for display."""
         fields_data = {}
 
         for field_definition in fields:
@@ -234,9 +229,7 @@ class TabSetMixin:
         return fields_data
 
     def get_field_value(self, field_name, render_func=None):
-        """
-        Returns the formatted value for the given `field_name` on the current object.
-        """
+        """Return the formatted value for the given `field_name` of the object."""
         field_value = getattr(self.object, field_name, None)
 
         if field_value and render_func:
@@ -249,9 +242,7 @@ class TabSetMixin:
 
     @staticmethod
     def get_field_label(field_name):
-        """
-        Returns a formatted label for display based on the `field_name`.
-        """
+        """Return a formatted label for display based on the `field_name`."""
         return field_name.replace("_", " ").capitalize().replace("url", "URL")
 
     def get_context_data(self, **kwargs):
@@ -278,9 +269,7 @@ class TableColumnsMixin:
     table_columns = []
 
     def get_columns_data(self):
-        """
-        Returns the columns data structure used in template rendering.
-        """
+        """Return the columns data structure used in template rendering."""
         columns_data = []
 
         sortable_fields = []
@@ -325,9 +314,7 @@ class TableColumnsMixin:
 
     @staticmethod
     def get_field_label(field_name):
-        """
-        Returns a formatted label for display based on the `field_name`.
-        """
+        """Return a formatted label for display based on the `field_name`."""
         return field_name.replace("_", " ").capitalize().replace("url", "URL")
 
     def get_context_data(self, **kwargs):
@@ -338,7 +325,7 @@ class TableColumnsMixin:
 
 class ExportXLSXMixin:
     """
-    Adds the ability to export the current filtered QuerySet of a `FilterView` into
+    Add the ability to export the current filtered QuerySet of a `FilterView` into
     the XLSX format.
     """
 
@@ -374,7 +361,7 @@ class ExportXLSXMixin:
 
 class PaginatedFilterView(FilterView):
     """
-    Adds a `url_params_without_page` value in the template context to include the
+    Add a `url_params_without_page` value in the template context to include the
     current filtering in the pagination.
     """
 
@@ -402,7 +389,7 @@ class ProjectListView(
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
     prefetch_related = ["runs"]
-    paginate_by = 20
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
         {
@@ -719,9 +706,7 @@ class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.Delet
     success_message = 'All data, except inputs, for the "{}" project have been removed.'
 
     def form_valid(self, form):
-        """
-        Call the reset() method on the project.
-        """
+        """Call the reset() method on the project."""
         project = self.get_object()
         try:
             project.reset(keep_input=True)
@@ -774,7 +759,7 @@ def delete_pipeline_view(request, uuid, run_uuid):
 
 def project_results_json_response(project, as_attachment=False):
     """
-    Returns the results as JSON compatible with ScanCode data format.
+    Return the results as JSON compatible with ScanCode data format.
     The content is returned as a stream of JSON content using the JSONResultsGenerator
     class.
     If `as_attachment` is True, the response will force the download of the file.
@@ -848,7 +833,7 @@ class CodebaseResourceListView(
     model = CodebaseResource
     filterset_class = ResourceFilterSet
     template_name = "scanpipe/resource_list.html"
-    paginate_by = 100
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
     prefetch_related = ["discovered_packages"]
     table_columns = [
         "path",
@@ -885,7 +870,7 @@ class DiscoveredPackageListView(
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = 100
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
     prefetch_related = ["codebase_resources"]
     table_columns = [
         "package_url",
@@ -907,7 +892,7 @@ class DiscoveredDependencyListView(
     model = DiscoveredDependency
     filterset_class = DependencyFilterSet
     template_name = "scanpipe/dependency_list.html"
-    paginate_by = 100
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = ["for_package", "datafile_resource"]
     table_columns = [
         "package_url",
@@ -933,7 +918,7 @@ class ProjectErrorListView(
     model = ProjectError
     filterset_class = ErrorFilterSet
     template_name = "scanpipe/error_list.html"
-    paginate_by = 50
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("error", 50)
     table_columns = [
         "model",
         "message",
@@ -946,6 +931,8 @@ class CodebaseResourceDetailsView(
     ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
 ):
     model = CodebaseResource
+    slug_field = "path"
+    slug_url_kwarg = "path"
     template_name = "scanpipe/resource_detail.html"
     annotation_types = {
         CodebaseResource.Compliance.OK: "ok",
@@ -959,8 +946,8 @@ class CodebaseResourceDetailsView(
     @staticmethod
     def get_annotation_text(entry, field_name, value_key):
         """
-        A workaround to get the license_expression until the data structure is
-        updated on the ScanCode-toolkit side.
+        Get the license_expression until the data structure is updated on the
+        ScanCode-toolkit side.
         https://github.com/nexB/scancode-results-analyzer/blob/6c132bc20153d5c96929c
         f378bd0f06d83db9005/src/results_analyze/analyzer_plugin.py#L131-L198
         """
@@ -1178,6 +1165,8 @@ class CodebaseResourceRawView(
     generic.base.View,
 ):
     model = CodebaseResource
+    slug_field = "path"
+    slug_url_kwarg = "path"
 
     def get(self, request, *args, **kwargs):
         resource = self.get_object()

@@ -26,8 +26,7 @@ from scanpipe.pipes import vulnerablecode
 
 class FindVulnerabilities(Pipeline):
     """
-    A pipeline to find vulnerabilities for discovered packages in the VulnerableCode
-    database.
+    Find vulnerabilities for discovered packages in the VulnerableCode database.
 
     Vulnerability data is stored in the extra_data field of each package.
     """
@@ -40,9 +39,7 @@ class FindVulnerabilities(Pipeline):
         )
 
     def check_vulnerablecode_service_availability(self):
-        """
-        Check if the VulnerableCode service if configured and available.
-        """
+        """Check if the VulnerableCode service if configured and available."""
         if not vulnerablecode.is_configured():
             raise Exception("VulnerableCode is not configured.")
 
@@ -50,9 +47,7 @@ class FindVulnerabilities(Pipeline):
             raise Exception("VulnerableCode is not available.")
 
     def lookup_vulnerabilities(self):
-        """
-        Check for vulnerabilities on each of the project's discovered package.
-        """
+        """Check for vulnerabilities on each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
 
         for package in packages:

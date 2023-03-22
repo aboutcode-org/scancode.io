@@ -24,6 +24,8 @@ import json
 import sys
 from pathlib import Path
 
+from django.core.validators import EMPTY_VALUES
+
 from attributecode.model import About
 from licensedcode.match_spdx_lid import get_spdx_expression
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
@@ -31,6 +33,7 @@ from packagedcode.licensing import get_normalized_expression
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 
+from scanpipe import cyclonedx
 from scanpipe import spdx
 from scanpipe.models import DiscoveredPackage
 
@@ -40,9 +43,7 @@ Utilities to resolve packages from manifest, lockfile, and SBOM.
 
 
 def resolve_pypi_packages(input_location):
-    """
-    Resolve the PyPI packages from the `input_location` requirements file.
-    """
+    """Resolve the PyPI packages from the `input_location` requirements file."""
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
@@ -57,9 +58,7 @@ def resolve_pypi_packages(input_location):
 
 
 def resolve_about_packages(input_location):
-    """
-    Resolve the packages from the `input_location` .ABOUT file.
-    """
+    """Resolve the packages from the `input_location` .ABOUT file."""
     about = About(location=input_location)
     about_data = about.as_dict()
 
@@ -108,21 +107,69 @@ def spdx_package_to_discovered_package_data(spdx_package):
 
 
 def resolve_spdx_packages(input_location):
-    """
-    Resolve the packages from the `input_location` SPDX document file.
-    """
+    """Resolve the packages from the `input_location` SPDX document file."""
     input_path = Path(input_location)
     spdx_document = json.loads(input_path.read_text())
 
     try:
         spdx.validate_document(spdx_document)
     except Exception as e:
-        raise Exception(f'SPDX document "{input_path.name}" is not valid: {e.message}')
+        raise Exception(f'SPDX document "{input_path.name}" is not valid: {e}')
 
     return [
         spdx_package_to_discovered_package_data(spdx.Package.from_data(spdx_package))
         for spdx_package in spdx_document.get("packages", [])
     ]
+
+
+def cyclonedx_component_to_package_data(component_data):
+    """Return package_data from CycloneDX component."""
+    extra_data = {}
+    component = component_data["cdx_package"]
+
+    package_url_dict = {}
+    if component.purl:
+        package_url_dict = PackageURL.from_string(component.purl).to_dict(encode=True)
+
+    declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
+
+    if external_references := cyclonedx.get_external_references(component):
+        extra_data["externalReferences"] = external_references
+
+    if nested_components := component_data.get("nested_components"):
+        extra_data["nestedComponents"] = nested_components
+
+    package_data = {
+        "name": component.name,
+        "declared_license": declared_license,
+        "copyright": component.copyright,
+        "version": component.version,
+        "description": component.description,
+        "extra_data": extra_data,
+        **package_url_dict,
+        **cyclonedx.get_checksums(component),
+        **cyclonedx.get_properties_data(component),
+    }
+
+    return {
+        key: value for key, value in package_data.items() if value not in EMPTY_VALUES
+    }
+
+
+def resolve_cyclonedx_packages(input_location):
+    """Resolve the packages from the `input_location` CycloneDX document file."""
+    input_path = Path(input_location)
+    cyclonedx_document = json.loads(input_path.read_text())
+
+    try:
+        cyclonedx.validate_document(cyclonedx_document)
+    except Exception as e:
+        raise Exception(f'CycloneDX document "{input_path.name}" is not valid: {e}')
+
+    cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)
+    components = cyclonedx.get_components(cyclonedx_bom)
+
+    return [cyclonedx_component_to_package_data(component) for component in components]
 
 
 def get_default_package_type(input_location):
@@ -135,6 +182,8 @@ def get_default_package_type(input_location):
             return handler.default_package_type
         if input_location.endswith((".spdx", ".spdx.json")):
             return "spdx"
+        if input_location.endswith((".bom.json", ".cdx.json")):
+            return "cyclonedx"
 
 
 # Mapping between the `default_package_type` its related resolver function
@@ -142,12 +191,13 @@ resolver_registry = {
     "about": resolve_about_packages,
     "pypi": resolve_pypi_packages,
     "spdx": resolve_spdx_packages,
+    "cyclonedx": resolve_cyclonedx_packages,
 }
 
 
 def set_license_expression(package_data):
     """
-    Sets the license expression from a detected license dict/str in provided
+    Set the license expression from a detected license dict/str in provided
     `package_data`.
     """
     declared_license = package_data.get("declared_license")

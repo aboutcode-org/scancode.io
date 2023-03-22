@@ -36,8 +36,8 @@ from scancodeio.auth import conditional_login_required
 @lru_cache(maxsize=None)
 def get_licenses():
     """
-    Loads licenses-related information from the ScanCode-toolkit `licensedcode` data and
-    returns a mapping of `key` to `license` objects.
+    Load licenses-related information from the ScanCode-toolkit `licensedcode` data and
+    return a mapping of `key` to `license` objects.
     The result is cached in memory so the load_licenses() process is only
     executed once on the first `get_licenses()` call.
     """
@@ -46,9 +46,7 @@ def get_licenses():
 
 @conditional_login_required
 def license_list_view(request):
-    """
-    Displays a list of all licenses linked to their details.
-    """
+    """Display a list of all licenses linked to their details."""
     licenses = get_licenses()
     license_links = [
         f'<a href="{reverse("license_details", args=[key])}">{key}</a>'
@@ -60,7 +58,7 @@ def license_list_view(request):
 @conditional_login_required
 def license_details_view(request, key):
     """
-    Displays all available information about a given license `key` followed by
+    Display all available information about a given license `key` followed by
     the full license text.
     """
     licenses = get_licenses()

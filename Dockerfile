@@ -22,6 +22,10 @@
 
 FROM --platform=linux/amd64 python:3.11
 
+LABEL org.opencontainers.image.source=https://github.com/nexB/scancode.io
+LABEL org.opencontainers.image.description="ScanCode.io"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+
 WORKDIR /app
 
 # Python settings: force unbuffered stdout and stderr (i.e. they are flushed to terminal immediately)

@@ -27,14 +27,19 @@ from scanpipe import views
 
 urlpatterns = [
     path(
-        "project/<uuid:uuid>/resources/<int:pk>/raw/",
+        "project/<uuid:uuid>/resources/<path:path>/raw/",
         views.CodebaseResourceRawView.as_view(),
         name="resource_raw",
     ),
     path(
-        "project/<uuid:uuid>/resources/<int:pk>/",
+        "project/<uuid:uuid>/resources/<path:path>/",
         views.CodebaseResourceDetailsView.as_view(),
         name="resource_detail",
+    ),
+    path(
+        "project/<uuid:uuid>/resources/",
+        views.CodebaseResourceListView.as_view(),
+        name="project_resources",
     ),
     path(
         "project/<uuid:uuid>/packages/<int:pk>/",
@@ -45,11 +50,6 @@ urlpatterns = [
         "project/<uuid:uuid>/dependencies/<int:pk>/",
         views.DiscoveredDependencyDetailsView.as_view(),
         name="dependency_detail",
-    ),
-    path(
-        "project/<uuid:uuid>/resources/",
-        views.CodebaseResourceListView.as_view(),
-        name="project_resources",
     ),
     path(
         "project/<uuid:uuid>/packages/",

@@ -46,17 +46,12 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 def safe_filename(filename):
-    """
-    Convert the provided `filename` to a safe filename.
-    """
+    """Convert the provided `filename` to a safe filename."""
     return re.sub("[^A-Za-z0-9.-]+", "_", filename).lower()
 
 
 def get_queryset(project, model_name):
-    """
-    Common source for getting consistent QuerySets across all supported outputs
-    (json, xlsx, csv, ...)
-    """
+    """Return a consistent QuerySet for all supported outputs (json, xlsx, csv, ...)"""
     querysets = {
         "discoveredpackage": (
             project.discoveredpackages.all().order_by(
@@ -87,7 +82,7 @@ def get_queryset(project, model_name):
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
     """
-    Outputs csv content generated from the provided `queryset` objects to the
+    Output csv content generated from the provided `queryset` objects to the
     `output_file`.
     The fields to be included as columns and their order are controlled by the
     `fieldnames` list.
@@ -102,7 +97,7 @@ def queryset_to_csv_file(queryset, fieldnames, output_file):
 
 def queryset_to_csv_stream(queryset, fieldnames, output_stream):
     """
-    Outputs csv content generated from the provided `queryset` objects to the
+    Output csv content generated from the provided `queryset` objects to the
     `output_stream`.
     The fields to be included as columns and their order are controlled by the
     `fieldnames` list.
@@ -120,11 +115,11 @@ def queryset_to_csv_stream(queryset, fieldnames, output_stream):
 
 def to_csv(project):
     """
-    Generates output for the provided `project` in csv format.
+    Generate output for the provided `project` in csv format.
     Since the csv format does not support multiple tabs, one file is created
     per object type.
     The output files are created in the `project` output/ directory.
-    Returns a list of paths of the generated output files.
+    Return a list of paths of the generated output files.
     """
     from scanpipe.api.serializers import get_serializer_fields
 
@@ -153,7 +148,7 @@ def to_csv(project):
 
 class JSONResultsGenerator:
     """
-    Returns the `project` JSON results as a Python generator.
+    Return the `project` JSON results as a Python generator.
     Use this class to stream the results from the database to the client browser
     without having to load everything in memory first.
 
@@ -245,9 +240,9 @@ class JSONResultsGenerator:
 
 def to_json(project):
     """
-    Generates output for the provided `project` in JSON format.
+    Generate output for the provided `project` in JSON format.
     The output file is created in the `project` output/ directory.
-    Returns the path of the generated output file.
+    Return the path of the generated output file.
     """
     results_generator = JSONResultsGenerator(project)
     output_file = project.get_output_file_path("results", "json")
@@ -269,15 +264,14 @@ model_name_to_worksheet_name = {
 
 def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     """
-    Adds a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
+    Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
     "worksheet".
     Exclude fields listed in the ``exclude_fields`` sequence of field names.
 
-    Adds an extra trailing "xlsx_errors" column with conversion error messages if
-    any. Returns a number of conversion errors.
+    Add an extra trailing "xlsx_errors" column with conversion error messages if
+    any. Return a number of conversion errors.
     """
-
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model
@@ -298,11 +292,11 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
 def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
-    Adds a new ``worksheet_name`` worksheet to the ``workbook``
+    Add a new ``worksheet_name`` worksheet to the ``workbook``
     ``xlsxwriter.Workbook``. Write the iterable of ``rows`` objects using their
     attributes listed in the ``fields`` sequence of field names.
-    Adds an "xlsx_errors" column with conversion error messages if any.
-    Returns a number of conversion errors.
+    Add an "xlsx_errors" column with conversion error messages if any.
+    Return a number of conversion errors.
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
@@ -360,7 +354,7 @@ mappings_key_by_fieldname = {
 
 def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     """
-    Returns two tuples of:
+    Return two tuples of:
     (``value`` adapted for use in an XLSX cell, error message or None)
 
     Convert the value to a string and perform these adaptations:
@@ -421,7 +415,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
 
 def to_xlsx(project):
     """
-    Generates output for the provided ``project`` in XLSX format.
+    Generate output for the provided ``project`` in XLSX format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
 
@@ -500,7 +494,7 @@ def _get_spdx_extracted_licenses(license_expressions):
 
 def to_spdx(project):
     """
-    Generates output for the provided ``project`` in SPDX document format.
+    Generate output for the provided ``project`` in SPDX document format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """
@@ -594,7 +588,7 @@ def get_cyclonedx_bom(project):
 
 def to_cyclonedx(project):
     """
-    Generates output for the provided ``project`` in CycloneDX BOM format.
+    Generate output for the provided ``project`` in CycloneDX BOM format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """

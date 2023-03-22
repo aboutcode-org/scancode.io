@@ -32,16 +32,14 @@ def info(message, pk):
 
 
 def get_run_instance(run_pk):
-    """
-    Returns the run instance using the `run_pk`.
-    """
+    """Return the run instance using the `run_pk`."""
     run_model = apps.get_model("scanpipe", "Run")
     return run_model.objects.get(pk=run_pk)
 
 
 def report_failure(job, connection, type, value, traceback):
     """
-    This callback will be called when an exception is raised during the Job
+    Report a job failure as a call back when an exception is raised during the Job
     execution but was not caught by the task itself.
     """
     run = get_run_instance(run_pk=job.id)

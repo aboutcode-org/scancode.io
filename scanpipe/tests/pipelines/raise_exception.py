@@ -24,9 +24,7 @@ from scanpipe.pipelines import Pipeline
 
 
 class RaiseException(Pipeline):
-    """
-    A pipeline that raises an Exception.
-    """
+    """A pipeline that raises an Exception."""
 
     @classmethod
     def steps(cls):

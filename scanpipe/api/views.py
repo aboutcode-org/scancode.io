@@ -122,7 +122,7 @@ class ProjectViewSet(
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):
         """
-        Returns the results compatible with ScanCode data format.
+        Return the results compatible with ScanCode data format.
         The content is returned as a stream of JSON content using the
         JSONResultsGenerator class.
         """
@@ -132,15 +132,13 @@ class ProjectViewSet(
         detail=True, name="Results (download)", renderer_classes=[PassThroughRenderer]
     )
     def results_download(self, request, *args, **kwargs):
-        """
-        Returns the results as an attachment.
-        """
+        """Return the results as an attachment."""
         return project_results_json_response(self.get_object(), as_attachment=True)
 
     @action(detail=True)
     def summary(self, request, *args, **kwargs):
         """
-        Returns a summary of the results from the latest summary file found in the
+        Return a summary of the results from the latest summary file found in the
         project's `output` directory.
         """
         project = self.get_object()
@@ -321,9 +319,7 @@ class ProjectViewSet(
 
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """
-    This viewset only provides the `detail` action.
-    """
+    """Add actions to the Run viewset."""
 
     queryset = Run.objects.all()
     serializer_class = RunSerializer

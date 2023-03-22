@@ -25,9 +25,7 @@ from scanpipe.pipelines import profile
 
 
 class ProfileStep(Pipeline):
-    """
-    A pipeline to profile a step using the @profile decorator.
-    """
+    """A pipeline to profile a step using the @profile decorator."""
 
     @classmethod
     def steps(cls):

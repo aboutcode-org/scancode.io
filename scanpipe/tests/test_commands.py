@@ -199,7 +199,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options.extend(["--project", project.name])
         call_command("add-input", *options, stdout=out)
-        self.assertIn("File(s) copied to the project inputs directory", out.getvalue())
+        self.assertIn("Files copied to the project inputs directory", out.getvalue())
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
 
@@ -249,7 +249,9 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
-        self.assertIn("Pipeline(s) added to the project", out.getvalue())
+        self.assertIn(
+            "Pipelines docker, root_filesystems added to the project", out.getvalue()
+        )
         self.assertEqual(pipelines, [run.pipeline_name for run in project.runs.all()])
 
         options = ["--project", project.name, "non-existing"]
@@ -411,21 +413,38 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(filename, project.output_root)
 
         out = StringIO()
+        options = ["--project", project.name, "--no-color"]
         options.extend(["--format", "csv"])
         call_command("output", *options, stdout=out)
         out_value = out.getvalue().strip()
         for output_file in out_value.split("\n"):
-            filename = out_value.split("/")[-1]
+            filename = output_file.split("/")[-1]
             self.assertIn(filename, project.output_root)
 
         out = StringIO()
+        options = ["--project", project.name, "--no-color"]
         options.extend(["--format", "WRONG"])
         message = (
             "Error: argument --format: invalid choice: 'WRONG' "
-            "(choose from 'json', 'csv', 'xlsx')"
+            "(choose from 'json', 'csv', 'xlsx', 'spdx', 'cyclonedx')"
         )
         with self.assertRaisesMessage(CommandError, message):
             call_command("output", *options, stdout=out)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "xlsx", "--print"])
+        message = "--print is not compatible with xlsx and csv formats."
+        with self.assertRaisesMessage(CommandError, message):
+            call_command("output", *options, stdout=out)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "json", "--print"])
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        self.assertIn('"tool_name": "scanpipe"', out_value)
+        self.assertIn('"notice": "Generated with ScanCode.io', out_value)
 
     def test_scanpipe_management_command_delete_project(self):
         project = Project.objects.create(name="my_project")

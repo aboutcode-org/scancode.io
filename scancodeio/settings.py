@@ -76,6 +76,19 @@ SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 # Default to 24 hours.
 SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
 
+# List views pagination, controls the number of items displayed per page.
+# Syntax in .env: SCANCODEIO_PAGINATE_BY=project=10,project_error=10
+SCANCODEIO_PAGINATE_BY = env.dict(
+    "SCANCODEIO_PAGINATE_BY",
+    default={
+        "project": 20,
+        "error": 50,
+        "resource": 100,
+        "package": 100,
+        "dependency": 100,
+    },
+)
+
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 

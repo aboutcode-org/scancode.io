@@ -245,7 +245,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def _without_keys(self, data, exclude_keys):
         """
-        Returns the `data` excluding the provided `exclude_keys`.
+        Return the `data` excluding the provided `exclude_keys`.
         """
         if type(data) == list:
             return [self._without_keys(entry, exclude_keys) for entry in data]
@@ -263,7 +263,7 @@ class PipelinesIntegrationTest(TestCase):
 
     def _normalize_package_uids(self, data):
         """
-        Returns the `data`, where any `package_uid` value has been normalized
+        Return the `data`, where any `package_uid` value has been normalized
         with `purl_with_fake_uuid()`
         """
         if type(data) == list:
@@ -562,9 +562,9 @@ class PipelinesIntegrationTest(TestCase):
 
     def test_scanpipe_load_inventory_pipeline_integration_test(self):
         pipeline_name = "load_inventory"
-        project1 = Project.objects.create(name="Analysis")
+        project1 = Project.objects.create(name="Tool: scancode-toolkit")
 
-        input_location = self.data_location / "asgiref-3.3.0_scancode_scan.json"
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)
@@ -582,6 +582,22 @@ class PipelinesIntegrationTest(TestCase):
             self.data_location / "asgiref-3.3.0_load_inventory_expected.json"
         )
         self.assertPipelineResultEqual(expected_file, result_file)
+
+        # Using the ScanCode.io JSON output as the input
+        project2 = Project.objects.create(name="Tool: scanpipe")
+
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        project2.copy_input_from(input_location)
+
+        run = project2.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(18, project2.codebaseresources.count())
+        self.assertEqual(2, project2.discoveredpackages.count())
+        self.assertEqual(4, project2.discovereddependencies.count())
 
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
@@ -684,7 +700,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("4.0.8", discoveredpackage.version)
         self.assertEqual("bsd-new", discoveredpackage.license_expression)
 
-    def test_scanpipe_inspect_manifest_pipeline_spdx_document_integration_test(self):
+    def test_scanpipe_inspect_manifest_pipeline_spdx_integration_test(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 
@@ -705,3 +721,72 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("https://github.com/uiri/toml", discoveredpackage.homepage_url)
         self.assertEqual("MIT", discoveredpackage.declared_license)
         self.assertEqual("mit", discoveredpackage.license_expression)
+
+    def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration_test(self):
+        pipeline_name = "inspect_manifest"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = self.data_location / "cyclonedx/nested.bom.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(3, project1.discoveredpackages.count())
+        packages = project1.discoveredpackages.all()
+        expected_data = {
+            "pkg:pypi/toml@0.10.2?extension=tar.gz": {
+                "type": "pypi",
+                "name": "toml",
+                "version": "0.10.2",
+                "declared_license": "OFL-1.1\nApache-2.0",
+                "license_expression": "ofl-1.1 AND unknown",
+                "homepage_url": "https://cyclonedx.org/website",
+                "bug_tracking_url": "https://cyclonedx.org/issue-tracker",
+                "vcs_url": "https://cyclonedx.org/vcs",
+                "filename": "",
+            },
+            "pkg:pypi/billiard@3.6.3.0": {
+                "type": "pypi",
+                "name": "billiard",
+                "version": "3.6.3.0",
+                "declared_license": "BSD-3-Clause",
+                "license_expression": "bsd-new",
+                "homepage_url": "",
+                "bug_tracking_url": "",
+                "vcs_url": "",
+                "extra_data": "",
+                "filename": "",
+            },
+            "pkg:pypi/fictional@9.10.2": {
+                "type": "pypi",
+                "name": "fictional",
+                "version": "9.10.2",
+                "declared_license": (
+                    "LGPL-3.0-or-later"
+                    " AND "
+                    "LicenseRef-scancode-openssl-exception-lgpl3.0plus"
+                ),
+                "license_expression": (
+                    "lgpl-3.0-plus AND openssl-exception-lgpl-3.0-plus"
+                ),
+                "homepage_url": "https://home.page",
+                "bug_tracking_url": "",
+                "vcs_url": "",
+                "extra_data": "",
+                "filename": "package.zip",
+            },
+        }
+
+        for package in packages:
+            expected = expected_data.get(str(package))
+            self.assertEqual(expected["type"], package.type)
+            self.assertEqual(expected["name"], package.name)
+            self.assertEqual(expected["version"], package.version)
+            self.assertEqual(expected["homepage_url"], package.homepage_url)
+            self.assertEqual(expected["declared_license"], package.declared_license)
+            self.assertEqual(expected["license_expression"], package.license_expression)
+            self.assertEqual(expected["filename"], package.filename)

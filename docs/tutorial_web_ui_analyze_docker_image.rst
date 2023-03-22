@@ -23,7 +23,7 @@ We’ll assume that you have:
 
 - Installed **ScanCode.io** locally
 - Access to the web application from your preferred browser on http://localhost/ or
-  http://127.0.0.1:8001/ if you run on a local development setup.
+  http://localhost:8001/ if you run on a local development setup.
 
 .. tip::
     You can view our :ref:`user_interface` section for general information about

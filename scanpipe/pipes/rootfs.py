@@ -73,9 +73,7 @@ class Resource:
 
 @attr.attributes
 class RootFs:
-    """
-    A root filesystem.
-    """
+    """A root filesystem."""
 
     location = attr.attrib(
         metadata=dict(doc="The root directory location where this rootfs lives.")
@@ -91,7 +89,7 @@ class RootFs:
     @classmethod
     def from_project_codebase(cls, project):
         """
-        Returns RootFs objects collected from the project's "codebase" directory.
+        Return RootFs objects collected from the project's "codebase" directory.
         Each directory in the input/ is considered as the root of a root filesystem.
         """
         subdirs = [path for path in project.codebase_path.glob("*/") if path.is_dir()]
@@ -100,14 +98,12 @@ class RootFs:
             yield RootFs(location=rootfs_location)
 
     def get_resources(self, with_dir=False):
-        """
-        Return a Resource for each file in this rootfs.
-        """
+        """Return a Resource for each file in this rootfs."""
         return get_resources(location=self.location, with_dir=with_dir)
 
     def get_installed_packages(self, packages_getter):
         """
-        Returns tuples of (package_url, package) for installed packages found in
+        Return tuples of (package_url, package) for installed packages found in
         this rootfs layer using the `packages_getter` function or callable.
 
         The `packages_getter()` function should:
@@ -129,9 +125,7 @@ class RootFs:
 
 
 def get_resources(location, with_dir=False):
-    """
-    Returns the Resource found in the `location` in root directory of a rootfs.
-    """
+    """Return the Resource found in the `location` in root directory of a rootfs."""
 
     def get_res(parent, fname):
         loc = os.path.join(parent, fname)
@@ -150,9 +144,7 @@ def get_resources(location, with_dir=False):
 
 
 def create_codebase_resources(project, rootfs):
-    """
-    Creates the CodebaseResource for a `rootfs` in `project`.
-    """
+    """Create the CodebaseResource for a `rootfs` in `project`."""
     for resource in rootfs.get_resources(with_dir=True):
         pipes.make_codebase_resource(
             project=project,
@@ -163,7 +155,7 @@ def create_codebase_resources(project, rootfs):
 
 def has_hash_diff(install_file, codebase_resource):
     """
-    Returns True if one of available hashes on both `install_file` and
+    Return True if one of available hashes on both `install_file` and
     `codebase_resource`, by hash type, is different.
     For example: Alpine uses SHA1 while Debian uses MD5, we prefer the strongest hash
     that's present.
@@ -196,9 +188,7 @@ def has_hash_diff(install_file, codebase_resource):
 
 
 def package_getter(root_dir, **kwargs):
-    """
-    Returns installed package objects.
-    """
+    """Return installed package objects."""
     packages = plugin_package.get_installed_packages(root_dir)
     for package in packages:
         yield package.purl, package
@@ -214,7 +204,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     DiscoveredPackage; otherwise, keep that as a missing file.
     """
     if not rootfs.distro:
-        raise DistroNotFound(f"Distro not found.")
+        raise DistroNotFound("Distro not found.")
 
     distro_id = rootfs.distro.identifier
     if distro_id not in SUPPORTED_DISTROS:
@@ -324,16 +314,14 @@ def match_not_analyzed(
 
 
 def tag_empty_codebase_resources(project):
-    """
-    Tags empty files as ignored.
-    """
+    """Tags empty files as ignored."""
     qs = project.codebaseresources.files().empty()
     qs.filter(status__in=("", "not-analyzed")).update(status="ignored-empty-file")
 
 
 def tag_uninteresting_codebase_resources(project):
     """
-    Checks any file that doesn’t belong to any system package and determine if it's:
+    Check any file that doesn’t belong to any system package and determine if it's:
     - A temp file
     - Generated
     - Log file of sorts (such as var) using few heuristics
@@ -357,8 +345,8 @@ def tag_uninteresting_codebase_resources(project):
 
 def tag_ignorable_codebase_resources(project):
     """
-    Using the glob patterns from commoncode.ignore of ignorable files/directories,
-    tag codebase resources from `project` if their paths match an ignorable pattern.
+    Tag codebase resource using the glob patterns from commoncode.ignore of
+    ignorable files/directories, if their paths match an ignorable pattern.
     """
     lookups = Q()
     for pattern in default_ignores.keys():
@@ -395,8 +383,6 @@ def tag_data_files_with_no_clues(project):
 
 
 def tag_media_files_as_uninteresting(project):
-    """
-    Tags CodebaseResources that are media files to be uninteresting.
-    """
+    """Tags CodebaseResources that are media files to be uninteresting."""
     qs = project.codebaseresources.no_status()
     qs.filter(is_media=True).update(status="ignored-media-file")

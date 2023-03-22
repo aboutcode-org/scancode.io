@@ -57,7 +57,7 @@ class SerializerExcludeFieldsMixin:
 class PipelineChoicesMixin:
     def __init__(self, *args, **kwargs):
         """
-        Loads the pipeline field choices on the init class instead of the module
+        Load the pipeline field choices on the init class instead of the module
         import, which ensures all pipelines are first properly loaded.
         """
         super().__init__(*args, **kwargs)
@@ -180,7 +180,7 @@ class ProjectSerializer(
 
     def create(self, validated_data):
         """
-        Creates a new `project` with `upload_file` and `pipeline` as optional.
+        Create a new `project` with `upload_file` and `pipeline` as optional.
 
         The `execute_now` parameter can be set to execute the Pipeline on creation.
         Note that even when `execute_now` is True, the pipeline execution is always
@@ -337,9 +337,7 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
 
 
 class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
-    """
-    Serializer used in the `ProjectViewSet.add_pipeline` action.
-    """
+    """Serializer used in the `ProjectViewSet.add_pipeline` action."""
 
     pipeline = serializers.ChoiceField(
         choices=(),
@@ -357,9 +355,7 @@ class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
 
 
 def get_model_serializer(model_class):
-    """
-    Returns a Serializer class that ia related to a given `model_class`.
-    """
+    """Return a Serializer class that ia related to a given `model_class`."""
     serializer = {
         CodebaseResource: CodebaseResourceSerializer,
         DiscoveredPackage: DiscoveredPackageSerializer,
@@ -375,7 +371,7 @@ def get_model_serializer(model_class):
 
 def get_serializer_fields(model_class):
     """
-    Returns a list of fields declared on the Serializer that are related to the
+    Return a list of fields declared on the Serializer that are related to the
     a given `model_class`.
     """
     serializer = get_model_serializer(model_class)

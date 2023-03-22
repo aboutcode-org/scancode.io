@@ -27,9 +27,7 @@ from scanpipe.pipes import windows
 
 
 class DockerWindows(Docker):
-    """
-    A pipeline to analyze Windows Docker images.
-    """
+    """Analyze Windows Docker images."""
 
     @classmethod
     def steps(cls):
@@ -52,15 +50,11 @@ class DockerWindows(Docker):
         )
 
     def tag_known_software_packages(self):
-        """
-        Flags files from known software packages by checking common install paths.
-        """
+        """Flag files from known software packages by checking common install paths."""
         windows.tag_known_software(self.project)
 
     def tag_uninteresting_codebase_resources(self):
-        """
-        Flags files that are known/labelled as uninteresting.
-        """
+        """Flag files that are known/labelled as uninteresting."""
         docker.tag_whiteout_codebase_resources(self.project)
         windows.tag_uninteresting_windows_codebase_resources(self.project)
         rootfs.tag_ignorable_codebase_resources(self.project)
@@ -68,13 +62,11 @@ class DockerWindows(Docker):
 
     def tag_program_files_dirs_as_packages(self):
         """
-        Reports the immediate subdirectories of `Program Files` and `Program
+        Report the immediate subdirectories of `Program Files` and `Program
         Files (x86)` as packages.
         """
         windows.tag_program_files(self.project)
 
     def tag_data_files_with_no_clues(self):
-        """
-        Flags data files that have no clues on their origin as uninteresting.
-        """
+        """Flag data files that have no clues on their origin as uninteresting."""
         rootfs.tag_data_files_with_no_clues(self.project)

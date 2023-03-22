@@ -27,11 +27,12 @@ from scanpipe.pipes import update_or_create_package
 
 class InspectManifest(Pipeline):
     """
-    A pipeline to inspect one or more manifest files and resolve its packages.
+    Inspect one or more manifest files and resolve its packages.
 
     Supports:
     - PyPI "requirements.txt" files
-    - SPDX document as JSON ".spdx.json"
+    - SPDX document as JSON ".spdx.json" files
+    - CycloneDX BOM as JSON ".bom.json" and ".cdx.json" files
     - AboutCode ".ABOUT" files
     """
 
@@ -43,17 +44,13 @@ class InspectManifest(Pipeline):
         )
 
     def get_manifest_inputs(self):
-        """
-        Locates all the manifest files from the project's input/ directory.
-        """
+        """Locate all the manifest files from the project's input/ directory."""
         self.input_locations = [
             str(input.absolute()) for input in self.project.inputs()
         ]
 
     def create_packages_from_manifest(self):
-        """
-        Resolves manifest files into packages.
-        """
+        """Resolve manifest files into packages."""
         for input_location in self.input_locations:
             default_package_type = resolve.get_default_package_type(input_location)
             if not default_package_type:
