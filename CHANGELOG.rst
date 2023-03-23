@@ -4,6 +4,9 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+v32.1.0 (2023-03-23)
+--------------------
+
 - Add support for ScanCode.io results in the "load_inventory" pipeline.
   https://github.com/nexB/scancode.io/issues/609
 
