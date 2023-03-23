@@ -88,7 +88,7 @@ check: doc8
 
 clean:
 	@echo "-> Clean the Python env"
-	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ pip-selfcheck.json pyvenv.cfg
+	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ .cache/ pip-selfcheck.json pyvenv.cfg
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete -type d -name '*.egg-info' -delete
 
 migrate:
