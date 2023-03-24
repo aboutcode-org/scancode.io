@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include
 from django.urls import path
@@ -49,7 +48,6 @@ auth_urlpatterns = [
 
 
 urlpatterns = auth_urlpatterns + [
-    path("admin/", admin.site.urls),
     path("api/", include(api_router.urls)),
     path("license/", include(licenses.urls)),
     path("", include("scanpipe.urls")),

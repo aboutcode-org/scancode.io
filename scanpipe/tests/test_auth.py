@@ -111,7 +111,6 @@ class ScanCodeIOAuthTest(TestCase):
         response = self.client.get(profile_url)
         expected = '<label class="label">API Key</label>'
         self.assertContains(response, expected, html=True)
-        expected = '<label class="label">API Key</label>'
         self.assertContains(response, self.basic_user.auth_token.key)
 
     def test_scancodeio_auth_views_are_protected(self):
@@ -138,8 +137,6 @@ class ScanCodeIOAuthTest(TestCase):
             ("project_delete_pipeline", [a_uuid, a_uuid]),
             ("run_detail", [a_uuid]),
             ("run_status", [a_uuid]),
-            ("admin:index", None),
-            ("rq_home", None),
             ("license_list", None),
             ("license_details", [a_path]),
         ]

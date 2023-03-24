@@ -162,7 +162,7 @@ class ScanPipeConfig(AppConfig):
 
         If the policies file is available but formatted properly or doesn't
         include the proper content, we want to raise an exception while the app
-        is loading to warn sysadmins about the issue.
+        is loading to warn system admins about the issue.
         """
         policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
 
