@@ -9,7 +9,15 @@ First application is for Docker container and VM composition analysis.
 Getting started
 ---------------
 
-Read more about ScanCode.io here: https://scancodeio.readthedocs.org/
+The ScanCode.io documentation is available here: https://scancodeio.readthedocs.org/
+
+If you have questions that are not covered by our
+`Documentation <https://scancodeio.readthedocs.io/en/latest/faq.html>`_ or
+`FAQs <https://scancodeio.readthedocs.io/en/latest/faq.html>`_,
+please ask them in `Discussions <https://github.com/nexB/scancode.io/discussions>`_.
+
+If you want to contribute to ScanCode.io, start with our
+`Contributing <https://scancodeio.readthedocs.io/en/latest/contributing.html>`_ page.
 
 Build and tests status
 ----------------------
