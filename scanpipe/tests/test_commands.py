@@ -423,6 +423,15 @@ class ScanPipeManagementCommandTest(TestCase):
 
         out = StringIO()
         options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "spdx", "xlsx"])
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        for output_file in out_value.split("\n"):
+            filename = output_file.split("/")[-1]
+            self.assertIn(filename, project.output_root)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
         options.extend(["--format", "WRONG"])
         message = (
             "Error: argument --format: invalid choice: 'WRONG' "
