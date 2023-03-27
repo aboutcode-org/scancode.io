@@ -4,6 +4,10 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Enhance the ``output`` management command to support providing multiple formats at
+  once.
+  https://github.com/nexB/scancode.io/issues/646
+
 - Remove the admin app and views.
   https://github.com/nexB/scancode.io/issues/645
 

@@ -195,12 +195,21 @@ Displays status information about the ``PROJECT`` project.
     This can be disabled providing the ``--verbosity 0`` option.
 
 
-`$ scanpipe output --project PROJECT --format {json,csv,xlsx}`
---------------------------------------------------------------
+`$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx}`
+-----------------------------------------------------------------------------
 
-Outputs the ``PROJECT`` results as JSON, CSV or XLSX.
+Outputs the ``PROJECT`` results as JSON, XLSX, CSV, SPDX, and CycloneDX.
 The output files are created in the ``PROJECT`` :guilabel:`output/` directory.
 
+Multiple formats can be provided at once::
+
+    $ scanpipe output --project foo --format json xlsx spdx cyclonedx
+
+Optional arguments:
+
+- ``--print`` Print the output to stdout instead of creating a file. This is not
+  compatible with the XLSX and CSV formats.
+  It cannot be used when multiple formats are provided.
 
 `$ scanpipe graph [PIPELINE_NAME ...]`
 --------------------------------------
