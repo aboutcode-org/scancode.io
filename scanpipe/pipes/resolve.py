@@ -33,8 +33,8 @@ from packagedcode.licensing import get_normalized_expression
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 
-from scanpipe import cyclonedx
 from scanpipe.models import DiscoveredPackage
+from scanpipe.pipes import cyclonedx
 from scanpipe.pipes import spdx
 
 """

@@ -25,7 +25,7 @@ from unittest import TestCase
 from scanpipe.pipes import spdx
 
 
-class SPDXTestCase(TestCase):
+class ScanPipeSPDXPipesTest(TestCase):
     def setUp(self):
         self.schema = spdx.SPDX_SCHEMA_PATH.read_text()
 

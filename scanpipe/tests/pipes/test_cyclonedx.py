@@ -33,11 +33,11 @@ from hoppr_cyclonedx_models.cyclonedx_1_4 import License1
 from hoppr_cyclonedx_models.cyclonedx_1_4 import LicenseChoice
 from hoppr_cyclonedx_models.cyclonedx_1_4 import LicenseChoice1
 
-from scanpipe import cyclonedx
+from scanpipe.pipes import cyclonedx
 
 
-class CycloneDXUnitTest(TestCase):
-    bom_file = Path(__file__).parent / "data/cyclonedx/nested.bom.json"
+class ScanPipeCycloneDXPipesTest(TestCase):
+    bom_file = Path(__file__).parent.parent / "data/cyclonedx/nested.bom.json"
     bom_json = bom_file.read_text()
     bom_parsed = json.loads(bom_json)
     bom = Bom_1_4(**bom_parsed)

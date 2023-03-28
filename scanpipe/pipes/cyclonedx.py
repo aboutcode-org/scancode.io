@@ -31,21 +31,21 @@ from hoppr_cyclonedx_models.cyclonedx_1_4 import (
     CyclonedxSoftwareBillOfMaterialsStandard as Bom_1_4,
 )
 
+SCHEMAS_PATH = pathlib.Path(__file__).parent / "schemas"
+
 CYCLONEDX_SPEC_VERSION = "1.4"
-CYCLONEDX_JSON_SCHEMA_LOCATION = "bom-1.4.schema.json"
-CYCLONEDX_JSON_SCHEMA_PATH = (
-    pathlib.Path(__file__).parent / CYCLONEDX_JSON_SCHEMA_LOCATION
-)
-CYCLONEDX_JSON_SCHEMA_URL = (
+CYCLONEDX_SCHEMA_NAME = "bom-1.4.schema.json"
+CYCLONEDX_SCHEMA_PATH = SCHEMAS_PATH / CYCLONEDX_SCHEMA_NAME
+CYCLONEDX_SCHEMA_URL = (
     "https://raw.githubusercontent.com/"
     "CycloneDX/specification/master/schema/bom-1.4.schema.json"
 )
 
-SPDX_JSON_SCHEMA_LOCATION = "spdx.schema.json"
-SPDX_JSON_SCHEMA_PATH = pathlib.Path(__file__).parent / SPDX_JSON_SCHEMA_LOCATION
+SPDX_SCHEMA_NAME = "spdx.schema.json"
+SPDX_SCHEMA_PATH = SCHEMAS_PATH / SPDX_SCHEMA_NAME
 
-JSF_JSON_SCHEMA_LOCATION = "jsf-0.82.schema.json"
-JSF_JSON_SCHEMA_PATH = pathlib.Path(__file__).parent / JSF_JSON_SCHEMA_LOCATION
+JSF_SCHEMA_NAME = "jsf-0.82.schema.json"
+JSF_SCHEMA_PATH = SCHEMAS_PATH / JSF_SCHEMA_NAME
 
 
 def get_bom(cyclonedx_document):
@@ -152,7 +152,7 @@ def get_properties_data(component):
     return properties_data
 
 
-def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
+def validate_document(document, schema=CYCLONEDX_SCHEMA_PATH):
     """Check the validity of this CycloneDX document."""
     if isinstance(document, str):
         document = json.loads(document)
@@ -163,8 +163,8 @@ def validate_document(document, schema=CYCLONEDX_JSON_SCHEMA_PATH):
     if isinstance(schema, str):
         schema = json.loads(schema)
 
-    spdx_schema = SPDX_JSON_SCHEMA_PATH.read_text()
-    jsf_schema = JSF_JSON_SCHEMA_PATH.read_text()
+    spdx_schema = SPDX_SCHEMA_PATH.read_text()
+    jsf_schema = JSF_SCHEMA_PATH.read_text()
 
     store = {
         "http://cyclonedx.org/schema/spdx.schema.json": json.loads(spdx_schema),
