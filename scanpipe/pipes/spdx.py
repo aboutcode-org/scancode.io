@@ -30,9 +30,9 @@ from typing import List  # Python 3.8 compatibility
 
 SPDX_SPEC_VERSION = "2.3"
 SPDX_LICENSE_LIST_VERSION = "3.18"
-SPDX_JSON_SCHEMA_LOCATION = "spdx-schema-2.3.json"
-SPDX_JSON_SCHEMA_PATH = pathlib.Path(__file__).parent / SPDX_JSON_SCHEMA_LOCATION
-SPDX_JSON_SCHEMA_URL = (
+SPDX_SCHEMA_NAME = "spdx-schema-2.3.json"
+SPDX_SCHEMA_PATH = pathlib.Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
+SPDX_SCHEMA_URL = (
     "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json"
 )
 
@@ -612,7 +612,7 @@ class Document:
         return validate_document(document=self.as_dict(), schema=schema)
 
 
-def validate_document(document, schema=SPDX_JSON_SCHEMA_PATH):
+def validate_document(document, schema=SPDX_SCHEMA_PATH):
     """
     SPDX document validation.
     Requires the `jsonschema` library.

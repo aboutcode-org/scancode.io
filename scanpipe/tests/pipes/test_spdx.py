@@ -20,17 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import pathlib
 from unittest import TestCase
 
-from scanpipe import spdx
+from scanpipe.pipes import spdx
 
 
 class SPDXTestCase(TestCase):
     def setUp(self):
-        spdx_module_location = pathlib.Path(spdx.__file__).parent
-        spdx_schema_location = spdx_module_location / spdx.SPDX_JSON_SCHEMA_LOCATION
-        self.schema = spdx_schema_location.read_text()
+        self.schema = spdx.SPDX_SCHEMA_PATH.read_text()
 
         self.creation_info_data = {
             "person_name": "John Doe",
