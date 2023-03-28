@@ -42,7 +42,7 @@ from scanpipe.tests import package_data1
 
 
 class ScanPipeOutputPipesTest(TestCase):
-    data_path = Path(__file__).parent / "data"
+    data_path = Path(__file__).parent.parent / "data"
 
     def assertResultsEqual(self, expected_file, results, regen=False):
         """

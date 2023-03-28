@@ -11,6 +11,8 @@ v33.0.0 (unreleased)
 - Remove the admin app and views.
   https://github.com/nexB/scancode.io/issues/645
 
+- Split the pipes unit tests into their own related submodule.
+
 v32.1.0 (2023-03-23)
 --------------------
 
