@@ -1188,7 +1188,8 @@ class ScanPipeModelsTest(TestCase):
         )
 
         results = CodebaseResource.objects.less_common_values("mime_type", limit=1)
-        self.assertQuerysetEqual(["text/plain", "text/x-script.python"], results)
+        expected = ["text/plain", "text/x-script.python"]
+        self.assertQuerysetEqual(expected, results, ordered=False)
 
     def test_scanpipe_codebase_resource_queryset_less_common(self):
         CodebaseResource.objects.all().delete()

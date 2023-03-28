@@ -37,7 +37,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanPipeDockerPipesTest(TestCase):
-    data_path = Path(__file__).parent / "data"
+    data_path = Path(__file__).parent.parent / "data"
     maxDiff = None
 
     def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
