@@ -29,6 +29,8 @@ from time import sleep
 
 from django.db.models import Count
 
+from packagedcode.models import build_package_uid
+
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -134,7 +136,7 @@ def update_or_create_package(project, package_data, codebase_resource=None):
 
 
 def update_or_create_dependency(
-    project, dependency_data, strip_datafile_path_root=False
+    project, dependency_data, for_package=None, strip_datafile_path_root=False
 ):
     """
     Get, update or create a DiscoveredDependency then returns it.
@@ -148,6 +150,11 @@ def update_or_create_dependency(
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
     """
+    dependency_uid = dependency_data.get("dependency_uid")
+
+    if not dependency_uid and for_package:
+        dependency_data["dependency_uid"] = build_package_uid(for_package.purl)
+
     try:
         dependency = project.discovereddependencies.get(
             dependency_uid=dependency_data.get("dependency_uid")
@@ -161,6 +168,7 @@ def update_or_create_dependency(
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
+            for_package=for_package,
             strip_datafile_path_root=strip_datafile_path_root,
         )
 

@@ -22,6 +22,7 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import resolve
+from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes import update_or_create_package
 
 
@@ -40,7 +41,8 @@ class InspectManifest(Pipeline):
     def steps(cls):
         return (
             cls.get_manifest_inputs,
-            cls.create_packages_from_manifest,
+            cls.get_packages_from_manifest,
+            cls.create_resolved_packages,
         )
 
     def get_manifest_inputs(self):
@@ -49,25 +51,24 @@ class InspectManifest(Pipeline):
             str(input.absolute()) for input in self.project.inputs()
         ]
 
-    def create_packages_from_manifest(self):
-        """Resolve manifest files into packages."""
+    def get_packages_from_manifest(self):
+        """Get packages data from manifest files."""
+        self.resolved_packages = []
+
         for input_location in self.input_locations:
-            default_package_type = resolve.get_default_package_type(input_location)
-            if not default_package_type:
-                raise Exception(f"No package type found for {input_location}")
-
-            resolver = resolve.resolver_registry.get(default_package_type)
-            if not resolver:
-                raise Exception(
-                    f'No resolver for package type "{default_package_type}" for '
-                    f"{input_location}"
-                )
-
-            self.log(f"`{default_package_type}` input detected for {input_location}")
-            resolved_packages = resolver(input_location=input_location)
-            if not resolved_packages:
+            packages = resolve.resolve_packages(input_location)
+            if not packages:
                 raise Exception(f"No packages could be resolved for {input_location}")
+            self.resolved_packages.extend(packages)
 
-            for package_data in resolved_packages:
-                package_data = resolve.set_license_expression(package_data)
-                update_or_create_package(self.project, package_data)
+    def create_resolved_packages(self):
+        """Create the resolved packages and their dependencies in the database."""
+        for package_data in self.resolved_packages:
+            package_data = resolve.set_license_expression(package_data)
+            dependencies = package_data.pop("dependencies", [])
+            package = update_or_create_package(self.project, package_data)
+
+            for dependency_data in dependencies:
+                update_or_create_dependency(
+                    self.project, dependency_data, for_package=package
+                )
