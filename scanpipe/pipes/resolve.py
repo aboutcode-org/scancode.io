@@ -185,11 +185,15 @@ def get_default_package_type(input_location):
     Return the package type associated with the provided `input_location`.
     This type is used to get the related handler that knows how process the input.
     """
+    input_location = str(input_location)
+
     for handler in APPLICATION_PACKAGE_DATAFILE_HANDLERS:
         if handler.is_datafile(input_location):
             return handler.default_package_type
+
         if input_location.endswith((".spdx", ".spdx.json")):
             return "spdx"
+
         if input_location.endswith((".bom.json", ".cdx.json")):
             return "cyclonedx"
 

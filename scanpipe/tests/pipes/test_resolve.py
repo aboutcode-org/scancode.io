@@ -30,6 +30,18 @@ from scanpipe.pipes import resolve
 class ScanPipeResolvePipesTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
 
+    def test_scanpipe_pipes_resolve_get_default_package_type(self):
+        self.assertIsNone(resolve.get_default_package_type(input_location=""))
+
+        input_location = self.data_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
+        self.assertEqual("about", resolve.get_default_package_type(input_location))
+
+        input_location = self.data_location / "toml.spdx.json"
+        self.assertEqual("spdx", resolve.get_default_package_type(input_location))
+
+        input_location = self.data_location / "cyclonedx/nested.bom.json"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
     def test_scanpipe_pipes_resolve_set_license_expression(self):
         declared_license = {"license": "MIT"}
         data = resolve.set_license_expression({"declared_license": declared_license})
