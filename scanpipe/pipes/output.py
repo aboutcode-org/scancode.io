@@ -40,7 +40,7 @@ from packagedcode.utils import combine_expressions
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
-from scanpipe import spdx
+from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
 

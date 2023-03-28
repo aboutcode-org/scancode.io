@@ -8,6 +8,9 @@ v33.0.0 (unreleased)
   once.
   https://github.com/nexB/scancode.io/issues/646
 
+- Move the ``cyclonedx`` and ``spdx`` root modules into the ``pipes`` module.
+  https://github.com/nexB/scancode.io/issues/657
+
 - Remove the admin app and views.
   https://github.com/nexB/scancode.io/issues/645
 
