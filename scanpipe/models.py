@@ -776,8 +776,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
-        Create a new Run instance with the provided `pipeline` on the current
-        project.
+        Create a new Run instance with the provided `pipeline` on the current project.
 
         If `execute_now` is True, the pipeline task is created.
         on_commit() is used to postpone the task creation after the transaction is
@@ -786,10 +785,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         immediately.
         """
         pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
+        if not pipeline_class:
+            raise ValueError(f"Unknown pipeline: {pipeline_name}")
+
         run = Run.objects.create(
             project=self,
             pipeline_name=pipeline_name,
-            description=pipeline_class.get_doc(),
+            description=pipeline_class.get_summary(),
         )
         if execute_now:
             transaction.on_commit(run.execute_task_async)

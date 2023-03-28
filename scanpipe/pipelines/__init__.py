@@ -28,6 +28,7 @@ import warnings
 from contextlib import contextmanager
 from functools import wraps
 from pydoc import getdoc
+from pydoc import splitdoc
 
 from django.utils import timezone
 
@@ -66,7 +67,7 @@ class Pipeline:
 
     @classmethod
     def get_doc(cls):
-        """Return a docstring."""
+        """Get the doc string of this pipeline."""
         return getdoc(cls)
 
     @classmethod
@@ -78,11 +79,18 @@ class Pipeline:
 
     @classmethod
     def get_info(cls):
-        """Return a dictionary of combined data about the current pipeline."""
+        """Get a dictionary of combined information data about this pipeline."""
+        summary, description = splitdoc(cls.get_doc())
         return {
-            "description": cls.get_doc(),
+            "summary": summary,
+            "description": description,
             "steps": cls.get_graph(),
         }
+
+    @classmethod
+    def get_summary(cls):
+        """Get the doc string summary."""
+        return cls.get_info()["summary"]
 
     def log(self, message):
         """Log the given `message` to the current module logger and Run instance."""

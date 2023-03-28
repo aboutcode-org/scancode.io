@@ -1523,14 +1523,19 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
         self.assertEqual(0, project1.runs.count())
 
-        pipeline_name = "docker"
-        pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
+        pipeline_name = "not_available"
+        with self.assertRaises(ValueError) as error:
+            project1.add_pipeline(pipeline_name)
+        self.assertEqual("Unknown pipeline: not_available", str(error.exception))
+
+        pipeline_name = "inspect_manifest"
         project1.add_pipeline(pipeline_name)
+        pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
 
         self.assertEqual(1, project1.runs.count())
         run = project1.runs.get()
         self.assertEqual(pipeline_name, run.pipeline_name)
-        self.assertEqual(pipeline_class.get_doc(), run.description)
+        self.assertEqual(pipeline_class.get_summary(), run.description)
         mock_execute_task.assert_not_called()
 
         project1.add_pipeline(pipeline_name, execute_now=True)

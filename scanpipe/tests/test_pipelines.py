@@ -44,6 +44,7 @@ from scanpipe.pipes import output
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
+from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
@@ -58,13 +59,30 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipelines_class_get_info(self):
         expected = {
-            "description": "A pipeline that does nothing, in 2 steps.",
+            "description": "Description section of the doc string.",
+            "summary": "Do nothing, in 2 steps.",
             "steps": [
                 {"name": "step1", "doc": "Step1 doc."},
                 {"name": "step2", "doc": "Step2 doc."},
             ],
         }
         self.assertEqual(expected, DoNothing.get_info())
+
+        expected = {
+            "summary": "Profile a step using the @profile decorator.",
+            "description": "",
+            "steps": [
+                {"name": "step", "doc": ""},
+            ],
+        }
+        self.assertEqual(expected, ProfileStep.get_info())
+
+    def test_scanpipe_pipelines_class_get_summary(self):
+        expected = "Do nothing, in 2 steps."
+        self.assertEqual(expected, DoNothing.get_summary())
+
+        expected = "Profile a step using the @profile decorator."
+        self.assertEqual(expected, ProfileStep.get_summary())
 
     def test_scanpipe_pipeline_class_log(self):
         project1 = Project.objects.create(name="Analysis")

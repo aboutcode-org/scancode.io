@@ -134,10 +134,14 @@ class AddInputsForm(InputsBaseForm, forms.Form):
 
 
 class AddPipelineForm(PipelineBaseForm):
-    def __init__(self, *args, **kwargs):
-        """Set the `pipeline` field as required for this form."""
-        super().__init__(*args, **kwargs)
-        self.fields["pipeline"].required = True
+    pipeline = forms.ChoiceField(
+        choices=[
+            (name, pipeline_class.get_summary())
+            for name, pipeline_class in scanpipe_app.pipelines.items()
+        ],
+        widget=forms.RadioSelect(),
+        required=True,
+    )
 
     def save(self, project):
         self.handle_pipeline(project)

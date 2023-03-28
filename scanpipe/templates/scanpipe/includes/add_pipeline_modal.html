@@ -9,13 +9,19 @@
       </header>
       <section class="modal-card-body">
         <div class="field">
-          <label class="label" for="{{ add_pipeline_form.pipeline.id_for_label }}">Pipeline</label>
           <div class="control">
-            <span class="select">
-              {{ add_pipeline_form.pipeline }}
-            </span>
+            {% for label, summary in add_pipeline_form.pipeline.field.choices %}
+              <div class="mb-3">
+                <label class="radio label mb-0">
+                  <input type="radio" name="pipeline" value="{{ label }}">
+                  {{ label }}
+                </label>
+                <p class="help ml-4">{{ summary }}</p>
+              </div>
+            {% endfor %}
           </div>
         </div>
+        <hr class="my-4">
         <div class="field">
           <label class="checkbox" for="{{ add_pipeline_form.execute_now.id_for_label }}">
             {{ add_pipeline_form.execute_now }}
