@@ -1,7 +1,7 @@
 about_resource: Django-4.0.8-py3-none-any.whl
 name: django
 version: 4.0.8
-download_url: https://files.pythonhosted.org/packages/e1/d0/d90528978da16288d470bb423abad307ed7ae724090132ff6bf67d6a5579/Django-4.0.8-py3-none-any.whl
+download_url: https://python.org/Django-4.0.8-py3-none-any.whl
 package_url: pkg:pypi/django@4.0.8
 license_expression: bsd-new
 attribute: yes
