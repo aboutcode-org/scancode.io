@@ -1394,6 +1394,12 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def unknown_license(self):
         return self.json_field_contains("license_expressions", "unknown")
 
+    def from_codebase(self):
+        return self.filter(path__startswith="from/")
+
+    def to_codebase(self):
+        return self.filter(path__startswith="to/")
+
 
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
@@ -1887,6 +1893,43 @@ class CodebaseResource(
             copyright_text=", ".join(copyrights),
             contributors=list(set(holders + authors)),
             types=self.get_spdx_types(),
+        )
+
+
+class CodebaseRelation(
+    ProjectRelatedModel,
+    models.Model,
+):
+    """Relation between two CodebaseResource."""
+
+    class Relationship(models.TextChoices):
+        IDENTICAL = "identical"
+        COMPILED_TO = "compiled_to"
+
+    from_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="related_to",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    to_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="related_from",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    relationship = models.CharField(
+        max_length=30,
+        choices=Relationship.choices,
+    )
+    match_type = models.CharField(
+        max_length=30,
+    )
+
+    def __str__(self):
+        return (
+            f"{self.from_resource.name} {self.relationship.upper()} "
+            f"{self.to_resource.name} using {self.match_type}"
         )
 
 
