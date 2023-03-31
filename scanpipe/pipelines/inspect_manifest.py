@@ -31,10 +31,19 @@ class InspectManifest(Pipeline):
     Inspect one or more manifest files and resolve its packages.
 
     Supports:
-    - PyPI "requirements.txt" files
-    - SPDX document as JSON ".spdx.json" files
-    - CycloneDX BOM as JSON ".bom.json" and ".cdx.json" files
-    - AboutCode ".ABOUT" files
+    - BOM: SPDX document, CycloneDX BOM, AboutCode ABOUT file
+    - Python: requirements.txt, setup.py, setup.cfg, Pipfile.lock
+    - JavaScript: yarn.lock lockfile, npm package-lock.json lockfile
+    - Java: Java JAR MANIFEST.MF, Gradle build script
+    - Ruby: RubyGems gemspec manifest, RubyGems Bundler Gemfile.lock
+    - Rust: Rust Cargo.lock dependencies lockfile, Rust Cargo.toml package manifest
+    - PHP: PHP composer lockfile, PHP composer manifest
+    - NuGet: nuspec package manifest
+    - Dart: pubspec manifest, pubspec lockfile
+    - OS: FreeBSD compact package manifest, Debian installed packages database
+
+    Full list available at https://scancode-toolkit.readthedocs.io/en/
+    doc-update-licenses/reference/available_package_parsers.html
     """
 
     @classmethod

@@ -49,7 +49,7 @@ def resolve_packages(input_location):
     if not default_package_type:
         raise Exception(f"No package type found for {input_location}")
 
-    # The ScanCode.io resolvers take precedence on the ScanCode-toolkit ones.
+    # The ScanCode.io resolvers take precedence over the ScanCode-toolkit ones.
     resolver = resolver_registry.get(default_package_type)
     if resolver:
         resolved_packages = resolver(input_location=input_location)
