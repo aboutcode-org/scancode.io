@@ -29,6 +29,7 @@ from time import sleep
 
 from django.db.models import Count
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -165,6 +166,19 @@ def update_or_create_dependency(
         )
 
     return dependency
+
+
+def make_relationship(
+    from_resource, to_resource, relationship, match_type, **extra_fields
+):
+    return CodebaseRelation.objects.create(
+        project=from_resource.project,
+        from_resource=from_resource,
+        to_resource=to_resource,
+        relationship=relationship,
+        match_type=match_type,
+        **extra_fields,
+    )
 
 
 def analyze_scanned_files(project):

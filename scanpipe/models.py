@@ -1400,6 +1400,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def to_codebase(self):
         return self.filter(path__startswith="to/")
 
+    def has_value(self, field_name):
+        return self.filter(~Q((field_name, "")))
+
 
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
@@ -1898,6 +1901,7 @@ class CodebaseResource(
 
 class CodebaseRelation(
     ProjectRelatedModel,
+    ExtraDataFieldMixin,
     models.Model,
 ):
     """Relation between two CodebaseResource."""
@@ -1905,6 +1909,7 @@ class CodebaseRelation(
     class Relationship(models.TextChoices):
         IDENTICAL = "identical"
         COMPILED_TO = "compiled_to"
+        PATH_MATCH = "path_match"
 
     from_resource = models.ForeignKey(
         CodebaseResource,

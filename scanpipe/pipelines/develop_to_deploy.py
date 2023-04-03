@@ -20,22 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.db.models import Q
-
 from scanpipe import pipes
-from scanpipe.models import CodebaseRelation
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import d2d
 from scanpipe.pipes import scancode
-
-
-def make_relationship(from_resource, to_resource, relationship, match_type):
-    return CodebaseRelation.objects.create(
-        project=from_resource.project,
-        from_resource=from_resource,
-        to_resource=to_resource,
-        relationship=relationship,
-        match_type=match_type,
-    )
 
 
 class DevelopToDeploy(Pipeline):
@@ -87,38 +75,8 @@ class DevelopToDeploy(Pipeline):
 
     def checksum_match(self):
         """Match using MD5 checksum."""
-        project_resources = self.project.codebaseresources
-        from_resources = project_resources.from_codebase().files().filter(~Q(md5=""))
-        to_resources = project_resources.to_codebase()
-
-        for resource in from_resources:
-            matches = to_resources.filter(md5=resource.md5)
-            for match in matches:
-                make_relationship(
-                    from_resource=resource,
-                    to_resource=match,
-                    relationship=CodebaseRelation.Relationship.IDENTICAL,
-                    match_type="md5",
-                )
+        d2d.checksum_match(project=self.project, checksum_field="md5")
 
     def java_to_class_match(self):
         """Match a .java source to its compiled .class"""
-        prefix = "from/"
-        extension = ".java"
-
-        project_resources = self.project.codebaseresources
-        from_resources = (
-            project_resources.from_codebase().files().filter(path__endswith=extension)
-        )
-        to_resources = project_resources.to_codebase()
-
-        for resource in from_resources:
-            parts = resource.path[len(prefix) : -len(extension)]
-            matches = to_resources.filter(path=f"to/{parts}.class")
-            for match in matches:
-                make_relationship(
-                    from_resource=resource,
-                    to_resource=match,
-                    relationship=CodebaseRelation.Relationship.COMPILED_TO,
-                    match_type="java_to_class",
-                )
+        d2d.java_to_class_match(project=self.project)
