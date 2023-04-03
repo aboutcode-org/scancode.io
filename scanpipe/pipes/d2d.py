@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from pathlib import Path
+
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 
@@ -62,3 +64,36 @@ def java_to_class_match(project):
                 relationship=CodebaseRelation.Relationship.COMPILED_TO,
                 match_type="java_to_class",
             )
+
+
+def path_match(project):
+    """Match using path similarities."""
+    project_files = project.codebaseresources.files()
+
+    from_resources = project_files.from_codebase()
+    to_resources = project_files.to_codebase()
+
+    for resource in from_resources:
+        path_parts = Path(resource.path.lstrip("/")).parts
+        for index in range(1, len(path_parts)):
+            current_parts = path_parts[index:]
+            current_path = "/".join(current_parts)
+            # The slash "/" prefix matters during the match as we do not want to
+            # match on filenames sharing the same ending.
+            # For example: Filter.java and FastFilter.java
+            matches = to_resources.filter(path__endswith=f"/{current_path}")
+
+            for match in matches:
+                relation = CodebaseRelation.objects.filter(
+                    from_resource=resource,
+                    to_resource=match,
+                    relationship=CodebaseRelation.Relationship.PATH_MATCH,
+                )
+                if not relation.exists():
+                    pipes.make_relationship(
+                        from_resource=resource,
+                        to_resource=match,
+                        relationship=CodebaseRelation.Relationship.PATH_MATCH,
+                        match_type="path",
+                        extra_data={"path_score": len(current_parts)},
+                    )

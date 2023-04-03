@@ -65,7 +65,7 @@ def make_codebase_resource(project, location, **extra_fields):
     skipped.
     """
     relative_path = Path(location).relative_to(project.codebase_path)
-    resource_data = scancode.get_resource_info(location=location)
+    resource_data = scancode.get_resource_info(location=str(location))
 
     if extra_fields:
         resource_data.update(**extra_fields)

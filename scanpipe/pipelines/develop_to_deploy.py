@@ -38,6 +38,7 @@ class DevelopToDeploy(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.checksum_match,
             cls.java_to_class_match,
+            cls.path_match,
         )
 
     def get_inputs(self):
@@ -68,10 +69,7 @@ class DevelopToDeploy(Pipeline):
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
         for resource_path in self.project.walk_codebase_path():
-            pipes.make_codebase_resource(
-                project=self.project,
-                location=str(resource_path),
-            )
+            pipes.make_codebase_resource(project=self.project, location=resource_path)
 
     def checksum_match(self):
         """Match using MD5 checksum."""
@@ -80,3 +78,7 @@ class DevelopToDeploy(Pipeline):
     def java_to_class_match(self):
         """Match a .java source to its compiled .class"""
         d2d.java_to_class_match(project=self.project)
+
+    def path_match(self):
+        """Match using path similarities."""
+        d2d.path_match(project=self.project)
