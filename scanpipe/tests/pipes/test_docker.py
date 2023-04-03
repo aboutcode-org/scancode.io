@@ -139,3 +139,44 @@ class ScanPipeDockerPipesTest(TestCase):
         self.assertEqual(3, len(tarballs))
         for path in tarballs:
             self.assertTrue(path.name.endswith(expected_extensions))
+
+    def test_pipes_docker_get_layers_data(self):
+        p1 = Project.objects.create(name="Analysis")
+        self.assertEqual([], docker.get_layers_data(p1))
+
+        layers = [
+            {
+                "size": 5855232,
+                "author": "Author",
+                "comment": "Comment",
+                "created": "2022-04-05T00:19:59.790636867Z",
+                "layer_id": "4fc242d58285699eca05db3cc7c7122a2b8e014d9481",
+                "created_by": "/bin/sh -c #(nop) ADD file:3efb3fd9ff852b5b56e4 in / ",
+            },
+            {
+                "size": 2876928,
+                "author": None,
+                "comment": None,
+                "created": "2022-04-05T07:50:46.219557029Z",
+                "layer_id": "fbd7d5451c694bccb661c80cb52dd44824a8d0947b",
+                "created_by": "/bin/sh -c set -eux;",
+            },
+        ]
+        p1.update_extra_data(
+            {
+                "images": [
+                    {
+                        "image_id": "06a4df09d5a34628e72a77999e5daee6cd3",
+                        "layers": layers,
+                    }
+                ]
+            }
+        )
+
+        layers_data = docker.get_layers_data(p1)
+        self.assertEqual(2, len(layers_data))
+        self.assertEqual("img-06a4df-layer-01-4fc242", layers_data[0].layer_tag)
+        self.assertEqual(5855232, layers_data[0].size)
+        self.assertEqual("Author", layers_data[0].author)
+        self.assertEqual("Comment", layers_data[0].comment)
+        self.assertEqual("img-06a4df-layer-02-fbd7d5", layers_data[1].layer_tag)

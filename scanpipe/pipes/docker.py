@@ -22,6 +22,7 @@
 
 import logging
 import posixpath
+from collections import namedtuple
 from pathlib import Path
 
 from container_inspector.image import Image
@@ -51,7 +52,7 @@ def extract_images_from_inputs(project):
     each tarball to the tmp/ work directory and collects the images.
 
     Return the `images` and an `errors` list of error messages that may have
-    happen during the extraction.
+    happened during the extraction.
     """
     target_path = project.tmp_path
     images = []
@@ -260,3 +261,42 @@ def tag_whiteout_codebase_resources(project):
     whiteout_prefix = ".wh."
     qs = project.codebaseresources.no_status()
     qs.filter(name__startswith=whiteout_prefix).update(status="ignored-whiteout")
+
+
+layer_fields = [
+    "layer_tag",
+    "created_by",
+    "layer_id",
+    "image_id",
+    "created",
+    "size",
+    "author",
+    "comment",
+]
+Layer = namedtuple("Layer", layer_fields)
+
+
+def get_layers_data(project):
+    """Get list of structured layers data from project extra_data field."""
+    layers_data = []
+    images = project.extra_data.get("images", [])
+
+    for image in images:
+        image_id = image.get("image_id")
+
+        for layer_index, layer in enumerate(image.get("layers", []), start=1):
+            layer_id = layer.get("layer_id")
+            layers_data.append(
+                Layer(
+                    layer_tag=get_layer_tag(image_id, layer_id, layer_index),
+                    created_by=layer.get("created_by"),
+                    layer_id=layer_id,
+                    image_id=image_id,
+                    created=layer.get("created"),
+                    size=layer.get("size"),
+                    author=layer.get("author"),
+                    comment=layer.get("comment"),
+                )
+            )
+
+    return layers_data
