@@ -23,13 +23,12 @@
 import logging
 import subprocess
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 from time import sleep
 
 from django.db.models import Count
-
-from packagedcode.models import build_package_uid
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -108,14 +107,11 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
 
-    try:
-        package = DiscoveredPackage.objects.get(
-            project=project,
-            package_uid=package_data.get("package_uid"),
-            **purl_data,
-        )
-    except DiscoveredPackage.DoesNotExist:
-        package = None
+    package = DiscoveredPackage.objects.get_or_none(
+        project=project,
+        package_uid=package_data.get("package_uid"),
+        **purl_data,
+    )
 
     package_data = package_data.copy()
     if release_date := package_data.get("release_date"):
@@ -150,17 +146,18 @@ def update_or_create_dependency(
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
     """
+    dependency = None
     dependency_uid = dependency_data.get("dependency_uid")
 
-    if not dependency_uid and for_package:
-        dependency_data["dependency_uid"] = build_package_uid(for_package.purl)
-
-    try:
-        dependency = project.discovereddependencies.get(
-            dependency_uid=dependency_data.get("dependency_uid")
+    # if not dependency_uid and for_package:
+    #     dependency_data["dependency_uid"] = build_package_uid(for_package.purl)
+    # TODO: Discuss the need to make this field mandatory in the context of ScanCode.io
+    if not dependency_uid:
+        dependency_data["dependency_uid"] = uuid.uuid4()
+    else:
+        dependency = project.discovereddependencies.get_or_none(
+            dependency_uid=dependency_uid,
         )
-    except DiscoveredDependency.DoesNotExist:
-        dependency = None
 
     if dependency:
         dependency.update_from_data(dependency_data)

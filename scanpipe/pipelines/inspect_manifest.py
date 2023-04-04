@@ -22,7 +22,6 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import resolve
-from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes import update_or_create_package
 
 
@@ -75,9 +74,20 @@ class InspectManifest(Pipeline):
         for package_data in self.resolved_packages:
             package_data = resolve.set_license_expression(package_data)
             dependencies = package_data.pop("dependencies", [])
-            package = update_or_create_package(self.project, package_data)
+            update_or_create_package(self.project, package_data)
 
             for dependency_data in dependencies:
-                update_or_create_dependency(
-                    self.project, dependency_data, for_package=package
-                )
+                resolved_package = dependency_data.get("resolved_package")
+                purl = dependency_data.get("purl")
+                if resolved_package:
+                    resolved_package.pop("dependencies", [])
+                    update_or_create_package(self.project, resolved_package)
+                elif purl:
+                    from packageurl import PackageURL
+
+                    purl_data = PackageURL.from_string(purl).to_dict(encode=True)
+                    update_or_create_package(self.project, purl_data)
+
+                # update_or_create_dependency(
+                #     self.project, dependency_data, for_package=package
+                # )
