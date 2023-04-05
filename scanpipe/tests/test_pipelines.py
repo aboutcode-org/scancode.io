@@ -190,7 +190,7 @@ class ScanPipePipelinesTest(TestCase):
         expected = (StepsAsAttribute.step1,)
         with warnings.catch_warnings(record=True) as caught_warnings:
             self.assertEqual(expected, StepsAsAttribute.get_steps())
-            self.assertEquals(len(caught_warnings), 1)
+            self.assertEqual(len(caught_warnings), 1)
             caught_warning = caught_warnings[0]
 
         expected = (

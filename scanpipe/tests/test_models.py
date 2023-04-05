@@ -623,28 +623,28 @@ class ScanPipeModelsTest(TestCase):
         )
 
         qs = self.project1.runs.has_start_date()
-        self.assertQuerysetEqual(qs, [running, executed, succeed, failed])
+        self.assertQuerySetEqual(qs, [running, executed, succeed, failed])
 
         qs = self.project1.runs.not_started()
-        self.assertQuerysetEqual(qs, [not_started])
+        self.assertQuerySetEqual(qs, [not_started])
 
         qs = self.project1.runs.queued()
-        self.assertQuerysetEqual(qs, [queued])
+        self.assertQuerySetEqual(qs, [queued])
 
         qs = self.project1.runs.running()
-        self.assertQuerysetEqual(qs, [running])
+        self.assertQuerySetEqual(qs, [running])
 
         qs = self.project1.runs.executed()
-        self.assertQuerysetEqual(qs, [executed, succeed, failed])
+        self.assertQuerySetEqual(qs, [executed, succeed, failed])
 
         qs = self.project1.runs.succeed()
-        self.assertQuerysetEqual(qs, [succeed])
+        self.assertQuerySetEqual(qs, [succeed])
 
         qs = self.project1.runs.failed()
-        self.assertQuerysetEqual(qs, [failed])
+        self.assertQuerySetEqual(qs, [failed])
 
         queued_or_running_qs = self.project1.runs.queued_or_running()
-        self.assertQuerysetEqual(queued_or_running_qs, [running, queued])
+        self.assertQuerySetEqual(queued_or_running_qs, [running, queued])
 
     def test_scanpipe_run_model_status_property(self):
         now = timezone.now()
@@ -1091,19 +1091,19 @@ class ScanPipeModelsTest(TestCase):
         resource_qs = self.project1.codebaseresources
 
         categories = ["Permissive"]
-        self.assertQuerysetEqual([], resource_qs.licenses_categories(categories))
+        self.assertQuerySetEqual([], resource_qs.licenses_categories(categories))
 
         categories = ["Copyleft"]
         expected = [resource1]
-        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+        self.assertQuerySetEqual(expected, resource_qs.licenses_categories(categories))
 
         categories = ["Copyleft Limited"]
         expected = [resource2]
-        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+        self.assertQuerySetEqual(expected, resource_qs.licenses_categories(categories))
 
         categories = ["Copyleft", "Copyleft Limited"]
         expected = [resource1, resource2]
-        self.assertQuerysetEqual(expected, resource_qs.licenses_categories(categories))
+        self.assertQuerySetEqual(expected, resource_qs.licenses_categories(categories))
 
     def _create_resources_for_queryset_methods(self):
         resource1 = CodebaseResource.objects.create(project=self.project1, path="1")
@@ -1129,30 +1129,30 @@ class ScanPipeModelsTest(TestCase):
         resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
 
         qs = CodebaseResource.objects
-        self.assertQuerysetEqual([resource2], qs.json_field_contains("holders", "H3"))
-        self.assertQuerysetEqual([resource1], qs.json_field_contains("holders", "H1"))
+        self.assertQuerySetEqual([resource2], qs.json_field_contains("holders", "H3"))
+        self.assertQuerySetEqual([resource1], qs.json_field_contains("holders", "H1"))
         expected = [resource1, resource2]
-        self.assertQuerysetEqual(expected, qs.json_field_contains("holders", "H"))
+        self.assertQuerySetEqual(expected, qs.json_field_contains("holders", "H"))
 
     def test_scanpipe_codebase_resource_queryset_json_list_contains(self):
         resource1, resource2, resource3 = self._create_resources_for_queryset_methods()
         qs = CodebaseResource.objects
 
         results = qs.json_list_contains("holders", "holder", ["H3"])
-        self.assertQuerysetEqual([resource2], results)
+        self.assertQuerySetEqual([resource2], results)
 
         results = qs.json_list_contains("holders", "holder", ["H1"])
-        self.assertQuerysetEqual([resource1], results)
+        self.assertQuerySetEqual([resource1], results)
         results = qs.json_list_contains("holders", "holder", ["H2"])
-        self.assertQuerysetEqual([resource1], results)
+        self.assertQuerySetEqual([resource1], results)
         results = qs.json_list_contains("holders", "holder", ["H1", "H2"])
-        self.assertQuerysetEqual([resource1], results)
+        self.assertQuerySetEqual([resource1], results)
 
         results = qs.json_list_contains("holders", "holder", ["H1", "H2", "H3"])
-        self.assertQuerysetEqual([resource1, resource2], results)
+        self.assertQuerySetEqual([resource1, resource2], results)
 
         results = qs.json_list_contains("holders", "holder", ["H"])
-        self.assertQuerysetEqual([], results)
+        self.assertQuerySetEqual([], results)
 
     def test_scanpipe_codebase_resource_queryset_values_from_json_field(self):
         CodebaseResource.objects.all().delete()
@@ -1178,7 +1178,7 @@ class ScanPipeModelsTest(TestCase):
         CodebaseResource.objects.all().delete()
         self._create_resources_for_queryset_methods()
         results = CodebaseResource.objects.most_common_values("mime_type", limit=1)
-        self.assertQuerysetEqual(["application/zip"], results)
+        self.assertQuerySetEqual(["application/zip"], results)
 
     def test_scanpipe_codebase_resource_queryset_less_common_values(self):
         CodebaseResource.objects.all().delete()
@@ -1189,7 +1189,7 @@ class ScanPipeModelsTest(TestCase):
 
         results = CodebaseResource.objects.less_common_values("mime_type", limit=1)
         expected = ["text/plain", "text/x-script.python"]
-        self.assertQuerysetEqual(expected, results, ordered=False)
+        self.assertQuerySetEqual(expected, results, ordered=False)
 
     def test_scanpipe_codebase_resource_queryset_less_common(self):
         CodebaseResource.objects.all().delete()
@@ -1207,10 +1207,10 @@ class ScanPipeModelsTest(TestCase):
 
         qs = CodebaseResource.objects
         results = qs.less_common("mime_type", limit=1)
-        self.assertQuerysetEqual([resource3, resource4], results)
+        self.assertQuerySetEqual([resource3, resource4], results)
 
         results = qs.less_common("holders", limit=2)
-        self.assertQuerysetEqual([resource2], results)
+        self.assertQuerySetEqual([resource2], results)
 
     def test_scanpipe_codebase_resource_descendants(self):
         path = "asgiref-3.3.0-py3-none-any.whl-extract/asgiref"
