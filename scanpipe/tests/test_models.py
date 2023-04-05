@@ -1606,7 +1606,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("DiscoveredPackage", error.model)
         self.assertEqual(long_value, error.details["filename"])
         self.assertEqual(
-            "value too long for type character varying(255)\n", error.message
+            "value too long for type character varying(255)", error.message
         )
 
         codebase_resource = CodebaseResource.objects.create(
@@ -1739,7 +1739,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
         error = project1.projecterrors.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
-        expected_message = "value too long for type character varying(100)\n"
+        expected_message = "value too long for type character varying(100)"
         self.assertEqual(expected_message, error.message)
         self.assertEqual(bad_data["version"], error.details["version"])
         self.assertTrue(error.details["codebase_resource_pk"])
