@@ -40,6 +40,7 @@ from packagedcode.utils import combine_expressions
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.pipes import docker
 from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -295,7 +296,7 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     Add a new ``worksheet_name`` worksheet to the ``workbook``
     ``xlsxwriter.Workbook``. Write the iterable of ``rows`` objects using their
     attributes listed in the ``fields`` sequence of field names.
-    Add an "xlsx_errors" column with conversion error messages if any.
+    Add a "xlsx_errors" column with conversion error messages if any.
     Return a number of conversion errors.
     """
     worksheet = workbook.add_worksheet(worksheet_name)
@@ -440,6 +441,9 @@ def to_xlsx(project):
         for model_name in model_names:
             queryset = get_queryset(project, model_name)
             queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
+
+        if layers_data := docker.get_layers_data(project):
+            _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
 
     return output_file
 
