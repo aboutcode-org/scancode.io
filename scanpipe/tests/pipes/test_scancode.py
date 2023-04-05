@@ -480,4 +480,4 @@ class ScanPipeScancodePipesTest(TestCase):
             "get_package_resources/package.json",
             "get_package_resources/this-should-be-returned",
         ]
-        self.assertEquals(sorted(expected_resources), sorted(associated_resources))
+        self.assertEqual(sorted(expected_resources), sorted(associated_resources))
