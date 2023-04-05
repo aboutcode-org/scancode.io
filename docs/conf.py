@@ -28,7 +28,7 @@ author = "nexB Inc."
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinxcontrib_django2",
+    "sphinxcontrib_django",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
