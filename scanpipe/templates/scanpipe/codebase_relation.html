@@ -13,6 +13,11 @@
   </div>
 
   <div class="container is-fluid mb-3">
+    {% if request.GET.missing_only %}
+      <a href="?" style="float: right;">Show all</a>
+    {% else %}
+      <a href="?missing_only=1" style="float: right;">Show missing only</a>
+    {% endif %}
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
       <thead>
         <tr>
@@ -22,25 +27,27 @@
         </tr>
       </thead>
       <tbody>
-        {% for resource in project.codebaseresources.from_codebase.files %}
+        {% for resource in from_codebase_resources %}
           {% for relation in resource.related_to.all %}
-            <tr>
-              <td class="break-all" style="min-width: 200px;">
-                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
-                  <i class="far fa-file"></i>
-                </a>
-                {{ resource.path }}
-              </td>
-              <td>
-                {{ relation.match_type }}
-                {% if relation.match_type == "path" %}
-                  (score: {{ relation.extra_data.path_score }})
-                {% endif %}
-              </td>
-              <td class="break-all" style="min-width: 200px;">
-                {{ relation.to_resource.path }}
-              </td>
-            </tr>
+            {% if not request.GET.missing_only %}
+              <tr>
+                <td class="break-all" style="min-width: 200px;">
+                  <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                    <i class="far fa-file"></i>
+                  </a>
+                  {{ resource.path }}
+                </td>
+                <td>
+                  {{ relation.match_type }}
+                  {% if relation.match_type == "path" %}
+                    (score: {{ relation.extra_data.path_score }})
+                  {% endif %}
+                </td>
+                <td class="break-all" style="min-width: 200px;">
+                  {{ relation.to_resource.path }}
+                </td>
+              </tr>
+            {% endif %}
           {% empty %}
             <tr>
               <td class="break-all has-text-danger" style="min-width: 200px;">
@@ -59,6 +66,11 @@
       </tbody>
     </table>
 
+    {% if request.GET.missing_only %}
+      <a href="?" style="float: right;">Show all</a>
+    {% else %}
+      <a href="?missing_only=1" style="float: right;">Show missing only</a>
+    {% endif %}
     <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
       <thead>
         <tr>
@@ -68,25 +80,27 @@
         </tr>
       </thead>
       <tbody>
-        {% for resource in project.codebaseresources.to_codebase.files %}
+        {% for resource in to_codebase_resources %}
           {% for relation in resource.related_from.all %}
-            <tr>
-              <td class="break-all" style="min-width: 200px;">
-                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
-                  <i class="far fa-file"></i>
-                </a>
-                {{ resource.path }}
-              </td>
-              <td>
-                {{ relation.match_type }}
-                {% if relation.match_type == "path" %}
-                  (score: {{ relation.extra_data.path_score }})
-                {% endif %}
-              </td>
-              <td class="break-all" style="min-width: 200px;">
-                {{ relation.from_resource.path }}
-              </td>
-            </tr>
+            {% if not request.GET.missing_only %}
+              <tr>
+                <td class="break-all" style="min-width: 200px;">
+                  <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                    <i class="far fa-file"></i>
+                  </a>
+                  {{ resource.path }}
+                </td>
+                <td>
+                  {{ relation.match_type }}
+                  {% if relation.match_type == "path" %}
+                    (score: {{ relation.extra_data.path_score }})
+                  {% endif %}
+                </td>
+                <td class="break-all" style="min-width: 200px;">
+                  {{ relation.from_resource.path }}
+                </td>
+              </tr>
+            {% endif %}
           {% empty %}
             <tr>
               <td class="break-all has-text-danger" style="min-width: 200px;">

@@ -814,9 +814,16 @@ class CodebaseRelationView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        project = self.object
+        project_files = project.codebaseresources.files()
+
         context.update(
             {
-                "project": self.object,
+                "project": project,
+                "from_codebase_resources": project_files.from_codebase(),
+                "to_codebase_resources": project_files.to_codebase(),
+                # "missing_in_to": project_files.missing_in_to(),
+                # "missing_in_from": project_files.missing_in_from(),
             }
         )
         return context

@@ -1395,10 +1395,20 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.json_field_contains("license_expressions", "unknown")
 
     def from_codebase(self):
+        """Resources in from/ directory"""
         return self.filter(path__startswith="from/")
 
     def to_codebase(self):
+        """Resources in to/ directory"""
         return self.filter(path__startswith="to/")
+
+    def missing_in_to(self):
+        """Resources in from/ not found in to/"""
+        return self.from_codebase().filter(related_to__isnull=True)
+
+    def missing_in_from(self):
+        """Resources in to/ not found in from/"""
+        return self.to_codebase().filter(related_from__isnull=True)
 
     def has_value(self, field_name):
         return self.filter(~Q((field_name, "")))
