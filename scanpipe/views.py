@@ -540,6 +540,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "archive_form": ArchiveProjectForm(),
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
+                "has_codebase_relation": project.codebaserelations.exists(),
             }
         )
 
@@ -804,6 +805,21 @@ class ProjectResultsView(
             filename=filename,
             as_attachment=True,
         )
+
+
+class CodebaseRelationView(
+    ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
+):
+    template_name = "scanpipe/codebase_relation.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "project": self.object,
+            }
+        )
+        return context
 
 
 class ProjectRelatedViewMixin:

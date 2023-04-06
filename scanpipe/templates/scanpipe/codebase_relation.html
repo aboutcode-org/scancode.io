@@ -1,0 +1,150 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} codebase relations{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-desktop mb-3">
+    {% include "scanpipe/includes/navbar_header.html" %}
+    <section class="mx-5 mb-3">
+      {% include "scanpipe/includes/breadcrumb.html" with linked_project=True current="Codebase relations" %}
+    </section>
+    <div class="mx-5 mb-2">{% include "scanpipe/includes/messages.html" %}</div>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>From resource</th>
+          <th>Match type</th>
+          <th>To resource</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resource in project.codebaseresources.from_codebase.files %}
+          {% for relation in resource.related_to.all %}
+            <tr>
+              <td class="break-all" style="min-width: 200px;">
+                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                  <i class="far fa-file"></i>
+                </a>
+                {{ resource.path }}
+              </td>
+              <td>
+                {{ relation.match_type }}
+                {% if relation.match_type == "path" %}
+                  (score: {{ relation.extra_data.path_score }})
+                {% endif %}
+              </td>
+              <td class="break-all" style="min-width: 200px;">
+                {{ relation.to_resource.path }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td class="break-all has-text-danger" style="min-width: 200px;">
+                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                  <i class="far fa-file"></i>
+                </a>
+                {{ resource.path }}{% if resource.is_dir %}/{% endif %}
+              </td>
+              <td>
+              </td>
+              <td>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>To resource</th>
+          <th>Match type</th>
+          <th>From resource</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resource in project.codebaseresources.to_codebase.files %}
+          {% for relation in resource.related_from.all %}
+            <tr>
+              <td class="break-all" style="min-width: 200px;">
+                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                  <i class="far fa-file"></i>
+                </a>
+                {{ resource.path }}
+              </td>
+              <td>
+                {{ relation.match_type }}
+                {% if relation.match_type == "path" %}
+                  (score: {{ relation.extra_data.path_score }})
+                {% endif %}
+              </td>
+              <td class="break-all" style="min-width: 200px;">
+                {{ relation.from_resource.path }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td class="break-all has-text-danger" style="min-width: 200px;">
+                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                  <i class="far fa-file"></i>
+                </a>
+                {{ resource.path }}
+              </td>
+              <td>
+              </td>
+              <td>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="file-content-modal" class="modal is-desktop-size">
+    <div class="modal-background"></div>
+    <div class="modal-content" style="width:50%;">
+      <figure class="highlight log border-no-top-left-radius">
+        <pre class="wrap p-1"><code></code></pre>
+      </figure>
+    </div>
+  <button class="modal-close is-large" aria-label="close"></button>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener("openModal", function(event) {
+      let modal_id = event.detail.modal;
+      if (modal_id !== "file-content-modal") return;
+
+      let $modal = document.getElementById(modal_id);
+      let raw_url = event.detail.$button.dataset.raw_url;
+      let $modal_content_code = $modal.querySelector(".modal-content pre code")
+      $modal_content_code.innerHTML = "";
+
+      fetch(raw_url).then(function (response) {
+        if (response.ok) {
+          return response.text();
+        } else {
+          closeModals();
+          throw Error(response.statusText);
+        }
+      }).then(function (html) {
+        $modal_content_code.innerHTML = html;
+        document.querySelectorAll('#file-content-modal .highlight code').forEach((block) => {
+          hljs.highlightBlock(block);
+          });
+        setupCloseModalButtons();
+      }).catch(function (error) {
+        console.warn('Error:', error);
+      });
+
+    });
+  </script>
+{% endblock %}
