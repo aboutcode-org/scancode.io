@@ -72,8 +72,8 @@ class DevelopToDeploy(Pipeline):
             pipes.make_codebase_resource(project=self.project, location=resource_path)
 
     def checksum_match(self):
-        """Match using MD5 checksum."""
-        d2d.checksum_match(project=self.project, checksum_field="md5")
+        """Match using SHA1 checksum."""
+        d2d.checksum_match(project=self.project, checksum_field="sha1")
 
     def java_to_class_match(self):
         """Match a .java source to its compiled .class"""
