@@ -98,7 +98,8 @@ def path_match(project):
 
     for resource in from_resources:
         path_parts = Path(resource.path.lstrip("/")).parts
-        for index in range(1, len(path_parts)):
+        path_parts_len = len(path_parts)
+        for index in range(1, path_parts_len):
             current_parts = path_parts[index:]
             current_path = "/".join(current_parts)
             # The slash "/" prefix matters during the match as we do not want to
@@ -118,5 +119,7 @@ def path_match(project):
                         to_resource=match,
                         relationship=CodebaseRelation.Relationship.PATH_MATCH,
                         match_type="path",
-                        extra_data={"path_score": len(current_parts)},
+                        extra_data={
+                            "path_score": f"{len(current_parts)}/{path_parts_len-1}",
+                        },
                     )
