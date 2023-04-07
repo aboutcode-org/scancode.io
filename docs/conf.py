@@ -29,7 +29,7 @@ author = "nexB Inc."
 extensions = [
     "sphinx.ext.autodoc",
     "sphinxcontrib_django",
-    "sphinx_rtd_dark_mode", #For the Dark Mode
+    "sphinx_rtd_dark_mode",  # For the Dark Mode
 ]
 
 # Add any paths that contain templates here, relative to this directory.
