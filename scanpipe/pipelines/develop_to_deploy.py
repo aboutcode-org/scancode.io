@@ -24,6 +24,7 @@ from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import scancode
+from scanpipe.pipes.scancode import extract_archives
 
 
 class DevelopToDeploy(Pipeline):
@@ -35,6 +36,7 @@ class DevelopToDeploy(Pipeline):
             cls.get_inputs,
             cls.extract_inputs_to_codebase_directory,
             cls.get_inputs,
+            cls.extract_archive_to_codebase_directory,
             cls.collect_and_create_codebase_resources,
             cls.checksum_match,
             cls.java_to_class_match,
@@ -42,9 +44,9 @@ class DevelopToDeploy(Pipeline):
         )
 
     def get_inputs(self):
-        """Locate the `from-` and `to-` archives."""
-        from_file = list(self.project.inputs("from-*"))
-        to_file = list(self.project.inputs("to-*"))
+        """Locate the `from` and `to` archives."""
+        from_file = list(self.project.inputs("from*"))
+        to_file = list(self.project.inputs("to*"))
 
         if len(from_file) != 1:
             raise
@@ -66,6 +68,13 @@ class DevelopToDeploy(Pipeline):
         if errors:
             self.add_error("\n".join(errors))
 
+    def extract_archive_to_codebase_directory(self):
+        """Extract from* and to* archives in place with extractcode."""
+        extract_errors = extract_archives(self.project.codebase_path)
+
+        if extract_errors:
+            self.add_error("\n".join(extract_errors))
+
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
         for resource_path in self.project.walk_codebase_path():
@@ -73,6 +82,7 @@ class DevelopToDeploy(Pipeline):
 
     def checksum_match(self):
         """Match using SHA1 checksum."""
+        # TODO: Exclude empty files, double check this
         d2d.checksum_match(project=self.project, checksum_field="sha1")
 
     def java_to_class_match(self):
