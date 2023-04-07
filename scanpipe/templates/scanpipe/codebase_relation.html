@@ -41,6 +41,7 @@
                   {{ relation.match_type }}
                   {% if relation.match_type == "path" %}
                     (score: {{ relation.extra_data.path_score }})
+                    <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.to_resource.path }}" target="_blank">diff</a>
                   {% endif %}
                 </td>
                 <td class="break-all" style="min-width: 200px;">
@@ -54,7 +55,7 @@
                 <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
                   <i class="far fa-file"></i>
                 </a>
-                {{ resource.path }}{% if resource.is_dir %}/{% endif %}
+                {{ resource.path }}
               </td>
               <td>
               </td>
@@ -94,6 +95,7 @@
                   {{ relation.match_type }}
                   {% if relation.match_type == "path" %}
                     (score: {{ relation.extra_data.path_score }})
+                    <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.from_resource.path }}" target="_blank">diff</a>
                   {% endif %}
                 </td>
                 <td class="break-all" style="min-width: 200px;">

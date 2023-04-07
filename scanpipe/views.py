@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import difflib
 import io
 import json
 from collections import Counter
@@ -31,6 +32,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import FileResponse
 from django.http import Http404
+from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -1021,6 +1023,23 @@ class CodebaseResourceDetailsView(
         }
 
         return context
+
+
+@conditional_login_required
+def codebase_resource_diff_view(request, uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+
+    project_files = project.codebaseresources.files()
+    pk_a = request.GET.get("pk_a")
+    pk_b = request.GET.get("pk_b")
+    resource_a = get_object_or_404(project_files, path=pk_a)
+    resource_b = get_object_or_404(project_files, path=pk_b)
+
+    text_a = resource_a.location_path.read_text()
+    text_b = resource_b.location_path.read_text()
+    html = difflib.HtmlDiff().make_file(text_a.split("\n"), text_b.split("\n"))
+
+    return HttpResponse(html)
 
 
 class DiscoveredPackageDetailsView(

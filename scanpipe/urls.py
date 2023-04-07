@@ -32,6 +32,11 @@ urlpatterns = [
         name="resource_raw",
     ),
     path(
+        "project/<uuid:uuid>/resources/diff/",
+        views.codebase_resource_diff_view,
+        name="resource_diff",
+    ),
+    path(
         "project/<uuid:uuid>/resources/<path:path>/",
         views.CodebaseResourceDetailsView.as_view(),
         name="resource_detail",
