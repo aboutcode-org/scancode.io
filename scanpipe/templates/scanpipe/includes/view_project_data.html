@@ -1,0 +1,25 @@
+<div id="view-project-data" class="modal">
+    <div class="modal-background"></div>
+    <form method="post">{% csrf_token %}
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Project Data</p>
+          <button class="delete" type="button" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="field">
+            <div class="control">
+                <div class="panel-block p-0">
+                    <figure class="highlight border-bottom-radius">
+                      <pre class="language-yaml"><code class="p-3">{{ extra_data_yaml }}</code></pre>
+                    </figure>
+                  </div>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button" type="button">Close</button>
+        </footer>
+      </div>
+    </form>
+  </div>
