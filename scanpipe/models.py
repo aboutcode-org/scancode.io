@@ -880,12 +880,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return self.projecterrors.count()
 
     @cached_property
+    def relation_count(self):
+        """Return the number of relations related to this project."""
+        return self.codebaserelations.count()
+
+    @cached_property
     def has_single_resource(self):
         """
         Return True if we only have a single CodebaseResource associated to this
         project, False otherwise.
         """
-        return self.codebaseresources.count() == 1
+        return self.resource_count == 1
 
 
 class GroupingQuerySetMixin:
@@ -1614,7 +1619,18 @@ class CodebaseResource(
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
-        unique_together = (("project", "path"),)
+        indexes = [
+            models.Index(fields=["name"]),
+            models.Index(fields=["extension"]),
+            models.Index(fields=["programming_language"]),
+            models.Index(fields=["sha1"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "path"],
+                name="%(app_label)s_%(class)s_unique_path_within_project",
+            )
+        ]
         ordering = ("project", "path")
 
     def __str__(self):
