@@ -43,7 +43,7 @@ Generate SPDX Documents
 Usage:
 
 import pathlib
-from dejacode_toolkit import spdx
+from scanpipe.pipes import spdx
 
 creation_info = spdx.CreationInfo(
     person_name="John Doe",
