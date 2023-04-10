@@ -31,7 +31,7 @@ TO = "to/"
 
 def checksum_match(project, checksum_field):
     """Match using checksum."""
-    project_files = project.codebaseresources.files()
+    project_files = project.codebaseresources.files().not_empty()
 
     from_resources = project_files.from_codebase().has_value(checksum_field)
     to_resources = project_files.to_codebase().has_value(checksum_field)

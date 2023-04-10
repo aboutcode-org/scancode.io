@@ -82,7 +82,6 @@ class DevelopToDeploy(Pipeline):
 
     def checksum_match(self):
         """Match using SHA1 checksum."""
-        # TODO: Exclude empty files, double check this
         d2d.checksum_match(project=self.project, checksum_field="sha1")
 
     def java_to_class_match(self):
