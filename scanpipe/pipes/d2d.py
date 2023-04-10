@@ -25,6 +25,9 @@ from pathlib import Path
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 
+FROM = "from/"
+TO = "to/"
+
 
 def checksum_match(project, checksum_field):
     """Match using checksum."""
@@ -47,16 +50,15 @@ def checksum_match(project, checksum_field):
 
 def java_to_class_match(project):
     """Match a .java source to its compiled .class"""
-    prefix = "from/"
     extension = ".java"
 
     project_files = project.codebaseresources.files()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase()
 
-    for resource in from_resources.filter(path__endswith=extension):
-        parts = resource.path[len(prefix) : -len(extension)]
-        matches = to_resources.filter(path=f"to/{parts}.class")
+    for resource in from_resources.filter(extension=extension):
+        parts = resource.path[len(FROM) : -len(extension)]
+        matches = to_resources.filter(path=f"{TO}{parts}.class")
         for match in matches:
             pipes.make_relationship(
                 from_resource=resource,
@@ -68,18 +70,17 @@ def java_to_class_match(project):
 
 def java_to_inner_class_match(project):
     """Match a .java source to compiled $.class"""
+    extension = ".class"
+
     project_files = project.codebaseresources.files()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase()
 
-    prefix = "to/"
-    extension = ".class"
-
-    inner_classes = to_resources.filter(name__endswith=extension, name__contains="$")
+    inner_classes = to_resources.filter(name__contains="$", extension=extension)
     for to_resource in inner_classes:
-        parts = to_resource.path[len(prefix) : -len(extension)]
+        parts = to_resource.path[len(TO) : -len(extension)]
         source_java = "/".join(parts.split("/")[:-1] + to_resource.name.split("$")[:1])
-        matches = from_resources.filter(path=f"from/{source_java}.java")
+        matches = from_resources.filter(path=f"{FROM}{source_java}.java")
         for match in matches:
             pipes.make_relationship(
                 from_resource=match,
