@@ -18,7 +18,7 @@
     {% else %}
       <a href="?missing_only=1" style="float: right;">Show missing only</a>
     {% endif %}
-    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
       <thead>
         <tr>
           <th>From resource</th>
@@ -31,12 +31,14 @@
           {% for relation in resource.related_to.all %}
             {% if not request.GET.missing_only %}
               <tr>
-                <td class="break-all" style="min-width: 200px;">
-                  <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
-                    <i class="far fa-file"></i>
-                  </a>
-                  {{ resource.path }}
-                </td>
+                {% if forloop.first %}
+                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_to.count }}">
+                    <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                      <i class="far fa-file"></i>
+                    </a>
+                    {{ resource.path }}
+                  </td>
+                {% endif %}
                 <td>
                   {{ relation.match_type }}
                   {% if relation.match_type == "path" %}
@@ -72,7 +74,7 @@
     {% else %}
       <a href="?missing_only=1" style="float: right;">Show missing only</a>
     {% endif %}
-    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
       <thead>
         <tr>
           <th>To resource</th>
@@ -85,12 +87,14 @@
           {% for relation in resource.related_from.all %}
             {% if not request.GET.missing_only %}
               <tr>
-                <td class="break-all" style="min-width: 200px;">
-                  <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
-                    <i class="far fa-file"></i>
-                  </a>
-                  {{ resource.path }}
-                </td>
+                {% if forloop.first %}
+                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_from.count }}">
+                    <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                      <i class="far fa-file"></i>
+                    </a>
+                    {{ resource.path }}
+                  </td>
+                {% endif %}
                 <td>
                   {{ relation.match_type }}
                   {% if relation.match_type == "path" %}
