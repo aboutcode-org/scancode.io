@@ -38,20 +38,7 @@
     </div>
 
     <hr class="mx-5">
-    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
-
-    {% if has_codebase_relation %}
-      <section class="pt-0 mx-5 mb-2">
-        <article class="message is-info">
-          <div class="message-body">
-            This project has relations between resources:
-            <a class="tag is-success is-medium ml-2" href="{% url 'project_detail' project.uuid %}codebase_relations/">
-              Codebase relations
-            </a>
-          </div>
-        </article>
-      </section>
-    {% endif %}
+    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" only %}
 
     <section class="pt-0 mx-5">
       {% if project.resource_count or project.package_count %}

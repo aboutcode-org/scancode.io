@@ -127,9 +127,9 @@ urlpatterns = [
         name="project_charts",
     ),
     path(
-        "project/<uuid:uuid>/codebase_relations/",
+        "project/<uuid:uuid>/relations/",
         views.CodebaseRelationView.as_view(),
-        name="project_codebase_tree",
+        name="project_relations",
     ),
     path(
         "project/<uuid:uuid>/",

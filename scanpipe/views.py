@@ -542,7 +542,6 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "archive_form": ArchiveProjectForm(),
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
-                "has_codebase_relation": project.codebaserelations.exists(),
             }
         )
 

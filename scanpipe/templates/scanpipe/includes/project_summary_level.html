@@ -9,9 +9,7 @@
             {{ project.package_count|intcomma }}
           </a>
         {% else %}
-          <span>
-            {{ project.package_count|intcomma }}
-          </span>
+          <span>0</span>
         {% endif %}
       </p>
     </div>
@@ -25,9 +23,7 @@
             {{ project.dependency_count|intcomma }}
           </a>
         {% else %}
-          <span>
-            {{ project.dependency_count|intcomma }}
-          </span>
+          <span>0</span>
         {% endif %}
       </p>
     </div>
@@ -41,13 +37,23 @@
             {{ project.resource_count|intcomma }}
           </a>
         {% else %}
-          <span>
-            {{ project.resource_count|intcomma }}
-          </span>
+          <span>0</span>
         {% endif %}
       </p>
     </div>
   </div>
+  {% if project.relation_count %}
+    <div class="level-item has-text-centered">
+      <div>
+        <p class="heading">Relations</p>
+        <p class="{{ title_class }}">
+          <a href="{% url 'project_relations' project.uuid %}">
+            {{ project.relation_count|intcomma }}
+          </a>
+        </p>
+      </div>
+    </div>
+  {% endif %}
   <div class="level-item has-text-centered">
     <div>
       <p class="heading">Errors</p>
@@ -57,19 +63,9 @@
             {{ project.error_count|intcomma }}
           </a>
         {% else %}
-          <span>
-            {{ project.error_count|intcomma }}
-          </span>
+          <span>0</span>
         {% endif %}
       </p>
     </div>
   </div>
-  {% if include_pipelines %}
-    <div class="level-item has-text-centered">
-      <div>
-        <p class="heading">Pipelines</p>
-        <p class="{{ title_class }}">{{ project.runs.count }}</p>
-      </div>
-    </div>
-  {% endif %}
 </nav>
