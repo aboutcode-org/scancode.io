@@ -35,7 +35,6 @@ class DevelopToDeploy(Pipeline):
         return (
             cls.get_inputs,
             cls.extract_inputs_to_codebase_directory,
-            cls.get_inputs,
             cls.extract_archive_to_codebase_directory,
             cls.collect_and_create_codebase_resources,
             cls.checksum_match,
