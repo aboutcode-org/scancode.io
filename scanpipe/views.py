@@ -1029,14 +1029,14 @@ def codebase_resource_diff_view(request, uuid):
     project = get_object_or_404(Project, uuid=uuid)
 
     project_files = project.codebaseresources.files()
-    pk_a = request.GET.get("pk_a")
-    pk_b = request.GET.get("pk_b")
-    resource_a = get_object_or_404(project_files, path=pk_a)
-    resource_b = get_object_or_404(project_files, path=pk_b)
+    from_pk = request.GET.get("pk_a")
+    to_pk = request.GET.get("pk_b")
+    from_resource = get_object_or_404(project_files, path=from_pk)
+    to_resource = get_object_or_404(project_files, path=to_pk)
 
-    text_a = resource_a.location_path.read_text()
-    text_b = resource_b.location_path.read_text()
-    html = difflib.HtmlDiff().make_file(text_a.split("\n"), text_b.split("\n"))
+    from_lines = from_resource.location_path.read_text().split("\n")
+    to_lines = to_resource.location_path.read_text().split("\n")
+    html = difflib.HtmlDiff().make_file(from_lines, to_lines)
 
     return HttpResponse(html)
 

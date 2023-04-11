@@ -1410,6 +1410,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         """Resources in to/ directory"""
         return self.filter(path__startswith="to/")
 
+    def has_no_relation(self):
+        """Resources not part of any CodebaseRelation"""
+        return self.filter(related_from__isnull=True, related_to__isnull=True)
+
     def missing_in_to(self):
         """Resources in from/ not found in to/"""
         return self.from_codebase().filter(related_to__isnull=True)

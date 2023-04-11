@@ -31,7 +31,7 @@ TO = "to/"
 
 def checksum_match(project, checksum_field):
     """Match using checksum."""
-    project_files = project.codebaseresources.files().not_empty()
+    project_files = project.codebaseresources.files().has_no_relation().not_empty()
 
     from_resources = project_files.from_codebase().has_value(checksum_field)
     to_resources = project_files.to_codebase().has_value(checksum_field)
@@ -50,15 +50,16 @@ def checksum_match(project, checksum_field):
 
 def java_to_class_match(project):
     """Match a .java source to its compiled .class"""
-    extension = ".java"
+    from_extension = ".java"
+    to_extension = ".class"
 
-    project_files = project.codebaseresources.files()
+    project_files = project.codebaseresources.files().has_no_relation()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase()
 
-    for resource in from_resources.filter(extension=extension):
-        parts = resource.path[len(FROM) : -len(extension)]
-        matches = to_resources.filter(path=f"{TO}{parts}.class")
+    for resource in from_resources.filter(extension=from_extension):
+        parts = resource.path[len(FROM) : -len(from_extension)]
+        matches = to_resources.filter(path=f"{TO}{parts}{to_extension}")
         for match in matches:
             pipes.make_relationship(
                 from_resource=resource,
@@ -70,17 +71,18 @@ def java_to_class_match(project):
 
 def java_to_inner_class_match(project):
     """Match a .java source to compiled $.class"""
-    extension = ".class"
+    from_extension = ".java"
+    to_extension = ".class"
 
-    project_files = project.codebaseresources.files()
+    project_files = project.codebaseresources.files().has_no_relation()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase()
 
-    inner_classes = to_resources.filter(name__contains="$", extension=extension)
+    inner_classes = to_resources.filter(name__contains="$", extension=to_extension)
     for to_resource in inner_classes:
-        parts = to_resource.path[len(TO) : -len(extension)]
+        parts = to_resource.path[len(TO) : -len(to_extension)]
         source_java = "/".join(parts.split("/")[:-1] + to_resource.name.split("$")[:1])
-        matches = from_resources.filter(path=f"{FROM}{source_java}.java")
+        matches = from_resources.filter(path=f"{FROM}{source_java}{from_extension}")
         for match in matches:
             pipes.make_relationship(
                 from_resource=match,
@@ -92,8 +94,7 @@ def java_to_inner_class_match(project):
 
 def path_match(project):
     """Match using path similarities."""
-    project_files = project.codebaseresources.files()
-
+    project_files = project.codebaseresources.files().has_no_relation()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase()
 
