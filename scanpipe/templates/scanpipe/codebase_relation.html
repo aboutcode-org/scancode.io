@@ -41,8 +41,10 @@
                 {% endif %}
                 <td>
                   {{ relation.match_type }}
+                  {% if relation.extra_data.path_score %}
+                    {{ relation.extra_data.path_score }}
+                  {% endif %}
                   {% if relation.match_type == "path" %}
-                    (score: {{ relation.extra_data.path_score }})
                     <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.to_resource.path }}" target="_blank">diff</a>
                   {% endif %}
                 </td>
@@ -97,8 +99,10 @@
                 {% endif %}
                 <td>
                   {{ relation.match_type }}
+                  {% if relation.extra_data.path_score %}
+                    {{ relation.extra_data.path_score }}
+                  {% endif %}
                   {% if relation.match_type == "path" %}
-                    (score: {{ relation.extra_data.path_score }})
                     <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.from_resource.path }}" target="_blank">diff</a>
                   {% endif %}
                 </td>
