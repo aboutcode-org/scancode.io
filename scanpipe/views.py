@@ -818,13 +818,18 @@ class CodebaseRelationView(
         project = self.object
         project_files = project.codebaseresources.files()
 
+        from_codebase_resources = project_files.from_codebase().prefetch_related(
+            "related_to__to_resource"
+        )
+        to_codebase_resources = project_files.to_codebase().prefetch_related(
+            "related_from__from_resource"
+        )
+
         context.update(
             {
                 "project": project,
-                "from_codebase_resources": project_files.from_codebase(),
-                "to_codebase_resources": project_files.to_codebase(),
-                # "missing_in_to": project_files.missing_in_to(),
-                # "missing_in_from": project_files.missing_in_from(),
+                "from_codebase_resources": from_codebase_resources,
+                "to_codebase_resources": to_codebase_resources,
             }
         )
         return context

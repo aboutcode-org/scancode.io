@@ -21,9 +21,9 @@
     <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
       <thead>
         <tr>
-          <th>From resource</th>
+          <th style="width: 45%">From resource</th>
           <th>Match type</th>
-          <th>To resource</th>
+          <th style="width: 45%">To resource</th>
         </tr>
       </thead>
       <tbody>
@@ -32,7 +32,7 @@
             {% if not request.GET.missing_only %}
               <tr>
                 {% if forloop.first %}
-                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_to.count }}">
+                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_to.all|length }}">
                     <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
                       <i class="far fa-file"></i>
                     </a>
@@ -90,7 +90,7 @@
             {% if not request.GET.missing_only %}
               <tr>
                 {% if forloop.first %}
-                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_from.count }}">
+                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_from.all|length }}">
                     <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
                       <i class="far fa-file"></i>
                     </a>
