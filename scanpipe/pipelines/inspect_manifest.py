@@ -30,17 +30,27 @@ class InspectManifest(Pipeline):
     Inspect one or more manifest files and resolve its packages.
 
     Supports:
-    - PyPI "requirements.txt" files
-    - SPDX document as JSON ".spdx.json" files
-    - CycloneDX BOM as JSON ".bom.json" and ".cdx.json" files
-    - AboutCode ".ABOUT" files
+    - BOM: SPDX document, CycloneDX BOM, AboutCode ABOUT file
+    - Python: requirements.txt, setup.py, setup.cfg, Pipfile.lock
+    - JavaScript: yarn.lock lockfile, npm package-lock.json lockfile
+    - Java: Java JAR MANIFEST.MF, Gradle build script
+    - Ruby: RubyGems gemspec manifest, RubyGems Bundler Gemfile.lock
+    - Rust: Rust Cargo.lock dependencies lockfile, Rust Cargo.toml package manifest
+    - PHP: PHP composer lockfile, PHP composer manifest
+    - NuGet: nuspec package manifest
+    - Dart: pubspec manifest, pubspec lockfile
+    - OS: FreeBSD compact package manifest, Debian installed packages database
+
+    Full list available at https://scancode-toolkit.readthedocs.io/en/
+    doc-update-licenses/reference/available_package_parsers.html
     """
 
     @classmethod
     def steps(cls):
         return (
             cls.get_manifest_inputs,
-            cls.create_packages_from_manifest,
+            cls.get_packages_from_manifest,
+            cls.create_resolved_packages,
         )
 
     def get_manifest_inputs(self):
@@ -49,25 +59,25 @@ class InspectManifest(Pipeline):
             str(input.absolute()) for input in self.project.inputs()
         ]
 
-    def create_packages_from_manifest(self):
-        """Resolve manifest files into packages."""
+    def get_packages_from_manifest(self):
+        """Get packages data from manifest files."""
+        self.resolved_packages = []
+
         for input_location in self.input_locations:
-            default_package_type = resolve.get_default_package_type(input_location)
-            if not default_package_type:
-                raise Exception(f"No package type found for {input_location}")
-
-            resolver = resolve.resolver_registry.get(default_package_type)
-            if not resolver:
-                raise Exception(
-                    f'No resolver for package type "{default_package_type}" for '
-                    f"{input_location}"
-                )
-
-            self.log(f"`{default_package_type}` input detected for {input_location}")
-            resolved_packages = resolver(input_location=input_location)
-            if not resolved_packages:
+            packages = resolve.resolve_packages(input_location)
+            if not packages:
                 raise Exception(f"No packages could be resolved for {input_location}")
+            self.resolved_packages.extend(packages)
 
-            for package_data in resolved_packages:
-                package_data = resolve.set_license_expression(package_data)
-                update_or_create_package(self.project, package_data)
+    def create_resolved_packages(self):
+        """Create the resolved packages and their dependencies in the database."""
+        for package_data in self.resolved_packages:
+            package_data = resolve.set_license_expression(package_data)
+            dependencies = package_data.pop("dependencies", [])
+            update_or_create_package(self.project, package_data)
+
+            for dependency_data in dependencies:
+                resolved_package = dependency_data.get("resolved_package")
+                if resolved_package:
+                    resolved_package.pop("dependencies", [])
+                    update_or_create_package(self.project, resolved_package)

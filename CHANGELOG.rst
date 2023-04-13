@@ -8,6 +8,9 @@ v33.0.0 (unreleased)
   once.
   https://github.com/nexB/scancode.io/issues/646
 
+- Add support for manifest types using ScanCode-toolkit handlers.
+  https://github.com/nexB/scancode.io/issues/658
+
 - Add a "layers" data sheet in the xlsx output for docker pipeline run.
   https://github.com/nexB/scancode.io/issues/578
 
