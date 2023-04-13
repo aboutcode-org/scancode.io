@@ -78,16 +78,6 @@ class InspectManifest(Pipeline):
 
             for dependency_data in dependencies:
                 resolved_package = dependency_data.get("resolved_package")
-                purl = dependency_data.get("purl")
                 if resolved_package:
                     resolved_package.pop("dependencies", [])
                     update_or_create_package(self.project, resolved_package)
-                elif purl:
-                    from packageurl import PackageURL
-
-                    purl_data = PackageURL.from_string(purl).to_dict(encode=True)
-                    update_or_create_package(self.project, purl_data)
-
-                # update_or_create_dependency(
-                #     self.project, dependency_data, for_package=package
-                # )

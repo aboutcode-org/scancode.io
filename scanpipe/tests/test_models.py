@@ -464,6 +464,10 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(2, project.projecterrors_count)
         self.assertEqual(2, project.projecterrors.count())
 
+    def test_scanpipe_project_related_queryset_get_or_none(self):
+        self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
+        self.assertIsNone(DiscoveredPackage.objects.get_or_none(name="name"))
+
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)

@@ -149,9 +149,6 @@ def update_or_create_dependency(
     dependency = None
     dependency_uid = dependency_data.get("dependency_uid")
 
-    # if not dependency_uid and for_package:
-    #     dependency_data["dependency_uid"] = build_package_uid(for_package.purl)
-    # TODO: Discuss the need to make this field mandatory in the context of ScanCode.io
     if not dependency_uid:
         dependency_data["dependency_uid"] = uuid.uuid4()
     else:
