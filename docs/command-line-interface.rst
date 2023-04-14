@@ -65,7 +65,8 @@ For example::
 
     $ scanpipe create-project --help
     usage: scanpipe create-project [--input-file INPUTS_FILES]
-        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] [--async]
+        [--input-url INPUT_URLS] [--copy-codebase SOURCE_DIRECTORY]
+        [--pipeline PIPELINES] [--execute] [--async]
         name
 
     Create a ScanPipe project.
@@ -89,6 +90,9 @@ Optional arguments:
 
 - ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
   directory.
+
+- ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
+  into the :guilabel:`codebase/` work directory.
 
 - ``--execute`` Execute the pipelines right after project creation.
 
@@ -127,6 +131,9 @@ Adds input files in the project's work directory.
 
 - ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
   directory.
+
+- ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
+  into the :guilabel:`codebase/` work directory.
 
 For example, assuming you have created beforehand a project named "foo", this will
 copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` directory::

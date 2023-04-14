@@ -67,6 +67,7 @@ class Command(AddInputCommandMixin, BaseCommand):
         pipeline_names = options["pipelines"]
         inputs_files = options["inputs_files"]
         input_urls = options["input_urls"]
+        copy_from = options["copy_codebase"]
         execute = options["execute"]
 
         project = Project(name=name)
@@ -96,6 +97,9 @@ class Command(AddInputCommandMixin, BaseCommand):
 
         if input_urls:
             self.handle_input_urls(input_urls)
+
+        if copy_from:
+            self.handle_copy_codebase(copy_from)
 
         if execute:
             call_command(
