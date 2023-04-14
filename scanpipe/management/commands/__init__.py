@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import shutil
 from pathlib import Path
 
 from django.apps import apps
@@ -142,6 +143,15 @@ class AddInputCommandMixin:
             default=list(),
             help="Input URLs to download in the input/ work directory.",
         )
+        parser.add_argument(
+            "--copy-codebase",
+            metavar="SOURCE_DIRECTORY",
+            dest="copy_codebase",
+            help=(
+                "Copy the content of the provided source directory into the codebase/ "
+                "work directory."
+            ),
+        )
 
     def handle_input_files(self, inputs_files):
         """Copy provided `inputs_files` to the project's `input` directory."""
@@ -188,6 +198,13 @@ class AddInputCommandMixin:
             msg += "\n".join(["- " + url for url in errors])
             self.stderr.write(msg)
 
+    def handle_copy_codebase(self, copy_from):
+        """Copy `codebase_path` tree to the project's `codebase` directory."""
+        project_codebase = self.project.codebase_path
+        msg = f"{copy_from} content copied in {project_codebase}"
+        self.stdout.write(msg, self.style.SUCCESS)
+        shutil.copytree(src=copy_from, dst=project_codebase, dirs_exist_ok=True)
+
 
 def validate_input_files(file_locations):
     """
@@ -198,6 +215,16 @@ def validate_input_files(file_locations):
         file_path = Path(file_location)
         if not file_path.is_file():
             raise CommandError(f"{file_location} not found or not a file")
+
+
+def validate_copy_from(copy_from):
+    """Raise an error if `copy_from` is not an available directory"""
+    if copy_from:
+        copy_from_path = Path(copy_from)
+        if not copy_from_path.exists():
+            raise CommandError(f"{copy_from} not found")
+        if not copy_from_path.is_dir():
+            raise CommandError(f"{copy_from} is not a directory")
 
 
 def validate_pipelines(pipeline_names):

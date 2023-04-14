@@ -26,6 +26,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
+from scanpipe.management.commands import validate_copy_from
 from scanpipe.management.commands import validate_input_files
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
@@ -67,6 +68,7 @@ class Command(AddInputCommandMixin, BaseCommand):
         pipeline_names = options["pipelines"]
         inputs_files = options["inputs_files"]
         input_urls = options["input_urls"]
+        copy_from = options["copy_codebase"]
         execute = options["execute"]
 
         project = Project(name=name)
@@ -78,6 +80,7 @@ class Command(AddInputCommandMixin, BaseCommand):
         # Run validation before creating the project in the database
         validate_pipelines(pipeline_names)
         validate_input_files(inputs_files)
+        validate_copy_from(copy_from)
 
         if execute and not pipeline_names:
             raise CommandError("The --execute option requires one or more pipelines.")
@@ -96,6 +99,9 @@ class Command(AddInputCommandMixin, BaseCommand):
 
         if input_urls:
             self.handle_input_urls(input_urls)
+
+        if copy_from:
+            self.handle_copy_codebase(copy_from)
 
         if execute:
             call_command(
