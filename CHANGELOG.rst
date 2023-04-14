@@ -6,6 +6,7 @@ v33.0.0 (unreleased)
 
 - Add new command line option to create-project and add-input management commands to
   copy the content of a local source directory to the project codebase work directory.
+  https://github.com/nexB/scancode.io/pull/672
 
 - Enhance the ``output`` management command to support providing multiple formats at
   once.

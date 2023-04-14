@@ -200,14 +200,7 @@ class AddInputCommandMixin:
 
     def handle_copy_codebase(self, copy_from):
         """Copy `codebase_path` tree to the project's `codebase` directory."""
-        copy_from_path = Path(copy_from)
         project_codebase = self.project.codebase_path
-
-        if not copy_from_path.exists():
-            raise CommandError(f"{copy_from} not found")
-        if not copy_from_path.is_dir():
-            raise CommandError(f"{copy_from} is not a directory")
-
         msg = f"{copy_from} content copied in {project_codebase}"
         self.stdout.write(msg, self.style.SUCCESS)
         shutil.copytree(src=copy_from, dst=project_codebase, dirs_exist_ok=True)
@@ -222,6 +215,16 @@ def validate_input_files(file_locations):
         file_path = Path(file_location)
         if not file_path.is_file():
             raise CommandError(f"{file_location} not found or not a file")
+
+
+def validate_copy_from(copy_from):
+    """Raise an error if `copy_from` is not an available directory"""
+    if copy_from:
+        copy_from_path = Path(copy_from)
+        if not copy_from_path.exists():
+            raise CommandError(f"{copy_from} not found")
+        if not copy_from_path.is_dir():
+            raise CommandError(f"{copy_from} is not a directory")
 
 
 def validate_pipelines(pipeline_names):

@@ -232,6 +232,32 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- archive.zip", out.getvalue())
         self.assertEqual(["archive.zip"], project.input_root)
 
+    def test_scanpipe_management_command_add_input_copy_codebase(self):
+        out = StringIO()
+
+        project = Project.objects.create(name="my_project")
+
+        options = ["--copy-codebase", "non-existing", "--project", project.name]
+        expected = "non-existing not found"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-input", *options)
+
+        parent_path = Path(__file__).parent
+        options = [
+            "--copy-codebase",
+            str(parent_path / "data" / "codebase"),
+            "--project",
+            project.name,
+        ]
+
+        call_command("add-input", *options, stdout=out)
+        self.assertIn("content copied in", out.getvalue())
+
+        expected = ["a.txt", "b.txt"]
+        self.assertEqual(
+            expected, sorted([path.name for path in project.codebase_path.iterdir()])
+        )
+
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
 

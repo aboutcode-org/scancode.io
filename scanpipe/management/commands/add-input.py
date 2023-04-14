@@ -24,6 +24,7 @@ from django.core.management import CommandError
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import ProjectCommand
+from scanpipe.management.commands import validate_copy_from
 
 
 class Command(AddInputCommandMixin, ProjectCommand):
@@ -53,4 +54,5 @@ class Command(AddInputCommandMixin, ProjectCommand):
             self.handle_input_urls(input_urls)
 
         if copy_from:
+            validate_copy_from(copy_from)
             self.handle_copy_codebase(copy_from)
