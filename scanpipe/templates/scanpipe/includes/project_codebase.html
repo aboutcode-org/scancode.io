@@ -1,0 +1,13 @@
+<nav class="panel is-info">
+  <p class="panel-heading py-2 is-size-6">
+    Codebase
+  </p>
+  {% for path in paths %}
+    <a class="panel-block">
+      <span class="panel-icon">
+        <i class="{% if path.is_dir %}fas fa-folder{% else %}far fa-file{% endif %}"></i>
+      </span>
+      {{ path.name }}
+    </a>
+  {% endfor %}
+</nav>

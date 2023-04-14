@@ -22,6 +22,7 @@
 
 import io
 import json
+import operator
 from collections import Counter
 from contextlib import suppress
 
@@ -532,6 +533,12 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 license_clarity = self.get_license_clarity_data(scan_summary_json)
                 scan_summary = self.get_scan_summary_data(scan_summary_json)
 
+        codebase_root = sorted(
+            project.codebase_path.glob("*"),
+            key=operator.methodcaller("is_dir"),
+            reverse=True,
+        )
+
         context.update(
             {
                 "inputs_with_source": inputs,
@@ -540,6 +547,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "archive_form": ArchiveProjectForm(),
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
+                "codebase_root": codebase_root,
             }
         )
 
