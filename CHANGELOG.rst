@@ -8,6 +8,9 @@ v33.0.0 (unreleased)
   copy the content of a local source directory to the project codebase work directory.
   https://github.com/nexB/scancode.io/pull/672
 
+- Include the ScanCode-toolkit version in the output headers.
+  https://github.com/nexB/scancode.io/pull/670
+
 - Enhance the ``output`` management command to support providing multiple formats at
   once.
   https://github.com/nexB/scancode.io/issues/646

@@ -247,6 +247,7 @@ class PipelinesIntegrationTest(TestCase):
         "compliance_alert",
         "policy",
         "tool_version",
+        "other_tools",
         "created_date",
         "log",
         "uuid",
