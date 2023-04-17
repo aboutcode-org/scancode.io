@@ -12,12 +12,80 @@
     <div class="mx-5 mb-2">{% include "scanpipe/includes/messages.html" %}</div>
   </div>
 
-  <div class="container is-fluid mb-3">
-    {% if request.GET.missing_only %}
-      <a href="?" style="float: right;">Show all</a>
-    {% else %}
-      <a href="?missing_only=1" style="float: right;">Show missing only</a>
-    {% endif %}
+  <div class="tabs is-boxed mx-5">
+    <ul>
+      <li class="is-active">
+        <a data-target="tab-to">To <> From</a>
+      </li>
+      <li>
+        <a data-target="tab-from">From <> To</a>
+      </li>
+    </ul>
+    <div>
+      {% if request.GET.missing_only %}
+        <a href="?" class="button is-ghost">Show all</a>
+      {% else %}
+        <a href="?missing_only=1" class="button is-ghost">Show missing only</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <section id="tab-to" class="tab-content is-fluid mx-5 px-1 mb-3 is-active">
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th style="width: 45%">To resource</th>
+          <th>Match type</th>
+          <th style="width: 45%">From resource</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resource in to_codebase_resources %}
+          {% for relation in resource.related_from.all %}
+            {% if not request.GET.missing_only %}
+              <tr>
+                {% if forloop.first %}
+                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_from.all|length }}">
+                    <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                      <i class="far fa-file"></i>
+                    </a>
+                    {{ resource.path }}
+                  </td>
+                {% endif %}
+                <td>
+                  {{ relation.match_type }}
+                  {% if relation.extra_data.path_score %}
+                    {{ relation.extra_data.path_score }}
+                  {% endif %}
+                  {% if relation.match_type == "path" %}
+                    <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.from_resource.path }}" target="_blank">diff</a>
+                  {% endif %}
+                </td>
+                <td class="break-all" style="min-width: 200px;">
+                  {{ relation.from_resource.path }}
+                </td>
+              </tr>
+            {% endif %}
+          {% empty %}
+            <tr>
+              <td class="break-all has-text-danger" style="min-width: 200px;">
+                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                  <i class="far fa-file"></i>
+                </a>
+                {{ resource.path }}
+              </td>
+              <td>
+              </td>
+              <td>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section id="tab-from" class="tab-content is-fluid mx-5 px-1 mb-3">
     <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
       <thead>
         <tr>
@@ -70,65 +138,7 @@
         {% endfor %}
       </tbody>
     </table>
-
-    {% if request.GET.missing_only %}
-      <a href="?" style="float: right;">Show all</a>
-    {% else %}
-      <a href="?missing_only=1" style="float: right;">Show missing only</a>
-    {% endif %}
-    <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
-      <thead>
-        <tr>
-          <th>To resource</th>
-          <th>Match type</th>
-          <th>From resource</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for resource in to_codebase_resources %}
-          {% for relation in resource.related_from.all %}
-            {% if not request.GET.missing_only %}
-              <tr>
-                {% if forloop.first %}
-                  <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_from.all|length }}">
-                    <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
-                      <i class="far fa-file"></i>
-                    </a>
-                    {{ resource.path }}
-                  </td>
-                {% endif %}
-                <td>
-                  {{ relation.match_type }}
-                  {% if relation.extra_data.path_score %}
-                    {{ relation.extra_data.path_score }}
-                  {% endif %}
-                  {% if relation.match_type == "path" %}
-                    <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.from_resource.path }}" target="_blank">diff</a>
-                  {% endif %}
-                </td>
-                <td class="break-all" style="min-width: 200px;">
-                  {{ relation.from_resource.path }}
-                </td>
-              </tr>
-            {% endif %}
-          {% empty %}
-            <tr>
-              <td class="break-all has-text-danger" style="min-width: 200px;">
-                <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
-                  <i class="far fa-file"></i>
-                </a>
-                {{ resource.path }}
-              </td>
-              <td>
-              </td>
-              <td>
-              </td>
-            </tr>
-          {% endfor %}
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  </section>
 
   <div id="file-content-modal" class="modal is-desktop-size">
     <div class="modal-background"></div>
