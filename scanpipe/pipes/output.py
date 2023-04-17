@@ -272,6 +272,7 @@ model_name_to_worksheet_name = {
     "discoveredpackage": "PACKAGES",
     "discovereddependency": "DEPENDENCIES",
     "codebaseresource": "RESOURCES",
+    "codebaserelation": "RELATIONS",
     "projecterror": "ERRORS",
 }
 
@@ -447,6 +448,7 @@ def to_xlsx(project):
         "discoveredpackage",
         "discovereddependency",
         "codebaseresource",
+        "codebaserelation",
         "projecterror",
     ]
 

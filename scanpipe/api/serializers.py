@@ -384,6 +384,7 @@ def get_model_serializer(model_class):
         CodebaseResource: CodebaseResourceSerializer,
         DiscoveredPackage: DiscoveredPackageSerializer,
         DiscoveredDependency: DiscoveredDependencySerializer,
+        CodebaseRelation: CodebaseRelationSerializer,
         ProjectError: ProjectErrorSerializer,
     }.get(model_class, None)
 
