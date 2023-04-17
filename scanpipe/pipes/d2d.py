@@ -30,6 +30,20 @@ FROM = "from/"
 TO = "to/"
 
 
+def get_inputs(project):
+    """Locate the `from` and `to` archives in project inputs directory."""
+    from_file = list(project.inputs("from*"))
+    to_file = list(project.inputs("to*"))
+
+    if len(from_file) != 1:
+        raise Exception("from* archive not found.")
+
+    if len(to_file) != 1:
+        raise Exception("to* archive not found.")
+
+    return from_file[0], to_file[0]
+
+
 def checksum_match(project, checksum_field):
     """Match using checksum."""
     project_files = project.codebaseresources.files().not_empty()
@@ -106,7 +120,7 @@ def java_to_class_match(project):
 
 # TODO: Remove duplication with java_to_class_match
 def java_to_inner_class_match(project):
-    """Match a .java source to compiled $.class"""
+    """Match a .java source to its compiled inner $.class"""
     from_extension = ".java"
     to_extension = ".class"
 
@@ -147,7 +161,7 @@ def java_to_inner_class_match(project):
 
 def path_match(project):
     """Match using path similarities."""
-    project_files = project.codebaseresources.files()
+    project_files = project.codebaseresources.files().only("path")
     from_resources = project_files.from_codebase().has_no_relation()
     to_resources = project_files.to_codebase()
 

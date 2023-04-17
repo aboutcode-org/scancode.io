@@ -2195,6 +2195,10 @@ class DiscoveredPackage(
     def get_absolute_url(self):
         return reverse("package_detail", args=[self.project_id, self.pk])
 
+    def add_resources(self, codebase_resources):
+        """Assign the `codebase_resources` to this `discovered_package` instance."""
+        self.codebase_resources.add(*codebase_resources)
+
     @cached_property
     def resources(self):
         """Return the assigned codebase_resources QuerySet as a list."""

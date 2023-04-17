@@ -23,6 +23,7 @@
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
+from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
 from scanpipe.pipes.scancode import extract_archives
 
@@ -35,28 +36,22 @@ class DevelopToDeploy(Pipeline):
         return (
             cls.get_inputs,
             cls.extract_inputs_to_codebase_directory,
-            cls.extract_archive_to_codebase_directory,
+            cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
             cls.checksum_match,
+            cls.lookup_purldb,
             cls.java_to_class_match,
             cls.path_match,
         )
 
+    purldb_lookup_extensions = [".jar", ".war"]
+
     def get_inputs(self):
         """Locate the `from` and `to` archives."""
-        from_file = list(self.project.inputs("from*"))
-        to_file = list(self.project.inputs("to*"))
+        self.from_file, self.to_file = d2d.get_inputs(self.project)
 
-        if len(from_file) != 1:
-            raise
-        if len(to_file) != 1:
-            raise
-
-        self.from_file = from_file[0]
-        self.to_file = to_file[0]
-
-        self.from_path = self.project.codebase_path / "from"
-        self.to_path = self.project.codebase_path / "to"
+        self.from_path = self.project.codebase_path / d2d.FROM
+        self.to_path = self.project.codebase_path / d2d.TO
 
     def extract_inputs_to_codebase_directory(self):
         """Extract input files to the project's codebase/ directory."""
@@ -67,7 +62,7 @@ class DevelopToDeploy(Pipeline):
         if errors:
             self.add_error("\n".join(errors))
 
-    def extract_archive_to_codebase_directory(self):
+    def extract_archives_in_place(self):
         """Extract from* and to* archives in place with extractcode."""
         extract_errors = extract_archives(self.project.codebase_path)
 
@@ -82,6 +77,34 @@ class DevelopToDeploy(Pipeline):
     def checksum_match(self):
         """Match using SHA1 checksum."""
         d2d.checksum_match(project=self.project, checksum_field="sha1")
+
+    def lookup_purldb(self):
+        """Lookup selected files by extension in PurlDB."""
+        if not purldb.is_available():
+            self.log("PurlDB is not available. Skipping.")
+            return
+
+        to_resources = (
+            self.project.codebaseresources.files()
+            .not_empty()
+            .to_codebase()
+            .has_value("sha1")
+            .filter(extension__in=self.purldb_lookup_extensions)
+        )
+        for resource in to_resources:
+            if results := purldb.match_by_sha1(sha1=resource.sha1):
+                package = pipes.update_or_create_package(
+                    project=self.project,
+                    package_data=results[0],
+                    codebase_resource=resource,
+                )
+                extracted_resources = (
+                    self.project.codebaseresources.to_codebase().filter(
+                        path__startswith=f"{resource.path}-extract"
+                    )
+                )
+                extracted_resources.update(status="application-package")
+                package.add_resources(extracted_resources)
 
     def java_to_class_match(self):
         """Match a .java source to its compiled .class"""

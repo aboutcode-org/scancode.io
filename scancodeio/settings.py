@@ -336,3 +336,10 @@ VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="")
 VULNERABLECODE_USER = env.str("VULNERABLECODE_USER", default="")
 VULNERABLECODE_PASSWORD = env.str("VULNERABLECODE_PASSWORD", default="")
 VULNERABLECODE_API_KEY = env.str("VULNERABLECODE_API_KEY", default="")
+
+# PurlDB integration
+
+PURLDB_URL = env.str("PURLDB_URL", default="")
+PURLDB_USER = env.str("PURLDB_USER", default="")
+PURLDB_PASSWORD = env.str("PURLDB_PASSWORD", default="")
+PURLDB_API_KEY = env.str("PURLDB_API_KEY", default="")
