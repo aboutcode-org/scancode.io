@@ -1964,6 +1964,9 @@ class CodebaseRelation(
         max_length=30,
     )
 
+    class Meta:
+        ordering = ["from_resource__path"]
+
     def __str__(self):
         return (
             f"{self.from_resource.name} {self.relationship.upper()} "

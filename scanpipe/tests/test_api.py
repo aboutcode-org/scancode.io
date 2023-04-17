@@ -292,7 +292,7 @@ class ScanPipeAPITest(TransactionTestCase):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))
 
-        expected = ["dependencies", "files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["dependencies"]))
@@ -306,7 +306,7 @@ class ScanPipeAPITest(TransactionTestCase):
         response_value = response.getvalue()
         results = json.loads(response_value)
 
-        expected = ["dependencies", "files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["dependencies"]))
@@ -324,7 +324,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         response_value = response.getvalue()
         results = json.loads(response_value)
-        expected = ["dependencies", "files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
     def test_scanpipe_api_project_action_pipelines(self):

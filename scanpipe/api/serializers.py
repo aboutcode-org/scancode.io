@@ -25,6 +25,7 @@ from django.apps import apps
 from rest_framework import serializers
 
 from scanpipe.api import ExcludeFromListViewMixin
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -100,7 +101,7 @@ class ProjectSerializer(
     )
     execute_now = serializers.BooleanField(
         write_only=True,
-        help_text=("Execute pipeline now"),
+        help_text="Execute pipeline now",
     )
     upload_file = serializers.FileField(write_only=True, required=False)
     input_urls = serializers.CharField(
@@ -115,6 +116,7 @@ class ProjectSerializer(
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_packages_summary = serializers.SerializerMethodField()
     discovered_dependencies_summary = serializers.SerializerMethodField()
+    codebase_relations_summary = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -139,9 +141,11 @@ class ProjectSerializer(
             "resource_count",
             "package_count",
             "dependency_count",
+            "relation_count",
             "codebase_resources_summary",
             "discovered_packages_summary",
             "discovered_dependencies_summary",
+            "codebase_relations_summary",
         )
 
         exclude_from_list_view = [
@@ -152,9 +156,11 @@ class ProjectSerializer(
             "resource_count",
             "package_count",
             "dependency_count",
+            "relation_count",
             "codebase_resources_summary",
             "discovered_packages_summary",
             "discovered_dependencies_summary",
+            "codebase_relations_summary",
         ]
 
     def get_codebase_resources_summary(self, project):
@@ -177,6 +183,10 @@ class ProjectSerializer(
             "is_optional": base_qs.filter(is_optional=True).count(),
             "is_resolved": base_qs.filter(is_resolved=True).count(),
         }
+
+    def get_codebase_relations_summary(self, project):
+        queryset = project.codebaserelations.all()
+        return count_group_by(queryset, "relationship")
 
     def create(self, validated_data):
         """
@@ -322,6 +332,20 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "datafile_path",
             "datasource_id",
             "package_type",
+        ]
+
+
+class CodebaseRelationSerializer(serializers.ModelSerializer):
+    from_resource = serializers.ReadOnlyField(source="from_resource.path")
+    to_resource = serializers.ReadOnlyField(source="to_resource.path")
+
+    class Meta:
+        model = CodebaseRelation
+        fields = [
+            "from_resource",
+            "to_resource",
+            "relationship",
+            "match_type",
         ]
 
 

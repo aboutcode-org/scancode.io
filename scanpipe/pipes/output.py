@@ -76,6 +76,9 @@ def get_queryset(project, model_name):
         "codebaseresource": (
             project.codebaseresources.without_symlinks().prefetch_for_serializer()
         ),
+        "codebaserelation": (
+            project.codebaserelations.select_related("from_resource", "to_resource")
+        ),
         "projecterror": project.projecterrors.all(),
     }
     return querysets.get(model_name)
@@ -172,7 +175,10 @@ class JSONResultsGenerator:
         yield from self.serialize(label="headers", generator=self.get_headers)
         yield from self.serialize(label="packages", generator=self.get_packages)
         yield from self.serialize(label="dependencies", generator=self.get_dependencies)
-        yield from self.serialize(label="files", generator=self.get_files, latest=True)
+        yield from self.serialize(label="files", generator=self.get_files)
+        yield from self.serialize(
+            label="relations", generator=self.get_relations, latest=True
+        )
         yield "}"
 
     def serialize(self, label, generator, latest=False):
@@ -236,6 +242,13 @@ class JSONResultsGenerator:
 
         yield from self.encode_queryset(
             project, "codebaseresource", CodebaseResourceSerializer
+        )
+
+    def get_relations(self, project):
+        from scanpipe.api.serializers import CodebaseRelationSerializer
+
+        yield from self.encode_queryset(
+            project, "codebaserelation", CodebaseRelationSerializer
         )
 
 
