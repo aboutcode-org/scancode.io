@@ -1941,7 +1941,7 @@ class CodebaseRelation(
 
     class Relationship(models.TextChoices):
         IDENTICAL = "identical"
-        COMPILED_TO = "compiled_to"
+        COMPILED = "compiled"
         PATH_MATCH = "path_match"
 
     from_resource = models.ForeignKey(

@@ -110,7 +110,7 @@ def java_to_class_match(project):
             pipes.make_relationship(
                 from_resource=resource,
                 to_resource=match,
-                relationship=CodebaseRelation.Relationship.COMPILED_TO,
+                relationship=CodebaseRelation.Relationship.COMPILED,
                 match_type="java_to_class",
                 extra_data={
                     "path_score": f"{max_similarity_count + 1}/{len(path_parts) - 1}",
@@ -151,7 +151,7 @@ def java_to_inner_class_match(project):
             pipes.make_relationship(
                 from_resource=match,
                 to_resource=resource,
-                relationship=CodebaseRelation.Relationship.COMPILED_TO,
+                relationship=CodebaseRelation.Relationship.COMPILED,
                 match_type="java_to_class",
                 extra_data={
                     "path_score": f"{max_similarity_count + 1}/{len(path_parts) - 1}",
