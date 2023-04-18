@@ -1627,6 +1627,7 @@ class CodebaseResource(
 
     class Meta:
         indexes = [
+            models.Index(fields=["path"]),
             models.Index(fields=["name"]),
             models.Index(fields=["extension"]),
             models.Index(fields=["programming_language"]),
@@ -1933,6 +1934,7 @@ class CodebaseResource(
 
 
 class CodebaseRelation(
+    UUIDPKModel,
     ProjectRelatedModel,
     ExtraDataFieldMixin,
     models.Model,
@@ -1965,7 +1967,7 @@ class CodebaseRelation(
     )
 
     class Meta:
-        ordering = ["from_resource__path"]
+        ordering = ["from_resource__path", "to_resource__path"]
 
     def __str__(self):
         return (
