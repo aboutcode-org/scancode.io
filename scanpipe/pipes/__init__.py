@@ -122,11 +122,14 @@ def update_or_create_package(project, package_data, codebase_resource=None):
 
     if package:
         package.update_from_data(package_data)
-    else:
-        if codebase_resource:
+
+    if codebase_resource:
+        if not package:
             package = codebase_resource.create_and_add_package(package_data)
         else:
-            package = DiscoveredPackage.create_from_data(project, package_data)
+            codebase_resource.add_package(package)
+    elif not package:
+        package = DiscoveredPackage.create_from_data(project, package_data)
 
     return package
 
