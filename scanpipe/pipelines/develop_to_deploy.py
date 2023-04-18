@@ -93,9 +93,11 @@ class DevelopToDeploy(Pipeline):
         )
         for resource in to_resources:
             if results := purldb.match_by_sha1(sha1=resource.sha1):
+                package_data = results[0]
+                package_data.pop("dependencies")
                 package = pipes.update_or_create_package(
                     project=self.project,
-                    package_data=results[0],
+                    package_data=package_data,
                     codebase_resource=resource,
                 )
                 extracted_resources = (

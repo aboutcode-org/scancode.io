@@ -1547,10 +1547,18 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
     def test_scanpipe_project_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")
-        error = project1.add_error(Exception("Error message"), model="Package")
+        details = {
+            "name": "value",
+            "release_date": datetime.fromisoformat("2008-02-01"),
+        }
+        error = project1.add_error(
+            error=Exception("Error message"),
+            model="Package",
+            details=details,
+        )
         self.assertEqual(error, ProjectError.objects.get())
         self.assertEqual("Package", error.model)
-        self.assertEqual({}, error.details)
+        self.assertEqual(details, error.details)
         self.assertEqual("Error message", error.message)
         self.assertEqual("", error.traceback)
 

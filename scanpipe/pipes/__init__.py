@@ -110,7 +110,8 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     try:
         package = DiscoveredPackage.objects.get(
             project=project,
-            package_uid=package_data.get("package_uid"),
+            # TODO: Add a test to ensure we always use "" instead of None
+            package_uid=package_data.get("package_uid") or "",
             **purl_data,
         )
     except DiscoveredPackage.DoesNotExist:

@@ -1017,7 +1017,10 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
     model = models.CharField(max_length=100, help_text=_("Name of the model class."))
     details = models.JSONField(
-        default=dict, blank=True, help_text=_("Data that caused the error.")
+        default=dict,
+        blank=True,
+        encoder=DjangoJSONEncoder,
+        help_text=_("Data that caused the error."),
     )
     message = models.TextField(blank=True, help_text=_("Error message."))
     traceback = models.TextField(blank=True, help_text=_("Exception traceback."))
