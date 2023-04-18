@@ -36,11 +36,14 @@ from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
 
+from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
+from scanpipe.api.serializers import ProjectErrorSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -67,6 +70,12 @@ class ScanPipeAPITest(TransactionTestCase):
         self.discovered_package1 = self.resource1.create_and_add_package(package_data1)
         self.discovered_dependency1 = DiscoveredDependency.create_from_data(
             self.project1, dependency_data1
+        )
+        self.codebase_relation1 = CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=self.resource1,
+            to_resource=self.resource1,
+            relationship=CodebaseRelation.Relationship.COMPILED,
         )
 
         self.project_list_url = reverse("project-list")
@@ -169,15 +178,18 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["resource_count"])
         self.assertEqual(1, response.data["package_count"])
         self.assertEqual(1, response.data["dependency_count"])
+        self.assertEqual(1, response.data["relation_count"])
 
         expected = {"": 1}
         self.assertEqual(expected, response.data["codebase_resources_summary"])
+
         expected = {
             "total": 1,
             "with_missing_resources": 0,
             "with_modified_resources": 0,
         }
         self.assertEqual(expected, response.data["discovered_packages_summary"])
+
         expected = {
             "total": 1,
             "is_runtime": 1,
@@ -185,6 +197,9 @@ class ScanPipeAPITest(TransactionTestCase):
             "is_resolved": 0,
         }
         self.assertEqual(expected, response.data["discovered_dependencies_summary"])
+
+        expected = {"compiled": 1}
+        self.assertEqual(expected, response.data["codebase_relations_summary"])
 
         self.project1.add_input_source(filename="file1", source="uploaded")
         self.project1.add_input_source(filename="file2", source="https://download.url")
@@ -384,6 +399,23 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(
             dependency_data1["dependency_uid"], dependency["dependency_uid"]
         )
+
+    def test_scanpipe_api_project_action_relations(self):
+        url = reverse("project-relations", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        relation = response.data["results"][0]
+        expected = {
+            "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            "to_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            "relationship": "compiled",
+            "match_type": "",
+        }
+        self.assertEqual(expected, relation)
 
     def test_scanpipe_api_project_action_errors(self):
         url = reverse("project-errors", args=[self.project1.uuid])
@@ -679,6 +711,11 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(
             CodebaseResourceSerializer, get_model_serializer(CodebaseResource)
         )
+        self.assertEqual(
+            CodebaseRelationSerializer, get_model_serializer(CodebaseRelation)
+        )
+        self.assertEqual(ProjectErrorSerializer, get_model_serializer(ProjectError))
+
         with self.assertRaises(LookupError):
             get_model_serializer(None)
 
@@ -686,6 +723,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(38, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(11, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(30, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(4, len(get_serializer_fields(CodebaseRelation)))
+        self.assertEqual(6, len(get_serializer_fields(ProjectError)))
 
         with self.assertRaises(LookupError):
             get_serializer_fields(None)
