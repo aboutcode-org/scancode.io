@@ -341,6 +341,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "emails",
             "urls",
             "in_package",
+            # CodebaseRelation
+            "related_from__match_type",
         ]
 
     @classmethod

@@ -808,6 +808,7 @@ class ProjectResultsView(
         )
 
 
+# TODO: Remove this view and related template once migrated to CodebaseRelationListView
 class CodebaseRelationView(
     ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
 ):
@@ -818,9 +819,9 @@ class CodebaseRelationView(
         project = self.object
         project_files = project.codebaseresources.files()
 
-        from_codebase_resources = project_files.from_codebase().prefetch_related(
-            "related_to__to_resource"
-        )
+        # from_codebase_resources = project_files.from_codebase().prefetch_related(
+        #     "related_to__to_resource"
+        # )
         to_codebase_resources = project_files.to_codebase().prefetch_related(
             "related_from__from_resource"
         )
@@ -828,7 +829,7 @@ class CodebaseRelationView(
         context.update(
             {
                 "project": project,
-                "from_codebase_resources": from_codebase_resources,
+                # "from_codebase_resources": from_codebase_resources,
                 "to_codebase_resources": to_codebase_resources,
             }
         )
@@ -954,6 +955,26 @@ class ProjectErrorListView(
         "details",
         "traceback",
     ]
+
+
+class CodebaseRelationListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    PaginatedFilterView,
+):
+    model = CodebaseResource
+    filterset_class = ResourceFilterSet
+    template_name = "scanpipe/relation_list.html"
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = (
+            queryset.files()
+            .to_codebase()
+            .prefetch_related("related_from__from_resource")
+        )
+        return queryset
 
 
 class CodebaseResourceDetailsView(

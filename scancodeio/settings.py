@@ -89,6 +89,7 @@ SCANCODEIO_PAGINATE_BY = env.dict(
         "resource": 100,
         "package": 100,
         "dependency": 100,
+        "relation": 100,
     },
 )
 

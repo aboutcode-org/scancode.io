@@ -1,0 +1,39 @@
+<div id="file-content-modal" class="modal is-desktop-size">
+  <div class="modal-background"></div>
+  <div class="modal-content" style="width:50%;">
+    <figure class="highlight log border-no-top-left-radius">
+      <pre class="wrap p-1"><code></code></pre>
+    </figure>
+  </div>
+<button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+<script>
+  document.addEventListener("openModal", function(event) {
+    let modal_id = event.detail.modal;
+    if (modal_id !== "file-content-modal") return;
+
+    let $modal = document.getElementById(modal_id);
+    let raw_url = event.detail.$button.dataset.raw_url;
+    let $modal_content_code = $modal.querySelector(".modal-content pre code")
+    $modal_content_code.innerHTML = "";
+
+    fetch(raw_url).then(function (response) {
+      if (response.ok) {
+        return response.text();
+      } else {
+        closeModals();
+        throw Error(response.statusText);
+      }
+    }).then(function (html) {
+      $modal_content_code.innerHTML = html;
+      document.querySelectorAll('#file-content-modal .highlight code').forEach((block) => {
+        hljs.highlightBlock(block);
+        });
+      setupCloseModalButtons();
+    }).catch(function (error) {
+      console.warn('Error:', error);
+    });
+
+  });
+</script>

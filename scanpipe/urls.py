@@ -67,6 +67,11 @@ urlpatterns = [
         name="project_dependencies",
     ),
     path(
+        "project/<uuid:uuid>/relations/",
+        views.CodebaseRelationListView.as_view(),
+        name="project_relations",
+    ),
+    path(
         "project/<uuid:uuid>/errors/",
         views.ProjectErrorListView.as_view(),
         name="project_errors",
@@ -125,11 +130,6 @@ urlpatterns = [
         "project/<uuid:uuid>/charts/",
         views.ProjectChartsView.as_view(),
         name="project_charts",
-    ),
-    path(
-        "project/<uuid:uuid>/relations/",
-        views.CodebaseRelationView.as_view(),
-        name="project_relations",
     ),
     path(
         "project/<uuid:uuid>/",

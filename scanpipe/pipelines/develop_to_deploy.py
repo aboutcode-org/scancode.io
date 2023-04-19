@@ -84,6 +84,7 @@ class DevelopToDeploy(Pipeline):
             self.log("PurlDB is not available. Skipping.")
             return
 
+        # TODO: Move this logic to the d2d pipes
         to_resources = (
             self.project.codebaseresources.files()
             .not_empty()
@@ -105,8 +106,8 @@ class DevelopToDeploy(Pipeline):
                         path__startswith=f"{resource.path}-extract"
                     )
                 )
-                extracted_resources.update(status="application-package")
                 package.add_resources(extracted_resources)
+                extracted_resources.update(status="application-package")
 
     def java_to_class_match(self):
         """Match a .java source to its compiled .class"""
