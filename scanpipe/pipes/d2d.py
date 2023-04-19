@@ -25,6 +25,7 @@ from pathlib import Path
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
+from scanpipe.pipes import purldb
 
 FROM = "from/"
 TO = "to/"
@@ -192,3 +193,32 @@ def path_match(project):
                             "path_score": f"{len(current_parts)}/{path_parts_len-1}",
                         },
                     )
+
+
+def purldb_match(project, extensions, logger=None):
+    to_resources = (
+        project.codebaseresources.files()
+        .not_empty()
+        .to_codebase()
+        .has_value("sha1")
+        .filter(extension__in=extensions)
+    )
+
+    if logger:
+        resource_count = to_resources.count()
+        logger(f"Matching {resource_count} resources against PurlDB")
+
+    for resource in to_resources:
+        if results := purldb.match_by_sha1(sha1=resource.sha1):
+            package_data = results[0]
+            package_data.pop("dependencies")
+            package = pipes.update_or_create_package(
+                project=project,
+                package_data=package_data,
+                codebase_resource=resource,
+            )
+            extracted_resources = project.codebaseresources.to_codebase().filter(
+                path__startswith=f"{resource.path}-extract"
+            )
+            package.add_resources(extracted_resources)
+            extracted_resources.update(status="application-package")

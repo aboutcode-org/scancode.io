@@ -39,12 +39,12 @@ class DevelopToDeploy(Pipeline):
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
             cls.checksum_match,
-            cls.lookup_purldb,
+            cls.purldb_match,
             cls.java_to_class_match,
             cls.path_match,
         )
 
-    purldb_lookup_extensions = [".jar", ".war"]
+    purldb_match_extensions = [".jar", ".war"]
 
     def get_inputs(self):
         """Locate the `from` and `to` archives."""
@@ -78,36 +78,17 @@ class DevelopToDeploy(Pipeline):
         """Match using SHA1 checksum."""
         d2d.checksum_match(project=self.project, checksum_field="sha1")
 
-    def lookup_purldb(self):
-        """Lookup selected files by extension in PurlDB."""
+    def purldb_match(self):
+        """Match selected files by extension in PurlDB."""
         if not purldb.is_available():
             self.log("PurlDB is not available. Skipping.")
             return
 
-        # TODO: Move this logic to the d2d pipes
-        to_resources = (
-            self.project.codebaseresources.files()
-            .not_empty()
-            .to_codebase()
-            .has_value("sha1")
-            .filter(extension__in=self.purldb_lookup_extensions)
+        d2d.purldb_match(
+            project=self.project,
+            extensions=self.purldb_match_extensions,
+            logger=self.log,
         )
-        for resource in to_resources:
-            if results := purldb.match_by_sha1(sha1=resource.sha1):
-                package_data = results[0]
-                package_data.pop("dependencies")
-                package = pipes.update_or_create_package(
-                    project=self.project,
-                    package_data=package_data,
-                    codebase_resource=resource,
-                )
-                extracted_resources = (
-                    self.project.codebaseresources.to_codebase().filter(
-                        path__startswith=f"{resource.path}-extract"
-                    )
-                )
-                package.add_resources(extracted_resources)
-                extracted_resources.update(status="application-package")
 
     def java_to_class_match(self):
         """Match a .java source to its compiled .class"""
