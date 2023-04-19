@@ -808,34 +808,6 @@ class ProjectResultsView(
         )
 
 
-# TODO: Remove this view and related template once migrated to CodebaseRelationListView
-class CodebaseRelationView(
-    ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
-):
-    template_name = "scanpipe/codebase_relation.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        project = self.object
-        project_files = project.codebaseresources.files()
-
-        # from_codebase_resources = project_files.from_codebase().prefetch_related(
-        #     "related_to__to_resource"
-        # )
-        to_codebase_resources = project_files.to_codebase().prefetch_related(
-            "related_from__from_resource"
-        )
-
-        context.update(
-            {
-                "project": project,
-                # "from_codebase_resources": from_codebase_resources,
-                "to_codebase_resources": to_codebase_resources,
-            }
-        )
-        return context
-
-
 class ProjectRelatedViewMixin:
     def get_project(self):
         if not getattr(self, "project", None):
@@ -968,12 +940,15 @@ class CodebaseRelationListView(
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         queryset = (
-            queryset.files()
+            super()
+            .get_queryset()
+            .files()
             .to_codebase()
             .prefetch_related("related_from__from_resource")
         )
+        if self.request.GET.get("missing_only"):
+            queryset = queryset.has_no_relation()
         return queryset
 
 

@@ -8,7 +8,7 @@
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
         {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Relations" %}
-        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search to/ resources" %}
       </div>
       {% include 'scanpipe/includes/pagination_header.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
@@ -33,42 +33,38 @@
         <tbody>
           {% for resource in object_list %}
             {% for relation in resource.related_from.all %}
-              {% if not request.GET.missing_only %}
-                <tr>
-                  {% if forloop.first %}
-                    <td class="break-all" style="min-width: 200px;" rowspan="{{ resource.related_from.all|length }}">
-                      <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
-                        <i class="far fa-file"></i>
-                      </a>
-                      {{ resource.path }}
-                    </td>
+              <tr>
+                {% if forloop.first %}
+                  <td class="break-all" rowspan="{{ resource.related_from.all|length }}">
+                    <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
+                      <i class="far fa-file"></i>
+                    </a>
+                    {{ resource.path }}
+                  </td>
+                {% endif %}
+                <td>
+                  {{ relation.match_type }}
+                  {% if relation.extra_data.path_score %}
+                    {{ relation.extra_data.path_score }}
                   {% endif %}
-                  <td>
-                    {{ relation.match_type }}
-                    {% if relation.extra_data.path_score %}
-                      {{ relation.extra_data.path_score }}
-                    {% endif %}
-                    {% if relation.match_type == "path" %}
-                      <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.from_resource.path }}" target="_blank">diff</a>
-                    {% endif %}
-                  </td>
-                  <td class="break-all" style="min-width: 200px;">
-                    {{ relation.from_resource.path }}
-                  </td>
-                </tr>
-              {% endif %}
+                  {% if relation.match_type == "path" %}
+                    <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.from_resource.path }}" target="_blank">diff</a>
+                  {% endif %}
+                </td>
+                <td class="break-all">
+                  {{ relation.from_resource.path }}
+                </td>
+              </tr>
             {% empty %}
               <tr>
-                <td class="break-all has-text-danger" style="min-width: 200px;">
+                <td class="break-all has-text-danger">
                   <a class="modal-button is-black-link" data-target="file-content-modal" data-raw_url="{{ resource.get_raw_url }}" aria-haspopup="true">
                     <i class="far fa-file"></i>
                   </a>
                   {{ resource.path }}
                 </td>
-                <td>
-                </td>
-                <td>
-                </td>
+                <td></td>
+                <td></td>
               </tr>
             {% endfor %}
           {% endfor %}

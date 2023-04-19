@@ -1,6 +1,6 @@
 <form method="get">
   <p class="control has-icons-left">
-    <input class="input {{ extra_class }}" type="text" placeholder="Search {{ filter.verbose_name_plural }}" name="{{ filter.form.search.name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
+    <input class="input {{ extra_class }}" type="text" placeholder="{% if placeholder %}{{ placeholder }}{% else %}Search {{ filter.verbose_name_plural }}{% endif %}" name="{{ filter.form.search.name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
     <span class="icon is-small is-left">
       <i class="fas fa-search"></i>
     </span>
