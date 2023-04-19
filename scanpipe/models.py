@@ -1971,6 +1971,10 @@ class CodebaseRelation(
 
     class Meta:
         ordering = ["from_resource__path", "to_resource__path"]
+        indexes = [
+            models.Index(fields=["relationship"]),
+            models.Index(fields=["match_type"]),
+        ]
 
     def __str__(self):
         return (
