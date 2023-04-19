@@ -76,7 +76,7 @@ class DevelopToDeploy(Pipeline):
 
     def checksum_match(self):
         """Match using SHA1 checksum."""
-        d2d.checksum_match(project=self.project, checksum_field="sha1")
+        d2d.checksum_match(project=self.project, checksum_field="sha1", logger=self.log)
 
     def purldb_match(self):
         """Match selected files by extension in PurlDB."""
@@ -97,4 +97,4 @@ class DevelopToDeploy(Pipeline):
 
     def path_match(self):
         """Match using path similarities."""
-        d2d.path_match(project=self.project)
+        d2d.path_match(project=self.project, logger=self.log)

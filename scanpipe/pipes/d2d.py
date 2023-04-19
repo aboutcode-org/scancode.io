@@ -45,19 +45,26 @@ def get_inputs(project):
     return from_file[0], to_file[0]
 
 
-def checksum_match(project, checksum_field):
+def checksum_match(project, checksum_field, logger=None):
     """Match using checksum."""
     project_files = project.codebaseresources.files().not_empty()
     from_resources = project_files.from_codebase().has_value(checksum_field)
     to_resources = project_files.to_codebase().has_value(checksum_field)
 
-    for resource in from_resources:
-        checksum_value = getattr(resource, checksum_field)
-        matches = to_resources.filter(**{checksum_field: checksum_value})
+    if logger:
+        resource_count = to_resources.count()
+        logger(
+            f"Matching {resource_count} to/ resources using {checksum_field} "
+            f"against from/ codebase"
+        )
+
+    for to_resource in to_resources:
+        checksum_value = getattr(to_resource, checksum_field)
+        matches = from_resources.filter(**{checksum_field: checksum_value})
         for match in matches:
             pipes.make_relationship(
-                from_resource=resource,
-                to_resource=match,
+                from_resource=match,
+                to_resource=to_resource,
                 relationship=CodebaseRelation.Relationship.IDENTICAL,
                 match_type=checksum_field,
             )
@@ -130,14 +137,14 @@ def java_to_inner_class_match(project):
     to_resources = project_files.to_codebase().has_no_relation()
 
     inner_classes = to_resources.filter(name__contains="$", name__endswith=to_extension)
-    for resource in inner_classes:
-        from_name = resource.name.split("$")[0] + from_extension
+    for to_resource in inner_classes:
+        from_name = to_resource.name.split("$")[0] + from_extension
         name_matches = from_resources.filter(name=from_name)
-        path_parts = Path(resource.path.lstrip("/")).parts
+        path_parts = Path(to_resource.path.lstrip("/")).parts
 
         match_by_similarity_count = defaultdict(list)
         for match in name_matches:
-            path1 = "/".join(resource.path.split("/")[:-1])
+            path1 = "/".join(to_resource.path.split("/")[:-1])
             path2 = "/".join(match.path.split("/")[:-1])
 
             similarity_count = count_similar_segments_reverse(path1, path2)
@@ -151,7 +158,7 @@ def java_to_inner_class_match(project):
         for match in best_matches:
             pipes.make_relationship(
                 from_resource=match,
-                to_resource=resource,
+                to_resource=to_resource,
                 relationship=CodebaseRelation.Relationship.COMPILED,
                 match_type="java_to_class",
                 extra_data={
@@ -160,14 +167,21 @@ def java_to_inner_class_match(project):
             )
 
 
-def path_match(project):
+def path_match(project, logger=None):
     """Match using path similarities."""
     project_files = project.codebaseresources.files().only("path")
-    from_resources = project_files.from_codebase().has_no_relation()
-    to_resources = project_files.to_codebase()
+    from_resources = project_files.from_codebase()
+    to_resources = project_files.to_codebase().has_no_relation()
 
-    for resource in from_resources:
-        path_parts = Path(resource.path.lstrip("/")).parts
+    if logger:
+        resource_count = to_resources.count()
+        logger(
+            f"Matching {resource_count} to/ resources using path match "
+            f"against from/ codebase"
+        )
+
+    for to_resource in to_resources:
+        path_parts = Path(to_resource.path.lstrip("/")).parts
         path_parts_len = len(path_parts)
         for index in range(1, path_parts_len):
             current_parts = path_parts[index:]
@@ -175,18 +189,18 @@ def path_match(project):
             # The slash "/" prefix matters during the match as we do not want to
             # match on filenames sharing the same ending.
             # For example: Filter.java and FastFilter.java
-            matches = to_resources.filter(path__endswith=f"/{current_path}")
+            matches = from_resources.filter(path__endswith=f"/{current_path}")
 
             for match in matches:
                 relation = CodebaseRelation.objects.filter(
-                    from_resource=resource,
-                    to_resource=match,
+                    from_resource=match,
+                    to_resource=to_resource,
                     relationship=CodebaseRelation.Relationship.PATH_MATCH,
                 )
                 if not relation.exists():
                     pipes.make_relationship(
-                        from_resource=resource,
-                        to_resource=match,
+                        from_resource=match,
+                        to_resource=to_resource,
                         relationship=CodebaseRelation.Relationship.PATH_MATCH,
                         match_type="path",
                         extra_data={
@@ -206,7 +220,8 @@ def purldb_match(project, extensions, logger=None):
 
     if logger:
         resource_count = to_resources.count()
-        logger(f"Matching {resource_count} resources against PurlDB")
+        extensions_str = ", ".join(extensions)
+        logger(f"Matching {resource_count} {extensions_str} resources against PurlDB")
 
     for resource in to_resources:
         if results := purldb.match_by_sha1(sha1=resource.sha1):
