@@ -24,6 +24,7 @@ import difflib
 import io
 import json
 from collections import Counter
+from collections import namedtuple
 from contextlib import suppress
 
 from django.apps import apps
@@ -929,9 +930,13 @@ class ProjectErrorListView(
     ]
 
 
+RelationRow = namedtuple("RelationRow", "to_resource match_type score from_resource")
+
+
 class CodebaseRelationListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    ExportXLSXMixin,
     PaginatedFilterView,
 ):
     model = CodebaseResource
@@ -950,6 +955,37 @@ class CodebaseRelationListView(
         if self.request.GET.get("missing_only"):
             queryset = queryset.has_no_relation()
         return queryset
+
+    @staticmethod
+    def get_rows(qs):
+        for resource in qs:
+            relations = resource.related_from.all()
+            if not relations:
+                yield RelationRow(resource.path, "", "", "")
+            else:
+                for relation in resource.related_from.all():
+                    yield RelationRow(
+                        resource.path,
+                        relation.match_type,
+                        relation.extra_data.get("path_score", ""),
+                        relation.from_resource.path,
+                    )
+
+    def export_xlsx_file_response(self):
+        filtered_qs = self.filterset.qs
+        output_file = io.BytesIO()
+
+        with xlsxwriter.Workbook(output_file) as workbook:
+            output._add_xlsx_worksheet(
+                workbook=workbook,
+                worksheet_name="RELATIONS",
+                rows=self.get_rows(qs=filtered_qs),
+                fields=RelationRow._fields,
+            )
+
+        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+        output_file.seek(0)
+        return FileResponse(output_file, as_attachment=True, filename=filename)
 
 
 class CodebaseResourceDetailsView(
