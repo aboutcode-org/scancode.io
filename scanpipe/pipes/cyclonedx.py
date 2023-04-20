@@ -181,6 +181,10 @@ def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
     with suppress(Exception):
         data = json.loads(Path(input_location).read_text())
-        if data.get("$schema", "").endswith(CYCLONEDX_SCHEMA_NAME):
+        conditions = (
+            data.get("$schema", "").endswith(CYCLONEDX_SCHEMA_NAME),
+            data.get("bomFormat") == "CycloneDX",
+        )
+        if any(conditions):
             return True
     return False

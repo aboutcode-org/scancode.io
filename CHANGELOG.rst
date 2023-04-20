@@ -17,6 +17,7 @@ v33.0.0 (unreleased)
 
 - Improve the resolution of CycloneDX BOM and SPDX document when the file extension is
   simply ``.json``.
+  https://github.com/nexB/scancode.io/pull/688
 
 - Add support for manifest types using ScanCode-toolkit handlers.
   https://github.com/nexB/scancode.io/issues/658
