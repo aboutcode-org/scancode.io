@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from collections import defaultdict
 from pathlib import Path
 
 from scanpipe import pipes
@@ -70,65 +69,8 @@ def checksum_match(project, checksum_field, logger=None):
             )
 
 
-def count_similar_segments_reverse(path1, path2):
-    """
-    Count the number of similar path segments between two paths,
-    starting from the rightmost segment.
-    """
-    segments1 = path1.split("/")
-    segments2 = path2.split("/")
-    count = 0
-
-    while segments1 and segments2 and segments1[-1] == segments2[-1]:
-        count += 1
-        segments1.pop()
-        segments2.pop()
-
-    return count
-
-
-def java_to_class_match(project):
-    """Match a .java source to its compiled .class"""
-    from_extension = ".java"
-    to_extension = ".class"
-
-    project_files = project.codebaseresources.files()
-    from_resources = project_files.from_codebase().has_no_relation()
-    to_resources = project_files.to_codebase()
-
-    for resource in from_resources.filter(name__endswith=from_extension):
-        to_name = resource.name.replace(from_extension, to_extension)
-        name_matches = to_resources.filter(name=to_name)
-        path_parts = Path(resource.path.lstrip("/")).parts
-
-        match_by_similarity_count = defaultdict(list)
-        for match in name_matches:
-            path1 = "/".join(resource.path.split("/")[:-1])
-            path2 = "/".join(match.path.split("/")[:-1])
-
-            similarity_count = count_similar_segments_reverse(path1, path2)
-            match_by_similarity_count[similarity_count].append(match)
-
-        if not match_by_similarity_count:
-            continue
-
-        max_similarity_count = max(match_by_similarity_count.keys())
-        best_matches = match_by_similarity_count[max_similarity_count]
-        for match in best_matches:
-            pipes.make_relationship(
-                from_resource=resource,
-                to_resource=match,
-                relationship=CodebaseRelation.Relationship.COMPILED,
-                match_type="java_to_class",
-                extra_data={
-                    "path_score": f"{max_similarity_count + 1}/{len(path_parts) - 1}",
-                },
-            )
-
-
-# TODO: Remove duplication with java_to_class_match
-def java_to_inner_class_match(project):
-    """Match a .java source to its compiled inner $.class"""
+def java_to_class_match(project, logger=None):
+    """Match a .java source to its compiled .class using fully qualified name."""
     from_extension = ".java"
     to_extension = ".class"
 
@@ -136,34 +78,28 @@ def java_to_inner_class_match(project):
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
-    inner_classes = to_resources.filter(name__contains="$", name__endswith=to_extension)
-    for to_resource in inner_classes:
-        from_name = to_resource.name.split("$")[0] + from_extension
-        name_matches = from_resources.filter(name=from_name)
-        path_parts = Path(to_resource.path.lstrip("/")).parts
+    to_resources_dot_class = to_resources.filter(name__endswith=to_extension)
+    if logger:
+        logger(f"Matching {to_resources_dot_class.count()} .class resources to .java")
 
-        match_by_similarity_count = defaultdict(list)
-        for match in name_matches:
-            path1 = "/".join(to_resource.path.split("/")[:-1])
-            path2 = "/".join(match.path.split("/")[:-1])
+    for to_resource in to_resources_dot_class:
+        qualified_class = to_resource.path.split("-extract/")[-1]
 
-            similarity_count = count_similar_segments_reverse(path1, path2)
-            match_by_similarity_count[similarity_count].append(match)
+        if "$" in to_resource.name:  # inner class
+            path_parts = Path(qualified_class.lstrip("/")).parts
+            parts_without_name = list(path_parts[:-1])
+            from_name = to_resource.name.split("$")[0] + from_extension
+            qualified_java = "/".join(parts_without_name + [from_name])
+        else:
+            qualified_java = qualified_class.replace(to_extension, from_extension)
 
-        if not match_by_similarity_count:
-            continue
-
-        max_similarity_count = max(match_by_similarity_count.keys())
-        best_matches = match_by_similarity_count[max_similarity_count]
-        for match in best_matches:
+        matches = from_resources.filter(path__endswith=qualified_java)
+        for match in matches:
             pipes.make_relationship(
                 from_resource=match,
                 to_resource=to_resource,
                 relationship=CodebaseRelation.Relationship.COMPILED,
                 match_type="java_to_class",
-                extra_data={
-                    "path_score": f"{max_similarity_count + 1}/{len(path_parts) - 1}",
-                },
             )
 
 

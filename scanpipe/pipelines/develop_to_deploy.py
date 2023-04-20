@@ -91,9 +91,8 @@ class DevelopToDeploy(Pipeline):
         )
 
     def java_to_class_match(self):
-        """Match a .java source to its compiled .class"""
-        d2d.java_to_class_match(project=self.project)
-        d2d.java_to_inner_class_match(project=self.project)
+        """Match a .class compiled file to its .java source."""
+        d2d.java_to_class_match(project=self.project, logger=self.log)
 
     def path_match(self):
         """Match using path similarities."""
