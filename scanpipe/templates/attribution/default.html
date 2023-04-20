@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      body {font-family: Helvetica, Arial, sans-serif;}
+      pre {white-space: pre-wrap;}
+      ul#package-list {padding-inline-start: 20px;}
+      .oss-package {margin-bottom: 35px;}
+    </style>
+    <title>Open Source Software Information</title>
+  </head>
+  <body>
+    <h1>OPEN SOURCE SOFTWARE INFORMATION</h1>
+    <div>
+      <p>Licenses, acknowledgments and required copyright notices for open source packages:</p>
+    </div>
+    <div class="oss-table-of-contents">
+      <ul id="package-list">
+        {% for about_object in abouts %}
+          <li>
+            <a href="#package_{{ loop.index0 }}">{{ about_object.name.value }}{% if about_object.version.value %}{{ about_object.version.value }}{% endif %}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <hr>
+    {% for about_object in abouts %}
+      <div class="oss-package" id="package_{{ loop.index0 }}">
+        <h3 class="package-name">
+          {{ about_object.name.value }}
+          {% if about_object.version.value %}
+            {{ about_object.version.value }}
+          {% endif %}
+        </h3>
+        {% if about_object.license_expression.value %}
+          <p>This package is licensed under {{ about_object.license_expression.value }}</p>
+        {% endif %}
+        {% if about_object.copyright.value %}
+          <pre>Copyright: {{ about_object.copyright.value }}</pre>
+        {% endif %}
+        {% if about_object.notice_file.value %}
+          {% for notice in about_object.notice_file.value %}
+            <pre class="package-notice">
+              {{ about_object.notice_file.value[notice] }}
+            </pre>
+          {% endfor %}
+        {% endif %}
+        {% if about_object.license_key.value %}
+          {% for license_key in about_object.license_key.value %}
+            {% if license_key in common_licenses %}
+              <p>Full text of <a class="{{ license_key }}" href="#package-license-{{ license_key }}"> {{ license_key }}</a> is available at the end of this document.</p>
+            {% else %}
+              {% for license in licenses_list %}
+                {% if license_key == license.key %}
+                  <h3 id="package-license-{{ license.key }}">{{ license.key }}</h3>
+                  <pre>{{ license.text | e }}</pre>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          {% if about_object.license_file.value %}
+            {% for lic_file_name in about_object.license_file.value %}
+              {% if about_object.license_file.value[lic_file_name] %}
+                <pre>{{ about_object.license_file.value[lic_file_name] | e }}</pre>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endif %}
+        {% if about_object.homepage_url.value %}
+          <div>
+            Homepage URL:
+            <a href="{{ about_object.homepage_url.value }}" target="_blank">
+              {{ about_object.homepage_url.value }}
+            </a>
+          </div>
+        {% endif %}
+        {% if about_object.download_url.value %}
+          <div>
+            Download URL:
+            <a href="{{ about_object.download_url.value }}" target="_blank">
+              {{ about_object.download_url.value }}
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <hr>
+    <h3>Common Licenses Used in This Product</h3>
+    {% for license in licenses_list %}
+      {% if license.key in common_licenses %}
+        <h3 id="package-license-{{ license.key }}">{{ license.key }}</h3>
+        <pre> {{ license.text | e }} </pre>
+      {% endif %}
+    {% endfor %}
+    <h3>
+      <a id="End">End</a>
+    </h3>
+    <i>This file was generated with <a href="https://github.com/nexB/aboutcode-toolkit">AboutCode Toolkit</a> version: {{ tkversion }} on: {{ utcnow }} (UTC)</i>
+  </body>
+</html>

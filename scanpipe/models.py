@@ -62,6 +62,7 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+from attributecode.model import About
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from cyclonedx import model as cyclonedx_model
@@ -597,6 +598,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def tmp_path(self):
         """Return the `tmp` directory as a Path instance."""
         return Path(self.work_path / "tmp")
+
+    def get_dot_scancode_directory(self):
+        """Return the `.scancode` directory if available in the `codebase` directory."""
+        dot_scancode = self.codebase_path / ".scancode"
+        if dot_scancode.exists():
+            return dot_scancode
 
     def clear_tmp_directory(self):
         """
@@ -2301,6 +2308,24 @@ class DiscoveredPackage(
             properties=properties,
             external_references=external_references,
         )
+
+    def as_aboutcode(self):
+        """Return this DiscoveredPackage as an About object."""
+        package_data = {
+            "about_resource": self.filename or ".",
+            "package_url": self.package_url,
+            "name": self.name,
+            "version": self.version,
+            "description": self.description,
+            "checksum_sha1": self.sha1,
+            "checksum_md5": self.md5,
+            "copyright": self.copyright,
+            "download_url": self.download_url,
+            "homepage_url": self.homepage_url,
+            "license_expression": self.license_expression,
+        }
+        about_object = About.from_dict(package_data)
+        return about_object
 
 
 class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):

@@ -23,12 +23,14 @@
 import csv
 import json
 import re
+from pathlib import Path
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
 
 import saneyaml
 import xlsxwriter
+from attributecode import attrib
 from cyclonedx import output as cyclonedx_output
 from cyclonedx.model import bom as cyclonedx_bom
 from cyclonedx.model import component as cyclonedx_component
@@ -612,5 +614,37 @@ def to_cyclonedx(project):
     bom_json = outputter.output_as_string()
     with output_file.open("w") as file:
         file.write(bom_json)
+
+    return output_file
+
+
+def to_attribution(project):
+    """
+    Generate attribution for the provided ``project``.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    Custom template can be provided in the
+    `codebase/.scancode/templates/attribution.html` location.
+    """
+    output_file = project.get_output_file_path("results", "attribution.html")
+
+    scanpipe_templates = Path(scanpipe_app.path) / "templates"
+    template_location = scanpipe_templates / "attribution" / "default.html"
+
+    if dot_scancode := project.get_dot_scancode_directory():
+        custom_template = dot_scancode / "templates" / "attribution.html"
+        if custom_template.exists():
+            template_location = custom_template
+
+    packages = get_queryset(project, "discoveredpackage")
+    abouts = [package.as_aboutcode() for package in packages]
+
+    attrib.generate_and_save(
+        abouts=abouts,
+        is_about_input=True,
+        license_dict={},
+        output_location=output_file,
+        template_loc=template_location,
+    )
 
     return output_file

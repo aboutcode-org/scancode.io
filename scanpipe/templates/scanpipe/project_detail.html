@@ -57,6 +57,9 @@
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'cyclonedx' %}">
               CycloneDX <i class="fas fa-download ml-1"></i>
             </a>
+            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'attribution' %}">
+              Attribution <i class="fas fa-download ml-1"></i>
+            </a>
           </div>
         </article>
       {% elif not project.runs.all %}
