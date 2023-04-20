@@ -21,8 +21,9 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
-import pathlib
 from collections import defaultdict
+from contextlib import suppress
+from pathlib import Path
 
 from django.core.validators import EMPTY_VALUES
 
@@ -31,7 +32,7 @@ from hoppr_cyclonedx_models.cyclonedx_1_4 import (
     CyclonedxSoftwareBillOfMaterialsStandard as Bom_1_4,
 )
 
-SCHEMAS_PATH = pathlib.Path(__file__).parent / "schemas"
+SCHEMAS_PATH = Path(__file__).parent / "schemas"
 
 CYCLONEDX_SPEC_VERSION = "1.4"
 CYCLONEDX_SCHEMA_NAME = "bom-1.4.schema.json"
@@ -157,7 +158,7 @@ def validate_document(document, schema=CYCLONEDX_SCHEMA_PATH):
     if isinstance(document, str):
         document = json.loads(document)
 
-    if isinstance(schema, pathlib.Path):
+    if isinstance(schema, Path):
         schema = schema.read_text()
 
     if isinstance(schema, str):
@@ -174,3 +175,12 @@ def validate_document(document, schema=CYCLONEDX_SCHEMA_PATH):
     resolver = jsonschema.RefResolver.from_schema(schema, store=store)
     validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
     validator.validate(instance=document)
+
+
+def is_cyclonedx_bom(input_location):
+    """Return True if the file at `input_location` is a CycloneDX BOM."""
+    with suppress(Exception):
+        data = json.loads(Path(input_location).read_text())
+        if data.get("$schema", "").endswith(CYCLONEDX_SCHEMA_NAME):
+            return True
+    return False

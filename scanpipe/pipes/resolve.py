@@ -215,6 +215,12 @@ def get_default_package_type(input_location):
         if input_location.endswith((".bom.json", ".cdx.json")):
             return "cyclonedx"
 
+        if input_location.endswith(".json"):
+            if cyclonedx.is_cyclonedx_bom(input_location):
+                return "cyclonedx"
+            if spdx.is_spdx_document(input_location):
+                return "spdx"
+
 
 # Mapping between the `default_package_type` its related resolver function
 resolver_registry = {
