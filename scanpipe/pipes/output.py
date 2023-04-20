@@ -37,6 +37,7 @@ from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licenses_by_spdx_key
 from packagedcode.utils import combine_expressions
+from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
@@ -206,9 +207,12 @@ class JSONResultsGenerator:
         runs = project.runs.all()
         runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
 
+        other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
+
         headers = {
             "tool_name": "scanpipe",
             "tool_version": scancodeio_version,
+            "other_tools": other_tools,
             "notice": SCAN_NOTICE,
             "uuid": project.uuid,
             "created_date": project.created_date,

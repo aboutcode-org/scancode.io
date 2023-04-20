@@ -37,6 +37,7 @@ from django.apps import apps
 from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
@@ -992,6 +993,11 @@ class ProjectRelatedQuerySet(
 ):
     def project(self, project):
         return self.filter(project=project)
+
+    def get_or_none(self, *args, **kwargs):
+        """Get the object from provided lookups or get None"""
+        with suppress(self.model.DoesNotExist, ValidationError):
+            return self.get(*args, **kwargs)
 
 
 class ProjectRelatedModel(models.Model):

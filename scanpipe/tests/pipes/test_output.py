@@ -32,6 +32,7 @@ from django.test import TestCase
 
 import xlsxwriter
 from lxml import etree
+from scancode_config import __version__ as scancode_toolkit_version
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
@@ -171,6 +172,10 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual(18, len(results["files"]))
         self.assertEqual(2, len(results["packages"]))
         self.assertEqual(4, len(results["dependencies"]))
+
+        self.assertEqual("scanpipe", results["headers"][0]["tool_name"])
+        expected = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
+        self.assertEqual(expected, results["headers"][0]["other_tools"])
 
         self.assertIn("compliance_alert", results["files"][0])
 

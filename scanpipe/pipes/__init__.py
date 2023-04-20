@@ -23,6 +23,7 @@
 import logging
 import subprocess
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -136,7 +137,7 @@ def update_or_create_package(project, package_data, codebase_resource=None):
 
 
 def update_or_create_dependency(
-    project, dependency_data, strip_datafile_path_root=False
+    project, dependency_data, for_package=None, strip_datafile_path_root=False
 ):
     """
     Get, update or create a DiscoveredDependency then returns it.
@@ -150,12 +151,15 @@ def update_or_create_dependency(
     where Dependency data is imported from a scancode-toolkit scan, where the
     root path segments are not stripped for `datafile_path`.
     """
-    try:
-        dependency = project.discovereddependencies.get(
-            dependency_uid=dependency_data.get("dependency_uid")
+    dependency = None
+    dependency_uid = dependency_data.get("dependency_uid")
+
+    if not dependency_uid:
+        dependency_data["dependency_uid"] = uuid.uuid4()
+    else:
+        dependency = project.discovereddependencies.get_or_none(
+            dependency_uid=dependency_uid,
         )
-    except DiscoveredDependency.DoesNotExist:
-        dependency = None
 
     if dependency:
         dependency.update_from_data(dependency_data)
@@ -163,6 +167,7 @@ def update_or_create_dependency(
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
+            for_package=for_package,
             strip_datafile_path_root=strip_datafile_path_root,
         )
 

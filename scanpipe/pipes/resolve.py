@@ -32,6 +32,7 @@ from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_normalized_expression
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
+from scancode.api import get_package_data
 
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import cyclonedx
@@ -40,6 +41,23 @@ from scanpipe.pipes import spdx
 """
 Resolve packages from manifest, lockfile, and SBOM.
 """
+
+
+def resolve_packages(input_location):
+    """Resolve the packages from manifest file."""
+    default_package_type = get_default_package_type(input_location)
+    if not default_package_type:
+        raise Exception(f"No package type found for {input_location}")
+
+    # The ScanCode.io resolvers take precedence over the ScanCode-toolkit ones.
+    resolver = resolver_registry.get(default_package_type)
+    if resolver:
+        resolved_packages = resolver(input_location=input_location)
+    else:
+        package_data = get_package_data(location=input_location)
+        resolved_packages = package_data.get("package_data", [])
+
+    return resolved_packages
 
 
 def resolve_pypi_packages(input_location):
@@ -196,6 +214,12 @@ def get_default_package_type(input_location):
 
         if input_location.endswith((".bom.json", ".cdx.json")):
             return "cyclonedx"
+
+        if input_location.endswith(".json"):
+            if cyclonedx.is_cyclonedx_bom(input_location):
+                return "cyclonedx"
+            if spdx.is_spdx_document(input_location):
+                return "spdx"
 
 
 # Mapping between the `default_package_type` its related resolver function

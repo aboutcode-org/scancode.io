@@ -21,17 +21,18 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
-import pathlib
 import re
+from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
+from pathlib import Path
 from typing import List  # Python 3.8 compatibility
 
 SPDX_SPEC_VERSION = "2.3"
 SPDX_LICENSE_LIST_VERSION = "3.18"
 SPDX_SCHEMA_NAME = "spdx-schema-2.3.json"
-SPDX_SCHEMA_PATH = pathlib.Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
+SPDX_SCHEMA_PATH = Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
 SPDX_SCHEMA_URL = (
     "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json"
 )
@@ -43,7 +44,7 @@ Generate SPDX Documents
 Usage:
 
 import pathlib
-from dejacode_toolkit import spdx
+from scanpipe.pipes import spdx
 
 creation_info = spdx.CreationInfo(
     person_name="John Doe",
@@ -631,9 +632,18 @@ def validate_document(document, schema=SPDX_SCHEMA_PATH):
     if isinstance(document, Document):
         document = document.as_dict()
 
-    if isinstance(schema, pathlib.Path):
+    if isinstance(schema, Path):
         schema = schema.read_text()
     if isinstance(schema, str):
         schema = json.loads(schema)
 
     jsonschema.validate(instance=document, schema=schema)
+
+
+def is_spdx_document(input_location):
+    """Return True if the file at `input_location` is a SPDX Document."""
+    with suppress(Exception):
+        data = json.loads(Path(input_location).read_text())
+        if data.get("SPDXID"):
+            return True
+    return False

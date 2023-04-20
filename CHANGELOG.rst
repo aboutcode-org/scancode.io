@@ -4,9 +4,22 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Add new command line option to create-project and add-input management commands to
+  copy the content of a local source directory to the project codebase work directory.
+  https://github.com/nexB/scancode.io/pull/672
+
+- Include the ScanCode-toolkit version in the output headers.
+  https://github.com/nexB/scancode.io/pull/670
+
 - Enhance the ``output`` management command to support providing multiple formats at
   once.
   https://github.com/nexB/scancode.io/issues/646
+
+- Improve the resolution of CycloneDX BOM and SPDX document when the file extension is
+  simply ``.json``.
+
+- Add support for manifest types using ScanCode-toolkit handlers.
+  https://github.com/nexB/scancode.io/issues/658
 
 - Add a "layers" data sheet in the xlsx output for docker pipeline run.
   https://github.com/nexB/scancode.io/issues/578
