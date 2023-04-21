@@ -29,6 +29,10 @@ from scanpipe.pipes import purldb
 FROM = "from/"
 TO = "to/"
 
+IGNORE_FILENAMES = ("packageinfo",)
+
+IGNORE_EXTENSIONS = ()
+
 
 def get_inputs(project):
     """Locate the `from` and `to` archives in project inputs directory."""
@@ -46,7 +50,7 @@ def get_inputs(project):
 
 def checksum_match(project, checksum_field, logger=None):
     """Match using checksum."""
-    project_files = project.codebaseresources.files().not_empty()
+    project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase().has_value(checksum_field)
     to_resources = (
         project_files.to_codebase().has_value(checksum_field).has_no_relation()
@@ -76,7 +80,7 @@ def java_to_class_match(project, logger=None):
     from_extension = ".java"
     to_extension = ".class"
 
-    project_files = project.codebaseresources.files()
+    project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
@@ -108,7 +112,7 @@ def java_to_class_match(project, logger=None):
 
 def path_match(project, logger=None):
     """Match using path similarities."""
-    project_files = project.codebaseresources.files().not_empty().only("path")
+    project_files = project.codebaseresources.files().no_status().only("path")
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
     resource_count = to_resources.count()
@@ -158,8 +162,8 @@ def path_match(project, logger=None):
 def purldb_match(project, extensions, logger=None):
     to_resources = (
         project.codebaseresources.files()
-        .not_empty()
         .to_codebase()
+        .no_status()
         .has_value("sha1")
         .filter(extension__in=extensions)
     )

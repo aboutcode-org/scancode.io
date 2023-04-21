@@ -25,6 +25,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
+from scanpipe.pipes import tag
 from scanpipe.pipes.scancode import extract_archives
 
 
@@ -38,6 +39,7 @@ class DevelopToDeploy(Pipeline):
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
+            cls.tag_empty_and_ignored_files,
             cls.checksum_match,
             cls.purldb_match,
             cls.java_to_class_match,
@@ -73,6 +75,12 @@ class DevelopToDeploy(Pipeline):
         """Collect and create codebase resources."""
         for resource_path in self.project.walk_codebase_path():
             pipes.make_codebase_resource(project=self.project, location=resource_path)
+
+    def tag_empty_and_ignored_files(self):
+        """Tag empty and ignored files using names and extensions."""
+        tag.tag_empty_codebase_resources(self.project)
+        tag.tag_ignored_filenames(self.project, filenames=d2d.IGNORE_FILENAMES)
+        tag.tag_ignored_extensions(self.project, extensions=d2d.IGNORE_EXTENSIONS)
 
     def checksum_match(self):
         """Match using SHA1 checksum."""

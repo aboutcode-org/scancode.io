@@ -1639,6 +1639,7 @@ class CodebaseResource(
             models.Index(fields=["path"]),
             models.Index(fields=["name"]),
             models.Index(fields=["extension"]),
+            models.Index(fields=["status"]),
             models.Index(fields=["programming_language"]),
             models.Index(fields=["sha1"]),
         ]

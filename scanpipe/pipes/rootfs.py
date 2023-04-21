@@ -313,12 +313,6 @@ def match_not_analyzed(
         matchable.save()
 
 
-def tag_empty_codebase_resources(project):
-    """Tags empty files as ignored."""
-    qs = project.codebaseresources.files().empty()
-    qs.filter(status__in=("", "not-analyzed")).update(status="ignored-empty-file")
-
-
 def tag_uninteresting_codebase_resources(project):
     """
     Check any file that doesn’t belong to any system package and determine if it's:
