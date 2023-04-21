@@ -22,6 +22,10 @@ v33.0.0 (unreleased)
 - Add support for manifest types using ScanCode-toolkit handlers.
   https://github.com/nexB/scancode.io/issues/658
 
+- Enhance the Resource details view to use the tabset system and display all
+  available data including the content viewer.
+  https://github.com/nexB/scancode.io/issues/215
+
 - Add a "layers" data sheet in the xlsx output for docker pipeline run.
   https://github.com/nexB/scancode.io/issues/578
 

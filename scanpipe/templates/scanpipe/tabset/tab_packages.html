@@ -1,0 +1,10 @@
+<div class="content">
+  <strong>{{ tab_data.fields.discovered_packages.label }}</strong>
+  <ul>
+    {% for package in tab_data.fields.discovered_packages.value.all %}
+      <li>
+        <a href="{{ package.get_absolute_url }}">{{ package }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>

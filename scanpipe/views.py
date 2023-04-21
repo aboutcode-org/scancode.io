@@ -199,7 +199,7 @@ class TabSetMixin:
                 "verbose_name": tab_definition.get("verbose_name"),
                 "icon_class": tab_definition.get("icon_class"),
                 "template": tab_definition.get("template"),
-                "fields": self.get_fields_data(tab_definition.get("fields")),
+                "fields": self.get_fields_data(tab_definition.get("fields", [])),
             }
             tabset_data[label] = tab_data
 
@@ -928,7 +928,10 @@ class ProjectErrorListView(
 
 
 class CodebaseResourceDetailsView(
-    ConditionalLoginRequired, ProjectRelatedViewMixin, generic.DetailView
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    TabSetMixin,
+    generic.DetailView,
 ):
     model = CodebaseResource
     slug_field = "path"
@@ -941,6 +944,66 @@ class CodebaseResourceDetailsView(
         CodebaseResource.Compliance.MISSING: "missing",
         "": "ok",
         None: "info",
+    }
+    prefetch_related = ["discovered_packages"]
+    tabset = {
+        "essentials": {
+            "fields": [
+                "path",
+                "status",
+                "type",
+                "name",
+                "extension",
+                "programming_language",
+                "mime_type",
+                "file_type",
+                "tag",
+                "rootfs_path",
+            ],
+            "icon_class": "fas fa-info-circle",
+        },
+        "viewer": {
+            "icon_class": "fas fa-file-code",
+            "template": "scanpipe/tabset/tab_content_viewer.html",
+        },
+        "detection": {
+            "fields": [
+                {"field_name": "license_expressions", "render_func": render_as_yaml},
+                {"field_name": "copyrights", "render_func": render_as_yaml},
+                {"field_name": "holders", "render_func": render_as_yaml},
+                {"field_name": "authors", "render_func": render_as_yaml},
+                {"field_name": "emails", "render_func": render_as_yaml},
+                {"field_name": "urls", "render_func": render_as_yaml},
+            ],
+            "icon_class": "fas fa-search",
+        },
+        "packages": {
+            "fields": ["discovered_packages"],
+            "icon_class": "fas fa-layer-group",
+            "template": "scanpipe/tabset/tab_packages.html",
+        },
+        "others": {
+            "fields": [
+                {"field_name": "size", "render_func": filesizeformat},
+                "md5",
+                "sha1",
+                "sha256",
+                "sha512",
+                "is_binary",
+                "is_text",
+                "is_archive",
+                "is_key_file",
+                "is_media",
+            ],
+            "icon_class": "fas fa-plus-square",
+        },
+        "extra_data": {
+            "fields": [
+                {"field_name": "extra_data", "render_func": render_as_yaml},
+            ],
+            "verbose_name": "Extra data",
+            "icon_class": "fas fa-database",
+        },
     }
 
     @staticmethod
