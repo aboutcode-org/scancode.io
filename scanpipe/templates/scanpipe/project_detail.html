@@ -81,6 +81,10 @@
         </div>
       </div>
 
+      {% if codebase_root %}
+        {% include "scanpipe/includes/project_codebase.html" with paths=codebase_root %}
+      {% endif %}
+
       {% if project.extra_data %}
         <article id="project-extra-data" class="panel is-info">
           <p class="panel-heading py-2 is-size-6">
