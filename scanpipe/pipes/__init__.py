@@ -288,3 +288,30 @@ def remove_prefix(text, prefix):
         prefix_len = len(prefix)
         return text[prefix_len:]
     return text
+
+
+def get_progress_percentage(current_index, total_count):
+    """
+    Return the percentage of progress given the current index and total count of
+    objects.
+    """
+    if current_index < 0 or current_index >= total_count:
+        raise ValueError("current_index must be between 0 and total_count - 1")
+
+    progress = current_index / total_count * 100
+    return progress
+
+
+def log_progress(log_func, current_index, total_count, last_percent, increment_percent):
+    """
+    Log progress updates every `increment_percent` percentage points, given the
+    current index and total count of objects.
+    Return the latest percent logged.
+    """
+    progress_percentage = int(get_progress_percentage(current_index, total_count))
+    if progress_percentage >= last_percent + increment_percent:
+        last_percent = progress_percentage
+        log_func(
+            f"Progress: {progress_percentage}% ({current_index:,d}/{total_count:,d})"
+        )
+    return last_percent

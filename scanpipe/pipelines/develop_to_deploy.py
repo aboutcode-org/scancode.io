@@ -44,7 +44,7 @@ class DevelopToDeploy(Pipeline):
             cls.path_match,
         )
 
-    purldb_match_extensions = [".jar", ".war"]
+    purldb_match_extensions = [".jar", ".war", ".zip"]
 
     def get_inputs(self):
         """Locate the `from` and `to` archives."""

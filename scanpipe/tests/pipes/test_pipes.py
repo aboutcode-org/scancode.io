@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import datetime
+import io
 from pathlib import Path
 from unittest import mock
 
@@ -203,3 +204,35 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         # resource.
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
+
+    def test_scanpipe_get_progress_percentage(self):
+        self.assertEqual(0.0, pipes.get_progress_percentage(0, 10))
+        self.assertEqual(50.0, pipes.get_progress_percentage(5, 10))
+        self.assertEqual(90.0, pipes.get_progress_percentage(9, 10))
+        self.assertEqual(60.0, pipes.get_progress_percentage(3, 5))
+
+        with self.assertRaises(ValueError):
+            pipes.get_progress_percentage(10, 1)
+
+    def test_scanpipe_log_progress(self):
+        buffer = io.StringIO()
+        last_percent = pipes.log_progress(
+            log_func=buffer.write,
+            current_index=1,
+            total_count=10,
+            last_percent=0,
+            increment_percent=5,
+        )
+        self.assertEqual(10, last_percent)
+        self.assertEqual("Progress: 10% (1/10)", buffer.getvalue())
+
+        buffer = io.StringIO()
+        last_percent = pipes.log_progress(
+            log_func=buffer.write,
+            current_index=20,
+            total_count=100,
+            last_percent=15,
+            increment_percent=5,
+        )
+        self.assertEqual(20, last_percent)
+        self.assertEqual("Progress: 20% (20/100)", buffer.getvalue())

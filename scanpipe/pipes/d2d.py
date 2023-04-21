@@ -48,12 +48,14 @@ def checksum_match(project, checksum_field, logger=None):
     """Match using checksum."""
     project_files = project.codebaseresources.files().not_empty()
     from_resources = project_files.from_codebase().has_value(checksum_field)
-    to_resources = project_files.to_codebase().has_value(checksum_field)
+    to_resources = (
+        project_files.to_codebase().has_value(checksum_field).has_no_relation()
+    )
 
     if logger:
         resource_count = to_resources.count()
         logger(
-            f"Matching {resource_count} to/ resources using {checksum_field} "
+            f"Matching {resource_count:,d} to/ resources using {checksum_field} "
             f"against from/ codebase"
         )
 
@@ -80,7 +82,8 @@ def java_to_class_match(project, logger=None):
 
     to_resources_dot_class = to_resources.filter(name__endswith=to_extension)
     if logger:
-        logger(f"Matching {to_resources_dot_class.count()} .class resources to .java")
+        count = to_resources_dot_class.count()
+        logger(f"Matching {count:,d} .class resources to .java")
 
     for to_resource in to_resources_dot_class:
         qualified_class = to_resource.path.split("-extract/")[-1]
@@ -105,22 +108,29 @@ def java_to_class_match(project, logger=None):
 
 def path_match(project, logger=None):
     """Match using path similarities."""
-    project_files = project.codebaseresources.files().only("path")
+    project_files = project.codebaseresources.files().not_empty().only("path")
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
+    resource_count = to_resources.count()
 
     if logger:
-        resource_count = to_resources.count()
         logger(
-            f"Matching {resource_count} to/ resources using path match "
+            f"Matching {resource_count:,d} to/ resources using path match "
             f"against from/ codebase"
         )
 
-    for to_resource in to_resources:
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    last_percent = 0
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger, resource_index, resource_count, last_percent, increment_percent=5
+        )
+
         path_parts = Path(to_resource.path.lstrip("/")).parts
         path_parts_len = len(path_parts)
-        for index in range(1, path_parts_len):
-            current_parts = path_parts[index:]
+
+        for path_parts_index in range(1, path_parts_len):
+            current_parts = path_parts[path_parts_index:]
             current_path = "/".join(current_parts)
             # The slash "/" prefix matters during the match as we do not want to
             # match on filenames sharing the same ending.
@@ -157,7 +167,9 @@ def purldb_match(project, extensions, logger=None):
     if logger:
         resource_count = to_resources.count()
         extensions_str = ", ".join(extensions)
-        logger(f"Matching {resource_count} {extensions_str} resources against PurlDB")
+        logger(
+            f"Matching {resource_count:,d} {extensions_str} resources against PurlDB"
+        )
 
     for resource in to_resources:
         if results := purldb.match_by_sha1(sha1=resource.sha1):
