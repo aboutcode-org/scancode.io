@@ -40,12 +40,37 @@ def get_inputs(project):
     to_file = list(project.inputs("to*"))
 
     if len(from_file) != 1:
-        raise Exception("from* archive not found.")
+        raise FileNotFoundError("from* archive not found.")
 
     if len(to_file) != 1:
-        raise Exception("to* archive not found.")
+        raise FileNotFoundError("to* archive not found.")
 
     return from_file[0], to_file[0]
+
+
+def get_extracted_subpath(path):
+    """Return the path segments located after the last `-extract/` segment"""
+    return path.split("-extract/")[-1]
+
+
+def get_best_checksum_matches(to_resource, matches):
+    extracted_subpath_matches = [
+        from_resource
+        for from_resource in matches
+        if from_resource.path.endswith(get_extracted_subpath(to_resource.path))
+    ]
+    if extracted_subpath_matches:
+        return extracted_subpath_matches
+
+    same_name_matches = [
+        from_resource
+        for from_resource in matches
+        if from_resource.name == to_resource.name
+    ]
+    if same_name_matches:
+        return same_name_matches
+
+    return matches
 
 
 def checksum_match(project, checksum_field, logger=None):
@@ -66,7 +91,7 @@ def checksum_match(project, checksum_field, logger=None):
     for to_resource in to_resources:
         checksum_value = getattr(to_resource, checksum_field)
         matches = from_resources.filter(**{checksum_field: checksum_value})
-        for match in matches:
+        for match in get_best_checksum_matches(to_resource, matches):
             pipes.make_relationship(
                 from_resource=match,
                 to_resource=to_resource,
@@ -90,7 +115,7 @@ def java_to_class_match(project, logger=None):
         logger(f"Matching {count:,d} .class resources to .java")
 
     for to_resource in to_resources_dot_class:
-        qualified_class = to_resource.path.split("-extract/")[-1]
+        qualified_class = get_extracted_subpath(to_resource.path)
 
         if "$" in to_resource.name:  # inner class
             path_parts = Path(qualified_class.lstrip("/")).parts
@@ -108,6 +133,39 @@ def java_to_class_match(project, logger=None):
                 relationship=CodebaseRelation.Relationship.COMPILED,
                 match_type="java_to_class",
             )
+
+
+def _resource_path_match(to_resource, from_resources):
+    path_parts = Path(to_resource.path.lstrip("/")).parts
+    path_parts_len = len(path_parts)
+
+    for path_parts_index in range(1, path_parts_len):
+        current_parts = path_parts[path_parts_index:]
+        current_path = "/".join(current_parts)
+        # The slash "/" prefix matters during the match as we do not want to
+        # match on filenames sharing the same ending.
+        # For example: Filter.java and FastFilter.java
+        matches = from_resources.filter(path__endswith=f"/{current_path}")
+
+        if len(matches) > len(current_parts):
+            break
+
+        for match in matches:
+            relation = CodebaseRelation.objects.filter(
+                from_resource=match,
+                to_resource=to_resource,
+                relationship=CodebaseRelation.Relationship.PATH_MATCH,
+            )
+            if not relation.exists():
+                pipes.make_relationship(
+                    from_resource=match,
+                    to_resource=to_resource,
+                    relationship=CodebaseRelation.Relationship.PATH_MATCH,
+                    match_type="path",
+                    extra_data={
+                        "path_score": f"{len(current_parts)}/{path_parts_len - 1}",
+                    },
+                )
 
 
 def path_match(project, logger=None):
@@ -129,34 +187,7 @@ def path_match(project, logger=None):
         last_percent = pipes.log_progress(
             logger, resource_index, resource_count, last_percent, increment_percent=5
         )
-
-        path_parts = Path(to_resource.path.lstrip("/")).parts
-        path_parts_len = len(path_parts)
-
-        for path_parts_index in range(1, path_parts_len):
-            current_parts = path_parts[path_parts_index:]
-            current_path = "/".join(current_parts)
-            # The slash "/" prefix matters during the match as we do not want to
-            # match on filenames sharing the same ending.
-            # For example: Filter.java and FastFilter.java
-            matches = from_resources.filter(path__endswith=f"/{current_path}")
-
-            for match in matches:
-                relation = CodebaseRelation.objects.filter(
-                    from_resource=match,
-                    to_resource=to_resource,
-                    relationship=CodebaseRelation.Relationship.PATH_MATCH,
-                )
-                if not relation.exists():
-                    pipes.make_relationship(
-                        from_resource=match,
-                        to_resource=to_resource,
-                        relationship=CodebaseRelation.Relationship.PATH_MATCH,
-                        match_type="path",
-                        extra_data={
-                            "path_score": f"{len(current_parts)}/{path_parts_len-1}",
-                        },
-                    )
+        _resource_path_match(to_resource, from_resources)
 
 
 def purldb_match(project, extensions, logger=None):

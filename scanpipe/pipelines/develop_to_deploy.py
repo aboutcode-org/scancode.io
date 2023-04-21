@@ -35,13 +35,13 @@ class DevelopToDeploy(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.get_inputs,
-            cls.extract_inputs_to_codebase_directory,
-            cls.extract_archives_in_place,
-            cls.collect_and_create_codebase_resources,
-            cls.tag_empty_and_ignored_files,
+            # cls.get_inputs,
+            # cls.extract_inputs_to_codebase_directory,
+            # cls.extract_archives_in_place,
+            # cls.collect_and_create_codebase_resources,
+            # cls.tag_empty_and_ignored_files,
             cls.checksum_match,
-            cls.purldb_match,
+            # cls.purldb_match,
             cls.java_to_class_match,
             cls.path_match,
         )
@@ -84,6 +84,7 @@ class DevelopToDeploy(Pipeline):
 
     def checksum_match(self):
         """Match using SHA1 checksum."""
+        self.project.codebaserelations.all().delete()
         d2d.checksum_match(project=self.project, checksum_field="sha1", logger=self.log)
 
     def purldb_match(self):

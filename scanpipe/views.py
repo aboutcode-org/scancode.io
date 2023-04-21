@@ -951,6 +951,7 @@ class CodebaseRelationListView(
             .files()
             .to_codebase()
             .prefetch_related("related_from__from_resource")
+            .distinct()
         )
         if self.request.GET.get("missing_only"):
             queryset = queryset.has_no_relation()
