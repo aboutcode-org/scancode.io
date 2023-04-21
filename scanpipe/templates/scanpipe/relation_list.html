@@ -36,7 +36,7 @@
               <tr>
                 {% if forloop.first %}
                   <td class="break-all" rowspan="{{ resource.related_from.all|length }}">
-                    <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+                    <a href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
                   </td>
                 {% endif %}
                 <td>
@@ -49,13 +49,13 @@
                   {% endif %}
                 </td>
                 <td class="break-all">
-                  <a href="{{ relation.from_resource.get_absolute_url }}">{{ relation.from_resource.path }}</a>
+                  <a href="{{ relation.from_resource.get_absolute_url }}#viewer">{{ relation.from_resource.path }}</a>
                 </td>
               </tr>
             {% empty %}
               <tr>
                 <td class="break-all">
-                  <a class="has-text-danger" href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+                  <a class="has-text-danger" href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
                 </td>
                 <td></td>
                 <td></td>

@@ -24,6 +24,7 @@ import tempfile
 
 from django.test import TestCase
 
+from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
 
@@ -58,3 +59,21 @@ class ScanPipeD2DPipesTest(TestCase):
 
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
+
+    def test_scanpipe_d2d_get_best_checksum_matches_same_name(self):
+        to_1 = CodebaseResource(name="package-1.0.ext", path="to/package-1.0.ext")
+        to_2 = CodebaseResource(name="package-2.0.ext", path="to/package-2.0.ext")
+        from_1 = CodebaseResource(name="package-1.0.ext", path="from/package-1.0.ext")
+        from_2 = CodebaseResource(name="package-2.0.ext", path="from/package-2.0.ext")
+        matches = [from_1, from_2]
+        self.assertEqual([from_1], d2d.get_best_checksum_matches(to_1, matches))
+        self.assertEqual([from_2], d2d.get_best_checksum_matches(to_2, matches))
+
+    def test_scanpipe_d2d_get_best_checksum_matches_extracted_subpath(self):
+        to_1 = CodebaseResource(path="to/jar-extract/a/package-1.0.ext")
+        to_2 = CodebaseResource(path="to/jar-extract/a/package-2.0.ext")
+        from_1 = CodebaseResource(path="from/src/a/package-1.0.ext")
+        from_2 = CodebaseResource(path="from/src/a/package-2.0.ext")
+        matches = [from_1, from_2]
+        self.assertEqual([from_1], d2d.get_best_checksum_matches(to_1, matches))
+        self.assertEqual([from_2], d2d.get_best_checksum_matches(to_2, matches))

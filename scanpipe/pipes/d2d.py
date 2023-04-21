@@ -148,6 +148,8 @@ def _resource_path_match(to_resource, from_resources):
         matches = from_resources.filter(path__endswith=f"/{current_path}")
 
         if len(matches) > len(current_parts):
+            to_resource.status = "too-many-matches"
+            to_resource.save()
             break
 
         for match in matches:
