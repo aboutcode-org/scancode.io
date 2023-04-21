@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import difflib
 from pathlib import Path
 
 from scanpipe import pipes
@@ -135,6 +136,20 @@ def java_to_class_match(project, logger=None):
             )
 
 
+def get_diff_ratio(to_resource, from_resource):
+    if not (to_resource.is_text and from_resource.is_text):
+        return
+
+    try:
+        to_lines = to_resource.location_path.read_text().split("\n")
+        from_lines = from_resource.location_path.read_text().split("\n")
+    except Exception:
+        return
+
+    matcher = difflib.SequenceMatcher(a=from_lines, b=to_lines)
+    return matcher.quick_ratio()
+
+
 def _resource_path_match(to_resource, from_resources):
     path_parts = Path(to_resource.path.lstrip("/")).parts
     path_parts_len = len(path_parts)
@@ -142,37 +157,45 @@ def _resource_path_match(to_resource, from_resources):
     for path_parts_index in range(1, path_parts_len):
         current_parts = path_parts[path_parts_index:]
         current_path = "/".join(current_parts)
+
         # The slash "/" prefix matters during the match as we do not want to
         # match on filenames sharing the same ending.
         # For example: Filter.java and FastFilter.java
         matches = from_resources.filter(path__endswith=f"/{current_path}")
+        if not matches:
+            continue
 
+        # Only create relations when the number of matches if inferior or equal to
+        # the current number of path segment matched.
         if len(matches) > len(current_parts):
             to_resource.status = "too-many-matches"
             to_resource.save()
             break
 
         for match in matches:
-            relation = CodebaseRelation.objects.filter(
+            diff_ratio = get_diff_ratio(to_resource=to_resource, from_resource=match)
+            if diff_ratio and diff_ratio < 0.7:
+                continue
+
+            extra_data = {
+                "path_score": f"{len(current_parts)}/{path_parts_len - 1}",
+            }
+            if diff_ratio:
+                extra_data["diff_ratio"] = round(diff_ratio, 2)
+
+            pipes.make_relationship(
                 from_resource=match,
                 to_resource=to_resource,
                 relationship=CodebaseRelation.Relationship.PATH_MATCH,
+                match_type="path",
+                extra_data=extra_data,
             )
-            if not relation.exists():
-                pipes.make_relationship(
-                    from_resource=match,
-                    to_resource=to_resource,
-                    relationship=CodebaseRelation.Relationship.PATH_MATCH,
-                    match_type="path",
-                    extra_data={
-                        "path_score": f"{len(current_parts)}/{path_parts_len - 1}",
-                    },
-                )
+        break
 
 
 def path_match(project, logger=None):
     """Match using path similarities."""
-    project_files = project.codebaseresources.files().no_status().only("path")
+    project_files = project.codebaseresources.files().no_status()  # .only("pk", "path")
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
     resource_count = to_resources.count()
