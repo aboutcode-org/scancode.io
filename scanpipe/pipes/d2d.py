@@ -22,6 +22,7 @@
 
 import difflib
 from pathlib import Path
+from timeit import default_timer as timer
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -74,6 +75,18 @@ def get_best_checksum_matches(to_resource, matches):
     return matches
 
 
+def _resource_checksum_match(to_resource, from_resources, checksum_field):
+    checksum_value = getattr(to_resource, checksum_field)
+    matches = from_resources.filter(**{checksum_field: checksum_value})
+    for match in get_best_checksum_matches(to_resource, matches):
+        pipes.make_relationship(
+            from_resource=match,
+            to_resource=to_resource,
+            relationship=CodebaseRelation.Relationship.IDENTICAL,
+            match_type=checksum_field,
+        )
+
+
 def checksum_match(project, checksum_field, logger=None):
     """Match using checksum."""
     project_files = project.codebaseresources.files().no_status()
@@ -81,59 +94,74 @@ def checksum_match(project, checksum_field, logger=None):
     to_resources = (
         project_files.to_codebase().has_value(checksum_field).has_no_relation()
     )
+    resource_count = to_resources.count()
 
     if logger:
-        resource_count = to_resources.count()
         logger(
             f"Matching {resource_count:,d} to/ resources using {checksum_field} "
             f"against from/ codebase"
         )
 
-    for to_resource in to_resources:
-        checksum_value = getattr(to_resource, checksum_field)
-        matches = from_resources.filter(**{checksum_field: checksum_value})
-        for match in get_best_checksum_matches(to_resource, matches):
-            pipes.make_relationship(
-                from_resource=match,
-                to_resource=to_resource,
-                relationship=CodebaseRelation.Relationship.IDENTICAL,
-                match_type=checksum_field,
-            )
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _resource_checksum_match(to_resource, from_resources, checksum_field)
+
+
+def _resource_java_to_class_match(to_resource, from_resources):
+    qualified_class = get_extracted_subpath(to_resource.path)
+
+    if "$" in to_resource.name:  # inner class
+        path_parts = Path(qualified_class.lstrip("/")).parts
+        parts_without_name = list(path_parts[:-1])
+        from_name = to_resource.name.split("$")[0] + ".java"
+        qualified_java = "/".join(parts_without_name + [from_name])
+    else:
+        qualified_java = qualified_class.replace(".class", ".java")
+
+    matches = from_resources.filter(path__endswith=qualified_java)
+    for match in matches:
+        pipes.make_relationship(
+            from_resource=match,
+            to_resource=to_resource,
+            relationship=CodebaseRelation.Relationship.COMPILED,
+            match_type="java_to_class",
+        )
 
 
 def java_to_class_match(project, logger=None):
     """Match a .java source to its compiled .class using fully qualified name."""
-    from_extension = ".java"
-    to_extension = ".class"
-
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
-    to_resources_dot_class = to_resources.filter(name__endswith=to_extension)
+    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    resource_count = to_resources_dot_class.count()
     if logger:
-        count = to_resources_dot_class.count()
-        logger(f"Matching {count:,d} .class resources to .java")
+        logger(f"Matching {resource_count:,d} .class resources to .java")
 
-    for to_resource in to_resources_dot_class:
-        qualified_class = get_extracted_subpath(to_resource.path)
-
-        if "$" in to_resource.name:  # inner class
-            path_parts = Path(qualified_class.lstrip("/")).parts
-            parts_without_name = list(path_parts[:-1])
-            from_name = to_resource.name.split("$")[0] + from_extension
-            qualified_java = "/".join(parts_without_name + [from_name])
-        else:
-            qualified_java = qualified_class.replace(to_extension, from_extension)
-
-        matches = from_resources.filter(path__endswith=qualified_java)
-        for match in matches:
-            pipes.make_relationship(
-                from_resource=match,
-                to_resource=to_resource,
-                relationship=CodebaseRelation.Relationship.COMPILED,
-                match_type="java_to_class",
-            )
+    resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _resource_java_to_class_match(to_resource, from_resources)
 
 
 def get_diff_ratio(to_resource, from_resource):
@@ -208,11 +236,33 @@ def path_match(project, logger=None):
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
+    start_time = timer()
     for resource_index, to_resource in enumerate(resource_iterator):
         last_percent = pipes.log_progress(
-            logger, resource_index, resource_count, last_percent, increment_percent=5
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
         )
         _resource_path_match(to_resource, from_resources)
+
+
+def _resource_purldb_match(project, resource):
+    if results := purldb.match_by_sha1(sha1=resource.sha1):
+        package_data = results[0]
+        package_data.pop("dependencies")
+        package = pipes.update_or_create_package(
+            project=project,
+            package_data=package_data,
+            codebase_resource=resource,
+        )
+        extracted_resources = project.codebaseresources.to_codebase().filter(
+            path__startswith=f"{resource.path}-extract"
+        )
+        package.add_resources(extracted_resources)
+        extracted_resources.update(status="application-package")
 
 
 def purldb_match(project, extensions, logger=None):
@@ -223,25 +273,24 @@ def purldb_match(project, extensions, logger=None):
         .has_value("sha1")
         .filter(extension__in=extensions)
     )
+    resource_count = to_resources.count()
 
     if logger:
-        resource_count = to_resources.count()
         extensions_str = ", ".join(extensions)
         logger(
             f"Matching {resource_count:,d} {extensions_str} resources against PurlDB"
         )
 
-    for resource in to_resources:
-        if results := purldb.match_by_sha1(sha1=resource.sha1):
-            package_data = results[0]
-            package_data.pop("dependencies")
-            package = pipes.update_or_create_package(
-                project=project,
-                package_data=package_data,
-                codebase_resource=resource,
-            )
-            extracted_resources = project.codebaseresources.to_codebase().filter(
-                path__startswith=f"{resource.path}-extract"
-            )
-            package.add_resources(extracted_resources)
-            extracted_resources.update(status="application-package")
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _resource_purldb_match(project, to_resource)

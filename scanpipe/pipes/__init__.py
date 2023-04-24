@@ -27,6 +27,7 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from time import sleep
+from timeit import default_timer as timer
 
 from django.db.models import Count
 
@@ -302,7 +303,14 @@ def get_progress_percentage(current_index, total_count):
     return progress
 
 
-def log_progress(log_func, current_index, total_count, last_percent, increment_percent):
+def log_progress(
+    log_func,
+    current_index,
+    total_count,
+    last_percent,
+    increment_percent,
+    start_time=None,
+):
     """
     Log progress updates every `increment_percent` percentage points, given the
     current index and total count of objects.
@@ -311,7 +319,14 @@ def log_progress(log_func, current_index, total_count, last_percent, increment_p
     progress_percentage = int(get_progress_percentage(current_index, total_count))
     if progress_percentage >= last_percent + increment_percent:
         last_percent = progress_percentage
-        log_func(
-            f"Progress: {progress_percentage}% ({current_index:,d}/{total_count:,d})"
-        )
+        msg = f"Progress: {progress_percentage}% ({current_index:,d}/{total_count:,d})"
+
+        if start_time:
+            run_time = timer() - start_time
+            eta = round(run_time / progress_percentage * (100 - progress_percentage))
+            if eta:
+                msg += f" ETA: {round(eta)} seconds"
+
+        log_func(msg)
+
     return last_percent
