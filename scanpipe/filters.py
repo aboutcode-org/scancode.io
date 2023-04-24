@@ -121,6 +121,7 @@ class FilterSetUtilsMixin:
         for name, value in self.form.cleaned_data.items():
             field_name = self.filters[name].field_name
             if value == self.empty_value:
+                print(name, value)
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
@@ -278,6 +279,26 @@ class InPackageFilter(django_filters.ChoiceFilter):
         return qs
 
 
+class RelationMatchTypeFilter(django_filters.ChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs["choices"] = (
+            ("", "All"),
+            ("none", "No match"),
+            ("any", "Any match"),
+            ("java_to_class", "java to class"),
+            ("path", "path"),
+            ("sha1", "sha1"),
+        )
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == "none":
+            return qs.has_no_relation()
+        elif value == "any":
+            return qs.has_relation()
+        return super().filter(qs, value)
+
+
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search",
@@ -297,6 +318,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "mime_type",
             "tag",
             "compliance_alert",
+            "related_from__match_type",
         ],
     )
     license_key = JSONContainsFilter(
@@ -311,6 +333,10 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
     )
     in_package = InPackageFilter(label="In a Package")
+    relation_match_type = RelationMatchTypeFilter(
+        label="Relation match type",
+        field_name="related_from__match_type",
+    )
 
     class Meta:
         model = CodebaseResource
@@ -341,8 +367,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "emails",
             "urls",
             "in_package",
-            # CodebaseRelation
-            "related_from__match_type",
+            "relation_match_type",
         ]
 
     @classmethod

@@ -22,7 +22,10 @@
           <tr>
             <th style="width: 45%">To resource</th>
             <th>
-              Match type
+              <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}related_from__match_type" class="is-black-link">Match type</a>
+              {% if "related_from__match_type" in filter.data.sort %}
+                <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+              {% endif %}
               <div style="float: right">
                 {% include 'scanpipe/includes/match_type_filter_dropdown.html' %}
               </div>
@@ -66,6 +69,12 @@
                 <td></td>
               </tr>
             {% endfor %}
+          {% empty %}
+            <tr>
+              <td colspan="10" class="has-text-centered p-3">
+                No Relations found. <a href="?">Clear search and filters</a>
+              </td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>

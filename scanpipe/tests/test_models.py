@@ -48,6 +48,7 @@ from requests.exceptions import RequestException
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -1080,6 +1081,17 @@ class ScanPipeModelsTest(TestCase):
         file.create_and_add_package(package_data1)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
+
+        self.assertEqual(0, CodebaseResource.objects.has_relation().count())
+        self.assertEqual(3, CodebaseResource.objects.has_no_relation().count())
+        CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=file,
+            to_resource=directory,
+            relationship=CodebaseRelation.Relationship.IDENTICAL,
+        )
+        self.assertEqual(2, CodebaseResource.objects.has_relation().count())
+        self.assertEqual(1, CodebaseResource.objects.has_no_relation().count())
 
     def test_scanpipe_codebase_resource_queryset_licenses_categories(self):
         CodebaseResource.objects.all().delete()

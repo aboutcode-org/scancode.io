@@ -1419,17 +1419,13 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         """Resources in to/ directory"""
         return self.filter(path__startswith="to/")
 
+    def has_relation(self):
+        """Resources assigned to at least one CodebaseRelation"""
+        return self.filter(Q(related_from__isnull=False) | Q(related_to__isnull=False))
+
     def has_no_relation(self):
         """Resources not part of any CodebaseRelation"""
         return self.filter(related_from__isnull=True, related_to__isnull=True)
-
-    def missing_in_to(self):
-        """Resources in from/ not found in to/"""
-        return self.from_codebase().filter(related_to__isnull=True)
-
-    def missing_in_from(self):
-        """Resources in to/ not found in from/"""
-        return self.to_codebase().filter(related_from__isnull=True)
 
     def has_value(self, field_name):
         return self.filter(~Q((field_name, "")))

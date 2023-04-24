@@ -953,7 +953,7 @@ class CodebaseRelationListView(
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
 
     def get_queryset(self):
-        queryset = (
+        return (
             super()
             .get_queryset()
             .files()
@@ -961,9 +961,6 @@ class CodebaseRelationListView(
             .prefetch_related("related_from__from_resource")
             .distinct()
         )
-        if self.request.GET.get("missing_only"):
-            queryset = queryset.has_no_relation()
-        return queryset
 
     @staticmethod
     def get_rows(qs):
