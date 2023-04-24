@@ -150,7 +150,7 @@ def get_diff_ratio(to_resource, from_resource):
     return matcher.quick_ratio()
 
 
-def _resource_path_match(to_resource, from_resources):
+def _resource_path_match(to_resource, from_resources, diff_ratio_threshold=0.7):
     path_parts = Path(to_resource.path.lstrip("/")).parts
     path_parts_len = len(path_parts)
 
@@ -174,14 +174,14 @@ def _resource_path_match(to_resource, from_resources):
 
         for match in matches:
             diff_ratio = get_diff_ratio(to_resource=to_resource, from_resource=match)
-            if diff_ratio and diff_ratio < 0.7:
+            if diff_ratio and diff_ratio < diff_ratio_threshold:
                 continue
 
             extra_data = {
                 "path_score": f"{len(current_parts)}/{path_parts_len - 1}",
             }
             if diff_ratio:
-                extra_data["diff_ratio"] = round(diff_ratio, 2)
+                extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
 
             pipes.make_relationship(
                 from_resource=match,
