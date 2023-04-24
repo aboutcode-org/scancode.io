@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.db.models import Q
+
 
 def tag_empty_codebase_resources(project):
     """Tags empty files as ignored."""
@@ -41,3 +43,13 @@ def tag_ignored_extensions(project, extensions):
     """Tag codebase resource as `ignored` status from list of `extensions`."""
     qs = project.codebaseresources.no_status().filter(extension__in=extensions)
     return qs.update(status="ignored-extension")
+
+
+def tag_ignored_paths(project, paths):
+    """Tag codebase resource as `ignored` status from list of `paths`."""
+    lookups = Q()
+    for path in paths:
+        lookups |= Q(path__contains=path)
+
+    qs = project.codebaseresources.no_status().filter(lookups)
+    return qs.update(status="ignored-path")

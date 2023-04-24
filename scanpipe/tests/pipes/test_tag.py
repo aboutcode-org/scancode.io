@@ -61,3 +61,10 @@ class ScanPipeTagPipesTest(TestCase):
         self.resource2.refresh_from_db()
         self.assertEqual("", self.resource1.status)
         self.assertEqual("ignored-extension", self.resource2.status)
+
+    def test_scanpipe_pipes_tag_tag_ignored_paths(self):
+        tag.tag_ignored_paths(self.project1, paths=["dir/"])
+        self.resource1.refresh_from_db()
+        self.resource2.refresh_from_db()
+        self.assertEqual("ignored-path", self.resource1.status)
+        self.assertEqual("ignored-path", self.resource2.status)

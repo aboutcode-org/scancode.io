@@ -32,8 +32,8 @@ FROM = "from/"
 TO = "to/"
 
 IGNORE_FILENAMES = ("packageinfo",)
-
 IGNORE_EXTENSIONS = ()
+IGNORE_PATHS = ("gradleTest/",)
 
 
 def get_inputs(project):

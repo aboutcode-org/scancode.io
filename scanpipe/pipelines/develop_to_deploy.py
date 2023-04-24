@@ -88,6 +88,7 @@ class DevelopToDeploy(Pipeline):
         tag.tag_empty_codebase_resources(self.project)
         tag.tag_ignored_filenames(self.project, filenames=d2d.IGNORE_FILENAMES)
         tag.tag_ignored_extensions(self.project, extensions=d2d.IGNORE_EXTENSIONS)
+        tag.tag_ignored_paths(self.project, paths=d2d.IGNORE_PATHS)
 
     def checksum_match(self):
         """Match using SHA1 checksum."""
