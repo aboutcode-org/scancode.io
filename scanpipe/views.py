@@ -1138,10 +1138,13 @@ def codebase_resource_diff_view(request, uuid):
     project = get_object_or_404(Project, uuid=uuid)
 
     project_files = project.codebaseresources.files()
-    from_pk = request.GET.get("pk_a")
-    to_pk = request.GET.get("pk_b")
-    from_resource = get_object_or_404(project_files, path=from_pk)
-    to_resource = get_object_or_404(project_files, path=to_pk)
+    from_path = request.GET.get("from_path")
+    to_path = request.GET.get("to_path")
+    from_resource = get_object_or_404(project_files, path=from_path)
+    to_resource = get_object_or_404(project_files, path=to_path)
+
+    if not (from_resource.is_text and to_resource.is_text):
+        raise Http404("Cannot diff on binary files")
 
     from_lines = from_resource.location_path.read_text().split("\n")
     to_lines = to_resource.location_path.read_text().split("\n")

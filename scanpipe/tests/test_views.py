@@ -31,6 +31,7 @@ from django.urls import reverse
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
+from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import license_policies_index
 from scanpipe.views import ProjectDetailView
 
@@ -459,3 +460,37 @@ class ScanPipeViewsTest(TestCase):
             '{"start_line": 1, "end_line": 2, "text": null, "className": "ace_info"}'
         )
         self.assertContains(response, expected)
+
+    def test_scanpipe_views_codebase_relation_diff_view(self):
+        url = reverse("resource_diff", args=[self.project1.uuid])
+        data = {
+            "from_path": "",
+            "to_path": "",
+        }
+        response = self.client.get(url, data=data)
+        expected = "The requested resource was not found on this server."
+        self.assertContains(response, expected, status_code=404)
+
+        resource_files = [
+            self.data_location / "codebase" / "a.txt",
+            self.data_location / "codebase" / "b.txt",
+        ]
+        copy_inputs(resource_files, self.project1.codebase_path)
+        resource1 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="a.txt",
+            type=CodebaseResource.Type.FILE,
+            is_text=True,
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="b.txt",
+            type=CodebaseResource.Type.FILE,
+            is_text=True,
+        )
+        data = {
+            "from_path": resource1.path,
+            "to_path": resource2.path,
+        }
+        response = self.client.get(url, data=data)
+        self.assertContains(response, '<table class="diff"')

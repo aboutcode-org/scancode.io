@@ -569,7 +569,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             )
 
     def setup_work_directory(self):
-        """Create all of the work_directory structure and skips if already existing."""
+        """Create all the work_directory structure and skips if already existing."""
         for subdirectory in self.WORK_DIRECTORIES:
             Path(self.work_directory, subdirectory).mkdir(parents=True, exist_ok=True)
 

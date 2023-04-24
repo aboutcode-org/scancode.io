@@ -44,9 +44,9 @@
                   {% if relation.extra_data.path_score %}
                     {{ relation.extra_data.path_score }}
                   {% endif %}
-                  {% if relation.match_type == "path" %}
+                  {% if relation.match_type == "path" and resource.is_text and relation.from_resource.is_text %}
                     <div>
-                      <a href="/project/{{ project.uuid }}/resources/diff/?pk_a={{ resource.path }}&pk_b={{ relation.from_resource.path }}" target="_blank">diff</a>
+                      <a href="{% url 'resource_diff' project.uuid %}?from_path={{ resource.path }}&to_path={{ relation.from_resource.path }}" target="_blank">diff</a>
                       {% if relation.extra_data.diff_ratio %}
                         ratio: {{ relation.extra_data.diff_ratio }}
                       {% endif %}
