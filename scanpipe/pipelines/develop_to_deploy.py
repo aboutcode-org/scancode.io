@@ -30,7 +30,14 @@ from scanpipe.pipes.scancode import extract_archives
 
 
 class DevelopToDeploy(Pipeline):
-    """Relate develop and deploy code tree."""
+    """
+    Relate develop and deploy code trees.
+
+    This pipeline is expecting 2 archive files with "from-" and "to-" filename
+    prefixes as inputs:
+    - "from-[FILENAME]" archive containing the development source code
+    - "to-[FILENAME]" archive containing the deployment compiled code
+    """
 
     @classmethod
     def steps(cls):
