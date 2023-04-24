@@ -17,11 +17,12 @@
 
   <div class="container is-fluid mb-3">
     <div class="table-container">
-      <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
+      <table class="table is-bordered is-narrow is-hoverable is-fullwidth" style="table-layout: fixed;">
         <thead>
           <tr>
-            <th style="width: 45%">To resource</th>
-            <th>
+            <th>To resource</th>
+            <th style="width:100px;">Status</th>
+            <th style="width:145px;">
               <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}related_from__match_type" class="is-black-link">Match type</a>
               {% if "related_from__match_type" in filter.data.sort %}
                 <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
@@ -30,7 +31,7 @@
                 {% include 'scanpipe/includes/match_type_filter_dropdown.html' %}
               </div>
             </th>
-            <th style="width: 45%">From resource</th>
+            <th>From resource</th>
           </tr>
         </thead>
         <tbody>
@@ -42,6 +43,7 @@
                     <a href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
                   </td>
                 {% endif %}
+                <td>{{ resource.status }}</td>
                 <td>
                   {{ relation.match_type }}
                   {% if relation.extra_data.path_score %}
@@ -65,6 +67,7 @@
                 <td class="break-all">
                   <a class="has-text-danger" href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
                 </td>
+                <td>{{ resource.status }}</td>
                 <td></td>
                 <td></td>
               </tr>

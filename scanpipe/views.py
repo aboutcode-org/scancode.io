@@ -938,7 +938,10 @@ class ProjectErrorListView(
     ]
 
 
-RelationRow = namedtuple("RelationRow", "to_resource match_type score from_resource")
+RelationRow = namedtuple(
+    "RelationRow",
+    field_names=["to_resource", "status", "match_type", "score", "from_resource"],
+)
 
 
 class CodebaseRelationListView(
@@ -967,11 +970,12 @@ class CodebaseRelationListView(
         for resource in qs:
             relations = resource.related_from.all()
             if not relations:
-                yield RelationRow(resource.path, "", "", "")
+                yield RelationRow(resource.path, "", "", "", "")
             else:
                 for relation in resource.related_from.all():
                     yield RelationRow(
                         resource.path,
+                        resource.status,
                         relation.match_type,
                         relation.extra_data.get("path_score", ""),
                         relation.from_resource.path,
