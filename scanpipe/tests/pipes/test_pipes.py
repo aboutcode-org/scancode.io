@@ -144,6 +144,24 @@ class ScanPipePipesTest(TestCase):
         self.assertIn(resource1, package.codebase_resources.all())
         self.assertIn(resource2, package.codebase_resources.all())
 
+    def test_scanpipe_pipes_update_or_create_package_package_uid(self):
+        p1 = Project.objects.create(name="Analysis")
+        package_data = dict(package_data1)
+
+        package_data["package_uid"] = None
+        pipes.update_or_create_package(p1, package_data)
+        pipes.update_or_create_package(p1, package_data)
+
+        package_data["package_uid"] = ""
+        pipes.update_or_create_package(p1, package_data)
+
+        del package_data["package_uid"]
+        pipes.update_or_create_package(p1, package_data)
+
+        # Make sure only 1 package was created, then properly found in the db regardless
+        # of the empty/none package_uid.
+        self.assertEqual(1, DiscoveredPackage.objects.count())
+
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")
         CodebaseResource.objects.create(

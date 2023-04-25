@@ -120,10 +120,12 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
     package_data = _clean_package_data(package_data)
+    # No values for package_uid requires to be empty string for proper queryset lookup
+    package_uid = package_data.get("package_uid") or ""
 
     package = DiscoveredPackage.objects.get_or_none(
         project=project,
-        package_uid=package_data.get("package_uid"),
+        package_uid=package_uid,
         **purl_data,
     )
 

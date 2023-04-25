@@ -4,7 +4,7 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
-- Enhance the `update_or_create_package` pipe and add the ability to assign multiple
+- Enhance the ``update_or_create_package`` pipe and add the ability to assign multiple
   codebase resources at once.
   https://github.com/nexB/scancode.io/issues/681
 
