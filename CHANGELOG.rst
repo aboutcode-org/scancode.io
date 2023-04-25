@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v33.0.0 (unreleased)
+v32.2.0 (2023-04-25)
 --------------------
 
 - Enhance the ``update_or_create_package`` pipe and add the ability to assign multiple
@@ -45,7 +45,6 @@ v33.0.0 (unreleased)
 
 - Upgrade ScanCode Toolkit to v31.2.6
   https://github.com/nexB/scancode.io/issues/693
-
 
 v32.1.0 (2023-03-23)
 --------------------
