@@ -12,6 +12,9 @@ v33.0.0 (unreleased)
   2. "to-[FILENAME]" archive containing the deployment compiled code
   https://github.com/nexB/scancode.io/issues/659
 
+- Move the "Resources status" panel from the run modal to the project details view.
+  https://github.com/nexB/scancode.io/issues/370
+
 v32.2.0 (2023-04-25)
 --------------------
 

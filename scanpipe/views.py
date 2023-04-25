@@ -542,12 +542,15 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             reverse=True,
         )
 
+        resource_status_summary = count_group_by(project.codebaseresources, "status")
+
         context.update(
             {
                 "inputs_with_source": inputs,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "archive_form": ArchiveProjectForm(),
+                "resource_status_summary": resource_status_summary,
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
                 "codebase_root": codebase_root,
@@ -1288,13 +1291,11 @@ def run_detail_view(request, uuid):
     )
     run = get_object_or_404(run_qs, uuid=uuid)
     project = run.project
-    status_summary = count_group_by(project.codebaseresources, "status")
 
     context = {
         "run": run,
         "project": project,
         "webhook_subscriptions": project.webhooksubscriptions.all(),
-        "status_summary": status_summary,
     }
 
     return render(request, template, context)
