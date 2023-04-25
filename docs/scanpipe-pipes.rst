@@ -18,11 +18,20 @@ Compliance
 .. automodule:: scanpipe.pipes.compliance
     :members:
 
+CycloneDX
+---------
+.. automodule:: scanpipe.pipes.cyclonedx
+    :members:
+
+Develop to deploy
+-----------------
+.. automodule:: scanpipe.pipes.d2d
+    :members:
+
 Docker
 ------
 .. automodule:: scanpipe.pipes.docker
     :members:
-
 
 Fetch
 -----
@@ -41,6 +50,11 @@ Output
     :members:
     :exclude-members: JSONResultsGenerator
 
+PurlDB
+------
+.. automodule:: scanpipe.pipes.purldb
+    :members:
+
 Resolve
 -------
 .. automodule:: scanpipe.pipes.resolve
@@ -54,6 +68,16 @@ RootFS
 ScanCode
 --------
 .. automodule:: scanpipe.pipes.scancode
+    :members:
+
+SPDX
+----
+.. automodule:: scanpipe.pipes.spdx
+    :members:
+
+Tag
+---
+.. automodule:: scanpipe.pipes.tag
     :members:
 
 VulnerableCode
