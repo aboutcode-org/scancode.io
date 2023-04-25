@@ -252,16 +252,15 @@ def path_match(project, logger=None):
 def _resource_purldb_match(project, resource):
     if results := purldb.match_by_sha1(sha1=resource.sha1):
         package_data = results[0]
-        package_data.pop("dependencies")
-        package = pipes.update_or_create_package(
+        package_data.pop("dependencies", None)
+        extracted_resources = project.codebaseresources.to_codebase().filter(
+            path__startswith=f"{resource.path}"
+        )
+        pipes.update_or_create_package(
             project=project,
             package_data=package_data,
-            codebase_resource=resource,
+            codebase_resources=extracted_resources,
         )
-        extracted_resources = project.codebaseresources.to_codebase().filter(
-            path__startswith=f"{resource.path}-extract"
-        )
-        package.add_resources(extracted_resources)
         extracted_resources.update(status="application-package")
 
 

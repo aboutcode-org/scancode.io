@@ -973,11 +973,14 @@ class CodebaseRelationListView(
                 yield RelationRow(resource.path, "", "", "", "")
             else:
                 for relation in resource.related_from.all():
+                    score = relation.extra_data.get("path_score", "")
+                    if diff_ratio := relation.extra_data.get("diff_ratio", ""):
+                        score += f" diff_ratio: {diff_ratio}"
                     yield RelationRow(
                         resource.path,
                         resource.status,
                         relation.match_type,
-                        relation.extra_data.get("path_score", ""),
+                        score,
                         relation.from_resource.path,
                     )
 
