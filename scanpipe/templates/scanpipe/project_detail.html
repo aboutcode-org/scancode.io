@@ -81,8 +81,19 @@
         </div>
       </div>
 
-      {% if codebase_root %}
-        {% include "scanpipe/includes/project_codebase.html" with paths=codebase_root %}
+      {% if codebase_root or resource_status_summary %}
+        <div class="columns">
+          {% if codebase_root %}
+            <div class="column">
+              {% include "scanpipe/includes/project_codebase.html" with paths=codebase_root %}
+            </div>
+          {% endif %}
+          {% if resource_status_summary %}
+            <div class="column">
+              {% include "scanpipe/includes/resource_status_summary.html"  %}
+            </div>
+          {% endif %}
+        </div>
       {% endif %}
 
       {% if project.extra_data %}
