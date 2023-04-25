@@ -99,6 +99,17 @@ def update_or_create_resource(project, resource_data):
     return codebase_resource
 
 
+def _clean_package_data(package_data):
+    """Clean provided `package_data` to make it compatible with the model."""
+    package_data = package_data.copy()
+    if release_date := package_data.get("release_date"):
+        if type(release_date) is str:
+            if release_date.endswith("Z"):
+                release_date = release_date[:-1]
+            package_data["release_date"] = datetime.fromisoformat(release_date).date()
+    return package_data
+
+
 def update_or_create_package(project, package_data, codebase_resource=None):
     """
     Get, update or create a DiscoveredPackage then return it.
@@ -106,6 +117,7 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     DiscoveredPackage using its Package URL and package_uid as a unique key.
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
+    package_data = _clean_package_data(package_data)
 
     package = DiscoveredPackage.objects.get_or_none(
         project=project,
@@ -113,23 +125,13 @@ def update_or_create_package(project, package_data, codebase_resource=None):
         **purl_data,
     )
 
-    package_data = package_data.copy()
-    if release_date := package_data.get("release_date"):
-        if type(release_date) is str:
-            if release_date.endswith("Z"):
-                release_date = release_date[:-1]
-            package_data["release_date"] = datetime.fromisoformat(release_date).date()
-
     if package:
         package.update_from_data(package_data)
+    else:
+        package = DiscoveredPackage.create_from_data(project, package_data)
 
     if codebase_resource:
-        if not package:
-            package = codebase_resource.create_and_add_package(package_data)
-        else:
-            codebase_resource.add_package(package)
-    elif not package:
-        package = DiscoveredPackage.create_from_data(project, package_data)
+        codebase_resource.add_package(package)
 
     return package
 

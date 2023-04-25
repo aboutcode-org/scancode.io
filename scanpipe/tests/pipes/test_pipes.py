@@ -118,8 +118,8 @@ class ScanPipePipesTest(TestCase):
         self.assertIn(resource1, package2.codebase_resources.all())
         self.assertEqual(datetime.date(2020, 11, 1), package2.release_date)
 
-        # Check to see if we can assign a package to multiple Resources with
-        # update_or_create_package()
+        # Make sure we can assign a package to multiple Resources calling
+        # update_or_create_package() several times.
         resource2 = CodebaseResource.objects.create(project=p1, path="filename2.ext")
         package2 = pipes.update_or_create_package(p1, package_data2, resource2)
         self.assertIn(package2, resource1.discovered_packages.all())
