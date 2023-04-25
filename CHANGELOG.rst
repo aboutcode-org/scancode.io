@@ -12,6 +12,9 @@ v33.0.0 (unreleased)
   2. "to-[FILENAME]" archive containing the deployment compiled code
   https://github.com/nexB/scancode.io/issues/659
 
+v32.2.0 (2023-04-25)
+--------------------
+
 - Enhance the ``update_or_create_package`` pipe and add the ability to assign multiple
   codebase resources at once.
   https://github.com/nexB/scancode.io/issues/681
@@ -50,6 +53,9 @@ v33.0.0 (unreleased)
 - Enhance the ``resolve_about_packages`` pipe to handle filename and checksum values.
 
 - Split the pipes unit tests into their own related submodule.
+
+- Upgrade ScanCode Toolkit to v31.2.6
+  https://github.com/nexB/scancode.io/issues/693
 
 v32.1.0 (2023-03-23)
 --------------------
