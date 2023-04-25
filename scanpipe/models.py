@@ -2210,10 +2210,6 @@ class DiscoveredPackage(
     def get_absolute_url(self):
         return reverse("package_detail", args=[self.project_id, self.pk])
 
-    def add_resources(self, codebase_resources):
-        """Assign the `codebase_resources` to this `discovered_package` instance."""
-        self.codebase_resources.add(*codebase_resources)
-
     @cached_property
     def resources(self):
         """Return the assigned codebase_resources QuerySet as a list."""
@@ -2277,6 +2273,10 @@ class DiscoveredPackage(
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
+
+    def add_resources(self, codebase_resources):
+        """Assign the `codebase_resources` to this `discovered_package` instance."""
+        self.codebase_resources.add(*codebase_resources)
 
     @classmethod
     def clean_data(cls, data):

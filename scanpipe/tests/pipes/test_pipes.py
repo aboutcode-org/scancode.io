@@ -115,10 +115,54 @@ class ScanPipePipesTest(TestCase):
         package_data2["name"] = "new name"
         package_data2["package_uid"] = ""
         package_data2["release_date"] = "2020-11-01T01:40:20"
-        package2 = pipes.update_or_create_package(p1, package_data2, resource1)
+        package2 = pipes.update_or_create_package(p1, package_data2, [resource1])
         self.assertNotEqual(package.pk, package2.pk)
         self.assertIn(resource1, package2.codebase_resources.all())
         self.assertEqual(datetime.date(2020, 11, 1), package2.release_date)
+
+        # Make sure we can assign a package to multiple Resources calling
+        # update_or_create_package() several times.
+        resource2 = CodebaseResource.objects.create(project=p1, path="filename2.ext")
+        package2 = pipes.update_or_create_package(p1, package_data2, [resource2])
+        self.assertIn(package2, resource1.discovered_packages.all())
+        self.assertIn(package2, resource2.discovered_packages.all())
+
+    def test_scanpipe_pipes_update_or_create_package_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource2 = CodebaseResource.objects.create(project=p1, path="filename2.ext")
+        resources = [resource1, resource2]
+
+        # On creation
+        package = pipes.update_or_create_package(p1, package_data1, resources)
+        self.assertIn(resource1, package.codebase_resources.all())
+        self.assertIn(resource2, package.codebase_resources.all())
+
+        # On update
+        package.delete()
+        package = pipes.update_or_create_package(p1, package_data1)
+        self.assertEqual(0, package.codebase_resources.count())
+        package = pipes.update_or_create_package(p1, package_data1, resources)
+        self.assertIn(resource1, package.codebase_resources.all())
+        self.assertIn(resource2, package.codebase_resources.all())
+
+    def test_scanpipe_pipes_update_or_create_package_package_uid(self):
+        p1 = Project.objects.create(name="Analysis")
+        package_data = dict(package_data1)
+
+        package_data["package_uid"] = None
+        pipes.update_or_create_package(p1, package_data)
+        pipes.update_or_create_package(p1, package_data)
+
+        package_data["package_uid"] = ""
+        pipes.update_or_create_package(p1, package_data)
+
+        del package_data["package_uid"]
+        pipes.update_or_create_package(p1, package_data)
+
+        # Make sure only 1 package was created, then properly found in the db regardless
+        # of the empty/none package_uid.
+        self.assertEqual(1, DiscoveredPackage.objects.count())
 
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")

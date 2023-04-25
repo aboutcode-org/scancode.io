@@ -1460,6 +1460,26 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["description"], updated_fields)
         self.assertEqual(new_data["description"], package.description)
 
+    def test_scanpipe_discovered_package_model_add_resources(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        resource1 = CodebaseResource.objects.create(project=self.project1, path="file1")
+        resource2 = CodebaseResource.objects.create(project=self.project1, path="file2")
+
+        package.add_resources([resource1])
+        self.assertEqual(1, package.codebase_resources.count())
+        self.assertIn(resource1, package.codebase_resources.all())
+        package.add_resources([resource2])
+        self.assertEqual(2, package.codebase_resources.count())
+        self.assertIn(resource2, package.codebase_resources.all())
+
+        package.codebase_resources.remove(resource1)
+        package.codebase_resources.remove(resource2)
+        self.assertEqual(0, package.codebase_resources.count())
+        package.add_resources([resource1, resource2])
+        self.assertEqual(2, package.codebase_resources.count())
+        self.assertIn(resource1, package.codebase_resources.all())
+        self.assertIn(resource2, package.codebase_resources.all())
+
     def test_scanpipe_discovered_package_model_as_cyclonedx(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         cyclonedx_component = package.as_cyclonedx()
