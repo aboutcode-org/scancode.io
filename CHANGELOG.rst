@@ -43,6 +43,10 @@ v33.0.0 (unreleased)
 
 - Split the pipes unit tests into their own related submodule.
 
+- Upgrade ScanCode Toolkit to v31.2.6
+  https://github.com/nexB/scancode.io/issues/693
+
+
 v32.1.0 (2023-03-23)
 --------------------
 
