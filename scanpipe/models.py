@@ -2184,6 +2184,10 @@ class DiscoveredPackage(
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
+    def add_resources(self, codebase_resources):
+        """Assign the `codebase_resources` to this `discovered_package` instance."""
+        self.codebase_resources.add(*codebase_resources)
+
     @classmethod
     def clean_data(cls, data):
         """

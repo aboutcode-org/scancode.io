@@ -4,6 +4,10 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Enhance the ``update_or_create_package`` pipe and add the ability to assign multiple
+  codebase resources at once.
+  https://github.com/nexB/scancode.io/issues/681
+
 - Add new command line option to create-project and add-input management commands to
   copy the content of a local source directory to the project codebase work directory.
   https://github.com/nexB/scancode.io/pull/672
