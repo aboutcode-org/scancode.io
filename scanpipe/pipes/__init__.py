@@ -110,11 +110,13 @@ def _clean_package_data(package_data):
     return package_data
 
 
-def update_or_create_package(project, package_data, codebase_resource=None):
+def update_or_create_package(project, package_data, codebase_resources=None):
     """
     Get, update or create a DiscoveredPackage then return it.
     Use the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL and package_uid as a unique key.
+    The package can be associated to `codebase_resources` providing a list or queryset
+    of resources.
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
     package_data = _clean_package_data(package_data)
@@ -130,8 +132,8 @@ def update_or_create_package(project, package_data, codebase_resource=None):
     else:
         package = DiscoveredPackage.create_from_data(project, package_data)
 
-    if codebase_resource:
-        codebase_resource.add_package(package)
+    if codebase_resources:
+        package.add_resources(codebase_resources)
 
     return package
 

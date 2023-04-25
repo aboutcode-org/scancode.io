@@ -113,7 +113,7 @@ class ScanPipePipesTest(TestCase):
         package_data2["name"] = "new name"
         package_data2["package_uid"] = ""
         package_data2["release_date"] = "2020-11-01T01:40:20"
-        package2 = pipes.update_or_create_package(p1, package_data2, resource1)
+        package2 = pipes.update_or_create_package(p1, package_data2, [resource1])
         self.assertNotEqual(package.pk, package2.pk)
         self.assertIn(resource1, package2.codebase_resources.all())
         self.assertEqual(datetime.date(2020, 11, 1), package2.release_date)
@@ -121,9 +121,28 @@ class ScanPipePipesTest(TestCase):
         # Make sure we can assign a package to multiple Resources calling
         # update_or_create_package() several times.
         resource2 = CodebaseResource.objects.create(project=p1, path="filename2.ext")
-        package2 = pipes.update_or_create_package(p1, package_data2, resource2)
+        package2 = pipes.update_or_create_package(p1, package_data2, [resource2])
         self.assertIn(package2, resource1.discovered_packages.all())
         self.assertIn(package2, resource2.discovered_packages.all())
+
+    def test_scanpipe_pipes_update_or_create_package_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource2 = CodebaseResource.objects.create(project=p1, path="filename2.ext")
+        resources = [resource1, resource2]
+
+        # On creation
+        package = pipes.update_or_create_package(p1, package_data1, resources)
+        self.assertIn(resource1, package.codebase_resources.all())
+        self.assertIn(resource2, package.codebase_resources.all())
+
+        # On update
+        package.delete()
+        package = pipes.update_or_create_package(p1, package_data1)
+        self.assertEqual(0, package.codebase_resources.count())
+        package = pipes.update_or_create_package(p1, package_data1, resources)
+        self.assertIn(resource1, package.codebase_resources.all())
+        self.assertIn(resource2, package.codebase_resources.all())
 
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")
