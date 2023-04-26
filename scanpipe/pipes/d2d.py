@@ -134,6 +134,10 @@ def _resource_java_to_class_match(to_resource, from_resources):
             match_type="java_to_class",
         )
 
+    if not matches and not to_resource.status:
+        to_resource.status = "not-found"
+        to_resource.save()
+
 
 def java_to_class_match(project, logger=None):
     """Match a .java source to its compiled .class using fully qualified name."""

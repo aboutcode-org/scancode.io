@@ -51,6 +51,7 @@ class DevelopToDeploy(Pipeline):
             cls.purldb_match,
             cls.java_to_class_match,
             cls.path_match,
+            cls.tag_mapped_resources,
         )
 
     purldb_match_extensions = [".jar", ".war", ".zip"]
@@ -113,3 +114,10 @@ class DevelopToDeploy(Pipeline):
     def path_match(self):
         """Match using path similarities."""
         d2d.path_match(project=self.project, logger=self.log)
+
+    def tag_mapped_resources(self):
+        """Tag all codebase resources that were mapped during the pipeline."""
+        resources = (
+            self.project.codebaseresources.to_codebase().has_relation().no_status()
+        )
+        resources.update(status="mapped")
