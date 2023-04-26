@@ -48,8 +48,8 @@ class DevelopToDeploy(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.tag_empty_and_ignored_files,
             cls.checksum_match,
-            cls.purldb_match,
             cls.java_to_class_match,
+            cls.purldb_match,
             cls.path_match,
             cls.tag_mapped_resources,
         )
@@ -95,6 +95,10 @@ class DevelopToDeploy(Pipeline):
         """Match using SHA1 checksum."""
         d2d.checksum_match(project=self.project, checksum_field="sha1", logger=self.log)
 
+    def java_to_class_match(self):
+        """Match a .class compiled file to its .java source."""
+        d2d.java_to_class_match(project=self.project, logger=self.log)
+
     def purldb_match(self):
         """Match selected files by extension in PurlDB."""
         if not purldb.is_available():
@@ -106,10 +110,6 @@ class DevelopToDeploy(Pipeline):
             extensions=self.purldb_match_extensions,
             logger=self.log,
         )
-
-    def java_to_class_match(self):
-        """Match a .class compiled file to its .java source."""
-        d2d.java_to_class_match(project=self.project, logger=self.log)
 
     def path_match(self):
         """Match using path similarities."""

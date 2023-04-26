@@ -262,10 +262,14 @@ def _resource_purldb_match(project, resource):
             package_data=package_data,
             codebase_resources=extracted_resources,
         )
-        extracted_resources.update(status="application-package")
+        extracted_resources.no_status().update(status="matched-to-purldb")
 
 
 def purldb_match(project, extensions, logger=None):
+    """
+    Match against PurlDB selecting codebase resources using provided `extensions`.
+    Resources with existing status as not excluded.
+    """
     to_resources = (
         project.codebaseresources.files()
         .to_codebase()
