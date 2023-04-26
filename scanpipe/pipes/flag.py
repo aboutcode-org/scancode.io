@@ -65,3 +65,9 @@ def analyze_scanned_files(project):
 def tag_not_analyzed_codebase_resources(project):
     """Flag codebase resource as `not-analyzed`."""
     project.codebaseresources.no_status().update(status="not-analyzed")
+
+
+def flag_mapped_resources(project):
+    """Flag all codebase resources that were mapped during the d2d pipeline."""
+    resources = project.codebaseresources.to_codebase().has_relation().no_status()
+    return resources.update(status="mapped")

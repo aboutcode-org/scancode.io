@@ -72,7 +72,7 @@ def get_best_path_matches(to_resource, matches):
     return matches
 
 
-def _resource_checksum_match(to_resource, from_resources, checksum_field):
+def _resource_checksum_map(to_resource, from_resources, checksum_field):
     checksum_value = getattr(to_resource, checksum_field)
     matches = from_resources.filter(**{checksum_field: checksum_value})
     for match in get_best_path_matches(to_resource, matches):
@@ -84,8 +84,8 @@ def _resource_checksum_match(to_resource, from_resources, checksum_field):
         )
 
 
-def checksum_match(project, checksum_field, logger=None):
-    """Match using checksum."""
+def checksum_map(project, checksum_field, logger=None):
+    """Map using checksum."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase().has_value(checksum_field)
     to_resources = (
@@ -95,7 +95,7 @@ def checksum_match(project, checksum_field, logger=None):
 
     if logger:
         logger(
-            f"Matching {resource_count:,d} to/ resources using {checksum_field} "
+            f"Mapping {resource_count:,d} to/ resources using {checksum_field} "
             f"against from/ codebase"
         )
 
@@ -111,10 +111,10 @@ def checksum_match(project, checksum_field, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_checksum_match(to_resource, from_resources, checksum_field)
+        _resource_checksum_map(to_resource, from_resources, checksum_field)
 
 
-def _resource_java_to_class_match(to_resource, from_resources):
+def _resource_java_to_class_map(to_resource, from_resources):
     qualified_class = get_extracted_subpath(to_resource.path)
 
     if "$" in to_resource.name:  # inner class
@@ -139,8 +139,8 @@ def _resource_java_to_class_match(to_resource, from_resources):
         to_resource.save()
 
 
-def java_to_class_match(project, logger=None):
-    """Match a .java source to its compiled .class using fully qualified name."""
+def java_to_class_map(project, logger=None):
+    """Map a .java source to its compiled .class using fully qualified name."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
@@ -148,7 +148,7 @@ def java_to_class_match(project, logger=None):
     to_resources_dot_class = to_resources.filter(name__endswith=".class")
     resource_count = to_resources_dot_class.count()
     if logger:
-        logger(f"Matching {resource_count:,d} .class resources to .java")
+        logger(f"Mapping {resource_count:,d} .class resources to .java")
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
     last_percent = 0
@@ -162,7 +162,7 @@ def java_to_class_match(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_java_to_class_match(to_resource, from_resources)
+        _resource_java_to_class_map(to_resource, from_resources)
 
 
 def get_diff_ratio(to_resource, from_resource):
@@ -179,7 +179,7 @@ def get_diff_ratio(to_resource, from_resource):
     return matcher.quick_ratio()
 
 
-def _resource_path_match(to_resource, from_resources, diff_ratio_threshold=0.7):
+def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
     path_parts = Path(to_resource.path.lstrip("/")).parts
     path_parts_len = len(path_parts)
 
@@ -222,8 +222,8 @@ def _resource_path_match(to_resource, from_resources, diff_ratio_threshold=0.7):
         break
 
 
-def path_match(project, logger=None):
-    """Match using path similarities."""
+def path_map(project, logger=None):
+    """Map using path similarities."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
@@ -231,7 +231,7 @@ def path_match(project, logger=None):
 
     if logger:
         logger(
-            f"Matching {resource_count:,d} to/ resources using path match "
+            f"Mapping {resource_count:,d} to/ resources using path match "
             f"against from/ codebase"
         )
 
@@ -247,7 +247,7 @@ def path_match(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_path_match(to_resource, from_resources)
+        _resource_path_map(to_resource, from_resources)
 
 
 def _resource_purldb_match(project, resource):

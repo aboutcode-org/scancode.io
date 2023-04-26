@@ -141,7 +141,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_2 = make_resource_file(self.project1, path="to/x/y/z/init.jsp.readme")
         self.assertEqual(matches, d2d.get_best_path_matches(to_2, matches))
 
-    def test_scanpipe_d2d_checksum_match(self):
+    def test_scanpipe_d2d_checksum_map(self):
         sha1 = "abcde"
         to_1 = make_resource_file(self.project1, path="to/a/b/c/file.txt", sha1=sha1)
         make_resource_file(self.project1, path="from/source/f/i/j/file.txt", sha1=sha1)
@@ -153,8 +153,8 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_file(self.project1, path="from/q/w/e/file.txt", sha1=sha1)
 
         buffer = io.StringIO()
-        d2d.checksum_match(self.project1, "sha1", logger=buffer.write)
-        expected = "Matching 1 to/ resources using sha1 against from/ codebase"
+        d2d.checksum_map(self.project1, "sha1", logger=buffer.write)
+        expected = "Mapping 1 to/ resources using sha1 against from/ codebase"
         self.assertEqual(expected, buffer.getvalue())
         self.assertEqual(1, to_1.related_from.count())
         relation = to_1.related_from.get()

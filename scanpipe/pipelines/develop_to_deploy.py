@@ -47,10 +47,10 @@ class DevelopToDeploy(Pipeline):
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_and_ignored_files,
-            cls.checksum_match,
-            cls.java_to_class_match,
+            cls.checksum_map,
+            cls.java_to_class_map,
             cls.purldb_match,
-            cls.path_match,
+            cls.path_map,
             cls.flag_mapped_resources,
         )
 
@@ -91,13 +91,13 @@ class DevelopToDeploy(Pipeline):
         flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORE_EXTENSIONS)
         flag.flag_ignored_paths(self.project, paths=d2d.IGNORE_PATHS)
 
-    def checksum_match(self):
-        """Match using SHA1 checksum."""
-        d2d.checksum_match(project=self.project, checksum_field="sha1", logger=self.log)
+    def checksum_map(self):
+        """Map using SHA1 checksum."""
+        d2d.checksum_map(project=self.project, checksum_field="sha1", logger=self.log)
 
-    def java_to_class_match(self):
-        """Match a .class compiled file to its .java source."""
-        d2d.java_to_class_match(project=self.project, logger=self.log)
+    def java_to_class_map(self):
+        """Map a .class compiled file to its .java source."""
+        d2d.java_to_class_map(project=self.project, logger=self.log)
 
     def purldb_match(self):
         """Match selected files by extension in PurlDB."""
@@ -111,13 +111,10 @@ class DevelopToDeploy(Pipeline):
             logger=self.log,
         )
 
-    def path_match(self):
-        """Match using path similarities."""
-        d2d.path_match(project=self.project, logger=self.log)
+    def path_map(self):
+        """Map using path similarities."""
+        d2d.path_map(project=self.project, logger=self.log)
 
     def flag_mapped_resources(self):
         """Flag all codebase resources that were mapped during the pipeline."""
-        resources = (
-            self.project.codebaseresources.to_codebase().has_relation().no_status()
-        )
-        resources.update(status="mapped")
+        flag.flag_mapped_resources(self.project)
