@@ -134,10 +134,6 @@ def _resource_java_to_class_map(to_resource, from_resources):
             match_type="java_to_class",
         )
 
-    if not matches and not to_resource.status:
-        to_resource.status = "not-found"
-        to_resource.save()
-
 
 def java_to_class_map(project, logger=None):
     """Map a .java source to its compiled .class using fully qualified name."""
@@ -163,6 +159,10 @@ def java_to_class_map(project, logger=None):
             start_time=start_time,
         )
         _resource_java_to_class_map(to_resource, from_resources)
+
+    # Flag not mapped .class in to/ codebase
+    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class.update(status="NOT-found")
 
 
 def get_diff_ratio(to_resource, from_resource):
