@@ -281,7 +281,6 @@ class InPackageFilter(django_filters.ChoiceFilter):
 class RelationMatchTypeFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
-            ("", "All"),
             ("none", "No match"),
             ("any", "Any match"),
             ("java_to_class", "java to class"),
@@ -335,6 +334,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     relation_match_type = RelationMatchTypeFilter(
         label="Relation match type",
         field_name="related_from__match_type",
+        empty_label="All",
     )
 
     class Meta:
