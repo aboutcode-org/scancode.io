@@ -284,6 +284,8 @@ class RelationMatchTypeFilter(django_filters.ChoiceFilter):
             ("none", "No match"),
             ("any", "Any match"),
             ("java_to_class", "java to class"),
+            ("jar_to_source", "jar to source"),
+            ("jar_misc", "jar misc"),
             ("path", "path"),
             ("sha1", "sha1"),
         )

@@ -69,6 +69,17 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(2, len(d2d.get_inputs(self.project1)))
 
+    def test_scanpipe_d2d_get_extracted_path(self):
+        path = "not/an/extracted/path/"
+        r1 = make_resource_file(self.project1, path)
+        expected = "not/an/extracted/path/-extract/"
+        self.assertEqual(expected, d2d.get_extracted_path(r1))
+
+        path = "a.jar-extract/subpath/file.ext"
+        r2 = make_resource_file(self.project1, path)
+        expected = "a.jar-extract/subpath/file.ext-extract/"
+        self.assertEqual(expected, d2d.get_extracted_path(r2))
+
     def test_scanpipe_d2d_get_extracted_subpath(self):
         path = "not/an/extracted/path/"
         self.assertEqual(path, d2d.get_extracted_subpath(path))

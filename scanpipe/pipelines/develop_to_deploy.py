@@ -49,6 +49,7 @@ class DevelopToDeploy(Pipeline):
             cls.flag_empty_and_ignored_files,
             cls.checksum_map,
             cls.java_to_class_map,
+            cls.jar_to_source_map,
             cls.purldb_match,
             cls.path_map,
             cls.flag_mapped_resources,
@@ -98,6 +99,10 @@ class DevelopToDeploy(Pipeline):
     def java_to_class_map(self):
         """Map a .class compiled file to its .java source."""
         d2d.java_to_class_map(project=self.project, logger=self.log)
+
+    def jar_to_source_map(self):
+        """Map a .class compiled file to its .java source."""
+        d2d.jar_to_source_map(project=self.project, logger=self.log)
 
     def purldb_match(self):
         """Match selected files by extension in PurlDB."""

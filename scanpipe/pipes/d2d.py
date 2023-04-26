@@ -21,8 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import difflib
+import os
 from pathlib import Path
 from timeit import default_timer as timer
+
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -31,7 +35,7 @@ from scanpipe.pipes import purldb
 FROM = "from/"
 TO = "to/"
 
-IGNORE_FILENAMES = ("packageinfo",)
+IGNORE_FILENAMES = ()
 IGNORE_EXTENSIONS = ()
 IGNORE_PATHS = ("gradleTest/",)
 
@@ -50,8 +54,13 @@ def get_inputs(project):
     return from_file[0], to_file[0]
 
 
+def get_extracted_path(resource):
+    """Return the `-extract/` extracted path of provided `resource`."""
+    return resource.path + "-extract/"
+
+
 def get_extracted_subpath(path):
-    """Return the path segments located after the last `-extract/` segment"""
+    """Return the path segments located after the last `-extract/` segment."""
     return path.split("-extract/")[-1]
 
 
@@ -163,6 +172,65 @@ def java_to_class_map(project, logger=None):
     # Flag not mapped .class in to/ codebase
     to_resources_dot_class = to_resources.filter(name__endswith=".class")
     to_resources_dot_class.update(status="NOT-found")
+
+
+# TODO: Optimize querysets
+def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
+    jar_extracted_path = get_extracted_path(jar_resource)
+    jar_extracted_files = to_resources.filter(path__startswith=jar_extracted_path)
+
+    # 1. Find the common_root using all the java_to_class relation paths
+    dot_class_files = jar_extracted_files.has_relation().filter(name__endswith=".class")
+    dot_java_paths = []
+    for resource in dot_class_files:
+        dot_java_paths.extend(
+            resource.related_from.filter(match_type="java_to_class").values_list(
+                "from_resource__path", flat=True
+            )
+        )
+    if not dot_java_paths:
+        return
+
+    common_source_root = os.path.commonpath(dot_java_paths)
+    try:
+        common_from_resource = from_resources.get(path=common_source_root.lstrip("/"))
+    except ObjectDoesNotExist:
+        return
+
+    # 2. Map generated file, packageinfo and META-INF/* to the top most shared common
+    # directory of all already mapped .java/.class
+    jar_misc_resource = jar_extracted_files.filter(
+        Q(name__endswith="packageinfo") | Q(path__contains="META-INF/")
+    )
+
+    for misc_resource in jar_misc_resource:
+        pipes.make_relationship(
+            from_resource=common_from_resource,
+            to_resource=misc_resource,
+            relationship=CodebaseRelation.Relationship.COMPILED,
+            match_type="jar_misc",
+        )
+
+    # 3. At that point, if all the extracted files form the .jar are mapped,
+    # the jar resource is mapped as well.
+    if not jar_extracted_files.has_no_relation().exists():
+        pipes.make_relationship(
+            from_resource=common_from_resource,
+            to_resource=jar_resource,
+            relationship=CodebaseRelation.Relationship.COMPILED,
+            match_type="jar_to_source",
+        )
+
+
+def jar_to_source_map(project, logger=None):
+    project_files = project.codebaseresources.files()
+    # Include the directories to map on the common source
+    from_resources = project.codebaseresources.from_codebase()
+    to_resources = project_files.to_codebase()
+    to_jars = to_resources.filter(extension=".jar")
+
+    for jar_resource in to_jars:
+        _resource_jar_to_source_map(jar_resource, to_resources, from_resources)
 
 
 def get_diff_ratio(to_resource, from_resource):

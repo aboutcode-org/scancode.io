@@ -22,7 +22,10 @@
           <tr>
             <th>To resource</th>
             <th style="width:100px;">
-              Status
+              <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}status" class="is-black-link">Status</a>
+              {% if "status" in filter.data.sort %}
+                <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+              {% endif %}
             </th>
             <th style="width:145px;">
               <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}related_from__match_type" class="is-black-link">Map type</a>
