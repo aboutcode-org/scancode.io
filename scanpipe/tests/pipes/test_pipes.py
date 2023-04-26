@@ -59,21 +59,6 @@ class ScanPipePipesTest(TestCase):
             self.assertEqual(expected, pipes.strip_root(path))
             self.assertEqual(expected, pipes.strip_root(Path(path)))
 
-    def test_scanpipe_pipes_tag_not_analyzed_codebase_resources(self):
-        p1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
-        resource2 = CodebaseResource.objects.create(
-            project=p1,
-            path="filename1.ext",
-            status="scanned",
-        )
-
-        pipes.tag_not_analyzed_codebase_resources(p1)
-        resource1.refresh_from_db()
-        resource2.refresh_from_db()
-        self.assertEqual("not-analyzed", resource1.status)
-        self.assertEqual("scanned", resource2.status)
-
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", pipes.filename_now())

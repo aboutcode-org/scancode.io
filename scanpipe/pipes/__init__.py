@@ -193,21 +193,6 @@ def make_relationship(
     )
 
 
-def analyze_scanned_files(project):
-    """Set the status for CodebaseResource to unknown or no license."""
-    scanned_files = project.codebaseresources.files().status("scanned")
-    scanned_files.has_no_licenses().update(status="no-licenses")
-    scanned_files.unknown_license().update(status="unknown-license")
-
-
-def tag_not_analyzed_codebase_resources(project):
-    """
-    Flag any of the `project`'s '`CodebaseResource` without a status as
-    "not-analyzed".
-    """
-    project.codebaseresources.no_status().update(status="not-analyzed")
-
-
 def normalize_path(path):
     """Return a normalized path from a `path` string."""
     return "/" + path.strip("/")

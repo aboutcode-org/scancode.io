@@ -121,7 +121,6 @@ class FilterSetUtilsMixin:
         for name, value in self.form.cleaned_data.items():
             field_name = self.filters[name].field_name
             if value == self.empty_value:
-                print(name, value)
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)

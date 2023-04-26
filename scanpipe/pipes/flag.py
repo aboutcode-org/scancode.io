@@ -23,8 +23,8 @@
 from django.db.models import Q
 
 
-def tag_empty_codebase_resources(project):
-    """Tags empty files as ignored."""
+def flag_empty_codebase_resources(project):
+    """Flag empty files as ignored."""
     qs = (
         project.codebaseresources.files()
         .empty()
@@ -33,23 +33,35 @@ def tag_empty_codebase_resources(project):
     return qs.update(status="ignored-empty-file")
 
 
-def tag_ignored_filenames(project, filenames):
-    """Tag codebase resource as `ignored` status from list of `filenames`."""
+def flag_ignored_filenames(project, filenames):
+    """Flag codebase resource as `ignored` status from list of `filenames`."""
     qs = project.codebaseresources.no_status().filter(name__in=filenames)
     return qs.update(status="ignored-filename")
 
 
-def tag_ignored_extensions(project, extensions):
-    """Tag codebase resource as `ignored` status from list of `extensions`."""
+def flag_ignored_extensions(project, extensions):
+    """Flag codebase resource as `ignored` status from list of `extensions`."""
     qs = project.codebaseresources.no_status().filter(extension__in=extensions)
     return qs.update(status="ignored-extension")
 
 
-def tag_ignored_paths(project, paths):
-    """Tag codebase resource as `ignored` status from list of `paths`."""
+def flag_ignored_paths(project, paths):
+    """Flag codebase resource as `ignored` status from list of `paths`."""
     lookups = Q()
     for path in paths:
         lookups |= Q(path__contains=path)
 
     qs = project.codebaseresources.no_status().filter(lookups)
     return qs.update(status="ignored-path")
+
+
+def analyze_scanned_files(project):
+    """Set the status for CodebaseResource to unknown or no license."""
+    scanned_files = project.codebaseresources.files().status("scanned")
+    scanned_files.has_no_licenses().update(status="no-licenses")
+    scanned_files.unknown_license().update(status="unknown-license")
+
+
+def tag_not_analyzed_codebase_resources(project):
+    """Flag codebase resource as `not-analyzed`."""
+    project.codebaseresources.no_status().update(status="not-analyzed")

@@ -23,9 +23,9 @@
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
+from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
-from scanpipe.pipes import tag
 from scanpipe.pipes.scancode import extract_archives
 
 
@@ -46,12 +46,12 @@ class DevelopToDeploy(Pipeline):
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
-            cls.tag_empty_and_ignored_files,
+            cls.flag_empty_and_ignored_files,
             cls.checksum_match,
             cls.java_to_class_match,
             cls.purldb_match,
             cls.path_match,
-            cls.tag_mapped_resources,
+            cls.flag_mapped_resources,
         )
 
     purldb_match_extensions = [".jar", ".war", ".zip"]
@@ -84,12 +84,12 @@ class DevelopToDeploy(Pipeline):
         for resource_path in self.project.walk_codebase_path():
             pipes.make_codebase_resource(project=self.project, location=resource_path)
 
-    def tag_empty_and_ignored_files(self):
-        """Tag empty and ignored files using names and extensions."""
-        tag.tag_empty_codebase_resources(self.project)
-        tag.tag_ignored_filenames(self.project, filenames=d2d.IGNORE_FILENAMES)
-        tag.tag_ignored_extensions(self.project, extensions=d2d.IGNORE_EXTENSIONS)
-        tag.tag_ignored_paths(self.project, paths=d2d.IGNORE_PATHS)
+    def flag_empty_and_ignored_files(self):
+        """Flag empty and ignored files using names and extensions."""
+        flag.flag_empty_codebase_resources(self.project)
+        flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORE_FILENAMES)
+        flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORE_EXTENSIONS)
+        flag.flag_ignored_paths(self.project, paths=d2d.IGNORE_PATHS)
 
     def checksum_match(self):
         """Match using SHA1 checksum."""
@@ -115,8 +115,8 @@ class DevelopToDeploy(Pipeline):
         """Match using path similarities."""
         d2d.path_match(project=self.project, logger=self.log)
 
-    def tag_mapped_resources(self):
-        """Tag all codebase resources that were mapped during the pipeline."""
+    def flag_mapped_resources(self):
+        """Flag all codebase resources that were mapped during the pipeline."""
         resources = (
             self.project.codebaseresources.to_codebase().has_relation().no_status()
         )

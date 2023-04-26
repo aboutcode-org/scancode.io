@@ -107,7 +107,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()
-            self.assertEqual("application-package", resource.status)
+            self.assertEqual("matched-to-purldb", resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_d2d_get_best_path_matches_same_name(self):

@@ -22,11 +22,10 @@
 
 import os
 
-from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
-from scanpipe.pipes import tag
 
 
 class RootFS(Pipeline):
@@ -96,7 +95,7 @@ class RootFS(Pipeline):
 
     def tag_empty_files(self):
         """Flag empty files."""
-        tag.tag_empty_codebase_resources(self.project)
+        flag.flag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
@@ -131,8 +130,8 @@ class RootFS(Pipeline):
 
     def analyze_scanned_files(self):
         """Analyze single file scan results for completeness."""
-        pipes.analyze_scanned_files(self.project)
+        flag.analyze_scanned_files(self.project)
 
     def tag_not_analyzed_codebase_resources(self):
         """Check for any leftover files for sanity; there should be none."""
-        pipes.tag_not_analyzed_codebase_resources(self.project)
+        flag.tag_not_analyzed_codebase_resources(self.project)

@@ -75,9 +75,9 @@ SPDX
 .. automodule:: scanpipe.pipes.spdx
     :members:
 
-Tag
----
-.. automodule:: scanpipe.pipes.tag
+Flag
+----
+.. automodule:: scanpipe.pipes.flag
     :members:
 
 VulnerableCode
