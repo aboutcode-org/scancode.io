@@ -55,22 +55,19 @@ def get_extracted_subpath(path):
     return path.split("-extract/")[-1]
 
 
-def get_best_checksum_matches(to_resource, matches):
-    extracted_subpath_matches = [
-        from_resource
-        for from_resource in matches
-        if from_resource.path.endswith(get_extracted_subpath(to_resource.path))
-    ]
-    if extracted_subpath_matches:
-        return extracted_subpath_matches
+def get_best_path_matches(to_resource, matches):
+    """Return the best `matches` for the provided `to_resource`."""
+    path_parts = Path(to_resource.path.lstrip("/")).parts
 
-    same_name_matches = [
-        from_resource
-        for from_resource in matches
-        if from_resource.name == to_resource.name
-    ]
-    if same_name_matches:
-        return same_name_matches
+    for path_parts_index in range(1, len(path_parts)):
+        subpath = "/".join(path_parts[path_parts_index:])
+        subpath_matches = [
+            from_resource
+            for from_resource in matches
+            if from_resource.path.endswith(subpath)
+        ]
+        if subpath_matches:
+            return subpath_matches
 
     return matches
 
@@ -78,7 +75,7 @@ def get_best_checksum_matches(to_resource, matches):
 def _resource_checksum_match(to_resource, from_resources, checksum_field):
     checksum_value = getattr(to_resource, checksum_field)
     matches = from_resources.filter(**{checksum_field: checksum_value})
-    for match in get_best_checksum_matches(to_resource, matches):
+    for match in get_best_path_matches(to_resource, matches):
         pipes.make_relationship(
             from_resource=match,
             to_resource=to_resource,
@@ -223,7 +220,7 @@ def _resource_path_match(to_resource, from_resources, diff_ratio_threshold=0.7):
 
 def path_match(project, logger=None):
     """Match using path similarities."""
-    project_files = project.codebaseresources.files().no_status()  # .only("pk", "path")
+    project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
     resource_count = to_resources.count()

@@ -79,24 +79,6 @@ class ScanPipeD2DPipesTest(TestCase):
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
 
-    def test_scanpipe_d2d_get_best_checksum_matches_same_name(self):
-        to_1 = CodebaseResource(name="package-1.0.ext", path="to/package-1.0.ext")
-        to_2 = CodebaseResource(name="package-2.0.ext", path="to/package-2.0.ext")
-        from_1 = CodebaseResource(name="package-1.0.ext", path="from/package-1.0.ext")
-        from_2 = CodebaseResource(name="package-2.0.ext", path="from/package-2.0.ext")
-        matches = [from_1, from_2]
-        self.assertEqual([from_1], d2d.get_best_checksum_matches(to_1, matches))
-        self.assertEqual([from_2], d2d.get_best_checksum_matches(to_2, matches))
-
-    def test_scanpipe_d2d_get_best_checksum_matches_extracted_subpath(self):
-        to_1 = CodebaseResource(path="to/jar-extract/a/package-1.0.ext")
-        to_2 = CodebaseResource(path="to/jar-extract/a/package-2.0.ext")
-        from_1 = CodebaseResource(path="from/src/a/package-1.0.ext")
-        from_2 = CodebaseResource(path="from/src/a/package-2.0.ext")
-        matches = [from_1, from_2]
-        self.assertEqual([from_1], d2d.get_best_checksum_matches(to_1, matches))
-        self.assertEqual([from_2], d2d.get_best_checksum_matches(to_2, matches))
-
     def test_scanpipe_d2d_get_diff_ratio(self):
         resource_files = [
             self.data_location / "codebase" / "a.txt",
@@ -127,3 +109,55 @@ class ScanPipeD2DPipesTest(TestCase):
             resource.refresh_from_db()
             self.assertEqual("application-package", resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
+
+    def test_scanpipe_d2d_get_best_path_matches_same_name(self):
+        to_1 = CodebaseResource(name="package-1.0.ext", path="to/package-1.0.ext")
+        to_2 = CodebaseResource(name="package-2.0.ext", path="to/package-2.0.ext")
+        from_1 = CodebaseResource(name="package-1.0.ext", path="from/package-1.0.ext")
+        from_2 = CodebaseResource(name="package-2.0.ext", path="from/package-2.0.ext")
+        matches = [from_1, from_2]
+        self.assertEqual([from_1], d2d.get_best_path_matches(to_1, matches))
+        self.assertEqual([from_2], d2d.get_best_path_matches(to_2, matches))
+
+    def test_scanpipe_d2d_get_best_path_matches_extracted_subpath(self):
+        to_1 = CodebaseResource(path="to/jar-extract/a/package-1.0.ext")
+        to_2 = CodebaseResource(path="to/jar-extract/a/package-2.0.ext")
+        from_1 = CodebaseResource(path="from/src/a/package-1.0.ext")
+        from_2 = CodebaseResource(path="from/src/a/package-2.0.ext")
+        matches = [from_1, from_2]
+        self.assertEqual([from_1], d2d.get_best_path_matches(to_1, matches))
+        self.assertEqual([from_2], d2d.get_best_path_matches(to_2, matches))
+
+    def test_scanpipe_d2d_get_best_path_matches(self):
+        to_1 = make_resource_file(self.project1, path="to/a/b/c/file.txt")
+        from_1 = make_resource_file(self.project1, path="from/source/f/i/j/file.txt")
+        from_2 = make_resource_file(self.project1, path="from/source/a/b/c/file.txt")
+        from_3 = make_resource_file(self.project1, path="from/q/w/e/file.txt")
+
+        matches = [from_1, from_2, from_3]
+        self.assertEqual([from_2], d2d.get_best_path_matches(to_1, matches))
+
+        # Cannot determine the best as only the filename matches
+        to_2 = make_resource_file(self.project1, path="to/x/y/z/init.jsp.readme")
+        self.assertEqual(matches, d2d.get_best_path_matches(to_2, matches))
+
+    def test_scanpipe_d2d_checksum_match(self):
+        sha1 = "abcde"
+        to_1 = make_resource_file(self.project1, path="to/a/b/c/file.txt", sha1=sha1)
+        make_resource_file(self.project1, path="from/source/f/i/j/file.txt", sha1=sha1)
+        from_2 = make_resource_file(
+            self.project1, path="from/source/a/b/c/file.txt", sha1=sha1
+        )
+        # Matchable path but missing sha1 value
+        make_resource_file(self.project1, path="from/content/a/b/c/file.txt")
+        make_resource_file(self.project1, path="from/q/w/e/file.txt", sha1=sha1)
+
+        buffer = io.StringIO()
+        d2d.checksum_match(self.project1, "sha1", logger=buffer.write)
+        expected = "Matching 1 to/ resources using sha1 against from/ codebase"
+        self.assertEqual(expected, buffer.getvalue())
+        self.assertEqual(1, to_1.related_from.count())
+        relation = to_1.related_from.get()
+        self.assertEqual("sha1", relation.match_type)
+        self.assertEqual("identical", relation.relationship)
+        self.assertEqual(from_2, relation.from_resource)
