@@ -973,7 +973,7 @@ class CodebaseRelationListView(
         for resource in qs:
             relations = resource.related_from.all()
             if not relations:
-                yield RelationRow(resource.path, "", "", "", "")
+                yield RelationRow(resource.path, resource.status, "", "", "")
             else:
                 for relation in resource.related_from.all():
                     score = relation.extra_data.get("path_score", "")
