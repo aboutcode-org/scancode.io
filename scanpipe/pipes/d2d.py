@@ -312,6 +312,9 @@ def path_map(project, logger=None):
 def _resource_purldb_match(project, resource):
     if results := purldb.match_by_sha1(sha1=resource.sha1):
         package_data = results[0]
+        # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
+        # PurlDB match can be found in different projects.
+        package_data.pop("uuid", None)
         package_data.pop("dependencies", None)
         extracted_resources = project.codebaseresources.to_codebase().filter(
             path__startswith=f"{resource.path}"
