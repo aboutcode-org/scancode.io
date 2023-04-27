@@ -281,8 +281,9 @@ class InPackageFilter(django_filters.ChoiceFilter):
 class RelationMatchTypeFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
-            ("none", "No match"),
-            ("any", "Any match"),
+            ("none", "No map"),
+            ("any", "Any map"),
+            ("many", "Many map"),
             ("java_to_class", "java to class"),
             ("jar_to_source", "jar to source"),
             ("path", "path"),
@@ -295,6 +296,8 @@ class RelationMatchTypeFilter(django_filters.ChoiceFilter):
             return qs.has_no_relation()
         elif value == "any":
             return qs.has_relation()
+        elif value == "many":
+            return qs.has_many_relation()
         return super().filter(qs, value)
 
 
