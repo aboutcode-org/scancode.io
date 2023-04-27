@@ -172,7 +172,7 @@ def java_to_class_map(project, logger=None):
 
     # Flag not mapped .class in to/ codebase
     to_resources_dot_class = to_resources.filter(name__endswith=".class")
-    to_resources_dot_class.update(status="NOT-found")
+    to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
 
 # TODO: Optimize querysets
@@ -183,6 +183,7 @@ def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
     # 1. Find the common_root using all the java_to_class relation paths
     dot_class_files = jar_extracted_files.has_relation().filter(name__endswith=".class")
     dot_java_paths = []
+    # TODO: Do not include duplicated paths
     for resource in dot_class_files:
         dot_java_paths.extend(
             resource.related_from.filter(match_type="java_to_class").values_list(
@@ -331,7 +332,9 @@ def _resource_purldb_match(project, resource):
             package_data=package_data,
             codebase_resources=extracted_resources,
         )
-        extracted_resources.no_status().update(status=flag.MATCHED_TO_PURLDB)
+        # Override the status as "purldb match" as we can rely on the codebase relation
+        # for the mapping information.
+        extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
 
 
 def purldb_match(project, extensions, logger=None):
