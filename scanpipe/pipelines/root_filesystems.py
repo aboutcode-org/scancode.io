@@ -108,8 +108,8 @@ class RootFS(Pipeline):
         """
         rootfs.match_not_analyzed(
             self.project,
-            reference_status="system-package",
-            not_analyzed_status="",
+            reference_status=flag.SYSTEM_PACKAGE,
+            not_analyzed_status=flag.NO_STATUS,
         )
 
     def match_not_analyzed_to_application_packages(self):
@@ -120,8 +120,8 @@ class RootFS(Pipeline):
         # TODO: do it one rootfs at a time e.g. for rfs in self.root_filesystems:
         rootfs.match_not_analyzed(
             self.project,
-            reference_status="application-package",
-            not_analyzed_status="",
+            reference_status=flag.APPLICATION_PACKAGE,
+            not_analyzed_status=flag.NO_STATUS,
         )
 
     def scan_for_files(self):

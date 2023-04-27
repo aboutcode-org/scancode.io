@@ -30,6 +30,7 @@ from django.db.models import Q
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
+from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
 
 FROM = "from/"
@@ -265,7 +266,7 @@ def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
         # Only create relations when the number of matches if inferior or equal to
         # the current number of path segment matched.
         if len(matches) > len(current_parts):
-            to_resource.status = "too-many-matches"
+            to_resource.status = flag.TOO_MANY_MATCHES
             to_resource.save()
             break
 
@@ -330,7 +331,7 @@ def _resource_purldb_match(project, resource):
             package_data=package_data,
             codebase_resources=extracted_resources,
         )
-        extracted_resources.no_status().update(status="matched-to-purldb")
+        extracted_resources.no_status().update(status=flag.MATCHED_TO_PURLDB)
 
 
 def purldb_match(project, extensions, logger=None):

@@ -78,7 +78,7 @@ class ScanPipeFlagPipesTest(TestCase):
         resource2 = CodebaseResource.objects.create(
             project=self.project1,
             path="filename1.ext",
-            status="scanned",
+            status=flag.SCANNED,
         )
         flag.tag_not_analyzed_codebase_resources(self.project1)
         resource1.refresh_from_db()

@@ -22,27 +22,84 @@
 
 from django.db.models import Q
 
+NO_STATUS = ""
+
+SCANNED = "scanned"
+SCANNED_WITH_ERROR = "scanned-with-error"
+
+SYSTEM_PACKAGE = "system-package"
+APPLICATION_PACKAGE = "application-package"
+INSTALLED_PACKAGE = "installed-package"
+
+NO_LICENSES = "no-licenses"
+UNKNOWN_LICENSE = "unknown-license"
+NOT_ANALYZED = "not-analyzed"
+
+IGNORED_WHITEOUT = "ignored-whiteout"
+IGNORED_EMPTY_FILE = "ignored-empty-file"
+IGNORED_FILENAME = "ignored-filename"
+IGNORED_EXTENSION = "ignored-extension"
+IGNORED_PATH = "ignored-path"
+IGNORED_MEDIA_FILE = "ignored-media-file"
+IGNORED_NOT_INTERESTING = "ignored-not-interesting"
+IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
+IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
+
+COMPLIANCE_LICENSES = "compliance-licenses"
+COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
+
+MAPPED = "mapped"
+MATCHED_TO_PURLDB = "matched-to-purldb"
+TOO_MANY_MATCHES = "too-many-matches"
+NOT_FOUND = "not-found"
+
+RESOURCE_STATUSES = [
+    SCANNED,
+    SCANNED_WITH_ERROR,
+    SYSTEM_PACKAGE,
+    APPLICATION_PACKAGE,
+    INSTALLED_PACKAGE,
+    NO_LICENSES,
+    UNKNOWN_LICENSE,
+    NOT_ANALYZED,
+    IGNORED_WHITEOUT,
+    IGNORED_EMPTY_FILE,
+    IGNORED_FILENAME,
+    IGNORED_EXTENSION,
+    IGNORED_PATH,
+    IGNORED_MEDIA_FILE,
+    IGNORED_NOT_INTERESTING,
+    IGNORED_DEFAULT_IGNORES,
+    IGNORED_DATA_FILE_NO_CLUES,
+    COMPLIANCE_LICENSES,
+    COMPLIANCE_SOURCEMIRROR,
+    MAPPED,
+    MATCHED_TO_PURLDB,
+    TOO_MANY_MATCHES,
+    NOT_FOUND,
+]
+
 
 def flag_empty_codebase_resources(project):
     """Flag empty files as ignored."""
     qs = (
         project.codebaseresources.files()
         .empty()
-        .filter(status__in=("", "not-analyzed"))
+        .filter(status__in=(NO_STATUS, NOT_ANALYZED))
     )
-    return qs.update(status="ignored-empty-file")
+    return qs.update(status=IGNORED_EMPTY_FILE)
 
 
 def flag_ignored_filenames(project, filenames):
     """Flag codebase resource as `ignored` status from list of `filenames`."""
     qs = project.codebaseresources.no_status().filter(name__in=filenames)
-    return qs.update(status="ignored-filename")
+    return qs.update(status=IGNORED_FILENAME)
 
 
 def flag_ignored_extensions(project, extensions):
     """Flag codebase resource as `ignored` status from list of `extensions`."""
     qs = project.codebaseresources.no_status().filter(extension__in=extensions)
-    return qs.update(status="ignored-extension")
+    return qs.update(status=IGNORED_EXTENSION)
 
 
 def flag_ignored_paths(project, paths):
@@ -52,22 +109,22 @@ def flag_ignored_paths(project, paths):
         lookups |= Q(path__contains=path)
 
     qs = project.codebaseresources.no_status().filter(lookups)
-    return qs.update(status="ignored-path")
+    return qs.update(status=IGNORED_PATH)
 
 
 def analyze_scanned_files(project):
     """Set the status for CodebaseResource to unknown or no license."""
-    scanned_files = project.codebaseresources.files().status("scanned")
-    scanned_files.has_no_licenses().update(status="no-licenses")
-    scanned_files.unknown_license().update(status="unknown-license")
+    scanned_files = project.codebaseresources.files().status(SCANNED)
+    scanned_files.has_no_licenses().update(status=NO_LICENSES)
+    scanned_files.unknown_license().update(status=UNKNOWN_LICENSE)
 
 
 def tag_not_analyzed_codebase_resources(project):
     """Flag codebase resource as `not-analyzed`."""
-    project.codebaseresources.no_status().update(status="not-analyzed")
+    project.codebaseresources.no_status().update(status=NOT_ANALYZED)
 
 
 def flag_mapped_resources(project):
     """Flag all codebase resources that were mapped during the d2d pipeline."""
     resources = project.codebaseresources.to_codebase().has_relation().no_status()
-    return resources.update(status="mapped")
+    return resources.update(status=MAPPED)

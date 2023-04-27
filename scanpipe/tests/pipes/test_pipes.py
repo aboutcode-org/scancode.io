@@ -33,6 +33,7 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
@@ -73,7 +74,7 @@ class ScanPipePipesTest(TestCase):
         for field_name, value in resource_data.items():
             self.assertEqual(value, getattr(resource, field_name), msg=field_name)
 
-        resource_data["status"] = "scanned"
+        resource_data["status"] = flag.SCANNED
         resource = pipes.update_or_create_resource(p1, resource_data)
         self.assertEqual("scanned", resource.status)
 

@@ -29,6 +29,7 @@ from container_inspector.image import Image
 from container_inspector.utils import extract_tar
 
 from scanpipe import pipes
+from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 
 logger = logging.getLogger(__name__)
@@ -235,7 +236,7 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
                 found_res = True
                 if created_package not in codebase_resource.discovered_packages.all():
                     codebase_resource.discovered_packages.add(created_package)
-                    codebase_resource.status = "system-package"
+                    codebase_resource.status = flag.SYSTEM_PACKAGE
                     logger.info(f"      added as system-package to: {purl}")
                     codebase_resource.save()
 
