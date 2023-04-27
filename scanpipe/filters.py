@@ -285,7 +285,6 @@ class RelationMatchTypeFilter(django_filters.ChoiceFilter):
             ("any", "Any match"),
             ("java_to_class", "java to class"),
             ("jar_to_source", "jar to source"),
-            ("jar_misc", "jar misc"),
             ("path", "path"),
             ("sha1", "sha1"),
         )
@@ -296,6 +295,15 @@ class RelationMatchTypeFilter(django_filters.ChoiceFilter):
             return qs.has_no_relation()
         elif value == "any":
             return qs.has_relation()
+        return super().filter(qs, value)
+
+
+class StatusFilter(django_filters.CharFilter):
+    def filter(self, qs, value):
+        if value == "none":
+            return qs.no_status()
+        elif value == "any":
+            return qs.status()
         return super().filter(qs, value)
 
 
@@ -333,6 +341,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
     )
     in_package = InPackageFilter(label="In a Package")
+    status = StatusFilter()
     relation_match_type = RelationMatchTypeFilter(
         label="Relation match type",
         field_name="related_from__match_type",

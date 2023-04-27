@@ -6,6 +6,7 @@
   </div>
   <div class="dropdown-menu" id="{{ filter_form_field.id_for_label }}" role="menu">
     <div class="dropdown-content">
+    {{ filter_form_field.field.choices }}
       {% for value, label in filter_form_field.field.choices %}
         <a href="?{{ filter_form_field.html_name }}={{ value }}" class="dropdown-item">
           {{ label }}

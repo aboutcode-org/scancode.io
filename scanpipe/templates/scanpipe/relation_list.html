@@ -16,77 +16,78 @@
   </div>
 
   <div class="container is-fluid mb-3">
-    <div class="table-container">
-      <table class="table is-bordered is-narrow is-hoverable is-fullwidth" style="table-layout: fixed;">
-        <thead>
-          <tr>
-            <th>To resource</th>
-            <th style="width:100px;">
-              <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}status" class="is-black-link">Status</a>
-              {% if "status" in filter.data.sort %}
-                <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
-              {% endif %}
-            </th>
-            <th style="width:145px;">
-              <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}related_from__match_type" class="is-black-link">Map type</a>
-              {% if "related_from__match_type" in filter.data.sort %}
-                <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
-              {% endif %}
-              <div style="float: right">
-                {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.relation_match_type only %}
-              </div>
-            </th>
-            <th>From resource</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for resource in object_list %}
-            {% for relation in resource.related_from.all %}
-              <tr>
-                {% if forloop.first %}
-                  <td class="break-all" rowspan="{{ resource.related_from.all|length }}">
-                    <a href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
-                  </td>
-                {% endif %}
-                <td>{{ resource.status }}</td>
-                <td>
-                  {{ relation.match_type }}
-                  {% if relation.extra_data.path_score %}
-                    {{ relation.extra_data.path_score }}
-                  {% endif %}
-                  {% if relation.match_type == "path" and resource.is_text and relation.from_resource.is_text %}
-                    <div>
-                      <a href="{% url 'resource_diff' project.uuid %}?from_path={{ resource.path }}&to_path={{ relation.from_resource.path }}" target="_blank">diff</a>
-                      {% if relation.extra_data.diff_ratio %}
-                        ratio: {{ relation.extra_data.diff_ratio }}
-                      {% endif %}
-                    </div>
-                  {% endif %}
-                </td>
-                <td class="break-all">
-                  <a href="{{ relation.from_resource.get_absolute_url }}#viewer">{{ relation.from_resource.path }}</a>
-                </td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td class="break-all">
-                  <a class="has-text-danger" href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
-                </td>
-                <td>{{ resource.status }}</td>
-                <td></td>
-                <td></td>
-              </tr>
-            {% endfor %}
-          {% empty %}
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth" style="table-layout: fixed;">
+      <thead>
+        <tr>
+          <th>To resource</th>
+          <th style="width:110px;">
+            <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}status" class="is-black-link">Status</a>
+            {% if "status" in filter.data.sort %}
+              <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+            {% endif %}
+            <div style="float: right">
+              {% include 'scanpipe/includes/filter_status_choices_field.html' %}
+            </div>
+          </th>
+          <th style="width:145px;">
+            <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}related_from__match_type" class="is-black-link">Map type</a>
+            {% if "related_from__match_type" in filter.data.sort %}
+              <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+            {% endif %}
+            <div style="float: right">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.relation_match_type only %}
+            </div>
+          </th>
+          <th>From resource</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resource in object_list %}
+          {% for relation in resource.related_from.all %}
             <tr>
-              <td colspan="4" class="has-text-centered p-3">
-                No Relations found. <a href="?">Clear search and filters</a>
+              {% if forloop.first %}
+                <td class="break-all" rowspan="{{ resource.related_from.all|length }}">
+                  <a href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
+                </td>
+              {% endif %}
+              <td>{{ resource.status }}</td>
+              <td>
+                {{ relation.match_type }}
+                {% if relation.extra_data.path_score %}
+                  {{ relation.extra_data.path_score }}
+                {% endif %}
+                {% if relation.match_type == "path" and resource.is_text and relation.from_resource.is_text %}
+                  <div>
+                    <a href="{% url 'resource_diff' project.uuid %}?from_path={{ resource.path }}&to_path={{ relation.from_resource.path }}" target="_blank">diff</a>
+                    {% if relation.extra_data.diff_ratio %}
+                      ratio: {{ relation.extra_data.diff_ratio }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </td>
+              <td class="break-all">
+                <a href="{{ relation.from_resource.get_absolute_url }}#viewer">{{ relation.from_resource.path }}</a>
               </td>
             </tr>
+          {% empty %}
+            <tr>
+              <td class="break-all">
+                <a class="has-text-danger" href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
+              </td>
+              <td>{{ resource.status }}</td>
+              <td></td>
+              <td></td>
+            </tr>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
+        {% empty %}
+          <tr>
+            <td colspan="4" class="has-text-centered p-3">
+              No Relations found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
     {% if is_paginated %}
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
