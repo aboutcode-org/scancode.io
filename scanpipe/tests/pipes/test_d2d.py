@@ -94,12 +94,16 @@ class ScanPipeD2DPipesTest(TestCase):
         resource_files = [
             self.data_location / "codebase" / "a.txt",
             self.data_location / "codebase" / "b.txt",
+            self.data_location / "codebase" / "c.txt",
         ]
         copy_inputs(resource_files, self.project1.codebase_path)
 
         resource1 = make_resource_file(self.project1, "a.txt")
         resource2 = make_resource_file(self.project1, "b.txt")
         self.assertEqual(0.5, d2d.get_diff_ratio(resource1, resource2))
+
+        resource3 = make_resource_file(self.project1, "c.txt")
+        self.assertEqual(0.0, d2d.get_diff_ratio(resource1, resource3))
 
     @mock.patch("scanpipe.pipes.purldb.match_by_sha1")
     def test_scanpipe_d2d_purldb_match(self, mock_match_by_sha1):

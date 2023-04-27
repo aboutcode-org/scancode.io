@@ -36,7 +36,7 @@ from scanpipe.pipes import purldb
 FROM = "from/"
 TO = "to/"
 
-IGNORE_FILENAMES = ()
+IGNORE_FILENAMES = ("packageinfo",)
 IGNORE_EXTENSIONS = ()
 IGNORE_PATHS = ("gradleTest/",)
 
@@ -273,7 +273,7 @@ def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
 
         for match in matches:
             diff_ratio = get_diff_ratio(to_resource=to_resource, from_resource=match)
-            if diff_ratio and diff_ratio < diff_ratio_threshold:
+            if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
                 continue
 
             extra_data = {
