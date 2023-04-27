@@ -21,12 +21,10 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import difflib
-import os
 from pathlib import Path
 from timeit import default_timer as timer
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -142,6 +140,9 @@ def _resource_java_to_class_map(to_resource, from_resources):
             to_resource=to_resource,
             relationship=CodebaseRelation.Relationship.COMPILED,
             match_type="java_to_class",
+            extra_data={
+                "from_source_root": match.path.replace(qualified_java, ""),
+            },
         )
 
 
@@ -175,53 +176,41 @@ def java_to_class_map(project, logger=None):
     to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
 
-# TODO: Optimize querysets
 def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
     jar_extracted_path = get_extracted_path(jar_resource)
     jar_extracted_files = to_resources.filter(path__startswith=jar_extracted_path)
 
-    # 1. Find the common_root using all the java_to_class relation paths
-    dot_class_files = jar_extracted_files.has_relation().filter(name__endswith=".class")
-    dot_java_paths = []
-    # TODO: Do not include duplicated paths
-    for resource in dot_class_files:
-        dot_java_paths.extend(
-            resource.related_from.filter(match_type="java_to_class").values_list(
-                "from_resource__path", flat=True
-            )
-        )
-    if not dot_java_paths:
+    # Flag all META-INF/* file as ignored
+    meta_inf_files = jar_extracted_files.filter(path__contains="META-INF/")
+    meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
+
+    dot_class_files = jar_extracted_files.filter(name__endswith=".class")
+    # Do not continue if some .class files couldn't be mapped.
+    if dot_class_files.has_no_relation().exists():
         return
 
-    common_source_root = os.path.commonpath(dot_java_paths)
+    java_to_class_relations = CodebaseRelation.objects.filter(
+        to_resource__in=dot_class_files, match_type="java_to_class"
+    )
+    from_source_roots = [
+        relation.extra_data.get("from_source_root", "")
+        for relation in java_to_class_relations
+    ]
+    if len(set(from_source_roots)) != 1:
+        # Could not determine a common root directory for the java_to_class files
+        return
+
     try:
-        common_from_resource = from_resources.get(path=common_source_root.lstrip("/"))
+        common_from_resource = from_resources.get(path=from_source_roots[0].rstrip("/"))
     except ObjectDoesNotExist:
         return
 
-    # 2. Map generated file, packageinfo and META-INF/* to the top most shared common
-    # directory of all already mapped .java/.class
-    jar_misc_resource = jar_extracted_files.filter(
-        Q(name__endswith="packageinfo") | Q(path__contains="META-INF/")
+    pipes.make_relationship(
+        from_resource=common_from_resource,
+        to_resource=jar_resource,
+        relationship=CodebaseRelation.Relationship.COMPILED,
+        match_type="jar_to_source",
     )
-
-    for misc_resource in jar_misc_resource:
-        pipes.make_relationship(
-            from_resource=common_from_resource,
-            to_resource=misc_resource,
-            relationship=CodebaseRelation.Relationship.COMPILED,
-            match_type="jar_misc",
-        )
-
-    # 3. At that point, if all the extracted files form the .jar are mapped,
-    # the jar resource is mapped as well.
-    if not jar_extracted_files.has_no_relation().exists():
-        pipes.make_relationship(
-            from_resource=common_from_resource,
-            to_resource=jar_resource,
-            relationship=CodebaseRelation.Relationship.COMPILED,
-            match_type="jar_to_source",
-        )
 
 
 def jar_to_source_map(project, logger=None):
