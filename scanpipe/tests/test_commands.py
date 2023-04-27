@@ -253,7 +253,7 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("add-input", *options, stdout=out)
         self.assertIn("content copied in", out.getvalue())
 
-        expected = ["a.txt", "b.txt"]
+        expected = ["a.txt", "b.txt", "c.txt"]
         self.assertEqual(
             expected, sorted([path.name for path in project.codebase_path.iterdir()])
         )
