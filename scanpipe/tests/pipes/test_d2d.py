@@ -22,6 +22,7 @@
 
 import io
 import tempfile
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -144,17 +145,23 @@ class ScanPipeD2DPipesTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.match_by_sha1")
     def test_scanpipe_d2d_purldb_match(self, mock_match_by_sha1):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
-        to_2 = make_resource_file(self.project1, "to/package.jar-extract/a.class")
+        # The initial status will be updated to "matched-to-purldb"
+        to_2 = make_resource_file(
+            self.project1, "to/package.jar-extract/a.class", status="mapped"
+        )
         to_3 = make_resource_file(self.project1, "to/package.jar-extract/b.class")
 
-        mock_match_by_sha1.return_value = [package_data1]
+        package_data = package_data1.copy()
+        package_data["uuid"] = uuid.uuid4()
+        mock_match_by_sha1.return_value = [package_data]
 
         buffer = io.StringIO()
         d2d.purldb_match(self.project1, extensions=[".jar"], logger=buffer.write)
         self.assertEqual("Matching 1 .jar resources against PurlDB", buffer.getvalue())
 
         package = self.project1.discoveredpackages.get()
-        self.assertEqual(package_data1["name"], package.name)
+        self.assertEqual(package_data["name"], package.name)
+        self.assertNotEqual(package_data["uuid"], package.uuid)
 
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()

@@ -1424,10 +1424,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(Q(related_from__isnull=False) | Q(related_to__isnull=False))
 
     def has_many_relation(self):
+        """Resources assigned to two or more CodebaseRelation"""
         return self.annotate(
-            related_from_count=Count("related_from"),
-            related_to_count=Count("related_to"),
-        ).filter(Q(related_from_count__gte=2) | Q(related_to_count__gte=2))
+            relation_count=Count("related_from") + Count("related_to")
+        ).filter(relation_count__gte=2)
 
     def has_no_relation(self):
         """Resources not part of any CodebaseRelation"""

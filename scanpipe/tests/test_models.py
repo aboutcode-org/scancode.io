@@ -1084,6 +1084,7 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual(0, CodebaseResource.objects.has_relation().count())
         self.assertEqual(3, CodebaseResource.objects.has_no_relation().count())
+        self.assertEqual(0, CodebaseResource.objects.has_many_relation().count())
         CodebaseRelation.objects.create(
             project=self.project1,
             from_resource=file,
@@ -1092,6 +1093,15 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertEqual(2, CodebaseResource.objects.has_relation().count())
         self.assertEqual(1, CodebaseResource.objects.has_no_relation().count())
+        self.assertEqual(0, CodebaseResource.objects.has_many_relation().count())
+
+        CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=file,
+            to_resource=symlink,
+            relationship=CodebaseRelation.Relationship.IDENTICAL,
+        )
+        self.assertEqual(1, CodebaseResource.objects.has_many_relation().count())
 
     def test_scanpipe_codebase_resource_queryset_licenses_categories(self):
         CodebaseResource.objects.all().delete()
