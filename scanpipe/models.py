@@ -1975,7 +1975,7 @@ class CodebaseRelation(
         max_length=30,
         choices=Relationship.choices,
     )
-    match_type = models.CharField(
+    map_type = models.CharField(
         max_length=30,
     )
 
@@ -1983,13 +1983,13 @@ class CodebaseRelation(
         ordering = ["from_resource__path", "to_resource__path"]
         indexes = [
             models.Index(fields=["relationship"]),
-            models.Index(fields=["match_type"]),
+            models.Index(fields=["map_type"]),
         ]
 
     def __str__(self):
         return (
             f"{self.from_resource.name} {self.relationship.upper()} "
-            f"{self.to_resource.name} using {self.match_type}"
+            f"{self.to_resource.name} using {self.map_type}"
         )
 
 

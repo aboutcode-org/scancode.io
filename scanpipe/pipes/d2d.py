@@ -110,7 +110,7 @@ def _resource_checksum_map(to_resource, from_resources, checksum_field):
             from_resource=match,
             to_resource=to_resource,
             relationship=CodebaseRelation.Relationship.IDENTICAL,
-            match_type=checksum_field,
+            map_type=checksum_field,
         )
 
 
@@ -161,7 +161,7 @@ def _resource_java_to_class_map(to_resource, from_resources):
             from_resource=match,
             to_resource=to_resource,
             relationship=CodebaseRelation.Relationship.COMPILED,
-            match_type="java_to_class",
+            map_type="java_to_class",
             extra_data={
                 "from_source_root": match.path.replace(qualified_java, ""),
             },
@@ -212,7 +212,7 @@ def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
         return
 
     java_to_class_relations = CodebaseRelation.objects.filter(
-        to_resource__in=dot_class_files, match_type="java_to_class"
+        to_resource__in=dot_class_files, map_type="java_to_class"
     )
     from_source_roots = [
         relation.extra_data.get("from_source_root", "")
@@ -231,7 +231,7 @@ def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
         from_resource=common_from_resource,
         to_resource=jar_resource,
         relationship=CodebaseRelation.Relationship.COMPILED,
-        match_type="jar_to_source",
+        map_type="jar_to_source",
     )
 
 
@@ -278,7 +278,7 @@ def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
         # Only create relations when the number of matches if inferior or equal to
         # the current number of path segment matched.
         if len(matches) > len(current_parts):
-            to_resource.status = flag.TOO_MANY_MATCHES
+            to_resource.status = flag.TOO_MANY_MAPS
             to_resource.save()
             break
 
@@ -297,7 +297,7 @@ def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
                 from_resource=match,
                 to_resource=to_resource,
                 relationship=CodebaseRelation.Relationship.PATH_MATCH,
-                match_type="path",
+                map_type="path",
                 extra_data=extra_data,
             )
         break
@@ -312,7 +312,7 @@ def path_map(project, logger=None):
 
     if logger:
         logger(
-            f"Mapping {resource_count:,d} to/ resources using path match "
+            f"Mapping {resource_count:,d} to/ resources using path map "
             f"against from/ codebase"
         )
 

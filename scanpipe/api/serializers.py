@@ -345,7 +345,7 @@ class CodebaseRelationSerializer(serializers.ModelSerializer):
             "from_resource",
             "to_resource",
             "relationship",
-            "match_type",
+            "map_type",
         ]
 
 

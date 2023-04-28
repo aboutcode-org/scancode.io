@@ -51,7 +51,7 @@ COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
 
 MAPPED = "mapped"
 MATCHED_TO_PURLDB = "matched-to-purldb"
-TOO_MANY_MATCHES = "too-many-matches"
+TOO_MANY_MAPS = "too-many-maps"
 NO_JAVA_SOURCE = "no-java-source"
 
 RESOURCE_STATUSES = [
@@ -76,7 +76,7 @@ RESOURCE_STATUSES = [
     COMPLIANCE_SOURCEMIRROR,
     MAPPED,
     MATCHED_TO_PURLDB,
-    TOO_MANY_MATCHES,
+    TOO_MANY_MAPS,
     NO_JAVA_SOURCE,
 ]
 

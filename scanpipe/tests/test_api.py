@@ -413,7 +413,7 @@ class ScanPipeAPITest(TransactionTestCase):
             "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
             "to_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
             "relationship": "compiled",
-            "match_type": "",
+            "map_type": "",
         }
         self.assertEqual(expected, relation)
 

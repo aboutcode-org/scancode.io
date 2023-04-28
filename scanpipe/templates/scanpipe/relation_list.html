@@ -31,12 +31,12 @@
             </div>
           </th>
           <th style="width:145px;">
-            <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}related_from__match_type" class="is-black-link">Map type</a>
-            {% if "related_from__match_type" in filter.data.sort %}
+            <a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}related_from__map_type" class="is-black-link">Map type</a>
+            {% if "related_from__map_type" in filter.data.sort %}
               <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
             {% endif %}
             <div style="float: right">
-              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.relation_match_type only %}
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.relation_map_type only %}
             </div>
           </th>
           <th>From resource</th>
@@ -53,11 +53,11 @@
               {% endif %}
               <td>{{ resource.status }}</td>
               <td>
-                {{ relation.match_type }}
+                {{ relation.map_type }}
                 {% if relation.extra_data.path_score %}
                   {{ relation.extra_data.path_score }}
                 {% endif %}
-                {% if relation.match_type == "path" and resource.is_text and relation.from_resource.is_text %}
+                {% if relation.map_type == "path" and resource.is_text and relation.from_resource.is_text %}
                   <div>
                     <a href="{% url 'resource_diff' project.uuid %}?from_path={{ resource.path }}&to_path={{ relation.from_resource.path }}" target="_blank">diff</a>
                     {% if relation.extra_data.diff_ratio %}

@@ -177,14 +177,14 @@ class ScanPipePipesTest(TestCase):
             from_resource=from_resource,
             to_resource=to_resource,
             relationship=CodebaseRelation.Relationship.COMPILED,
-            match_type="java_to_class",
+            map_type="java_to_class",
             extra_data={"extra": "data"},
         )
 
         self.assertEqual(from_resource, relation.from_resource)
         self.assertEqual(to_resource, relation.to_resource)
         self.assertEqual(CodebaseRelation.Relationship.COMPILED, relation.relationship)
-        self.assertEqual("java_to_class", relation.match_type)
+        self.assertEqual("java_to_class", relation.map_type)
         self.assertEqual({"extra": "data"}, relation.extra_data)
 
 

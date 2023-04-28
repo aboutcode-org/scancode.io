@@ -278,7 +278,7 @@ class InPackageFilter(django_filters.ChoiceFilter):
         return qs
 
 
-class RelationMatchTypeFilter(django_filters.ChoiceFilter):
+class RelationMapTypeFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
             ("none", "No map"),
@@ -329,7 +329,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "mime_type",
             "tag",
             "compliance_alert",
-            "related_from__match_type",
+            "related_from__map_type",
         ],
     )
     license_key = JSONContainsFilter(
@@ -345,9 +345,9 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     )
     in_package = InPackageFilter(label="In a Package")
     status = StatusFilter()
-    relation_match_type = RelationMatchTypeFilter(
-        label="Relation match type",
-        field_name="related_from__match_type",
+    relation_map_type = RelationMapTypeFilter(
+        label="Relation map type",
+        field_name="related_from__map_type",
         empty_label="All",
     )
 
@@ -380,7 +380,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "emails",
             "urls",
             "in_package",
-            "relation_match_type",
+            "relation_map_type",
         ]
 
     @classmethod

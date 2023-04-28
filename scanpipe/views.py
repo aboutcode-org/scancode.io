@@ -943,7 +943,7 @@ class ProjectErrorListView(
 
 RelationRow = namedtuple(
     "RelationRow",
-    field_names=["to_resource", "status", "match_type", "score", "from_resource"],
+    field_names=["to_resource", "status", "map_type", "score", "from_resource"],
 )
 
 
@@ -987,7 +987,7 @@ class CodebaseRelationListView(
                     yield RelationRow(
                         resource.path,
                         resource.status,
-                        relation.match_type,
+                        relation.map_type,
                         score,
                         relation.from_resource.path,
                     )

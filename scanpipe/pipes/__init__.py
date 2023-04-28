@@ -181,14 +181,14 @@ def update_or_create_dependency(
 
 
 def make_relationship(
-    from_resource, to_resource, relationship, match_type, **extra_fields
+    from_resource, to_resource, relationship, map_type, **extra_fields
 ):
     return CodebaseRelation.objects.create(
         project=from_resource.project,
         from_resource=from_resource,
         to_resource=to_resource,
         relationship=relationship,
-        match_type=match_type,
+        map_type=map_type,
         **extra_fields,
     )
 
