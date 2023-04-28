@@ -1954,11 +1954,6 @@ class CodebaseRelation(
 ):
     """Relation between two CodebaseResource."""
 
-    class Relationship(models.TextChoices):
-        IDENTICAL = "identical"
-        COMPILED = "compiled"
-        PATH_MATCH = "path_match"
-
     from_resource = models.ForeignKey(
         CodebaseResource,
         related_name="related_to",
@@ -1971,10 +1966,6 @@ class CodebaseRelation(
         on_delete=models.CASCADE,
         editable=False,
     )
-    relationship = models.CharField(
-        max_length=30,
-        choices=Relationship.choices,
-    )
     map_type = models.CharField(
         max_length=30,
     )
@@ -1982,15 +1973,11 @@ class CodebaseRelation(
     class Meta:
         ordering = ["from_resource__path", "to_resource__path"]
         indexes = [
-            models.Index(fields=["relationship"]),
             models.Index(fields=["map_type"]),
         ]
 
     def __str__(self):
-        return (
-            f"{self.from_resource.name} {self.relationship.upper()} "
-            f"{self.to_resource.name} using {self.map_type}"
-        )
+        return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
 
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):

@@ -29,7 +29,6 @@ from django.test import TestCase
 from django.test import TransactionTestCase
 
 from scanpipe import pipes
-from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -168,22 +167,20 @@ class ScanPipePipesTest(TestCase):
         dependency = pipes.update_or_create_dependency(p1, dependency_data)
         self.assertEqual(dependency.scope, "install")
 
-    def test_scanpipe_pipes_make_relationship(self):
+    def test_scanpipe_pipes_make_relation(self):
         p1 = Project.objects.create(name="Analysis")
         from_resource = CodebaseResource.objects.create(project=p1, path="Name.java")
         to_resource = CodebaseResource.objects.create(project=p1, path="Name.class")
 
-        relation = pipes.make_relationship(
+        relation = pipes.make_relation(
             from_resource=from_resource,
             to_resource=to_resource,
-            relationship=CodebaseRelation.Relationship.COMPILED,
             map_type="java_to_class",
             extra_data={"extra": "data"},
         )
 
         self.assertEqual(from_resource, relation.from_resource)
         self.assertEqual(to_resource, relation.to_resource)
-        self.assertEqual(CodebaseRelation.Relationship.COMPILED, relation.relationship)
         self.assertEqual("java_to_class", relation.map_type)
         self.assertEqual({"extra": "data"}, relation.extra_data)
 

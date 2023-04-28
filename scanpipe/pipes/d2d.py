@@ -106,10 +106,9 @@ def _resource_checksum_map(to_resource, from_resources, checksum_field):
     checksum_value = getattr(to_resource, checksum_field)
     matches = from_resources.filter(**{checksum_field: checksum_value})
     for match in get_best_path_matches(to_resource, matches):
-        pipes.make_relationship(
+        pipes.make_relation(
             from_resource=match,
             to_resource=to_resource,
-            relationship=CodebaseRelation.Relationship.IDENTICAL,
             map_type=checksum_field,
         )
 
@@ -157,10 +156,9 @@ def _resource_java_to_class_map(to_resource, from_resources):
 
     matches = from_resources.filter(path__endswith=qualified_java)
     for match in matches:
-        pipes.make_relationship(
+        pipes.make_relation(
             from_resource=match,
             to_resource=to_resource,
-            relationship=CodebaseRelation.Relationship.COMPILED,
             map_type="java_to_class",
             extra_data={
                 "from_source_root": match.path.replace(qualified_java, ""),
@@ -227,10 +225,9 @@ def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
     except ObjectDoesNotExist:
         return
 
-    pipes.make_relationship(
+    pipes.make_relation(
         from_resource=common_from_resource,
         to_resource=jar_resource,
-        relationship=CodebaseRelation.Relationship.COMPILED,
         map_type="jar_to_source",
     )
 
@@ -293,10 +290,9 @@ def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
             if diff_ratio:
                 extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
 
-            pipes.make_relationship(
+            pipes.make_relation(
                 from_resource=match,
                 to_resource=to_resource,
-                relationship=CodebaseRelation.Relationship.PATH_MATCH,
                 map_type="path",
                 extra_data=extra_data,
             )

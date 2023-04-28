@@ -217,5 +217,4 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(1, to_1.related_from.count())
         relation = to_1.related_from.get()
         self.assertEqual("sha1", relation.map_type)
-        self.assertEqual("identical", relation.relationship)
         self.assertEqual(from_2, relation.from_resource)

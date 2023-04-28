@@ -75,7 +75,7 @@ class ScanPipeAPITest(TransactionTestCase):
             project=self.project1,
             from_resource=self.resource1,
             to_resource=self.resource1,
-            relationship=CodebaseRelation.Relationship.COMPILED,
+            map_type="java_to_class",
         )
 
         self.project_list_url = reverse("project-list")
@@ -198,7 +198,7 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data["discovered_dependencies_summary"])
 
-        expected = {"compiled": 1}
+        expected = {"java_to_class": 1}
         self.assertEqual(expected, response.data["codebase_relations_summary"])
 
         self.project1.add_input_source(filename="file1", source="uploaded")
@@ -412,8 +412,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {
             "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
             "to_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
-            "relationship": "compiled",
-            "map_type": "",
+            "map_type": "java_to_class",
         }
         self.assertEqual(expected, relation)
 
@@ -723,7 +722,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(38, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(11, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(30, len(get_serializer_fields(CodebaseResource)))
-        self.assertEqual(4, len(get_serializer_fields(CodebaseRelation)))
+        self.assertEqual(3, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(6, len(get_serializer_fields(ProjectError)))
 
         with self.assertRaises(LookupError):

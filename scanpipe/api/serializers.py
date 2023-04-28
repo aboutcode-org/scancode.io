@@ -186,7 +186,7 @@ class ProjectSerializer(
 
     def get_codebase_relations_summary(self, project):
         queryset = project.codebaserelations.all()
-        return count_group_by(queryset, "relationship")
+        return count_group_by(queryset, "map_type")
 
     def create(self, validated_data):
         """
@@ -344,7 +344,6 @@ class CodebaseRelationSerializer(serializers.ModelSerializer):
         fields = [
             "from_resource",
             "to_resource",
-            "relationship",
             "map_type",
         ]
 

@@ -1089,7 +1089,6 @@ class ScanPipeModelsTest(TestCase):
             project=self.project1,
             from_resource=file,
             to_resource=directory,
-            relationship=CodebaseRelation.Relationship.IDENTICAL,
         )
         self.assertEqual(2, CodebaseResource.objects.has_relation().count())
         self.assertEqual(1, CodebaseResource.objects.has_no_relation().count())
@@ -1099,7 +1098,6 @@ class ScanPipeModelsTest(TestCase):
             project=self.project1,
             from_resource=file,
             to_resource=symlink,
-            relationship=CodebaseRelation.Relationship.IDENTICAL,
         )
         self.assertEqual(1, CodebaseResource.objects.has_many_relation().count())
 
