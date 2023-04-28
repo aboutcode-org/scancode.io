@@ -1,4 +1,5 @@
 {% extends "scanpipe/base.html" %}
+{% load humanize %}
 
 {% block title %}ScanCode.io: {{ project.name }} - Relations{% endblock %}
 
@@ -10,7 +11,7 @@
         {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Relations" %}
         {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search to/ resources" %}
       </div>
-      {% include 'scanpipe/includes/pagination_header.html' %}
+      {% include 'scanpipe/includes/pagination_header_relations.html' %}
       {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
     </section>
   </div>

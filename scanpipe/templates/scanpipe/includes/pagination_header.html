@@ -1,7 +1,9 @@
 {% load humanize %}
 <div class="is-flex is-justify-content-space-between">
   <div>
-    {{ paginator.count|intcomma }} results
+    {% block paginator_count %}
+      {{ paginator.count|intcomma }} results
+    {% endblock %}
     {% if export_xlsx_url_query %}
       {% include "scanpipe/includes/list_actions_dropdown.html" %}
     {% endif %}
