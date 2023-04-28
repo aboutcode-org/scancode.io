@@ -72,6 +72,45 @@ class RunStatusCommandMixin:
 
         return status.upper()
 
+    def get_run_status_messages(self, project):
+        messages = []
+
+        if runs := project.runs.all():
+            messages.append("\nPipelines:")
+            for run in runs:
+                status_code = self.get_run_status_code(run)
+                msg = f" [{status_code}] {run.pipeline_name}"
+                execution_time = run.execution_time
+                if execution_time:
+                    msg += f" (executed in {execution_time} seconds)"
+                messages.append(msg)
+                if run.log:
+                    for line in run.log.rstrip("\n").split("\n"):
+                        messages.append(3 * " " + line)
+
+        return messages
+
+    def get_queryset_objects_messages(self, project):
+        messages = []
+
+        for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
+            queryset = model_class.objects.project(project)
+            messages.append(f" - {model_class.__name__}: {queryset.count()}")
+
+            if model_class == CodebaseResource:
+                status_summary = count_group_by(queryset, "status")
+                for status, count in status_summary.items():
+                    status = status or "(no status)"
+                    messages.append(f"   - {status}: {count}")
+
+        inputs, missing_inputs = project.inputs_with_source
+        if inputs:
+            messages.append("\nInputs:")
+            for input in inputs:
+                messages.append(f" - {input.get('name')} ({input.get('source')})")
+
+        return messages
+
     def display_status(self, project, verbosity):
         project_label = f"Project: {project.name}"
         if project.is_archived:
@@ -91,36 +130,8 @@ class RunStatusCommandMixin:
 
         if verbosity >= 3:
             message.append("\nDatabase:")
-
-            for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
-                queryset = model_class.objects.project(project)
-                message.append(f" - {model_class.__name__}: {queryset.count()}")
-
-                if model_class == CodebaseResource:
-                    status_summary = count_group_by(queryset, "status")
-                    for status, count in status_summary.items():
-                        status = status or "(no status)"
-                        message.append(f"   - {status}: {count}")
-
-            inputs, missing_inputs = project.inputs_with_source
-            if inputs:
-                message.append("\nInputs:")
-                for input in inputs:
-                    message.append(f" - {input.get('name')} ({input.get('source')})")
-
-            runs = project.runs.all()
-            if runs:
-                message.append("\nPipelines:")
-                for run in runs:
-                    status_code = self.get_run_status_code(run)
-                    msg = f" [{status_code}] {run.pipeline_name}"
-                    execution_time = run.execution_time
-                    if execution_time:
-                        msg += f" (executed in {execution_time} seconds)"
-                    message.append(msg)
-                    if run.log:
-                        for line in run.log.rstrip("\n").split("\n"):
-                            message.append(3 * " " + line)
+            message.extend(self.get_queryset_objects_messages(project))
+            message.extend(self.get_run_status_messages(project))
 
         for line in message:
             self.stdout.write(line)

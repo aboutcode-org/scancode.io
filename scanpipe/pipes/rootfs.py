@@ -194,7 +194,54 @@ def package_getter(root_dir, **kwargs):
         yield package.purl, package
 
 
-def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
+def _create_system_package(project, purl, package):
+    """Create system package and related resources."""
+    created_package = pipes.update_or_create_package(project, package.to_dict())
+
+    installed_files = []
+    if hasattr(package, "resources"):
+        installed_files = package.resources
+
+    # We have no files for this installed package, we cannot go further.
+    if not installed_files:
+        logger.info(f"  No installed_files for: {purl}")
+        return
+
+    missing_resources = created_package.missing_resources[:]
+    modified_resources = created_package.modified_resources[:]
+
+    codebase_resources = project.codebaseresources.all()
+
+    for install_file in installed_files:
+        rootfs_path = pipes.normalize_path(install_file.path)
+        logger.info(f"   installed file rootfs_path: {rootfs_path}")
+
+        try:
+            codebase_resource = codebase_resources.get(
+                rootfs_path=rootfs_path,
+            )
+        except ObjectDoesNotExist:
+            if rootfs_path not in missing_resources:
+                missing_resources.append(rootfs_path)
+            logger.info(f"      installed file is missing: {rootfs_path}")
+            continue
+
+        if created_package not in codebase_resource.discovered_packages.all():
+            codebase_resource.discovered_packages.add(created_package)
+            codebase_resource.status = "system-package"
+            logger.info(f"      added as system-package to: {purl}")
+            codebase_resource.save()
+
+        if has_hash_diff(install_file, codebase_resource):
+            if install_file.path not in modified_resources:
+                modified_resources.append(install_file.path)
+
+    created_package.missing_resources = missing_resources
+    created_package.modified_resources = modified_resources
+    created_package.save()
+
+
+def scan_rootfs_for_system_packages(project, rootfs):
     """
     Given a `project` Project and a `rootfs` RootFs, scan the `rootfs` for
     installed system packages, and create a DiscoveredPackage for each.
@@ -214,52 +261,9 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
 
     installed_packages = rootfs.get_installed_packages(package_getter)
 
-    for i, (purl, package) in enumerate(installed_packages):
-        logger.info(f"Creating package #{i}: {purl}")
-        created_package = pipes.update_or_create_package(project, package.to_dict())
-
-        installed_files = []
-        if hasattr(package, "resources"):
-            installed_files = package.resources
-
-        # We have no files for this installed package, we cannot go further.
-        if not installed_files:
-            logger.info(f"  No installed_files for: {purl}")
-            continue
-
-        missing_resources = created_package.missing_resources[:]
-        modified_resources = created_package.modified_resources[:]
-
-        codebase_resources = project.codebaseresources.all()
-
-        for install_file in installed_files:
-            rootfs_path = pipes.normalize_path(install_file.path)
-            logger.info(f"   installed file rootfs_path: {rootfs_path}")
-
-            try:
-                codebase_resource = codebase_resources.get(
-                    rootfs_path=rootfs_path,
-                )
-            except ObjectDoesNotExist:
-                if rootfs_path not in missing_resources:
-                    missing_resources.append(rootfs_path)
-                logger.info(f"      installed file is missing: {rootfs_path}")
-                continue
-
-            # id list?
-            if created_package not in codebase_resource.discovered_packages.all():
-                codebase_resource.discovered_packages.add(created_package)
-                codebase_resource.status = "system-package"
-                logger.info(f"      added as system-package to: {purl}")
-                codebase_resource.save()
-
-            if has_hash_diff(install_file, codebase_resource):
-                if install_file.path not in modified_resources:
-                    modified_resources.append(install_file.path)
-
-        created_package.missing_resources = missing_resources
-        created_package.modified_resources = modified_resources
-        created_package.save()
+    for index, (purl, package) in enumerate(installed_packages):
+        logger.info(f"Creating package #{index}: {purl}")
+        _create_system_package(project, purl, package)
 
 
 def get_resource_with_md5(project, status):
