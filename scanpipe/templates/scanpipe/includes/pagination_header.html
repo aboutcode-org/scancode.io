@@ -2,9 +2,6 @@
 <div class="is-flex is-justify-content-space-between">
   <div>
     {{ paginator.count|intcomma }} results
-    {% if export_xlsx_url_query %}
-      {% include "scanpipe/includes/list_actions_dropdown.html" %}
-    {% endif %}
   </div>
   <div>
     {% if page_obj.has_previous %}
