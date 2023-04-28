@@ -55,8 +55,9 @@ def get_inputs(project):
 
 def get_resource_codebase_root(project, resource_path):
     """Return "to" or "from" depending on the resource location in the codebase."""
-    relative_path = resource_path.relative_to(project.codebase_path)
-    if first_part := relative_path.parts[0] in ["to", "from"]:
+    relative_path = Path(resource_path).relative_to(project.codebase_path)
+    first_part = relative_path.parts[0]
+    if first_part in ["to", "from"]:
         return first_part
     return ""
 

@@ -27,7 +27,7 @@ from pathlib import Path
 def copy_input(input_location, dest_path):
     """Copy the `input_location` to the `dest_path`."""
     destination = dest_path / Path(input_location).name
-    shutil.copyfile(input_location, destination)
+    return shutil.copyfile(input_location, destination)
 
 
 def copy_inputs(input_locations, dest_path):

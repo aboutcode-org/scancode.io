@@ -30,6 +30,7 @@ from django.test import TestCase
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
+from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import package_data1
 
@@ -69,6 +70,40 @@ class ScanPipeD2DPipesTest(TestCase):
         self.project1.copy_input_from(input_location)
 
         self.assertEqual(2, len(d2d.get_inputs(self.project1)))
+
+    def test_scanpipe_d2d_get_resource_codebase_root(self):
+        input_location = self.data_location / "codebase" / "a.txt"
+        file_location = copy_input(input_location, self.project1.codebase_path)
+        codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
+        self.assertEqual("", codebase_root)
+
+        to_dir = self.project1.codebase_path / "to"
+        to_dir.mkdir()
+        file_location = copy_input(input_location, to_dir)
+        codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
+        self.assertEqual("to", codebase_root)
+
+        from_dir = self.project1.codebase_path / "from"
+        from_dir.mkdir()
+        file_location = copy_input(input_location, from_dir)
+        codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
+        self.assertEqual("from", codebase_root)
+
+    def test_scanpipe_d2d_collect_and_create_codebase_resources(self):
+        input_location = self.data_location / "codebase" / "a.txt"
+        to_dir = self.project1.codebase_path / "to"
+        to_dir.mkdir()
+        from_dir = self.project1.codebase_path / "from"
+        from_dir.mkdir()
+        copy_input(input_location, to_dir)
+        copy_input(input_location, from_dir)
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        self.assertEqual(4, self.project1.codebaseresources.count())
+        from_resource = self.project1.codebaseresources.get(path="from/a.txt")
+        self.assertEqual("from", from_resource.tag)
+        to_resource = self.project1.codebaseresources.get(path="to/a.txt")
+        self.assertEqual("to", to_resource.tag)
 
     def test_scanpipe_d2d_get_extracted_path(self):
         path = "not/an/extracted/path/"
