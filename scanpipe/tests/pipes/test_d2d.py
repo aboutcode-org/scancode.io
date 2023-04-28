@@ -42,6 +42,7 @@ def make_resource_file(project, path, **extra):
         extension="." + path.split(".")[-1],
         type=CodebaseResource.Type.FILE,
         is_text=True,
+        tag=path.split("/")[0],
         **extra
     )
 

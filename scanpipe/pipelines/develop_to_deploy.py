@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -82,8 +81,7 @@ class DevelopToDeploy(Pipeline):
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
-        for resource_path in self.project.walk_codebase_path():
-            pipes.make_codebase_resource(project=self.project, location=resource_path)
+        d2d.collect_and_create_codebase_resources(self.project)
 
     def flag_empty_and_ignored_files(self):
         """Flag empty and ignored files using names and extensions."""

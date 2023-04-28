@@ -53,6 +53,27 @@ def get_inputs(project):
     return from_file[0], to_file[0]
 
 
+def get_resource_codebase_root(project, resource_path):
+    """Return "to" or "from" depending on the resource location in the codebase."""
+    relative_path = resource_path.relative_to(project.codebase_path)
+    if first_part := relative_path.parts[0] in ["to", "from"]:
+        return first_part
+    return ""
+
+
+def collect_and_create_codebase_resources(project):
+    """
+    Collect and create codebase resources including the "to/" and "from/" context using
+    the resource tag field.
+    """
+    for resource_path in project.walk_codebase_path():
+        pipes.make_codebase_resource(
+            project=project,
+            location=resource_path,
+            tag=get_resource_codebase_root(project, resource_path),
+        )
+
+
 def get_extracted_path(resource):
     """Return the `-extract/` extracted path of provided `resource`."""
     return resource.path + "-extract/"

@@ -1413,11 +1413,11 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def from_codebase(self):
         """Resources in from/ directory"""
-        return self.filter(path__startswith="from/")
+        return self.filter(tag="from")
 
     def to_codebase(self):
         """Resources in to/ directory"""
-        return self.filter(path__startswith="to/")
+        return self.filter(tag="to")
 
     def has_relation(self):
         """Resources assigned to at least one CodebaseRelation"""
@@ -1643,6 +1643,7 @@ class CodebaseResource(
             models.Index(fields=["extension"]),
             models.Index(fields=["status"]),
             models.Index(fields=["programming_language"]),
+            models.Index(fields=["tag"]),
             models.Index(fields=["sha1"]),
         ]
         constraints = [
