@@ -1975,6 +1975,12 @@ class CodebaseRelation(
         indexes = [
             models.Index(fields=["map_type"]),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["from_resource", "to_resource", "map_type"],
+                name="%(app_label)s_%(class)s_unique_relation",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
