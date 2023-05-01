@@ -26,6 +26,7 @@ from unittest import mock
 
 from django.apps import apps
 
+from scanpipe.models import CodebaseResource
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.raise_exception import RaiseException
@@ -38,6 +39,20 @@ scanpipe_app.register_pipeline("raise_exception", RaiseException)
 
 FIXTURES_REGEN = os.environ.get("SCANCODEIO_TEST_FIXTURES_REGEN", False)
 mocked_now = mock.Mock(now=lambda: datetime(2010, 10, 10, 10, 10, 10))
+
+
+def make_resource_file(project, path, **extra):
+    return CodebaseResource.objects.create(
+        project=project,
+        path=path,
+        name=path.split("/")[-1],
+        extension="." + path.split(".")[-1],
+        type=CodebaseResource.Type.FILE,
+        is_text=True,
+        tag=path.split("/")[0],
+        **extra
+    )
+
 
 resource_data1 = {
     "path": "notice.NOTICE",

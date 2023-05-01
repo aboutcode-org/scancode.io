@@ -33,20 +33,8 @@ from scanpipe.models import Project
 from scanpipe.pipes import d2d
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
-
-
-def make_resource_file(project, path, **extra):
-    return CodebaseResource.objects.create(
-        project=project,
-        path=path,
-        name=path.split("/")[-1],
-        extension="." + path.split(".")[-1],
-        type=CodebaseResource.Type.FILE,
-        is_text=True,
-        tag=path.split("/")[0],
-        **extra
-    )
 
 
 class ScanPipeD2DPipesTest(TestCase):

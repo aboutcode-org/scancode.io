@@ -31,8 +31,10 @@ from django.urls import reverse
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
+from scanpipe.pipes import make_relation
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_resource_file
 from scanpipe.views import ProjectDetailView
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -460,6 +462,24 @@ class ScanPipeViewsTest(TestCase):
             '{"start_line": 1, "end_line": 2, "text": null, "className": "ace_info"}'
         )
         self.assertContains(response, expected)
+
+    def test_scanpipe_views_codebase_relation_list_view_count(self):
+        url = reverse("project_relations", args=[self.project1.uuid])
+
+        to_1 = make_resource_file(self.project1, "to/file1.ext")
+        to_2 = make_resource_file(self.project1, "to/file2.ext")
+        from_1 = make_resource_file(self.project1, "from/file1.ext")
+        from_2 = make_resource_file(self.project1, "from/file2.ext")
+
+        make_relation(from_resource=from_1, to_resource=to_1, map_type="path")
+        make_relation(from_resource=from_2, to_resource=to_2, map_type="path")
+        make_relation(from_resource=from_1, to_resource=to_2, map_type="path")
+
+        self.assertEqual(3, self.project1.codebaserelations.count())
+        self.assertEqual(3, self.project1.relation_count)
+
+        response = self.client.get(url)
+        self.assertContains(response, "2 to/ resources (3 relations)")
 
     def test_scanpipe_views_codebase_relation_diff_view(self):
         url = reverse("resource_diff", args=[self.project1.uuid])

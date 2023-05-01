@@ -965,7 +965,6 @@ class CodebaseRelationListView(
             .files()
             .to_codebase()
             .prefetch_related("related_from__from_resource")
-            .distinct()
         )
 
     def get_context_data(self, **kwargs):
