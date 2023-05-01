@@ -43,7 +43,7 @@ class ScanPipeD2DPipesTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
-    def test_scanpipe_d2d_get_inputs(self):
+    def test_scanpipe_pipes_d2d_get_inputs(self):
         with self.assertRaises(FileNotFoundError) as error:
             d2d.get_inputs(self.project1)
         self.assertEqual("from* archive not found.", str(error.exception))
@@ -60,7 +60,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(2, len(d2d.get_inputs(self.project1)))
 
-    def test_scanpipe_d2d_get_resource_codebase_root(self):
+    def test_scanpipe_pipes_d2d_get_resource_codebase_root(self):
         input_location = self.data_location / "codebase" / "a.txt"
         file_location = copy_input(input_location, self.project1.codebase_path)
         codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
@@ -78,7 +78,7 @@ class ScanPipeD2DPipesTest(TestCase):
         codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
         self.assertEqual("from", codebase_root)
 
-    def test_scanpipe_d2d_collect_and_create_codebase_resources(self):
+    def test_scanpipe_pipes_d2d_collect_and_create_codebase_resources(self):
         input_location = self.data_location / "codebase" / "a.txt"
         to_dir = self.project1.codebase_path / "to"
         to_dir.mkdir()
@@ -94,7 +94,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_resource = self.project1.codebaseresources.get(path="to/a.txt")
         self.assertEqual("to", to_resource.tag)
 
-    def test_scanpipe_d2d_get_extracted_path(self):
+    def test_scanpipe_pipes_d2d_get_extracted_path(self):
         path = "not/an/extracted/path/"
         r1 = make_resource_file(self.project1, path)
         expected = "not/an/extracted/path/-extract/"
@@ -105,7 +105,7 @@ class ScanPipeD2DPipesTest(TestCase):
         expected = "a.jar-extract/subpath/file.ext-extract/"
         self.assertEqual(expected, d2d.get_extracted_path(r2))
 
-    def test_scanpipe_d2d_get_extracted_subpath(self):
+    def test_scanpipe_pipes_d2d_get_extracted_subpath(self):
         path = "not/an/extracted/path/"
         self.assertEqual(path, d2d.get_extracted_subpath(path))
 
@@ -115,7 +115,7 @@ class ScanPipeD2DPipesTest(TestCase):
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
 
-    def test_scanpipe_d2d_get_diff_ratio(self):
+    def test_scanpipe_pipes_d2d_get_diff_ratio(self):
         resource_files = [
             self.data_location / "codebase" / "a.txt",
             self.data_location / "codebase" / "b.txt",
@@ -131,7 +131,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(0.0, d2d.get_diff_ratio(resource1, resource3))
 
     @mock.patch("scanpipe.pipes.purldb.match_by_sha1")
-    def test_scanpipe_d2d_purldb_match(self, mock_match_by_sha1):
+    def test_scanpipe_pipes_d2d_purldb_match(self, mock_match_by_sha1):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
         # The initial status will be updated to "matched-to-purldb"
         to_2 = make_resource_file(
@@ -156,7 +156,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.assertEqual("matched-to-purldb", resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
-    def test_scanpipe_d2d_get_best_path_matches_same_name(self):
+    def test_scanpipe_pipes_d2d_get_best_path_matches_same_name(self):
         to_1 = CodebaseResource(name="package-1.0.ext", path="to/package-1.0.ext")
         to_2 = CodebaseResource(name="package-2.0.ext", path="to/package-2.0.ext")
         from_1 = CodebaseResource(name="package-1.0.ext", path="from/package-1.0.ext")
@@ -165,7 +165,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual([from_1], d2d.get_best_path_matches(to_1, matches))
         self.assertEqual([from_2], d2d.get_best_path_matches(to_2, matches))
 
-    def test_scanpipe_d2d_get_best_path_matches_extracted_subpath(self):
+    def test_scanpipe_pipes_d2d_get_best_path_matches_extracted_subpath(self):
         to_1 = CodebaseResource(path="to/jar-extract/a/package-1.0.ext")
         to_2 = CodebaseResource(path="to/jar-extract/a/package-2.0.ext")
         from_1 = CodebaseResource(path="from/src/a/package-1.0.ext")
@@ -174,7 +174,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual([from_1], d2d.get_best_path_matches(to_1, matches))
         self.assertEqual([from_2], d2d.get_best_path_matches(to_2, matches))
 
-    def test_scanpipe_d2d_get_best_path_matches(self):
+    def test_scanpipe_pipes_d2d_get_best_path_matches(self):
         to_1 = make_resource_file(self.project1, path="to/a/b/c/file.txt")
         from_1 = make_resource_file(self.project1, path="from/source/f/i/j/file.txt")
         from_2 = make_resource_file(self.project1, path="from/source/a/b/c/file.txt")
@@ -187,7 +187,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_2 = make_resource_file(self.project1, path="to/x/y/z/init.jsp.readme")
         self.assertEqual(matches, d2d.get_best_path_matches(to_2, matches))
 
-    def test_scanpipe_d2d_checksum_map(self):
+    def test_scanpipe_pipes_d2d_checksum_map(self):
         sha1 = "abcde"
         to_1 = make_resource_file(self.project1, path="to/a/b/c/file.txt", sha1=sha1)
         make_resource_file(self.project1, path="from/source/f/i/j/file.txt", sha1=sha1)
@@ -206,3 +206,53 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = to_1.related_from.get()
         self.assertEqual("sha1", relation.map_type)
         self.assertEqual(from_2, relation.from_resource)
+
+    def test_scanpipe_pipes_d2d_java_to_class_map(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.java",
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from-flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/WRONG/"
+            "Application.java",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider$ChannelComponent.class",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+        to3 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "Application.class",
+        )
+
+        buffer = io.StringIO()
+        d2d.java_to_class_map(self.project1, logger=buffer.write)
+        expected = "Mapping 3 .class resources to .java"
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(2, self.project1.codebaserelations.count())
+
+        r1 = self.project1.codebaserelations.get(to_resource=to1, from_resource=from1)
+        self.assertEqual("java_to_class", r1.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, r1.extra_data)
+
+        r2 = self.project1.codebaserelations.get(to_resource=to2, from_resource=from1)
+        self.assertEqual("java_to_class", r2.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, r2.extra_data)
+
+        no_relations = self.project1.codebaseresources.has_no_relation()
+        self.assertIn(from2, no_relations)
+        self.assertIn(to3, no_relations)
+        to3.refresh_from_db()
+        self.assertEqual("no-java-source", to3.status)
