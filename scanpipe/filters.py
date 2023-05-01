@@ -301,7 +301,14 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
         return super().filter(qs, value)
 
 
-class StatusFilter(django_filters.CharFilter):
+class StatusFilter(django_filters.ChoiceFilter):
+    # def __init__(self, *args, **kwargs):
+    #     kwargs["choices"] = (
+    #         ("none", "No status"),
+    #         ("any", "Any status"),
+    #     )
+    #     super().__init__(*args, **kwargs)
+
     def filter(self, qs, value):
         if value == "none":
             return qs.no_status()
@@ -344,7 +351,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
     )
     in_package = InPackageFilter(label="In a Package")
-    status = StatusFilter()
+    status = StatusFilter(empty_label="All")
     relation_map_type = RelationMapTypeFilter(
         label="Relation map type",
         field_name="related_from__map_type",
@@ -382,6 +389,22 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "in_package",
             "relation_map_type",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if status_filter := self.filters.get("status"):
+            status_filter.extra.update({"choices": self.get_status_choices()})
+
+    def get_status_choices(self):
+        default_choices = [
+            ("none", "No status"),
+            ("any", "Any status"),
+        ]
+        status_values = (
+            self.queryset.order_by("status").values_list("status", flat=True).distinct()
+        )
+        value_choices = [(status, status) for status in status_values if status]
+        return default_choices + value_choices
 
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):

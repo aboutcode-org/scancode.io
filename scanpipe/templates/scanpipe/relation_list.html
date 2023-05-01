@@ -26,8 +26,8 @@
             {% if "status" in filter.data.sort %}
               <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
             {% endif %}
-            <div style="float: right">
-              {% include 'scanpipe/includes/filter_status_choices_field.html' %}
+            <div class="is-pulled-right">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.status only %}
             </div>
           </th>
           <th style="width:145px;">
@@ -35,7 +35,7 @@
             {% if "related_from__map_type" in filter.data.sort %}
               <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
             {% endif %}
-            <div style="float: right">
+            <div class="is-pulled-right">
               {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.relation_map_type only %}
             </div>
           </th>
