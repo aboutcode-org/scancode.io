@@ -1075,6 +1075,15 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
 
+        qs = CodebaseResource.objects.has_value("mime_type")
+        self.assertEqual(0, qs.count())
+        qs = CodebaseResource.objects.has_value("type")
+        self.assertEqual(3, qs.count())
+        qs = CodebaseResource.objects.has_value("license_expressions")
+        self.assertEqual(1, qs.count())
+        qs = CodebaseResource.objects.has_value("copyrights")
+        self.assertEqual(0, qs.count())
+
         self.assertEqual(0, CodebaseResource.objects.in_package().count())
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
@@ -1100,6 +1109,17 @@ class ScanPipeModelsTest(TestCase):
             to_resource=symlink,
         )
         self.assertEqual(1, CodebaseResource.objects.has_many_relation().count())
+
+        self.assertEqual(0, CodebaseResource.objects.from_codebase().count())
+        self.assertEqual(0, CodebaseResource.objects.to_codebase().count())
+        file.tag = "to"
+        file.save()
+        symlink.tag = "to"
+        symlink.save()
+        directory.tag = "from"
+        directory.save()
+        self.assertEqual(1, CodebaseResource.objects.from_codebase().count())
+        self.assertEqual(2, CodebaseResource.objects.to_codebase().count())
 
     def test_scanpipe_codebase_resource_queryset_licenses_categories(self):
         CodebaseResource.objects.all().delete()

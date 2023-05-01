@@ -1434,7 +1434,8 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(related_from__isnull=True, related_to__isnull=True)
 
     def has_value(self, field_name):
-        return self.filter(~Q((field_name, "")))
+        """Resources that have a value for provided `field_name`."""
+        return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
 
 class ScanFieldsModelMixin(models.Model):
