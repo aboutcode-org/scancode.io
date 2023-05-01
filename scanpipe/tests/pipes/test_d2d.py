@@ -256,3 +256,47 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertIn(to3, no_relations)
         to3.refresh_from_db()
         self.assertEqual("no-java-source", to3.status)
+
+    def test_scanpipe_pipes_d2d_jar_to_source_map(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.java",
+        )
+        from2 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
+        )
+        to_jar = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar",
+        )
+
+        d2d.java_to_class_map(self.project1)
+        relation = self.project1.codebaserelations.get()
+        self.assertEqual(from1, relation.from_resource)
+        self.assertEqual(to1, relation.to_resource)
+        self.assertEqual("java_to_class", relation.map_type)
+        expected = {"from_source_root": "from/flume-ng-node-1.9.0-sources.jar-extract/"}
+        self.assertEqual(expected, relation.extra_data)
+
+        buffer = io.StringIO()
+        d2d.jar_to_source_map(self.project1, logger=buffer.write)
+        expected = "Mapping 1 .jar resources using jar_to_source_map"
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(2, self.project1.codebaserelations.count())
+        relation = self.project1.codebaserelations.get(map_type="jar_to_source")
+        self.assertEqual(from2, relation.from_resource)
+        self.assertEqual(to_jar, relation.to_resource)
+        to2.refresh_from_db()
+        self.assertEqual("ignored-meta-inf", to2.status)

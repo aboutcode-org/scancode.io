@@ -239,6 +239,13 @@ def jar_to_source_map(project, logger=None):
     to_resources = project_files.to_codebase()
     to_jars = to_resources.filter(extension=".jar")
 
+    to_jars_count = to_jars.count()
+    if logger:
+        logger(
+            f"Mapping {to_jars_count:,d} .jar resources using jar_to_source_map "
+            f"against from/ codebase"
+        )
+
     for jar_resource in to_jars:
         _resource_jar_to_source_map(jar_resource, to_resources, from_resources)
 
