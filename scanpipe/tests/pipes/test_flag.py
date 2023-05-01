@@ -31,7 +31,9 @@ class ScanPipeFlagPipesTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
         self.resource1 = CodebaseResource.objects.create(
-            project=self.project1, path="dir/"
+            project=self.project1,
+            type=CodebaseResource.Type.DIRECTORY,
+            path="dir/",
         )
         self.resource2 = CodebaseResource.objects.create(
             project=self.project1,
@@ -47,6 +49,13 @@ class ScanPipeFlagPipesTest(TestCase):
         self.resource2.refresh_from_db()
         self.assertEqual("", self.resource1.status)
         self.assertEqual("ignored-empty-file", self.resource2.status)
+
+    def test_scanpipe_pipes_flag_flag_ignored_directories(self):
+        flag.flag_ignored_directories(self.project1)
+        self.resource1.refresh_from_db()
+        self.resource2.refresh_from_db()
+        self.assertEqual("ignored-directory", self.resource1.status)
+        self.assertEqual("", self.resource2.status)
 
     def test_scanpipe_pipes_flag_flag_ignored_filenames(self):
         flag.flag_ignored_filenames(self.project1, filenames=[self.resource2.name])

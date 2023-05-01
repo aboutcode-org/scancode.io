@@ -37,6 +37,7 @@ NOT_ANALYZED = "not-analyzed"
 
 IGNORED_WHITEOUT = "ignored-whiteout"
 IGNORED_EMPTY_FILE = "ignored-empty-file"
+IGNORED_DIRECTORY = "ignored-directory"
 IGNORED_FILENAME = "ignored-filename"
 IGNORED_EXTENSION = "ignored-extension"
 IGNORED_PATH = "ignored-path"
@@ -89,6 +90,12 @@ def flag_empty_codebase_resources(project):
         .filter(status__in=(NO_STATUS, NOT_ANALYZED))
     )
     return qs.update(status=IGNORED_EMPTY_FILE)
+
+
+def flag_ignored_directories(project):
+    """Flag directories as ignored."""
+    qs = project.codebaseresources.no_status().directories()
+    return qs.update(status=IGNORED_DIRECTORY)
 
 
 def flag_ignored_filenames(project, filenames):

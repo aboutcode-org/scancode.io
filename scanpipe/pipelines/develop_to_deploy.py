@@ -51,7 +51,7 @@ class DevelopToDeploy(Pipeline):
             cls.jar_to_source_map,
             cls.purldb_match,
             cls.path_map,
-            cls.flag_mapped_resources,
+            cls.flag_mapped_resources_and_ignored_directories,
         )
 
     purldb_match_extensions = [".jar", ".war", ".zip"]
@@ -118,6 +118,7 @@ class DevelopToDeploy(Pipeline):
         """Map using path similarities."""
         d2d.path_map(project=self.project, logger=self.log)
 
-    def flag_mapped_resources(self):
+    def flag_mapped_resources_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""
         flag.flag_mapped_resources(self.project)
+        flag.flag_ignored_directories(self.project)
