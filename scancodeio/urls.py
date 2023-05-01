@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from django.conf import settings
 from django.contrib.auth import views as auth_views
 from django.urls import include
 from django.urls import path
@@ -53,3 +54,6 @@ urlpatterns = auth_urlpatterns + [
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]
+
+if settings.DEBUG and settings.DEBUG_TOOLBAR:
+    urlpatterns.append(path("__debug__/", include("debug_toolbar.urls")))
