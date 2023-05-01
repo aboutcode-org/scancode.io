@@ -28,9 +28,9 @@ from scanpipe.pipes import scancode
 from scanpipe.pipes.scancode import extract_archives
 
 
-class DevelopToDeploy(Pipeline):
+class DeployToDevelop(Pipeline):
     """
-    Relate develop and deploy code trees.
+    Relate deploy and develop code trees.
 
     This pipeline is expecting 2 archive files with "from-" and "to-" filename
     prefixes as inputs:
