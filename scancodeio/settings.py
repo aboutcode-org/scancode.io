@@ -98,7 +98,7 @@ SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     # Local apps
     # Must come before Third-party apps for proper templates override
     "scanpipe",
@@ -118,16 +118,16 @@ INSTALLED_APPS = (
     "rest_framework.authtoken",
     "django_rq",
     "django_probes",
-)
+]
 
-MIDDLEWARE = (
+MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-)
+]
 
 ROOT_URLCONF = "scancodeio.urls"
 
@@ -205,6 +205,14 @@ if IS_TESTS:
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
     SCANCODEIO_SCAN_FILE_TIMEOUT = 120
+
+# Debug toolbar
+
+DEBUG_TOOLBAR = env.bool("SCANCODEIO_DEBUG_TOOLBAR", default=False)
+if DEBUG and DEBUG_TOOLBAR:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+    INTERNAL_IPS = ["127.0.0.1"]
 
 # Cache
 

@@ -1,4 +1,4 @@
-<div class="is-flex">
+<div{% if export_xlsx_url_query %} class="is-flex"{% endif %}>
   {% if export_xlsx_url_query %}
     {% include "scanpipe/includes/list_actions_dropdown.html" %}
   {% endif %}
