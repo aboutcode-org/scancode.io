@@ -22,6 +22,7 @@
 
 from django.test import TestCase
 
+from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import flag
@@ -44,37 +45,42 @@ class ScanPipeFlagPipesTest(TestCase):
         )
 
     def test_scanpipe_pipes_flag_flag_empty_codebase_resources(self):
-        flag.flag_empty_codebase_resources(self.project1)
+        updated = flag.flag_empty_codebase_resources(self.project1)
+        self.assertEqual(1, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
         self.assertEqual("", self.resource1.status)
         self.assertEqual("ignored-empty-file", self.resource2.status)
 
     def test_scanpipe_pipes_flag_flag_ignored_directories(self):
-        flag.flag_ignored_directories(self.project1)
+        updated = flag.flag_ignored_directories(self.project1)
+        self.assertEqual(1, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
         self.assertEqual("ignored-directory", self.resource1.status)
         self.assertEqual("", self.resource2.status)
 
     def test_scanpipe_pipes_flag_flag_ignored_filenames(self):
-        flag.flag_ignored_filenames(self.project1, filenames=[self.resource2.name])
+        filenames = [self.resource2.name]
+        updated = flag.flag_ignored_filenames(self.project1, filenames)
+        self.assertEqual(1, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
         self.assertEqual("", self.resource1.status)
         self.assertEqual("ignored-filename", self.resource2.status)
 
     def test_scanpipe_pipes_flag_flag_ignored_extensions(self):
-        flag.flag_ignored_extensions(
-            self.project1, extensions=[self.resource2.extension]
-        )
+        extensions = [self.resource2.extension]
+        updated = flag.flag_ignored_extensions(self.project1, extensions)
+        self.assertEqual(1, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
         self.assertEqual("", self.resource1.status)
         self.assertEqual("ignored-extension", self.resource2.status)
 
     def test_scanpipe_pipes_flag_flag_ignored_paths(self):
-        flag.flag_ignored_paths(self.project1, paths=["dir/"])
+        updated = flag.flag_ignored_paths(self.project1, paths=["dir/"])
+        self.assertEqual(2, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
         self.assertEqual("ignored-path", self.resource1.status)
@@ -89,8 +95,22 @@ class ScanPipeFlagPipesTest(TestCase):
             path="filename1.ext",
             status=flag.SCANNED,
         )
-        flag.tag_not_analyzed_codebase_resources(self.project1)
+        updated = flag.tag_not_analyzed_codebase_resources(self.project1)
+        self.assertEqual(3, updated)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         self.assertEqual("not-analyzed", resource1.status)
         self.assertEqual("scanned", resource2.status)
+
+    def test_scanpipe_pipes_flag_flag_mapped_resources(self):
+        pipes.make_relation(
+            from_resource=self.resource1,
+            to_resource=self.resource2,
+            map_type="type",
+        )
+        updated = flag.flag_mapped_resources(self.project1)
+        self.assertEqual(2, updated)
+        self.resource1.refresh_from_db()
+        self.resource2.refresh_from_db()
+        self.assertEqual("mapped", self.resource1.status)
+        self.assertEqual("mapped", self.resource2.status)
