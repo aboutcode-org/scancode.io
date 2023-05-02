@@ -1,0 +1,6 @@
+{% extends "scanpipe/includes/pagination_header.html" %}
+{% load humanize %}
+
+{% block paginator_count %}
+  {{ paginator.count|intcomma }} to/ resources ({{ relation_count|intcomma }} relations)
+{% endblock %}

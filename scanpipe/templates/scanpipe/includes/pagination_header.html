@@ -1,7 +1,9 @@
 {% load humanize %}
 <div class="is-flex is-justify-content-space-between">
   <div>
-    {{ paginator.count|intcomma }} results
+    {% block paginator_count %}
+      {{ paginator.count|intcomma }} results
+    {% endblock %}
   </div>
   <div>
     {% if page_obj.has_previous %}

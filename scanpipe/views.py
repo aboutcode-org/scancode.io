@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import difflib
 import io
 import json
 import operator
 from collections import Counter
+from collections import namedtuple
 from contextlib import suppress
 
 from django.apps import apps
@@ -32,6 +34,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import FileResponse
 from django.http import Http404
+from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -938,6 +941,73 @@ class ProjectErrorListView(
     ]
 
 
+RelationRow = namedtuple(
+    "RelationRow",
+    field_names=["to_resource", "status", "map_type", "score", "from_resource"],
+)
+
+
+class CodebaseRelationListView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    ExportXLSXMixin,
+    PaginatedFilterView,
+):
+    model = CodebaseResource
+    filterset_class = ResourceFilterSet
+    template_name = "scanpipe/relation_list.html"
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .files()
+            .to_codebase()
+            .prefetch_related("related_from__from_resource")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["relation_count"] = context["filter"].qs.has_relation().count()
+        return context
+
+    @staticmethod
+    def get_rows(qs):
+        for resource in qs:
+            relations = resource.related_from.all()
+            if not relations:
+                yield RelationRow(resource.path, resource.status, "", "", "")
+            else:
+                for relation in resource.related_from.all():
+                    score = relation.extra_data.get("path_score", "")
+                    if diff_ratio := relation.extra_data.get("diff_ratio", ""):
+                        score += f" diff_ratio: {diff_ratio}"
+                    yield RelationRow(
+                        resource.path,
+                        resource.status,
+                        relation.map_type,
+                        score,
+                        relation.from_resource.path,
+                    )
+
+    def export_xlsx_file_response(self):
+        filtered_qs = self.filterset.qs
+        output_file = io.BytesIO()
+
+        with xlsxwriter.Workbook(output_file) as workbook:
+            output._add_xlsx_worksheet(
+                workbook=workbook,
+                worksheet_name="RELATIONS",
+                rows=self.get_rows(qs=filtered_qs),
+                fields=RelationRow._fields,
+            )
+
+        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
+        output_file.seek(0)
+        return FileResponse(output_file, as_attachment=True, filename=filename)
+
+
 class CodebaseResourceDetailsView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
@@ -1072,6 +1142,26 @@ class CodebaseResourceDetailsView(
         }
 
         return context
+
+
+@conditional_login_required
+def codebase_resource_diff_view(request, uuid):
+    project = get_object_or_404(Project, uuid=uuid)
+
+    project_files = project.codebaseresources.files()
+    from_path = request.GET.get("from_path")
+    to_path = request.GET.get("to_path")
+    from_resource = get_object_or_404(project_files, path=from_path)
+    to_resource = get_object_or_404(project_files, path=to_path)
+
+    if not (from_resource.is_text and to_resource.is_text):
+        raise Http404("Cannot diff on binary files")
+
+    from_lines = from_resource.location_path.read_text().splitlines()
+    to_lines = to_resource.location_path.read_text().splitlines()
+    html = difflib.HtmlDiff().make_file(from_lines, to_lines)
+
+    return HttpResponse(html)
 
 
 class DiscoveredPackageDetailsView(

@@ -48,6 +48,7 @@ from requests.exceptions import RequestException
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -1011,11 +1012,15 @@ class ScanPipeModelsTest(TestCase):
 
         qs = CodebaseResource.objects.empty()
         self.assertEqual(3, len(qs))
+        qs = CodebaseResource.objects.not_empty()
+        self.assertEqual(0, len(qs))
         file.size = 1
         file.save()
         qs = CodebaseResource.objects.empty()
         self.assertEqual(2, len(qs))
         self.assertNotIn(file, qs)
+        qs = CodebaseResource.objects.not_empty()
+        self.assertEqual(1, len(qs))
         file.size = 0
         file.save()
         qs = CodebaseResource.objects.empty()
@@ -1070,12 +1075,51 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
 
+        qs = CodebaseResource.objects.has_value("mime_type")
+        self.assertEqual(0, qs.count())
+        qs = CodebaseResource.objects.has_value("type")
+        self.assertEqual(3, qs.count())
+        qs = CodebaseResource.objects.has_value("license_expressions")
+        self.assertEqual(1, qs.count())
+        qs = CodebaseResource.objects.has_value("copyrights")
+        self.assertEqual(0, qs.count())
+
         self.assertEqual(0, CodebaseResource.objects.in_package().count())
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
         file.create_and_add_package(package_data1)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
+
+        self.assertEqual(0, CodebaseResource.objects.has_relation().count())
+        self.assertEqual(3, CodebaseResource.objects.has_no_relation().count())
+        self.assertEqual(0, CodebaseResource.objects.has_many_relation().count())
+        CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=file,
+            to_resource=directory,
+        )
+        self.assertEqual(2, CodebaseResource.objects.has_relation().count())
+        self.assertEqual(1, CodebaseResource.objects.has_no_relation().count())
+        self.assertEqual(0, CodebaseResource.objects.has_many_relation().count())
+
+        CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=file,
+            to_resource=symlink,
+        )
+        self.assertEqual(1, CodebaseResource.objects.has_many_relation().count())
+
+        self.assertEqual(0, CodebaseResource.objects.from_codebase().count())
+        self.assertEqual(0, CodebaseResource.objects.to_codebase().count())
+        file.tag = "to"
+        file.save()
+        symlink.tag = "to"
+        symlink.save()
+        directory.tag = "from"
+        directory.save()
+        self.assertEqual(1, CodebaseResource.objects.from_codebase().count())
+        self.assertEqual(2, CodebaseResource.objects.to_codebase().count())
 
     def test_scanpipe_codebase_resource_queryset_licenses_categories(self):
         CodebaseResource.objects.all().delete()
@@ -1567,10 +1611,18 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
 
     def test_scanpipe_project_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")
-        error = project1.add_error(Exception("Error message"), model="Package")
+        details = {
+            "name": "value",
+            "release_date": datetime.fromisoformat("2008-02-01"),
+        }
+        error = project1.add_error(
+            error=Exception("Error message"),
+            model="Package",
+            details=details,
+        )
         self.assertEqual(error, ProjectError.objects.get())
         self.assertEqual("Package", error.model)
-        self.assertEqual({}, error.details)
+        self.assertEqual(details, error.details)
         self.assertEqual("Error message", error.message)
         self.assertEqual("", error.traceback)
 

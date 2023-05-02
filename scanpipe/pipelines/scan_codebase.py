@@ -22,7 +22,7 @@
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import rootfs
+from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_inputs
 
@@ -81,7 +81,7 @@ class ScanCodebase(Pipeline):
 
     def tag_empty_files(self):
         """Flag empty files."""
-        rootfs.tag_empty_codebase_resources(self.project)
+        flag.flag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""

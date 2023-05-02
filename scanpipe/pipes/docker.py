@@ -29,6 +29,7 @@ from container_inspector.image import Image
 from container_inspector.utils import extract_tar
 
 from scanpipe import pipes
+from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 
 logger = logging.getLogger(__name__)
@@ -217,9 +218,9 @@ def _create_system_package(project, purl, package, layer):
             found_resource = True
             if created_package not in resource.discovered_packages.all():
                 resource.discovered_packages.add(created_package)
-                resource.status = "system-package"
-                logger.info(f"      added as system-package to: {purl}")
+                resource.status = flag.SYSTEM_PACKAGE
                 resource.save()
+                logger.info(f"      added as system-package to: {purl}")
 
             if rootfs.has_hash_diff(install_file, resource):
                 if install_file.path not in modified_resources:
@@ -251,7 +252,6 @@ def scan_image_for_system_packages(project, image):
         raise rootfs.DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
     installed_packages = image.get_installed_packages(rootfs.package_getter)
-
     for index, (purl, package, layer) in enumerate(installed_packages):
         logger.info(f"Creating package #{index}: {purl}")
         _create_system_package(project, purl, package, layer)

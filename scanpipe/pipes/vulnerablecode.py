@@ -102,7 +102,7 @@ def request_get(
     if payload:
         params.update(payload)
 
-    logger.debug(f"VulnerableCode: url={url} params={params}")
+    logger.debug(f"{label}: url={url} params={params}")
     try:
         response = session.get(url, params=params, timeout=timeout)
         response.raise_for_status()

@@ -15,6 +15,14 @@ Pipeline Base Class
     :members:
     :member-order: bysource
 
+.. _pipeline_d2d:
+
+Deploy To Develop
+-----------------
+.. autoclass:: scanpipe.pipelines.deploy_to_develop.DeployToDevelop()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_docker:
 
 Docker Image Analysis

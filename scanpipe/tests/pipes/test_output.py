@@ -165,7 +165,7 @@ class ScanPipeOutputPipesTest(TestCase):
         with output_file.open() as f:
             results = json.loads(f.read())
 
-        expected = ["dependencies", "files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["headers"]))
@@ -181,7 +181,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             output_file = output.to_json(project=project)
         self.assertIn(output_file.name, project.output_root)
 
@@ -199,7 +199,7 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 

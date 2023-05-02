@@ -1,1 +1,2 @@
-B
+This is file b.txt
+Common line for diff

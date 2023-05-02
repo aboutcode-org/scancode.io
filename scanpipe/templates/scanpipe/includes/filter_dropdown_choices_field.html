@@ -1,0 +1,16 @@
+<div class="dropdown is-hoverable">
+  <div class="dropdown-trigger">
+    <a aria-haspopup="true" aria-controls="{{ filter_form_field.id_for_label }}">
+      <i class="fas fa-filter"></i>
+    </a>
+  </div>
+  <div class="dropdown-menu" id="{{ filter_form_field.id_for_label }}" role="menu">
+    <div class="dropdown-content">
+      {% for value, label in filter_form_field.field.choices %}
+        <a href="?{{ filter_form_field.html_name }}={{ value }}" class="dropdown-item">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>

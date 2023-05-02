@@ -27,9 +27,11 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from time import sleep
+from timeit import default_timer as timer
 
 from django.db.models import Count
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -65,7 +67,7 @@ def make_codebase_resource(project, location, **extra_fields):
     skipped.
     """
     relative_path = Path(location).relative_to(project.codebase_path)
-    resource_data = scancode.get_resource_info(location=location)
+    resource_data = scancode.get_resource_info(location=str(location))
 
     if extra_fields:
         resource_data.update(**extra_fields)
@@ -178,19 +180,34 @@ def update_or_create_dependency(
     return dependency
 
 
-def analyze_scanned_files(project):
-    """Set the status for CodebaseResource to unknown or no license."""
-    scanned_files = project.codebaseresources.files().status("scanned")
-    scanned_files.has_no_licenses().update(status="no-licenses")
-    scanned_files.unknown_license().update(status="unknown-license")
+def get_or_create_relation(project, relation_data):
+    """
+    Get  or create a CodebaseRelation then return it.
+    The support for update is not useful as there is no fields on the model that
+    could be updated.
+    """
+    from_resource_path = relation_data.get("from_resource")
+    to_resource_path = relation_data.get("to_resource")
+    resource_qs = project.codebaseresources
+
+    codebase_relation, _ = CodebaseRelation.objects.get_or_create(
+        project=project,
+        from_resource=resource_qs.get(path=from_resource_path),
+        to_resource=resource_qs.get(path=to_resource_path),
+        map_type=relation_data.get("map_type"),
+    )
+
+    return codebase_relation
 
 
-def tag_not_analyzed_codebase_resources(project):
-    """
-    Flag any of the `project`'s '`CodebaseResource` without a status as
-    "not-analyzed".
-    """
-    project.codebaseresources.no_status().update(status="not-analyzed")
+def make_relation(from_resource, to_resource, map_type, **extra_fields):
+    return CodebaseRelation.objects.create(
+        project=from_resource.project,
+        from_resource=from_resource,
+        to_resource=to_resource,
+        map_type=map_type,
+        **extra_fields,
+    )
 
 
 def normalize_path(path):
@@ -279,3 +296,44 @@ def remove_prefix(text, prefix):
         prefix_len = len(prefix)
         return text[prefix_len:]
     return text
+
+
+def get_progress_percentage(current_index, total_count):
+    """
+    Return the percentage of progress given the current index and total count of
+    objects.
+    """
+    if current_index < 0 or current_index >= total_count:
+        raise ValueError("current_index must be between 0 and total_count - 1")
+
+    progress = current_index / total_count * 100
+    return progress
+
+
+def log_progress(
+    log_func,
+    current_index,
+    total_count,
+    last_percent,
+    increment_percent,
+    start_time=None,
+):
+    """
+    Log progress updates every `increment_percent` percentage points, given the
+    current index and total count of objects.
+    Return the latest percent logged.
+    """
+    progress_percentage = int(get_progress_percentage(current_index, total_count))
+    if progress_percentage >= last_percent + increment_percent:
+        last_percent = progress_percentage
+        msg = f"Progress: {progress_percentage}% ({current_index:,d}/{total_count:,d})"
+
+        if start_time:
+            run_time = timer() - start_time
+            eta = round(run_time / progress_percentage * (100 - progress_percentage))
+            if eta:
+                msg += f" ETA: {round(eta)} seconds"
+
+        log_func(msg)
+
+    return last_percent

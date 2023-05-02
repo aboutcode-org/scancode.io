@@ -4,6 +4,14 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Add a new ``deploy_to_develop`` pipeline specialized in creating relations between
+  the development source code and binaries or deployed code.
+  This pipeline is expecting 2 archive files with "from-" and "to-" filename prefixes
+  as inputs:
+  1. "from-[FILENAME]" archive containing the development source code
+  2. "to-[FILENAME]" archive containing the deployment compiled code
+  https://github.com/nexB/scancode.io/issues/659
+
 - Move the "Resources status" panel from the run modal to the project details view.
   https://github.com/nexB/scancode.io/issues/370
 

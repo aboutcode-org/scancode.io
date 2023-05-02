@@ -48,19 +48,6 @@ class ScanPipeRootfsPipesTest(TestCase):
         self.assertEqual("windows", distro.os)
         self.assertEqual("windows", distro.identifier)
 
-    def test_scanpipe_pipes_rootfs_tag_empty_codebase_resources(self):
-        p1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(project=p1, path="dir/")
-        resource2 = CodebaseResource.objects.create(
-            project=p1, path="filename.ext", type=CodebaseResource.Type.FILE
-        )
-
-        rootfs.tag_empty_codebase_resources(p1)
-        resource1.refresh_from_db()
-        resource2.refresh_from_db()
-        self.assertEqual("", resource1.status)
-        self.assertEqual("ignored-empty-file", resource2.status)
-
     def test_scanpipe_pipes_rootfs_tag_uninteresting_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")

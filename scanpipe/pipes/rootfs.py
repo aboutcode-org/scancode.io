@@ -33,6 +33,7 @@ from container_inspector.distro import Distro
 from packagedcode import plugin_package
 
 from scanpipe import pipes
+from scanpipe.pipes import flag
 
 logger = logging.getLogger(__name__)
 
@@ -228,9 +229,9 @@ def _create_system_package(project, purl, package):
 
         if created_package not in codebase_resource.discovered_packages.all():
             codebase_resource.discovered_packages.add(created_package)
-            codebase_resource.status = "system-package"
-            logger.info(f"      added as system-package to: {purl}")
+            codebase_resource.status = flag.SYSTEM_PACKAGE
             codebase_resource.save()
+            logger.info(f"      added as system-package to: {purl}")
 
         if has_hash_diff(install_file, codebase_resource):
             if install_file.path not in modified_resources:
@@ -260,7 +261,6 @@ def scan_rootfs_for_system_packages(project, rootfs):
     logger.info(f"rootfs location: {rootfs.location}")
 
     installed_packages = rootfs.get_installed_packages(package_getter)
-
     for index, (purl, package) in enumerate(installed_packages):
         logger.info(f"Creating package #{index}: {purl}")
         _create_system_package(project, purl, package)
@@ -280,8 +280,8 @@ def get_resource_with_md5(project, status):
 
 def match_not_analyzed(
     project,
-    reference_status="system-package",
-    not_analyzed_status="not-analyzed",
+    reference_status=flag.SYSTEM_PACKAGE,
+    not_analyzed_status=flag.NOT_ANALYZED,
 ):
     """
     Given a `project` Project :
@@ -317,12 +317,6 @@ def match_not_analyzed(
         matchable.save()
 
 
-def tag_empty_codebase_resources(project):
-    """Tags empty files as ignored."""
-    qs = project.codebaseresources.files().empty()
-    qs.filter(status__in=("", "not-analyzed")).update(status="ignored-empty-file")
-
-
 def tag_uninteresting_codebase_resources(project):
     """
     Check any file that doesn’t belong to any system package and determine if it's:
@@ -344,7 +338,7 @@ def tag_uninteresting_codebase_resources(project):
         lookups |= Q(rootfs_path__startswith=segment)
 
     qs = project.codebaseresources.no_status()
-    qs.filter(lookups).update(status="ignored-not-interesting")
+    qs.filter(lookups).update(status=flag.IGNORED_NOT_INTERESTING)
 
 
 def tag_ignorable_codebase_resources(project):
@@ -363,7 +357,7 @@ def tag_ignorable_codebase_resources(project):
         lookups |= Q(rootfs_path__iregex=translated_pattern)
 
     qs = project.codebaseresources.no_status()
-    qs.filter(lookups).update(status="ignored-default-ignores")
+    qs.filter(lookups).update(status=flag.IGNORED_DEFAULT_IGNORES)
 
 
 def tag_data_files_with_no_clues(project):
@@ -383,10 +377,10 @@ def tag_data_files_with_no_clues(project):
     )
 
     qs = project.codebaseresources
-    qs.filter(lookup).update(status="ignored-data-file-no-clues")
+    qs.filter(lookup).update(status=flag.IGNORED_DATA_FILE_NO_CLUES)
 
 
 def tag_media_files_as_uninteresting(project):
     """Tags CodebaseResources that are media files to be uninteresting."""
     qs = project.codebaseresources.no_status()
-    qs.filter(is_media=True).update(status="ignored-media-file")
+    qs.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)

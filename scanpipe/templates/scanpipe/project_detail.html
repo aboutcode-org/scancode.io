@@ -38,7 +38,7 @@
     </div>
 
     <hr class="mx-5">
-    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
+    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" only %}
 
     <section class="pt-0 mx-5">
       {% if project.resource_count or project.package_count %}
@@ -89,7 +89,7 @@
             </div>
           {% endif %}
           {% if resource_status_summary %}
-            <div class="column">
+            <div class="column is-half">
               {% include "scanpipe/includes/resource_status_summary.html"  %}
             </div>
           {% endif %}

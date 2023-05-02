@@ -811,3 +811,26 @@ class PipelinesIntegrationTest(TestCase):
             self.assertEqual(expected["declared_license"], package.declared_license)
             self.assertEqual(expected["license_expression"], package.license_expression)
             self.assertEqual(expected["filename"], package.filename)
+
+    def test_scanpipe_deploy_to_develop_pipeline_integration_test(self):
+        pipeline_name = "deploy_to_develop"
+        project1 = Project.objects.create(name="Analysis")
+
+        jar_location = self.data_location / "jars"
+        project1.copy_input_from(jar_location / "from-flume-ng-node-1.9.0.zip")
+        project1.copy_input_from(jar_location / "to-flume-ng-node-1.9.0.zip")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(57, project1.codebaseresources.count())
+        self.assertEqual(18, project1.codebaserelations.count())
+        self.assertEqual(0, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = self.data_location / "flume-ng-node-d2d.json"
+        self.assertPipelineResultEqual(expected_file, result_file)

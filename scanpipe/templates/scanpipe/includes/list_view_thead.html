@@ -1,7 +1,7 @@
 <thead>
   <tr>
     {% for column in columns_data %}
-      <th {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
+      <th id="column-{{ column.field_name }}" {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
         {% if column.sort_query %}
           <a class="is-black-link" href="?{{ column.sort_query }}">{{ column.label }}</a>
           {% if column.field_name in filter.data.sort %}
@@ -9,6 +9,11 @@
           {% endif %}
         {% else %}
           {{ column.label }}
+        {% endif %}
+        {% if column.field_name == "status" %}
+          <div class="is-pulled-right">
+            {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.status only %}
+          </div>
         {% endif %}
       </th>
     {% endfor %}

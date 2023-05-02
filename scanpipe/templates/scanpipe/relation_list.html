@@ -1,0 +1,95 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Relations{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-desktop mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Relations" %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" placeholder="Search to/ resources" %}
+      </div>
+      {% include 'scanpipe/includes/pagination_header_relations.html' %}
+      {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
+    </section>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth" style="table-layout: fixed;">
+      <thead>
+        <tr>
+          <th>
+            {% include 'scanpipe/includes/filter_sort.html' with field_name="path" label="To resource" %}
+          </th>
+          <th style="width:110px;">
+            {% include 'scanpipe/includes/filter_sort.html' with field_name="status" label="Status" %}
+            <div class="is-pulled-right">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.status only %}
+            </div>
+          </th>
+          <th style="width:145px;">
+            {% include 'scanpipe/includes/filter_sort.html' with field_name="related_from__map_type" label="Map type" %}
+            <div class="is-pulled-right">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.relation_map_type only %}
+            </div>
+          </th>
+          <th>
+            {% include 'scanpipe/includes/filter_sort.html' with field_name="related_from__from_resource__path" label="From resource" %}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resource in object_list %}
+          {% for relation in resource.related_from.all %}
+            <tr>
+              {% if forloop.first %}
+                <td class="break-all" rowspan="{{ resource.related_from.all|length }}">
+                  <a href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
+                </td>
+              {% endif %}
+              <td>{{ resource.status }}</td>
+              <td>
+                {{ relation.map_type }}
+                {% if relation.extra_data.path_score %}
+                  {{ relation.extra_data.path_score }}
+                {% endif %}
+                {% if relation.map_type == "path" and resource.is_text and relation.from_resource.is_text %}
+                  <div>
+                    <a href="{% url 'resource_diff' project.uuid %}?from_path={{ resource.path }}&to_path={{ relation.from_resource.path }}" target="_blank">diff</a>
+                    {% if relation.extra_data.diff_ratio %}
+                      ratio: {{ relation.extra_data.diff_ratio }}
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </td>
+              <td class="break-all">
+                <a href="{{ relation.from_resource.get_absolute_url }}#viewer">{{ relation.from_resource.path }}</a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td class="break-all">
+                <a class="has-text-danger" href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
+              </td>
+              <td>{{ resource.status }}</td>
+              <td></td>
+              <td></td>
+            </tr>
+          {% endfor %}
+        {% empty %}
+          <tr>
+            <td colspan="4" class="has-text-centered p-3">
+              No Relations found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+    {% endif %}
+  </div>
+{% endblock %}
