@@ -54,6 +54,7 @@ class DeployToDevelop(Pipeline):
             cls.flag_mapped_resources_and_ignored_directories,
         )
 
+    extract_recursively = True
     purldb_match_extensions = [".jar", ".war", ".zip"]
 
     def get_inputs(self):
@@ -73,8 +74,11 @@ class DeployToDevelop(Pipeline):
             self.add_error("\n".join(errors))
 
     def extract_archives_in_place(self):
-        """Extract from* and to* archives in place with extractcode."""
-        extract_errors = extract_archives(self.project.codebase_path)
+        """Extract recursively from* and to* archives in place with extractcode."""
+        extract_errors = extract_archives(
+            self.project.codebase_path,
+            recurse=self.extract_recursively,
+        )
 
         if extract_errors:
             self.add_error("\n".join(extract_errors))
