@@ -302,17 +302,8 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
 
 
 class StatusFilter(django_filters.ChoiceFilter):
-    # def __init__(self, *args, **kwargs):
-    #     kwargs["choices"] = (
-    #         ("none", "No status"),
-    #         ("any", "Any status"),
-    #     )
-    #     super().__init__(*args, **kwargs)
-
     def filter(self, qs, value):
-        if value == "none":
-            return qs.no_status()
-        elif value == "any":
+        if value == "any":
             return qs.status()
         return super().filter(qs, value)
 
@@ -398,7 +389,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
     def get_status_choices(self):
         default_choices = [
-            ("none", "No status"),
+            ("_EMPTY_", "No status"),
             ("any", "Any status"),
         ]
         status_values = (
