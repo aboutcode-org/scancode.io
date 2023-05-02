@@ -337,6 +337,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "tag",
             "compliance_alert",
             "related_from__map_type",
+            "related_from__from_resource__path",
         ],
     )
     license_key = JSONContainsFilter(

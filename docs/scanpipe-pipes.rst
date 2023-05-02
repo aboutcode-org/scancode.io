@@ -23,7 +23,7 @@ CycloneDX
 .. automodule:: scanpipe.pipes.cyclonedx
     :members:
 
-Develop to deploy
+Deploy to develop
 -----------------
 .. automodule:: scanpipe.pipes.d2d
     :members:
