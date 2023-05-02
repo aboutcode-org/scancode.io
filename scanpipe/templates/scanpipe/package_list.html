@@ -16,48 +16,46 @@
   </div>
 
   <div class="container is-fluid mb-3">
-    <div class="table-container">
-      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        {% include 'scanpipe/includes/list_view_thead.html' %}
-        <tbody>
-          {% for package in object_list %}
-            <tr class="break-word">
-              <td style="min-width: 500px;" title="{{ package.package_uid }}">
-                <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
-                {% if package.extra_data.discovered_vulnerabilities %}
-                  <a href="{{ package.get_absolute_url }}#extra_data">
-                    <i class="fas fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
-                  </a>
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      {% include 'scanpipe/includes/list_view_thead.html' %}
+      <tbody>
+        {% for package in object_list %}
+          <tr class="break-word">
+            <td style="min-width: 500px;" title="{{ package.package_uid }}">
+              <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
+              {% if package.extra_data.discovered_vulnerabilities %}
+                <a href="{{ package.get_absolute_url }}#extra_data">
+                  <i class="fas fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
+                </a>
+              {% endif %}
+            </td>
+            <td style="min-width: 300px; max-width: 400px;">
+              {{ package.license_expression|linebreaksbr }}
+            </td>
+            <td title="{{ package.copyright }}">
+              {{ package.copyright|truncatechars:150|linebreaksbr }}
+            </td>
+            <td>
+              {{ package.primary_language }}
+            </td>
+            <td class="is-clipped-list">
+              {% if package.resources %}
+                <ul>
+                  {% for resource in package.resources %}
+                    <li>
+                      <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+                {% if package.resources|length > 5 %}
+                  <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
                 {% endif %}
-              </td>
-              <td style="min-width: 300px; max-width: 400px;">
-                {{ package.license_expression|linebreaksbr }}
-              </td>
-              <td title="{{ package.copyright }}">
-                {{ package.copyright|truncatechars:150|linebreaksbr }}
-              </td>
-              <td>
-                {{ package.primary_language }}
-              </td>
-              <td class="is-clipped-list">
-                {% if package.resources %}
-                  <ul>
-                    {% for resource in package.resources %}
-                      <li>
-                        <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
-                      </li>
-                    {% endfor %}
-                  </ul>
-                  {% if package.resources|length > 5 %}
-                    <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
-                  {% endif %}
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
     {% if is_paginated %}
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}

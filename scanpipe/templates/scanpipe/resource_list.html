@@ -16,73 +16,71 @@
   </div>
 
   <div id="resource-list" class="container is-fluid mb-3">
-    <div class="table-container">
-      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        {% include 'scanpipe/includes/list_view_thead.html' %}
-        <tbody>
-          {% for resource in object_list %}
-            <tr>
-              <td class="break-all" style="min-width: 200px;">
-                {% if resource.is_dir %}
-                  {{ resource.path }}
-                {% else %}
-                  <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
-                {% endif %}
-              </td>
-              <td>
-                <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
-              </td>
-              <td>
-                 <a href="?type={{ resource.type }}" class="is-black-link">{{ resource.type }}</a>
-              </td>
-              <td>
-                {% if resource.is_file %}
-                  {{ resource.size|filesizeformat|default_if_none:"" }}
-                {% endif %}
-              </td>
-              <td class="break-all" style="min-width: 100px;">
-                <a href="?name={{ resource.name }}" class="is-black-link">{{ resource.name }}</a>
-              </td>
-              <td>
-                <a href="?extension={{ resource.extension }}" class="is-black-link">{{ resource.extension }}</a>
-              </td>
-              <td>
-                <a href="?programming_language={{ resource.programming_language }}" class="is-black-link">{{ resource.programming_language }}</a>
-              </td>
-              <td>
-                <a href="?mime_type={{ resource.mime_type }}" class="is-black-link">{{ resource.mime_type }}</a>
-              </td>
-              <td>
-                <a href="?tag={{ resource.tag }}" class="is-black-link">{{ resource.tag }}</a>
-              </td>
-              <td>
-                 <ul>
-                  {% for license_expression in resource.unique_license_expressions %}
-                    <li>
-                      <a href="?license_expressions={{ license_expression }}" class="is-black-link">{{ license_expression }}</a>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </td>
-              {% if include_compliance_alert %}
-                <td>
-                  <a href="?compliance_alert={{ resource.compliance_alert }}" class="is-black-link">{{ resource.compliance_alert }}</a>
-                </td>
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      {% include 'scanpipe/includes/list_view_thead.html' %}
+      <tbody>
+        {% for resource in object_list %}
+          <tr>
+            <td class="break-all" style="min-width: 200px;">
+              {% if resource.is_dir %}
+                {{ resource.path }}
+              {% else %}
+                <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
               {% endif %}
+            </td>
+            <td>
+              <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
+            </td>
+            <td>
+               <a href="?type={{ resource.type }}" class="is-black-link">{{ resource.type }}</a>
+            </td>
+            <td>
+              {% if resource.is_file %}
+                {{ resource.size|filesizeformat|default_if_none:"" }}
+              {% endif %}
+            </td>
+            <td class="break-all" style="min-width: 100px;">
+              <a href="?name={{ resource.name }}" class="is-black-link">{{ resource.name }}</a>
+            </td>
+            <td>
+              <a href="?extension={{ resource.extension }}" class="is-black-link">{{ resource.extension }}</a>
+            </td>
+            <td>
+              <a href="?programming_language={{ resource.programming_language }}" class="is-black-link">{{ resource.programming_language }}</a>
+            </td>
+            <td>
+              <a href="?mime_type={{ resource.mime_type }}" class="is-black-link">{{ resource.mime_type }}</a>
+            </td>
+            <td>
+              <a href="?tag={{ resource.tag }}" class="is-black-link">{{ resource.tag }}</a>
+            </td>
+            <td>
+               <ul>
+                {% for license_expression in resource.unique_license_expressions %}
+                  <li>
+                    <a href="?license_expressions={{ license_expression }}" class="is-black-link">{{ license_expression }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </td>
+            {% if include_compliance_alert %}
               <td>
-                <ul>
-                  {% for package in resource.discovered_packages.all %}
-                    <li>
-                      <a href="{% url 'project_packages' project.uuid %}?purl={{ package.package_url }}">{{ package }}</a>
-                    </li>
-                  {% endfor %}
-                </ul>
+                <a href="?compliance_alert={{ resource.compliance_alert }}" class="is-black-link">{{ resource.compliance_alert }}</a>
               </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+            {% endif %}
+            <td>
+              <ul>
+                {% for package in resource.discovered_packages.all %}
+                  <li>
+                    <a href="{% url 'project_packages' project.uuid %}?purl={{ package.package_url }}">{{ package }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
     {% if is_paginated %}
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
