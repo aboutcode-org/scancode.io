@@ -1643,9 +1643,15 @@ class CodebaseResource(
             models.Index(fields=["name"]),
             models.Index(fields=["extension"]),
             models.Index(fields=["status"]),
+            models.Index(fields=["type"]),
+            models.Index(fields=["size"]),
             models.Index(fields=["programming_language"]),
+            models.Index(fields=["mime_type"]),
             models.Index(fields=["tag"]),
             models.Index(fields=["sha1"]),
+            models.Index(fields=["compliance_alert"]),
+            models.Index(fields=["is_binary"]),
+            models.Index(fields=["is_text"]),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -2189,8 +2195,12 @@ class DiscoveredPackage(
     class Meta:
         ordering = ["uuid"]
         indexes = [
+            models.Index(fields=["type"]),
+            models.Index(fields=["namespace"]),
+            models.Index(fields=["name"]),
             models.Index(fields=["filename"]),
             models.Index(fields=["primary_language"]),
+            models.Index(fields=["license_expression"]),
             models.Index(fields=["size"]),
             models.Index(fields=["md5"]),
             models.Index(fields=["sha1"]),
@@ -2488,6 +2498,12 @@ class DiscoveredDependency(
             "for_package",
             "datafile_resource",
             "datasource_id",
+        ]
+        indexes = [
+            models.Index(fields=["scope"]),
+            models.Index(fields=["is_runtime"]),
+            models.Index(fields=["is_optional"]),
+            models.Index(fields=["is_resolved"]),
         ]
         constraints = [
             models.UniqueConstraint(
