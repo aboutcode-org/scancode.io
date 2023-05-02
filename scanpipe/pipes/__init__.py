@@ -180,6 +180,26 @@ def update_or_create_dependency(
     return dependency
 
 
+def get_or_create_relation(project, relation_data):
+    """
+    Get  or create a CodebaseRelation then return it.
+    The support for update is not useful as there is no fields on the model that
+    could be updated.
+    """
+    from_resource_path = relation_data.get("from_resource")
+    to_resource_path = relation_data.get("to_resource")
+    resource_qs = project.codebaseresources
+
+    codebase_relation, _ = CodebaseRelation.objects.get_or_create(
+        project=project,
+        from_resource=resource_qs.get(path=from_resource_path),
+        to_resource=resource_qs.get(path=to_resource_path),
+        map_type=relation_data.get("map_type"),
+    )
+
+    return codebase_relation
+
+
 def make_relation(from_resource, to_resource, map_type, **extra_fields):
     return CodebaseRelation.objects.create(
         project=from_resource.project,

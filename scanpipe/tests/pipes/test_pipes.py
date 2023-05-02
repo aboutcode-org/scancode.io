@@ -36,6 +36,7 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests import resource_data1
@@ -95,7 +96,7 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("NOTICE", updated_package.notice_text)
         self.assertEqual(package.pk, updated_package.pk)
 
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource1 = make_resource_file(project=p1, path="filename.ext")
         package_data2 = dict(package_data1)
         package_data2["name"] = "new name"
         package_data2["package_uid"] = ""
@@ -107,15 +108,15 @@ class ScanPipePipesTest(TestCase):
 
         # Make sure we can assign a package to multiple Resources calling
         # update_or_create_package() several times.
-        resource2 = CodebaseResource.objects.create(project=p1, path="filename2.ext")
+        resource2 = make_resource_file(project=p1, path="filename2.ext")
         package2 = pipes.update_or_create_package(p1, package_data2, [resource2])
         self.assertIn(package2, resource1.discovered_packages.all())
         self.assertIn(package2, resource2.discovered_packages.all())
 
     def test_scanpipe_pipes_update_or_create_package_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
-        resource2 = CodebaseResource.objects.create(project=p1, path="filename2.ext")
+        resource1 = make_resource_file(project=p1, path="filename.ext")
+        resource2 = make_resource_file(project=p1, path="filename2.ext")
         resources = [resource1, resource2]
 
         # On creation
@@ -151,10 +152,7 @@ class ScanPipePipesTest(TestCase):
 
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")
-        CodebaseResource.objects.create(
-            project=p1,
-            path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
-        )
+        make_resource_file(p1, "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO")
         pipes.update_or_create_package(p1, package_data1)
 
         dependency_data = dict(dependency_data1)
@@ -165,12 +163,26 @@ class ScanPipePipesTest(TestCase):
 
         dependency_data["scope"] = "install"
         dependency = pipes.update_or_create_dependency(p1, dependency_data)
-        self.assertEqual(dependency.scope, "install")
+        self.assertEqual("install", dependency.scope)
+
+    def test_scanpipe_pipes_get_or_create_relation(self):
+        p1 = Project.objects.create(name="Analysis")
+        from1 = make_resource_file(p1, "from/a.txt")
+        to1 = make_resource_file(p1, "to/a.txt")
+        relation_data = {
+            "from_resource": from1.path,
+            "to_resource": to1.path,
+            "map_type": "sha1",
+        }
+        relation_created = pipes.get_or_create_relation(p1, relation_data)
+        self.assertEqual("sha1", relation_created.map_type)
+        relation_from_get = pipes.get_or_create_relation(p1, relation_data)
+        self.assertEqual(relation_created, relation_from_get)
 
     def test_scanpipe_pipes_make_relation(self):
         p1 = Project.objects.create(name="Analysis")
-        from_resource = CodebaseResource.objects.create(project=p1, path="Name.java")
-        to_resource = CodebaseResource.objects.create(project=p1, path="Name.class")
+        from_resource = make_resource_file(p1, "Name.java")
+        to_resource = make_resource_file(p1, "Name.class")
 
         relation = pipes.make_relation(
             from_resource=from_resource,
@@ -225,10 +237,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
     def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
+        resource1 = make_resource_file(project=project1, path="filename.ext")
         package1 = pipes.update_or_create_package(project1, package_data1)
         self.assertFalse(resource1.for_packages)
 

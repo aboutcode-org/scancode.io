@@ -635,3 +635,6 @@ def load_inventory_from_scanpipe(project, scan_data):
 
     for dependency_data in scan_data.get("dependencies", []):
         pipes.update_or_create_dependency(project, dependency_data)
+
+    for relation_data in scan_data.get("relations", []):
+        pipes.get_or_create_relation(project, relation_data)
