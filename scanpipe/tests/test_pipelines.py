@@ -816,7 +816,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
-        jar_location = self.data_location / "codebase" / "jars"
+        jar_location = self.data_location / "jars"
         project1.copy_input_from(jar_location / "from-flume-ng-node-1.9.0.zip")
         project1.copy_input_from(jar_location / "to-flume-ng-node-1.9.0.zip")
 
@@ -832,5 +832,5 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        expected_file = self.data_location / "codebase/jars/flume-ng-node-d2d.json"
+        expected_file = jar_location / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
