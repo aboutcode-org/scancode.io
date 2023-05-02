@@ -356,7 +356,7 @@ class ProjectErrorSerializer(serializers.ModelSerializer):
         fields = ["uuid", "model", "message", "details", "traceback", "created_date"]
 
     def get_traceback(self, project_error):
-        return project_error.traceback.split("\n")
+        return project_error.traceback.splitlines()
 
 
 class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):

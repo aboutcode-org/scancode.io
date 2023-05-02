@@ -255,8 +255,8 @@ def get_diff_ratio(to_resource, from_resource):
         return
 
     try:
-        to_lines = to_resource.location_path.read_text().split("\n")
-        from_lines = from_resource.location_path.read_text().split("\n")
+        to_lines = to_resource.location_path.read_text().splitlines()
+        from_lines = from_resource.location_path.read_text().splitlines()
     except Exception:
         return
 

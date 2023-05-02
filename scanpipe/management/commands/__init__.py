@@ -85,7 +85,7 @@ class RunStatusCommandMixin:
                     msg += f" (executed in {execution_time} seconds)"
                 messages.append(msg)
                 if run.log:
-                    for line in run.log.rstrip("\n").split("\n"):
+                    for line in run.log.rstrip("\n").splitlines():
                         messages.append(3 * " " + line)
 
         return messages

@@ -1324,7 +1324,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         pattern = re.compile(r"Step \[(?P<step>.+)] completed in (?P<time>.+) seconds")
 
         profiler = {}
-        for line in self.log.split("\n"):
+        for line in self.log.splitlines():
             match = pattern.search(line)
             if match:
                 step, runtime = match.groups()

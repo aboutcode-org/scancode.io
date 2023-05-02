@@ -1157,8 +1157,8 @@ def codebase_resource_diff_view(request, uuid):
     if not (from_resource.is_text and to_resource.is_text):
         raise Http404("Cannot diff on binary files")
 
-    from_lines = from_resource.location_path.read_text().split("\n")
-    to_lines = to_resource.location_path.read_text().split("\n")
+    from_lines = from_resource.location_path.read_text().splitlines()
+    to_lines = to_resource.location_path.read_text().splitlines()
     html = difflib.HtmlDiff().make_file(from_lines, to_lines)
 
     return HttpResponse(html)

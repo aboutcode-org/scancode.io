@@ -386,7 +386,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         output = out.getvalue()
         self.assertIn("[RUNNING] docker", output)
-        for line in run.log.split("\n"):
+        for line in run.log.splitlines():
             self.assertIn(line, output)
 
         run.task_end_date = run.task_start_date + datetime.timedelta(0, 42)
@@ -443,7 +443,7 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--format", "csv"])
         call_command("output", *options, stdout=out)
         out_value = out.getvalue().strip()
-        for output_file in out_value.split("\n"):
+        for output_file in out_value.splitlines():
             filename = output_file.split("/")[-1]
             self.assertIn(filename, project.output_root)
 
@@ -452,7 +452,7 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--format", "spdx", "xlsx"])
         call_command("output", *options, stdout=out)
         out_value = out.getvalue().strip()
-        for output_file in out_value.split("\n"):
+        for output_file in out_value.splitlines():
             filename = output_file.split("/")[-1]
             self.assertIn(filename, project.output_root)
 
