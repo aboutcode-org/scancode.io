@@ -4,7 +4,7 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
-- Add a new ``develop_to_deploy`` pipeline specialized in creating relations between
+- Add a new ``deploy_to_develop`` pipeline specialized in creating relations between
   the development source code and binaries or deployed code.
   This pipeline is expecting 2 archive files with "from-" and "to-" filename prefixes
   as inputs:

@@ -17,9 +17,9 @@ Pipeline Base Class
 
 .. _pipeline_d2d:
 
-Develop To Deploy
+Deploy To Develop
 -----------------
-.. autoclass:: scanpipe.pipelines.develop_to_deploy.DevelopToDeploy()
+.. autoclass:: scanpipe.pipelines.deploy_to_develop.DeployToDevelop()
     :members:
     :member-order: bysource
 
