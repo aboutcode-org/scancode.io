@@ -23,16 +23,20 @@
 import ahocorasick
 
 """
-Path matching using Aho-Corasick automatons. The approach is to create a trie of
-all reversed path suffixes aka. subpath each mapped to a tuple of:
+Path matching using Aho-Corasick automatons.
+
+The approach is to create a trie of all reversed path suffixes aka. subpath each
+mapped to a tuple of:
     (subpath length, [list of path ids]).
+
+And then search this using Aho-Corasick search.
 
 For instance with this list of paths, prefixed with a path id:
 
     1    RouterStub.java
-    2    samples/screenshot.png
+    23   samples/screenshot.png
     3    samples/JGroups/src/RouterStub.java
-    4    src/screenshot.png
+    42   src/screenshot.png
 
 We will create this list of subpaths:
 
@@ -46,92 +50,110 @@ We will create this list of subpaths:
     (screenshot.png)
     (screenshot.png, src)
 
-And we will have this index style:
+And we will have this index:
 
     (tuple of path segments) -> (number of segments, [list of path ids])
     (RouterStub.java) -> (1, [1, 3])
-    (screenshot.png) -> (1, [2, 4])
-    (screenshot.png, samples) -> (2, [2])
+    (screenshot.png) -> (1, [23, 42])
+    (screenshot.png, samples) -> (2, [23])
     (RouterStub.java, JGroups, src, samples) -> (4, [3])
     (RouterStub.java, JGroups, src) -> (3, [3])
     (RouterStub.java, JGroups) -> (3, [3])
-    (screenshot.png, src) -> (2, [4])
+    (screenshot.png, src) -> (2, [42])
 
-Note that internally we first assign an integer if to each unique path segment
-and work on sequence of integers rather than sequence of words.
 """
 
 
-def get_matched_paths(path, index, id_by_segment):
+def find_paths(path, index):
     """
-    Yield tuples of the longest paths matched in the ``automaton`` for a
-    POSIX ``path`` string.
+    Yield tuples of the longest paths matched in the ``automaton`` for a POSIX
+    ``path`` string.
+
+    Each tuple is (number of matched path segments, [list of resource ids])
+
+    For example::
+    >>> resource_id_and_paths = [
+    ...     (1,  "RouterStub.java"),
+    ...     (23, "samples/screenshot.png"),
+    ...     (3,  "samples/JGroups/src/RouterStub.java"),
+    ...     (42, "src/screenshot.png"),
+    ... ]
+
+    >>> index = build_index(resource_id_and_paths)
+
+    >>> expected = [(3, [3])]
+    >>> results = list(find_paths("JGroups/src/RouterStub.java", index))
+    >>> assert results == expected, results
+
+    >>> expected = [(1, [23, 42])]
+    >>> results = list(find_paths("screenshot.png", index))
+    >>> assert results == expected, results
     """
-    segment_ids = convert_path_to_segment_ids(path, id_by_segment)
+    segments = get_reversed_path_segments(path)
+    reversed_path = convert_segments_to_path(segments)
     # note: we use iter_long() to get the longess match only.
     # use iter() to get all matches
-    for _, matched_paths in index.iter_long(segment_ids):
-        yield matched_paths
+    for _, matched_len_and_paths in index.iter_long(reversed_path):
+        yield matched_len_and_paths
 
 
-def build_index(paths_database):
+def build_index(resource_id_and_paths):
     """
-    Return an index as a tuple of (automaton, id_by_segment) built from a
-    ``paths_database`` mapping of {path: path_id}
+    Return an index (an automaton) built from a ``resource_id_and_paths``
+    iterable of tuples of (resource_id int, resource_path string).
     """
     # create a new empty automaton.
-    automaton = ahocorasick.Automaton(ahocorasick.STORE_ANY, ahocorasick.KEY_SEQUENCE)
+    automaton = ahocorasick.Automaton(ahocorasick.STORE_ANY, ahocorasick.KEY_STRING)
 
-    # assign and keep track of a int if for each unique path segment
-    id_by_segment = build_segment_id_by_segment(paths_database)
-
-    for path, path_id in paths_database.items():
-        # we need int ids for our automaton
-        segment_ids = convert_path_to_segment_ids(path, id_by_segment)
-        for idx, _ in enumerate(segment_ids, 1):
-            subpath = tuple(segment_ids[:idx])
-
+    for resource_id, resource_path in resource_id_and_paths:
+        segments = get_reversed_path_segments(resource_path)
+        segments_count = len(segments)
+        for segments_count in range(segments_count):
+            subpath_segments_count = segments_count + 1
+            subpath_segments = segments[:subpath_segments_count]
+            subpath = convert_segments_to_path(subpath_segments)
             existing = automaton.get(subpath, None)
             if existing:
-                # ensure that for identical sequence of segments (e.g., a path suffix)
-                # added several times, all path_id(s) are added to the value list
-                _len, path_ids = existing
-                path_ids.append(path_id)
+                # For multiple identical path suffixes, append to the list of
+                # resource_ids
+                _seg_count, resource_ids = existing
+                resource_ids.append(resource_id)
             else:
-                automaton.add_word(subpath, (len(subpath), [path_id]))
+                # We store this value mapped to a subpath as a tuple of
+                # (segments count, [list of resource ids])
+                value = subpath_segments_count, [resource_id]
+                automaton.add_word(subpath, value)
 
-    # "finalize" automaton
+    # "finalize" the automaton
     automaton.make_automaton()
-    return automaton, id_by_segment
+    return automaton
 
 
-def build_segment_id_by_segment(paths_database):
+def get_reversed_path_segments(path):
     """
-    Return a mapping of {path_segment: int id} assigning a unique id to each
-    unique path segment from a ``paths_database``.
+    Return reversed segments list given a POSIX ``path`` string. We reverse
+    based on path segments separated by a "/".
+
+    Note that the inputh ``path`` is assumed to be normalized, not relative and
+    not containing double slash.
+
+    For example::
+    >>> assert get_reversed_path_segments("a/b/c.js") == ["c.js", "b", "a"]
     """
-    unique_segments = set()
-    for path in paths_database:
-        segments = path.strip("/").split("/")
-        unique_segments.update(segments)
-
-    unique_segments = sorted(unique_segments)
-    return {seg: sid for sid, seg in enumerate(unique_segments, 1)}
-
-
-def get_reversed_segments(path):
-    """Return a sequence of reversed path segments given a POSIX ``path`` string."""
     # [::-1] does the list reversing
-    return path.strip("/").split("/")[::-1]
+    reversed_segments = path.strip("/").split("/")[::-1]
+    return reversed_segments
 
 
-def convert_path_to_segment_ids(path, id_by_segment):
+def convert_segments_to_path(segments):
     """
-    Return a sequence of reversed path segment int ids given a POSIX ``path``
-    string. Use the ``id_by_segment`` mapping to convert segment strings to int
-    ids.
+    Return a path string is suitable for indexing or matching given a
+    ``segments`` sequence of path segment strings.
+    The resulting reversed path is prefixed and suffixed by a "/" irrespective
+    of whether the original path is a file or directory and had such prefix or
+    suffix.
+
+    For example::
+    >>> assert convert_segments_to_path(["c.js", "b", "a"]) == "/c.js/b/a/"
     """
-    try:
-        return tuple(id_by_segment[seg] for seg in get_reversed_segments(path))
-    except KeyError:
-        return ()
+    return "/" + "/".join(segments) + "/"

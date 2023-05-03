@@ -26,22 +26,34 @@ from scanpipe.pipes import pathmap
 
 
 class ScanPipePathmapPipesTest(TestCase):
-    def test_scanpipe_pipes_pathmap_get_matched_paths(self):
-        paths_database = {
-            "RouterStub.java": 1,
-            "samples/screenshot.png": 2,
-            "samples/JGroups/src/RouterStub.java": 3,
-            "src/screenshot.png": 4,
-        }
+    def test_scanpipe_pipes_pathmap_find_paths(self):
+        resource_id_and_paths = (
+            (
+                1,
+                "RouterStub.java",
+            ),
+            (
+                2,
+                "samples/screenshot.png",
+            ),
+            (
+                3,
+                "samples/JGroups/src/RouterStub.java",
+            ),
+            (
+                4,
+                "src/screenshot.png",
+            ),
+        )
 
-        index, id_by_segment = pathmap.build_index(paths_database)
+        index = pathmap.build_index(resource_id_and_paths)
 
         lookup_path = "src/RouterStub.java"
-        matches = pathmap.get_matched_paths(lookup_path, index, id_by_segment)
+        matches = pathmap.find_paths(lookup_path, index)
         expected_length = 2
-        expected_path_id = 3
-        self.assertEqual([(expected_length, [expected_path_id])], list(matches))
+        expected_path_ids = [3]
+        self.assertEqual([(expected_length, expected_path_ids)], list(matches))
 
         lookup_path = "samples/JGroups/src/File.ext"
-        matches = pathmap.get_matched_paths(lookup_path, index, id_by_segment)
+        matches = pathmap.find_paths(lookup_path, index)
         self.assertEqual([], list(matches))
