@@ -29,6 +29,7 @@ from container_inspector.image import Image
 from container_inspector.utils import extract_tar
 
 from scanpipe import pipes
+from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 
 logger = logging.getLogger(__name__)
@@ -181,7 +182,60 @@ def create_codebase_resources(project, image):
             )
 
 
-def scan_image_for_system_packages(project, image, detect_licenses=True):
+def _create_system_package(project, purl, package, layer):
+    """Create system package and related resources."""
+    created_package = pipes.update_or_create_package(project, package.to_dict())
+
+    installed_files = []
+    if hasattr(package, "resources"):
+        installed_files = package.resources
+
+    # We have no files for this installed package, we cannot go further.
+    if not installed_files:
+        logger.info(f"  No installed_files for: {purl}")
+        return
+
+    missing_resources = created_package.missing_resources[:]
+    modified_resources = created_package.modified_resources[:]
+
+    codebase_resources = project.codebaseresources.all()
+
+    for install_file in installed_files:
+        install_file_path = install_file.get_path(strip_root=True)
+        install_file_path = pipes.normalize_path(install_file_path)
+        layer_rootfs_path = posixpath.join(
+            layer.layer_id,
+            install_file_path.strip("/"),
+        )
+        logger.info(f"   installed file rootfs_path: {install_file_path}")
+        logger.info(f"   layer rootfs_path: {layer_rootfs_path}")
+        resource_qs = codebase_resources.filter(
+            path__endswith=layer_rootfs_path,
+            rootfs_path=install_file_path,
+        )
+        found_resource = False
+        for resource in resource_qs:
+            found_resource = True
+            if created_package not in resource.discovered_packages.all():
+                resource.discovered_packages.add(created_package)
+                resource.status = flag.SYSTEM_PACKAGE
+                resource.save()
+                logger.info(f"      added as system-package to: {purl}")
+
+            if rootfs.has_hash_diff(install_file, resource):
+                if install_file.path not in modified_resources:
+                    modified_resources.append(install_file.path)
+
+        if not found_resource and install_file_path not in missing_resources:
+            missing_resources.append(install_file_path)
+            logger.info(f"      installed file is missing: {install_file_path}")
+
+    created_package.missing_resources = missing_resources
+    created_package.modified_resources = modified_resources
+    created_package.save()
+
+
+def scan_image_for_system_packages(project, image):
     """
     Given a `project` and an `image` - this scans the `image` layer by layer for
     installed system packages and creates a DiscoveredPackage for each.
@@ -198,58 +252,9 @@ def scan_image_for_system_packages(project, image, detect_licenses=True):
         raise rootfs.DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
     installed_packages = image.get_installed_packages(rootfs.package_getter)
-
-    for i, (purl, package, layer) in enumerate(installed_packages):
-        logger.info(f"Creating package #{i}: {purl}")
-        created_package = pipes.update_or_create_package(project, package.to_dict())
-
-        installed_files = []
-        if hasattr(package, "resources"):
-            installed_files = package.resources
-
-        # We have no files for this installed package, we cannot go further.
-        if not installed_files:
-            logger.info(f"  No installed_files for: {purl}")
-            continue
-
-        missing_resources = created_package.missing_resources[:]
-        modified_resources = created_package.modified_resources[:]
-
-        codebase_resources = project.codebaseresources.all()
-
-        for install_file in installed_files:
-            install_file_path = install_file.get_path(strip_root=True)
-            install_file_path = pipes.normalize_path(install_file_path)
-            layer_rootfs_path = posixpath.join(
-                layer.layer_id,
-                install_file_path.strip("/"),
-            )
-            logger.info(f"   installed file rootfs_path: {install_file_path}")
-            logger.info(f"   layer rootfs_path: {layer_rootfs_path}")
-            cbr_qs = codebase_resources.filter(
-                path__endswith=layer_rootfs_path,
-                rootfs_path=install_file_path,
-            )
-            found_res = False
-            for codebase_resource in cbr_qs:
-                found_res = True
-                if created_package not in codebase_resource.discovered_packages.all():
-                    codebase_resource.discovered_packages.add(created_package)
-                    codebase_resource.status = "system-package"
-                    logger.info(f"      added as system-package to: {purl}")
-                    codebase_resource.save()
-
-                if rootfs.has_hash_diff(install_file, codebase_resource):
-                    if install_file.path not in modified_resources:
-                        modified_resources.append(install_file.path)
-
-            if not found_res and install_file_path not in missing_resources:
-                missing_resources.append(install_file_path)
-                logger.info(f"      installed file is missing: {install_file_path}")
-
-        created_package.missing_resources = missing_resources
-        created_package.modified_resources = modified_resources
-        created_package.save()
+    for index, (purl, package, layer) in enumerate(installed_packages):
+        logger.info(f"Creating package #{index}: {purl}")
+        _create_system_package(project, purl, package, layer)
 
 
 def tag_whiteout_codebase_resources(project):

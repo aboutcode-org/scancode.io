@@ -278,6 +278,36 @@ class InPackageFilter(django_filters.ChoiceFilter):
         return qs
 
 
+class RelationMapTypeFilter(django_filters.ChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs["choices"] = (
+            ("none", "No map"),
+            ("any", "Any map"),
+            ("many", "Many map"),
+            ("java_to_class", "java to class"),
+            ("jar_to_source", "jar to source"),
+            ("path", "path"),
+            ("sha1", "sha1"),
+        )
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == "none":
+            return qs.has_no_relation()
+        elif value == "any":
+            return qs.has_relation()
+        elif value == "many":
+            return qs.has_many_relation()
+        return super().filter(qs, value)
+
+
+class StatusFilter(django_filters.ChoiceFilter):
+    def filter(self, qs, value):
+        if value == "any":
+            return qs.status()
+        return super().filter(qs, value)
+
+
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search",
@@ -297,6 +327,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "mime_type",
             "tag",
             "compliance_alert",
+            "related_from__map_type",
+            "related_from__from_resource__path",
         ],
     )
     license_key = JSONContainsFilter(
@@ -311,6 +343,12 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
     )
     in_package = InPackageFilter(label="In a Package")
+    status = StatusFilter(empty_label="All")
+    relation_map_type = RelationMapTypeFilter(
+        label="Relation map type",
+        field_name="related_from__map_type",
+        empty_label="All",
+    )
 
     class Meta:
         model = CodebaseResource
@@ -341,7 +379,24 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "emails",
             "urls",
             "in_package",
+            "relation_map_type",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if status_filter := self.filters.get("status"):
+            status_filter.extra.update({"choices": self.get_status_choices()})
+
+    def get_status_choices(self):
+        default_choices = [
+            ("_EMPTY_", "No status"),
+            ("any", "Any status"),
+        ]
+        status_values = (
+            self.queryset.order_by("status").values_list("status", flat=True).distinct()
+        )
+        value_choices = [(status, status) for status in status_values if status]
+        return default_choices + value_choices
 
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):

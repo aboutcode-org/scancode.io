@@ -4,6 +4,24 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Add a new ``deploy_to_develop`` pipeline specialized in creating relations between
+  the development source code and binaries or deployed code.
+  This pipeline is expecting 2 archive files with "from-" and "to-" filename prefixes
+  as inputs:
+  1. "from-[FILENAME]" archive containing the development source code
+  2. "to-[FILENAME]" archive containing the deployment compiled code
+  https://github.com/nexB/scancode.io/issues/659
+
+- Move the "Resources status" panel from the run modal to the project details view.
+  https://github.com/nexB/scancode.io/issues/370
+
+v32.2.0 (2023-04-25)
+--------------------
+
+- Enhance the ``update_or_create_package`` pipe and add the ability to assign multiple
+  codebase resources at once.
+  https://github.com/nexB/scancode.io/issues/681
+
 - Add new command line option to create-project and add-input management commands to
   copy the content of a local source directory to the project codebase work directory.
   https://github.com/nexB/scancode.io/pull/672
@@ -15,8 +33,16 @@ v33.0.0 (unreleased)
   once.
   https://github.com/nexB/scancode.io/issues/646
 
+- Improve the resolution of CycloneDX BOM and SPDX document when the file extension is
+  simply ``.json``.
+  https://github.com/nexB/scancode.io/pull/688
+
 - Add support for manifest types using ScanCode-toolkit handlers.
   https://github.com/nexB/scancode.io/issues/658
+
+- Enhance the Resource details view to use the tabset system and display all
+  available data including the content viewer.
+  https://github.com/nexB/scancode.io/issues/215
 
 - Add a "layers" data sheet in the xlsx output for docker pipeline run.
   https://github.com/nexB/scancode.io/issues/578
@@ -30,6 +56,9 @@ v33.0.0 (unreleased)
 - Enhance the ``resolve_about_packages`` pipe to handle filename and checksum values.
 
 - Split the pipes unit tests into their own related submodule.
+
+- Upgrade ScanCode Toolkit to v31.2.6
+  https://github.com/nexB/scancode.io/issues/693
 
 v32.1.0 (2023-03-23)
 --------------------

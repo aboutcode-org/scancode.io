@@ -1,20 +1,15 @@
-<div class="tabs is-toggle is-fullwidth mx-5 mb-3 mt-4">
-  <ul>
-    <li class="has-text-weight-semibold is-radiusless">
-      Detected values:
-    </li>
-    {% for key, value in detected_values.items %}
-      <li>
-        <a data-type="{{ key }}" {% if forloop.first %}class="border-left-radius"{% endif %}>
-          {{ key|title }}
-          <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
-        </a>
-      </li>
-    {% endfor %}
-  </ul>
+<div id="detected-data-buttons" class="field has-addons">
+  {% for key, value in detected_values.items %}
+    <p class="control mb-0">
+      <button class="button" data-type="{{ key }}">
+        {{ key|title }}
+        <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
+      </button>
+    </p>
+  {% endfor %}
 </div>
 
-<section id="resource-viewer" class="mx-5 message is-dark mb-2">
+<section id="resource-viewer" class="message is-dark mb-2">
   <div class="message-header is-flex">
     <div>
       <div>

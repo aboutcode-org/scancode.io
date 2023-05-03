@@ -28,6 +28,7 @@ from packagedcode import win_reg
 from packagedcode.models import Package
 
 from scanpipe import pipes
+from scanpipe.pipes import flag
 
 
 def package_getter(root_dir, **kwargs):
@@ -87,7 +88,7 @@ def tag_uninteresting_windows_codebase_resources(project):
         lookups |= Q(extension__icontains=file_extension)
 
     qs = project.codebaseresources.no_status()
-    qs.filter(lookups).update(status="ignored-not-interesting")
+    qs.filter(lookups).update(status=flag.IGNORED_NOT_INTERESTING)
 
 
 def tag_installed_package_files(project, root_dir_pattern, package, q_objects=None):
@@ -112,7 +113,7 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=No
         created_package = pipes.update_or_create_package(project, package.to_dict())
         for installed_package_file in installed_package_files:
             installed_package_file.discovered_packages.add(created_package)
-            installed_package_file.status = "installed-package"
+            installed_package_file.status = flag.INSTALLED_PACKAGE
             installed_package_file.save()
         created_package.save()
 

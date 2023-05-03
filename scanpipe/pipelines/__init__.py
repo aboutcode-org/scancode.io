@@ -22,13 +22,13 @@
 
 import inspect
 import logging
-import timeit
 import traceback
 import warnings
 from contextlib import contextmanager
 from functools import wraps
 from pydoc import getdoc
 from pydoc import splitdoc
+from timeit import default_timer as timer
 
 from django.utils import timezone
 
@@ -113,7 +113,7 @@ class Pipeline:
             self.run.current_step = f"{current_index}/{steps_count} {step_name}"[:256]
 
             self.log(f"Step [{step_name}] starting")
-            start_time = timeit.default_timer()
+            start_time = timer()
 
             try:
                 step(self)
@@ -122,7 +122,7 @@ class Pipeline:
                 tb = "".join(traceback.format_tb(e.__traceback__))
                 return 1, f"{e}\n\nTraceback:\n{tb}"
 
-            run_time = timeit.default_timer() - start_time
+            run_time = timer() - start_time
             self.log(f"Step [{step.__name__}] completed in {run_time:.2f} seconds")
 
         self.run.current_step = ""

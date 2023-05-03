@@ -47,6 +47,7 @@ from scancode import cli as scancode_cli
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
+from scanpipe.pipes import flag
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -233,9 +234,9 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     """
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = "scanned-with-error"
+        codebase_resource.status = flag.SCANNED_WITH_ERROR
     else:
-        codebase_resource.status = "scanned"
+        codebase_resource.status = flag.SCANNED
 
     codebase_resource.set_scan_results(scan_results, save=True)
 
@@ -248,12 +249,12 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     package_data = scan_results.get("package_data", [])
     if package_data:
         codebase_resource.package_data = package_data
-        codebase_resource.status = "application-package"
+        codebase_resource.status = flag.APPLICATION_PACKAGE
         codebase_resource.save()
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = "scanned-with-error"
+        codebase_resource.status = flag.SCANNED_WITH_ERROR
         codebase_resource.save()
 
 
@@ -531,7 +532,7 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     status to "application-package".
     """
     codebase_resource.add_package(discovered_package)
-    codebase_resource.status = "application-package"
+    codebase_resource.status = flag.APPLICATION_PACKAGE
     codebase_resource.save()
 
 
@@ -634,3 +635,6 @@ def load_inventory_from_scanpipe(project, scan_data):
 
     for dependency_data in scan_data.get("dependencies", []):
         pipes.update_or_create_dependency(project, dependency_data)
+
+    for relation_data in scan_data.get("relations", []):
+        pipes.get_or_create_relation(project, relation_data)

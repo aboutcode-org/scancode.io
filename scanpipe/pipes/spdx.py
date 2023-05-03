@@ -21,81 +21,84 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
-import pathlib
 import re
+from contextlib import suppress
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
+from pathlib import Path
 from typing import List  # Python 3.8 compatibility
 
 SPDX_SPEC_VERSION = "2.3"
 SPDX_LICENSE_LIST_VERSION = "3.18"
 SPDX_SCHEMA_NAME = "spdx-schema-2.3.json"
-SPDX_SCHEMA_PATH = pathlib.Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
+SPDX_SCHEMA_PATH = Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
 SPDX_SCHEMA_URL = (
     "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json"
 )
 
 """
-Generate SPDX Documents
-- Spec documentation: https://spdx.github.io/spdx-spec/v2.3/
+Generate SPDX Documents.
+Spec documentation: https://spdx.github.io/spdx-spec/v2.3/
 
-Usage:
+Usage::
 
-import pathlib
-from scanpipe.pipes import spdx
+    import pathlib
+    from scanpipe.pipes import spdx
 
-creation_info = spdx.CreationInfo(
-    person_name="John Doe",
-    person_email="john@starship.space",
-    organization_name="Starship",
-    tool="SPDXCode-1.0",
-)
+    creation_info = spdx.CreationInfo(
+        person_name="John Doe",
+        person_email="john@starship.space",
+        organization_name="Starship",
+        tool="SPDXCode-1.0",
+    )
 
-package1 = spdx.Package(
-    spdx_id="SPDXRef-package1",
-    name="lxml",
-    version="3.3.5",
-    license_concluded="LicenseRef-1",
-    checksums=[
-        spdx.Checksum(algorithm="SHA1", value="10c72b88de4c5f3095ebe20b4d8afbedb32b8f"),
-        spdx.Checksum(algorithm="MD5", value="56770c1a2df6e0dc51c491f0a5b9d865"),
-    ],
-    external_refs=[
-        spdx.ExternalRef(
-            category="PACKAGE-MANAGER",
-            type="purl",
-            locator="pkg:pypi/lxml@3.3.5",
-        ),
-    ]
-)
+    package1 = spdx.Package(
+        spdx_id="SPDXRef-package1",
+        name="lxml",
+        version="3.3.5",
+        license_concluded="LicenseRef-1",
+        checksums=[
+            spdx.Checksum(
+                algorithm="SHA1", value="10c72b88de4c5f3095ebe20b4d8afbedb32b8f"
+            ),
+            spdx.Checksum(algorithm="MD5", value="56770c1a2df6e0dc51c491f0a5b9d865"),
+        ],
+        external_refs=[
+            spdx.ExternalRef(
+                category="PACKAGE-MANAGER",
+                type="purl",
+                locator="pkg:pypi/lxml@3.3.5",
+            ),
+        ]
+    )
 
-document = spdx.Document(
-    name="Document name",
-    namespace="https://[CreatorWebsite]/[pathToSpdx]/[DocumentName]-[UUID]",
-    creation_info=creation_info,
-    packages=[package1],
-    extracted_licenses=[
-        spdx.ExtractedLicensingInfo(
-            license_id="LicenseRef-1",
-            extracted_text="License Text",
-            name="License 1",
-            see_alsos=["https://license1.text"],
-        ),
-    ],
-    comment="This document was created using SPDXCode-1.0",
-)
+    document = spdx.Document(
+        name="Document name",
+        namespace="https://[CreatorWebsite]/[pathToSpdx]/[DocumentName]-[UUID]",
+        creation_info=creation_info,
+        packages=[package1],
+        extracted_licenses=[
+            spdx.ExtractedLicensingInfo(
+                license_id="LicenseRef-1",
+                extracted_text="License Text",
+                name="License 1",
+                see_alsos=["https://license1.text"],
+            ),
+        ],
+        comment="This document was created using SPDXCode-1.0",
+    )
 
-# Display document content:
-print(document.as_json())
+    # Display document content:
+    print(document.as_json())
 
-# Validate document
-schema = pathlib.Path(spdx.SPDX_JSON_SCHEMA_LOCATION).read_text()
-document.validate(schema)
+    # Validate document
+    schema = pathlib.Path(spdx.SPDX_JSON_SCHEMA_LOCATION).read_text()
+    document.validate(schema)
 
-# Write document to a file:
-with open("document_name.spdx.json", "w") as f:
-    f.write(document.as_json())
+    # Write document to a file:
+    with open("document_name.spdx.json", "w") as f:
+        f.write(document.as_json())
 """
 
 
@@ -631,9 +634,18 @@ def validate_document(document, schema=SPDX_SCHEMA_PATH):
     if isinstance(document, Document):
         document = document.as_dict()
 
-    if isinstance(schema, pathlib.Path):
+    if isinstance(schema, Path):
         schema = schema.read_text()
     if isinstance(schema, str):
         schema = json.loads(schema)
 
     jsonschema.validate(instance=document, schema=schema)
+
+
+def is_spdx_document(input_location):
+    """Return True if the file at `input_location` is a SPDX Document."""
+    with suppress(Exception):
+        data = json.loads(Path(input_location).read_text())
+        if data.get("SPDXID"):
+            return True
+    return False

@@ -22,8 +22,8 @@
 
 import os
 
-from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 
@@ -95,7 +95,7 @@ class RootFS(Pipeline):
 
     def tag_empty_files(self):
         """Flag empty files."""
-        rootfs.tag_empty_codebase_resources(self.project)
+        flag.flag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
@@ -108,8 +108,8 @@ class RootFS(Pipeline):
         """
         rootfs.match_not_analyzed(
             self.project,
-            reference_status="system-package",
-            not_analyzed_status="",
+            reference_status=flag.SYSTEM_PACKAGE,
+            not_analyzed_status=flag.NO_STATUS,
         )
 
     def match_not_analyzed_to_application_packages(self):
@@ -120,8 +120,8 @@ class RootFS(Pipeline):
         # TODO: do it one rootfs at a time e.g. for rfs in self.root_filesystems:
         rootfs.match_not_analyzed(
             self.project,
-            reference_status="application-package",
-            not_analyzed_status="",
+            reference_status=flag.APPLICATION_PACKAGE,
+            not_analyzed_status=flag.NO_STATUS,
         )
 
     def scan_for_files(self):
@@ -130,8 +130,8 @@ class RootFS(Pipeline):
 
     def analyze_scanned_files(self):
         """Analyze single file scan results for completeness."""
-        pipes.analyze_scanned_files(self.project)
+        flag.analyze_scanned_files(self.project)
 
     def tag_not_analyzed_codebase_resources(self):
         """Check for any leftover files for sanity; there should be none."""
-        pipes.tag_not_analyzed_codebase_resources(self.project)
+        flag.tag_not_analyzed_codebase_resources(self.project)

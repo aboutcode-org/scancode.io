@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import datetime
+import io
 from pathlib import Path
 from unittest import mock
 
@@ -31,9 +32,11 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests import resource_data1
@@ -57,21 +60,6 @@ class ScanPipePipesTest(TestCase):
             self.assertEqual(expected, pipes.strip_root(path))
             self.assertEqual(expected, pipes.strip_root(Path(path)))
 
-    def test_scanpipe_pipes_tag_not_analyzed_codebase_resources(self):
-        p1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
-        resource2 = CodebaseResource.objects.create(
-            project=p1,
-            path="filename1.ext",
-            status="scanned",
-        )
-
-        pipes.tag_not_analyzed_codebase_resources(p1)
-        resource1.refresh_from_db()
-        resource2.refresh_from_db()
-        self.assertEqual("not-analyzed", resource1.status)
-        self.assertEqual("scanned", resource2.status)
-
     @mock.patch("scanpipe.pipes.datetime", mocked_now)
     def test_scanpipe_pipes_filename_now(self):
         self.assertEqual("2010-10-10-10-10-10", pipes.filename_now())
@@ -86,7 +74,7 @@ class ScanPipePipesTest(TestCase):
         for field_name, value in resource_data.items():
             self.assertEqual(value, getattr(resource, field_name), msg=field_name)
 
-        resource_data["status"] = "scanned"
+        resource_data["status"] = flag.SCANNED
         resource = pipes.update_or_create_resource(p1, resource_data)
         self.assertEqual("scanned", resource.status)
 
@@ -108,22 +96,63 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("NOTICE", updated_package.notice_text)
         self.assertEqual(package.pk, updated_package.pk)
 
-        resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
+        resource1 = make_resource_file(project=p1, path="filename.ext")
         package_data2 = dict(package_data1)
         package_data2["name"] = "new name"
         package_data2["package_uid"] = ""
         package_data2["release_date"] = "2020-11-01T01:40:20"
-        package2 = pipes.update_or_create_package(p1, package_data2, resource1)
+        package2 = pipes.update_or_create_package(p1, package_data2, [resource1])
         self.assertNotEqual(package.pk, package2.pk)
         self.assertIn(resource1, package2.codebase_resources.all())
         self.assertEqual(datetime.date(2020, 11, 1), package2.release_date)
 
+        # Make sure we can assign a package to multiple Resources calling
+        # update_or_create_package() several times.
+        resource2 = make_resource_file(project=p1, path="filename2.ext")
+        package2 = pipes.update_or_create_package(p1, package_data2, [resource2])
+        self.assertIn(package2, resource1.discovered_packages.all())
+        self.assertIn(package2, resource2.discovered_packages.all())
+
+    def test_scanpipe_pipes_update_or_create_package_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        resource1 = make_resource_file(project=p1, path="filename.ext")
+        resource2 = make_resource_file(project=p1, path="filename2.ext")
+        resources = [resource1, resource2]
+
+        # On creation
+        package = pipes.update_or_create_package(p1, package_data1, resources)
+        self.assertIn(resource1, package.codebase_resources.all())
+        self.assertIn(resource2, package.codebase_resources.all())
+
+        # On update
+        package.delete()
+        package = pipes.update_or_create_package(p1, package_data1)
+        self.assertEqual(0, package.codebase_resources.count())
+        package = pipes.update_or_create_package(p1, package_data1, resources)
+        self.assertIn(resource1, package.codebase_resources.all())
+        self.assertIn(resource2, package.codebase_resources.all())
+
+    def test_scanpipe_pipes_update_or_create_package_package_uid(self):
+        p1 = Project.objects.create(name="Analysis")
+        package_data = dict(package_data1)
+
+        package_data["package_uid"] = None
+        pipes.update_or_create_package(p1, package_data)
+        pipes.update_or_create_package(p1, package_data)
+
+        package_data["package_uid"] = ""
+        pipes.update_or_create_package(p1, package_data)
+
+        del package_data["package_uid"]
+        pipes.update_or_create_package(p1, package_data)
+
+        # Make sure only 1 package was created, then properly found in the db regardless
+        # of the empty/none package_uid.
+        self.assertEqual(1, DiscoveredPackage.objects.count())
+
     def test_scanpipe_pipes_update_or_create_dependency(self):
         p1 = Project.objects.create(name="Analysis")
-        CodebaseResource.objects.create(
-            project=p1,
-            path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
-        )
+        make_resource_file(p1, "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO")
         pipes.update_or_create_package(p1, package_data1)
 
         dependency_data = dict(dependency_data1)
@@ -134,7 +163,38 @@ class ScanPipePipesTest(TestCase):
 
         dependency_data["scope"] = "install"
         dependency = pipes.update_or_create_dependency(p1, dependency_data)
-        self.assertEqual(dependency.scope, "install")
+        self.assertEqual("install", dependency.scope)
+
+    def test_scanpipe_pipes_get_or_create_relation(self):
+        p1 = Project.objects.create(name="Analysis")
+        from1 = make_resource_file(p1, "from/a.txt")
+        to1 = make_resource_file(p1, "to/a.txt")
+        relation_data = {
+            "from_resource": from1.path,
+            "to_resource": to1.path,
+            "map_type": "sha1",
+        }
+        relation_created = pipes.get_or_create_relation(p1, relation_data)
+        self.assertEqual("sha1", relation_created.map_type)
+        relation_from_get = pipes.get_or_create_relation(p1, relation_data)
+        self.assertEqual(relation_created, relation_from_get)
+
+    def test_scanpipe_pipes_make_relation(self):
+        p1 = Project.objects.create(name="Analysis")
+        from_resource = make_resource_file(p1, "Name.java")
+        to_resource = make_resource_file(p1, "Name.class")
+
+        relation = pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type="java_to_class",
+            extra_data={"extra": "data"},
+        )
+
+        self.assertEqual(from_resource, relation.from_resource)
+        self.assertEqual(to_resource, relation.to_resource)
+        self.assertEqual("java_to_class", relation.map_type)
+        self.assertEqual({"extra": "data"}, relation.extra_data)
 
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
@@ -177,10 +237,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
     def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")
-        resource1 = CodebaseResource.objects.create(
-            project=project1,
-            path="filename.ext",
-        )
+        resource1 = make_resource_file(project=project1, path="filename.ext")
         package1 = pipes.update_or_create_package(project1, package_data1)
         self.assertFalse(resource1.for_packages)
 
@@ -203,3 +260,35 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         # resource.
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
+
+    def test_scanpipe_get_progress_percentage(self):
+        self.assertEqual(0.0, pipes.get_progress_percentage(0, 10))
+        self.assertEqual(50.0, pipes.get_progress_percentage(5, 10))
+        self.assertEqual(90.0, pipes.get_progress_percentage(9, 10))
+        self.assertEqual(60.0, pipes.get_progress_percentage(3, 5))
+
+        with self.assertRaises(ValueError):
+            pipes.get_progress_percentage(10, 1)
+
+    def test_scanpipe_log_progress(self):
+        buffer = io.StringIO()
+        last_percent = pipes.log_progress(
+            log_func=buffer.write,
+            current_index=1,
+            total_count=10,
+            last_percent=0,
+            increment_percent=5,
+        )
+        self.assertEqual(10, last_percent)
+        self.assertEqual("Progress: 10% (1/10)", buffer.getvalue())
+
+        buffer = io.StringIO()
+        last_percent = pipes.log_progress(
+            log_func=buffer.write,
+            current_index=20,
+            total_count=100,
+            last_percent=15,
+            increment_percent=5,
+        )
+        self.assertEqual(20, last_percent)
+        self.assertEqual("Progress: 20% (20/100)", buffer.getvalue())

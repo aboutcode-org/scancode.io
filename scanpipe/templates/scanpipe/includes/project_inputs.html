@@ -7,7 +7,7 @@
       <div class="break-all pr-1">
         <div class="panel-icon pt-1">
           <div class="dropdown-trigger">
-            <i class="is-size-6 {% if input.is_file %}far fa-file-alt{% else %}fas fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.name|slugify }}"></i>
+            <i class="is-size-6 {% if input.is_file %}far fa-file{% else %}fas fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.name|slugify }}"></i>
           </div>
           <div class="dropdown-menu" id="dropdown-input-{{ file.name|slugify }}" role="menu">
             <div class="dropdown-content">

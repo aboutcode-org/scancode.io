@@ -41,7 +41,16 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.manifest_location / "toml.spdx.json"
         self.assertEqual("spdx", resolve.get_default_package_type(input_location))
 
+        input_location = self.manifest_location / "toml.json"
+        self.assertEqual("spdx", resolve.get_default_package_type(input_location))
+
         input_location = self.data_location / "cyclonedx/nested.bom.json"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
+        input_location = self.data_location / "cyclonedx/asgiref-3.3.0.json"
+        self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
+
+        input_location = self.data_location / "cyclonedx/missing_schema.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
     def test_scanpipe_pipes_resolve_set_license_expression(self):

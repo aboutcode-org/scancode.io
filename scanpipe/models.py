@@ -570,7 +570,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             )
 
     def setup_work_directory(self):
-        """Create all of the work_directory structure and skips if already existing."""
+        """Create all the work_directory structure and skips if already existing."""
         for subdirectory in self.WORK_DIRECTORIES:
             Path(self.work_directory, subdirectory).mkdir(parents=True, exist_ok=True)
 
@@ -888,12 +888,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return self.projecterrors.count()
 
     @cached_property
+    def relation_count(self):
+        """Return the number of relations related to this project."""
+        return self.codebaserelations.count()
+
+    @cached_property
     def has_single_resource(self):
         """
         Return True if we only have a single CodebaseResource associated to this
         project, False otherwise.
         """
-        return self.codebaseresources.count() == 1
+        return self.resource_count == 1
 
 
 class GroupingQuerySetMixin:
@@ -1025,7 +1030,10 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
     model = models.CharField(max_length=100, help_text=_("Name of the model class."))
     details = models.JSONField(
-        default=dict, blank=True, help_text=_("Data that caused the error.")
+        default=dict,
+        blank=True,
+        encoder=DjangoJSONEncoder,
+        help_text=_("Data that caused the error."),
     )
     message = models.TextField(blank=True, help_text=_("Error message."))
     traceback = models.TextField(blank=True, help_text=_("Exception traceback."))
@@ -1323,7 +1331,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         pattern = re.compile(r"Step \[(?P<step>.+)] completed in (?P<time>.+) seconds")
 
         profiler = {}
-        for line in self.log.split("\n"):
+        for line in self.log.splitlines():
             match = pattern.search(line)
             if match:
                 step, runtime = match.groups()
@@ -1370,6 +1378,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def empty(self):
         return self.filter(Q(size__isnull=True) | Q(size=0))
 
+    def not_empty(self):
+        return self.filter(size__gt=0)
+
     def in_package(self):
         return self.filter(discovered_packages__isnull=False)
 
@@ -1406,6 +1417,32 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def unknown_license(self):
         return self.json_field_contains("license_expressions", "unknown")
+
+    def from_codebase(self):
+        """Resources in from/ directory"""
+        return self.filter(tag="from")
+
+    def to_codebase(self):
+        """Resources in to/ directory"""
+        return self.filter(tag="to")
+
+    def has_relation(self):
+        """Resources assigned to at least one CodebaseRelation"""
+        return self.filter(Q(related_from__isnull=False) | Q(related_to__isnull=False))
+
+    def has_many_relation(self):
+        """Resources assigned to two or more CodebaseRelation"""
+        return self.annotate(
+            relation_count=Count("related_from") + Count("related_to")
+        ).filter(relation_count__gte=2)
+
+    def has_no_relation(self):
+        """Resources not part of any CodebaseRelation"""
+        return self.filter(related_from__isnull=True, related_to__isnull=True)
+
+    def has_value(self, field_name):
+        """Resources that have a value for provided `field_name`."""
+        return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -1608,7 +1645,27 @@ class CodebaseResource(
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
-        unique_together = (("project", "path"),)
+        indexes = [
+            models.Index(fields=["path"]),
+            models.Index(fields=["name"]),
+            models.Index(fields=["extension"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["type"]),
+            models.Index(fields=["size"]),
+            models.Index(fields=["programming_language"]),
+            models.Index(fields=["mime_type"]),
+            models.Index(fields=["tag"]),
+            models.Index(fields=["sha1"]),
+            models.Index(fields=["compliance_alert"]),
+            models.Index(fields=["is_binary"]),
+            models.Index(fields=["is_text"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "path"],
+                name="%(app_label)s_%(class)s_unique_path_within_project",
+            )
+        ]
         ordering = ("project", "path")
 
     def __str__(self):
@@ -1903,6 +1960,46 @@ class CodebaseResource(
         )
 
 
+class CodebaseRelation(
+    UUIDPKModel,
+    ProjectRelatedModel,
+    ExtraDataFieldMixin,
+    models.Model,
+):
+    """Relation between two CodebaseResource."""
+
+    from_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="related_to",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    to_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="related_from",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    map_type = models.CharField(
+        max_length=30,
+    )
+
+    class Meta:
+        ordering = ["from_resource__path", "to_resource__path"]
+        indexes = [
+            models.Index(fields=["map_type"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["from_resource", "to_resource", "map_type"],
+                name="%(app_label)s_%(class)s_unique_relation",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
+
+
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
     pass
 
@@ -2105,8 +2202,12 @@ class DiscoveredPackage(
     class Meta:
         ordering = ["uuid"]
         indexes = [
+            models.Index(fields=["type"]),
+            models.Index(fields=["namespace"]),
+            models.Index(fields=["name"]),
             models.Index(fields=["filename"]),
             models.Index(fields=["primary_language"]),
+            models.Index(fields=["license_expression"]),
             models.Index(fields=["size"]),
             models.Index(fields=["md5"]),
             models.Index(fields=["sha1"]),
@@ -2190,6 +2291,10 @@ class DiscoveredPackage(
         # can be injected in the ProjectError record.
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
+
+    def add_resources(self, codebase_resources):
+        """Assign the `codebase_resources` to this `discovered_package` instance."""
+        self.codebase_resources.add(*codebase_resources)
 
     @classmethod
     def clean_data(cls, data):
@@ -2418,6 +2523,12 @@ class DiscoveredDependency(
             "for_package",
             "datafile_resource",
             "datasource_id",
+        ]
+        indexes = [
+            models.Index(fields=["scope"]),
+            models.Index(fields=["is_runtime"]),
+            models.Index(fields=["is_optional"]),
+            models.Index(fields=["is_resolved"]),
         ]
         constraints = [
             models.UniqueConstraint(

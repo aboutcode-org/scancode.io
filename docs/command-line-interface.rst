@@ -98,7 +98,7 @@ Optional arguments:
 
 - ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
   of running in the current thread.
-  Applies only when --execute is provided.
+  Applies only when ``--execute`` is provided.
 
 .. warning::
     Pipelines are added and are executed in order.
