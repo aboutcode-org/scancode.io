@@ -23,14 +23,15 @@
 import csv
 import json
 import re
+from operator import attrgetter
 from pathlib import Path
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
+from django.template import loader
 
 import saneyaml
 import xlsxwriter
-from attributecode import attrib
 from cyclonedx import output as cyclonedx_output
 from cyclonedx.model import bom as cyclonedx_bom
 from cyclonedx.model import component as cyclonedx_component
@@ -633,6 +634,13 @@ def to_cyclonedx(project):
     return output_file
 
 
+def get_expression_as_attribution_links(parsed_expression):
+    template = (
+        '<a href="#license_{symbol.wrapped.key}">{symbol.wrapped.spdx_license_key}</a>'
+    )
+    return parsed_expression.simplify().render(template=template)
+
+
 def to_attribution(project):
     """
     Generate attribution for the provided ``project``.
@@ -652,14 +660,35 @@ def to_attribution(project):
             template_location = custom_template
 
     packages = get_queryset(project, "discoveredpackage")
-    abouts = [package.as_aboutcode() for package in packages]
 
-    attrib.generate_and_save(
-        abouts=abouts,
-        is_about_input=True,
-        license_dict={},
-        output_location=output_file,
-        template_loc=template_location,
-    )
+    from licensedcode.cache import get_licensing
+
+    licensing = get_licensing()
+    unique_license_symbols = set()
+
+    for package in packages:
+        if package.license_expression:
+            parsed = licensing.parse(package.license_expression)
+            unique_license_symbols.update(parsed.symbols)
+            package.expression_links = get_expression_as_attribution_links(parsed)
+
+    # TODO: LicenseWithExceptionSymbol(
+    #  license_symbol=LicenseSymbolLike('gpl-2.0', is_exception=False),
+    #  exception_symbol=LicenseSymbolLike('classpath-exception-2.0', is_exception=True))
+    licenses = [
+        symbol.wrapped
+        for symbol in unique_license_symbols
+        if symbol.__class__.__name__ != "LicenseWithExceptionSymbol"
+    ]
+    licenses.sort(key=attrgetter("spdx_license_key"))
+
+    context = {
+        "project": project,
+        "packages": packages,
+        "licenses": licenses,
+    }
+
+    content = loader.render_to_string(template_location, context)
+    output_file.write_text(content)
 
     return output_file

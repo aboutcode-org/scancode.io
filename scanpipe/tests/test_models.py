@@ -1540,34 +1540,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("vcs", external_references[0].type)
         self.assertEqual("https://packages.vcs.url", external_references[0].url)
 
-    def test_scanpipe_discovered_package_model_as_aboutcode(self):
-        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
-        about_object = package.as_aboutcode()
-
-        self.assertEqual(package_data1["purl"], about_object.package_url.value)
-        self.assertEqual(package_data1["name"], about_object.name.value)
-        self.assertEqual(package_data1["version"], about_object.version.value)
-
-        expected = {
-            "about_file_path": None,
-            "about_resource": {"package.zip": None},
-            "name": "adduser",
-            "version": "3.118",
-            "download_url": "https://download.url/package.zip",
-            "description": "add and remove users and groups",
-            "homepage_url": "https://packages.debian.org",
-            "package_url": "pkg:deb/debian/adduser@3.118?arch=all",
-            "license_expression": "gpl-2.0 AND gpl-2.0-plus AND unknown",
-            "copyright": (
-                "Copyright (c) 2000 Roland Bauerschmidt <rb@debian.org>\n"
-                "Copyright (c) 1997, 1998, 1999 Guy Maor <maor@debian.org>\n"
-                "Copyright (c) 1995 Ted Hajek <tedhajek@boombox.micro.umn.edu>\n"
-                "portions Copyright (c) 1994 Debian Association, Inc."
-            ),
-            "checksum_md5": "76cf50f29e47676962645632737365a7",
-        }
-        self.assertEqual(expected, about_object.as_dict())
-
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
