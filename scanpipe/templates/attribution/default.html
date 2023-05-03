@@ -15,7 +15,7 @@
       <h1>Attribution for {{ project.name }}</h1>
     {% endblock %}
 
-    {% block package-list-toc %}
+    {% block package-toc %}
       <h2>Licenses, acknowledgments and required copyright notices for open source packages:</h2>
       <ul>
         {% for package in packages %}
@@ -24,7 +24,7 @@
       </ul>
     {% endblock %}
 
-    {% block license-list-toc %}
+    {% block license-toc %}
       <h2>The following licenses are used in {{ project.name }}:</h2>
       <ul>
         {% for license in licenses %}
@@ -60,7 +60,7 @@
           {% if package.license_expression %}
             <p>This package is licensed under {{ package.expression_links|safe }}</p>
           {% endif %}
-          {# 8. Notice text #}
+          {# 6. Notice text #}
           {% if package.notice_text %}
             <pre>{{ package.notice_text }}</pre>
           {% endif %}
