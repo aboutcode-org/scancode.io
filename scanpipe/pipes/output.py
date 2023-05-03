@@ -39,6 +39,7 @@ from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licenses_by_spdx_key
+from licensedcode.cache import get_licensing
 from packagedcode.utils import combine_expressions
 from scancode_config import __version__ as scancode_toolkit_version
 
@@ -661,25 +662,18 @@ def to_attribution(project):
 
     packages = get_queryset(project, "discoveredpackage")
 
-    from licensedcode.cache import get_licensing
-
     licensing = get_licensing()
-    unique_license_symbols = set()
+    license_symbols = []
 
     for package in packages:
         if package.license_expression:
             parsed = licensing.parse(package.license_expression)
-            unique_license_symbols.update(parsed.symbols)
             package.expression_links = get_expression_as_attribution_links(parsed)
+            # .decompose() is required for LicenseWithExceptionSymbol support
+            for symbol in parsed.symbols:
+                license_symbols.extend(list(symbol.decompose()))
 
-    # TODO: LicenseWithExceptionSymbol(
-    #  license_symbol=LicenseSymbolLike('gpl-2.0', is_exception=False),
-    #  exception_symbol=LicenseSymbolLike('classpath-exception-2.0', is_exception=True))
-    licenses = [
-        symbol.wrapped
-        for symbol in unique_license_symbols
-        if symbol.__class__.__name__ != "LicenseWithExceptionSymbol"
-    ]
+    licenses = [symbol.wrapped for symbol in set(license_symbols)]
     licenses.sort(key=attrgetter("spdx_license_key"))
 
     context = {
