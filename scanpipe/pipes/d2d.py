@@ -144,25 +144,39 @@ def checksum_map(project, checksum_field, logger=None):
         _resource_checksum_map(to_resource, from_resources, checksum_field)
 
 
-def _resource_java_to_class_map(to_resource, from_resources):
-    qualified_class = get_extracted_subpath(to_resource.path)
+def _resource_java_to_class_map(to_resource, from_resources, from_resources_index):
+    qualified_class_path = get_extracted_subpath(to_resource.path)
 
     if "$" in to_resource.name:  # inner class
-        path_parts = Path(qualified_class.lstrip("/")).parts
+        path_parts = Path(qualified_class_path.lstrip("/")).parts
         parts_without_name = list(path_parts[:-1])
         from_name = to_resource.name.split("$")[0] + ".java"
-        qualified_java = "/".join(parts_without_name + [from_name])
+        qualified_java_path = "/".join(parts_without_name + [from_name])
     else:
-        qualified_java = qualified_class.replace(".class", ".java")
+        qualified_java_path = qualified_class_path.replace(".class", ".java")
 
-    matches = from_resources.filter(path__endswith=qualified_java)
-    for match in matches:
+    matches_iterator = pathmap.find_paths(qualified_java_path, from_resources_index)
+
+    matches = list(matches_iterator)
+    if not matches:
+        return
+
+    matched_path_length, resource_ids = matches[0]
+
+    # We only want 100% of the segments matched
+    # TODO: Can we force this during find_paths?
+    if len(qualified_java_path.split("/")) != matched_path_length:
+        return
+
+    for resource_id in resource_ids:
+        from_resource = from_resources.get(id=resource_id)
+        from_source_root = from_resource.path.replace(qualified_java_path, "")
         pipes.make_relation(
-            from_resource=match,
+            from_resource=from_resource,
             to_resource=to_resource,
             map_type="java_to_class",
             extra_data={
-                "from_source_root": match.path.replace(qualified_java, ""),
+                "from_source_root": from_source_root,
             },
         )
 
@@ -178,6 +192,8 @@ def java_to_class_map(project, logger=None):
     if logger:
         logger(f"Mapping {resource_count:,d} .class resources to .java")
 
+    from_resources_index = pathmap.build_index(from_resources.values_list("id", "path"))
+
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
@@ -190,7 +206,7 @@ def java_to_class_map(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_java_to_class_map(to_resource, from_resources)
+        _resource_java_to_class_map(to_resource, from_resources, from_resources_index)
 
     # Flag not mapped .class in to/ codebase
     to_resources_dot_class = to_resources.filter(name__endswith=".class")
@@ -270,6 +286,7 @@ def _resource_path_map(
 ):
     matches_iterator = pathmap.find_paths(to_resource.path, from_resources_index)
 
+    # TODO: We need a better API for this
     matches = list(matches_iterator)
     if not matches:
         return
