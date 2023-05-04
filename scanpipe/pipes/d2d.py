@@ -29,6 +29,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import flag
+from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 
 FROM = "from/"
@@ -264,46 +265,46 @@ def get_diff_ratio(to_resource, from_resource):
     return matcher.quick_ratio()
 
 
-def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
-    path_parts = Path(to_resource.path.lstrip("/")).parts
-    path_parts_len = len(path_parts)
+def _resource_path_map(
+    to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
+):
+    matches_iterator = pathmap.find_paths(to_resource.path, from_resources_index)
 
-    for path_parts_index in range(1, path_parts_len):
-        current_parts = path_parts[path_parts_index:]
-        current_path = "/".join(current_parts)
+    matches = list(matches_iterator)
+    if not matches:
+        return
 
-        # The slash "/" prefix matters during the match as we do not want to
-        # match on filenames sharing the same ending.
-        # For example: Filter.java and FastFilter.java
-        matches = from_resources.filter(path__endswith=f"/{current_path}")
-        if not matches:
+    matched_path_length, resource_ids = matches[0]
+
+    # Only create relations when the number of matches if inferior or equal to
+    # the current number of path segment matched.
+    if len(resource_ids) > matched_path_length:
+        to_resource.status = flag.TOO_MANY_MAPS
+        to_resource.save()
+        return
+
+    for resource_id in resource_ids:
+        from_resource = from_resources.get(id=resource_id)
+        diff_ratio = get_diff_ratio(
+            to_resource=to_resource, from_resource=from_resource
+        )
+        if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
             continue
 
-        # Only create relations when the number of matches if inferior or equal to
-        # the current number of path segment matched.
-        if len(matches) > len(current_parts):
-            to_resource.status = flag.TOO_MANY_MAPS
-            to_resource.save()
-            break
+        # Do not count the "to/" segment as it is not "matchable"
+        to_path_length = len(to_resource.path.split("/")) - 1
+        extra_data = {
+            "path_score": f"{matched_path_length}/{to_path_length}",
+        }
+        if diff_ratio:
+            extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
 
-        for match in matches:
-            diff_ratio = get_diff_ratio(to_resource=to_resource, from_resource=match)
-            if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
-                continue
-
-            extra_data = {
-                "path_score": f"{len(current_parts)}/{path_parts_len - 1}",
-            }
-            if diff_ratio:
-                extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
-
-            pipes.make_relation(
-                from_resource=match,
-                to_resource=to_resource,
-                map_type="path",
-                extra_data=extra_data,
-            )
-        break
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type="path",
+            extra_data=extra_data,
+        )
 
 
 def path_map(project, logger=None):
@@ -319,6 +320,8 @@ def path_map(project, logger=None):
             f"against from/ codebase"
         )
 
+    from_resources_index = pathmap.build_index(from_resources.values_list("id", "path"))
+
     resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
@@ -331,7 +334,7 @@ def path_map(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_path_map(to_resource, from_resources)
+        _resource_path_map(to_resource, from_resources, from_resources_index)
 
 
 def _resource_purldb_match(project, resource):

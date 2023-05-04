@@ -60,7 +60,6 @@ And we will have this index:
     (RouterStub.java, JGroups, src) -> (3, [3])
     (RouterStub.java, JGroups) -> (3, [3])
     (screenshot.png, src) -> (2, [42])
-
 """
 
 
@@ -91,8 +90,7 @@ def find_paths(path, index):
     """
     segments = get_reversed_path_segments(path)
     reversed_path = convert_segments_to_path(segments)
-    # note: we use iter_long() to get the longess match only.
-    # use iter() to get all matches
+    # We use iter_long() to get the longest match only. Use iter() to get all matches.
     for _, matched_len_and_paths in index.iter_long(reversed_path):
         yield matched_len_and_paths
 
@@ -124,7 +122,6 @@ def build_index(resource_id_and_paths):
                 value = subpath_segments_count, [resource_id]
                 automaton.add_word(subpath, value)
 
-    # "finalize" the automaton
     automaton.make_automaton()
     return automaton
 
