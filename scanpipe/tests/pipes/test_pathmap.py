@@ -23,6 +23,7 @@
 from django.test import TestCase
 
 from scanpipe.pipes import pathmap
+from scanpipe.pipes.pathmap import Match
 
 
 class ScanPipePathmapPipesTest(TestCase):
@@ -50,10 +51,16 @@ class ScanPipePathmapPipesTest(TestCase):
 
         lookup_path = "src/RouterStub.java"
         matches = pathmap.find_paths(lookup_path, index)
-        expected_length = 2
-        expected_path_ids = [3]
-        self.assertEqual([(expected_length, expected_path_ids)], list(matches))
+        expected = Match(matched_path_length=2, resource_ids=[3])
+        self.assertEqual(expected, matches)
+
+        lookup_path = "other/src/RouterStub.java"
+        matches = pathmap.find_paths(lookup_path, index, all_segments=False)
+        expected = Match(matched_path_length=2, resource_ids=[3])
+        self.assertEqual(expected, matches)
+        matches = pathmap.find_paths(lookup_path, index, all_segments=True)
+        self.assertIsNone(matches)
 
         lookup_path = "samples/JGroups/src/File.ext"
         matches = pathmap.find_paths(lookup_path, index)
-        self.assertEqual([], list(matches))
+        self.assertIsNone(matches)

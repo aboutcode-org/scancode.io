@@ -145,38 +145,28 @@ def checksum_map(project, checksum_field, logger=None):
 
 
 def _resource_java_to_class_map(to_resource, from_resources, from_resources_index):
-    qualified_class_path = get_extracted_subpath(to_resource.path)
+    qualified_class = get_extracted_subpath(to_resource.path)
 
     if "$" in to_resource.name:  # inner class
-        path_parts = Path(qualified_class_path.lstrip("/")).parts
+        path_parts = Path(qualified_class.lstrip("/")).parts
         parts_without_name = list(path_parts[:-1])
         from_name = to_resource.name.split("$")[0] + ".java"
-        qualified_java_path = "/".join(parts_without_name + [from_name])
+        qualified_java = "/".join(parts_without_name + [from_name])
     else:
-        qualified_java_path = qualified_class_path.replace(".class", ".java")
+        qualified_java = qualified_class.replace(".class", ".java")
 
-    matches_iterator = pathmap.find_paths(qualified_java_path, from_resources_index)
-
-    matches = list(matches_iterator)
-    if not matches:
+    match = pathmap.find_paths(qualified_java, from_resources_index, all_segments=True)
+    if not match:
         return
 
-    matched_path_length, resource_ids = matches[0]
-
-    # We only want 100% of the segments matched
-    # TODO: Can we force this during find_paths?
-    if len(qualified_java_path.split("/")) != matched_path_length:
-        return
-
-    for resource_id in resource_ids:
+    for resource_id in match.resource_ids:
         from_resource = from_resources.get(id=resource_id)
-        from_source_root = from_resource.path.replace(qualified_java_path, "")
         pipes.make_relation(
             from_resource=from_resource,
             to_resource=to_resource,
             map_type="java_to_class",
             extra_data={
-                "from_source_root": from_source_root,
+                "from_source_root": from_resource.path.replace(qualified_java, ""),
             },
         )
 
@@ -284,23 +274,18 @@ def get_diff_ratio(to_resource, from_resource):
 def _resource_path_map(
     to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
 ):
-    matches_iterator = pathmap.find_paths(to_resource.path, from_resources_index)
-
-    # TODO: We need a better API for this
-    matches = list(matches_iterator)
-    if not matches:
+    match = pathmap.find_paths(to_resource.path, from_resources_index)
+    if not match:
         return
-
-    matched_path_length, resource_ids = matches[0]
 
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
-    if len(resource_ids) > matched_path_length:
+    if len(match.resource_ids) > match.matched_path_length:
         to_resource.status = flag.TOO_MANY_MAPS
         to_resource.save()
         return
 
-    for resource_id in resource_ids:
+    for resource_id in match.resource_ids:
         from_resource = from_resources.get(id=resource_id)
         diff_ratio = get_diff_ratio(
             to_resource=to_resource, from_resource=from_resource
@@ -311,7 +296,7 @@ def _resource_path_map(
         # Do not count the "to/" segment as it is not "matchable"
         to_path_length = len(to_resource.path.split("/")) - 1
         extra_data = {
-            "path_score": f"{matched_path_length}/{to_path_length}",
+            "path_score": f"{match.matched_path_length}/{to_path_length}",
         }
         if diff_ratio:
             extra_data["diff_ratio"] = f"{diff_ratio:.1%}"

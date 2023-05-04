@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from typing import NamedTuple
+
 import ahocorasick
 
 """
@@ -63,36 +65,36 @@ And we will have this index:
 """
 
 
-def find_paths(path, index):
+class Match(NamedTuple):
+    matched_path_length: int
+    resource_ids: list
+
+
+def find_paths(path, index, all_segments=False):
     """
-    Yield tuples of the longest paths matched in the ``automaton`` for a POSIX
+    Return a tuple of the longest paths matched in the ``automaton`` for a POSIX
     ``path`` string.
 
-    Each tuple is (number of matched path segments, [list of resource ids])
-
-    For example::
-    >>> resource_id_and_paths = [
-    ...     (1,  "RouterStub.java"),
-    ...     (23, "samples/screenshot.png"),
-    ...     (3,  "samples/JGroups/src/RouterStub.java"),
-    ...     (42, "src/screenshot.png"),
-    ... ]
-
-    >>> index = build_index(resource_id_and_paths)
-
-    >>> expected = [(3, [3])]
-    >>> results = list(find_paths("JGroups/src/RouterStub.java", index))
-    >>> assert results == expected, results
-
-    >>> expected = [(1, [23, 42])]
-    >>> results = list(find_paths("screenshot.png", index))
-    >>> assert results == expected, results
+    The tuple is (number of matched path segments, [list of resource ids])
     """
     segments = get_reversed_path_segments(path)
     reversed_path = convert_segments_to_path(segments)
-    # We use iter_long() to get the longest match only. Use iter() to get all matches.
-    for _, matched_len_and_paths in index.iter_long(reversed_path):
-        yield matched_len_and_paths
+
+    # We use iter_long() to get the longest match only.
+    matches = [
+        matched_len_and_paths
+        for _, matched_len_and_paths in index.iter_long(reversed_path)
+    ]
+    if not matches:
+        return
+
+    assert len(matches) == 1
+    matched_path_length, resource_ids = matches[0]
+
+    if all_segments and len(segments) != matched_path_length:
+        return
+
+    return Match(matched_path_length, resource_ids)
 
 
 def build_index(resource_id_and_paths):
