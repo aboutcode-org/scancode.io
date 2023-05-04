@@ -45,6 +45,14 @@ class ScanPipePathmapPipesTest(TestCase):
                 4,
                 "src/screenshot.png",
             ),
+            (
+                5,
+                "samples/file.class",
+            ),
+            (
+                6,
+                "samples/json",
+            ),
         )
 
         index = pathmap.build_index(resource_id_and_paths)
@@ -62,5 +70,9 @@ class ScanPipePathmapPipesTest(TestCase):
         self.assertIsNone(matches)
 
         lookup_path = "samples/JGroups/src/File.ext"
+        matches = pathmap.find_paths(lookup_path, index)
+        self.assertIsNone(matches)
+
+        lookup_path = "json/subpath/file.class"
         matches = pathmap.find_paths(lookup_path, index)
         self.assertIsNone(matches)
