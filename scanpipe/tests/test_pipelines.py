@@ -763,8 +763,8 @@ class PipelinesIntegrationTest(TestCase):
                 "type": "pypi",
                 "name": "toml",
                 "version": "0.10.2",
-                "declared_license": "OFL-1.1\nApache-2.0",
-                "license_expression": "ofl-1.1 AND unknown",
+                "extracted_license_statement": "OFL-1.1\nApache-2.0",
+                "declared_license_expression": "ofl-1.1 AND unknown",
                 "homepage_url": "https://cyclonedx.org/website",
                 "bug_tracking_url": "https://cyclonedx.org/issue-tracker",
                 "vcs_url": "https://cyclonedx.org/vcs",
@@ -774,8 +774,8 @@ class PipelinesIntegrationTest(TestCase):
                 "type": "pypi",
                 "name": "billiard",
                 "version": "3.6.3.0",
-                "declared_license": "BSD-3-Clause",
-                "license_expression": "bsd-new",
+                "extracted_license_statement": "BSD-3-Clause",
+                "declared_license_expression": "bsd-new",
                 "homepage_url": "",
                 "bug_tracking_url": "",
                 "vcs_url": "",
@@ -786,12 +786,12 @@ class PipelinesIntegrationTest(TestCase):
                 "type": "pypi",
                 "name": "fictional",
                 "version": "9.10.2",
-                "declared_license": (
+                "extracted_license_statement": (
                     "LGPL-3.0-or-later"
                     " AND "
                     "LicenseRef-scancode-openssl-exception-lgpl3.0plus"
                 ),
-                "license_expression": (
+                "declared_license_expression": (
                     "lgpl-3.0-plus AND openssl-exception-lgpl-3.0-plus"
                 ),
                 "homepage_url": "https://home.page",
@@ -808,8 +808,14 @@ class PipelinesIntegrationTest(TestCase):
             self.assertEqual(expected["name"], package.name)
             self.assertEqual(expected["version"], package.version)
             self.assertEqual(expected["homepage_url"], package.homepage_url)
-            self.assertEqual(expected["declared_license"], package.declared_license)
-            self.assertEqual(expected["license_expression"], package.license_expression)
+            self.assertEqual(
+                expected["extracted_license_statement"],
+                package.extracted_license_statement,
+            )
+            self.assertEqual(
+                expected["declared_license_expression"],
+                package.declared_license_expression,
+            )
             self.assertEqual(expected["filename"], package.filename)
 
     def test_scanpipe_deploy_to_develop_pipeline_integration_test(self):

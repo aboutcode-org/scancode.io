@@ -148,11 +148,14 @@ def _tag_python_software(project):
     q_objects = [~Q(rootfs_path__icontains="site-packages")]
 
     for python_path, python_version in python_versions_by_path.items():
+        # TODO: test_scanpipe_pipes_windows_tag_known_software
+        # TypeError: Package.__init__() got an unexpected keyword argument
+        # 'license_expression'
         python_package = Package(
             type="windows-program",
             name="Python",
             version=python_version,
-            license_expression="python",
+            # license_expression="python",
             copyright="Copyright (c) Python Software Foundation",
             homepage_url="https://www.python.org/",
         )
@@ -197,7 +200,7 @@ def _tag_openjdk_software(project):
             type="windows-program",
             name="OpenJDK",
             version=openjdk_version,
-            license_expression="gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0",
+            # license_expression="gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0",
             copyright="Copyright (c) Oracle and/or its affiliates",
             homepage_url="http://openjdk.java.net/",
         )

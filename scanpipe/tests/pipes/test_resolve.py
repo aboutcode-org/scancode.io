@@ -54,21 +54,27 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
     def test_scanpipe_pipes_resolve_set_license_expression(self):
-        declared_license = {"license": "MIT"}
-        data = resolve.set_license_expression({"declared_license": declared_license})
-        self.assertEqual("mit", data.get("license_expression"))
+        extracted_license_statement = {"license": "MIT"}
+        data = resolve.set_license_expression(
+            {"extracted_license_statement": extracted_license_statement}
+        )
+        self.assertEqual("mit", data.get("declared_license_expression"))
 
-        declared_license = {
+        extracted_license_statement = {
             "classifiers": [
                 "License :: OSI Approved :: Python Software Foundation License"
             ]
         }
-        data = resolve.set_license_expression({"declared_license": declared_license})
-        self.assertEqual("python", data.get("license_expression"))
+        data = resolve.set_license_expression(
+            {"extracted_license_statement": extracted_license_statement}
+        )
+        self.assertEqual("python", data.get("declared_license_expression"))
 
-        declared_license = "GPL 2.0"
-        data = resolve.set_license_expression({"declared_license": declared_license})
-        self.assertEqual("gpl-2.0", data.get("license_expression"))
+        extracted_license_statement = "GPL 2.0"
+        data = resolve.set_license_expression(
+            {"extracted_license_statement": extracted_license_statement}
+        )
+        self.assertEqual("gpl-2.0", data.get("declared_license_expression"))
 
     def test_scanpipe_pipes_resolve_resolve_packages(self):
         # ScanCode.io resolvers
@@ -77,7 +83,7 @@ class ScanPipeResolvePipesTest(TestCase):
         expected = {
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
-            "license_expression": "bsd-new",
+            "declared_license_expression": "bsd-new",
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",
@@ -99,7 +105,7 @@ class ScanPipeResolvePipesTest(TestCase):
         expected = {
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
-            "license_expression": "bsd-new",
+            "declared_license_expression": "bsd-new",
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",

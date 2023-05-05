@@ -1823,9 +1823,29 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertIn("in save", error.traceback)
 
     def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
-        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
-        discovered_packages_fields = [
-            field.name for field in DiscoveredPackage._meta.get_fields()
+        scanpipe_only_fields = [
+            "id",
+            "uuid",
+            "project",
+            "missing_resources",
+            "modified_resources",
+            "codebase_resources",
+            # TODO: Review those:
+            "package_uid",
+            "filename",
+            "manifest_path",
+            "contains_source_code",
         ]
-        for toolkit_field_name in toolkit_package_fields:
-            self.assertIn(toolkit_field_name, discovered_packages_fields)
+
+        discovered_package_fields = [
+            field.name
+            for field in DiscoveredPackage._meta.get_fields()
+            if field.name not in scanpipe_only_fields
+        ]
+        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
+
+        for toolkit_field in toolkit_package_fields:
+            self.assertIn(toolkit_field, discovered_package_fields)
+
+        for scanpipe_field in discovered_package_fields:
+            self.assertIn(scanpipe_field, toolkit_package_fields)

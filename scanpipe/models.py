@@ -2101,18 +2101,86 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("Copyright statements for this package. Typically one per line."),
     )
-    license_expression = models.TextField(
+    # The data structure of license attributes in package_data and the codebase
+    # level packages has been updated accordingly:
+    #
+    # There is a new license_detections attribute for the primary, top-level
+    # declared licenses of a package and an other_license_detections attribute
+    # for the other secondary detections.
+    #
+    # The license_expression is replaced by the declared_license_expression
+    # and other_license_expression attributes with their SPDX counterparts
+    # declared_license_expression_spdx and other_license_expression_spdx.
+    # These expressions are parallel to detections.
+    #
+    # The declared_license attribute is renamed extracted_license_statement
+    # and is now a YAML-encoded string.
+    #
+    # See license updates documentation
+    # <https://scancode-toolkit.readthedocs.io/en/latest/explanations/
+    # license-detection-reference.html#change-in-license-data-format-package>_
+    # for examples and details.
+    holder = models.TextField(
+        blank=True,
+        help_text=_("Holders for this package. Typically one per line."),
+    )
+    # TODO: Replaces license_expression
+    declared_license_expression = models.TextField(
         blank=True,
         help_text=_(
-            "The normalized license expression for this package as derived "
-            "from its declared license."
+            "The license expression for this package typically derived "
+            "from its extracted_license_statement or from some other type-specific "
+            "routine or convention."
         ),
     )
-    declared_license = models.TextField(
+    declared_license_expression_spdx = models.TextField(
         blank=True,
         help_text=_(
-            "The declared license mention or tag or text as found in a "
-            "package manifest."
+            "The SPDX license expression for this package converted "
+            "from its declared_license_expression."
+        ),
+    )
+    license_detections = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_(
+            "A list of LicenseDetection mappings typically derived "
+            "from its extracted_license_statement or from some other type-specific "
+            "routine or convention."
+        ),
+    )
+    other_license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license expression for this package which is different from the "
+            "declared_license_expression, (i.e. not the primary license) "
+            "routine or convention."
+        ),
+    )
+    other_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(
+            "The other SPDX license expression for this package converted "
+            "from its other_license_expression."
+        ),
+    )
+    other_license_detections = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_(
+            "A list of LicenseDetection mappings which is different from the "
+            "declared_license_expression, (i.e. not the primary license) "
+            "These are detections for the detection for the license expressions "
+            "in other_license_expression. "
+        ),
+    )
+    # TODO: Replaces declared_license
+    extracted_license_statement = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license statement mention, tag or text as found in a "
+            "package manifest and extracted. This can be a string, a list or dict of "
+            "strings possibly nested, as found originally in the manifest."
         ),
     )
     notice_text = models.TextField(
@@ -2200,7 +2268,8 @@ class DiscoveredPackage(
             models.Index(fields=["name"]),
             models.Index(fields=["filename"]),
             models.Index(fields=["primary_language"]),
-            models.Index(fields=["license_expression"]),
+            models.Index(fields=["declared_license_expression"]),
+            models.Index(fields=["other_license_expression"]),
             models.Index(fields=["size"]),
             models.Index(fields=["md5"]),
             models.Index(fields=["sha1"]),

@@ -77,8 +77,9 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 LICENSE_CLARITY_FIELDS = [
     (
+        # TODO:
         "Declared license",
-        "declared_license",
+        "extracted_license_statement",
         "Indicates that the software package licensing is documented at top-level or "
         "well-known locations in the software project, typically in a package "
         "manifest, NOTICE, LICENSE, COPYING or README file. "
@@ -624,7 +625,7 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         packages = project.discoveredpackages.all().only(
             "type",
-            "license_expression",
+            "declared_license_expression",
         )
 
         dependencies = project.discovereddependencies.all().only(
@@ -644,7 +645,9 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         if scanpipe_app.policies_enabled:
             file_compliance_alert = files.values_list("compliance_alert", flat=True)
 
-        package_licenses = packages.values_list("license_expression", flat=True)
+        package_licenses = packages.values_list(
+            "declared_license_expression", flat=True
+        )
         package_types = packages.values_list("type", flat=True)
 
         dependency_package_type = dependencies.values_list("type", flat=True)
@@ -888,7 +891,7 @@ class DiscoveredPackageListView(
     prefetch_related = ["codebase_resources"]
     table_columns = [
         "package_url",
-        "license_expression",
+        "declared_license_expression",
         "copyright",
         "primary_language",
         "resources",
@@ -1178,7 +1181,7 @@ class DiscoveredPackageDetailsView(
         "essentials": {
             "fields": [
                 "package_url",
-                "license_expression",
+                "declared_license_expression",
                 "primary_language",
                 "homepage_url",
                 "download_url",
@@ -1196,8 +1199,8 @@ class DiscoveredPackageDetailsView(
         },
         "terms": {
             "fields": [
-                "license_expression",
-                "declared_license",
+                "declared_license_expression",
+                "extracted_license_statement",
                 "copyright",
                 "notice_text",
             ],

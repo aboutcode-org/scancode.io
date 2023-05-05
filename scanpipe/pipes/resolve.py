@@ -29,7 +29,9 @@ from django.core.validators import EMPTY_VALUES
 from attributecode.model import About
 from licensedcode.match_spdx_lid import get_spdx_expression
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
-from packagedcode.licensing import get_normalized_expression
+
+# https://github.com/nexB/scancode-toolkit/commit/539ebedd700d7c6bb9596ca1274f0fd86624926d
+# from packagedcode.licensing import get_normalized_expression
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 from scancode.api import get_package_data
@@ -113,8 +115,11 @@ def spdx_package_to_discovered_package_data(spdx_package):
     package_data = {
         "name": spdx_package.name,
         "download_url": spdx_package.download_location,
-        "declared_license": spdx_package.license_declared,
-        "license_expression": get_spdx_expression(spdx_package.license_concluded or ""),
+        # TODO: Likely not relevant with model changes
+        "extracted_license_statement": spdx_package.license_declared,
+        "declared_license_expression": get_spdx_expression(
+            spdx_package.license_concluded or ""
+        ),
         "copyright": spdx_package.copyright_text,
         "version": spdx_package.version,
         "homepage_url": spdx_package.homepage,
@@ -167,7 +172,7 @@ def cyclonedx_component_to_package_data(component_data):
 
     package_data = {
         "name": component.name,
-        "declared_license": declared_license,
+        "extracted_license_statement": declared_license,
         "copyright": component.copyright,
         "version": component.version,
         "description": component.description,
@@ -236,20 +241,24 @@ def set_license_expression(package_data):
     Set the license expression from a detected license dict/str in provided
     `package_data`.
     """
-    declared_license = package_data.get("declared_license")
-    license_expression = package_data.get("license_expression")
+    extracted_license_statement = package_data.get("extracted_license_statement")
+    declared_license_expression = package_data.get("declared_license_expression")
 
-    if declared_license and not license_expression:
+    if extracted_license_statement and not declared_license_expression:
         license_str = ""
 
-        if isinstance(declared_license, dict):
-            license_str = declared_license.get("license")
+        if isinstance(extracted_license_statement, dict):
+            license_str = extracted_license_statement.get("license")
 
         if not license_str:
-            license_str = repr(declared_license)
+            license_str = repr(extracted_license_statement)
 
-        license_expression = get_normalized_expression(query_string=license_str)
+        from packagedcode import licensing
+
+        license_expression = licensing.get_normalized_expression(
+            query_string=license_str
+        )
         if license_expression:
-            package_data["license_expression"] = license_expression
+            package_data["declared_license_expression"] = declared_license_expression
 
     return package_data

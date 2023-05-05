@@ -414,7 +414,8 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
-            "license_expression",
+            "declared_license_expression",
+            "other_license_expression",
             "copyright",
             "primary_language",
         ],
@@ -444,8 +445,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "code_view_url",
             "vcs_url",
             "type",
-            "license_expression",
-            "declared_license",
+            "declared_license_expression",
+            "other_license_expression",
+            "extracted_license_statement",
             "copyright",
             "manifest_path",
             "contains_source_code",
