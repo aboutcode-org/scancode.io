@@ -130,7 +130,6 @@ package_data1 = {
     "notice_text": None,
     "root_path": None,
     "dependencies": [],
-    "contains_source_code": None,
     "source_packages": [],
     "purl": "pkg:deb/debian/adduser@3.118?arch=all",
     "repository_homepage_url": None,

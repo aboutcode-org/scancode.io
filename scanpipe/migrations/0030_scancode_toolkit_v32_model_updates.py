@@ -9,6 +9,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RemoveField(
+            model_name="discoveredpackage",
+            name="contains_source_code",
+        ),
+        migrations.RemoveField(
+            model_name="discoveredpackage",
+            name="manifest_path",
+        ),
         migrations.RemoveIndex(
             model_name="discoveredpackage",
             name="scanpipe_di_license_e8ce32_idx",

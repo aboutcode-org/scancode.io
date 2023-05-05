@@ -2166,15 +2166,6 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("A notice text for this package."),
     )
-    manifest_path = models.CharField(
-        max_length=1024,
-        blank=True,
-        help_text=_(
-            "A relative path to the manifest file if any, such as a "
-            "Maven .pom or a npm package.json."
-        ),
-    )
-    contains_source_code = models.BooleanField(null=True, blank=True)
     datasource_id = models.CharField(
         max_length=64,
         blank=True,

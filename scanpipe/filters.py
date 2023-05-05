@@ -449,8 +449,6 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "other_license_expression",
             "extracted_license_statement",
             "copyright",
-            "manifest_path",
-            "contains_source_code",
         ]
 
 

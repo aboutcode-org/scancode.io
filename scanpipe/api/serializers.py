@@ -309,8 +309,6 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "source_packages",
             "extra_data",
             "package_uid",
-            "manifest_path",
-            "contains_source_code",
             "datasource_id",
             "file_references",
             "missing_resources",
