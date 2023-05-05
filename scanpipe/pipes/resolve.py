@@ -29,9 +29,6 @@ from django.core.validators import EMPTY_VALUES
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
-from packagedcode.licensing import (
-    get_license_detections_for_extracted_license_statement,
-)
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 from scancode.api import get_package_data
@@ -108,14 +105,7 @@ def convert_spdx_expression(license_expression_spdx):
     Return an ScanCode license expression from a SPDX `license_expression_spdx`
     string.
     """
-    license_detections = get_license_detections_for_extracted_license_statement(
-        license_expression_spdx,
-        try_as_expression=True,
-    )
-    if license_detections:
-        return license_detections[0].license_expression
-
-    return ""
+    return get_license_detections_and_expression(license_expression_spdx)[1]
 
 
 def spdx_package_to_discovered_package_data(spdx_package):

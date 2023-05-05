@@ -78,7 +78,7 @@ class ScanPipeResolvePipesTest(TestCase):
 
     def test_scanpipe_pipes_resolve_convert_spdx_expression(self):
         spdx = "MIT OR GPL-2.0-only WITH LicenseRef-scancode-generic-exception"
-        scancode_expression = "mit OR gpl-2.0 with generic-exception"
+        scancode_expression = "mit OR gpl-2.0 WITH generic-exception"
         self.assertEqual(scancode_expression, resolve.convert_spdx_expression(spdx))
 
     def test_scanpipe_pipes_resolve_resolve_packages(self):

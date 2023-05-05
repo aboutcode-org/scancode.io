@@ -926,8 +926,8 @@ class GroupingQuerySetMixin:
         `field_name` starting at the `limit`.
         """
         json_fields_mapping = {
-            "license_key": ("licenses", "key"),
-            "license_category": ("licenses", "category"),
+            "license_key": ("license_detections", "key"),
+            "license_category": ("license_detections", "category"),
             "copyrights": ("copyrights", "copyright"),
             "holders": ("holders", "holder"),
         }
@@ -1438,9 +1438,33 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
 
+# TODO: Add in UI, API, ...
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
 
+    detected_license_expression = models.TextField(
+        blank=True,
+        help_text=_(""),
+    )
+    detected_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(""),
+    )
+    license_detections = models.JSONField(
+        blank=True,
+        default=list,
+        help_text=_("List of license detection details."),
+    )
+    license_clues = models.JSONField(
+        blank=True,
+        default=list,
+        help_text=_("List of license clues."),
+    )
+    percentage_of_license_text = models.FloatField(
+        blank=True,
+        null=True,
+        help_text=_(""),
+    )
     copyrights = models.JSONField(
         blank=True,
         default=list,
@@ -1459,16 +1483,6 @@ class ScanFieldsModelMixin(models.Model):
         blank=True,
         default=list,
         help_text=_("List of detected authors (and related detection details)."),
-    )
-    licenses = models.JSONField(
-        blank=True,
-        default=list,
-        help_text=_("List of license detection details."),
-    )
-    license_expressions = models.JSONField(
-        blank=True,
-        default=list,
-        help_text=_("List of detected license expressions."),
     )
     emails = models.JSONField(
         blank=True,
@@ -1527,7 +1541,7 @@ class CodebaseResource(
     A project Codebase Resources are records of its code files and directories.
     Each record is identified by its path under the project workspace.
 
-    These model fields should be kept in line with `scancode.resource.Resource`.
+    These model fields should be kept in line with `commoncode.resource.Resource`.
     """
 
     path = models.CharField(
@@ -1688,7 +1702,8 @@ class CodebaseResource(
         """
         if scanpipe_app.policies_enabled:
             loaded_licenses = getattr(self, "loaded_licenses", [])
-            if self.licenses != loaded_licenses:
+            # TODO: Use detected_license_expression instead
+            if self.license_detections != loaded_licenses:
                 self.inject_licenses_policy(scanpipe_app.license_policies_index)
                 self.compliance_alert = self.compute_compliance_alert()
 
@@ -1696,7 +1711,8 @@ class CodebaseResource(
 
     def inject_licenses_policy(self, policies_index):
         """Inject license policies from the `policies_index` into the licenses field."""
-        for license_data in self.licenses:
+        for license_data in self.license_detections:
+            # TODO: key is not available anymore, license_expression only
             key = license_data.get("key")
             license_data["policy"] = policies_index.get(key, None)
 
@@ -1729,7 +1745,8 @@ class CodebaseResource(
 
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
-        if not self.licenses:
+        # TODO: Base this on self.detected_license_expression
+        if not self.license_detections:
             return ""
 
         ok = self.Compliance.OK
@@ -1738,7 +1755,7 @@ class CodebaseResource(
         missing = self.Compliance.MISSING
 
         alerts = []
-        for license_data in self.licenses:
+        for license_data in self.license_detections:
             policy = license_data.get("policy")
             if policy:
                 alerts.append(policy.get("compliance_alert") or ok)
@@ -1753,6 +1770,7 @@ class CodebaseResource(
             return missing
         return ok
 
+    # TODO: Remove this
     @property
     def unique_license_expressions(self):
         """Return the sorted set of unique license_expressions."""
@@ -1937,7 +1955,9 @@ class CodebaseResource(
         """Return this CodebaseResource as an SPDX Package entry."""
         from scanpipe.pipes import spdx
 
-        spdx_license_keys = [license["spdx_license_key"] for license in self.licenses]
+        spdx_license_keys = [
+            license["spdx_license_key"] for license in self.license_detections
+        ]
         copyrights = [copyright["copyright"] for copyright in self.copyrights]
         holders = [holder["holder"] for holder in self.holders]
         authors = [author["author"] for author in self.authors]

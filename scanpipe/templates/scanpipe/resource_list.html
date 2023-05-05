@@ -55,13 +55,7 @@
               <a href="?tag={{ resource.tag }}" class="is-black-link">{{ resource.tag }}</a>
             </td>
             <td>
-               <ul>
-                {% for license_expression in resource.unique_license_expressions %}
-                  <li>
-                    <a href="?license_expressions={{ license_expression }}" class="is-black-link">{{ license_expression }}</a>
-                  </li>
-                {% endfor %}
-              </ul>
+               <a href="?license_expressions={{ resource.detected_license_expression }}" class="is-black-link">{{ resource.detected_license_expression }}</a>
             </td>
             {% if include_compliance_alert %}
               <td>

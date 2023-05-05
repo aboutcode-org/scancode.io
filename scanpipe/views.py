@@ -619,7 +619,7 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             "mime_type",
             "holders",
             "copyrights",
-            "license_expressions",
+            "detected_license_expression",
         )
 
         packages = project.discoveredpackages.all().only(
@@ -861,7 +861,7 @@ class CodebaseResourceListView(
         "programming_language",
         "mime_type",
         "tag",
-        "license_expressions",
+        "detected_license_expression",
         {
             "field_name": "compliance_alert",
             "condition": scanpipe_app.policies_enabled,
@@ -1051,7 +1051,14 @@ class CodebaseResourceDetailsView(
         },
         "detection": {
             "fields": [
-                {"field_name": "license_expressions", "render_func": render_as_yaml},
+                "detected_license_expression",
+                {
+                    "field_name": "detected_license_expression_spdx",
+                    "label": "Detected license expression (SPDX)",
+                },
+                {"field_name": "license_detections", "render_func": render_as_yaml},
+                {"field_name": "license_clues", "render_func": render_as_yaml},
+                "percentage_of_license_text",
                 {"field_name": "copyrights", "render_func": render_as_yaml},
                 {"field_name": "holders", "render_func": render_as_yaml},
                 {"field_name": "authors", "render_func": render_as_yaml},
@@ -1135,7 +1142,7 @@ class CodebaseResourceDetailsView(
             messages.warning(self.request, message)
 
         context["detected_values"] = {
-            "licenses": self.get_annotations("licenses"),
+            "licenses": self.get_annotations("license_detections"),
             "copyrights": self.get_annotations("copyrights"),
             "holders": self.get_annotations("holders"),
             "authors": self.get_annotations("authors"),
