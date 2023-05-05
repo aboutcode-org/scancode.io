@@ -236,7 +236,8 @@ class ScanPipeD2DPipesTest(TestCase):
 
         buffer = io.StringIO()
         d2d.java_to_class_map(self.project1, logger=buffer.write)
-        expected = "Mapping 3 .class resources to .java"
+
+        expected = "Mapping 3 .class resources to 1 .java resources."
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())

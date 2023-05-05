@@ -149,7 +149,6 @@ def get_indexable_to_java_class_paths(to_resources_dot_class):
     Yield tuples of (resource id, fully-qualified Java name) for indexable
     classes from the "to/" side of the project codebase.
     """
-
     for to_resource in to_resources_dot_class:
         qualified_class = get_extracted_subpath(to_resource.path).strip("/")
         path = Path(qualified_class)
@@ -173,6 +172,7 @@ def java_to_class_map(project, logger=None):
     project_files = project.codebaseresources.files().no_status()
     to_resources = project_files.to_codebase().has_no_relation()
     to_resources_dot_classes = to_resources.filter(name__endswith=".class")
+    to_resources_count = to_resources_dot_classes.count()
 
     # build an index using to-side Java fully qualified class names
     indexables = get_indexable_to_java_class_paths(to_resources_dot_classes)
@@ -181,9 +181,12 @@ def java_to_class_map(project, logger=None):
     to_java_fqn_index = pathmap.build_index(indexables, with_subpaths=False)
 
     from_resources = project_files.from_codebase().filter(name__endswith=".java")
-    resource_count = from_resources.count()
+    from_resource_count = from_resources.count()
     if logger:
-        logger(f"Indexing {resource_count:,d} 'From' .java resources")
+        logger(
+            f"Mapping {to_resources_count:,d} .class resources "
+            f"to {from_resource_count:,d} .java resources."
+        )
 
     # iterate on the from "sources" resources and find a corresponding "to"
     # deployed Java
@@ -194,7 +197,7 @@ def java_to_class_map(project, logger=None):
         last_percent = pipes.log_progress(
             logger,
             resource_index,
-            resource_count,
+            from_resource_count,
             last_percent,
             increment_percent=10,
             start_time=start_time,
@@ -204,6 +207,7 @@ def java_to_class_map(project, logger=None):
     # Flag not mapped .class in to/ codebase
     to_resources = project_files.to_codebase().has_no_relation()
     to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_count = to_resources_dot_classes.count()
     to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
 
@@ -216,16 +220,17 @@ def map_from_resource_java_to_class(from_resource, to_resources, to_java_fqn_ind
     if not match:
         return
 
+    from_segments = from_resource.path.strip("/").split("/")
+    from_source_root = "/".join(from_segments[: -match.matched_path_length])
     for resource_id in match.resource_ids:
         to_resource = to_resources.get(id=resource_id)
         pipes.make_relation(
             from_resource=from_resource,
             to_resource=to_resource,
             map_type="java_to_class",
-            # TODO: not sure what to make of this
-            # extra_data={
-            # "from_source_root": to_resource.path.replace(qualified_java, ""),
-            # },
+            extra_data={
+                "from_source_root": f"{from_source_root}/",
+            },
         )
 
 
