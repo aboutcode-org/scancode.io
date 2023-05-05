@@ -1216,8 +1216,11 @@ class DiscoveredPackageDetailsView(
                 "copyright",
                 "holder",
                 "notice_text",
-                "license_detections",
-                "other_license_detections",
+                {"field_name": "license_detections", "render_func": render_as_yaml},
+                {
+                    "field_name": "other_license_detections",
+                    "render_func": render_as_yaml,
+                },
             ],
             "icon_class": "fas fa-file-contract",
         },
