@@ -29,6 +29,7 @@ from django.test import TestCase
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
 from scanpipe.pipes import output
+from scanpipe.pipes import scancode
 
 
 class RegenTestData(TestCase):
@@ -67,7 +68,13 @@ class RegenTestData(TestCase):
         exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
-        # Scan results
+        # ScanCode-toolkit scan result
+        scan_options = ["--copyright", "--info", "--license", "--package"]
+        scan_location = str(project1.codebase_path)
+        output_location = str(self.data_location / "asgiref-3.3.0_toolkit_scan.json")
+        scancode.run_scancode(scan_location, output_location, scan_options)
+
+        # ScanCode.io results
         test_file_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         result_file = output.to_json(project1)
         result_json = json.loads(Path(result_file).read_text())
