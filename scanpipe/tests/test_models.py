@@ -1707,7 +1707,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("add and remove users and groups", package.description)
         self.assertEqual("849", package.size)
         self.assertEqual(
-            "gpl-2.0 AND gpl-2.0-plus AND unknown", package.license_expression
+            "gpl-2.0 AND gpl-2.0-plus AND unknown", package.declared_license_expression
         )
 
         package_count = DiscoveredPackage.objects.count()

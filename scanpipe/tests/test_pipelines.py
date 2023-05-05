@@ -719,7 +719,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("pypi", discoveredpackage.type)
         self.assertEqual("django", discoveredpackage.name)
         self.assertEqual("4.0.8", discoveredpackage.version)
-        self.assertEqual("bsd-new", discoveredpackage.license_expression)
+        self.assertEqual("bsd-new", discoveredpackage.declared_license_expression)
 
     def test_scanpipe_inspect_manifest_pipeline_spdx_integration_test(self):
         pipeline_name = "inspect_manifest"
@@ -740,8 +740,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("toml", discoveredpackage.name)
         self.assertEqual("0.10.2", discoveredpackage.version)
         self.assertEqual("https://github.com/uiri/toml", discoveredpackage.homepage_url)
-        self.assertEqual("MIT", discoveredpackage.declared_license)
-        self.assertEqual("mit", discoveredpackage.license_expression)
+        self.assertEqual("MIT", discoveredpackage.extracted_license_statement)
+        self.assertEqual("mit", discoveredpackage.declared_license_expression)
 
     def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration_test(self):
         pipeline_name = "inspect_manifest"

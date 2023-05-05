@@ -92,6 +92,9 @@ def resolve_about_packages(input_location):
     if about_resource := about_data.get("about_resource"):
         package_data["filename"] = list(about_resource.keys())[0]
 
+    if license_expression := about_data.get("license_expression"):
+        package_data["declared_license_expression"] = license_expression
+
     for field_name, value in about_data.items():
         if field_name.startswith("checksum_"):
             package_data[field_name.replace("checksum_", "")] = value

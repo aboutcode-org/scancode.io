@@ -2374,10 +2374,11 @@ class DiscoveredPackage(
     def spdx_id(self):
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
+    # TODO: Is this still relevant with addition of declared_license_expression_spdx?
     def get_license_expression_spdx_id(self):
         """Return this package license expression using SPDX syntax and keys."""
-        if self.license_expression:
-            return build_spdx_license_expression(self.license_expression)
+        if self.declared_license_expression:
+            return build_spdx_license_expression(self.declared_license_expression)
 
     def as_spdx(self):
         """Return this DiscoveredPackage as an SPDX Package entry."""
