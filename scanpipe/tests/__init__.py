@@ -124,7 +124,8 @@ package_data1 = {
         "Copyright (c) 1995 Ted Hajek <tedhajek@boombox.micro.umn.edu>\n"
         "portions Copyright (c) 1994 Debian Association, Inc."
     ),
-    "declared_license_expression": "gpl-2.0 AND gpl-2.0-plus AND unknown",
+    "declared_license_expression": "gpl-2.0 AND gpl-2.0-plus",
+    "declared_license_expression_spdx": "GPL-2.0-only AND GPL-2.0-or-later",
     "extracted_license_statement": "",
     "notice_text": None,
     "root_path": None,

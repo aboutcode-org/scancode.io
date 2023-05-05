@@ -2353,11 +2353,18 @@ class DiscoveredPackage(
     def spdx_id(self):
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
-    # TODO: Is this still relevant with addition of declared_license_expression_spdx?
-    def get_license_expression_spdx_id(self):
-        """Return this package license expression using SPDX syntax and keys."""
-        if self.declared_license_expression:
+    def get_declared_license_expression_spdx(self):
+        """
+        Return this package license expression using SPDX keys.
+
+        Use `declared_license_expression_spdx` when available or compute the expression
+        from `declared_license_expression`.
+        """
+        if self.declared_license_expression_spdx:
+            return self.declared_license_expression_spdx
+        elif self.declared_license_expression:
             return build_spdx_license_expression(self.declared_license_expression)
+        return ""
 
     def as_spdx(self):
         """Return this DiscoveredPackage as an SPDX Package entry."""
@@ -2384,8 +2391,8 @@ class DiscoveredPackage(
             name=self.name or self.filename,
             spdx_id=self.spdx_id,
             download_location=self.download_url,
-            license_declared=self.declared_license_expression_spdx,
-            license_concluded=self.declared_license_expression_spdx,
+            license_declared=self.get_declared_license_expression_spdx(),
+            license_concluded=self.get_declared_license_expression_spdx(),
             copyright_text=self.copyright,
             version=self.version,
             homepage=self.homepage_url,
@@ -2399,7 +2406,7 @@ class DiscoveredPackage(
     def as_cyclonedx(self):
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
-        if expression_spdx := self.declared_license_expression_spdx:
+        if expression_spdx := self.get_declared_license_expression_spdx():
             licenses = [
                 cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
             ]

@@ -1488,6 +1488,27 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(["description"], updated_fields)
         self.assertEqual(new_data["description"], package.description)
 
+    def test_scanpipe_discovered_package_get_declared_license_expression_spdx(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        expression = "gpl-2.0 AND gpl-2.0-plus"
+        spdx = "GPL-2.0-only AND GPL-2.0-or-later"
+
+        self.assertEqual(expression, package.declared_license_expression)
+        self.assertEqual(spdx, package.declared_license_expression_spdx)
+        self.assertEqual(spdx, package.get_declared_license_expression_spdx())
+
+        package.declared_license_expression_spdx = ""
+        package.save()
+        self.assertEqual(expression, package.declared_license_expression)
+        self.assertEqual("", package.declared_license_expression_spdx)
+        self.assertEqual(spdx, package.get_declared_license_expression_spdx())
+
+        package.declared_license_expression = ""
+        package.save()
+        self.assertEqual("", package.declared_license_expression)
+        self.assertEqual("", package.declared_license_expression_spdx)
+        self.assertEqual("", package.get_declared_license_expression_spdx())
+
     def test_scanpipe_discovered_package_model_add_resources(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         resource1 = CodebaseResource.objects.create(project=self.project1, path="file1")
@@ -1519,7 +1540,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(purl, str(cyclonedx_component.bom_ref))
         self.assertEqual(purl, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
-        expected = "GPL-2.0-only AND GPL-2.0-or-later AND LicenseRef-scancode-unknown"
+        expected = "GPL-2.0-only AND GPL-2.0-or-later"
         self.assertEqual(expected, cyclonedx_component.licenses[0].expression)
         self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
@@ -1706,9 +1727,8 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual("arch=all", package.qualifiers)
         self.assertEqual("add and remove users and groups", package.description)
         self.assertEqual("849", package.size)
-        self.assertEqual(
-            "gpl-2.0 AND gpl-2.0-plus AND unknown", package.declared_license_expression
-        )
+        expected = "gpl-2.0 AND gpl-2.0-plus"
+        self.assertEqual(expected, package.declared_license_expression)
 
         package_count = DiscoveredPackage.objects.count()
         incomplete_data = dict(package_data1)
