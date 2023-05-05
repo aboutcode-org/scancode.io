@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
             name="license_detections",
             field=models.JSONField(
                 blank=True,
-                default=dict,
+                default=list,
                 help_text="A list of LicenseDetection mappings typically derived from its extracted_license_statement or from some other type-specific routine or convention.",
             ),
         ),
@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
             name="other_license_detections",
             field=models.JSONField(
                 blank=True,
-                default=dict,
+                default=list,
                 help_text="A list of LicenseDetection mappings which is different from the declared_license_expression, (i.e. not the primary license) These are detections for the detection for the license expressions in other_license_expression. ",
             ),
         ),

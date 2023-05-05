@@ -2101,30 +2101,10 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("Copyright statements for this package. Typically one per line."),
     )
-    # The data structure of license attributes in package_data and the codebase
-    # level packages has been updated accordingly:
-    #
-    # There is a new license_detections attribute for the primary, top-level
-    # declared licenses of a package and an other_license_detections attribute
-    # for the other secondary detections.
-    #
-    # The license_expression is replaced by the declared_license_expression
-    # and other_license_expression attributes with their SPDX counterparts
-    # declared_license_expression_spdx and other_license_expression_spdx.
-    # These expressions are parallel to detections.
-    #
-    # The declared_license attribute is renamed extracted_license_statement
-    # and is now a YAML-encoded string.
-    #
-    # See license updates documentation
-    # <https://scancode-toolkit.readthedocs.io/en/latest/explanations/
-    # license-detection-reference.html#change-in-license-data-format-package>_
-    # for examples and details.
     holder = models.TextField(
         blank=True,
         help_text=_("Holders for this package. Typically one per line."),
     )
-    # TODO: Replaces license_expression
     declared_license_expression = models.TextField(
         blank=True,
         help_text=_(
@@ -2141,7 +2121,7 @@ class AbstractPackage(models.Model):
         ),
     )
     license_detections = models.JSONField(
-        default=dict,
+        default=list,
         blank=True,
         help_text=_(
             "A list of LicenseDetection mappings typically derived "
@@ -2165,7 +2145,7 @@ class AbstractPackage(models.Model):
         ),
     )
     other_license_detections = models.JSONField(
-        default=dict,
+        default=list,
         blank=True,
         help_text=_(
             "A list of LicenseDetection mappings which is different from the "
@@ -2174,7 +2154,6 @@ class AbstractPackage(models.Model):
             "in other_license_expression. "
         ),
     )
-    # TODO: Replaces declared_license
     extracted_license_statement = models.TextField(
         blank=True,
         help_text=_(
