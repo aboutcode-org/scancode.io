@@ -148,14 +148,15 @@ class ScanPipeScancodePipesTest(TestCase):
         input_location = str(self.data_location / "notice.NOTICE")
         scan_results, scan_errors = scancode.scan_file(input_location)
         expected = [
-            "copyrights",
-            "holders",
             "authors",
-            "licenses",
-            "license_expressions",
-            "spdx_license_expressions",
-            "percentage_of_license_text",
+            "copyrights",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
             "emails",
+            "holders",
+            "license_clues",
+            "license_detections",
+            "percentage_of_license_text",
             "urls",
         ]
         self.assertEqual(sorted(expected), sorted(scan_results.keys()))
@@ -175,11 +176,12 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(expected_errors, scan_errors)
 
         expected = [
-            "licenses",
-            "license_expressions",
-            "spdx_license_expressions",
-            "percentage_of_license_text",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
             "emails",
+            "license_clues",
+            "license_detections",
+            "percentage_of_license_text",
             "urls",
         ]
         self.assertEqual(sorted(expected), sorted(scan_results.keys()))
