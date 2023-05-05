@@ -2344,6 +2344,21 @@ class DiscoveredPackage(
     def spdx_id(self):
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
+    def get_declared_license_expression(self):
+        """
+        Return this package license expression.
+
+        Use `declared_license_expression` when available or compute the expression
+        from `declared_license_expression_spdx`.
+        """
+        from scanpipe.pipes.resolve import convert_spdx_expression
+
+        if self.declared_license_expression:
+            return self.declared_license_expression
+        elif self.declared_license_expression_spdx:
+            return convert_spdx_expression(self.declared_license_expression_spdx)
+        return ""
+
     def get_declared_license_expression_spdx(self):
         """
         Return this package license expression using SPDX keys.

@@ -1509,6 +1509,27 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("", package.declared_license_expression_spdx)
         self.assertEqual("", package.get_declared_license_expression_spdx())
 
+    def test_scanpipe_discovered_package_get_declared_license_expression(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        expression = "gpl-2.0 AND gpl-2.0-plus"
+        spdx = "GPL-2.0-only AND GPL-2.0-or-later"
+
+        self.assertEqual(expression, package.declared_license_expression)
+        self.assertEqual(spdx, package.declared_license_expression_spdx)
+        self.assertEqual(expression, package.get_declared_license_expression())
+
+        package.declared_license_expression = ""
+        package.save()
+        self.assertEqual(expression, package.declared_license_expression)
+        self.assertEqual("", package.declared_license_expression_spdx)
+        self.assertEqual(expression, package.get_declared_license_expression())
+
+        package.declared_license_expression_spdx = ""
+        package.save()
+        self.assertEqual("", package.declared_license_expression)
+        self.assertEqual("", package.declared_license_expression_spdx)
+        self.assertEqual("", package.get_declared_license_expression_spdx())
+
     def test_scanpipe_discovered_package_model_add_resources(self):
         package = DiscoveredPackage.create_from_data(self.project1, package_data1)
         resource1 = CodebaseResource.objects.create(project=self.project1, path="file1")

@@ -76,6 +76,11 @@ class ScanPipeResolvePipesTest(TestCase):
         )
         self.assertEqual("gpl-2.0", data.get("declared_license_expression"))
 
+    def test_scanpipe_pipes_resolve_convert_spdx_expression(self):
+        spdx = "MIT OR GPL-2.0-only WITH LicenseRef-scancode-generic-exception"
+        scancode_expression = "mit OR gpl-2.0 with generic-exception"
+        self.assertEqual(scancode_expression, resolve.convert_spdx_expression(spdx))
+
     def test_scanpipe_pipes_resolve_resolve_packages(self):
         # ScanCode.io resolvers
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"

@@ -29,6 +29,9 @@ from django.core.validators import EMPTY_VALUES
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
+from packagedcode.licensing import (
+    get_license_detections_for_extracted_license_statement,
+)
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 from scancode.api import get_package_data
@@ -100,6 +103,21 @@ def resolve_about_packages(input_location):
     return [package_data]
 
 
+def convert_spdx_expression(license_expression_spdx):
+    """
+    Return an ScanCode license expression from a SPDX `license_expression_spdx`
+    string.
+    """
+    license_detections = get_license_detections_for_extracted_license_statement(
+        license_expression_spdx,
+        try_as_expression=True,
+    )
+    if license_detections:
+        return license_detections[0].license_expression
+
+    return ""
+
+
 def spdx_package_to_discovered_package_data(spdx_package):
     package_url_dict = {}
     for ref in spdx_package.external_refs:
@@ -112,14 +130,15 @@ def spdx_package_to_discovered_package_data(spdx_package):
         for checksum in spdx_package.checksums
     }
 
-    # TODO: Compute the `declared_license_expression`, check toolkit code
     declared_license_expression_spdx = spdx_package.license_concluded
-    declared_license_expression = ""
+    declared_expression = ""
+    if declared_license_expression_spdx:
+        declared_expression = convert_spdx_expression(declared_license_expression_spdx)
 
     package_data = {
         "name": spdx_package.name,
         "download_url": spdx_package.download_location,
-        "declared_license_expression": declared_license_expression,
+        "declared_license_expression": declared_expression,
         "declared_license_expression_spdx": declared_license_expression_spdx,
         "extracted_license_statement": spdx_package.license_declared,
         "copyright": spdx_package.copyright_text,
@@ -238,7 +257,6 @@ resolver_registry = {
 }
 
 
-# TODO: Check if that function call is still relevant
 def set_license_expression(package_data):
     """
     Set the license expression from a detected license dict/str in provided
