@@ -31,101 +31,132 @@ The approach is to create a trie of all reversed path suffixes aka. subpath each
 mapped to a tuple of:
     (subpath length, [list of path ids]).
 
-And then search this using Aho-Corasick search.
+And then search this index using Aho-Corasick search.
 
-For instance with this list of paths, prefixed with a path id:
+For instance with this list of path ids and paths:
 
     1    RouterStub.java
     23   samples/screenshot.png
     3    samples/JGroups/src/RouterStub.java
     42   src/screenshot.png
 
-We will create this list of subpaths:
+We will create this list of inverted subpaths:
 
-    (RouterStub.java)
-    (screenshot.png)
-    (screenshot.png, samples)
-    (RouterStub.java, JGroups, src, samples)
-    (RouterStub.java, JGroups, src)
-    (RouterStub.java, JGroups)
-    (RouterStub.java)
-    (screenshot.png)
-    (screenshot.png, src)
+    RouterStub.java
+    screenshot.png
+    screenshot.png/samples
+    RouterStub.java/JGroups/src/samples
+    RouterStub.java/JGroups/src
+    RouterStub.java/JGroups
+    RouterStub.java
+    screenshot.png
+    screenshot.png/src
 
 And we will have this index:
 
-    (tuple of path segments) -> (number of segments, [list of path ids])
-    (RouterStub.java) -> (1, [1, 3])
-    (screenshot.png) -> (1, [23, 42])
-    (screenshot.png, samples) -> (2, [23])
-    (RouterStub.java, JGroups, src, samples) -> (4, [3])
-    (RouterStub.java, JGroups, src) -> (3, [3])
-    (RouterStub.java, JGroups) -> (3, [3])
-    (screenshot.png, src) -> (2, [42])
+    inverted path -> (number of segments, [list of path ids])
+    RouterStub.java -> (1, [1, 3])
+    screenshot.png -> (1, [23, 42])
+    screenshot.png/samples -> (2, [23])
+    RouterStub.java/JGroups/src/samples -> (4, [3])
+    RouterStub.java/JGroups/src -> (3, [3])
+    RouterStub.java/JGroups -> (3, [3])
+    screenshot.png/src -> (2, [42])
 """
 
 
 class Match(NamedTuple):
+    # number of matched path segments
     matched_path_length: int
     resource_ids: list
 
 
-def find_paths(path, index, all_segments=False):
+def find_paths(path, index):
     """
-    Return a tuple of the longest paths matched in the ``automaton`` for a POSIX
-    ``path`` string.
-
-    The tuple is (number of matched path segments, [list of resource ids])
+    Return a Match for the longest paths matched in the ``index`` automaton for
+    a POSIX ``path`` string.
+    Retrun None if there is not matching paths found.
     """
     segments = get_reversed_path_segments(path)
     reversed_path = convert_segments_to_path(segments)
 
-    # We use iter_long() to get the longest match only.
-    matches = [
-        matched_len_and_paths
-        for _, matched_len_and_paths in index.iter_long(reversed_path)
-    ]
+    # We use iter_long() to get longest matches
+    matches = list(index.iter_long(reversed_path))
+
     if not matches:
         return
-
-    assert len(matches) == 1
-    matched_path_length, resource_ids = matches[0]
-
-    if all_segments and len(segments) != matched_path_length:
-        return
-
-    return Match(matched_path_length, resource_ids)
+    # Filter after to keep only one match per path which is always the match
+    # matching the suffix of the path and not something in the middle
+    good_match = matches[0]
+    _, (matched_length, resource_ids) = good_match
+    return Match(matched_length, resource_ids)
 
 
-def build_index(resource_id_and_paths):
+def build_index(resource_id_and_paths, with_subpaths=True):
     """
-    Return an index (an automaton) built from a ``resource_id_and_paths``
+    Return an index (an index) built from a ``resource_id_and_paths``
     iterable of tuples of (resource_id int, resource_path string).
+
+    If `with_subpaths`` is True, index all suffixes of the paths, other index
+    and match only each complete path.
+
+    For example, for the path "samples/JGroups/src/RouterStub.java", the
+    suffixes are:
+
+        samples/JGroups/src/RouterStub.java
+                JGroups/src/RouterStub.java
+                        src/RouterStub.java
+                            RouterStub.java
     """
     # create a new empty automaton.
-    automaton = ahocorasick.Automaton(ahocorasick.STORE_ANY, ahocorasick.KEY_STRING)
+    index = ahocorasick.Automaton(ahocorasick.STORE_ANY, ahocorasick.KEY_STRING)
 
     for resource_id, resource_path in resource_id_and_paths:
         segments = get_reversed_path_segments(resource_path)
         segments_count = len(segments)
-        for segments_count in range(segments_count):
-            subpath_segments_count = segments_count + 1
-            subpath_segments = segments[:subpath_segments_count]
-            subpath = convert_segments_to_path(subpath_segments)
-            existing = automaton.get(subpath, None)
-            if existing:
-                # For multiple identical path suffixes, append to the list of
-                # resource_ids
-                _seg_count, resource_ids = existing
-                resource_ids.append(resource_id)
-            else:
-                # We store this value mapped to a subpath as a tuple of
-                # (segments count, [list of resource ids])
-                value = subpath_segments_count, [resource_id]
-                automaton.add_word(subpath, value)
+        if with_subpaths:
+            add_subpaths(resource_id, segments, segments_count, index)
+        else:
+            add_path(resource_id, segments, segments_count, index)
 
-    automaton.make_automaton()
-    return automaton
+    index.make_automaton()
+    return index
+
+
+def add_path(resource_id, segments, segments_count, index):
+    """
+    Add the ``resource_id`` path represented by its list of reversed path
+    ``segments`` with ``segments_count`` segments to the ``index`` automaton.
+    """
+    indexable_path = convert_segments_to_path(segments)
+    existing = index.get(indexable_path, None)
+    if existing:
+        # For multiple identical path suffixes, append to the list of
+        # resource_ids
+        _seg_count, resource_ids = existing
+        resource_ids.append(resource_id)
+    else:
+        # We store this value mapped to a indexable_path as a tuple of
+        # (segments count, [list of resource ids])
+        value = segments_count, [resource_id]
+        index.add_word(indexable_path, value)
+
+
+def add_subpaths(resource_id, segments, segments_count, index):
+    """
+    Add all the ``resource_id`` subpaths "suffixes" of the resource path as
+    represented by its list of reversed path ``segments`` with
+    ``segments_count`` segments to the ``index`` automaton.
+    """
+    for segment_count in range(segments_count):
+        subpath_segments_count = segment_count + 1
+        subpath_segments = segments[:subpath_segments_count]
+        add_path(
+            resource_id=resource_id,
+            segments=subpath_segments,
+            segments_count=subpath_segments_count,
+            index=index,
+        )
 
 
 def get_reversed_path_segments(path):

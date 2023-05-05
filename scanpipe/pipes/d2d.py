@@ -144,50 +144,53 @@ def checksum_map(project, checksum_field, logger=None):
         _resource_checksum_map(to_resource, from_resources, checksum_field)
 
 
-def _resource_java_to_class_map(to_resource, from_resources, from_resources_index):
-    qualified_class = get_extracted_subpath(to_resource.path)
+def get_indexable_to_java_class_paths(to_resources_dot_class):
+    """
+    Yield tuples of (resource id, fully-qualified Java name) for indexable
+    classes from the "to/" side of the project codebase.
+    """
 
-    if "$" in to_resource.name:  # inner class
-        path_parts = Path(qualified_class.lstrip("/")).parts
-        parts_without_name = list(path_parts[:-1])
-        from_name = to_resource.name.split("$")[0] + ".java"
-        qualified_java = "/".join(parts_without_name + [from_name])
-    else:
-        qualified_java = qualified_class.replace(".class", ".java")
-
-    match = pathmap.find_paths(qualified_java, from_resources_index, all_segments=True)
-    if not match:
-        return
-
-    for resource_id in match.resource_ids:
-        from_resource = from_resources.get(id=resource_id)
-        pipes.make_relation(
-            from_resource=from_resource,
-            to_resource=to_resource,
-            map_type="java_to_class",
-            extra_data={
-                "from_source_root": from_resource.path.replace(qualified_java, ""),
-            },
-        )
+    for to_resource in to_resources_dot_class:
+        qualified_class = get_extracted_subpath(to_resource.path).strip("/")
+        path = Path(qualified_class)
+        parts_without_name = list(path.parts)[:-1]
+        if "$" in to_resource.name:
+            # an inner class: we keep only the outer class name
+            to_name = to_resource.name.split("$")[0]
+        else:
+            to_name = path.stem
+        # we append a .java extension so that we can map to the From side that is
+        # suypposed to contain the corresponding Java source code
+        fully_qualified_java_name = "/".join(parts_without_name + [f"{to_name}.java"])
+        yield to_resource.id, fully_qualified_java_name
 
 
 def java_to_class_map(project, logger=None):
-    """Map a .java source to its compiled .class using fully qualified name."""
+    """
+    Map From the .java source To its compiled .class(es) using Java fully
+    qualified names mapping.
+    """
     project_files = project.codebaseresources.files().no_status()
-    from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
+    to_resources_dot_classes = to_resources.filter(name__endswith=".class")
 
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
-    resource_count = to_resources_dot_class.count()
+    # build an index using to-side Java fully qualified class names
+    indexables = get_indexable_to_java_class_paths(to_resources_dot_classes)
+
+    # we do not index subpath since we want to match only fully qualified names
+    to_java_fqn_index = pathmap.build_index(indexables, with_subpaths=False)
+
+    from_resources = project_files.from_codebase().filter(name__endswith=".java")
+    resource_count = from_resources.count()
     if logger:
-        logger(f"Mapping {resource_count:,d} .class resources to .java")
+        logger(f"Indexing {resource_count:,d} 'From' .java resources")
 
-    from_resources_index = pathmap.build_index(from_resources.values_list("id", "path"))
-
-    resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
+    # iterate on the from "sources" resources and find a corresponding "to"
+    # deployed Java
+    resource_iterator = from_resources.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
+    for resource_index, from_resource in enumerate(resource_iterator):
         last_percent = pipes.log_progress(
             logger,
             resource_index,
@@ -196,11 +199,34 @@ def java_to_class_map(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_java_to_class_map(to_resource, from_resources, from_resources_index)
+        map_from_resource_java_to_class(from_resource, to_resources, to_java_fqn_index)
 
     # Flag not mapped .class in to/ codebase
+    to_resources = project_files.to_codebase().has_no_relation()
     to_resources_dot_class = to_resources.filter(name__endswith=".class")
     to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
+
+
+def map_from_resource_java_to_class(from_resource, to_resources, to_java_fqn_index):
+    """
+    Create a mapping relation for the ``from_resource``  to the "to" resources
+    in ``to_resources`` query set using the ``to_java_fqn_index``.
+    """
+    match = pathmap.find_paths(from_resource.path, to_java_fqn_index)
+    if not match:
+        return
+
+    for resource_id in match.resource_ids:
+        to_resource = to_resources.get(id=resource_id)
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type="java_to_class",
+            # TODO: not sure what to make of this
+            # extra_data={
+            # "from_source_root": to_resource.path.replace(qualified_java, ""),
+            # },
+        )
 
 
 def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
@@ -310,7 +336,7 @@ def _resource_path_map(
 
 
 def path_map(project, logger=None):
-    """Map using path similarities."""
+    """Map using path suffix similarities."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
@@ -322,7 +348,9 @@ def path_map(project, logger=None):
             f"against from/ codebase"
         )
 
-    from_resources_index = pathmap.build_index(from_resources.values_list("id", "path"))
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
