@@ -77,9 +77,8 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 LICENSE_CLARITY_FIELDS = [
     (
-        # TODO:
         "Declared license",
-        "extracted_license_statement",
+        "declared_license",
         "Indicates that the software package licensing is documented at top-level or "
         "well-known locations in the software project, typically in a package "
         "manifest, NOTICE, LICENSE, COPYING or README file. "
@@ -1182,6 +1181,10 @@ class DiscoveredPackageDetailsView(
             "fields": [
                 "package_url",
                 "declared_license_expression",
+                {
+                    "field_name": "declared_license_expression_spdx",
+                    "label": "Declared license expression (SPDX)",
+                },
                 "primary_language",
                 "homepage_url",
                 "download_url",
@@ -1200,9 +1203,21 @@ class DiscoveredPackageDetailsView(
         "terms": {
             "fields": [
                 "declared_license_expression",
+                {
+                    "field_name": "declared_license_expression_spdx",
+                    "label": "Declared license expression (SPDX)",
+                },
+                "other_license_expression",
+                {
+                    "field_name": "other_license_expression_spdx",
+                    "label": "Other license expression (SPDX)",
+                },
                 "extracted_license_statement",
                 "copyright",
+                "holder",
                 "notice_text",
+                "license_detections",
+                "other_license_detections",
             ],
             "icon_class": "fas fa-file-contract",
         },

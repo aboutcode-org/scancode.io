@@ -764,7 +764,7 @@ class PipelinesIntegrationTest(TestCase):
                 "name": "toml",
                 "version": "0.10.2",
                 "extracted_license_statement": "OFL-1.1\nApache-2.0",
-                "declared_license_expression": "ofl-1.1 AND unknown",
+                "declared_license_expression": "ofl-1.1 OR apache-2.0",
                 "homepage_url": "https://cyclonedx.org/website",
                 "bug_tracking_url": "https://cyclonedx.org/issue-tracker",
                 "vcs_url": "https://cyclonedx.org/vcs",

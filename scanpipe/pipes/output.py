@@ -443,7 +443,13 @@ def to_xlsx(project):
     exceed the limits of what can be stored in a cell.
     """
     output_file = project.get_output_file_path("results", "xlsx")
-    exclude_fields = ["licenses", "extra_data", "extracted_license_statement"]
+    exclude_fields = [
+        "licenses",
+        "extra_data",
+        "extracted_license_statement",
+        "license_detections",
+        "other_license_detections",
+    ]
 
     if not scanpipe_app.policies_enabled:
         exclude_fields.append("compliance_alert")

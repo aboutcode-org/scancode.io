@@ -2380,13 +2380,12 @@ class DiscoveredPackage(
                 )
             )
 
-        license_expression_spdx = self.get_license_expression_spdx_id()
         return spdx.Package(
             name=self.name or self.filename,
             spdx_id=self.spdx_id,
             download_location=self.download_url,
-            license_declared=license_expression_spdx,
-            license_concluded=license_expression_spdx,
+            license_declared=self.declared_license_expression_spdx,
+            license_concluded=self.declared_license_expression_spdx,
             copyright_text=self.copyright,
             version=self.version,
             homepage=self.homepage_url,
@@ -2400,7 +2399,7 @@ class DiscoveredPackage(
     def as_cyclonedx(self):
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
-        if expression_spdx := self.get_license_expression_spdx_id():
+        if expression_spdx := self.declared_license_expression_spdx:
             licenses = [
                 cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
             ]

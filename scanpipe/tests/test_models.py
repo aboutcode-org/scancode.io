@@ -1830,11 +1830,8 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             "missing_resources",
             "modified_resources",
             "codebase_resources",
-            # TODO: Review those:
             "package_uid",
             "filename",
-            "manifest_path",
-            "contains_source_code",
         ]
 
         discovered_package_fields = [

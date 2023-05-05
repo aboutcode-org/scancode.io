@@ -27,11 +27,8 @@ from pathlib import Path
 from django.core.validators import EMPTY_VALUES
 
 from attributecode.model import About
-from licensedcode.match_spdx_lid import get_spdx_expression
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
-
-# https://github.com/nexB/scancode-toolkit/commit/539ebedd700d7c6bb9596ca1274f0fd86624926d
-# from packagedcode.licensing import get_normalized_expression
+from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
 from python_inspector.resolve_cli import resolver_api
 from scancode.api import get_package_data
@@ -115,14 +112,16 @@ def spdx_package_to_discovered_package_data(spdx_package):
         for checksum in spdx_package.checksums
     }
 
+    # TODO: Compute the `declared_license_expression`, check toolkit code
+    declared_license_expression_spdx = spdx_package.license_concluded
+    declared_license_expression = ""
+
     package_data = {
         "name": spdx_package.name,
         "download_url": spdx_package.download_location,
-        # TODO: Likely not relevant with model changes
+        "declared_license_expression": declared_license_expression,
+        "declared_license_expression_spdx": declared_license_expression_spdx,
         "extracted_license_statement": spdx_package.license_declared,
-        "declared_license_expression": get_spdx_expression(
-            spdx_package.license_concluded or ""
-        ),
         "copyright": spdx_package.copyright_text,
         "version": spdx_package.version,
         "homepage_url": spdx_package.homepage,
@@ -239,6 +238,7 @@ resolver_registry = {
 }
 
 
+# TODO: Check if that function call is still relevant
 def set_license_expression(package_data):
     """
     Set the license expression from a detected license dict/str in provided
@@ -248,20 +248,10 @@ def set_license_expression(package_data):
     declared_license_expression = package_data.get("declared_license_expression")
 
     if extracted_license_statement and not declared_license_expression:
-        license_str = ""
-
-        if isinstance(extracted_license_statement, dict):
-            license_str = extracted_license_statement.get("license")
-
-        if not license_str:
-            license_str = repr(extracted_license_statement)
-
-        from packagedcode import licensing
-
-        license_expression = licensing.get_normalized_expression(
-            query_string=license_str
+        _, license_expression = get_license_detections_and_expression(
+            extracted_license_statement
         )
         if license_expression:
-            package_data["declared_license_expression"] = declared_license_expression
+            package_data["declared_license_expression"] = license_expression
 
     return package_data
