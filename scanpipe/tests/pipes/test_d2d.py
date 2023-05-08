@@ -131,7 +131,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(0.0, d2d.get_diff_ratio(resource1, resource3))
 
     @mock.patch("scanpipe.pipes.purldb.match_by_sha1")
-    def test_scanpipe_pipes_d2d_purldb_match(self, mock_match_by_sha1):
+    def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_by_sha1):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
         # The initial status will be updated to "matched-to-purldb"
         to_2 = make_resource_file(
@@ -144,7 +144,7 @@ class ScanPipeD2DPipesTest(TestCase):
         mock_match_by_sha1.return_value = [package_data]
 
         buffer = io.StringIO()
-        d2d.purldb_match(self.project1, extensions=[".jar"], logger=buffer.write)
+        d2d.match_purldb(self.project1, extensions=[".jar"], logger=buffer.write)
         self.assertEqual("Matching 1 .jar resources against PurlDB", buffer.getvalue())
 
         package = self.project1.discoveredpackages.get()
@@ -187,7 +187,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_2 = make_resource_file(self.project1, path="to/x/y/z/init.jsp.readme")
         self.assertEqual(matches, d2d.get_best_path_matches(to_2, matches))
 
-    def test_scanpipe_pipes_d2d_checksum_map(self):
+    def test_scanpipe_pipes_d2d_map_checksum(self):
         sha1 = "abcde"
         to_1 = make_resource_file(self.project1, path="to/a/b/c/file.txt", sha1=sha1)
         make_resource_file(self.project1, path="from/source/f/i/j/file.txt", sha1=sha1)
@@ -199,7 +199,7 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_file(self.project1, path="from/q/w/e/file.txt", sha1=sha1)
 
         buffer = io.StringIO()
-        d2d.checksum_map(self.project1, "sha1", logger=buffer.write)
+        d2d.map_checksum(self.project1, "sha1", logger=buffer.write)
         expected = "Mapping 1 to/ resources using sha1 against from/ codebase"
         self.assertEqual(expected, buffer.getvalue())
         self.assertEqual(1, to_1.related_from.count())
@@ -207,7 +207,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("sha1", relation.map_type)
         self.assertEqual(from_2, relation.from_resource)
 
-    def test_scanpipe_pipes_d2d_java_to_class_map(self):
+    def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(
             self.project1,
             path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
@@ -237,7 +237,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         buffer = io.StringIO()
-        d2d.java_to_class_map(self.project1, logger=buffer.write)
+        d2d.map_java_to_class(self.project1, logger=buffer.write)
 
         expected = "Mapping 3 .class resources to .java"
         self.assertIn(expected, buffer.getvalue())
@@ -260,7 +260,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to3.refresh_from_db()
         self.assertEqual("no-java-source", to3.status)
 
-    def test_scanpipe_pipes_d2d_jar_to_source_map(self):
+    def test_scanpipe_pipes_d2d_map_jar_to_source(self):
         from1 = make_resource_file(
             self.project1,
             path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
@@ -286,7 +286,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         buffer = io.StringIO()
-        d2d.java_to_class_map(self.project1, logger=buffer.write)
+        d2d.map_jar_to_source(self.project1, logger=buffer.write)
 
         relation = self.project1.codebaserelations.get()
         self.assertEqual(from1, relation.from_resource)
@@ -296,7 +296,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(expected, relation.extra_data)
 
         buffer = io.StringIO()
-        d2d.jar_to_source_map(self.project1, logger=buffer.write)
+        d2d.map_jar_to_source(self.project1, logger=buffer.write)
         expected = "Mapping 1 .jar resources using jar_to_source_map"
         self.assertIn(expected, buffer.getvalue())
 
@@ -307,7 +307,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to2.refresh_from_db()
         self.assertEqual("ignored-meta-inf", to2.status)
 
-    def test_scanpipe_pipes_d2d_jar_to_source_map_works_for_jar(self):
+    def test_scanpipe_pipes_d2d_map_jar_to_source_works_for_jar(self):
         from1 = make_resource_file(
             self.project1,
             path="from/org/apache/logging/log4j/core/util/SystemClock.java",
@@ -315,14 +315,17 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to1 = make_resource_file(
             self.project1,
-            path="to/META-INF/versions/9/org/apache/logging/log4j/core/util/SystemClock.class",  # NOQA: E501
+            path=(
+                "to/META-INF/versions/9/org/apache/logging/log4j/core/util/"
+                "SystemClock.class"
+            ),
         )
         to2 = make_resource_file(
             self.project1,
             path="to/org/apache/logging/log4j/core/util/SystemClock.class",
         )
 
-        d2d.java_to_class_map(self.project1)
+        d2d.map_java_to_class(self.project1)
 
         expected = [
             (from1.path, to1.path, "java_to_class"),
@@ -361,7 +364,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         self.assertEqual(expected, results)
 
-    def test_scanpipe_pipes_d2d_path_map(self):
+    def test_scanpipe_pipes_d2d_map_path(self):
         from1 = make_resource_file(
             self.project1,
             path="from/core/src/main/org/apache/bar/file.ext",
@@ -376,7 +379,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         buffer = io.StringIO()
-        d2d.path_map(self.project1, logger=buffer.write)
+        d2d.map_path(self.project1, logger=buffer.write)
         expected = "Mapping 1 to/ resources using path map against from/ codebase"
         self.assertIn(expected, buffer.getvalue())
 

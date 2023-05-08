@@ -105,7 +105,7 @@ def get_best_path_matches(to_resource, matches):
     return matches
 
 
-def _resource_checksum_map(to_resource, from_resources, checksum_field):
+def _map_checksum_resource(to_resource, from_resources, checksum_field):
     checksum_value = getattr(to_resource, checksum_field)
     matches = from_resources.filter(**{checksum_field: checksum_value})
     for match in get_best_path_matches(to_resource, matches):
@@ -116,7 +116,7 @@ def _resource_checksum_map(to_resource, from_resources, checksum_field):
         )
 
 
-def checksum_map(project, checksum_field, logger=None):
+def map_checksum(project, checksum_field, logger=None):
     """Map using checksum."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase().has_value(checksum_field)
@@ -143,10 +143,10 @@ def checksum_map(project, checksum_field, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_checksum_map(to_resource, from_resources, checksum_field)
+        _map_checksum_resource(to_resource, from_resources, checksum_field)
 
 
-def _resource_java_to_class_map(to_resource, from_resources, from_classes_index):
+def _map_java_to_class_resource(to_resource, from_resources, from_classes_index):
     """
     Map the ``to_resource`` .class file Resource with a Resource in
     ``from_resources`` .java files, using the ``from_classes_index`` index of
@@ -173,7 +173,7 @@ def _resource_java_to_class_map(to_resource, from_resources, from_classes_index)
         )
 
 
-def java_to_class_map(project, logger=None):
+def map_java_to_class(project, logger=None):
     """
     Map to/ compiled Java .class(es) to from/ .java source using Java fully
     qualified paths and indexing from/ .java files.
@@ -209,7 +209,7 @@ def java_to_class_map(project, logger=None):
                 increment_percent=10,
                 start_time=start_time,
             )
-        _resource_java_to_class_map(to_resource, from_resources, from_classes_index)
+        _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
     # Flag not mapped .class in to/ codebase
     # TODO: consider skipping this as we could have a purldb match!
@@ -305,7 +305,7 @@ def save_java_package_scan_results(codebase_resource, scan_results, scan_errors)
     codebase_resource.save()
 
 
-def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
+def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
     jar_extracted_path = get_extracted_path(jar_resource)
     jar_extracted_files = to_resources.filter(path__startswith=jar_extracted_path)
 
@@ -313,7 +313,7 @@ def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
     meta_inf_files = jar_extracted_files.filter(path__contains="META-INF/")
     meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
 
-    dot_class_files = jar_extracted_files.filter(name__endswith=".class")
+    dot_class_files = jar_extracted_files.filter(extension=".class")
     # Do not continue if some .class files couldn't be mapped.
     if dot_class_files.has_no_relation().exists():
         return
@@ -341,7 +341,7 @@ def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
     )
 
 
-def jar_to_source_map(project, logger=None):
+def map_jar_to_source(project, logger=None):
     project_files = project.codebaseresources.files()
     # Include the directories to map on the common source
     from_resources = project.codebaseresources.from_codebase()
@@ -356,7 +356,7 @@ def jar_to_source_map(project, logger=None):
         )
 
     for jar_resource in to_jars:
-        _resource_jar_to_source_map(jar_resource, to_resources, from_resources)
+        _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
 
 
 def get_diff_ratio(to_resource, from_resource):
@@ -373,7 +373,7 @@ def get_diff_ratio(to_resource, from_resource):
     return matcher.quick_ratio()
 
 
-def _resource_path_map(
+def _map_path_resource(
     to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
 ):
     match = pathmap.find_paths(to_resource.path, from_resources_index)
@@ -411,7 +411,7 @@ def _resource_path_map(
         )
 
 
-def path_map(project, logger=None):
+def map_path(project, logger=None):
     """Map using path suffix similarities."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
@@ -440,10 +440,10 @@ def path_map(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_path_map(to_resource, from_resources, from_resources_index)
+        _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def _resource_purldb_match(project, resource):
+def _match_purldb_resource(project, resource):
     if results := purldb.match_by_sha1(sha1=resource.sha1):
         package_data = results[0].copy()
         # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
@@ -463,7 +463,7 @@ def _resource_purldb_match(project, resource):
         extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
 
 
-def purldb_match(project, extensions, logger=None):
+def match_purldb(project, extensions, logger=None):
     """
     Match against PurlDB selecting codebase resources using provided `extensions`.
     Resources with existing status as not excluded.
@@ -495,4 +495,4 @@ def purldb_match(project, extensions, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_purldb_match(project, to_resource)
+        _match_purldb_resource(project, to_resource)
