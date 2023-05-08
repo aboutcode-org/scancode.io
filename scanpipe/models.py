@@ -1393,10 +1393,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
     def has_licenses(self):
-        return self.filter(~Q(licenses=[]))
+        return self.filter(~Q(license_detections=[]))
 
     def has_no_licenses(self):
-        return self.filter(licenses=[])
+        return self.filter(license_detections=[])
 
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
@@ -1409,7 +1409,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         )
 
     def unknown_license(self):
-        return self.json_field_contains("license_expressions", "unknown")
+        return self.filter(detected_license_expression__icontains="unknown")
 
     def from_codebase(self):
         """Resources in from/ directory"""
@@ -1685,8 +1685,8 @@ class CodebaseResource(
         """
         new = super().from_db(db, field_names, values)
 
-        if "licenses" in field_names:
-            new._loaded_licenses = values[field_names.index("licenses")]
+        if "license_detections" in field_names:
+            new._loaded_licenses = values[field_names.index("license_detections")]
 
         return new
 
@@ -1699,9 +1699,9 @@ class CodebaseResource(
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
+        # TODO: Review and test this
         if scanpipe_app.policies_enabled:
-            loaded_licenses = getattr(self, "loaded_licenses", [])
-            # TODO: Use detected_license_expression instead
+            loaded_licenses = getattr(self, "_loaded_licenses", [])
             if self.license_detections != loaded_licenses:
                 self.inject_licenses_policy(scanpipe_app.license_policies_index)
                 self.compliance_alert = self.compute_compliance_alert()
@@ -1768,12 +1768,6 @@ class CodebaseResource(
         elif missing in alerts:
             return missing
         return ok
-
-    # TODO: Remove this
-    @property
-    def unique_license_expressions(self):
-        """Return the sorted set of unique license_expressions."""
-        return sorted(set(self.license_expressions))
 
     def parent_path(self):
         """Return the parent path for this CodebaseResource or None."""

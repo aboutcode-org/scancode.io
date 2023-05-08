@@ -453,7 +453,9 @@ class ScanPipeViewsTest(TestCase):
         resource1 = CodebaseResource.objects.create(
             project=self.project1,
             path="resource1",
-            licenses=[{"key": "key", "policy": None, "start_line": 1, "end_line": 2}],
+            license_detections=[
+                {"key": "key", "policy": None, "start_line": 1, "end_line": 2}
+            ],
         )
         url = resource1.get_absolute_url()
 

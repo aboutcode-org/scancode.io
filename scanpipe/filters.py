@@ -331,11 +331,11 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "related_from__from_resource__path",
         ],
     )
-    license_key = JSONContainsFilter(
-        label="License key",
-        field_name="licenses",
-    )
-    # TODO: We will have to compute that field as not available anymore
+    # TODO: We will have to compute those fields as not available anymore
+    # license_key = JSONContainsFilter(
+    #     label="License key",
+    #     field_name="licenses",
+    # )
     # license_category = JSONContainsFilter(
     #     label="License category",
     #     field_name="licenses",

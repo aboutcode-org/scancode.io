@@ -546,7 +546,7 @@ def _get_license_matches_grouped(project):
     for resource in project.codebaseresources.has_licenses():
         file_cache = []
 
-        for license in resource.licenses:
+        for license in resource.license_detections:
             matched_rule = license.get("matched_rule", {})
             license_expression = matched_rule.get("license_expression")
             matched_text = license.get("matched_text")

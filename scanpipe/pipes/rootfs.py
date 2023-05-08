@@ -370,8 +370,8 @@ def tag_data_files_with_no_clues(project):
         copyrights=[],
         holders=[],
         authors=[],
-        licenses=[],
-        license_expressions=[],
+        license_detections=[],
+        detected_license_expression="",
         emails=[],
         urls=[],
     )

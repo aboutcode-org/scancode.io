@@ -208,12 +208,8 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
-        expected = [
-            "apache-2.0",
-            "apache-2.0",
-            "warranty-disclaimer",
-        ]
-        self.assertEqual(expected, codebase_resource2.license_expressions)
+        expected = "apache-2.0 AND warranty-disclaimer"
+        self.assertEqual(expected, codebase_resource2.detected_license_expression)
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
@@ -241,7 +237,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.scancode._scan_resource")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
-        scan_results = {"license_expressions": ["mit"]}
+        scan_results = {"detected_license_expression": "mit"}
         scan_errors = []
         mock_scan_resource.return_value = scan_results, scan_errors
 
@@ -262,10 +258,10 @@ class ScanPipeScancodePipesTest(TestCase):
 
         resource1.refresh_from_db()
         self.assertEqual("scanned", resource1.status)
-        self.assertEqual(["mit"], resource1.license_expressions)
+        self.assertEqual("mit", resource1.detected_license_expression)
         resource2.refresh_from_db()
         self.assertEqual("scanned", resource2.status)
-        self.assertEqual(["mit"], resource2.license_expressions)
+        self.assertEqual("mit", resource2.detected_license_expression)
 
         resource3 = CodebaseResource.objects.create(
             project=project1,
@@ -278,7 +274,7 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.scan_for_files(project1)
         resource3.refresh_from_db()
         self.assertEqual("scanned-with-error", resource3.status)
-        self.assertEqual([], resource3.license_expressions)
+        self.assertEqual("", resource3.detected_license_expression)
         self.assertEqual(["copy"], resource3.copyrights)
 
     def test_scanpipe_pipes_scancode_scan_for_package_data_timeout(self):
@@ -391,19 +387,19 @@ class ScanPipeScancodePipesTest(TestCase):
         resources = project.codebaseresources
 
         resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")
-        self.assertEqual("bsd-new", resource1.licenses[0]["key"])
+        self.assertEqual("bsd-new", resource1.license_detections[0]["key"])
         self.assertNotIn("bsd-new", license_policies_index)
-        self.assertIsNone(resource1.licenses[0]["policy"])
+        self.assertIsNone(resource1.license_detections[0]["policy"])
 
         resource2 = resources.get(path__endswith="asgiref/timeout.py")
-        self.assertEqual("apache-2.0", resource2.licenses[0]["key"])
+        self.assertEqual("apache-2.0", resource2.license_detections[0]["key"])
         expected = {
             "label": "Approved License",
             "color_code": "#008000",
             "license_key": "apache-2.0",
             "compliance_alert": "",
         }
-        self.assertEqual(expected, resource2.licenses[0]["policy"])
+        self.assertEqual(expected, resource2.license_detections[0]["policy"])
 
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")

@@ -341,13 +341,6 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
         self.assertEqual(result, "some \nsimple \nvalue\n")
         self.assertEqual(error, None)
 
-    def test__adapt_value_for_xlsx_does_adapt_license_expressions(self):
-        result, error = output._adapt_value_for_xlsx(
-            fieldname="license_expressions", value=["mit", "mit", "gpl-2.0"]
-        )
-        self.assertEqual(result, "mit AND gpl-2.0")
-        self.assertEqual(error, None)
-
     def test__adapt_value_for_xlsx_does_adapt_description_and_keeps_only_5_lines(self):
         twenty_lines = "\r\n".join(str(i) for i in range(20))
 

@@ -1104,7 +1104,7 @@ class CodebaseResourceDetailsView(
         https://github.com/nexB/scancode-results-analyzer/blob/6c132bc20153d5c96929c
         f378bd0f06d83db9005/src/results_analyze/analyzer_plugin.py#L131-L198
         """
-        if field_name == "licenses":
+        if field_name == "license_detections":
             return entry.get("matched_rule", {}).get("license_expression")
         return entry.get(value_key)
 
