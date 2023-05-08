@@ -22,6 +22,30 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
             package.save()
 
 
+def compute_resource_detected_license_expression(apps, schema_editor):
+    """
+    Compute CodebaseResource `detected_license_expression` and
+    `detected_license_expression_spdx` from old `license_expressions` field.
+    """
+    from license_expression import combine_expressions
+    from licensedcode.cache import build_spdx_license_expression
+
+    CodebaseResource = apps.get_model('scanpipe', 'CodebaseResource')
+    resources = CodebaseResource.objects.filter(~Q(license_expressions=[]))
+
+    for resource in resources:
+        license_expression = str(combine_expressions(resource.license_expressions))
+        license_expression_spdx = build_spdx_license_expression(license_expression)
+        resource.declared_license_expression = license_expression
+        resource.declared_license_expression_spdx = license_expression_spdx
+        resource.save()
+
+
+def compute_resource_license_detections(apps, schema_editor):
+    """Compute CodebaseResource `license_detections` from old `licenses` field."""
+    pass
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("scanpipe", "0030_scancode_toolkit_v32_model_updates"),
@@ -32,4 +56,12 @@ class Migration(migrations.Migration):
             compute_package_declared_license_expression_spdx,
             reverse_code=migrations.RunPython.noop,
         ),
+        # migrations.RunPython(
+        #     compute_resource_detected_license_expression,
+        #     reverse_code=migrations.RunPython.noop,
+        # ),
+        # migrations.RunPython(
+        #     compute_resource_license_detections,
+        #     reverse_code=migrations.RunPython.noop,
+        # ),
     ]
