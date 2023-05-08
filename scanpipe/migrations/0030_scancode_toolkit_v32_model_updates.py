@@ -111,4 +111,38 @@ class Migration(migrations.Migration):
                 name="scanpipe_di_other_l_1f1616_idx",
             ),
         ),
+
+        # CodebaseResource
+        migrations.RenameField(
+            model_name="codebaseresource",
+            old_name="license_expressions",
+            new_name="detected_license_expression",
+        ),
+        migrations.AlterField(
+            model_name="codebaseresource",
+            name="detected_license_expression",
+            field=models.TextField(blank=True, help_text="TODO"),
+        ),
+        migrations.RenameField(
+            model_name="codebaseresource",
+            old_name="licenses",
+            new_name="license_detections",
+        ),
+        migrations.AddField(
+            model_name="codebaseresource",
+            name="detected_license_expression_spdx",
+            field=models.TextField(blank=True, help_text="TODO"),
+        ),
+        migrations.AddField(
+            model_name="codebaseresource",
+            name="license_clues",
+            field=models.JSONField(
+                blank=True, default=list, help_text="List of license clues."
+            ),
+        ),
+        migrations.AddField(
+            model_name="codebaseresource",
+            name="percentage_of_license_text",
+            field=models.FloatField(blank=True, help_text="TODO", null=True),
+        ),
     ]

@@ -4,9 +4,9 @@ from django.db import migrations
 from django.db.models import Q
 
 
-def compute_declared_license_expression_spdx(apps, schema_editor):
+def compute_package_declared_license_expression_spdx(apps, schema_editor):
     """
-    Compute `declared_license_expression_spdx`, when missing,
+    Compute DiscoveredPackage `declared_license_expression_spdx`, when missing,
     from `declared_license_expression`, when available.
     """
     from licensedcode.cache import build_spdx_license_expression
@@ -28,5 +28,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(compute_declared_license_expression_spdx),
+        migrations.RunPython(
+            compute_package_declared_license_expression_spdx,
+            reverse_code=migrations.RunPython.noop,
+        ),
     ]

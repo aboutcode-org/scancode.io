@@ -1438,17 +1438,16 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
 
-# TODO: Add in UI, API, ...
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
 
     detected_license_expression = models.TextField(
         blank=True,
-        help_text=_(""),
+        help_text=_("TODO"),
     )
     detected_license_expression_spdx = models.TextField(
         blank=True,
-        help_text=_(""),
+        help_text=_("TODO"),
     )
     license_detections = models.JSONField(
         blank=True,
@@ -1463,7 +1462,7 @@ class ScanFieldsModelMixin(models.Model):
     percentage_of_license_text = models.FloatField(
         blank=True,
         null=True,
-        help_text=_(""),
+        help_text=_("TODO"),
     )
     copyrights = models.JSONField(
         blank=True,
