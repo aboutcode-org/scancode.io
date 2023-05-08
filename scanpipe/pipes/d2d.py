@@ -29,13 +29,15 @@ from django.core.exceptions import ObjectDoesNotExist
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import flag
+from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
+from scanpipe.pipes import scancode
 
 FROM = "from/"
 TO = "to/"
 
-IGNORE_FILENAMES = ("packageinfo",)
+IGNORE_FILENAMES = ("package-info",)
 IGNORE_EXTENSIONS = ()
 IGNORE_PATHS = ("gradleTest/",)
 
@@ -144,94 +146,163 @@ def checksum_map(project, checksum_field, logger=None):
         _resource_checksum_map(to_resource, from_resources, checksum_field)
 
 
-def get_indexable_to_java_class_paths(to_resources_dot_class):
+def _resource_java_to_class_map(to_resource, from_resources, from_classes_index):
     """
-    Yield tuples of (resource id, fully-qualified Java name) for indexable
-    classes from the "to/" side of the project codebase.
+    Map the ``to_resource`` .class file Resource with a Resource in
+    ``from_resources`` .java files, using the ``from_classes_index`` index of
+    from/ fully qualified Java class names.
     """
-    for to_resource in to_resources_dot_class:
-        qualified_class = get_extracted_subpath(to_resource.path).strip("/")
-        path = Path(qualified_class)
-        parts_without_name = list(path.parts)[:-1]
-        if "$" in to_resource.name:
-            # an inner class: we keep only the outer class name
-            to_name = to_resource.name.split("$")[0]
-        else:
-            to_name = path.stem
-        # we append a .java extension so that we can map to the From side that is
-        # suypposed to contain the corresponding Java source code
-        fully_qualified_java_name = "/".join(parts_without_name + [f"{to_name}.java"])
-        yield to_resource.id, fully_qualified_java_name
-
-
-def java_to_class_map(project, logger=None):
-    """
-    Map From the .java source To its compiled .class(es) using Java fully
-    qualified names mapping.
-    """
-    project_files = project.codebaseresources.files().no_status()
-    to_resources = project_files.to_codebase().has_no_relation()
-    to_resources_dot_classes = to_resources.filter(name__endswith=".class")
-    to_resources_count = to_resources_dot_classes.count()
-
-    # build an index using to-side Java fully qualified class names
-    indexables = get_indexable_to_java_class_paths(to_resources_dot_classes)
-
-    # we do not index subpath since we want to match only fully qualified names
-    to_java_fqn_index = pathmap.build_index(indexables, with_subpaths=False)
-
-    from_resources = project_files.from_codebase().filter(name__endswith=".java")
-    from_resource_count = from_resources.count()
-    if logger:
-        logger(
-            f"Mapping {to_resources_count:,d} .class resources "
-            f"to {from_resource_count:,d} .java resources."
-        )
-
-    # iterate on the from "sources" resources and find a corresponding "to"
-    # deployed Java
-    resource_iterator = from_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, from_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            from_resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
-        map_from_resource_java_to_class(from_resource, to_resources, to_java_fqn_index)
-
-    # Flag not mapped .class in to/ codebase
-    to_resources = project_files.to_codebase().has_no_relation()
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
-    to_resources_count = to_resources_dot_classes.count()
-    to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
-
-
-def map_from_resource_java_to_class(from_resource, to_resources, to_java_fqn_index):
-    """
-    Create a mapping relation for the ``from_resource``  to the "to" resources
-    in ``to_resources`` query set using the ``to_java_fqn_index``.
-    """
-    match = pathmap.find_paths(from_resource.path, to_java_fqn_index)
+    normalized_java_path = jvm.get_normalized_java_path(to_resource.path)
+    match = pathmap.find_paths(path=normalized_java_path, index=from_classes_index)
     if not match:
         return
 
-    from_segments = from_resource.path.strip("/").split("/")
-    from_source_root = "/".join(from_segments[: -match.matched_path_length])
     for resource_id in match.resource_ids:
-        to_resource = to_resources.get(id=resource_id)
+        from_resource = from_resources.get(id=resource_id)
+        # compute the root of the packages on the source side
+        # TODO: consider storing this?
+        from_source_root_parts = from_resource.path.strip("/").split("/")
+        from_source_root = "/".join(
+            from_source_root_parts[: -match.matched_path_length]
+        )
         pipes.make_relation(
             from_resource=from_resource,
             to_resource=to_resource,
             map_type="java_to_class",
-            extra_data={
-                "from_source_root": f"{from_source_root}/",
-            },
+            extra_data={"from_source_root": f"{from_source_root}/"},
         )
+
+
+def java_to_class_map(project, logger=None):
+    """
+    Map to/ compiled Java .class(es) to from/ .java source using Java fully
+    qualified paths and indexing from/ .java files.
+    """
+    project_files = project.codebaseresources.files().no_status()
+    from_resources = project_files.from_codebase()
+    to_resources = project_files.to_codebase().has_no_relation()
+
+    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    resource_count = to_resources_dot_class.count()
+    if logger:
+        logger(f"Mapping {resource_count:,d} .class resources to .java")
+
+    from_resources_dot_java = from_resources.filter(name__endswith=".java")
+
+    # build an index using from-side Java fully qualified class file names
+    # built from the "java_package" and file name
+    indexables = get_indexable_qualified_java_paths(from_resources_dot_java)
+
+    # we do not index subpath since we want to match only fully qualified names
+    from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
+
+    resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_resource in enumerate(resource_iterator):
+        if logger:
+            last_percent = pipes.log_progress(
+                logger,
+                resource_index,
+                resource_count,
+                last_percent,
+                increment_percent=10,
+                start_time=start_time,
+            )
+        _resource_java_to_class_map(to_resource, from_resources, from_classes_index)
+
+    # Flag not mapped .class in to/ codebase
+    # TODO: consider skipping this as we could have a purldb match!
+    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
+
+
+def get_indexable_qualified_java_paths_from_values(resource_values):
+    """
+    Yield tuples of (resource id, fully-qualified Java path) for indexable
+    classes from a list of ``resource_data`` tuples of "from/" side of the
+    project codebase.
+
+    These ``resource_data`` input tuples are in the form:
+        (resource.id, resource.name, resource.extra_data)
+
+    And the output tuples look like this example::
+        (123, "org/apache/commons/LoggerImpl.java")
+
+    """
+    for res_id, res_name, res_extra_data in resource_values:
+        java_package = res_extra_data and res_extra_data.get("java_package")
+        if not java_package:
+            continue
+        fully_qualified = jvm.get_fully_qualified_java_path(
+            java_package,
+            filename=res_name,
+        )
+        yield res_id, fully_qualified
+
+
+def get_indexable_qualified_java_paths(from_resources_dot_java):
+    """
+    Yield tuples of (resource id, fully-qualified Java class name) for indexable
+    classes from the "from/" side of the project codebase using the
+    "java_package" Resource.extra_data.
+    """
+    resource_values = from_resources_dot_java.values_list("id", "name", "extra_data")
+    return get_indexable_qualified_java_paths_from_values(resource_values)
+
+
+def find_java_packages(project, logger=None):
+    """
+    Collect the Java packages of Java source files for a `project`.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes
+    can be controlled through the SCANCODEIO_PROCESSES setting.
+
+    Note: we use the same API as the ScanCode scans by design
+    """
+    from_java_resources = (
+        project.codebaseresources.files()
+        .no_status()
+        .from_codebase()
+        .has_no_relation()
+        .filter(name__endswith=".java")
+    )
+
+    if logger:
+        logger(
+            f"Finding Java package for {from_java_resources.count():,d} "
+            ".java resources."
+        )
+
+    scancode._scan_and_save(
+        resource_qs=from_java_resources,
+        scan_func=scan_for_java_package,
+        save_func=save_java_package_scan_results,
+    )
+
+
+def scan_for_java_package(location, with_threading=True):
+    """
+    Run a Java package scan on provided ``location``.
+
+    Return a dict of scan `results` and a list of `errors`.
+    """
+    scanners = [scancode.Scanner("java_package", jvm.get_java_package)]
+    return scancode._scan_resource(location, scanners, with_threading=with_threading)
+
+
+def save_java_package_scan_results(codebase_resource, scan_results, scan_errors):
+    """
+    Save the resource Java package scan results in the database as Resource.extra_data.
+    Create project errors if any occurred during the scan.
+    """
+    # note: we do not set a status on resources if we collected this correctly
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        codebase_resource.status = flag.SCANNED_WITH_ERROR
+    else:
+        codebase_resource.extra_data.update(scan_results)
+    codebase_resource.save()
 
 
 def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):

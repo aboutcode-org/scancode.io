@@ -212,11 +212,13 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
             "AbstractConfigurationProvider.java",
+            extra_data={"java_package": "org.apache.flume.node"},
         )
         from2 = make_resource_file(
             self.project1,
-            path="from-flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/WRONG/"
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/WRONG/"
             "Application.java",
+            extra_data={"java_package": "org.apache.flume.WRONG"},
         )
         to1 = make_resource_file(
             self.project1,
@@ -237,7 +239,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.java_to_class_map(self.project1, logger=buffer.write)
 
-        expected = "Mapping 3 .class resources to 1 .java resources."
+        expected = "Mapping 3 .class resources to .java"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
@@ -263,6 +265,7 @@ class ScanPipeD2DPipesTest(TestCase):
             self.project1,
             path="from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/"
             "AbstractConfigurationProvider.java",
+            extra_data={"java_package": "org.apache.flume.node"},
         )
         from2 = make_resource_file(
             self.project1,
@@ -282,7 +285,9 @@ class ScanPipeD2DPipesTest(TestCase):
             path="to/flume-ng-node-1.9.0.jar",
         )
 
-        d2d.java_to_class_map(self.project1)
+        buffer = io.StringIO()
+        d2d.java_to_class_map(self.project1, logger=buffer.write)
+
         relation = self.project1.codebaserelations.get()
         self.assertEqual(from1, relation.from_resource)
         self.assertEqual(to1, relation.to_resource)
@@ -301,6 +306,60 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(to_jar, relation.to_resource)
         to2.refresh_from_db()
         self.assertEqual("ignored-meta-inf", to2.status)
+
+    def test_scanpipe_pipes_d2d_jar_to_source_map_works_for_jar(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/org/apache/logging/log4j/core/util/SystemClock.java",
+            extra_data={"java_package": "org.apache.logging.log4j.core.util"},
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/META-INF/versions/9/org/apache/logging/log4j/core/util/SystemClock.class",  # NOQA: E501
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/org/apache/logging/log4j/core/util/SystemClock.class",
+        )
+
+        d2d.java_to_class_map(self.project1)
+
+        expected = [
+            (from1.path, to1.path, "java_to_class"),
+            (from1.path, to2.path, "java_to_class"),
+        ]
+
+        results = list(
+            self.project1.codebaserelations.all().values_list(
+                "from_resource__path", "to_resource__path", "map_type"
+            )
+        )
+
+        self.assertEqual(expected, results)
+
+    def test_scanpipe_pipes_d2d_get_indexable_qualified_java_paths_from_values_yields_correct_paths(  # NOQA: E501
+        self,
+    ):
+        resource_values = [
+            (
+                1,
+                "SystemClock.java",
+                {"java_package": "org.apache.logging.log4j.core.util"},
+            ),
+            (
+                2,
+                "SystemClock2.java",
+                {"java_package": "org.apache.logging.log4j.core.util"},
+            ),
+        ]
+        expected = [
+            (1, "org/apache/logging/log4j/core/util/SystemClock.java"),
+            (2, "org/apache/logging/log4j/core/util/SystemClock2.java"),
+        ]
+        results = list(
+            d2d.get_indexable_qualified_java_paths_from_values(resource_values)
+        )
+        self.assertEqual(expected, results)
 
     def test_scanpipe_pipes_d2d_path_map(self):
         from1 = make_resource_file(
