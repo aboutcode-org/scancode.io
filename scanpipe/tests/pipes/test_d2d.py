@@ -286,8 +286,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         buffer = io.StringIO()
-        d2d.map_jar_to_source(self.project1, logger=buffer.write)
-
+        d2d.map_java_to_class(self.project1, logger=buffer.write)
         relation = self.project1.codebaserelations.get()
         self.assertEqual(from1, relation.from_resource)
         self.assertEqual(to1, relation.to_resource)
