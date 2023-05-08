@@ -9,14 +9,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="discoveredpackage",
-            name="contains_source_code",
-        ),
-        migrations.RemoveField(
-            model_name="discoveredpackage",
-            name="manifest_path",
-        ),
         migrations.RemoveIndex(
             model_name="discoveredpackage",
             name="scanpipe_di_license_e8ce32_idx",
@@ -97,41 +89,22 @@ class Migration(migrations.Migration):
                 help_text="The other SPDX license expression for this package converted from its other_license_expression.",
             ),
         ),
-        migrations.AddIndex(
-            model_name="discoveredpackage",
-            index=models.Index(
-                fields=["declared_license_expression"],
-                name="scanpipe_di_declare_4b8499_idx",
-            ),
-        ),
-        migrations.AddIndex(
-            model_name="discoveredpackage",
-            index=models.Index(
-                fields=["other_license_expression"],
-                name="scanpipe_di_other_l_1f1616_idx",
-            ),
-        ),
-
-        # CodebaseResource
-        migrations.RenameField(
-            model_name="codebaseresource",
-            old_name="license_expressions",
-            new_name="detected_license_expression",
-        ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name="codebaseresource",
             name="detected_license_expression",
             field=models.TextField(blank=True, help_text="TODO"),
-        ),
-        migrations.RenameField(
-            model_name="codebaseresource",
-            old_name="licenses",
-            new_name="license_detections",
         ),
         migrations.AddField(
             model_name="codebaseresource",
             name="detected_license_expression_spdx",
             field=models.TextField(blank=True, help_text="TODO"),
+        ),
+        migrations.AddField(
+            model_name="codebaseresource",
+            name="license_detections",
+            field=models.JSONField(
+                blank=True, default=list, help_text="List of license detection details."
+            ),
         ),
         migrations.AddField(
             model_name="codebaseresource",

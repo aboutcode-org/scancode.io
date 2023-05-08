@@ -1662,6 +1662,7 @@ class CodebaseResource(
             models.Index(fields=["mime_type"]),
             models.Index(fields=["tag"]),
             models.Index(fields=["sha1"]),
+            models.Index(fields=["detected_license_expression"]),
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
