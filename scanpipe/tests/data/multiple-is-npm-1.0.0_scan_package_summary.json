@@ -24,7 +24,26 @@
     }
   ],
   "other_languages": [],
-  "license_matches": {},
+  "license_matches": {
+    "mit": [
+      {
+        "path": "is-npm/node_modules/is-npm/package.json",
+        "matched_text": "  \"license\": \"MIT\","
+      },
+      {
+        "path": "is-npm/node_modules/is-npm/readme.md",
+        "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
+      },
+      {
+        "path": "is-npm/package.json",
+        "matched_text": "  \"license\": \"MIT\","
+      },
+      {
+        "path": "is-npm/readme.md",
+        "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
+      }
+    ]
+  },
   "key_files": [
     {
       "path": "is-npm/package.json",
@@ -43,8 +62,31 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": true,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 5,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "start_line": 5,
+              "matched_text": "  \"license\": \"MIT\",",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "license_expression": "mit"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 3.33,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -174,8 +216,31 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": true,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 30,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "start_line": 28,
+              "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "license_expression": "mit"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 2.78,
       "copyrights": [
         {
           "end_line": 30,
@@ -290,14 +355,12 @@
       ],
       "other_license_expression": "",
       "other_license_expression_spdx": "",
-      "other_license_detections": {},
+      "other_license_detections": [],
       "extracted_license_statement": "['MIT']",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "manifest_path": "",
-      "contains_source_code": null,
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],

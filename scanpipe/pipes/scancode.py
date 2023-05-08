@@ -542,14 +542,15 @@ def _get_license_matches_grouped(project):
     license_expression.
     """
     license_matches = defaultdict(list)
+    resources_with_license = project.codebaseresources.has_licenses()
 
-    for resource in project.codebaseresources.has_licenses():
+    for resource in resources_with_license:
         file_cache = []
 
-        for license in resource.license_detections:
-            matched_rule = license.get("matched_rule", {})
-            license_expression = matched_rule.get("license_expression")
-            matched_text = license.get("matched_text")
+        # TODO:
+        for match in resource.license_detections[0].get("matches", []):
+            license_expression = match.get("license_expression")
+            matched_text = match.get("matched_text")
 
             # Do not include duplicated matched_text for a given license_expression
             # within the same file
