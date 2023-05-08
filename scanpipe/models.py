@@ -1948,6 +1948,7 @@ class CodebaseResource(
         """Return this CodebaseResource as an SPDX Package entry."""
         from scanpipe.pipes import spdx
 
+        # TODO: test_scanpipe_pipes_outputs_to_spdx
         spdx_license_keys = [
             license["spdx_license_key"] for license in self.license_detections
         ]

@@ -70,13 +70,52 @@
       "sha512": "",
       "copyright": "",
       "holder": "",
-      "declared_license_expression": "",
-      "declared_license_expression_spdx": "",
-      "license_detections": {},
+      "declared_license_expression": "bsd-new",
+      "declared_license_expression_spdx": "BSD-3-Clause",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 99.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+              "start_line": 1,
+              "matched_text": "license BSD",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 99,
+              "rule_identifier": "bsd-new_89.RULE",
+              "license_expression": "bsd-new"
+            }
+          ],
+          "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
+          "license_expression": "bsd-new"
+        },
+        {
+          "matches": [
+            {
+              "score": 99.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+              "start_line": 1,
+              "matched_text": "['License :: OSI Approved :: BSD License']",
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 99,
+              "rule_identifier": "pypi_bsd_license.RULE",
+              "license_expression": "bsd-new"
+            }
+          ],
+          "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
+          "license_expression": "bsd-new"
+        }
+      ],
       "other_license_expression": "",
       "other_license_expression_spdx": "",
-      "other_license_detections": {},
-      "extracted_license_statement": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {
@@ -85,8 +124,6 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "manifest_path": "",
-      "contains_source_code": null,
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
@@ -140,13 +177,52 @@
       "sha512": "",
       "copyright": "",
       "holder": "",
-      "declared_license_expression": "",
-      "declared_license_expression_spdx": "",
-      "license_detections": {},
+      "declared_license_expression": "bsd-new",
+      "declared_license_expression_spdx": "BSD-3-Clause",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 99.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+              "start_line": 1,
+              "matched_text": "license BSD",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 99,
+              "rule_identifier": "bsd-new_89.RULE",
+              "license_expression": "bsd-new"
+            }
+          ],
+          "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
+          "license_expression": "bsd-new"
+        },
+        {
+          "matches": [
+            {
+              "score": 99.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+              "start_line": 1,
+              "matched_text": "['License :: OSI Approved :: BSD License']",
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 99,
+              "rule_identifier": "pypi_bsd_license.RULE",
+              "license_expression": "bsd-new"
+            }
+          ],
+          "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
+          "license_expression": "bsd-new"
+        }
+      ],
       "other_license_expression": "",
       "other_license_expression_spdx": "",
-      "other_license_detections": {},
-      "extracted_license_statement": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {
@@ -155,8 +231,6 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "manifest_path": "",
-      "contains_source_code": null,
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
@@ -166,10 +240,10 @@
   "dependencies": [
     {
       "purl": "pkg:pypi/pytest",
-      "extracted_requirement": "",
+      "extracted_requirement": "pytest; extra == \"tests\"",
       "scope": "tests",
       "is_runtime": true,
-      "is_optional": false,
+      "is_optional": true,
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -179,10 +253,10 @@
     },
     {
       "purl": "pkg:pypi/pytest",
-      "extracted_requirement": "",
+      "extracted_requirement": "pytest; extra == \"tests\"",
       "scope": "tests",
       "is_runtime": true,
-      "is_optional": false,
+      "is_optional": true,
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -192,10 +266,10 @@
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
-      "extracted_requirement": "",
+      "extracted_requirement": "pytest-asyncio; extra == \"tests\"",
       "scope": "tests",
       "is_runtime": true,
-      "is_optional": false,
+      "is_optional": true,
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -205,10 +279,10 @@
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
-      "extracted_requirement": "",
+      "extracted_requirement": "pytest-asyncio; extra == \"tests\"",
       "scope": "tests",
       "is_runtime": true,
-      "is_optional": false,
+      "is_optional": true,
       "is_resolved": false,
       "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=fixed-uid-done-for-testing-5642512d1758",
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
@@ -235,8 +309,11 @@
       "is_archive": true,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -247,6 +324,7 @@
           "purl": "pkg:pypi/asgiref@3.3.0",
           "sha1": null,
           "type": "pypi",
+          "holder": null,
           "sha256": null,
           "sha512": null,
           "parties": [
@@ -290,20 +368,22 @@
             {
               "purl": "pkg:pypi/pytest",
               "scope": "tests",
+              "extra_data": {},
               "is_runtime": true,
-              "is_optional": false,
+              "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": null
+              "extracted_requirement": "pytest; extra == \"tests\""
             },
             {
               "purl": "pkg:pypi/pytest-asyncio",
               "scope": "tests",
+              "extra_data": {},
               "is_runtime": true,
-              "is_optional": false,
+              "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": null
+              "extracted_requirement": "pytest-asyncio; extra == \"tests\""
             }
           ],
           "download_url": null,
@@ -427,16 +507,55 @@
           ],
           "source_packages": [],
           "bug_tracking_url": null,
-          "declared_license": {
-            "license": "BSD",
-            "classifiers": [
-              "License :: OSI Approved :: BSD License"
-            ]
-          },
           "primary_language": "Python",
-          "license_expression": "bsd-new AND bsd-new",
+          "license_detections": [
+            {
+              "matches": [
+                {
+                  "score": 99.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+                  "start_line": 1,
+                  "matched_text": "license BSD",
+                  "match_coverage": 100.0,
+                  "matched_length": 2,
+                  "rule_relevance": 99,
+                  "rule_identifier": "bsd-new_89.RULE",
+                  "license_expression": "bsd-new"
+                }
+              ],
+              "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
+              "license_expression": "bsd-new"
+            },
+            {
+              "matches": [
+                {
+                  "score": 99.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+                  "start_line": 1,
+                  "matched_text": "['License :: OSI Approved :: BSD License']",
+                  "match_coverage": 100.0,
+                  "matched_length": 5,
+                  "rule_relevance": 99,
+                  "rule_identifier": "pypi_bsd_license.RULE",
+                  "license_expression": "bsd-new"
+                }
+              ],
+              "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
+              "license_expression": "bsd-new"
+            }
+          ],
           "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
-          "repository_homepage_url": "https://pypi.org/project/asgiref"
+          "repository_homepage_url": "https://pypi.org/project/asgiref",
+          "other_license_detections": [],
+          "other_license_expression": null,
+          "declared_license_expression": "bsd-new",
+          "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
+          "other_license_expression_spdx": null,
+          "declared_license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "for_packages": [
@@ -463,8 +582,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -491,8 +613,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -519,8 +644,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -534,7 +662,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
       "type": "file",
       "name": "LICENSE",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": "",
       "md5": "f09eb47206614a4954c51db8a94840fa",
@@ -547,49 +675,30 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [
+      "detected_license_expression": "bsd-new",
+      "detected_license_expression_spdx": "BSD-3-Clause",
+      "license_detections": [
         {
-          "key": "bsd-new",
-          "name": "BSD-3-Clause",
-          "owner": "Regents of the University of California",
-          "score": 100.0,
-          "category": "Permissive",
-          "end_line": 27,
-          "spdx_url": "https://spdx.org/licenses/BSD-3-Clause",
-          "text_url": "http://www.opensource.org/licenses/BSD-3-Clause",
-          "is_unknown": false,
-          "short_name": "BSD-3-Clause",
-          "start_line": 4,
-          "homepage_url": "http://www.opensource.org/licenses/BSD-3-Clause",
-          "is_exception": false,
-          "matched_rule": {
-            "matcher": "2-aho",
-            "licenses": [
-              "bsd-new"
-            ],
-            "identifier": "bsd-new_683.RULE",
-            "has_unknown": false,
-            "rule_length": 214,
-            "is_license_tag": false,
-            "match_coverage": 100.0,
-            "matched_length": 214,
-            "rule_relevance": 100,
-            "is_license_text": true,
-            "is_license_intro": false,
-            "is_license_notice": false,
-            "license_expression": "bsd-new",
-            "is_license_reference": false,
-            "referenced_filenames": []
-          },
-          "reference_url": "https://scancode-licensedb.aboutcode.org/bsd-new",
-          "spdx_license_key": "BSD-3-Clause",
-          "scancode_data_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/bsd-new.yml",
-          "scancode_text_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/bsd-new.LICENSE"
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 27,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_683.RULE",
+              "start_line": 4,
+              "match_coverage": 100.0,
+              "matched_length": 214,
+              "rule_relevance": 100,
+              "rule_identifier": "bsd-new_683.RULE",
+              "license_expression": "bsd-new"
+            }
+          ],
+          "identifier": "bsd_new-72cae3bc-4423-3a9e-be84-ee8bb5120a4d",
+          "license_expression": "bsd-new"
         }
       ],
-      "license_expressions": [
-        "bsd-new"
-      ],
+      "license_clues": [],
+      "percentage_of_license_text": 95.11,
       "copyrights": [
         {
           "end_line": 1,
@@ -606,7 +715,9 @@
       ],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -628,88 +739,48 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [
+      "detected_license_expression": "bsd-new",
+      "detected_license_expression_spdx": "BSD-3-Clause",
+      "license_detections": [
         {
-          "key": "bsd-new",
-          "name": "BSD-3-Clause",
-          "owner": "Regents of the University of California",
-          "score": 99.0,
-          "category": "Permissive",
-          "end_line": 8,
-          "spdx_url": "https://spdx.org/licenses/BSD-3-Clause",
-          "text_url": "http://www.opensource.org/licenses/BSD-3-Clause",
-          "is_unknown": false,
-          "short_name": "BSD-3-Clause",
-          "start_line": 8,
-          "homepage_url": "http://www.opensource.org/licenses/BSD-3-Clause",
-          "is_exception": false,
-          "matched_rule": {
-            "matcher": "2-aho",
-            "licenses": [
-              "bsd-new"
-            ],
-            "identifier": "bsd-new_89.RULE",
-            "has_unknown": false,
-            "rule_length": 2,
-            "is_license_tag": true,
-            "match_coverage": 100.0,
-            "matched_length": 2,
-            "rule_relevance": 99,
-            "is_license_text": false,
-            "is_license_intro": false,
-            "is_license_notice": false,
-            "license_expression": "bsd-new",
-            "is_license_reference": false,
-            "referenced_filenames": []
-          },
-          "reference_url": "https://scancode-licensedb.aboutcode.org/bsd-new",
-          "spdx_license_key": "BSD-3-Clause",
-          "scancode_data_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/bsd-new.yml",
-          "scancode_text_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/bsd-new.LICENSE"
+          "matches": [
+            {
+              "score": 99.0,
+              "matcher": "2-aho",
+              "end_line": 8,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+              "start_line": 8,
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 99,
+              "rule_identifier": "bsd-new_89.RULE",
+              "license_expression": "bsd-new"
+            }
+          ],
+          "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
+          "license_expression": "bsd-new"
         },
         {
-          "key": "bsd-new",
-          "name": "BSD-3-Clause",
-          "owner": "Regents of the University of California",
-          "score": 99.0,
-          "category": "Permissive",
-          "end_line": 16,
-          "spdx_url": "https://spdx.org/licenses/BSD-3-Clause",
-          "text_url": "http://www.opensource.org/licenses/BSD-3-Clause",
-          "is_unknown": false,
-          "short_name": "BSD-3-Clause",
-          "start_line": 16,
-          "homepage_url": "http://www.opensource.org/licenses/BSD-3-Clause",
-          "is_exception": false,
-          "matched_rule": {
-            "matcher": "2-aho",
-            "licenses": [
-              "bsd-new"
-            ],
-            "identifier": "pypi_bsd_license.RULE",
-            "has_unknown": false,
-            "rule_length": 5,
-            "is_license_tag": true,
-            "match_coverage": 100.0,
-            "matched_length": 5,
-            "rule_relevance": 99,
-            "is_license_text": false,
-            "is_license_intro": false,
-            "is_license_notice": false,
-            "license_expression": "bsd-new",
-            "is_license_reference": false,
-            "referenced_filenames": []
-          },
-          "reference_url": "https://scancode-licensedb.aboutcode.org/bsd-new",
-          "spdx_license_key": "BSD-3-Clause",
-          "scancode_data_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/bsd-new.yml",
-          "scancode_text_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/bsd-new.LICENSE"
+          "matches": [
+            {
+              "score": 99.0,
+              "matcher": "2-aho",
+              "end_line": 16,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+              "start_line": 16,
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 99,
+              "rule_identifier": "pypi_bsd_license.RULE",
+              "license_expression": "bsd-new"
+            }
+          ],
+          "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
+          "license_expression": "bsd-new"
         }
       ],
-      "license_expressions": [
-        "bsd-new",
-        "bsd-new"
-      ],
+      "license_clues": [],
+      "percentage_of_license_text": 0.54,
       "copyrights": [],
       "holders": [],
       "authors": [
@@ -726,6 +797,7 @@
           "purl": "pkg:pypi/asgiref@3.3.0",
           "sha1": null,
           "type": "pypi",
+          "holder": null,
           "sha256": null,
           "sha512": null,
           "parties": [
@@ -769,20 +841,22 @@
             {
               "purl": "pkg:pypi/pytest",
               "scope": "tests",
+              "extra_data": {},
               "is_runtime": true,
-              "is_optional": false,
+              "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": null
+              "extracted_requirement": "pytest; extra == \"tests\""
             },
             {
               "purl": "pkg:pypi/pytest-asyncio",
               "scope": "tests",
+              "extra_data": {},
               "is_runtime": true,
-              "is_optional": false,
+              "is_optional": true,
               "is_resolved": false,
               "resolved_package": {},
-              "extracted_requirement": null
+              "extracted_requirement": "pytest-asyncio; extra == \"tests\""
             }
           ],
           "download_url": null,
@@ -906,16 +980,55 @@
           ],
           "source_packages": [],
           "bug_tracking_url": null,
-          "declared_license": {
-            "license": "BSD",
-            "classifiers": [
-              "License :: OSI Approved :: BSD License"
-            ]
-          },
           "primary_language": "Python",
-          "license_expression": "bsd-new AND bsd-new",
+          "license_detections": [
+            {
+              "matches": [
+                {
+                  "score": 99.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/bsd-new_89.RULE",
+                  "start_line": 1,
+                  "matched_text": "license BSD",
+                  "match_coverage": 100.0,
+                  "matched_length": 2,
+                  "rule_relevance": 99,
+                  "rule_identifier": "bsd-new_89.RULE",
+                  "license_expression": "bsd-new"
+                }
+              ],
+              "identifier": "bsd_new-261898a0-0118-87c4-7092-14e4ff134882",
+              "license_expression": "bsd-new"
+            },
+            {
+              "matches": [
+                {
+                  "score": 99.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
+                  "start_line": 1,
+                  "matched_text": "['License :: OSI Approved :: BSD License']",
+                  "match_coverage": 100.0,
+                  "matched_length": 5,
+                  "rule_relevance": 99,
+                  "rule_identifier": "pypi_bsd_license.RULE",
+                  "license_expression": "bsd-new"
+                }
+              ],
+              "identifier": "bsd_new-f4e99f86-00ab-18d9-a65d-a3a12767dcf5",
+              "license_expression": "bsd-new"
+            }
+          ],
           "repository_download_url": "https://pypi.org/packages/source/a/asgiref/asgiref-3.3.0.tar.gz",
-          "repository_homepage_url": "https://pypi.org/project/asgiref"
+          "repository_homepage_url": "https://pypi.org/project/asgiref",
+          "other_license_detections": [],
+          "other_license_expression": null,
+          "declared_license_expression": "bsd-new",
+          "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
+          "other_license_expression_spdx": null,
+          "declared_license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "for_packages": [
@@ -929,7 +1042,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
       "type": "file",
       "name": "RECORD",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": "",
       "md5": "38e56802a5adcafeae35efc6e3d218ba",
@@ -942,13 +1055,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -957,7 +1075,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
       "type": "file",
       "name": "WHEEL",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": "",
       "md5": "5ccc7519eb42f1dfceee6e7d685f1ff5",
@@ -970,13 +1088,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -985,7 +1108,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/top_level.txt",
       "type": "file",
       "name": "top_level.txt",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".txt",
       "md5": "680e61db4d95c8d9501b7a49fa2bf0b2",
@@ -998,13 +1121,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1013,7 +1141,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
       "type": "file",
       "name": "__init__.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "4910b756f4e611055140e80f757d9325",
@@ -1026,13 +1154,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1041,7 +1174,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
       "type": "file",
       "name": "compatibility.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "5231077fd0628314246fcba7817b561e",
@@ -1054,13 +1187,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1069,7 +1207,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
       "type": "file",
       "name": "current_thread_executor.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "b4c45f37055d88dd11b15eb4de51b074",
@@ -1082,13 +1220,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1097,7 +1240,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
       "type": "file",
       "name": "local.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "e4103a2fcd6a3f23a036307c978271d7",
@@ -1110,13 +1253,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1125,7 +1273,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
       "type": "file",
       "name": "server.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "5b7619584de19d8f1a00fb5a43349153",
@@ -1138,13 +1286,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1153,7 +1306,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
       "type": "file",
       "name": "sync.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "44ec43af7ee367c7d6a5808d37133144",
@@ -1166,13 +1319,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1181,7 +1339,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
       "type": "file",
       "name": "testing.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "aff31de5fa753643adacf0311aa553f4",
@@ -1194,13 +1352,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1209,7 +1372,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
       "type": "file",
       "name": "timeout.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "8114ef1d7c1488ebf3a1766dbd39d427",
@@ -1222,54 +1385,37 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [
+      "detected_license_expression": "apache-2.0",
+      "detected_license_expression_spdx": "Apache-2.0",
+      "license_detections": [
         {
-          "key": "apache-2.0",
-          "name": "Apache License 2.0",
-          "owner": "Apache Software Foundation",
-          "score": 100.0,
-          "category": "Permissive",
-          "end_line": 2,
-          "spdx_url": "https://spdx.org/licenses/Apache-2.0",
-          "text_url": "http://www.apache.org/licenses/LICENSE-2.0",
-          "is_unknown": false,
-          "short_name": "Apache 2.0",
-          "start_line": 2,
-          "homepage_url": "http://www.apache.org/licenses/",
-          "is_exception": false,
-          "matched_rule": {
-            "matcher": "2-aho",
-            "licenses": [
-              "apache-2.0"
-            ],
-            "identifier": "apache-2.0_174.RULE",
-            "has_unknown": false,
-            "rule_length": 6,
-            "is_license_tag": false,
-            "match_coverage": 100.0,
-            "matched_length": 6,
-            "rule_relevance": 100,
-            "is_license_text": false,
-            "is_license_intro": false,
-            "is_license_notice": true,
-            "license_expression": "apache-2.0",
-            "is_license_reference": false,
-            "referenced_filenames": []
-          },
-          "reference_url": "https://scancode-licensedb.aboutcode.org/apache-2.0",
-          "spdx_license_key": "Apache-2.0",
-          "scancode_data_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/apache-2.0.yml",
-          "scancode_text_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/apache-2.0.LICENSE"
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 2,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_174.RULE",
+              "start_line": 2,
+              "match_coverage": 100.0,
+              "matched_length": 6,
+              "rule_relevance": 100,
+              "rule_identifier": "apache-2.0_174.RULE",
+              "license_expression": "apache-2.0"
+            }
+          ],
+          "identifier": "apache_2_0-5a90b5fa-5d10-5a98-d2a7-ef089c46a900",
+          "license_expression": "apache-2.0"
         }
       ],
-      "license_expressions": [
-        "apache-2.0"
-      ],
+      "license_clues": [],
+      "percentage_of_license_text": 1.22,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
@@ -1278,7 +1424,7 @@
       "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
       "type": "file",
       "name": "wsgi.py",
-      "status": "",
+      "status": "application-package",
       "tag": "",
       "extension": ".py",
       "md5": "4eed1361d0e454149f95fca85c84f33f",
@@ -1291,13 +1437,18 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
-      "for_packages": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
       "emails": [],
       "urls": [],
       "extra_data": {}
