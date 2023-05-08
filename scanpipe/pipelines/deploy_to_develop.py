@@ -47,6 +47,7 @@ class DeployToDevelop(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_and_ignored_files,
             cls.checksum_map,
+            cls.find_java_packages,
             cls.java_to_class_map,
             cls.jar_to_source_map,
             cls.purldb_match,
@@ -97,6 +98,10 @@ class DeployToDevelop(Pipeline):
     def checksum_map(self):
         """Map using SHA1 checksum."""
         d2d.checksum_map(project=self.project, checksum_field="sha1", logger=self.log)
+
+    def find_java_packages(self):
+        """Find the java package of the .java source files."""
+        d2d.find_java_packages(self.project, logger=self.log)
 
     def java_to_class_map(self):
         """Map a .class compiled file to its .java source."""
