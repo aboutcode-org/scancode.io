@@ -37,9 +37,9 @@ from scanpipe.pipes import scancode
 FROM = "from/"
 TO = "to/"
 
-IGNORE_FILENAMES = ("package-info",)
-IGNORE_EXTENSIONS = ()
-IGNORE_PATHS = ("gradleTest/",)
+IGNORED_FILENAMES = ("package-info",)
+IGNORED_EXTENSIONS = ()
+IGNORED_PATHS = ("gradleTest/",)
 
 
 def get_inputs(project):

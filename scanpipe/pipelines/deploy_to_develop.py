@@ -91,9 +91,9 @@ class DeployToDevelop(Pipeline):
     def flag_empty_and_ignored_files(self):
         """Flag empty and ignored files using names and extensions."""
         flag.flag_empty_codebase_resources(self.project)
-        flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORE_FILENAMES)
-        flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORE_EXTENSIONS)
-        flag.flag_ignored_paths(self.project, paths=d2d.IGNORE_PATHS)
+        flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORED_FILENAMES)
+        flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORED_EXTENSIONS)
+        flag.flag_ignored_paths(self.project, paths=d2d.IGNORED_PATHS)
 
     def map_checksum(self):
         """Map using SHA1 checksum."""
