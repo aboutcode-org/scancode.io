@@ -58,6 +58,11 @@ class ScanPipeJvmTest(TestCase):
         package = jvm.find_java_package(java_code.splitlines())
         self.assertEqual({"java_package": "org.apache.logging.log4j.core"}, package)
 
+    def test_scanpipe_pipes_jvm_find_java_package_with_spaces(self):
+        lines = ["   package    foo.back ;  # dsasdasdasdasdasda.asdasdasd"]
+        package = jvm.find_java_package(lines)
+        self.assertEqual({"java_package": "foo.back"}, package)
+
     def test_scanpipe_pipes_jvm_find_java_package_return_None(self):
         package = jvm.find_java_package(java_package_too_far_down.splitlines())
         self.assertIsNone(package)
@@ -76,3 +81,15 @@ class ScanPipeJvmTest(TestCase):
         input_location = self.data_location / "jvm" / "no-package.java"
         package = jvm.get_java_package(input_location)
         self.assertIsNone(package)
+
+    def test_scanpipe_pipes_jvm_get_normalized_java_path(self):
+        njp = jvm.get_normalized_java_path("foo/org/common/Bar.class")
+        self.assertEqual("foo/org/common/Bar.java", njp)
+
+    def test_scanpipe_pipes_jvm_get_normalized_java_path_with_inner_class(self):
+        njp = jvm.get_normalized_java_path("foo/org/common/Bar$inner.class")
+        self.assertEqual("foo/org/common/Bar.java", njp)
+
+    def test_scanpipe_pipes_jvm_get_fully_qualified_java_path(self):
+        fqjp = jvm.get_fully_qualified_java_path("org.common", "Bar.java")
+        self.assertEqual("org/common/Bar.java", fqjp)
