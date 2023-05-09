@@ -442,7 +442,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.java",
@@ -470,7 +472,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java",
@@ -498,7 +502,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
@@ -526,7 +532,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/EnvVarResolverProperties.java",
@@ -554,7 +562,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/MaterializedConfiguration.java",
@@ -582,7 +592,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java",
@@ -610,7 +622,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java",
@@ -638,7 +652,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.java",
@@ -666,7 +682,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.java",
@@ -694,7 +712,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.java",
@@ -722,7 +742,9 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {}
+      "extra_data": {
+        "java_package": "org.apache.flume.node"
+      }
     },
     {
       "path": "to",
