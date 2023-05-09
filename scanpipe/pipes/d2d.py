@@ -357,6 +357,13 @@ def map_jar_to_source(project, logger=None):
 
 
 def get_diff_ratio(to_resource, from_resource):
+    """
+    Return a similarity ratio as a float between 0 and 1 by comparing the
+    text content of the ``to_resource`` and ``from_resource``.
+
+    Return None if any of the two resources are not text files or if files
+    are not readable.
+    """
     if not (to_resource.is_text and from_resource.is_text):
         return
 
