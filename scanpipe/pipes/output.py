@@ -28,7 +28,8 @@ from pathlib import Path
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
-from django.template import loader
+from django.template import Context
+from django.template import Template
 
 import saneyaml
 import xlsxwriter
@@ -642,6 +643,25 @@ def get_expression_as_attribution_links(parsed_expression):
     return parsed_expression.simplify().render(template=template)
 
 
+def render_template(template_location, context):
+    """Render a Django template at `template_location` using the `context` dict."""
+    template_string = Path(template_location).read_text()
+    template = Template(template_string)
+    return template.render(Context(context))
+
+
+def get_attribution_template(project):
+    """Return a custom attribution template if provided or the default one."""
+    if config_directory := project.get_codebase_config_directory():
+        custom_template = config_directory / "templates" / "attribution.html"
+        if custom_template.exists():
+            return custom_template
+
+    scanpipe_templates = Path(scanpipe_app.path) / "templates"
+    default_template = scanpipe_templates / "attribution" / "default.html"
+    return default_template
+
+
 def to_attribution(project):
     """
     Generate attribution for the provided ``project``.
@@ -651,14 +671,6 @@ def to_attribution(project):
     `codebase/.scancode/templates/attribution.html` location.
     """
     output_file = project.get_output_file_path("results", "attribution.html")
-
-    scanpipe_templates = Path(scanpipe_app.path) / "templates"
-    template_location = scanpipe_templates / "attribution" / "default.html"
-
-    if dot_scancode := project.get_dot_scancode_directory():
-        custom_template = dot_scancode / "templates" / "attribution.html"
-        if custom_template.exists():
-            template_location = custom_template
 
     packages = get_queryset(project, "discoveredpackage")
 
@@ -681,8 +693,8 @@ def to_attribution(project):
         "packages": packages,
         "licenses": licenses,
     }
-
-    content = loader.render_to_string(template_location, context)
-    output_file.write_text(content)
+    template_location = get_attribution_template(project)
+    rendered_template = render_template(template_location, context)
+    output_file.write_text(rendered_template)
 
     return output_file
