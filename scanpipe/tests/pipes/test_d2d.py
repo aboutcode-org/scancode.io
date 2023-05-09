@@ -388,3 +388,30 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(to1, relation.to_resource)
         self.assertEqual("path", relation.map_type)
         self.assertEqual({"path_score": "3/3"}, relation.extra_data)
+
+    def test_scanpipe_pipes_d2d_find_java_packages(self):
+        input_locations = [
+            self.data_location / "d2d" / "find_java_packages" / "Foo.java",
+            self.data_location / "d2d" / "find_java_packages" / "Baz.java",
+            self.data_location / "d2d" / "find_java_packages" / "Baz.class",
+        ]
+
+        from_dir = self.project1.codebase_path / "from"
+        from_dir.mkdir()
+        copy_inputs(input_locations, from_dir)
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.find_java_packages(self.project1, logger=buffer.write)
+
+        expected = "Finding Java package for 2 .java resources."
+        self.assertEqual(expected, buffer.getvalue())
+
+        expected = [
+            {"extra_data": {}, "path": "from"},
+            {"extra_data": {}, "path": "from/Baz.class"},
+            {"extra_data": {"java_package": "org.apache.biz"}, "path": "from/Baz.java"},
+            {"extra_data": {"java_package": "org.apache.foo"}, "path": "from/Foo.java"},
+        ]
+        results = list(self.project1.codebaseresources.values("path", "extra_data"))
+        self.assertEqual(expected, results)
