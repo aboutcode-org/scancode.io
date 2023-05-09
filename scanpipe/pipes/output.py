@@ -658,7 +658,7 @@ def get_attribution_template(project):
             return custom_template
 
     scanpipe_templates = Path(scanpipe_app.path) / "templates"
-    default_template = scanpipe_templates / "attribution" / "default.html"
+    default_template = scanpipe_templates / "scanpipe" / "attribution.html"
     return default_template
 
 

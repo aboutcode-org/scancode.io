@@ -35,7 +35,7 @@ class Command(ProjectCommand):
             "--format",
             default=["json"],
             nargs="+",
-            choices=["json", "csv", "xlsx", "spdx", "cyclonedx"],
+            choices=["json", "csv", "xlsx", "spdx", "cyclonedx", "attribution"],
             help="Specifies the output serialization format for the results.",
         )
         parser.add_argument(
@@ -64,6 +64,7 @@ class Command(ProjectCommand):
                 "xlsx": output.to_xlsx,
                 "spdx": output.to_spdx,
                 "cyclonedx": output.to_cyclonedx,
+                "attribution": output.to_attribution,
             }.get(format_)
 
             output_file = output_function(self.project)

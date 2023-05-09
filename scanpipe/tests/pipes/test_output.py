@@ -288,7 +288,7 @@ class ScanPipeOutputPipesTest(TestCase):
     def test_scanpipe_pipes_outputs_get_attribution_template(self):
         project = Project.objects.create(name="Analysis")
         template_location = str(output.get_attribution_template(project))
-        expected_location = "scanpipe/templates/attribution/default.html"
+        expected_location = "templates/scanpipe/attribution.html"
         self.assertTrue(template_location.endswith(expected_location))
 
         config_directory = make_config_directory(project)
