@@ -23,9 +23,13 @@
 import csv
 import json
 import re
+from operator import attrgetter
+from pathlib import Path
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
+from django.template import Context
+from django.template import Template
 
 import saneyaml
 import xlsxwriter
@@ -36,6 +40,7 @@ from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licenses_by_spdx_key
+from licensedcode.cache import get_licensing
 from packagedcode.utils import combine_expressions
 from scancode_config import __version__ as scancode_toolkit_version
 
@@ -627,5 +632,69 @@ def to_cyclonedx(project):
     bom_json = outputter.output_as_string()
     with output_file.open("w") as file:
         file.write(bom_json)
+
+    return output_file
+
+
+def get_expression_as_attribution_links(parsed_expression):
+    template = (
+        '<a href="#license_{symbol.wrapped.key}">{symbol.wrapped.spdx_license_key}</a>'
+    )
+    return parsed_expression.simplify().render(template=template)
+
+
+def render_template(template_location, context):
+    """Render a Django template at `template_location` using the `context` dict."""
+    template_string = Path(template_location).read_text()
+    template = Template(template_string)
+    return template.render(Context(context))
+
+
+def get_attribution_template(project):
+    """Return a custom attribution template if provided or the default one."""
+    if config_directory := project.get_codebase_config_directory():
+        custom_template = config_directory / "templates" / "attribution.html"
+        if custom_template.exists():
+            return custom_template
+
+    scanpipe_templates = Path(scanpipe_app.path) / "templates"
+    default_template = scanpipe_templates / "scanpipe" / "attribution.html"
+    return default_template
+
+
+def to_attribution(project):
+    """
+    Generate attribution for the provided ``project``.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    Custom template can be provided in the
+    `codebase/.scancode/templates/attribution.html` location.
+    """
+    output_file = project.get_output_file_path("results", "attribution.html")
+
+    packages = get_queryset(project, "discoveredpackage")
+
+    licensing = get_licensing()
+    license_symbols = []
+
+    for package in packages:
+        if package.license_expression:
+            parsed = licensing.parse(package.license_expression)
+            package.expression_links = get_expression_as_attribution_links(parsed)
+            # .decompose() is required for LicenseWithExceptionSymbol support
+            for symbol in parsed.symbols:
+                license_symbols.extend(list(symbol.decompose()))
+
+    licenses = [symbol.wrapped for symbol in set(license_symbols)]
+    licenses.sort(key=attrgetter("spdx_license_key"))
+
+    context = {
+        "project": project,
+        "packages": packages,
+        "licenses": licenses,
+    }
+    template_location = get_attribution_template(project)
+    rendered_template = render_template(template_location, context)
+    output_file.write_text(rendered_template)
 
     return output_file

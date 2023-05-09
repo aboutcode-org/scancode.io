@@ -598,6 +598,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """Return the `tmp` directory as a Path instance."""
         return Path(self.work_path / "tmp")
 
+    def get_codebase_config_directory(self):
+        """Return the `.scancode` directory if available in the `codebase` directory."""
+        config_directory = self.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+        if config_directory.exists():
+            return config_directory
+
     def clear_tmp_directory(self):
         """
         Delete the whole content of the tmp/ directory.
