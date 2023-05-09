@@ -1,0 +1,14 @@
+{
+   "version":3,
+   "sources":[
+      "../../../../../src/main/resources/META-INF/adaptive_media/js/main.js"
+   ],
+   "names":[
+      "randomIndex",
+      "randomChar"
+   ],
+   "mappings":"6WA6De,SAAAA,SAAAC",
+   "sourcesContent":[
+      "// Set the possible characters for the password\nconst charSet = \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_-+=\";\n\n// Function to generate a random password\nfunction generatePassword(length) {\n  let password = \"\";\n  for (let i = 0; i < length; i++) {\n    // Choose a random character from the character set\n    const randomIndex = Math.floor(Math.random() * charSet.length);\n    const randomChar = charSet[randomIndex];\n    // Add the random character to the password string\n    password += randomChar;\n  }\n  return password;\n}\n\n// Get the password length from the user\nconst passwordLength = parseInt(prompt(\"Enter the desired length of your password:\"));\n\n// Generate the password and display it to the user\nconst password = generatePassword(passwordLength);\nalert(`Your random password is: ${password}`);\n"
+   ]
+}

@@ -286,6 +286,7 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
             ("many", "Many map"),
             ("java_to_class", "java to class"),
             ("jar_to_source", "jar to source"),
+            ("js_compiled", "js csompiled"),
             ("path", "path"),
             ("sha1", "sha1"),
         )

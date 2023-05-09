@@ -21,8 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import difflib
+import hashlib
+import json
 from pathlib import Path
 from timeit import default_timer as timer
+
+from django.db.models import Q
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -38,6 +42,54 @@ TO = "to/"
 IGNORED_FILENAMES = ("packageinfo", "package-info.java", "package-info.class")
 IGNORED_EXTENSIONS = ()
 IGNORED_PATHS = ("gradleTest/",)
+
+"""
+`PROSPECTIVE_JAVASCRIPT_MAP` maps source file extensions to a list of dict
+that specifies extension of transformed files. The `to_minified_ext` key in
+each dict specifies the file extension of the transformed minified file, and
+the `to_related` key specifies the related file extensions that are generated
+alongside the transformed file (inclusive of minified file extension).
+For example, the `.scss` key maps to a list of two dict. The first dict
+specifies that `.scss` file is transformed into minified `.css` files along
+with `.css.map` and `_rtl.css`, and the second dict specifies that `.scss`
+is also transformed into minified `.scss.js` file along with `.scss.js.map`.
+"""
+PROSPECTIVE_JAVASCRIPT_MAP = {
+    ".scss": [
+        {
+            "to_minified_ext": ".css",
+            "to_related": [".css", ".css.map", "_rtl.css"],
+        },
+        {
+            "to_minified_ext": ".scss.js",
+            "to_related": [".scss.js", ".scss.js.map"],
+        },
+    ],
+    ".js": [
+        {
+            "to_minified_ext": ".js",
+            "to_related": [".js", ".js.map"],
+        },
+    ],
+    ".jsx": [
+        {
+            "to_minified_ext": ".js",
+            "to_related": [".jsx", ".js", ".js.map"],
+        },
+    ],
+    ".ts": [
+        {
+            "to_minified_ext": ".js",
+            "to_related": [".ts", ".js", ".js.map"],
+        },
+    ],
+    ".d.ts": [
+        {
+            "to_minified_ext": None,
+            "to_related": [".ts"],
+        },
+    ],
+}
 
 
 def get_inputs(project):
@@ -524,3 +576,198 @@ def match_purldb(project, extensions, logger=None):
             start_time=start_time,
         )
         _match_purldb_resource(project, to_resource)
+
+
+def map_javascript(project, logger=None):
+    """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
+    project_files = project.codebaseresources.files().only("path")
+    query = Q(
+        *[Q(extension=extension) for extension in PROSPECTIVE_JAVASCRIPT_MAP.keys()],
+        _connector=Q.OR,
+    )
+
+    from_resources = project_files.from_codebase().filter(query)
+    to_resources = project_files.to_codebase()
+    resource_count = from_resources.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} from/ resources using javascript map "
+            f"against to/ codebase"
+        )
+
+    resource_iterator = from_resources.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, from_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _map_javascript_resource(from_resource, to_resources)
+
+
+def _map_javascript_resource(from_resource, to_resources):
+    path = Path(from_resource.path.lstrip("/"))
+    # Skip any dot files.
+    if path.name.startswith("."):
+        return
+
+    basename, from_extension = _get_basename_and_extension(path.name)
+    path_parts = (path.parent / basename).parts
+    path_parts_len = len(path_parts)
+
+    for index in range(1, path_parts_len - 1):
+        current_parts = path_parts[index:]
+        current_path = "/".join(current_parts)
+
+        any_map = False
+
+        for candidate in PROSPECTIVE_JAVASCRIPT_MAP.get(from_extension, []):
+            query = Q(
+                *[
+                    Q(path__endswith=f"{current_path}{extension}")
+                    for extension in candidate["to_related"]
+                ],
+                _connector=Q.OR,
+            )
+
+            matches = to_resources.filter(query)
+
+            if not matches:
+                continue
+
+            # Only create relations when the number of matches if inferior or
+            # equal to the sum of current number of path segment matched and
+            # number of related files.
+            if len(matches) > len(current_parts) + len(candidate["to_related"]):
+                continue
+
+            map_type = "path"
+            if _is_minified_and_map_compiled_from_source(
+                matches,
+                from_resource,
+                minified_extension=candidate["to_minified_ext"],
+            ):
+                map_type = "js_compiled"
+
+            _relate_js_files(
+                matches,
+                from_resource,
+                map_type,
+                path_score=f"{len(current_parts)}/{path_parts_len-1}",
+            )
+            any_map = True
+
+        if any_map:
+            break
+
+
+def _relate_js_files(matches, from_resource, map_type, path_score):
+    for match in matches:
+        relation = CodebaseRelation.objects.filter(
+            from_resource=from_resource,
+            to_resource=match,
+            map_type=map_type,
+        )
+        if not relation.exists():
+            pipes.make_relation(
+                from_resource=from_resource,
+                to_resource=match,
+                map_type=map_type,
+                extra_data={
+                    "path_score": path_score,
+                },
+            )
+
+
+def _is_minified_and_map_compiled_from_source(
+    to_resources, from_source, minified_extension
+):
+    """Return True if a minified file and its map were compiled from a source file."""
+    if not minified_extension:
+        return False
+    path = Path(from_source.path.lstrip("/"))
+    basename, extension = _get_basename_and_extension(path.name)
+    minified_file, minified_map_file = None, None
+
+    source_file_name = path.name
+    source_mapping = f"sourceMappingURL={basename}{minified_extension}.map"
+
+    for resource in to_resources:
+        if resource.path.endswith(minified_extension):
+            minified_file = resource
+        elif resource.path.endswith(f"{minified_extension}.map"):
+            minified_map_file = resource
+
+    if minified_file and minified_map_file:
+        # Check minified_file contains reference to the source file.
+        if _source_mapping_in_minified(minified_file, source_mapping):
+            # Check source file's content is in the map file or if the
+            # source file path is in the map file.
+            if _source_content_in_map(minified_map_file, from_source) or _source_in_map(
+                minified_map_file, source_file_name
+            ):
+                return True
+
+    return False
+
+
+def _source_mapping_in_minified(resource, source_mapping):
+    """Return True if a string contains a specific string in its last 5 lines."""
+    lines = resource.file_content.split("\n")
+    total_lines = len(lines)
+    # Get the last 5 lines.
+    tail = 5 if total_lines > 5 else total_lines
+    return any(source_mapping in line for line in reversed(lines[-tail:]))
+
+
+def _source_in_map(map_file, source_name):
+    """
+    Return True if the given source file name exists in the sources list of the
+    specified map file.
+    """
+    try:
+        with open(map_file.location) as f:
+            data = json.load(f)
+            sources = data.get("sources", [])
+            return any(source.endswith(source_name) for source in sources)
+    except json.JSONDecodeError:
+        return False
+
+
+def _sha1(content):
+    """Calculate the SHA-1 hash of a string."""
+    hash_object = hashlib.sha1(content.encode())
+    return hash_object.hexdigest()
+
+
+def _source_content_in_map(map_file, source_file):
+    """Return True if the given source content is in specified map file."""
+    origin_sha1 = source_file.sha1
+    try:
+        with open(map_file.location) as f:
+            data = json.load(f)
+            contents = data.get("sourcesContent", [])
+            return any(origin_sha1 == _sha1(content) for content in contents)
+    except json.JSONDecodeError:
+        return False
+
+
+def _get_basename_and_extension(filename):
+    """Return the basename and extension of a JavaScript/TypeScript related file."""
+    # The order of extensions in the list matters since
+    # `.d.ts` should be tested first before `.ts`.
+    js_extensions = [".d.ts", ".ts", ".js", ".jsx", ".scss"]
+    for ext in js_extensions:
+        if filename.endswith(ext):
+            extension = ext
+            break
+    else:
+        raise ValueError(f"{filename} has an invalid extension")
+    basename = filename[: -len(extension)]
+    return basename, extension

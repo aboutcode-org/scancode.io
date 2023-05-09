@@ -1,0 +1,3 @@
+const charSet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_-+=";function generatePassword(r){let e="";for(let s=0;s<r;s++){let o=Math.floor(Math.random()*charSet.length),t=charSet[o];e+=t}return e}const passwordLength=parseInt(prompt("Enter the desired length of your password:")),password=generatePassword(passwordLength);alert(`Your random password is: ${password}`);
+
+/*# sourceMappingURL=main.js.map */

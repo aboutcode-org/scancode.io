@@ -51,6 +51,7 @@ class DeployToDevelop(Pipeline):
             cls.map_java_to_class,
             cls.flag_to_meta_inf_files,
             cls.map_jar_to_source,
+            cls.map_javascript,
             cls.match_purldb,
             cls.map_path,
             cls.flag_mapped_resources_and_ignored_directories,
@@ -115,6 +116,13 @@ class DeployToDevelop(Pipeline):
     def map_jar_to_source(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_jar_to_source(project=self.project, logger=self.log)
+
+    def map_javascript(self):
+        """
+        Map a packed or minified JavaScript, TypeScript, CSS and SCSS
+        to its source.
+        """
+        d2d.map_javascript(project=self.project, logger=self.log)
 
     def match_purldb(self):
         """Match selected files by extension in PurlDB."""
