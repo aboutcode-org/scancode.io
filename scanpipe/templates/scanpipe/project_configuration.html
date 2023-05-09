@@ -1,0 +1,70 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  <div class="container is-max-desktop">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Configuration" %}
+      </div>
+    </section>
+
+    <section class="mx-5 mt-3 pb-1">
+      <div id="form-errors" class="notification is-danger {% if not form.errors %}is-hidden{% endif %}">
+        {% for field_name, errors in form.errors.items %}
+          {{ errors }}
+        {% endfor %}
+      </div>
+
+      <div class="columns">
+        <div class="column is-three-fifths pr-5 pb-0">
+          <form method="post" action="{% url 'project_configuration' project.uuid %}">{% csrf_token %}
+            {% for section, options in configuration_options.items %}
+              <div class="panel is-info">
+                <p class="panel-heading py-2 is-size-6">
+                  {{ section|title }}
+                </p>
+                <div class="panel-block" style="display: block;">
+                  {% for name, type, default, help_text in options %}
+                    {% if type == "str" or type == "text" %}
+                      <div class="field">
+                        <label class="label" for="{{ name }}">{{ name }}</label>
+                        <div class="control">
+                          {% if type == "str" %}
+                            <input type="text" name="{{ name }}" class="input" id="id_{{ name }}" value="{{ default|default_if_none:'' }}">
+                          {% else %}
+                            <textarea class="textarea" name="{{ name }}" id="id_{{ name }}">{{ default|default_if_none:'' }}</textarea>
+                          {% endif %}
+                          <p class="help">{{ help_text }}</p>
+                        </div>
+                      </div>
+                    {% elif type == "bool" %}
+                      <div class="field">
+                        <label class="checkbox" for="{{ name }}">
+                          <input type="checkbox" name="{{ name }}" id="id_{{ name }}"{% if default == True %} checked="checked"{% endif %}>
+                          {{ name }}
+                        </label>
+                        <p class="help">{{ help_text }}</p>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+
+            <div class="columns mt-4 is-variable is-1">
+              <div class="column is-one-third">
+                <a href="{% url 'project_detail' project.uuid %}" class="button is-fullwidth">Cancel</a>
+              </div>
+              <div class="column">
+                <input type="submit" class="button is-fullwidth is-link" value="Submit">
+              </div>
+            </div>
+          </form>
+          {{ form.media }}
+        </div>
+      </div>
+
+    </section>
+  </div>
+{% endblock %}

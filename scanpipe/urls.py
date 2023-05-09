@@ -92,6 +92,11 @@ urlpatterns = [
         name="project_reset",
     ),
     path(
+        "project/<uuid:uuid>/configuration/",
+        views.ProjectConfigurationView.as_view(),
+        name="project_configuration",
+    ),
+    path(
         "run/<uuid:uuid>/",
         views.run_detail_view,
         name="run_detail",

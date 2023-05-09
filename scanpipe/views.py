@@ -585,6 +585,21 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         return redirect(project)
 
 
+class ProjectConfigurationView(
+    ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
+):
+    template_name = "scanpipe/project_configuration.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["configuration_options"] = scanpipe_app.configuration_options
+        return context
+
+    def post(self, request, *args, **kwargs):
+        project = self.get_object()
+        return redirect(project)
+
+
 class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_charts.html"
 
