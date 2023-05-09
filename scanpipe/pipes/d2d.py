@@ -226,7 +226,6 @@ def get_indexable_qualified_java_paths_from_values(resource_values):
 
     And the output tuples look like this example::
         (123, "org/apache/commons/LoggerImpl.java")
-
     """
     for res_id, res_name, res_extra_data in resource_values:
         java_package = res_extra_data and res_extra_data.get("java_package")
