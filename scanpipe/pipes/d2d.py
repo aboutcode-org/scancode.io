@@ -37,7 +37,7 @@ from scanpipe.pipes import scancode
 FROM = "from/"
 TO = "to/"
 
-IGNORED_FILENAMES = ("package-info",)
+IGNORED_FILENAMES = ("packageinfo", "package-info.java", "package-info.class")
 IGNORED_EXTENSIONS = ()
 IGNORED_PATHS = ("gradleTest/",)
 
@@ -160,7 +160,6 @@ def _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
     for resource_id in match.resource_ids:
         from_resource = from_resources.get(id=resource_id)
         # compute the root of the packages on the source side
-        # TODO: consider storing this?
         from_source_root_parts = from_resource.path.strip("/").split("/")
         from_source_root = "/".join(
             from_source_root_parts[: -match.matched_path_length]
@@ -212,7 +211,6 @@ def map_java_to_class(project, logger=None):
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
     # Flag not mapped .class in to/ codebase
-    # TODO: consider skipping this as we could have a purldb match!
     to_resources_dot_class = to_resources.filter(name__endswith=".class")
     to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
