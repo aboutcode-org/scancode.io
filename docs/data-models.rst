@@ -35,6 +35,13 @@ DiscoveredDependency
     :undoc-members:
     :member-order: groupwise
 
+CodebaseRelation
+----------------
+.. autoclass:: scanpipe.models.CodebaseRelation()
+    :members:
+    :undoc-members:
+    :member-order: groupwise
+
 ProjectError
 ------------
 .. autoclass:: scanpipe.models.ProjectError()
