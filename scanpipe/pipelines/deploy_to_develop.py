@@ -59,7 +59,7 @@ class DeployToDevelop(Pipeline):
     purldb_match_extensions = [".jar", ".war", ".zip"]
 
     def get_inputs(self):
-        """Locate the `from` and `to` archives."""
+        """Locate the ``from`` and ``to`` archives."""
         self.from_file, self.to_file = d2d.get_inputs(self.project)
 
         self.from_path = self.project.codebase_path / d2d.FROM
@@ -106,6 +106,10 @@ class DeployToDevelop(Pipeline):
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_java_to_class(project=self.project, logger=self.log)
+
+    def flag_to_meta_inf_files(self):
+        """Flag all ``META-INF/*`` file of the ``to/`` directory as ignored."""
+        d2d.flag_to_meta_inf_files(self.project)
 
     def map_jar_to_source(self):
         """Map a .class compiled file to its .java source."""
