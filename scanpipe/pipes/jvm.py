@@ -30,7 +30,7 @@ java_package_re = re.compile(r"^\s*package\s+([\w\.]+)\s*;")
 
 def get_java_package(location, java_extensions=(".java",), **kwargs):
     """
-    Return a Java package as a mapping with a single "java_package" key, or None
+    Return a Java package as a mapping with a single "java_package" key, or ``None``
     from the .java source code file at ``location``.
 
     Only look at files with an extension in the ``java_extensions`` tuple.
@@ -53,12 +53,13 @@ def get_java_package(location, java_extensions=(".java",), **kwargs):
 
 def find_java_package(lines):
     """
-    Return a mapping of {'java_package': <value>} or None from an iterable or
+    Return a mapping of ``{'java_package': <value>}`` or ``None`` from an iterable or
     text ``lines``.
 
     For example::
-    >>> lines = ["   package    foo.back ;  # dsasdasdasdasdasda.asdasdasd"]
-    >>> assert find_java_package(lines) == {"java_package": "foo.back"}
+
+        >>> lines = ["   package    foo.back ;  # dsasdasdasdasdasda.asdasdasd"]
+        >>> assert find_java_package(lines) == {"java_package": "foo.back"}
     """
     package = _find_java_package(lines)
     if package:
@@ -67,11 +68,12 @@ def find_java_package(lines):
 
 def _find_java_package(lines):
     """
-    Return a Java package or None from an iterable or text ``lines``.
+    Return a Java package or ``None`` from an iterable or text ``lines``.
 
     For example::
-    >>> lines = ["   package    foo.back ;  # dsasdasdasdasdasda.asdasdasd"]
-    >>> assert _find_java_package(lines) == "foo.back", _find_java_package(lines)
+
+        >>> lines = ["   package    foo.back ;  # dsasdasdasdasdasda.asdasdasd"]
+        >>> assert _find_java_package(lines) == "foo.back", _find_java_package(lines)
     """
     for ln, line in enumerate(lines):
         # only look at the first 500 lines
@@ -89,10 +91,11 @@ def get_normalized_java_path(path):
     outer class.
 
     For example::
-    >>> get_normalized_java_path("foo/org/common/Bar$inner.class")
-    'foo/org/common/Bar.java'
-    >>> get_normalized_java_path("foo/org/common/Bar.class")
-    'foo/org/common/Bar.java'
+
+        >>> get_normalized_java_path("foo/org/common/Bar$inner.class")
+        'foo/org/common/Bar.java'
+        >>> get_normalized_java_path("foo/org/common/Bar.class")
+        'foo/org/common/Bar.java'
     """
     assert path.endswith(".class")
     path = Path(path.strip("/"))
@@ -111,8 +114,9 @@ def get_fully_qualified_java_path(java_package, filename):
     Note that we use "/" as path separators.
 
     For example::
-    >>> get_fully_qualified_java_path("org.common" , "Bar.java")
-    'org/common/Bar.java'
+
+        >>> get_fully_qualified_java_path("org.common" , "Bar.java")
+        'org/common/Bar.java'
     """
     java_package = java_package.replace(".", "/")
     return f"{java_package}/{filename}"
