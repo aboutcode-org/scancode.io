@@ -62,8 +62,8 @@ class DockerWindows(Docker):
 
     def tag_program_files_dirs_as_packages(self):
         """
-        Report the immediate subdirectories of `Program Files` and `Program
-        Files (x86)` as packages.
+        Report the immediate subdirectories of ``Program Files`` and ``Program
+        Files (x86)`` as packages.
         """
         windows.tag_program_files(self.project)
 

@@ -24,8 +24,6 @@ import difflib
 from pathlib import Path
 from timeit import default_timer as timer
 
-from django.core.exceptions import ObjectDoesNotExist
-
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import flag
@@ -181,12 +179,12 @@ def map_java_to_class(project, logger=None):
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class = to_resources.filter(extension=".class")
     resource_count = to_resources_dot_class.count()
     if logger:
         logger(f"Mapping {resource_count:,d} .class resources to .java")
 
-    from_resources_dot_java = from_resources.filter(name__endswith=".java")
+    from_resources_dot_java = from_resources.filter(extension=".java")
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -211,7 +209,7 @@ def map_java_to_class(project, logger=None):
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
     # Flag not mapped .class in to/ codebase
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class = to_resources.filter(extension=".class")
     to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
 
@@ -227,15 +225,15 @@ def get_indexable_qualified_java_paths_from_values(resource_values):
     And the output tuples look like this example::
         (123, "org/apache/commons/LoggerImpl.java")
     """
-    for res_id, res_name, res_extra_data in resource_values:
-        java_package = res_extra_data and res_extra_data.get("java_package")
+    for resource_id, resource_name, resource_extra_data in resource_values:
+        java_package = resource_extra_data and resource_extra_data.get("java_package")
         if not java_package:
             continue
         fully_qualified = jvm.get_fully_qualified_java_path(
             java_package,
-            filename=res_name,
+            filename=resource_name,
         )
-        yield res_id, fully_qualified
+        yield resource_id, fully_qualified
 
 
 def get_indexable_qualified_java_paths(from_resources_dot_java):
@@ -262,7 +260,7 @@ def find_java_packages(project, logger=None):
         .no_status()
         .from_codebase()
         .has_no_relation()
-        .filter(name__endswith=".java")
+        .filter(extension=".java")
     )
 
     if logger:
@@ -304,38 +302,46 @@ def save_java_package_scan_results(codebase_resource, scan_results, scan_errors)
 
 def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
     jar_extracted_path = get_extracted_path(jar_resource)
-    jar_extracted_files = to_resources.filter(path__startswith=jar_extracted_path)
+    jar_extracted_dot_class_files = list(
+        to_resources.filter(
+            extension=".class", path__startswith=jar_extracted_path
+        ).values("id", "status")
+    )
 
-    # Flag all META-INF/* file as ignored
-    meta_inf_files = jar_extracted_files.filter(path__contains="META-INF/")
-    meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
-
-    dot_class_files = jar_extracted_files.filter(extension=".class")
-    # Do not continue if some .class files couldn't be mapped.
-    if dot_class_files.has_no_relation().exists():
+    # Rely on the status flag to avoid triggering extra SQL queries.
+    not_mapped_dot_class = [
+        dot_class_file
+        for dot_class_file in jar_extracted_dot_class_files
+        if dot_class_file.get("status") == flag.NO_JAVA_SOURCE
+    ]
+    # Do not continue if any .class files couldn't be mapped.
+    if any(not_mapped_dot_class):
         return
 
-    java_to_class_relations = CodebaseRelation.objects.filter(
-        to_resource__in=dot_class_files, map_type="java_to_class"
-    )
+    # Using ids from already evaluated QuerySet to avoid triggering an expensive
+    # SQL subquery in the following CodebaseRelation QuerySet.
+    dot_class_file_ids = [
+        dot_class_file.get("id") for dot_class_file in jar_extracted_dot_class_files
+    ]
+    java_to_class_extra_data_list = CodebaseRelation.objects.filter(
+        to_resource__in=dot_class_file_ids, map_type="java_to_class"
+    ).values_list("extra_data", flat=True)
+
     from_source_roots = [
-        relation.extra_data.get("from_source_root", "")
-        for relation in java_to_class_relations
+        extra_data.get("from_source_root", "")
+        for extra_data in java_to_class_extra_data_list
     ]
     if len(set(from_source_roots)) != 1:
         # Could not determine a common root directory for the java_to_class files
         return
 
-    try:
-        common_from_resource = from_resources.get(path=from_source_roots[0].rstrip("/"))
-    except ObjectDoesNotExist:
-        return
-
-    pipes.make_relation(
-        from_resource=common_from_resource,
-        to_resource=jar_resource,
-        map_type="jar_to_source",
-    )
+    common_source_root = from_source_roots[0].rstrip("/")
+    if common_from_resource := from_resources.get_or_none(path=common_source_root):
+        pipes.make_relation(
+            from_resource=common_from_resource,
+            to_resource=jar_resource,
+            map_type="jar_to_source",
+        )
 
 
 def map_jar_to_source(project, logger=None):
@@ -348,12 +354,30 @@ def map_jar_to_source(project, logger=None):
     to_jars_count = to_jars.count()
     if logger:
         logger(
-            f"Mapping {to_jars_count:,d} .jar resources using jar_to_source_map "
+            f"Mapping {to_jars_count:,d} .jar resources using map_jar_to_source "
             f"against from/ codebase"
         )
 
-    for jar_resource in to_jars:
+    resource_iterator = to_jars.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, jar_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            to_jars_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
         _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
+
+
+def flag_to_meta_inf_files(project):
+    """Flag all ``META-INF/*`` file of the ``to/`` directory as ignored."""
+    to_resources = project.codebaseresources.files().to_codebase()
+    meta_inf_files = to_resources.filter(path__contains="META-INF/")
+    meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
 
 
 def get_diff_ratio(to_resource, from_resource):
@@ -455,7 +479,7 @@ def _match_purldb_resource(project, resource):
         package_data.pop("uuid", None)
         package_data.pop("dependencies", None)
         extracted_resources = project.codebaseresources.to_codebase().filter(
-            path__startswith=f"{resource.path}"
+            path__startswith=resource.path
         )
         pipes.update_or_create_package(
             project=project,

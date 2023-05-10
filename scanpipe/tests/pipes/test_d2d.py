@@ -115,6 +115,29 @@ class ScanPipeD2DPipesTest(TestCase):
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
 
+    def test_scanpipe_pipes_d2d_flag_to_meta_inf_files(self):
+        from1 = make_resource_file(
+            self.project1,
+            path="from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/MANIFEST.MF",
+        )
+        to1 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
+            "AbstractConfigurationProvider.class",
+        )
+        to2 = make_resource_file(
+            self.project1,
+            path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
+        )
+
+        d2d.flag_to_meta_inf_files(self.project1)
+        from1.refresh_from_db()
+        to1.refresh_from_db()
+        to2.refresh_from_db()
+        self.assertEqual("", from1.status)
+        self.assertEqual("", to1.status)
+        self.assertEqual("ignored-meta-inf", to2.status)
+
     def test_scanpipe_pipes_d2d_get_diff_ratio(self):
         resource_files = [
             self.data_location / "codebase" / "a.txt",
@@ -276,7 +299,7 @@ class ScanPipeD2DPipesTest(TestCase):
             path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
             "AbstractConfigurationProvider.class",
         )
-        to2 = make_resource_file(
+        make_resource_file(
             self.project1,
             path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
         )
@@ -295,16 +318,15 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(expected, relation.extra_data)
 
         buffer = io.StringIO()
-        d2d.map_jar_to_source(self.project1, logger=buffer.write)
-        expected = "Mapping 1 .jar resources using jar_to_source_map"
+        with self.assertNumQueries(6):
+            d2d.map_jar_to_source(self.project1, logger=buffer.write)
+        expected = "Mapping 1 .jar resources using map_jar_to_source"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
         relation = self.project1.codebaserelations.get(map_type="jar_to_source")
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
-        to2.refresh_from_db()
-        self.assertEqual("ignored-meta-inf", to2.status)
 
     def test_scanpipe_pipes_d2d_map_jar_to_source_works_for_jar(self):
         from1 = make_resource_file(

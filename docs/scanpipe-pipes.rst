@@ -44,6 +44,11 @@ Input
 .. automodule:: scanpipe.pipes.input
     :members:
 
+JVM
+---
+.. automodule:: scanpipe.pipes.jvm
+    :members:
+
 Output
 ------
 .. automodule:: scanpipe.pipes.output
