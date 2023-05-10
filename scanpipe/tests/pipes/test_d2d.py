@@ -295,7 +295,8 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(expected, relation.extra_data)
 
         buffer = io.StringIO()
-        d2d.map_jar_to_source(self.project1, logger=buffer.write)
+        with self.assertNumQueries(6):
+            d2d.map_jar_to_source(self.project1, logger=buffer.write)
         expected = "Mapping 1 .jar resources using map_jar_to_source"
         self.assertIn(expected, buffer.getvalue())
 
