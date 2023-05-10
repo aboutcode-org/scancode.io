@@ -276,7 +276,7 @@ class ScanPipeD2DPipesTest(TestCase):
             path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
             "AbstractConfigurationProvider.class",
         )
-        to2 = make_resource_file(
+        make_resource_file(
             self.project1,
             path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
         )
@@ -296,15 +296,13 @@ class ScanPipeD2DPipesTest(TestCase):
 
         buffer = io.StringIO()
         d2d.map_jar_to_source(self.project1, logger=buffer.write)
-        expected = "Mapping 1 .jar resources using jar_to_source_map"
+        expected = "Mapping 1 .jar resources using map_jar_to_source"
         self.assertIn(expected, buffer.getvalue())
 
         self.assertEqual(2, self.project1.codebaserelations.count())
         relation = self.project1.codebaserelations.get(map_type="jar_to_source")
         self.assertEqual(from2, relation.from_resource)
         self.assertEqual(to_jar, relation.to_resource)
-        to2.refresh_from_db()
-        self.assertEqual("ignored-meta-inf", to2.status)
 
     def test_scanpipe_pipes_d2d_map_jar_to_source_works_for_jar(self):
         from1 = make_resource_file(

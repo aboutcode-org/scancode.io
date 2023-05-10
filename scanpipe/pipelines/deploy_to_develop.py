@@ -49,6 +49,7 @@ class DeployToDevelop(Pipeline):
             cls.map_checksum,
             cls.find_java_packages,
             cls.map_java_to_class,
+            cls.flag_to_meta_inf_files,
             cls.map_jar_to_source,
             cls.match_purldb,
             cls.map_path,
