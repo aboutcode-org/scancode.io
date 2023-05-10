@@ -179,12 +179,12 @@ def map_java_to_class(project, logger=None):
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class = to_resources.filter(extension=".class")
     resource_count = to_resources_dot_class.count()
     if logger:
         logger(f"Mapping {resource_count:,d} .class resources to .java")
 
-    from_resources_dot_java = from_resources.filter(name__endswith=".java")
+    from_resources_dot_java = from_resources.filter(extension=".java")
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -209,7 +209,7 @@ def map_java_to_class(project, logger=None):
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
     # Flag not mapped .class in to/ codebase
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class = to_resources.filter(extension=".class")
     to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
 
@@ -260,7 +260,7 @@ def find_java_packages(project, logger=None):
         .no_status()
         .from_codebase()
         .has_no_relation()
-        .filter(name__endswith=".java")
+        .filter(extension=".java")
     )
 
     if logger:
@@ -479,7 +479,7 @@ def _match_purldb_resource(project, resource):
         package_data.pop("uuid", None)
         package_data.pop("dependencies", None)
         extracted_resources = project.codebaseresources.to_codebase().filter(
-            path__startswith=f"{resource.path}"
+            path__startswith=resource.path
         )
         pipes.update_or_create_package(
             project=project,
