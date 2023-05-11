@@ -28,6 +28,27 @@
       background-position: 3px top;
     }
     .ace_tooltip .ace_icon {display: none;}
+    {# Full screen inspired by ace/demo/scrollable-page.html #}
+    body.full-screen #resource-viewer {
+      height: auto;
+      width: auto;
+      border: 0;
+      margin: 0;
+      position: fixed !important;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    body.full-screen {
+      overflow: hidden;
+      /*transform breaks position fixed*/
+      transform: none!important;
+    }
+    body {
+      transform: translateZ(0);
+    }
   </style>
 {% endblock %}
 
@@ -147,7 +168,7 @@
       editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
       nextBtn.disabled = scrollPositionIndex === detected_data.length - 1;
       previousBtn.disabled = false;
-    })
+    });
 
     previousBtn.addEventListener('click', function() {
       if (scrollPositionIndex <= 0) return false;
@@ -155,6 +176,14 @@
       editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
       previousBtn.disabled = scrollPositionIndex === 0;
       nextBtn.disabled = false;
-    })
+    });
+
+    const fullscreenBtn = document.querySelector('#toggle-fullscreen');
+    fullscreenBtn.addEventListener('click', function() {
+      let body = document.querySelector('body');
+      let is_full_screen = body.classList.toggle("full-screen");
+      editor.resize()
+    });
+
   </script>
 {% endblock %}
