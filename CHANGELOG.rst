@@ -12,6 +12,14 @@ v33.0.0 (unreleased)
   2. "to-[FILENAME]" archive containing the deployment compiled code
   https://github.com/nexB/scancode.io/issues/659
 
+- Enhance the file viewer UI of the resource details view.
+  A new search for the file content was added.
+  Also, it is now possible to expand the file viewer in full screen mode.
+  https://github.com/nexB/scancode.io/issues/724
+
+- Refine the breadcrumb UI for details view.
+  https://github.com/nexB/scancode.io/issues/717
+
 - Move the "Resources status" panel from the run modal to the project details view.
   https://github.com/nexB/scancode.io/issues/370
 
