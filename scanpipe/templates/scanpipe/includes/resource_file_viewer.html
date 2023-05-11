@@ -1,7 +1,7 @@
 <div id="detected-data-buttons" class="field has-addons">
   {% for key, value in detected_values.items %}
     <p class="control mb-0">
-      <button class="button" data-type="{{ key }}">
+      <button class="button" data-type="{{ key }}"{% if not value %} disabled{% endif %}>
         {{ key|title }}
         <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
       </button>

@@ -27,6 +27,7 @@
       background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANRJREFUOE+lU8ENAyEMwxMcG7U3Wa+TldsIJqByRNoAQVepPKPYTmKD4LwY453lWusDwNlaUs45je2wBQIJCiEIgfMSgKcl+hDEGI8GXmC/5UZysCIETfllkJPSKABg5yRCsG0bwTp2KqXs3hheHzx1Eth7qNrYyzoJLnc3BF3vLwTdOo5YwrBXt3opxR55spdueDdQEnFCA+Vl44qAWJKcq3zIDRwbZQIblsWacp9VkERd8+A51QWppXGyk1PUWm/j/lOU9Wp/fabxV6oqJ1A3vO/8Bvwpta0GO9pwAAAAAElFTkSuQmCC);
       background-position: 3px top;
     }
+    .ace_tooltip .ace_icon {display: none;}
   </style>
 {% endblock %}
 
@@ -50,9 +51,9 @@
   </div>
 {% endblock %}
 
-{{ detected_values }}
 {% block scripts %}
-  <script src="{% static 'ace-1.9.5.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.20.0.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.20.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
   {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {
@@ -97,11 +98,11 @@
           row: start_row,
           column: 0,
           text: $el.text,
+          type: "info",
           className: $el.className,
         });
 
       });
-
       editor.getSession().setAnnotations(annotations);
     }
 
