@@ -1,39 +1,23 @@
-<div id="detected-data-buttons" class="field has-addons">
-  {% for key, value in detected_values.items %}
-    <p class="control mb-0">
-      <button class="button" data-type="{{ key }}"{% if not value %} disabled{% endif %}>
-        {{ key|title }}
-        <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
-      </button>
-    </p>
-  {% endfor %}
-</div>
-
 <section id="resource-viewer" class="message is-dark mb-2">
   <div class="message-header is-flex is-align-items-flex-start">
     <div>
-      <div>
-        {{ object.name }}
-        | {{ object.size|filesizeformat }} |
-        {% if object.is_binary %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
-        {% endif %}
-        {% if object.is_text %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Text</span>' content="Plain text file." only %}
-        {% endif %}
-        {% if object.is_archive %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
-        {% endif %}
-        {% if object.is_key_file %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
-        {% endif %}
-        {% if object.is_media %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
-        {% endif %}
-      </div>
-      <div class="mt-2 is-size-7">
-        {{ object.path }}
-      </div>
+      <span title="{{ object.path }}">{{ object.name }}</span>
+      | {{ object.size|filesizeformat }} |
+      {% if object.is_binary %}
+        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
+      {% endif %}
+      {% if object.is_text %}
+        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Text</span>' content="Plain text file." only %}
+      {% endif %}
+      {% if object.is_archive %}
+        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
+      {% endif %}
+      {% if object.is_key_file %}
+        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
+      {% endif %}
+      {% if object.is_media %}
+        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
+      {% endif %}
     </div>
     <div class="nav-button">
       <button class="button previous-btn is-dark" disabled><i class="fas fa-arrow-up"></i></button>
@@ -41,6 +25,16 @@
       <a class="button is-dark" href="{{ object.get_raw_url }}?as_attachment=1"><i class="fas fa-download"></i></a>
       <button id="toggle-fullscreen" class="button is-dark"><i class="fas fa-expand"></i></button>
     </div>
+  </div>
+  <div id="detected-data-buttons" class="field has-addons mb-0">
+    {% for key, value in detected_values.items %}
+      <p class="control mb-0">
+        <button class="button is-radiusless" data-type="{{ key }}"{% if not value %} disabled{% endif %}>
+          {{ key|title }}
+          <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
+        </button>
+      </p>
+    {% endfor %}
   </div>
   <div id="editor">{{ file_content }}</div>
 </section>
