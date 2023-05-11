@@ -10,12 +10,11 @@
 </div>
 
 <section id="resource-viewer" class="message is-dark mb-2">
-  <div class="message-header is-flex">
+  <div class="message-header is-flex is-align-items-flex-start">
     <div>
       <div>
         {{ object.name }}
-        | {{ object.size|filesizeformat }}
-        |
+        | {{ object.size|filesizeformat }} |
         {% if object.is_binary %}
           {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
         {% endif %}
@@ -31,18 +30,16 @@
         {% if object.is_media %}
           {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
         {% endif %}
-       | <a class="has-text-white" href="{{ object.get_raw_url }}?as_attachment=1"><i class="fas fa-download"></i></a>
-       | <a id="toggle-fullscreen" class="has-text-white ml-1" style="text-decoration:none">
-            <i class="fas fa-expand"></i> Full screen
-          </a>
       </div>
       <div class="mt-2 is-size-7">
         {{ object.path }}
       </div>
     </div>
     <div class="nav-button">
-      <button class="button previous-btn is-dark is-small" disabled><i class="fas fa-arrow-up mr-2"></i>Previous</button>
-      <button class="button next-btn is-dark is-small" disabled><i class="fas fa-arrow-down mr-2"></i>Next</button>
+      <button class="button previous-btn is-dark" disabled><i class="fas fa-arrow-up"></i></button>
+      <button class="button next-btn is-dark" disabled><i class="fas fa-arrow-down"></i></button>
+      <a class="button is-dark" href="{{ object.get_raw_url }}?as_attachment=1"><i class="fas fa-download"></i></a>
+      <button id="toggle-fullscreen" class="button is-dark"><i class="fas fa-expand"></i></button>
     </div>
   </div>
   <div id="editor">{{ file_content }}</div>

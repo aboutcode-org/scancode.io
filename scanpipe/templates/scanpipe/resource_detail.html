@@ -6,7 +6,10 @@
 {% block extrahead %}
   <style>
     #resource-viewer #editor {min-height:730px; border: lightgrey 1px solid;}
-    #resource-viewer .nav-button {flex-basis: min-content;}
+    #resource-viewer .nav-button .button {
+      height: auto;
+      padding: 0 .25rem 0 .25rem;
+    }
     .ace_gutter-cell.ace_info, .ace_gutter-cell.undefined {
       background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANhJREFUOE+tU9EVgjAMTHAhGECEkcQBgAHEkag4ACwk8V18INam+mG/+trkcndJmAKnuIwFnu/CNYtccU8Scu6YOT+ctw9I1CQiBfCPELkdS7sFWgHy89gQcx1K/ESSdjhlDd4VAJVn4T5U0WKTsJRgogD7bupDgUOVmv+Qc6vSkmPVEYACeTdJSBpY8DftqBSTYQPIyyiLgYJb+ukHAMSYHkDzYqLFIAqwuKwmGjOiJlptXPpsAaxtjA1SbCrfBilGMwiyMfh/y+Rv5Tw/N1KYD9hA3EPr/ADng505myWL3AAAAABJRU5ErkJggg==);
       background-position: 3px top;
