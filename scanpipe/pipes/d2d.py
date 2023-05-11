@@ -34,6 +34,7 @@ from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
+from scanpipe.pipes.js import PROSPECTIVE_JAVASCRIPT_MAP
 
 FROM = "from/"
 TO = "to/"
@@ -41,55 +42,6 @@ TO = "to/"
 IGNORED_FILENAMES = ("packageinfo", "package-info.java", "package-info.class")
 IGNORED_EXTENSIONS = ()
 IGNORED_PATHS = ("gradleTest/",)
-
-
-# `PROSPECTIVE_JAVASCRIPT_MAP` maps source file extensions to a list of dict
-# that specifies extension of transformed files. The `to_minified_ext` key in
-# each dict specifies the file extension of the transformed minified file, and
-# the `to_related` key specifies the related file extensions that are generated
-# alongside the transformed file (inclusive of minified file extension).
-#
-# For example, the `.scss` key maps to a list of two dict. The first dict
-# specifies that `.scss` file is transformed into minified `.css` files along
-# with `.css.map` and `_rtl.css`, and the second dict specifies that `.scss`
-# is also transformed into minified `.scss.js` file along with `.scss.js.map`.
-
-PROSPECTIVE_JAVASCRIPT_MAP = {
-    ".scss": [
-        {
-            "to_minified_ext": ".css",
-            "to_related": [".css", ".css.map", "_rtl.css"],
-        },
-        {
-            "to_minified_ext": ".scss.js",
-            "to_related": [".scss.js", ".scss.js.map"],
-        },
-    ],
-    ".js": [
-        {
-            "to_minified_ext": ".js",
-            "to_related": [".js", ".js.map"],
-        },
-    ],
-    ".jsx": [
-        {
-            "to_minified_ext": ".js",
-            "to_related": [".jsx", ".js", ".js.map"],
-        },
-    ],
-    ".ts": [
-        {
-            "to_minified_ext": ".js",
-            "to_related": [".ts", ".js", ".js.map"],
-        },
-    ],
-    ".d.ts": [
-        {
-            "to_minified_ext": None,
-            "to_related": [".ts"],
-        },
-    ],
-}
 
 
 def get_inputs(project):
@@ -582,9 +534,13 @@ def map_javascript(project, logger=None):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
     project_files = project.codebaseresources.files().only("path")
 
-    from_resources = project_files.from_codebase().filter(
-        extension__in=PROSPECTIVE_JAVASCRIPT_MAP.keys()
+    javascript_extensions = PROSPECTIVE_JAVASCRIPT_MAP.keys()
+    from_resources = (
+        project_files.from_codebase()
+        .filter(extension__in=javascript_extensions)
+        .exclude(name__startswith=".")
     )
+
     to_resources = project_files.to_codebase()
     resource_count = from_resources.count()
 
@@ -616,9 +572,6 @@ def map_javascript(project, logger=None):
 
 def _map_javascript_resource(from_resource, to_resources):
     path = Path(from_resource.path.lstrip("/"))
-    # Skip any dot files.
-    if path.name.startswith("."):
-        return
 
     basename, from_extension = js.get_basename_and_extension(path.name)
     path_parts = (path.parent / basename).parts

@@ -438,8 +438,8 @@ class ScanPipeD2DPipesTest(TestCase):
         results = list(self.project1.codebaseresources.values("path", "extra_data"))
         self.assertEqual(expected, results)
 
-    def test_scanpipe_pipes_d2d_map_javascript_resource_skips_dot_file(self):
-        from_resource = make_resource_file(
+    def test_scanpipe_pipes_d2d_map_javascript_skips_dot_file(self):
+        make_resource_file(
             self.project1,
             path=(
                 "from/project.tar.zst/modules/apps/adaptive-media/"
@@ -447,7 +447,7 @@ class ScanPipeD2DPipesTest(TestCase):
                 "adaptive_media/js/.main.js"
             ),
         )
-        d2d._map_javascript_resource(from_resource, [])
+        d2d.map_javascript(self.project1)
         self.assertEqual(0, self.project1.codebaserelations.count())
 
     def test_scanpipe_pipes_d2d_map_javascript(self):

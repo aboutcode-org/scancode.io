@@ -24,6 +24,54 @@ import hashlib
 import json
 from pathlib import Path
 
+# `PROSPECTIVE_JAVASCRIPT_MAP` maps source file extensions to a list of dict
+# that specifies extension of transformed files. The `to_minified_ext` key in
+# each dict specifies the file extension of the transformed minified file, and
+# the `to_related` key specifies the related file extensions that are generated
+# alongside the transformed file (inclusive of minified file extension).
+#
+# For example, the `.scss` key maps to a list of two dict. The first dict
+# specifies that `.scss` file is transformed into minified `.css` files along
+# with `.css.map` and `_rtl.css`, and the second dict specifies that `.scss`
+# is also transformed into minified `.scss.js` file along with `.scss.js.map`.
+
+PROSPECTIVE_JAVASCRIPT_MAP = {
+    ".scss": [
+        {
+            "to_minified_ext": ".css",
+            "to_related": [".css", ".css.map", "_rtl.css"],
+        },
+        {
+            "to_minified_ext": ".scss.js",
+            "to_related": [".scss.js", ".scss.js.map"],
+        },
+    ],
+    ".js": [
+        {
+            "to_minified_ext": ".js",
+            "to_related": [".js", ".js.map"],
+        },
+    ],
+    ".jsx": [
+        {
+            "to_minified_ext": ".js",
+            "to_related": [".jsx", ".js", ".js.map"],
+        },
+    ],
+    ".ts": [
+        {
+            "to_minified_ext": ".js",
+            "to_related": [".ts", ".js", ".js.map"],
+        },
+    ],
+    ".d.ts": [
+        {
+            "to_minified_ext": None,
+            "to_related": [".ts"],
+        },
+    ],
+}
+
 
 def is_minified_and_map_compiled_from_source(
     to_resources, from_source, minified_extension
@@ -109,6 +157,6 @@ def get_basename_and_extension(filename):
             extension = ext
             break
     else:
-        raise ValueError(f"{filename} has an invalid extension")
+        raise ValueError(f"{filename} is not JavaScript related")
     basename = filename[: -len(extension)]
     return basename, extension
