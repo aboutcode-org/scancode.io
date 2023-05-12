@@ -637,7 +637,9 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         file_mime_types = files.values_list("mime_type", flat=True)
         file_holders = files.values_from_json_field("holders", "holder")
         file_copyrights = files.values_from_json_field("copyrights", "copyright")
-        file_license_keys = files.values_from_json_field("licenses", "key")
+        file_license_expressions = files.values_list(
+            "detected_license_expression", flat=True
+        )
 
         file_compliance_alert = []
         if scanpipe_app.policies_enabled:
@@ -659,7 +661,7 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "mime_types": self.get_summary(file_mime_types),
                 "holders": self.get_summary(file_holders),
                 "copyrights": self.get_summary(file_copyrights),
-                "file_license_keys": self.get_summary(file_license_keys),
+                "file_license_expressions": self.get_summary(file_license_expressions),
                 "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),
