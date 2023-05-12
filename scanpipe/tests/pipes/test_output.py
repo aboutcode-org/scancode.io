@@ -258,7 +258,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results = json.dumps(results_json, indent=2)
 
         expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
-        self.assertResultsEqual(expected_file, results, regen=False)
+        self.assertResultsEqual(expected_file, results)
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)

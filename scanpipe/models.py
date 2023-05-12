@@ -1958,10 +1958,6 @@ class CodebaseResource(
         """Return this CodebaseResource as an SPDX Package entry."""
         from scanpipe.pipes import spdx
 
-        # TODO: test_scanpipe_pipes_outputs_to_spdx
-        spdx_license_keys = [
-            license["spdx_license_key"] for license in self.license_detections
-        ]
         copyrights = [copyright["copyright"] for copyright in self.copyrights]
         holders = [holder["holder"] for holder in self.holders]
         authors = [author["author"] for author in self.authors]
@@ -1970,7 +1966,7 @@ class CodebaseResource(
             spdx_id=self.spdx_id,
             name=f"./{self.path}",
             checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
-            license_in_files=list(set(spdx_license_keys)),
+            license_concluded=self.detected_license_expression_spdx,
             copyright_text=", ".join(copyrights),
             contributors=list(set(holders + authors)),
             types=self.get_spdx_types(),
