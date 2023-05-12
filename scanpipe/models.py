@@ -1452,11 +1452,16 @@ class ScanFieldsModelMixin(models.Model):
 
     detected_license_expression = models.TextField(
         blank=True,
-        help_text=_("TODO"),
+        help_text=_(
+            "The license expression summarizing the license info for this resource, "
+            "combined from all the license detections"
+        ),
     )
     detected_license_expression_spdx = models.TextField(
         blank=True,
-        help_text=_("TODO"),
+        help_text=_(
+            "The detected license expression for this file, with SPDX license keys"
+        ),
     )
     license_detections = models.JSONField(
         blank=True,
@@ -1466,12 +1471,19 @@ class ScanFieldsModelMixin(models.Model):
     license_clues = models.JSONField(
         blank=True,
         default=list,
-        help_text=_("List of license clues."),
+        help_text=_(
+            "List of license matches that are not proper detections and potentially "
+            "just clues to licenses or likely false positives. Those are not included "
+            "in computing the detected license expression for the resource."
+        ),
     )
     percentage_of_license_text = models.FloatField(
         blank=True,
         null=True,
-        help_text=_("TODO"),
+        help_text=_(
+            "The percentage of words in the whole resource which are legal words, "
+            "i.e. words that typically contain license related information."
+        ),
     )
     copyrights = models.JSONField(
         blank=True,

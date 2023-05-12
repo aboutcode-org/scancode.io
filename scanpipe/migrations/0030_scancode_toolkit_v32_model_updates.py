@@ -92,12 +92,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="codebaseresource",
             name="detected_license_expression",
-            field=models.TextField(blank=True, help_text="TODO"),
+            field=models.TextField(blank=True, help_text="The license expression summarizing the license info for this resource, combined from all the license detections"),
         ),
         migrations.AddField(
             model_name="codebaseresource",
             name="detected_license_expression_spdx",
-            field=models.TextField(blank=True, help_text="TODO"),
+            field=models.TextField(blank=True, help_text="The detected license expression for this file, with SPDX license keys"),
         ),
         migrations.AddField(
             model_name="codebaseresource",
@@ -110,12 +110,12 @@ class Migration(migrations.Migration):
             model_name="codebaseresource",
             name="license_clues",
             field=models.JSONField(
-                blank=True, default=list, help_text="List of license clues."
+                blank=True, default=list, help_text="List of license matches that are not proper detections and potentially just clues to licenses or likely false positives. Those are not included in computing the detected license expression for the resource."
             ),
         ),
         migrations.AddField(
             model_name="codebaseresource",
             name="percentage_of_license_text",
-            field=models.FloatField(blank=True, help_text="TODO", null=True),
+            field=models.FloatField(blank=True, help_text="The percentage of words in the whole resource which are legal words, i.e. words that typically contain license related information.", null=True),
         ),
     ]
