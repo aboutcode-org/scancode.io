@@ -608,6 +608,7 @@ class ScanPipeModelsTest(TestCase):
         run1.stop_task()
         self.assertEqual(Run.Status.STOPPED, run1.status)
         self.assertTrue(run1.task_stopped)
+        self.assertIn("Stop task requested", run1.log)
 
     @override_settings(SCANCODEIO_ASYNC=False)
     def test_scanpipe_run_model_delete_task_method(self):
