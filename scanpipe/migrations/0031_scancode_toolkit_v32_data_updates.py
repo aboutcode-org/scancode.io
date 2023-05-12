@@ -11,7 +11,7 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
     """
     from licensedcode.cache import build_spdx_license_expression
 
-    DiscoveredPackage = apps.get_model('scanpipe', 'DiscoveredPackage')
+    DiscoveredPackage = apps.get_model("scanpipe", "DiscoveredPackage")
     packages = DiscoveredPackage.objects.filter(
         ~Q(declared_license_expression="") & Q(declared_license_expression_spdx="")
     )
@@ -30,7 +30,7 @@ def compute_resource_detected_license_expression(apps, schema_editor):
     from license_expression import combine_expressions
     from licensedcode.cache import build_spdx_license_expression
 
-    CodebaseResource = apps.get_model('scanpipe', 'CodebaseResource')
+    CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
     resources = CodebaseResource.objects.filter(~Q(license_expressions=[]))
 
     for resource in resources:
@@ -41,9 +41,68 @@ def compute_resource_detected_license_expression(apps, schema_editor):
         resource.save()
 
 
+def _convert_matches_to_detections(license_matches):
+    """
+    Return a list of scancode v32 LicenseDetection mappings from provided
+    ``license_matches``: a list of the scancode v31 LicenseMatch mappings.
+    """
+    from license_expression import combine_expressions
+    from licensedcode.detection import get_uuid_on_content
+    from commoncode.text import python_safe_name
+
+    match_attributes = ["score", "start_line", "end_line", "matched_text"]
+    rule_attributes = [
+        "matched_length",
+        "match_coverage",
+        "matcher",
+        "rule_relevance",
+    ]
+    license_detection = {}
+    detection_matches = []
+
+    for match in license_matches:
+        detection_match = {}
+
+        for attribute in match_attributes:
+            detection_match[attribute] = match[attribute]
+        for attribute in rule_attributes:
+            detection_match[attribute] = match["matched_rule"][attribute]
+
+        detection_match["rule_identifier"] = match["matched_rule"]["identifier"]
+        detection_match["license_expression"] = match["matched_rule"][
+            "license_expression"
+        ]
+        detection_match["rule_url"] = None
+        detection_matches.append(detection_match)
+
+    license_expressions = [match["license_expression"] for match in detection_matches]
+    hashable_details = tuple(
+        [
+            (match["score"], match["rule_identifier"], match["matched_text"])
+            for match in detection_matches
+        ]
+    )
+    uuid = get_uuid_on_content(hashable_details)
+
+    license_detection["matches"] = detection_matches
+    license_detection["license_expression"] = str(
+        combine_expressions(license_expressions)
+    )
+    license_detection["identifier"] = "{}-{}".format(
+        python_safe_name(license_detection["license_expression"]), uuid
+    )
+
+    return [license_detection]
+
+
 def compute_resource_license_detections(apps, schema_editor):
     """Compute CodebaseResource `license_detections` from old `licenses` field."""
-    pass
+    CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
+    resources = CodebaseResource.objects.filter(~Q(licenses=[]))
+    for resource in resources:
+        detections = _convert_matches_to_detections(resource.licenses)
+        resource.license_detections = detections
+        resource.save()
 
 
 class Migration(migrations.Migration):
@@ -56,12 +115,12 @@ class Migration(migrations.Migration):
             compute_package_declared_license_expression_spdx,
             reverse_code=migrations.RunPython.noop,
         ),
-        # migrations.RunPython(
-        #     compute_resource_detected_license_expression,
-        #     reverse_code=migrations.RunPython.noop,
-        # ),
-        # migrations.RunPython(
-        #     compute_resource_license_detections,
-        #     reverse_code=migrations.RunPython.noop,
-        # ),
+        migrations.RunPython(
+            compute_resource_detected_license_expression,
+            reverse_code=migrations.RunPython.noop,
+        ),
+        migrations.RunPython(
+            compute_resource_license_detections,
+            reverse_code=migrations.RunPython.noop,
+        ),
     ]
