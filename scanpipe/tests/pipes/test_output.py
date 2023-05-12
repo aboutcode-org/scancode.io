@@ -305,7 +305,7 @@ class ScanPipeOutputPipesTest(TestCase):
         project = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
         expression_with_exception = "mit AND gpl-2.0 with classpath-exception-2.0"
-        package_data["license_expression"] = expression_with_exception
+        package_data["declared_license_expression"] = expression_with_exception
         package_data["notice_text"] = "Notice text"
         pipes.update_or_create_package(project, package_data)
 
@@ -313,7 +313,7 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_attribution(project=project)
 
         expected_file = self.data_path / "outputs" / "expected_attribution.html"
-        self.assertResultsEqual(expected_file, output_file.read_text())
+        self.assertResultsEqual(expected_file, output_file.read_text(), 1)
 
         config_directory = make_config_directory(project)
         custom_template_dir = config_directory / "templates"

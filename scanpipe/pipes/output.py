@@ -680,8 +680,8 @@ def to_attribution(project):
     license_symbols = []
 
     for package in packages:
-        if package.license_expression:
-            parsed = licensing.parse(package.license_expression)
+        if package.declared_license_expression:
+            parsed = licensing.parse(package.declared_license_expression)
             package.expression_links = get_expression_as_attribution_links(parsed)
             # .decompose() is required for LicenseWithExceptionSymbol support
             for symbol in parsed.symbols:
