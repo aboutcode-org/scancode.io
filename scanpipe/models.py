@@ -946,10 +946,9 @@ class GroupingQuerySetMixin:
         `field_name` starting at the `limit`.
         """
         json_fields_mapping = {
-            "license_key": ("license_detections", "key"),
-            "license_category": ("license_detections", "category"),
             "copyrights": ("copyrights", "copyright"),
             "holders": ("holders", "holder"),
+            "authors": ("authors", "author"),
         }
 
         if field_name in json_fields_mapping:

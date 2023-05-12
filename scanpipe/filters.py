@@ -322,6 +322,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "type",
             "size",
             "name",
+            "detected_license_expression",
             "extension",
             "programming_language",
             "mime_type",
@@ -331,15 +332,6 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "related_from__from_resource__path",
         ],
     )
-    # TODO: We will have to compute those fields as not available anymore
-    # license_key = JSONContainsFilter(
-    #     label="License key",
-    #     field_name="licenses",
-    # )
-    # license_category = JSONContainsFilter(
-    #     label="License category",
-    #     field_name="licenses",
-    # )
     compliance_alert = django_filters.ChoiceFilter(
         choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
     )
@@ -374,7 +366,6 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyrights",
             "holders",
             "authors",
-            # "license_category",
             "detected_license_expression",
             "detected_license_expression_spdx",
             "license_detections",

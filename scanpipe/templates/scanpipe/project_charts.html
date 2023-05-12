@@ -55,7 +55,7 @@
     {% include "scanpipe/includes/resource_chart_column.html" with field_name="copyrights" %}
   </div>
   <div class="columns is-gapless">
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="file_license_expressions" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="detected_license_expression" %}
     <div class="column"></div>
   </div>
   {% if file_compliance_alert %}
@@ -170,7 +170,7 @@
     makeChart("mime_types", "#mime_type_chart", "Mime\nType");
     makeChart("holders", "#holders_chart", "Holder");
     makeChart("copyrights", "#copyrights_chart", "Copyright");
-    makeChart("file_license_expressions", "#file_license_expressions_chart", "License\nExpressions");
+    makeChart("file_license_expressions", "#detected_license_expression_chart", "Detected\nLicense\nExpression");
     makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
   </script>
 {% endblock %}
