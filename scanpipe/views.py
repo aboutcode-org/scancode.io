@@ -638,7 +638,6 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         file_holders = files.values_from_json_field("holders", "holder")
         file_copyrights = files.values_from_json_field("copyrights", "copyright")
         file_license_keys = files.values_from_json_field("licenses", "key")
-        file_license_categories = files.values_from_json_field("licenses", "category")
 
         file_compliance_alert = []
         if scanpipe_app.policies_enabled:
@@ -661,7 +660,6 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "holders": self.get_summary(file_holders),
                 "copyrights": self.get_summary(file_copyrights),
                 "file_license_keys": self.get_summary(file_license_keys),
-                "file_license_categories": self.get_summary(file_license_categories),
                 "file_compliance_alert": self.get_summary(file_compliance_alert),
                 "package_licenses": self.get_summary(package_licenses),
                 "package_types": self.get_summary(package_types),

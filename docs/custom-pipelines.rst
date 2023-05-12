@@ -113,6 +113,7 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
     from scanpipe.pipelines.scan_codebase import ScanCodebase
 
 
+    # TODO: Rewrite this following v32 changes
     class ScanAndReport(ScanCodebase):
         """
         Runs the ScanCodebase built-in pipeline steps and generate a licenses report.

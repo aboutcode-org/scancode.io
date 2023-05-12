@@ -1409,11 +1409,13 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q(package_data=[]))
 
     def licenses_categories(self, categories):
-        return self.json_list_contains(
-            field_name="licenses",
-            key="category",
-            values=categories,
+        import warnings
+
+        warnings.warn(
+            "licenses_categories is deprecated due to the removal of the category "
+            "value from scancode-toolkit v32 scan data.",
         )
+        return []
 
     def unknown_license(self):
         return self.filter(detected_license_expression__icontains="unknown")

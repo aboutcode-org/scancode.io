@@ -77,7 +77,6 @@
     {{ holders|json_script:"holders" }}
     {{ copyrights|json_script:"copyrights" }}
     {{ file_license_keys|json_script:"file_license_keys" }}
-    {{ file_license_categories|json_script:"file_license_categories" }}
     {{ file_compliance_alert|json_script:"file_compliance_alert" }}
   {% endif %}
   {% if project.package_count %}
@@ -172,7 +171,6 @@
     makeChart("holders", "#holders_chart", "Holder");
     makeChart("copyrights", "#copyrights_chart", "Copyright");
     makeChart("file_license_keys", "#license_key_chart", "License\nKey");
-    makeChart("file_license_categories", "#license_category_chart", "License\nCategory");
     makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
   </script>
 {% endblock %}
