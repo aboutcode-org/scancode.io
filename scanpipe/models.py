@@ -1233,6 +1233,71 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
         return job
 
+    def sync_with_job(self):
+        """
+        Synchronise this Run instance with its related RQ Job.
+        This is required when a Run gets out of sync with its Job, this can happen
+        when the worker or one of its processes is killed, the Run status is not
+        properly updated and may stay in a Queued or Running state forever.
+        In case the Run is out of sync of its related Job, the Run status will be
+        updated accordingly. When the run was in the queue, it will be enqueued again.
+        """
+        RunStatus = self.Status
+
+        if settings.SCANCODEIO_ASYNC:
+            job_status = self.job_status
+        else:
+            job_status = None
+
+        if not job_status:
+            if self.status == RunStatus.QUEUED:
+                logger.info(
+                    f"No Job found for QUEUED Run={self.task_id}. "
+                    f"Enqueueing a new Job in the worker registery."
+                )
+                self.execute_task_async()
+
+            elif self.status == RunStatus.RUNNING:
+                logger.info(
+                    f"No Job found for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STALE."
+                )
+                self.set_task_staled()
+
+            return
+
+        job_is_out_of_sync = any(
+            [
+                self.status == RunStatus.RUNNING and job_status != JobStatus.STARTED,
+                self.status == RunStatus.QUEUED and job_status != JobStatus.QUEUED,
+            ]
+        )
+
+        if job_is_out_of_sync:
+            if job_status == JobStatus.STOPPED:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STOPPED."
+                )
+                self.set_task_stopped()
+
+            elif job_status == JobStatus.FAILED:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as FAILED."
+                )
+                self.set_task_ended(
+                    exitcode=1,
+                    output="Job was moved to the FailedJobRegistry during cleanup",
+                )
+
+            else:
+                logger.info(
+                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
+                    f"Flagging this Run as STALE."
+                )
+                self.set_task_staled()
+
     def set_scancodeio_version(self):
         """Set the current ScanCode.io version on the `Run.scancodeio_version` field."""
         if self.scancodeio_version:
