@@ -837,16 +837,16 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_pipes_codebase_resources_inject_licenses_policy(self):
         resource = CodebaseResource(
             license_detections=[
-                {"key": "mit"},
-                {"key": "apache-2.0"},
-                {"key": "gpl-3.0"},
+                {"license_expression": "mit"},
+                {"license_expression": "apache-2.0"},
+                {"license_expression": "gpl-3.0"},
             ]
         )
 
         expected = [
-            {"key": "mit", "policy": None},
+            {"license_expression": "mit", "policy": None},
             {
-                "key": "apache-2.0",
+                "license_expression": "apache-2.0",
                 "policy": {
                     "color_code": "#008000",
                     "compliance_alert": "",
@@ -855,7 +855,7 @@ class ScanPipeModelsTest(TestCase):
                 },
             },
             {
-                "key": "gpl-3.0",
+                "license_expression": "gpl-3.0",
                 "policy": {
                     "color_code": "#c83025",
                     "compliance_alert": "error",
@@ -872,11 +872,13 @@ class ScanPipeModelsTest(TestCase):
         scanpipe_app.license_policies_index = license_policies_index
 
         resource = CodebaseResource.objects.create(
-            project=self.project1, path="file", license_detections=[{"key": "gpl-3.0"}]
+            project=self.project1,
+            path="file",
+            license_detections=[{"license_expression": "gpl-3.0"}],
         )
         expected = [
             {
-                "key": "gpl-3.0",
+                "license_expression": "gpl-3.0",
                 "policy": {
                     "color_code": "#c83025",
                     "compliance_alert": "error",
@@ -887,16 +889,16 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, resource.license_detections)
 
-        resource.license_detections = [{"key": "not-in-index"}]
+        resource.license_detections = [{"license_expression": "not-in-index"}]
         resource.save()
-        expected = [{"key": "not-in-index", "policy": None}]
+        expected = [{"license_expression": "not-in-index", "policy": None}]
         self.assertEqual(expected, resource.license_detections)
 
-        resource.license_detections = [{"key": "apache-2.0"}]
+        resource.license_detections = [{"license_expression": "apache-2.0"}]
         resource.save()
         expected = [
             {
-                "key": "apache-2.0",
+                "license_expression": "apache-2.0",
                 "policy": {
                     "color_code": "#008000",
                     "compliance_alert": "",
@@ -912,34 +914,34 @@ class ScanPipeModelsTest(TestCase):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.compliance_alert)
 
-        license_key = "bsd-new"
-        self.assertNotIn(license_key, scanpipe_app.license_policies_index)
-        resource.license_detections = [{"key": license_key}]
+        license_expression = "bsd-new"
+        self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
+        resource.license_detections = [{"license_expression": license_expression}]
         resource.save()
         self.assertEqual("missing", resource.compliance_alert)
 
-        license_key = "apache-2.0"
-        self.assertIn(license_key, scanpipe_app.license_policies_index)
-        resource.license_detections = [{"key": license_key}]
+        license_expression = "apache-2.0"
+        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        resource.license_detections = [{"license_expression": license_expression}]
         resource.save()
         self.assertEqual("ok", resource.compliance_alert)
 
-        license_key = "mpl-2.0"
-        self.assertIn(license_key, scanpipe_app.license_policies_index)
-        resource.license_detections = [{"key": license_key}]
+        license_expression = "mpl-2.0"
+        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        resource.license_detections = [{"license_expression": license_expression}]
         resource.save()
         self.assertEqual("warning", resource.compliance_alert)
 
-        license_key = "gpl-3.0"
-        self.assertIn(license_key, scanpipe_app.license_policies_index)
-        resource.license_detections = [{"key": license_key}]
+        license_expression = "gpl-3.0"
+        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        resource.license_detections = [{"license_expression": license_expression}]
         resource.save()
         self.assertEqual("error", resource.compliance_alert)
 
         resource.license_detections = [
-            {"key": "apache-2.0"},
-            {"key": "mpl-2.0"},
-            {"key": "gpl-3.0"},
+            {"license_expression": "apache-2.0"},
+            {"license_expression": "mpl-2.0"},
+            {"license_expression": "gpl-3.0"},
         ]
         resource.save()
         self.assertEqual("error", resource.compliance_alert)
@@ -1039,7 +1041,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(directory, qs)
         self.assertNotIn(symlink, qs)
 
-        file.license_detections = [{"key": "bsd-new", "name": "BSD-3-Clause"}]
+        file.license_detections = [{"license_expression": "bsd-new"}]
         file.save()
         qs = CodebaseResource.objects.has_licenses()
         self.assertEqual(1, len(qs))

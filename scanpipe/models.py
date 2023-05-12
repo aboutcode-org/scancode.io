@@ -1701,28 +1701,29 @@ class CodebaseResource(
     @classmethod
     def from_db(cls, db, field_names, values):
         """
-        Store the `licenses` field on creating this instance from the database value.
+        Store the `license_detections` field on loading this instance from the
+        database value.
         The cached value is then used to detect changes on `save()`.
         """
         new = super().from_db(db, field_names, values)
 
         if "license_detections" in field_names:
-            new._loaded_licenses = values[field_names.index("license_detections")]
+            field_index = field_names.index("license_detections")
+            new._loaded_license_detections = values[field_index]
 
         return new
 
     def save(self, codebase=None, *args, **kwargs):
         """
         Save the current resource instance.
-        Injects policies—if the feature is enabled—when the `licenses` field value is
+        Injects policies, if the feature is enabled, when the `licenses` field value is
         changed.
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
-        # TODO: Review and test this
         if scanpipe_app.policies_enabled:
-            loaded_licenses = getattr(self, "_loaded_licenses", [])
+            loaded_licenses = getattr(self, "_loaded_license_detections", [])
             if self.license_detections != loaded_licenses:
                 self.inject_licenses_policy(scanpipe_app.license_policies_index)
                 self.compliance_alert = self.compute_compliance_alert()
@@ -1731,10 +1732,9 @@ class CodebaseResource(
 
     def inject_licenses_policy(self, policies_index):
         """Inject license policies from the `policies_index` into the licenses field."""
-        for license_data in self.license_detections:
-            # TODO: key is not available anymore, license_expression only
-            key = license_data.get("key")
-            license_data["policy"] = policies_index.get(key, None)
+        for detection_data in self.license_detections:
+            license_expression = detection_data.get("license_expression")
+            detection_data["policy"] = policies_index.get(license_expression, None)
 
     @property
     def location_path(self):
@@ -1765,7 +1765,6 @@ class CodebaseResource(
 
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
-        # TODO: Base this on self.detected_license_expression
         if not self.license_detections:
             return ""
 
@@ -1775,8 +1774,8 @@ class CodebaseResource(
         missing = self.Compliance.MISSING
 
         alerts = []
-        for license_data in self.license_detections:
-            policy = license_data.get("policy")
+        for detection_data in self.license_detections:
+            policy = detection_data.get("policy")
             if policy:
                 alerts.append(policy.get("compliance_alert") or ok)
             else:

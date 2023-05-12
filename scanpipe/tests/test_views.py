@@ -454,7 +454,12 @@ class ScanPipeViewsTest(TestCase):
             project=self.project1,
             path="resource1",
             license_detections=[
-                {"key": "key", "policy": None, "start_line": 1, "end_line": 2}
+                {
+                    "license_expression": "key",
+                    "policy": None,
+                    "start_line": 1,
+                    "end_line": 2,
+                }
             ],
         )
         url = resource1.get_absolute_url()

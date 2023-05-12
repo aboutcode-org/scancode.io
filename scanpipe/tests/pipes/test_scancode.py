@@ -387,12 +387,17 @@ class ScanPipeScancodePipesTest(TestCase):
         resources = project.codebaseresources
 
         resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")
-        self.assertEqual("bsd-new", resource1.license_detections[0]["key"])
+        self.assertEqual(
+            "bsd-new", resource1.license_detections[0]["license_expression"]
+        )
         self.assertNotIn("bsd-new", license_policies_index)
         self.assertIsNone(resource1.license_detections[0]["policy"])
 
         resource2 = resources.get(path__endswith="asgiref/timeout.py")
-        self.assertEqual("apache-2.0", resource2.license_detections[0]["key"])
+        self.assertEqual(
+            "apache-2.0", resource2.license_detections[0]["license_expression"]
+        )
+        self.assertIn("apache-2.0", license_policies_index)
         expected = {
             "label": "Approved License",
             "color_code": "#008000",
