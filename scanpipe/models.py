@@ -1398,23 +1398,14 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def without_symlinks(self):
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
-    def has_licenses(self):
+    def has_license_detections(self):
         return self.filter(~Q(license_detections=[]))
 
-    def has_no_licenses(self):
+    def has_no_license_detections(self):
         return self.filter(license_detections=[])
 
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
-
-    def licenses_categories(self, categories):
-        import warnings
-
-        warnings.warn(
-            "licenses_categories is deprecated due to the removal of the category "
-            "value from scancode-toolkit v32 scan data.",
-        )
-        return []
 
     def unknown_license(self):
         return self.filter(detected_license_expression__icontains="unknown")
@@ -1701,30 +1692,30 @@ class CodebaseResource(
     @classmethod
     def from_db(cls, db, field_names, values):
         """
-        Store the `license_detections` field on loading this instance from the
+        Store the `detected_license_expression` field on loading this instance from the
         database value.
         The cached value is then used to detect changes on `save()`.
         """
         new = super().from_db(db, field_names, values)
 
-        if "license_detections" in field_names:
-            field_index = field_names.index("license_detections")
-            new._loaded_license_detections = values[field_index]
+        if "detected_license_expression" in field_names:
+            field_index = field_names.index("detected_license_expression")
+            new._loaded_license_expression = values[field_index]
 
         return new
 
     def save(self, codebase=None, *args, **kwargs):
         """
         Save the current resource instance.
-        Injects policies, if the feature is enabled, when the `licenses` field value is
-        changed.
+        Injects policies, if the feature is enabled, when the
+        `detected_license_expression` field value is changed.
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
         if scanpipe_app.policies_enabled:
-            loaded_licenses = getattr(self, "_loaded_license_detections", [])
-            if self.license_detections != loaded_licenses:
+            loaded_license_expression = getattr(self, "_loaded_license_expression", [])
+            if self.detected_license_expression != loaded_license_expression:
                 self.inject_licenses_policy(scanpipe_app.license_policies_index)
                 self.compliance_alert = self.compute_compliance_alert()
 

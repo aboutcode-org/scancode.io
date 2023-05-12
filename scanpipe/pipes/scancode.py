@@ -542,7 +542,7 @@ def _get_license_matches_grouped(project):
     license_expression.
     """
     license_matches = defaultdict(list)
-    resources_with_license = project.codebaseresources.has_licenses()
+    resources_with_license = project.codebaseresources.has_license_detections()
 
     for resource in resources_with_license:
         file_cache = []

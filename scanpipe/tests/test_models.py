@@ -1043,13 +1043,13 @@ class ScanPipeModelsTest(TestCase):
 
         file.license_detections = [{"license_expression": "bsd-new"}]
         file.save()
-        qs = CodebaseResource.objects.has_licenses()
+        qs = CodebaseResource.objects.has_license_detections()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
         self.assertNotIn(directory, qs)
         self.assertNotIn(symlink, qs)
 
-        qs = CodebaseResource.objects.has_no_licenses()
+        qs = CodebaseResource.objects.has_no_license_detections()
         self.assertEqual(2, len(qs))
         self.assertNotIn(file, qs)
         self.assertIn(directory, qs)
