@@ -823,7 +823,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
-        jar_location = self.data_location / "jars"
+        jar_location = self.data_location / "d2d" / "jars"
         project1.copy_input_from(jar_location / "from-flume-ng-node-1.9.0.zip")
         project1.copy_input_from(jar_location / "to-flume-ng-node-1.9.0.zip")
 

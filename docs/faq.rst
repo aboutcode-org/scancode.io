@@ -19,6 +19,8 @@ ScanCode.io offers several :ref:`built_in_pipelines` depending on your input:
 - Package archive
 - Root filesystem
 - ScanCode-toolkit results
+- Manifest files
+- Deploy and develop codebase drops
 
 What is the difference between scan_codebase and scan_package pipelines?
 ------------------------------------------------------------------------

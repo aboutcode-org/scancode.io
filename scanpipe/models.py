@@ -180,6 +180,7 @@ class AbstractTaskFieldsModel(models.Model):
         blank=True,
         editable=False,
     )
+    log = models.TextField(blank=True, editable=False)
 
     class Meta:
         abstract = True
@@ -345,6 +346,8 @@ class AbstractTaskFieldsModel(models.Model):
 
     def stop_task(self):
         """Stop a "running" task."""
+        self.append_to_log("Stop task requested", save=True)
+
         if not settings.SCANCODEIO_ASYNC:
             self.set_task_stopped()
             return
@@ -357,7 +360,8 @@ class AbstractTaskFieldsModel(models.Model):
 
         if self.job_status == JobStatus.FAILED:
             self.set_task_ended(
-                exitcode=1, output=f"Killed from outside, exc_info={self.job.exc_info}"
+                exitcode=1,
+                output=f"Killed from outside, latest_result={self.job.latest_result()}",
             )
             return
 
@@ -375,6 +379,16 @@ class AbstractTaskFieldsModel(models.Model):
 
         if delete_self:
             self.delete()
+
+    def append_to_log(self, message, save=False):
+        """Append the ``message`` string to the ``log`` field of this instance."""
+        message = message.strip()
+        if any(lf in message for lf in ("\n", "\r")):
+            raise ValueError("message cannot contain line returns (either CR or LF).")
+
+        self.log = self.log + message + "\n"
+        if save:
+            self.save()
 
 
 class ExtraDataFieldMixin(models.Model):
@@ -597,6 +611,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def tmp_path(self):
         """Return the `tmp` directory as a Path instance."""
         return Path(self.work_path / "tmp")
+
+    def get_codebase_config_directory(self):
+        """Return the `.scancode` directory if available in the `codebase` directory."""
+        config_directory = self.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+        if config_directory.exists():
+            return config_directory
 
     def clear_tmp_directory(self):
         """
@@ -1175,7 +1195,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
-    log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
 
@@ -1217,11 +1236,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def sync_with_job(self):
         """
         Synchronise this Run instance with its related RQ Job.
-
         This is required when a Run gets out of sync with its Job, this can happen
         when the worker or one of its processes is killed, the Run status is not
         properly updated and may stay in a Queued or Running state forever.
-
         In case the Run is out of sync of its related Job, the Run status will be
         updated accordingly. When the run was in the queue, it will be enqueued again.
         """
@@ -1296,16 +1313,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def make_pipeline_instance(self):
         """Return a pipelines instance using this Run pipeline_class."""
         return self.pipeline_class(self)
-
-    def append_to_log(self, message, save=False):
-        """Append the `message` string to the `log` field of this Run instance."""
-        message = message.strip()
-        if any(lf in message for lf in ("\n", "\r")):
-            raise ValueError("message cannot contain line returns (either CR or LF).")
-
-        self.log = self.log + message + "\n"
-        if save:
-            self.save()
 
     def deliver_project_subscriptions(self):
         """Triggers related project webhook subscriptions."""

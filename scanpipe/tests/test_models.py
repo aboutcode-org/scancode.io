@@ -32,6 +32,7 @@ from unittest import mock
 from unittest import skipIf
 
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -469,6 +470,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
         self.assertIsNone(DiscoveredPackage.objects.get_or_none(name="name"))
 
+    def test_scanpipe_project_get_codebase_config_directory(self):
+        self.assertIsNone(self.project1.get_codebase_config_directory())
+        (self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR).mkdir()
+        config_directory = str(self.project1.get_codebase_config_directory())
+        self.assertTrue(config_directory.endswith("codebase/.scancode"))
+
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)
@@ -601,6 +608,7 @@ class ScanPipeModelsTest(TestCase):
         run1.stop_task()
         self.assertEqual(Run.Status.STOPPED, run1.status)
         self.assertTrue(run1.task_stopped)
+        self.assertIn("Stop task requested", run1.log)
 
     @override_settings(SCANCODEIO_ASYNC=False)
     def test_scanpipe_run_model_delete_task_method(self):

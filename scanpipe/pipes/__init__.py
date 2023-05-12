@@ -42,27 +42,27 @@ logger = logging.getLogger("scanpipe.pipes")
 
 def make_codebase_resource(project, location, **extra_fields):
     """
-    Create a CodebaseResource instance in the database for the given `project`.
+    Create a CodebaseResource instance in the database for the given ``project``.
 
-    The provided `location` is the absolute path of this resource.
+    The provided ``location`` is the absolute path of this resource.
     It must be rooted in `project.codebase_path` as only the relative path within the
     project codebase/ directory is stored in the database.
 
-    Extra fields can be provided as keywords arguments to this function call:
+    Extra fields can be provided as keywords arguments to this function call::
 
-    >>> make_codebase_resource(
-    >>>     project=project,
-    >>>     location=resource.location,
-    >>>     rootfs_path=resource.path,
-    >>>     tag=layer_tag,
-    >>> )
+        make_codebase_resource(
+            project=project,
+            location=resource.location,
+            rootfs_path=resource.path,
+            tag=layer_tag,
+        )
 
-    In this example, `rootfs_path` is an optional path relative to a rootfs root
+    In this example, ``rootfs_path`` is an optional path relative to a rootfs root
     within an Image/VM filesystem context. e.g.: "/var/log/file.log"
 
     All paths use the POSIX separators.
 
-    If a CodebaseResource already exists in the `project` with the same path,
+    If a CodebaseResource already exists in the ``project`` with the same path,
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """

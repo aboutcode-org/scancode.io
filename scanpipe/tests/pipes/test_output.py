@@ -27,19 +27,31 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 
 import xlsxwriter
+from licensedcode.cache import get_licensing
 from lxml import etree
 from scancode_config import __version__ as scancode_toolkit_version
 
+from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.pipes import output
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
+
+
+def make_config_directory(project):
+    """
+    Make and return the `project` config directory.
+    """
+    config_directory = project.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+    config_directory.mkdir(exist_ok=True)
+    return config_directory
 
 
 class ScanPipeOutputPipesTest(TestCase):
@@ -233,7 +245,8 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
         project = Project.objects.get(name="asgiref")
 
-        output_file = output.to_spdx(project=project)
+        with self.assertNumQueries(8):
+            output_file = output.to_spdx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
         # Patch the `created` date and tool version
@@ -249,9 +262,68 @@ class ScanPipeOutputPipesTest(TestCase):
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
-        with self.assertNumQueries(8):
-            output_file = output.to_spdx(project=project)
+        output_file = output.to_spdx(project=project)
         self.assertIn(output_file.name, project.output_root)
+
+    def test_scanpipe_pipes_outputs_get_expression_as_attribution_links(self):
+        expression_with_exception = "mit AND gpl-2.0 with classpath-exception-2.0"
+        licensing = get_licensing()
+        parsed_expression = licensing.parse(expression_with_exception)
+        rendered = output.get_expression_as_attribution_links(parsed_expression)
+        expected = (
+            '<a href="#license_gpl-2.0">GPL-2.0-only</a>'
+            " WITH "
+            '<a href="#license_classpath-exception-2.0">Classpath-exception-2.0</a>'
+            " AND "
+            '<a href="#license_mit">MIT</a>'
+        )
+        self.assertEqual(expected, rendered)
+
+    def test_scanpipe_pipes_outputs_render_template(self):
+        template_location = str(self.data_path / "outputs" / "render_me.html")
+        context = {"var": "value"}
+        rendered = output.render_template(template_location, context)
+        self.assertEqual("value", rendered)
+
+    def test_scanpipe_pipes_outputs_get_attribution_template(self):
+        project = Project.objects.create(name="Analysis")
+        template_location = str(output.get_attribution_template(project))
+        expected_location = "templates/scanpipe/attribution.html"
+        self.assertTrue(template_location.endswith(expected_location))
+
+        config_directory = make_config_directory(project)
+        custom_template_dir = config_directory / "templates"
+        custom_template_dir.mkdir(parents=True)
+        custom_attribution_template = custom_template_dir / "attribution.html"
+        custom_attribution_template.touch()
+
+        template_location = str(output.get_attribution_template(project))
+        expected_location = "codebase/.scancode/templates/attribution.html"
+        self.assertTrue(template_location.endswith(expected_location))
+
+    def test_scanpipe_pipes_outputs_to_attribution(self):
+        project = Project.objects.create(name="Analysis")
+        package_data = dict(package_data1)
+        expression_with_exception = "mit AND gpl-2.0 with classpath-exception-2.0"
+        package_data["license_expression"] = expression_with_exception
+        package_data["notice_text"] = "Notice text"
+        pipes.update_or_create_package(project, package_data)
+
+        with self.assertNumQueries(1):
+            output_file = output.to_attribution(project=project)
+
+        expected_file = self.data_path / "outputs" / "expected_attribution.html"
+        self.assertResultsEqual(expected_file, output_file.read_text())
+
+        config_directory = make_config_directory(project)
+        custom_template_dir = config_directory / "templates"
+        custom_template_dir.mkdir(parents=True)
+        custom_attribution_template = custom_template_dir / "attribution.html"
+        custom_attribution_template.touch()
+        custom_attribution_template.write_text("EMPTY_TEMPLATE")
+
+        output_file = output.to_attribution(project=project)
+        self.assertEqual("EMPTY_TEMPLATE", output_file.read_text())
 
 
 class ScanPipeXLSXOutputPipesTest(TestCase):

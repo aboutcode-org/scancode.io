@@ -6,6 +6,7 @@ Output Files
 Whether you use the command line or the web application to run your
 scans, the generated results are available for review or export in
 **JSON**, **Excel (XLSX)**, **SPDX**, and **CycloneDX** file formats.
+You can also produce the **Attribution** as an HTML file.
 
 .. tip::
     Check our :ref:`data_model` section for more details about all fields included
@@ -21,7 +22,7 @@ the output file format with the ``–-format`` option:
 
 .. code-block:: console
 
-    $ scanpipe output --project PROJECT --format {json,xlsx,spdx,cyclonedx}
+    $ scanpipe output --project PROJECT --format {json,xlsx,spdx,cyclonedx,attribution}
 
 .. note::
     The previous command will output the scan results in a file format
@@ -246,3 +247,26 @@ while the **Codebase Resources** sheet includes information about each
 individual file:
 
 .. image:: images/output-files-xlsx-resources.png
+
+Attribution
+^^^^^^^^^^^
+ScanCode.io can generate attribution notices of the discovered packages of a project.
+The output format is a HTML page.
+
+The default template output can be customized providing your own template in the
+:guilabel:`.scancode` config directory :ref:`scancodeio_settings_config_dir`.
+
+You usually want to start with a copy of the default template available at
+``scanpipe/templates/scanpipe/attribution.html`` and add your modifications.
+
+You can then place your custom template file into the :guilabel:`.scancode` config
+directory in your input files, such as it will end up at
+``codebase/.scancode/templates/attribution.html`` on extraction.
+
+The following variable are available as the template context:
+
+- ``project``
+- ``packages``
+- ``licenses``
+
+Refer to :ref:`data_model` for the full details of available fields.

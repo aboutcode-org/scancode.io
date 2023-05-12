@@ -5,8 +5,19 @@
 
 {% block extrahead %}
   <style>
-    #resource-viewer #editor {min-height:730px; border: lightgrey 1px solid;}
-    #resource-viewer .nav-button {flex-basis: min-content;}
+    #resource-viewer #editor {
+      min-height:730px;
+      border: lightgrey 1px solid;
+    }
+    #resource-viewer .message-header .tag {
+      height: 1.5em;
+      padding-left: 0.5em;
+      padding-right: 0.5em;
+    }
+    #resource-viewer .nav-button .button {
+      height: auto;
+      padding: 0 .25rem 0 .25rem;
+    }
     .ace_gutter-cell.ace_info, .ace_gutter-cell.undefined {
       background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANhJREFUOE+tU9EVgjAMTHAhGECEkcQBgAHEkag4ACwk8V18INam+mG/+trkcndJmAKnuIwFnu/CNYtccU8Scu6YOT+ctw9I1CQiBfCPELkdS7sFWgHy89gQcx1K/ESSdjhlDd4VAJVn4T5U0WKTsJRgogD7bupDgUOVmv+Qc6vSkmPVEYACeTdJSBpY8DftqBSTYQPIyyiLgYJb+ukHAMSYHkDzYqLFIAqwuKwmGjOiJlptXPpsAaxtjA1SbCrfBilGMwiyMfh/y+Rv5Tw/N1KYD9hA3EPr/ADng505myWL3AAAAABJRU5ErkJggg==);
       background-position: 3px top;
@@ -27,6 +38,28 @@
       background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAANRJREFUOE+lU8ENAyEMwxMcG7U3Wa+TldsIJqByRNoAQVepPKPYTmKD4LwY453lWusDwNlaUs45je2wBQIJCiEIgfMSgKcl+hDEGI8GXmC/5UZysCIETfllkJPSKABg5yRCsG0bwTp2KqXs3hheHzx1Eth7qNrYyzoJLnc3BF3vLwTdOo5YwrBXt3opxR55spdueDdQEnFCA+Vl44qAWJKcq3zIDRwbZQIblsWacp9VkERd8+A51QWppXGyk1PUWm/j/lOU9Wp/fabxV6oqJ1A3vO/8Bvwpta0GO9pwAAAAAElFTkSuQmCC);
       background-position: 3px top;
     }
+    .ace_tooltip .ace_icon {display: none;}
+    {# Full screen inspired by ace/demo/scrollable-page.html #}
+    body.full-screen #resource-viewer {
+      height: auto;
+      width: auto;
+      border: 0;
+      margin: 0;
+      position: fixed !important;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    body.full-screen {
+      overflow: hidden;
+      /*transform breaks position fixed*/
+      transform: none!important;
+    }
+    body {
+      transform: translateZ(0);
+    }
   </style>
 {% endblock %}
 
@@ -34,25 +67,14 @@
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
-
-    <section class="mx-5 mb-3">
-      <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
-        <ul>
-          <li><a href="{% url 'project_list' %}">Projects</a></li>
-          <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
-          <li><a href="{% url 'project_resources' project.uuid %}">Resources</a></li>
-          <li class="is-active"><a href="#" aria-current="page">{{ object.path }}</a></li>
-        </ul>
-      </nav>
-    </section>
-
+    {% include 'scanpipe/includes/breadcrumb_detail_view.html' with object_title=object.path url_name="project_resources" model_label="Resources" %}
     {% include 'scanpipe/tabset/tabset.html' %}
   </div>
 {% endblock %}
 
-{{ detected_values }}
 {% block scripts %}
-  <script src="{% static 'ace-1.9.5.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.20.0.min.js' %}" crossorigin="anonymous"></script>
+  <script src="{% static 'ace-1.20.0-ext-searchbox.min.js' %}" crossorigin="anonymous"></script>
   {{ detected_values|json_script:"detected_values" }}
   <script>
     let editor = ace.edit("editor", {
@@ -97,11 +119,11 @@
           row: start_row,
           column: 0,
           text: $el.text,
+          type: "info",
           className: $el.className,
         });
 
       });
-
       editor.getSession().setAnnotations(annotations);
     }
 
@@ -146,7 +168,7 @@
       editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
       nextBtn.disabled = scrollPositionIndex === detected_data.length - 1;
       previousBtn.disabled = false;
-    })
+    });
 
     previousBtn.addEventListener('click', function() {
       if (scrollPositionIndex <= 0) return false;
@@ -154,6 +176,14 @@
       editor.renderer.scrollToLine(detected_data[scrollPositionIndex].start_line - 1);
       previousBtn.disabled = scrollPositionIndex === 0;
       nextBtn.disabled = false;
-    })
+    });
+
+    const fullscreenBtn = document.querySelector('#toggle-fullscreen');
+    fullscreenBtn.addEventListener('click', function() {
+      let body = document.querySelector('body');
+      let is_full_screen = body.classList.toggle("full-screen");
+      editor.resize()
+    });
+
   </script>
 {% endblock %}
