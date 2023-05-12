@@ -180,6 +180,7 @@ class AbstractTaskFieldsModel(models.Model):
         blank=True,
         editable=False,
     )
+    log = models.TextField(blank=True, editable=False)
 
     class Meta:
         abstract = True
@@ -345,6 +346,8 @@ class AbstractTaskFieldsModel(models.Model):
 
     def stop_task(self):
         """Stop a "running" task."""
+        self.append_to_log("Stop task requested", save=True)
+
         if not settings.SCANCODEIO_ASYNC:
             self.set_task_stopped()
             return
@@ -357,7 +360,8 @@ class AbstractTaskFieldsModel(models.Model):
 
         if self.job_status == JobStatus.FAILED:
             self.set_task_ended(
-                exitcode=1, output=f"Killed from outside, exc_info={self.job.exc_info}"
+                exitcode=1,
+                output=f"Killed from outside, latest_result={self.job.latest_result()}",
             )
             return
 
@@ -375,6 +379,16 @@ class AbstractTaskFieldsModel(models.Model):
 
         if delete_self:
             self.delete()
+
+    def append_to_log(self, message, save=False):
+        """Append the ``message`` string to the ``log`` field of this instance."""
+        message = message.strip()
+        if any(lf in message for lf in ("\n", "\r")):
+            raise ValueError("message cannot contain line returns (either CR or LF).")
+
+        self.log = self.log + message + "\n"
+        if save:
+            self.save()
 
 
 class ExtraDataFieldMixin(models.Model):
@@ -1181,7 +1195,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
-    log = models.TextField(blank=True, editable=False)
 
     objects = RunQuerySet.as_manager()
 
@@ -1220,73 +1233,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
         return job
 
-    def sync_with_job(self):
-        """
-        Synchronise this Run instance with its related RQ Job.
-
-        This is required when a Run gets out of sync with its Job, this can happen
-        when the worker or one of its processes is killed, the Run status is not
-        properly updated and may stay in a Queued or Running state forever.
-
-        In case the Run is out of sync of its related Job, the Run status will be
-        updated accordingly. When the run was in the queue, it will be enqueued again.
-        """
-        RunStatus = self.Status
-
-        if settings.SCANCODEIO_ASYNC:
-            job_status = self.job_status
-        else:
-            job_status = None
-
-        if not job_status:
-            if self.status == RunStatus.QUEUED:
-                logger.info(
-                    f"No Job found for QUEUED Run={self.task_id}. "
-                    f"Enqueueing a new Job in the worker registery."
-                )
-                self.execute_task_async()
-
-            elif self.status == RunStatus.RUNNING:
-                logger.info(
-                    f"No Job found for RUNNING Run={self.task_id}. "
-                    f"Flagging this Run as STALE."
-                )
-                self.set_task_staled()
-
-            return
-
-        job_is_out_of_sync = any(
-            [
-                self.status == RunStatus.RUNNING and job_status != JobStatus.STARTED,
-                self.status == RunStatus.QUEUED and job_status != JobStatus.QUEUED,
-            ]
-        )
-
-        if job_is_out_of_sync:
-            if job_status == JobStatus.STOPPED:
-                logger.info(
-                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
-                    f"Flagging this Run as STOPPED."
-                )
-                self.set_task_stopped()
-
-            elif job_status == JobStatus.FAILED:
-                logger.info(
-                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
-                    f"Flagging this Run as FAILED."
-                )
-                self.set_task_ended(
-                    exitcode=1,
-                    output="Job was moved to the FailedJobRegistry during cleanup",
-                )
-
-            else:
-                logger.info(
-                    f"Job found as {job_status} for RUNNING Run={self.task_id}. "
-                    f"Flagging this Run as STALE."
-                )
-                self.set_task_staled()
-
     def set_scancodeio_version(self):
         """Set the current ScanCode.io version on the `Run.scancodeio_version` field."""
         if self.scancodeio_version:
@@ -1302,16 +1248,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def make_pipeline_instance(self):
         """Return a pipelines instance using this Run pipeline_class."""
         return self.pipeline_class(self)
-
-    def append_to_log(self, message, save=False):
-        """Append the `message` string to the `log` field of this Run instance."""
-        message = message.strip()
-        if any(lf in message for lf in ("\n", "\r")):
-            raise ValueError("message cannot contain line returns (either CR or LF).")
-
-        self.log = self.log + message + "\n"
-        if save:
-            self.save()
 
     def deliver_project_subscriptions(self):
         """Triggers related project webhook subscriptions."""
