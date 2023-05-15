@@ -2,6 +2,7 @@
 
 from django.db import migrations
 from django.db.models import Q
+from django.conf import settings
 
 
 def compute_package_declared_license_expression_spdx(apps, schema_editor):
@@ -10,6 +11,9 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
     from `declared_license_expression`, when available.
     """
     from licensedcode.cache import build_spdx_license_expression
+
+    if settings.IS_TESTS:
+        return
 
     DiscoveredPackage = apps.get_model("scanpipe", "DiscoveredPackage")
     queryset = DiscoveredPackage.objects.filter(
@@ -46,6 +50,9 @@ def compute_resource_detected_license_expression(apps, schema_editor):
     """
     from license_expression import combine_expressions
     from licensedcode.cache import build_spdx_license_expression
+
+    if settings.IS_TESTS:
+        return
 
     CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
     queryset = CodebaseResource.objects.filter(~Q(license_expressions=[])).only(
@@ -144,6 +151,9 @@ def _convert_matches_to_detections(license_matches):
 
 def compute_resource_license_detections(apps, schema_editor):
     """Compute CodebaseResource `license_detections` from old `licenses` field."""
+    if settings.IS_TESTS:
+        return
+
     CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
     queryset = CodebaseResource.objects.filter(~Q(licenses=[])).only("licenses")
 
