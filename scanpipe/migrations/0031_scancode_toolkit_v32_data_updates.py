@@ -16,7 +16,13 @@ def compute_package_declared_license_expression_spdx(apps, schema_editor):
         ~Q(declared_license_expression="") & Q(declared_license_expression_spdx="")
     )
 
-    for package in packages:
+    package_count = packages.count()
+    print(f"Compute declared_license_expression_spdx for {package_count:,} packages.")
+
+    chunk_size = 2000
+    for index, package in enumerate(packages.iterator(chunk_size=chunk_size)):
+        if not (index % chunk_size):
+            print(f"  {index:,} / {package_count:,}")
         if spdx := build_spdx_license_expression(package.declared_license_expression):
             package.declared_license_expression_spdx = spdx
             package.save()
@@ -33,10 +39,17 @@ def compute_resource_detected_license_expression(apps, schema_editor):
     CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
     resources = CodebaseResource.objects.filter(~Q(license_expressions=[]))
 
-    for resource in resources:
-        license_expression = str(combine_expressions(resource.license_expressions))
-        license_expression_spdx = build_spdx_license_expression(license_expression)
-        resource.declared_license_expression = license_expression
+    resource_count = resources.count()
+    print(f"Compute detected_license_expression for {resource_count:,} resources.")
+
+    chunk_size = 2000
+    for index, resource in enumerate(resources.iterator(chunk_size=chunk_size)):
+        if not (index % chunk_size):
+            print(f"  {index:,} / {resource_count:,}")
+
+        combined_expression = str(combine_expressions(resource.license_expressions))
+        license_expression_spdx = build_spdx_license_expression(combined_expression)
+        resource.declared_license_expression = combined_expression
         resource.declared_license_expression_spdx = license_expression_spdx
         resource.save()
 
@@ -98,8 +111,16 @@ def _convert_matches_to_detections(license_matches):
 def compute_resource_license_detections(apps, schema_editor):
     """Compute CodebaseResource `license_detections` from old `licenses` field."""
     CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
-    resources = CodebaseResource.objects.filter(~Q(licenses=[]))
-    for resource in resources:
+    resources = CodebaseResource.objects.filter(~Q(licenses=[])).only("licenses")
+
+    resource_count = resources.count()
+    print(f"Compute license_detections for {resource_count:,} resources.")
+
+    chunk_size = 2000
+    for index, resource in enumerate(resources.iterator(chunk_size=chunk_size)):
+        if not (index % chunk_size):
+            print(f"  {index:,} / {resource_count:,}")
+
         detections = _convert_matches_to_detections(resource.licenses)
         resource.license_detections = detections
         resource.save()
