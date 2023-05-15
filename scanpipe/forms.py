@@ -49,7 +49,7 @@ class MultipleFileField(forms.FileField):
 
 
 class InputsBaseForm(forms.Form):
-    input_files = MultipleFileField()
+    input_files = MultipleFileField(required=False)
     input_urls = forms.CharField(
         label="Download URLs",
         required=False,
