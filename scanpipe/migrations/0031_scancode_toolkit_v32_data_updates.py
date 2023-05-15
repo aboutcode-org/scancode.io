@@ -68,13 +68,17 @@ def compute_resource_detected_license_expression(apps, schema_editor):
     unsaved_objects = []
     for index, resource in enumerate(iterator, start=1):
         combined_expression = str(combine_expressions(resource.license_expressions))
-        # TODO:
         # gpl-2.0 OR broadcom-linking-unmodified OR proprietary-license
         # build_spdx_license_expression("broadcom-linking-unmodified")
         # AttributeError: 'LicenseSymbol' object has no attribute 'wrapped'
         try:
             license_expression_spdx = build_spdx_license_expression(combined_expression)
-        except AttributeError:
+        except AttributeError as error:
+            resource.project.add_error(
+                error=error,
+                model=resource.__class__,
+                details={"combined_expression": combined_expression}
+            )
             continue
 
         resource.detected_license_expression = combined_expression
