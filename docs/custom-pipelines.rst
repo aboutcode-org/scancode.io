@@ -113,7 +113,6 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
     from scanpipe.pipelines.scan_codebase import ScanCodebase
 
 
-    # TODO: Rewrite this following v32 changes
     class ScanAndReport(ScanCodebase):
         """
         Runs the ScanCodebase built-in pipeline steps and generate a licenses report.
@@ -142,20 +141,20 @@ the file's directory in the :ref:`scancodeio_settings_pipelines_dirs`.
 
         def report_licenses_with_resources(self):
             """
-            Retrieves codebase resources filtered by license categories,
-            Generates a licenses report file from a template.
+            Retrieves codebase resources and generates a licenses report file using
+            a Jinja template.
             """
-            categories = ["Commercial", "Copyleft"]
-            resources = self.project.codebaseresources.licenses_categories(categories)
+            resources = self.project.codebaseresources.has_license_detections()
 
-            resources_by_licenses = defaultdict(list)
+            resources_by_matched_text = defaultdict(list)
             for resource in resources:
-                for license_data in resource.licenses:
-                    matched_text = license_data.get("matched_text")
-                    resources_by_licenses[matched_text].append(resource.path)
+                for detection_data in resource.license_detections:
+                    for match in detection_data.get("matches", []):
+                        matched_text = match.get("matched_text")
+                        resources_by_matched_text[matched_text].append(resource.path)
 
             template = Template(self.report_template, lstrip_blocks=True, trim_blocks=True)
-            report_stream = template.stream(resources=resources_by_licenses)
+            report_stream = template.stream(resources=resources_by_matched_text)
             report_file = self.project.get_output_file_path("license-report", "txt")
             report_stream.dump(str(report_file))
 
