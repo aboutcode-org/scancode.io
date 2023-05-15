@@ -509,6 +509,22 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         return summary_data
 
+    def check_run_scancode_version(self, pipeline_runs, version_limit="32.2.0"):
+        """
+        Display a warning message if one of the ``pipeline_runs`` scancodeio_version
+        is prior to or currently is ``old_version``.
+        """
+        if run_versions := [run.scancodeio_version for run in pipeline_runs]:
+            message = (
+                "WARNING: Some this project pipelines have been run with an "
+                "out of date ScanCode-toolkit version.\n"
+                "The scan data was migrated, but it is recommended to reset the "
+                "project and re-run the pipelines to benefit from the latest "
+                "scan results improvements."
+            )
+            if min(run_versions) <= version_limit:
+                messages.warning(self.request, message)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
@@ -544,6 +560,9 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         resource_status_summary = count_group_by(project.codebaseresources, "status")
 
+        pipeline_runs = project.runs.all()
+        self.check_run_scancode_version(pipeline_runs)
+
         context.update(
             {
                 "inputs_with_source": inputs,
@@ -553,6 +572,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "resource_status_summary": resource_status_summary,
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
+                "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
             }
         )
