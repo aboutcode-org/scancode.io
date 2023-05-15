@@ -184,7 +184,7 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=3fa5ecb6-859b-4c19-a1cf-a567ec45fc54"
+        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
       ],
       "emails": [
         {
@@ -273,7 +273,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=3fa5ecb6-859b-4c19-a1cf-a567ec45fc54"
+        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
       ],
       "emails": [],
       "urls": [
@@ -376,7 +376,7 @@
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
-      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=3fa5ecb6-859b-4c19-a1cf-a567ec45fc54",
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8",
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],

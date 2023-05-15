@@ -367,8 +367,15 @@ class ScanPipeAPITest(TransactionTestCase):
         )
 
         self.assertEqual("", resource["compliance_alert"])
-        self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR
-        self.resource1.save()
+
+        # Using update() to bypass the `compute_compliance_alert` call triggered
+        # when using save().
+        # The purpose of this test is not to assert on the compliance_alert computation
+        # but rather to test the render in the REST API.
+        CodebaseResource.objects.filter(id=self.resource1.id).update(
+            compliance_alert=CodebaseResource.Compliance.ERROR
+        )
+
         response = self.csrf_client.get(url)
         self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 

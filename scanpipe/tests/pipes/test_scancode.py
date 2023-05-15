@@ -442,7 +442,13 @@ class ScanPipeScancodePipesTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        scan_output_location = project1.get_latest_output("scancode")
+        # Forcing package_uid for proper assertion with expected results
+        package = project1.discoveredpackages.get()
+        uuid = "ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
+        package.package_uid = f"pkg:npm/is-npm@1.0.0?uuid={uuid}"
+        package.save()
+
+        scan_output_location = self.data_location / "is-npm-1.0.0_scan_package.json"
         summary = scancode.make_results_summary(project1, scan_output_location)
 
         expected_location = self.data_location / "scancode/is-npm-1.0.0_summary.json"
