@@ -61,13 +61,6 @@
       "detected_license_expression_spdx": "MIT",
       "license_detections": [
         {
-          "policy": {
-            "icon": "far fa-thumbs-up",
-            "label": "Recommended License",
-            "color_code": "#002fff",
-            "license_key": "mit",
-            "compliance_alert": ""
-          },
           "matches": [
             {
               "score": 100.0,
@@ -89,7 +82,7 @@
       ],
       "license_clues": [],
       "percentage_of_license_text": 3.33,
-      "compliance_alert": "ok",
+      "compliance_alert": "",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -227,13 +220,6 @@
       "detected_license_expression_spdx": "MIT",
       "license_detections": [
         {
-          "policy": {
-            "icon": "far fa-thumbs-up",
-            "label": "Recommended License",
-            "color_code": "#002fff",
-            "license_key": "mit",
-            "compliance_alert": ""
-          },
           "matches": [
             {
               "score": 100.0,
@@ -255,7 +241,7 @@
       ],
       "license_clues": [],
       "percentage_of_license_text": 2.78,
-      "compliance_alert": "ok",
+      "compliance_alert": "",
       "copyrights": [
         {
           "end_line": 30,

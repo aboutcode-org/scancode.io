@@ -430,6 +430,8 @@ class ScanPipeScancodePipesTest(TestCase):
             self.assertIn("--processes 10", mock_run_command.call_args[0][0])
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
+        # Ensure the policies index is empty to avoid any side effect on results
+        scanpipe_app.license_policies_index = None
         # Run the scan_package pipeline to have a proper DB and local files setup
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
