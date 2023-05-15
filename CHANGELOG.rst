@@ -4,6 +4,12 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Upgrade ScanCode-toolkit to latest v32.0.0
+  Warning: This upgrade required schema and data migrations.
+  Refer to https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst#v3200-next-roadmap
+  for the full list of changes.
+  https://github.com/nexB/scancode.io/issues/569
+
 - Add a new ``deploy_to_develop`` pipeline specialized in creating relations between
   the development source code and binaries or deployed code.
   This pipeline is expecting 2 archive files with "from-" and "to-" filename prefixes
