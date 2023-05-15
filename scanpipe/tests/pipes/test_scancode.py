@@ -489,10 +489,13 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
-        project_scan_location = self.data_location / "package_assembly_codebase.json"
+        filename = "package_assembly_codebase.json"
+        project_scan_location = self.data_location / "scancode" / filename
         scancode.load_inventory_from_toolkit_scan(project, project_scan_location)
 
+        project.discoveredpackages.all().delete()
         self.assertEqual(0, project.discoveredpackages.count())
+
         scancode.assemble_packages(project)
         self.assertEqual(1, project.discoveredpackages.count())
 
@@ -501,7 +504,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         associated_resources = [r.path for r in package.codebase_resources.all()]
         expected_resources = [
-            "get_package_resources/package.json",
-            "get_package_resources/this-should-be-returned",
+            "test/get_package_resources/package.json",
+            "test/get_package_resources/this-should-be-returned",
         ]
         self.assertEqual(sorted(expected_resources), sorted(associated_resources))

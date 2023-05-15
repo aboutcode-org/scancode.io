@@ -28,6 +28,7 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
+from scanpipe.pipes import input
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 
@@ -115,3 +116,18 @@ class RegenTestData(TestCase):
         pc = codebase.ProjectCodebase(project1)
         project_tree = codebase.get_codebase_tree(codebase=pc, fields=["name", "path"])
         test_file_location.write_text(json.dumps(project_tree, indent=2))
+
+        # Load inventory expected file
+        project2 = Project.objects.create(name="package_assembly")
+        filename = "package_assembly_codebase.tar.gz"
+        input_file = self.data_location / "scancode" / filename
+        project2.copy_input_from(input_location)
+        input.copy_input(input_file, project2.codebase_path)
+        scancode.extract_archives(location=project2.codebase_path)
+        scan_options = ["--info", "--package"]
+        scan_location = str(
+            project2.codebase_path / "package_assembly_codebase.tar.gz-extract/"
+        )
+        json_filename = "package_assembly_codebase.json"
+        output_location = str(self.data_location / "scancode" / json_filename)
+        scancode.run_scancode(scan_location, output_location, scan_options)
