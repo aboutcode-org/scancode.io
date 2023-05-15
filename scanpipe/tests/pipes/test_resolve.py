@@ -25,7 +25,10 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from scanpipe import pipes
+from scanpipe.models import Project
 from scanpipe.pipes import resolve
+from scanpipe.tests import package_data1
 
 
 class ScanPipeResolvePipesTest(TestCase):
@@ -123,3 +126,32 @@ class ScanPipeResolvePipesTest(TestCase):
         package = resolve.resolve_about_packages(str(input_location))
         expected = {"name": "project"}
         self.assertEqual([expected], package)
+
+    def test_scanpipe_pipes_resolve_spdx_package_to_discovered_package_data(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = pipes.update_or_create_package(p1, package_data1)
+        package_spdx = package.as_spdx()
+        package_data = resolve.spdx_package_to_discovered_package_data(package_spdx)
+        expected = {
+            "name": "adduser",
+            "download_url": "https://download.url/package.zip",
+            "declared_license_expression": "gpl-2.0 AND gpl-2.0-plus",
+            "declared_license_expression_spdx": "GPL-2.0-only AND GPL-2.0-or-later",
+            "extracted_license_statement": "GPL-2.0-only AND GPL-2.0-or-later",
+            "copyright": (
+                "Copyright (c) 2000 Roland Bauerschmidt <rb@debian.org>\n"
+                "Copyright (c) 1997, 1998, 1999 Guy Maor <maor@debian.org>\n"
+                "Copyright (c) 1995 Ted Hajek <tedhajek@boombox.micro.umn.edu>\n"
+                "portions Copyright (c) 1994 Debian Association, Inc."
+            ),
+            "version": "3.118",
+            "homepage_url": "https://packages.debian.org",
+            "filename": "package.zip",
+            "description": "add and remove users and groups",
+            "release_date": "1999-10-10",
+            "type": "deb",
+            "namespace": "debian",
+            "qualifiers": "arch=all",
+            "md5": "76cf50f29e47676962645632737365a7",
+        }
+        self.assertEqual(expected, package_data)
