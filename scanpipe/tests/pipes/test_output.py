@@ -41,6 +41,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.pipes import output
+from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -57,7 +58,7 @@ def make_config_directory(project):
 class ScanPipeOutputPipesTest(TestCase):
     data_path = Path(__file__).parent.parent / "data"
 
-    def assertResultsEqual(self, expected_file, results, regen=False):
+    def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
         """
         Set `regen` to True to regenerate the expected results.
         """
@@ -215,7 +216,7 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
-    def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=False):
+    def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
@@ -313,7 +314,7 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_attribution(project=project)
 
         expected_file = self.data_path / "outputs" / "expected_attribution.html"
-        self.assertResultsEqual(expected_file, output_file.read_text(), 1)
+        self.assertResultsEqual(expected_file, output_file.read_text())
 
         config_directory = make_config_directory(project)
         custom_template_dir = config_directory / "templates"

@@ -43,6 +43,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
+from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import license_policies_index
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -428,17 +429,27 @@ class ScanPipeScancodePipesTest(TestCase):
             scancode.run_scancode(location=None, output_file=None, options=[])
             self.assertIn("--processes 10", mock_run_command.call_args[0][0])
 
-    def test_scanpipe_pipes_scancode_make_results_summary(self):
-        project = Project.objects.create(name="Analysis")
-        scan_results_location = self.data_location / "is-npm-1.0.0_scan_package.json"
-        summary = scancode.make_results_summary(project, scan_results_location)
-        self.assertEqual(10, len(summary.keys()))
+    def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
+        # Run the scan_package pipeline to have a proper DB and local files setup
+        pipeline_name = "scan_package"
+        project1 = Project.objects.create(name="Analysis")
 
-        scan_results_location = (
-            self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
-        )
-        summary = scancode.make_results_summary(project, scan_results_location)
-        self.assertEqual(10, len(summary.keys()))
+        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        scan_output_location = project1.get_latest_output("scancode")
+        summary = scancode.make_results_summary(project1, scan_output_location)
+
+        expected_location = self.data_location / "scancode/is-npm-1.0.0_summary.json"
+        if regen:
+            expected_location.write_text(json.dumps(summary, indent=2))
+
+        self.assertJSONEqual(expected_location.read_text(), summary)
 
     def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
         project = Project.objects.create(name="Analysis")

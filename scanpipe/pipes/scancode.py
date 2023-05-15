@@ -547,25 +547,25 @@ def _get_license_matches_grouped(project):
     for resource in resources_with_license:
         file_cache = []
 
-        # TODO:
-        for match in resource.license_detections[0].get("matches", []):
-            license_expression = match.get("license_expression")
-            matched_text = match.get("matched_text")
+        for detection_data in resource.license_detections:
+            for match in detection_data.get("matches", []):
+                license_expression = match.get("license_expression")
+                matched_text = match.get("matched_text")
 
-            # Do not include duplicated matched_text for a given license_expression
-            # within the same file
-            cache_key = ":".join([license_expression, resource.path, matched_text])
-            cache_key = hashlib.md5(cache_key.encode()).hexdigest()
-            if cache_key in file_cache:
-                continue
-            file_cache.append(cache_key)
+                # Do not include duplicated matched_text for a given license_expression
+                # within the same file
+                cache_key = ":".join([license_expression, resource.path, matched_text])
+                cache_key = hashlib.md5(cache_key.encode()).hexdigest()
+                if cache_key in file_cache:
+                    continue
+                file_cache.append(cache_key)
 
-            license_matches[license_expression].append(
-                {
-                    "path": resource.path,
-                    "matched_text": matched_text,
-                }
-            )
+                license_matches[license_expression].append(
+                    {
+                        "path": resource.path,
+                        "matched_text": matched_text,
+                    }
+                )
 
     return dict(license_matches)
 
@@ -584,7 +584,8 @@ def make_results_summary(project, scan_results_location):
 
     summary = scan_data.get("summary")
 
-    # Inject the generated `license_matches` in the summary
+    # Inject the generated `license_matches` in the summary from the project
+    # codebase resources.
     summary["license_matches"] = _get_license_matches_grouped(project)
 
     # Inject the `key_files` and their file content in the summary
