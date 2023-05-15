@@ -24,8 +24,6 @@ import difflib
 from pathlib import Path
 from timeit import default_timer as timer
 
-from django.db.models import Q
-
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import flag
@@ -555,6 +553,10 @@ def map_javascript(project, logger=None):
             f"against to/ codebase"
         )
 
+    to_resources_index = pathmap.build_index(
+        to_resources.values_list("id", "path"), with_subpaths=True
+    )
+
     resource_iterator = from_resources.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
@@ -567,59 +569,67 @@ def map_javascript(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _map_javascript_resource(from_resource, to_resources)
+        _map_javascript_resource(from_resource, to_resources_index, to_resources)
 
 
-def _map_javascript_resource(from_resource, to_resources):
+def _map_javascript_resource(from_resource, to_resources_index, to_resources):
     path = Path(from_resource.path.lstrip("/"))
 
     basename, from_extension = js.get_basename_and_extension(path.name)
     path_parts = (path.parent / basename).parts
     path_parts_len = len(path_parts)
 
-    for index in range(1, path_parts_len - 1):
-        current_parts = path_parts[index:]
-        current_path = "/".join(current_parts)
+    base_path = path.parent / basename
 
-        any_map = False
+    candidates = PROSPECTIVE_JAVASCRIPT_MAP.get(from_extension, [])
 
-        for candidate in PROSPECTIVE_JAVASCRIPT_MAP.get(from_extension, []):
-            query = Q(
-                *[
-                    Q(path__endswith=f"{current_path}{extension}")
-                    for extension in candidate["to_related"]
-                ],
-                _connector=Q.OR,
+    for candidate in candidates:
+        first_extension = candidate["to_related"][0]
+        match = pathmap.find_paths(f"{base_path}{first_extension}", to_resources_index)
+        if not match:
+            continue
+
+        # Only create relations when the number of matches if inferior or equal to
+        # the current number of path segment matched.
+        if len(match.resource_ids) > match.matched_path_length:
+            continue
+
+        for resource_id in match.resource_ids:
+            first_match = to_resources.get(id=resource_id)
+
+            reversed_parent_segment = pathmap.get_reversed_path_segments(
+                str(Path(first_match.path).parent)
             )
 
-            matches = to_resources.filter(query)
+            # Collect the transformed files within the same parent directory.
+            matches = []
+            for extension in candidate["to_related"]:
+                reversed_segments = [f"{basename}{extension}"] + reversed_parent_segment
+                resource_key = pathmap.convert_segments_to_path(reversed_segments)
+                if to_resources_index.exists(resource_key):
+                    value = to_resources_index.get(resource_key)
+                    matches.append(to_resources.get(id=value[1][0]))
 
-            if not matches:
-                continue
-
-            # Only create relations when the number of matches if inferior or
-            # equal to the sum of current number of path segment matched and
-            # number of related files.
-            if len(matches) > len(current_parts) + len(candidate["to_related"]):
-                continue
-
-            map_type = "path"
-            if js.is_minified_and_map_compiled_from_source(
+            is_compiled = js.is_minified_and_map_compiled_from_source(
                 matches,
                 from_resource,
                 minified_extension=candidate["to_minified_ext"],
-            ):
-                map_type = "js_compiled"
+            )
+
+            if not is_compiled and bool(candidate["to_minified_ext"]):
+                continue
+
+            map_type = "js_compiled" if is_compiled else "path"
+
+            extra_data = {
+                "path_score": f"{match.matched_path_length}/{path_parts_len - 1}",
+            }
 
             for match in matches:
                 pipes.make_relation(
                     from_resource=from_resource,
                     to_resource=match,
                     map_type=map_type,
-                    extra_data=f"{len(current_parts)}/{path_parts_len-1}",
+                    extra_data=extra_data,
                 )
-
-            any_map = True
-
-        if any_map:
             break

@@ -70,6 +70,12 @@ PROSPECTIVE_JAVASCRIPT_MAP = {
             "to_related": [".ts"],
         },
     ],
+    ".css": [
+        {
+            "to_minified_ext": ".css",
+            "to_related": [".css", ".css.map"],
+        },
+    ],
 }
 
 
@@ -151,7 +157,7 @@ def get_basename_and_extension(filename):
     """Return the basename and extension of a JavaScript/TypeScript related file."""
     # The order of extensions in the list matters since
     # `.d.ts` should be tested first before `.ts`.
-    js_extensions = [".d.ts", ".ts", ".js", ".jsx", ".scss"]
+    js_extensions = [".d.ts", ".ts", ".js", ".jsx", ".scss", ".css"]
     for ext in js_extensions:
         if filename.endswith(ext):
             extension = ext
