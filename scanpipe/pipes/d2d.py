@@ -619,6 +619,8 @@ def _map_javascript_resource(from_resource, to_resources_index, to_resources):
             if not is_compiled and bool(candidate["to_minified_ext"]):
                 continue
 
+            # For those mappings where path matching is the only confirmation,
+            # since they don't have any map file, label such relations as `js_path`.
             map_type = "js_compiled" if is_compiled else "js_path"
 
             extra_data = {
