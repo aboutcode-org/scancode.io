@@ -44,7 +44,6 @@ from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
-from scanpipe.tests import license_policies_index
 
 scanpipe_app = apps.get_app_config("scanpipe")
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
@@ -370,42 +369,6 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
         self.assertEqual(1, DiscoveredDependency.objects.count())
-
-    def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
-        project = Project.objects.create(name="asgiref")
-        # We are using `asgiref-3.3.0_toolkit_scan.json` instead of
-        # `asgiref-3.3.0_scanpipe_output.json` because it is not exactly the same
-        # format as a scancode-toolkit scan
-        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
-        virtual_codebase = scancode.get_virtual_codebase(project, input_location)
-
-        scanpipe_app.license_policies_index = license_policies_index
-        scancode.create_discovered_packages(project, virtual_codebase)
-        scancode.create_codebase_resources(project, virtual_codebase)
-        scancode.create_discovered_dependencies(
-            project, virtual_codebase, strip_datafile_path_root=True
-        )
-        resources = project.codebaseresources
-
-        resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")
-        self.assertEqual(
-            "bsd-new", resource1.license_detections[0]["license_expression"]
-        )
-        self.assertNotIn("bsd-new", license_policies_index)
-        self.assertIsNone(resource1.license_detections[0]["policy"])
-
-        resource2 = resources.get(path__endswith="asgiref/timeout.py")
-        self.assertEqual(
-            "apache-2.0", resource2.license_detections[0]["license_expression"]
-        )
-        self.assertIn("apache-2.0", license_policies_index)
-        expected = {
-            "label": "Approved License",
-            "color_code": "#008000",
-            "license_key": "apache-2.0",
-            "compliance_alert": "",
-        }
-        self.assertEqual(expected, resource2.license_detections[0]["policy"])
 
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")

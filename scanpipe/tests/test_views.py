@@ -449,27 +449,6 @@ class ScanPipeViewsTest(TestCase):
         expected = '<span class="tag is-danger">Stopped</span>'
         self.assertContains(response, expected)
 
-    def test_scanpipe_views_codebase_resource_details_annotations_missing_policy(self):
-        resource1 = CodebaseResource.objects.create(
-            project=self.project1,
-            path="resource1",
-            license_detections=[
-                {
-                    "license_expression": "key",
-                    "policy": None,
-                    "start_line": 1,
-                    "end_line": 2,
-                }
-            ],
-        )
-        url = resource1.get_absolute_url()
-
-        response = self.client.get(url)
-        expected = (
-            '{"start_line": 1, "end_line": 2, "text": null, "className": "ace_info"}'
-        )
-        self.assertContains(response, expected)
-
     def test_scanpipe_views_codebase_relation_list_view_count(self):
         url = reverse("project_relations", args=[self.project1.uuid])
 

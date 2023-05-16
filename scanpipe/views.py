@@ -1119,58 +1119,57 @@ class CodebaseResourceDetailsView(
     }
 
     @staticmethod
-    def get_annotation_text(entry, field_name, value_key):
-        """
-        Get the license_expression until the data structure is updated on the
-        ScanCode-toolkit side.
-        https://github.com/nexB/scancode-results-analyzer/blob/6c132bc20153d5c96929c
-        f378bd0f06d83db9005/src/results_analyze/analyzer_plugin.py#L131-L198
-        """
-        if field_name == "license_detections":
-            return entry.get("matched_rule", {}).get("license_expression")
-        return entry.get(value_key)
-
-    def get_annotations(self, field_name, value_key="value"):
+    def get_annotations(entries, value_key):
         annotations = []
+        annotation_type = "info"
 
-        for entry in getattr(self.object, field_name):
-            annotation_type = "info"
-
-            # Customize the annotation icon based on the policy compliance_alert
-            policy = entry.get("policy")
-            if policy:
-                compliance_alert = policy.get("compliance_alert", None)
-                annotation_type = self.annotation_types.get(compliance_alert)
-
+        for entry in entries:
             annotations.append(
                 {
                     "start_line": entry.get("start_line"),
                     "end_line": entry.get("end_line"),
-                    "text": self.get_annotation_text(entry, field_name, value_key),
+                    "text": entry.get(value_key),
                     "className": f"ace_{annotation_type}",
                 }
             )
 
         return annotations
 
+    def get_license_annotations(self, field_name):
+        annotations = []
+
+        for entry in getattr(self.object, field_name):
+            matches = entry.get("matches", [])
+            annotations.extend(self.get_annotations(matches, "license_expression"))
+
+        return annotations
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        resource = self.object
 
         try:
-            context["file_content"] = self.object.file_content
+            context["file_content"] = resource.file_content
         except OSError:
             context["missing_file_content"] = True
             message = "WARNING: This resource is not available on disk."
             messages.warning(self.request, message)
 
+        license_annotations = self.get_license_annotations("license_detections")
         context["detected_values"] = {
-            "licenses": self.get_annotations("license_detections"),
-            "copyrights": self.get_annotations("copyrights"),
-            "holders": self.get_annotations("holders"),
-            "authors": self.get_annotations("authors"),
-            "emails": self.get_annotations("emails", value_key="email"),
-            "urls": self.get_annotations("urls", value_key="url"),
+            "licenses": license_annotations,
         }
+
+        fields = [
+            ("copyrights", "copyright"),
+            ("holders", "holder"),
+            ("authors", "author"),
+            ("emails", "email"),
+            ("urls", "url"),
+        ]
+        for field_name, value_key in fields:
+            annotations = self.get_annotations(getattr(resource, field_name), value_key)
+            context["detected_values"][field_name] = annotations
 
         return context
 

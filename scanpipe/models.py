@@ -68,6 +68,7 @@ from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
 from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
+from licensedcode.cache import get_licensing
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -1739,16 +1740,9 @@ class CodebaseResource(
         if scanpipe_app.policies_enabled:
             loaded_license_expression = getattr(self, "_loaded_license_expression", [])
             if self.detected_license_expression != loaded_license_expression:
-                self.inject_licenses_policy(scanpipe_app.license_policies_index)
                 self.compliance_alert = self.compute_compliance_alert()
 
         super().save(*args, **kwargs)
-
-    def inject_licenses_policy(self, policies_index):
-        """Inject license policies from the `policies_index` into the licenses field."""
-        for detection_data in self.license_detections:
-            license_expression = detection_data.get("license_expression")
-            detection_data["policy"] = policies_index.get(license_expression, None)
 
     @property
     def location_path(self):
@@ -1779,29 +1773,33 @@ class CodebaseResource(
 
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
-        if not self.license_detections:
+        if not self.detected_license_expression:
             return ""
 
-        ok = self.Compliance.OK
-        error = self.Compliance.ERROR
-        warning = self.Compliance.WARNING
-        missing = self.Compliance.MISSING
-
         alerts = []
-        for detection_data in self.license_detections:
-            policy = detection_data.get("policy")
-            if policy:
-                alerts.append(policy.get("compliance_alert") or ok)
-            else:
-                alerts.append(missing)
+        policy_index = scanpipe_app.license_policies_index
 
-        if error in alerts:
-            return error
-        elif warning in alerts:
-            return warning
-        elif missing in alerts:
-            return missing
-        return ok
+        licensing = get_licensing()
+        parsed = licensing.parse(self.detected_license_expression, simple=True)
+        license_keys = licensing.license_keys(parsed)
+
+        for license_key in license_keys:
+            if policy := policy_index.get(license_key):
+                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
+            else:
+                alerts.append(self.Compliance.MISSING)
+
+        compliance_ordered_by_severity = [
+            self.Compliance.ERROR,
+            self.Compliance.WARNING,
+            self.Compliance.MISSING,
+        ]
+
+        for compliance_severity in compliance_ordered_by_severity:
+            if compliance_severity in alerts:
+                return compliance_severity
+
+        return self.Compliance.OK
 
     def parent_path(self):
         """Return the parent path for this CodebaseResource or None."""
