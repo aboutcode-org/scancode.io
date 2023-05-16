@@ -392,6 +392,7 @@ class ScanPipeScancodePipesTest(TestCase):
             scancode.run_scancode(location=None, output_file=None, options=[])
             self.assertIn("--processes 10", mock_run_command.call_args[0][0])
 
+    @skipIf(sys.platform != "linux", "file_type inconsistent across OS.")
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results
         scanpipe_app.license_policies_index = None
@@ -417,7 +418,6 @@ class ScanPipeScancodePipesTest(TestCase):
         summary = scancode.make_results_summary(project1, scan_output_location)
 
         expected_location = self.data_location / "scancode/is-npm-1.0.0_summary.json"
-        print(json.dumps(summary, indent=2))
         if regen:
             expected_location.write_text(json.dumps(summary, indent=2))
 
