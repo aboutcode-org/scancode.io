@@ -34,6 +34,8 @@ from django.utils import timezone
 
 from pyinstrument import Profiler
 
+from scanpipe import humanize_time
+
 logger = logging.getLogger(__name__)
 
 
@@ -123,7 +125,7 @@ class Pipeline:
                 return 1, f"{e}\n\nTraceback:\n{tb}"
 
             run_time = timer() - start_time
-            self.log(f"Step [{step.__name__}] completed in {run_time:.2f} seconds")
+            self.log(f"Step [{step.__name__}] completed in {humanize_time(run_time)}")
 
         self.run.current_step = ""
         self.log("Pipeline completed")

@@ -31,6 +31,7 @@ from timeit import default_timer as timer
 
 from django.db.models import Count
 
+from scanpipe import humanize_time
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -332,7 +333,7 @@ def log_progress(
             run_time = timer() - start_time
             eta = round(run_time / progress_percentage * (100 - progress_percentage))
             if eta:
-                msg += f" ETA: {round(eta)} seconds"
+                msg += f" ETA: {humanize_time(eta)}"
 
         log_func(msg)
 

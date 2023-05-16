@@ -79,6 +79,7 @@ from rq.job import Job
 from rq.job import JobStatus
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import humanize_time
 from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
@@ -286,14 +287,10 @@ class AbstractTaskFieldsModel(models.Model):
 
     @property
     def execution_time_for_display(self):
+        """Return the ``execution_time`` formatted for display."""
         execution_time = self.execution_time
         if execution_time:
-            message = f"{execution_time} seconds"
-            if execution_time > 3600:
-                message += f" ({execution_time / 3600:.1f} hours)"
-            elif execution_time > 60:
-                message += f" ({execution_time / 60:.1f} minutes)"
-            return message
+            return humanize_time(execution_time)
 
     def reset_task_values(self):
         """Reset all task-related fields to their initial null value."""
