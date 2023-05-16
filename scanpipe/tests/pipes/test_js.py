@@ -118,7 +118,12 @@ class ScanPipeJsTest(TestCase):
                 "resources/adaptive_media/js/main.js.map"
             )
         )
-        result = js.source_in_map(to_resource, "main.js")
+        source_file_path = (
+            "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/"
+            "adaptive_media/js/main.js"
+        )
+        result = js.source_in_map(to_resource, source_file_path)
         self.assertEqual(True, result)
 
     def test_scanpipe_pipes_js_source_mapping_in_minified(self):

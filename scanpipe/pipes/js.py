@@ -89,7 +89,6 @@ def is_minified_and_map_compiled_from_source(
     basename, extension = get_basename_and_extension(path.name)
     minified_file, minified_map_file = None, None
 
-    source_file_name = path.name
     source_mapping = f"sourceMappingURL={basename}{minified_extension}.map"
 
     for resource in to_resources:
@@ -104,7 +103,7 @@ def is_minified_and_map_compiled_from_source(
             # Check source file's content is in the map file or if the
             # source file path is in the map file.
             if source_content_in_map(minified_map_file, from_source) or source_in_map(
-                minified_map_file, source_file_name
+                minified_map_file, str(path)
             ):
                 return True
 
@@ -120,9 +119,9 @@ def source_mapping_in_minified(resource, source_mapping):
     return any(source_mapping in line for line in reversed(lines[-tail:]))
 
 
-def source_in_map(map_file, source_name):
+def source_in_map(map_file, source_file_path):
     """
-    Return True if the given source file name exists in the sources list of the
+    Return True if the given source file path exists in the sources list of the
     specified map file.
     """
     with open(map_file.location) as f:
@@ -132,7 +131,9 @@ def source_in_map(map_file, source_name):
             return False
 
     sources = data.get("sources", [])
-    return any(source.endswith(source_name) for source in sources)
+    # Extract the longest possible path that can be used for matching.
+    sources = [source.rsplit("../", 1)[-1] for source in sources if source]
+    return any(source_file_path.endswith(source) for source in sources)
 
 
 def sha1(content):
