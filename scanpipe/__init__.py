@@ -19,3 +19,17 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
+
+
+def humanize_time(seconds):
+    """Convert the provided ``seconds`` number into human-readable time."""
+    message = f"{seconds:.0f} seconds"
+
+    if seconds > 86400:
+        message += f" ({seconds / 86400:.1f} days)"
+    if seconds > 3600:
+        message += f" ({seconds / 3600:.1f} hours)"
+    elif seconds > 60:
+        message += f" ({seconds / 60:.1f} minutes)"
+
+    return message
