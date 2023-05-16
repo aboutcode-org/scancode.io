@@ -5,11 +5,11 @@
       "tool_version": "32.0.0rc4",
       "options": {
         "input": [
-          "/private/var/folders/ph/tpf7js_n0r554mngmvykl7lm0000gn/T/tmph8hp21h7/projects/asgiref-cbd609b2/codebase"
+          "/tmp/tmp1kvnzy78/projects/asgiref-4c7f2e2e/codebase"
         ],
         "--copyright": true,
         "--info": true,
-        "--json-pp": "/Volumes/nexB/repos/scancode.io/scanpipe/tests/data/asgiref-3.3.0_toolkit_scan.json",
+        "--json-pp": "scancode.io/scanpipe/tests/data/asgiref-3.3.0_toolkit_scan.json",
         "--license": true,
         "--package": true,
         "--processes": "-1",

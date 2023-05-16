@@ -5,10 +5,10 @@
       "tool_version": "32.0.0rc4",
       "options": {
         "input": [
-          "/private/var/folders/ph/tpf7js_n0r554mngmvykl7lm0000gn/T/tmpy38obltd/projects/package_assembly-62319862/codebase/package_assembly_codebase.tar.gz-extract"
+          "/tmp/tmp1kvnzy78/projects/asgiref-4c7f2e2e/codebase/package_assembly_codebase.tar.gz-extract"
         ],
         "--info": true,
-        "--json-pp": "/Volumes/nexB/repos/scancode.io/scanpipe/tests/data/scancode/package_assembly_codebase.json",
+        "--json-pp": "scancode.io/scanpipe/tests/data/scancode/package_assembly_codebase.json",
         "--package": true,
         "--processes": "-1",
         "--verbose": true
