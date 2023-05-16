@@ -142,6 +142,27 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(0, len(Project.get_root_content(self.project1.codebase_path)))
         self.assertEqual(1, len(Project.get_root_content(self.project1.output_path)))
 
+    def test_scanpipe_project_model_delete_related_objects(self):
+        work_path = self.project1.work_path
+        self.assertTrue(work_path.exists())
+
+        self.project1.add_pipeline("docker")
+        resource = CodebaseResource.objects.create(project=self.project1, path="path")
+        package = DiscoveredPackage.objects.create(project=self.project1)
+        resource.discovered_packages.add(package)
+
+        delete_log = self.project1.delete_related_objects()
+        expected = {
+            "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.DiscoveredPackage": 1,
+            "scanpipe.ProjectError": 0,
+            "scanpipe.CodebaseRelation": 0,
+            "scanpipe.DiscoveredDependency": 0,
+            "scanpipe.CodebaseResource": 1,
+            "scanpipe.Run": 1,
+        }
+        self.assertEqual(expected, delete_log)
+
     def test_scanpipe_project_model_delete(self):
         work_path = self.project1.work_path
         self.assertTrue(work_path.exists())
@@ -154,13 +175,7 @@ class ScanPipeModelsTest(TestCase):
         resource.discovered_packages.add(package)
 
         delete_log = self.project1.delete()
-        expected = {
-            "scanpipe.CodebaseResource": 1,
-            "scanpipe.DiscoveredPackage": 1,
-            "scanpipe.DiscoveredPackage_codebase_resources": 1,
-            "scanpipe.Project": 1,
-            "scanpipe.Run": 1,
-        }
+        expected = {"scanpipe.Project": 1}
         self.assertEqual(expected, delete_log[1])
 
         self.assertFalse(Project.objects.filter(name=self.project1.name).exists())
@@ -173,8 +188,9 @@ class ScanPipeModelsTest(TestCase):
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.write_input_file(uploaded_file)
         self.project1.add_pipeline("docker")
-        CodebaseResource.objects.create(project=self.project1, path="path")
-        DiscoveredPackage.objects.create(project=self.project1)
+        resource = CodebaseResource.objects.create(project=self.project1, path="path")
+        package = DiscoveredPackage.objects.create(project=self.project1)
+        resource.discovered_packages.add(package)
 
         self.project1.reset()
 

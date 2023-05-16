@@ -528,11 +528,46 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         self.is_archived = True
         self.save()
 
+    def delete_related_objects(self):
+        """
+        Delete all related object instances using the private `_raw_delete` model API.
+        This bypass the objects collection, cascade deletions, and signals.
+        It results in a much faster objects deletion, but it needs to be applied in the
+        correct models order as the cascading event will not be triggered.
+        Note that this approach is used in Django's `fast_deletes` but the scanpipe
+        models are cannot be fast-deleted as they have cascades and relations.
+        """
+        # Use default `delete()` on the DiscoveredPackage model, as the
+        # `codebase_resources (ManyToManyField)` records need to collected and
+        # properly deleted first.
+        # Since this `ManyToManyField` has an implicit model table, we cannot directly
+        # run the `_raw_delete()` on its QuerySet.
+        _, deleted_counter = self.discoveredpackages.all().delete()
+
+        relationships = [
+            self.projecterrors,
+            self.codebaserelations,
+            self.discovereddependencies,
+            self.codebaseresources,
+            self.runs,
+        ]
+
+        for qs in relationships:
+            count = qs.all()._raw_delete(qs.db)
+            deleted_counter[qs.model._meta.label] = count
+
+        return deleted_counter
+
     def delete(self, *args, **kwargs):
         """Delete the `work_directory` along project-related data in the database."""
         self._raise_if_run_in_progress()
 
         shutil.rmtree(self.work_directory, ignore_errors=True)
+
+        # Start with the optimized deletion of the related objects before calling the
+        # full `delete()` process.
+        self.delete_related_objects()
+
         return super().delete(*args, **kwargs)
 
     def reset(self, keep_input=True):
@@ -542,16 +577,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         self._raise_if_run_in_progress()
 
-        relationships = [
-            self.projecterrors,
-            self.runs,
-            self.discoveredpackages,
-            self.discovereddependencies,
-            self.codebaseresources,
-        ]
-
-        for relation in relationships:
-            relation.all().delete()
+        self.delete_related_objects()
 
         work_directories = [
             self.codebase_path,
