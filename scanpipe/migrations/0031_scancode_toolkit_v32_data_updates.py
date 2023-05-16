@@ -55,6 +55,7 @@ def compute_resource_detected_license_expression(apps, schema_editor):
         return
 
     CodebaseResource = apps.get_model("scanpipe", "CodebaseResource")
+    ProjectError = apps.get_model("scanpipe", "ProjectError")
     queryset = CodebaseResource.objects.filter(~Q(license_expressions=[])).only(
         "license_expressions"
     )
@@ -74,8 +75,9 @@ def compute_resource_detected_license_expression(apps, schema_editor):
         try:
             license_expression_spdx = build_spdx_license_expression(combined_expression)
         except AttributeError as error:
-            resource.project.add_error(
-                error=error,
+            ProjectError.objects.create(
+                project=resource.project,
+                message=str(error),
                 model=resource.__class__,
                 details={"combined_expression": combined_expression}
             )
