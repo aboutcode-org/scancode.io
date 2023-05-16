@@ -619,7 +619,7 @@ def _map_javascript_resource(from_resource, to_resources_index, to_resources):
             if not is_compiled and bool(candidate["to_minified_ext"]):
                 continue
 
-            map_type = "js_compiled" if is_compiled else "path"
+            map_type = "js_compiled" if is_compiled else "js_path"
 
             extra_data = {
                 "path_score": f"{match.matched_path_length}/{path_parts_len - 1}",
