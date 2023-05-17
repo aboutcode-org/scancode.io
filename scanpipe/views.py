@@ -610,9 +610,15 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
     @staticmethod
     def get_summary(values_list, limit=settings.SCANCODEIO_MOST_COMMON_LIMIT):
-        most_common = dict(Counter(values_list).most_common(limit))
+        counter = Counter(values_list)
 
-        other = len(values_list) - sum(most_common.values())
+        has_only_empty_string = list(counter.keys()) == [""]
+        if has_only_empty_string:
+            return {}
+
+        most_common = dict(counter.most_common(limit))
+
+        other = counter.total() - sum(most_common.values())
         if other > 0:
             most_common["Other"] = other
 
@@ -626,72 +632,53 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        files_qs = project.codebaseresources.files()
+        file_filter = self.request.GET.get("file-filter")
+        context["file_filter"] = file_filter
 
-        file_filter = self.request.GET.get("file-filter", "all")
+        files = project.codebaseresources.files()
         if file_filter == "in-a-package":
-            files_qs = files_qs.in_package()
+            files = files.in_package()
         elif file_filter == "not-in-a-package":
-            files_qs = files_qs.not_in_package()
+            files = files.not_in_package()
 
-        files = files_qs.only(
-            "programming_language",
-            "mime_type",
-            "holders",
-            "copyrights",
-            "detected_license_expression",
-        )
+        charts = {
+            "file": {
+                "queryset": files,
+                "fields": [
+                    "programming_language",
+                    "mime_type",
+                    "holders",
+                    "copyrights",
+                    "detected_license_expression",
+                    "compliance_alert",
+                ],
+            },
+            "package": {
+                "queryset": project.discoveredpackages,
+                "fields": ["type", "declared_license_expression"],
+            },
+            "dependency": {
+                "queryset": project.discovereddependencies,
+                "fields": ["type", "is_runtime", "is_optional", "is_resolved"],
+            },
+        }
 
-        packages = project.discoveredpackages.all().only(
-            "type",
-            "declared_license_expression",
-        )
+        for group_name, spec in charts.items():
+            fields = spec["fields"]
+            # Clear the un-needed ordering to get faster queries
+            qs_values = spec["queryset"].values(*fields).order_by()
 
-        dependencies = project.discovereddependencies.all().only(
-            "is_runtime",
-            "is_optional",
-            "is_resolved",
-        )
+            for field_name in fields:
+                if field_name in ["holders", "copyrights"]:
+                    field_values = (
+                        data.get(field_name[:-1])
+                        for entry in qs_values
+                        for data in entry.get(field_name, [])
+                    )
+                else:
+                    field_values = (entry[field_name] for entry in qs_values)
 
-        file_languages = files.values_list("programming_language", flat=True)
-        file_mime_types = files.values_list("mime_type", flat=True)
-        file_holders = files.values_from_json_field("holders", "holder")
-        file_copyrights = files.values_from_json_field("copyrights", "copyright")
-        file_license_expressions = files.values_list(
-            "detected_license_expression", flat=True
-        )
-
-        file_compliance_alert = []
-        if scanpipe_app.policies_enabled:
-            file_compliance_alert = files.values_list("compliance_alert", flat=True)
-
-        package_licenses = packages.values_list(
-            "declared_license_expression", flat=True
-        )
-        package_types = packages.values_list("type", flat=True)
-
-        dependency_package_type = dependencies.values_list("type", flat=True)
-        dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
-        dependency_is_optional = dependencies.values_list("is_optional", flat=True)
-        dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
-
-        context.update(
-            {
-                "programming_languages": self.get_summary(file_languages),
-                "mime_types": self.get_summary(file_mime_types),
-                "holders": self.get_summary(file_holders),
-                "copyrights": self.get_summary(file_copyrights),
-                "file_license_expressions": self.get_summary(file_license_expressions),
-                "file_compliance_alert": self.get_summary(file_compliance_alert),
-                "package_licenses": self.get_summary(package_licenses),
-                "package_types": self.get_summary(package_types),
-                "dependency_package_type": self.get_summary(dependency_package_type),
-                "dependency_is_runtime": self.get_summary(dependency_is_runtime),
-                "dependency_is_optional": self.get_summary(dependency_is_optional),
-                "dependency_is_resolved": self.get_summary(dependency_is_resolved),
-                "file_filter": file_filter,
-            }
-        )
+                context[f"{group_name}_{field_name}"] = self.get_summary(field_values)
 
         return context
 
