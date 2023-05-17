@@ -46,4 +46,50 @@ class Migration(migrations.Migration):
                 name="scanpipe_co_detecte_f3f97d_idx",
             ),
         ),
+        # Extra fields alterations and index additions
+        migrations.AlterField(
+            model_name="discoveredpackage",
+            name="package_uid",
+            field=models.CharField(
+                blank=True,
+                help_text="Unique identifier for this package.",
+                max_length=1024,
+            ),
+        ),
+        migrations.AlterField(
+            model_name="project",
+            name="created_date",
+            field=models.DateTimeField(
+                auto_now_add=True, help_text="Creation date for this project."
+            ),
+        ),
+        migrations.AlterField(
+            model_name="project",
+            name="name",
+            field=models.CharField(
+                help_text="Name for this project.", max_length=100, unique=True
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="discoveredpackage",
+            index=models.Index(
+                fields=["package_uid"], name="scanpipe_di_package_379c99_idx"
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="project",
+            index=models.Index(
+                fields=["-created_date"], name="scanpipe_pr_created_258a96_idx"
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="project",
+            index=models.Index(
+                fields=["is_archived"], name="scanpipe_pr_is_arch_6af64f_idx"
+            ),
+        ),
+        migrations.AddIndex(
+            model_name="project",
+            index=models.Index(fields=["name"], name="scanpipe_pr_name_c81038_idx"),
+        ),
     ]

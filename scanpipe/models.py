@@ -455,12 +455,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     created_date = models.DateTimeField(
         auto_now_add=True,
-        db_index=True,
         help_text=_("Creation date for this project."),
     )
     name = models.CharField(
         unique=True,
-        db_index=True,
         max_length=100,
         help_text=_("Name for this project."),
     )
@@ -485,6 +483,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     class Meta:
         ordering = ["-created_date"]
+        indexes = [
+            models.Index(fields=["-created_date"]),
+            models.Index(fields=["is_archived"]),
+            models.Index(fields=["name"]),
+        ]
 
     def __str__(self):
         return self.name
@@ -2264,7 +2267,6 @@ class DiscoveredPackage(
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
-        db_index=True,
         help_text=_("Unique identifier for this package."),
     )
     keywords = models.JSONField(default=list, blank=True)
@@ -2279,6 +2281,7 @@ class DiscoveredPackage(
             models.Index(fields=["namespace"]),
             models.Index(fields=["name"]),
             models.Index(fields=["filename"]),
+            models.Index(fields=["package_uid"]),
             models.Index(fields=["primary_language"]),
             models.Index(fields=["declared_license_expression"]),
             models.Index(fields=["other_license_expression"]),
