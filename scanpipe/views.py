@@ -618,7 +618,7 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         most_common = dict(counter.most_common(limit))
 
-        other = counter.total() - sum(most_common.values())
+        other = sum(counter.values()) - sum(most_common.values())
         if other > 0:
             most_common["Other"] = other
 
