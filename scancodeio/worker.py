@@ -49,7 +49,7 @@ class ScanCodeIOWorker(Worker):
         super().run_maintenance_tasks()
 
         # The Runs and Jobs synchronization needs to be executed after the
-        # `self.clean_registries()` that takes place in the in the parent
+        # `self.clean_registries()` that takes place in the parent
         # `super().run_maintenance_tasks()`.
         scanpipe_app.sync_runs_and_jobs()
 

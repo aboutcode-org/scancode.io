@@ -30,7 +30,7 @@
               {% endif %}
             </td>
             <td style="min-width: 300px; max-width: 400px;">
-              {{ package.license_expression|linebreaksbr }}
+              {{ package.declared_license_expression|linebreaksbr }}
             </td>
             <td title="{{ package.copyright }}">
               {{ package.copyright|truncatechars:150|linebreaksbr }}

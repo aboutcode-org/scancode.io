@@ -28,7 +28,9 @@ from django.test import TestCase
 
 from scanpipe.models import Project
 from scanpipe.pipes import codebase
+from scanpipe.pipes import input
 from scanpipe.pipes import output
+from scanpipe.pipes import scancode
 
 
 class RegenTestData(TestCase):
@@ -48,6 +50,9 @@ class RegenTestData(TestCase):
     - Docker:
     $ docker compose run --volume "$(pwd)":/app web \
         ./manage.py test --pattern "regen*.py"
+
+    Warning: Once the test data is updated, run the whole test suite with the
+    `SCANCODEIO_TEST_FIXTURES_REGEN` setting enabled to regen the expected files.
     """
 
     data_location = Path(__file__).parent / "data"
@@ -67,7 +72,13 @@ class RegenTestData(TestCase):
         exitcode, _ = pipeline.execute()
         self.assertEqual(0, exitcode)
 
-        # Scan results
+        # ScanCode-toolkit scan result
+        scan_options = ["--copyright", "--info", "--license", "--package"]
+        scan_location = str(project1.codebase_path)
+        output_location = str(self.data_location / "asgiref-3.3.0_toolkit_scan.json")
+        scancode.run_scancode(scan_location, output_location, scan_options)
+
+        # ScanCode.io results
         test_file_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
         result_file = output.to_json(project1)
         result_json = json.loads(Path(result_file).read_text())
@@ -105,3 +116,18 @@ class RegenTestData(TestCase):
         pc = codebase.ProjectCodebase(project1)
         project_tree = codebase.get_codebase_tree(codebase=pc, fields=["name", "path"])
         test_file_location.write_text(json.dumps(project_tree, indent=2))
+
+        # Load inventory expected file
+        project2 = Project.objects.create(name="package_assembly")
+        filename = "package_assembly_codebase.tar.gz"
+        input_file = self.data_location / "scancode" / filename
+        project2.copy_input_from(input_location)
+        input.copy_input(input_file, project2.codebase_path)
+        scancode.extract_archives(location=project2.codebase_path)
+        scan_options = ["--info", "--package"]
+        scan_location = str(
+            project2.codebase_path / "package_assembly_codebase.tar.gz-extract/"
+        )
+        json_filename = "package_assembly_codebase.json"
+        output_location = str(self.data_location / "scancode" / json_filename)
+        scancode.run_scancode(scan_location, output_location, scan_options)

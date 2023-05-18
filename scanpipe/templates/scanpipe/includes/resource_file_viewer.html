@@ -26,12 +26,12 @@
       <button id="toggle-fullscreen" class="button is-dark"><i class="fas fa-expand"></i></button>
     </div>
   </div>
-  <div id="detected-data-buttons" class="field has-addons mb-0">
+  <div id="detected-data-buttons" class="field has-addons mb-0" style="border-left: lightgrey 1px solid; border-right: lightgrey 1px solid;">
     {% for key, value in detected_values.items %}
-      <p class="control mb-0">
-        <button class="button is-radiusless" data-type="{{ key }}"{% if not value %} disabled{% endif %}>
+      <p class="control mb-0" style="border-right: lightgrey 1px solid;">
+        <button class="button is-radiusless is-light" data-type="{{ key }}"{% if not value %} disabled{% endif %}>
           {{ key|title }}
-          <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
+          <span class="tag is-info is-rounded ml-1">{{ value|length }}</span>
         </button>
       </p>
     {% endfor %}

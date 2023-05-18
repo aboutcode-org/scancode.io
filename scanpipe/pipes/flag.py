@@ -123,7 +123,7 @@ def flag_ignored_paths(project, paths):
 def analyze_scanned_files(project):
     """Set the status for CodebaseResource to unknown or no license."""
     scanned_files = project.codebaseresources.files().status(SCANNED)
-    scanned_files.has_no_licenses().update(status=NO_LICENSES)
+    scanned_files.has_no_license_detections().update(status=NO_LICENSES)
     scanned_files.unknown_license().update(status=UNKNOWN_LICENSE)
 
 

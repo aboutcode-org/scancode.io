@@ -25,7 +25,7 @@ import sys
 import warnings
 from pathlib import Path
 
-__version__ = "32.2.0"
+__version__ = "33.0.0-dev"
 
 SCAN_NOTICE = Path(__file__).resolve().parent.joinpath("scan.NOTICE").read_text()
 

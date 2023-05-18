@@ -55,6 +55,7 @@ class DeployToDevelop(Pipeline):
             cls.match_purldb,
             cls.map_path,
             cls.flag_mapped_resources_and_ignored_directories,
+            cls.scan_mapped_from_for_files,
         )
 
     extract_recursively = True
@@ -144,3 +145,9 @@ class DeployToDevelop(Pipeline):
         """Flag all codebase resources that were mapped during the pipeline."""
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
+
+    def scan_mapped_from_for_files(self):
+        """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
+        resource_qs = self.project.codebaseresources
+        mapped_from_files = resource_qs.from_codebase().files().has_relation()
+        scancode.scan_for_files(self.project, mapped_from_files)

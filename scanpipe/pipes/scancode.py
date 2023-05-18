@@ -311,7 +311,7 @@ def _scan_and_save(resource_qs, scan_func, save_func):
             save_func(resource, scan_results, scan_errors)
 
 
-def scan_for_files(project):
+def scan_for_files(project, resource_qs=None):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -319,7 +319,7 @@ def scan_for_files(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = project.codebaseresources.no_status()
+    resource_qs = resource_qs or project.codebaseresources.no_status()
     _scan_and_save(resource_qs, scan_file, save_scan_file_results)
 
 
@@ -542,29 +542,30 @@ def _get_license_matches_grouped(project):
     license_expression.
     """
     license_matches = defaultdict(list)
+    resources_with_license = project.codebaseresources.has_license_detections()
 
-    for resource in project.codebaseresources.has_licenses():
+    for resource in resources_with_license:
         file_cache = []
 
-        for license in resource.licenses:
-            matched_rule = license.get("matched_rule", {})
-            license_expression = matched_rule.get("license_expression")
-            matched_text = license.get("matched_text")
+        for detection_data in resource.license_detections:
+            for match in detection_data.get("matches", []):
+                license_expression = match.get("license_expression")
+                matched_text = match.get("matched_text")
 
-            # Do not include duplicated matched_text for a given license_expression
-            # within the same file
-            cache_key = ":".join([license_expression, resource.path, matched_text])
-            cache_key = hashlib.md5(cache_key.encode()).hexdigest()
-            if cache_key in file_cache:
-                continue
-            file_cache.append(cache_key)
+                # Do not include duplicated matched_text for a given license_expression
+                # within the same file
+                cache_key = ":".join([license_expression, resource.path, matched_text])
+                cache_key = hashlib.md5(cache_key.encode()).hexdigest()
+                if cache_key in file_cache:
+                    continue
+                file_cache.append(cache_key)
 
-            license_matches[license_expression].append(
-                {
-                    "path": resource.path,
-                    "matched_text": matched_text,
-                }
-            )
+                license_matches[license_expression].append(
+                    {
+                        "path": resource.path,
+                        "matched_text": matched_text,
+                    }
+                )
 
     return dict(license_matches)
 
@@ -583,7 +584,8 @@ def make_results_summary(project, scan_results_location):
 
     summary = scan_data.get("summary")
 
-    # Inject the generated `license_matches` in the summary
+    # Inject the generated `license_matches` in the summary from the project
+    # codebase resources.
     summary["license_matches"] = _get_license_matches_grouped(project)
 
     # Inject the `key_files` and their file content in the summary

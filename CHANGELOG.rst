@@ -4,6 +4,14 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Upgrade ScanCode-toolkit to latest v32.0.0
+  Warning: This upgrade requires schema and data migrations (both included).
+  It is recommended to reset and re-run the pipelines to benefit from the latest
+  ScanCode detection improvements.
+  Refer to https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst#v3200-next-roadmap
+  for the full list of changes.
+  https://github.com/nexB/scancode.io/issues/569
+
 - Add a new ``deploy_to_develop`` pipeline specialized in creating relations between
   the development source code and binaries or deployed code.
   This pipeline is expecting 2 archive files with "from-" and "to-" filename prefixes
@@ -22,6 +30,9 @@ v33.0.0 (unreleased)
 
 - Move the "Resources status" panel from the run modal to the project details view.
   https://github.com/nexB/scancode.io/issues/370
+
+- Improve the speed of Project ``reset`` and ``delete`` using the _raw_delete model API.
+  https://github.com/nexB/scancode.io/issues/729
 
 v32.2.0 (2023-04-25)
 --------------------

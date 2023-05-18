@@ -44,10 +44,13 @@
       "status": "application-package",
       "tag": "",
       "extension": ".json",
+      "size": 563,
       "md5": "c843e88ecb274d5d573c71be330bff8b",
       "sha1": "943efb8abda9b9cdaa4ea73f5709563b948af50b",
       "sha256": "522879426298e078881de533b9b3a82fa3bece1336a84bddacf4620008b5d0a3",
       "sha512": "",
+      "mime_type": "application/json",
+      "file_type": "JSON data",
       "programming_language": "",
       "is_binary": false,
       "is_text": true,
@@ -79,6 +82,7 @@
       ],
       "license_clues": [],
       "percentage_of_license_text": 3.33,
+      "compliance_alert": "",
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -88,6 +92,7 @@
           "name": "is-npm",
           "purl": "pkg:npm/is-npm@1.0.0",
           "sha1": null,
+          "size": null,
           "type": "npm",
           "holder": null,
           "sha256": null,
@@ -172,7 +177,7 @@
         }
       ],
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
       ],
       "emails": [
         {
@@ -198,10 +203,13 @@
       "status": "application-package",
       "tag": "",
       "extension": ".md",
+      "size": 477,
       "md5": "a743e0abf08c28a37ecc4bef4dc02f8c",
       "sha1": "b77832e53cb8239edd733c2ca02b1fc01ca3c2b6",
       "sha256": "e98b263545fe62a00c73b57412cbdbcd0792e013a76f9c88342623ab5e8467c1",
       "sha512": "",
+      "mime_type": "text/plain",
+      "file_type": "UTF-8 Unicode text",
       "programming_language": "",
       "is_binary": false,
       "is_text": true,
@@ -233,6 +241,7 @@
       ],
       "license_clues": [],
       "percentage_of_license_text": 2.78,
+      "compliance_alert": "",
       "copyrights": [
         {
           "end_line": 30,
@@ -250,7 +259,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
+        "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
       ],
       "emails": [],
       "urls": [
@@ -316,6 +325,7 @@
       "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
       "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
       "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
+      "size": null,
       "md5": "",
       "sha1": "",
       "sha256": "",
@@ -352,7 +362,7 @@
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
-      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "package_uid": "pkg:npm/is-npm@1.0.0?uuid=ba110d49-b6f2-4c86-8d89-a6fd34838ca8",
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],

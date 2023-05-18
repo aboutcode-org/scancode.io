@@ -41,7 +41,6 @@ from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licenses_by_spdx_key
 from licensedcode.cache import get_licensing
-from packagedcode.utils import combine_expressions
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
@@ -402,9 +401,6 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
         max_description_lines = 5
         value = "\n".join(value.splitlines(False)[:max_description_lines])
 
-    if fieldname == "license_expressions":
-        value = combine_expressions(value)
-
     # we only get this key in each dict of a list for some fields
     mapping_key = mappings_key_by_fieldname.get(fieldname)
     if mapping_key:
@@ -448,7 +444,13 @@ def to_xlsx(project):
     exceed the limits of what can be stored in a cell.
     """
     output_file = project.get_output_file_path("results", "xlsx")
-    exclude_fields = ["licenses", "extra_data", "declared_license"]
+    exclude_fields = [
+        "extra_data",
+        "extracted_license_statement",
+        "license_detections",
+        "other_license_detections",
+        "license_clues",
+    ]
 
     if not scanpipe_app.policies_enabled:
         exclude_fields.append("compliance_alert")
@@ -678,8 +680,8 @@ def to_attribution(project):
     license_symbols = []
 
     for package in packages:
-        if package.license_expression:
-            parsed = licensing.parse(package.license_expression)
+        if package.declared_license_expression:
+            parsed = licensing.parse(package.declared_license_expression)
             package.expression_links = get_expression_as_attribution_links(parsed)
             # .decompose() is required for LicenseWithExceptionSymbol support
             for symbol in parsed.symbols:

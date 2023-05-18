@@ -65,16 +65,59 @@
       "sha256": "",
       "sha512": "",
       "copyright": "",
-      "license_expression": "mit AND mit",
-      "declared_license": "{'license': 'MIT', 'classifiers': ['License :: OSI Approved :: MIT License']}",
+      "holder": "",
+      "declared_license_expression": "mit",
+      "declared_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "start_line": 1,
+              "matched_text": "MIT",
+              "match_coverage": 100.0,
+              "matched_length": 1,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+          "license_expression": "mit"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+              "start_line": 1,
+              "matched_text": "['License :: OSI Approved :: MIT License']",
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 100,
+              "rule_identifier": "pypi_mit_license.RULE",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+          "license_expression": "mit"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "{'license': 'MIT', 'classifiers': ['License :: OSI Approved :: MIT License']}",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {
         "Documentation": "https://mharrisb1.github.io/daglib/"
       },
       "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "manifest_path": "",
-      "contains_source_code": null,
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
@@ -118,16 +161,59 @@
       "sha256": "",
       "sha512": "",
       "copyright": "",
-      "license_expression": "mit AND mit",
-      "declared_license": "{'license': 'MIT', 'classifiers': ['License :: OSI Approved :: MIT License']}",
+      "holder": "",
+      "declared_license_expression": "mit",
+      "declared_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "start_line": 1,
+              "matched_text": "MIT",
+              "match_coverage": 100.0,
+              "matched_length": 1,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+          "license_expression": "mit"
+        },
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-hash",
+              "end_line": 1,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+              "start_line": 1,
+              "matched_text": "['License :: OSI Approved :: MIT License']",
+              "match_coverage": 100.0,
+              "matched_length": 5,
+              "rule_relevance": 100,
+              "rule_identifier": "pypi_mit_license.RULE",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+          "license_expression": "mit"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "{'license': 'MIT', 'classifiers': ['License :: OSI Approved :: MIT License']}",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {
         "Documentation": "https://mharrisb1.github.io/daglib/"
       },
       "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "manifest_path": "",
-      "contains_source_code": null,
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
@@ -258,8 +344,11 @@
       "is_archive": true,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -270,6 +359,7 @@
           "purl": "pkg:pypi/daglib@0.6.0",
           "sha1": null,
           "type": "pypi",
+          "holder": null,
           "sha256": null,
           "sha512": null,
           "parties": [
@@ -405,16 +495,55 @@
           ],
           "source_packages": [],
           "bug_tracking_url": null,
-          "declared_license": {
-            "license": "MIT",
-            "classifiers": [
-              "License :: OSI Approved :: MIT License"
-            ]
-          },
           "primary_language": "Python",
-          "license_expression": "mit AND mit",
+          "license_detections": [
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-spdx-id",
+                  "end_line": 1,
+                  "rule_url": null,
+                  "start_line": 1,
+                  "matched_text": "MIT",
+                  "match_coverage": 100.0,
+                  "matched_length": 1,
+                  "rule_relevance": 100,
+                  "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+                  "license_expression": "mit"
+                }
+              ],
+              "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+              "license_expression": "mit"
+            },
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+                  "start_line": 1,
+                  "matched_text": "['License :: OSI Approved :: MIT License']",
+                  "match_coverage": 100.0,
+                  "matched_length": 5,
+                  "rule_relevance": 100,
+                  "rule_identifier": "pypi_mit_license.RULE",
+                  "license_expression": "mit"
+                }
+              ],
+              "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+              "license_expression": "mit"
+            }
+          ],
           "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",
-          "repository_homepage_url": "https://pypi.org/project/daglib"
+          "repository_homepage_url": "https://pypi.org/project/daglib",
+          "other_license_detections": [],
+          "other_license_expression": null,
+          "declared_license_expression": "mit",
+          "extracted_license_statement": "{'license': 'MIT', 'classifiers': ['License :: OSI Approved :: MIT License']}",
+          "other_license_expression_spdx": null,
+          "declared_license_expression_spdx": "MIT"
         }
       ],
       "for_packages": [
@@ -441,8 +570,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -469,8 +601,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -497,8 +632,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -525,50 +663,31 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
         {
-          "key": "mit",
-          "name": "MIT License",
-          "owner": "MIT",
-          "score": 100.0,
-          "category": "Permissive",
-          "end_line": 19,
-          "spdx_url": "https://spdx.org/licenses/MIT",
-          "text_url": "http://opensource.org/licenses/mit-license.php",
-          "is_unknown": false,
-          "short_name": "MIT License",
-          "start_line": 3,
-          "homepage_url": "http://opensource.org/licenses/mit-license.php",
-          "is_exception": false,
-          "matched_rule": {
-            "matcher": "2-aho",
-            "licenses": [
-              "mit"
-            ],
-            "identifier": "mit.LICENSE",
-            "has_unknown": false,
-            "rule_length": 161,
-            "is_license_tag": false,
-            "match_coverage": 100.0,
-            "matched_length": 161,
-            "rule_relevance": 100,
-            "is_license_text": true,
-            "is_license_intro": false,
-            "is_license_notice": false,
-            "license_expression": "mit",
-            "is_license_reference": false,
-            "referenced_filenames": []
-          },
-          "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
-          "reference_url": "https://scancode-licensedb.aboutcode.org/mit",
-          "spdx_license_key": "MIT",
-          "scancode_data_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.yml",
-          "scancode_text_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.LICENSE"
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 19,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.LICENSE",
+              "start_line": 3,
+              "matched_text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.",
+              "match_coverage": 100.0,
+              "matched_length": 161,
+              "rule_relevance": 100,
+              "rule_identifier": "mit.LICENSE",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-cacd5c0c-204a-85c2-affc-e4c125b2492a",
+          "license_expression": "mit"
         }
       ],
-      "license_expressions": [
-        "mit"
-      ],
+      "license_clues": [],
+      "percentage_of_license_text": 96.99,
       "copyrights": [
         {
           "end_line": 1,
@@ -609,8 +728,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -621,6 +743,7 @@
           "purl": "pkg:pypi/daglib@0.6.0",
           "sha1": null,
           "type": "pypi",
+          "holder": null,
           "sha256": null,
           "sha512": null,
           "parties": [
@@ -756,16 +879,55 @@
           ],
           "source_packages": [],
           "bug_tracking_url": null,
-          "declared_license": {
-            "license": "MIT",
-            "classifiers": [
-              "License :: OSI Approved :: MIT License"
-            ]
-          },
           "primary_language": "Python",
-          "license_expression": "mit AND mit",
+          "license_detections": [
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-spdx-id",
+                  "end_line": 1,
+                  "rule_url": null,
+                  "start_line": 1,
+                  "matched_text": "MIT",
+                  "match_coverage": 100.0,
+                  "matched_length": 1,
+                  "rule_relevance": 100,
+                  "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+                  "license_expression": "mit"
+                }
+              ],
+              "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+              "license_expression": "mit"
+            },
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-hash",
+                  "end_line": 1,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_mit_license.RULE",
+                  "start_line": 1,
+                  "matched_text": "['License :: OSI Approved :: MIT License']",
+                  "match_coverage": 100.0,
+                  "matched_length": 5,
+                  "rule_relevance": 100,
+                  "rule_identifier": "pypi_mit_license.RULE",
+                  "license_expression": "mit"
+                }
+              ],
+              "identifier": "mit-24a5293c-14d7-5403-efac-1a8b7532c0e8",
+              "license_expression": "mit"
+            }
+          ],
           "repository_download_url": "https://pypi.org/packages/source/d/daglib/daglib-0.6.0.tar.gz",
-          "repository_homepage_url": "https://pypi.org/project/daglib"
+          "repository_homepage_url": "https://pypi.org/project/daglib",
+          "other_license_detections": [],
+          "other_license_expression": null,
+          "declared_license_expression": "mit",
+          "extracted_license_statement": "{'license': 'MIT', 'classifiers': ['License :: OSI Approved :: MIT License']}",
+          "other_license_expression_spdx": null,
+          "declared_license_expression_spdx": "MIT"
         }
       ],
       "for_packages": [
@@ -792,8 +954,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -822,8 +987,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -852,8 +1020,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -882,8 +1053,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -912,8 +1086,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
