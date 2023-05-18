@@ -33,7 +33,6 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
 from scanpipe.pipes.input import copy_inputs
-from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_resource_file
 from scanpipe.views import ProjectDetailView
 
@@ -212,25 +211,47 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("docker", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
+    def test_scanpipe_views_project_details_charts_view(self):
+        url = reverse("project_charts", args=[self.project1.uuid])
+
+        with self.assertNumQueries(9):
+            response = self.client.get(url)
+
+        self.assertNotContains(response, 'id="package-charts"')
+        self.assertNotContains(response, 'id="dependency-charts"')
+        self.assertNotContains(response, 'id="resource-charts-charts"')
+
+        CodebaseResource.objects.create(
+            project=self.project1,
+            programming_language="Python",
+            type=CodebaseResource.Type.FILE,
+        )
+
+        with self.assertNumQueries(12):
+            response = self.client.get(url)
+        self.assertContains(response, '{"Python": 1}')
+
     def test_scanpipe_views_project_details_charts_compliance_alert(self):
         url = reverse("project_charts", args=[self.project1.uuid])
         expected = 'id="compliance_alert_chart"'
 
-        scanpipe_app.license_policies_index = None
         response = self.client.get(url)
         self.assertNotContains(response, expected)
 
-        scanpipe_app.license_policies_index = license_policies_index
         response = self.client.get(url)
         self.assertNotContains(response, expected)
 
-        CodebaseResource.objects.create(
+        resource = CodebaseResource.objects.create(
             project=self.project1,
-            compliance_alert="error",
             type=CodebaseResource.Type.FILE,
         )
+        CodebaseResource.objects.filter(id=resource.id).update(
+            compliance_alert=CodebaseResource.Compliance.ERROR
+        )
+
         response = self.client.get(url)
         self.assertContains(response, expected)
+        self.assertContains(response, '{"error": 1}')
 
     def test_scanpipe_views_project_details_scan_summary_panels(self):
         url = self.project1.get_absolute_url()
@@ -447,20 +468,6 @@ class ScanPipeViewsTest(TestCase):
         run.set_task_stopped()
         response = self.client.get(url)
         expected = '<span class="tag is-danger">Stopped</span>'
-        self.assertContains(response, expected)
-
-    def test_scanpipe_views_codebase_resource_details_annotations_missing_policy(self):
-        resource1 = CodebaseResource.objects.create(
-            project=self.project1,
-            path="resource1",
-            licenses=[{"key": "key", "policy": None, "start_line": 1, "end_line": 2}],
-        )
-        url = resource1.get_absolute_url()
-
-        response = self.client.get(url)
-        expected = (
-            '{"start_line": 1, "end_line": 2, "text": null, "className": "ace_info"}'
-        )
         self.assertContains(response, expected)
 
     def test_scanpipe_views_codebase_relation_list_view_count(self):

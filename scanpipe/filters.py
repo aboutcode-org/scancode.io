@@ -322,6 +322,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "type",
             "size",
             "name",
+            "detected_license_expression",
             "extension",
             "programming_language",
             "mime_type",
@@ -331,16 +332,8 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "related_from__from_resource__path",
         ],
     )
-    license_key = JSONContainsFilter(
-        label="License key",
-        field_name="licenses",
-    )
-    license_category = JSONContainsFilter(
-        label="License category",
-        field_name="licenses",
-    )
     compliance_alert = django_filters.ChoiceFilter(
-        choices=CodebaseResource.Compliance.choices + [("EMPTY", "EMPTY")]
+        choices=CodebaseResource.Compliance.choices + [("_EMPTY_", "EMPTY")]
     )
     in_package = InPackageFilter(label="In a Package")
     status = StatusFilter(empty_label="All")
@@ -373,9 +366,11 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyrights",
             "holders",
             "authors",
-            "licenses",
-            "license_category",
-            "license_expressions",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
+            "license_detections",
+            "license_clues",
+            "percentage_of_license_text",
             "emails",
             "urls",
             "in_package",
@@ -414,7 +409,8 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
-            "license_expression",
+            "declared_license_expression",
+            "other_license_expression",
             "copyright",
             "primary_language",
         ],
@@ -444,11 +440,10 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "code_view_url",
             "vcs_url",
             "type",
-            "license_expression",
-            "declared_license",
+            "declared_license_expression",
+            "other_license_expression",
+            "extracted_license_statement",
             "copyright",
-            "manifest_path",
-            "contains_source_code",
         ]
 
 

@@ -2,7 +2,7 @@
 
 {% if project.package_count %}
   <hr>
-  <h3 class="title is-4 has-text-centered">
+  <h3 id="package-charts" class="title is-4 has-text-centered">
     Discovered Packages
     <span class="tag is-link is-light is-rounded ml-1">{{ project.package_count|intcomma }}</span>
   </h3>
@@ -11,20 +11,20 @@
       <div id="package_type_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="type"></div>
     </div>
     <div class="column">
-      <div id="package_license_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="license_expression"></div>
+      <div id="package_license_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="declared_license_expression"></div>
     </div>
   </div>
 {% endif %}
 
 {% if project.dependency_count %}
   <hr>
-  <h3 class="title is-4 has-text-centered">
+  <h3 id="dependency-charts" class="title is-4 has-text-centered">
     Discovered Dependencies
     <span class="tag is-link is-light is-rounded ml-1">{{ project.dependency_count|intcomma }}</span>
   </h3>
   <div class="columns is-gapless">
     <div class="column">
-      <div id="dependency_package_type_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="package_type"></div>
+      <div id="dependency_type_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="type"></div>
     </div>
     <div class="column">
       <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_runtime"></div>
@@ -55,8 +55,8 @@
     {% include "scanpipe/includes/resource_chart_column.html" with field_name="copyrights" %}
   </div>
   <div class="columns is-gapless">
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_key" lookup_field="license_key" %}
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="license_category" lookup_field="license_category" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="detected_license_expression" %}
+    <div class="column"></div>
   </div>
   {% if file_compliance_alert %}
     <hr>
@@ -71,25 +71,18 @@
 {% endif %}
 
 {% block scripts %}
-  {% if project.file_count %}
-    {{ programming_languages|json_script:"programming_languages" }}
-    {{ mime_types|json_script:"mime_types" }}
-    {{ holders|json_script:"holders" }}
-    {{ copyrights|json_script:"copyrights" }}
-    {{ file_license_keys|json_script:"file_license_keys" }}
-    {{ file_license_categories|json_script:"file_license_categories" }}
-    {{ file_compliance_alert|json_script:"file_compliance_alert" }}
-  {% endif %}
-  {% if project.package_count %}
-    {{ package_licenses|json_script:"package_licenses" }}
-    {{ package_types|json_script:"package_types" }}
-  {% endif %}
-  {% if project.dependency_count %}
-    {{ dependency_package_type|json_script:"dependency_package_type" }}
-    {{ dependency_is_runtime|json_script:"dependency_is_runtime" }}
-    {{ dependency_is_optional|json_script:"dependency_is_optional" }}
-    {{ dependency_is_resolved|json_script:"dependency_is_resolved" }}
-  {% endif %}
+  {{ file_programming_language|json_script:"file_programming_language" }}
+  {{ file_mime_type|json_script:"file_mime_type" }}
+  {{ file_holders|json_script:"file_holders" }}
+  {{ file_copyrights|json_script:"file_copyrights" }}
+  {{ file_detected_license_expression|json_script:"file_detected_license_expression" }}
+  {{ file_compliance_alert|json_script:"file_compliance_alert" }}
+  {{ package_declared_license_expression|json_script:"package_declared_license_expression" }}
+  {{ package_type|json_script:"package_type" }}
+  {{ dependency_type|json_script:"dependency_type" }}
+  {{ dependency_is_runtime|json_script:"dependency_is_runtime" }}
+  {{ dependency_is_optional|json_script:"dependency_is_optional" }}
+  {{ dependency_is_resolved|json_script:"dependency_is_resolved" }}
   <script>
     let makeChart = function(data_source_id, element_id, title) {
       let data_source = document.getElementById(data_source_id);
@@ -158,21 +151,23 @@
      });
     };
 
-    // Packages
-    makeChart("package_types", "#package_type_chart", "Package\nType");
-    makeChart("package_licenses", "#package_license_chart", "Package\nLicense\nExpression");
-    // Dependencies
-    makeChart("dependency_package_type", "#dependency_package_type_chart", "Package\nType");
-    makeChart("dependency_is_runtime", "#dependency_is_runtime_chart", "Runtime\nDependencies");
-    makeChart("dependency_is_optional", "#dependency_is_optional_chart", "Optional\nDependencies");
-    makeChart("dependency_is_resolved", "#dependency_is_resolved_chart", "Resolved\nDependencies");
-    // Resources
-    makeChart("programming_languages", "#programming_language_chart", "Programming\nLanguage");
-    makeChart("mime_types", "#mime_type_chart", "Mime\nType");
-    makeChart("holders", "#holders_chart", "Holder");
-    makeChart("copyrights", "#copyrights_chart", "Copyright");
-    makeChart("file_license_keys", "#license_key_chart", "License\nKey");
-    makeChart("file_license_categories", "#license_category_chart", "License\nCategory");
-    makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
+    {% if project.package_count %}
+      makeChart("package_type", "#package_type_chart", "Package\nType");
+      makeChart("package_declared_license_expression", "#package_license_chart", "Package\nLicense\nExpression");
+    {% endif %}
+    {% if project.dependency_count %}
+      makeChart("dependency_type", "#dependency_type_chart", "Package\nType");
+      makeChart("dependency_is_runtime", "#dependency_is_runtime_chart", "Runtime\nDependencies");
+      makeChart("dependency_is_optional", "#dependency_is_optional_chart", "Optional\nDependencies");
+      makeChart("dependency_is_resolved", "#dependency_is_resolved_chart", "Resolved\nDependencies");
+    {% endif %}
+    {% if project.resource_count %}
+      makeChart("file_programming_language", "#programming_language_chart", "Programming\nLanguage");
+      makeChart("file_mime_type", "#mime_type_chart", "Mime\nType");
+      makeChart("file_holders", "#holders_chart", "Holder");
+      makeChart("file_copyrights", "#copyrights_chart", "Copyright");
+      makeChart("file_detected_license_expression", "#detected_license_expression_chart", "Detected\nLicense\nExpression");
+      makeChart("file_compliance_alert", "#compliance_alert_chart", "Compliance\nAlert");
+    {% endif %}
   </script>
 {% endblock %}

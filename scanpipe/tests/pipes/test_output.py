@@ -41,6 +41,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.models import ProjectError
 from scanpipe.pipes import output
+from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
@@ -57,7 +58,7 @@ def make_config_directory(project):
 class ScanPipeOutputPipesTest(TestCase):
     data_path = Path(__file__).parent.parent / "data"
 
-    def assertResultsEqual(self, expected_file, results, regen=False):
+    def assertResultsEqual(self, expected_file, results, regen=FIXTURES_REGEN):
         """
         Set `regen` to True to regenerate the expected results.
         """
@@ -215,7 +216,7 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
-    def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=False):
+    def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
@@ -258,7 +259,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results = json.dumps(results_json, indent=2)
 
         expected_file = self.data_path / "asgiref-3.3.0.spdx.json"
-        self.assertResultsEqual(expected_file, results, regen=False)
+        self.assertResultsEqual(expected_file, results)
 
         # Make sure the output can be generated even if the work_directory was wiped
         shutil.rmtree(project.work_directory)
@@ -305,7 +306,7 @@ class ScanPipeOutputPipesTest(TestCase):
         project = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
         expression_with_exception = "mit AND gpl-2.0 with classpath-exception-2.0"
-        package_data["license_expression"] = expression_with_exception
+        package_data["declared_license_expression"] = expression_with_exception
         package_data["notice_text"] = "Notice text"
         pipes.update_or_create_package(project, package_data)
 
@@ -411,13 +412,6 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
             value="some \r\nsimple \r\nvalue\r\n",
         )
         self.assertEqual(result, "some \nsimple \nvalue\n")
-        self.assertEqual(error, None)
-
-    def test__adapt_value_for_xlsx_does_adapt_license_expressions(self):
-        result, error = output._adapt_value_for_xlsx(
-            fieldname="license_expressions", value=["mit", "mit", "gpl-2.0"]
-        )
-        self.assertEqual(result, "mit AND gpl-2.0")
         self.assertEqual(error, None)
 
     def test__adapt_value_for_xlsx_does_adapt_description_and_keeps_only_5_lines(self):

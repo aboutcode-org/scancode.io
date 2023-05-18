@@ -68,6 +68,7 @@ from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
 from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
+from licensedcode.cache import get_licensing
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -454,12 +455,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     created_date = models.DateTimeField(
         auto_now_add=True,
-        db_index=True,
         help_text=_("Creation date for this project."),
     )
     name = models.CharField(
         unique=True,
-        db_index=True,
         max_length=100,
         help_text=_("Name for this project."),
     )
@@ -484,6 +483,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     class Meta:
         ordering = ["-created_date"]
+        indexes = [
+            models.Index(fields=["-created_date"]),
+            models.Index(fields=["is_archived"]),
+            models.Index(fields=["name"]),
+        ]
 
     def __str__(self):
         return self.name
@@ -969,10 +973,9 @@ class GroupingQuerySetMixin:
         `field_name` starting at the `limit`.
         """
         json_fields_mapping = {
-            "license_key": ("licenses", "key"),
-            "license_category": ("licenses", "category"),
             "copyrights": ("copyrights", "copyright"),
             "holders": ("holders", "holder"),
+            "authors": ("authors", "author"),
         }
 
         if field_name in json_fields_mapping:
@@ -1422,24 +1425,17 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def without_symlinks(self):
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
-    def has_licenses(self):
-        return self.filter(~Q(licenses=[]))
+    def has_license_detections(self):
+        return self.filter(~Q(license_detections=[]))
 
-    def has_no_licenses(self):
-        return self.filter(licenses=[])
+    def has_no_license_detections(self):
+        return self.filter(license_detections=[])
 
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
 
-    def licenses_categories(self, categories):
-        return self.json_list_contains(
-            field_name="licenses",
-            key="category",
-            values=categories,
-        )
-
     def unknown_license(self):
-        return self.json_field_contains("license_expressions", "unknown")
+        return self.filter(detected_license_expression__icontains="unknown")
 
     def from_codebase(self):
         """Resources in from/ directory"""
@@ -1471,6 +1467,38 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
 
+    detected_license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license expression summarizing the license info for this resource, "
+            "combined from all the license detections"
+        ),
+    )
+    detected_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(
+            "The detected license expression for this file, with SPDX license keys"
+        ),
+    )
+    license_detections = models.JSONField(
+        blank=True,
+        default=list,
+        help_text=_("List of license detection details."),
+    )
+    license_clues = models.JSONField(
+        blank=True,
+        default=list,
+        help_text=_(
+            "List of license matches that are not proper detections and potentially "
+            "just clues to licenses or likely false positives. Those are not included "
+            "in computing the detected license expression for the resource."
+        ),
+    )
+    percentage_of_license_text = models.FloatField(
+        blank=True,
+        null=True,
+        help_text=_("Percentage of file words detected as license text or notice."),
+    )
     copyrights = models.JSONField(
         blank=True,
         default=list,
@@ -1489,16 +1517,6 @@ class ScanFieldsModelMixin(models.Model):
         blank=True,
         default=list,
         help_text=_("List of detected authors (and related detection details)."),
-    )
-    licenses = models.JSONField(
-        blank=True,
-        default=list,
-        help_text=_("List of license detection details."),
-    )
-    license_expressions = models.JSONField(
-        blank=True,
-        default=list,
-        help_text=_("List of detected license expressions."),
     )
     emails = models.JSONField(
         blank=True,
@@ -1557,7 +1575,7 @@ class CodebaseResource(
     A project Codebase Resources are records of its code files and directories.
     Each record is identified by its path under the project workspace.
 
-    These model fields should be kept in line with `scancode.resource.Resource`.
+    These model fields should be kept in line with `commoncode.resource.Resource`.
     """
 
     path = models.CharField(
@@ -1679,6 +1697,7 @@ class CodebaseResource(
             models.Index(fields=["mime_type"]),
             models.Index(fields=["tag"]),
             models.Index(fields=["sha1"]),
+            models.Index(fields=["detected_license_expression"]),
             models.Index(fields=["compliance_alert"]),
             models.Index(fields=["is_binary"]),
             models.Index(fields=["is_text"]),
@@ -1697,38 +1716,33 @@ class CodebaseResource(
     @classmethod
     def from_db(cls, db, field_names, values):
         """
-        Store the `licenses` field on creating this instance from the database value.
+        Store the `detected_license_expression` field on loading this instance from the
+        database value.
         The cached value is then used to detect changes on `save()`.
         """
         new = super().from_db(db, field_names, values)
 
-        if "licenses" in field_names:
-            new._loaded_licenses = values[field_names.index("licenses")]
+        if "detected_license_expression" in field_names:
+            field_index = field_names.index("detected_license_expression")
+            new._loaded_license_expression = values[field_index]
 
         return new
 
     def save(self, codebase=None, *args, **kwargs):
         """
         Save the current resource instance.
-        Injects policies—if the feature is enabled—when the `licenses` field value is
-        changed.
+        Injects policies, if the feature is enabled, when the
+        `detected_license_expression` field value is changed.
 
         `codebase` is not used in this context but required for compatibility
         with the commoncode.resource.Codebase class API.
         """
         if scanpipe_app.policies_enabled:
-            loaded_licenses = getattr(self, "loaded_licenses", [])
-            if self.licenses != loaded_licenses:
-                self.inject_licenses_policy(scanpipe_app.license_policies_index)
+            loaded_license_expression = getattr(self, "_loaded_license_expression", [])
+            if self.detected_license_expression != loaded_license_expression:
                 self.compliance_alert = self.compute_compliance_alert()
 
         super().save(*args, **kwargs)
-
-    def inject_licenses_policy(self, policies_index):
-        """Inject license policies from the `policies_index` into the licenses field."""
-        for license_data in self.licenses:
-            key = license_data.get("key")
-            license_data["policy"] = policies_index.get(key, None)
 
     @property
     def location_path(self):
@@ -1759,34 +1773,33 @@ class CodebaseResource(
 
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
-        if not self.licenses:
+        if not self.detected_license_expression:
             return ""
 
-        ok = self.Compliance.OK
-        error = self.Compliance.ERROR
-        warning = self.Compliance.WARNING
-        missing = self.Compliance.MISSING
-
         alerts = []
-        for license_data in self.licenses:
-            policy = license_data.get("policy")
-            if policy:
-                alerts.append(policy.get("compliance_alert") or ok)
+        policy_index = scanpipe_app.license_policies_index
+
+        licensing = get_licensing()
+        parsed = licensing.parse(self.detected_license_expression, simple=True)
+        license_keys = licensing.license_keys(parsed)
+
+        for license_key in license_keys:
+            if policy := policy_index.get(license_key):
+                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
             else:
-                alerts.append(missing)
+                alerts.append(self.Compliance.MISSING)
 
-        if error in alerts:
-            return error
-        elif warning in alerts:
-            return warning
-        elif missing in alerts:
-            return missing
-        return ok
+        compliance_ordered_by_severity = [
+            self.Compliance.ERROR,
+            self.Compliance.WARNING,
+            self.Compliance.MISSING,
+        ]
 
-    @property
-    def unique_license_expressions(self):
-        """Return the sorted set of unique license_expressions."""
-        return sorted(set(self.license_expressions))
+        for compliance_severity in compliance_ordered_by_severity:
+            if compliance_severity in alerts:
+                return compliance_severity
+
+        return self.Compliance.OK
 
     def parent_path(self):
         """Return the parent path for this CodebaseResource or None."""
@@ -1967,7 +1980,6 @@ class CodebaseResource(
         """Return this CodebaseResource as an SPDX Package entry."""
         from scanpipe.pipes import spdx
 
-        spdx_license_keys = [license["spdx_license_key"] for license in self.licenses]
         copyrights = [copyright["copyright"] for copyright in self.copyrights]
         holders = [holder["holder"] for holder in self.holders]
         authors = [author["author"] for author in self.authors]
@@ -1976,7 +1988,7 @@ class CodebaseResource(
             spdx_id=self.spdx_id,
             name=f"./{self.path}",
             checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
-            license_in_files=list(set(spdx_license_keys)),
+            license_concluded=self.detected_license_expression_spdx,
             copyright_text=", ".join(copyrights),
             contributors=list(set(holders + authors)),
             types=self.get_spdx_types(),
@@ -2131,33 +2143,71 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("Copyright statements for this package. Typically one per line."),
     )
-    license_expression = models.TextField(
+    holder = models.TextField(
+        blank=True,
+        help_text=_("Holders for this package. Typically one per line."),
+    )
+    declared_license_expression = models.TextField(
         blank=True,
         help_text=_(
-            "The normalized license expression for this package as derived "
-            "from its declared license."
+            "The license expression for this package typically derived "
+            "from its extracted_license_statement or from some other type-specific "
+            "routine or convention."
         ),
     )
-    declared_license = models.TextField(
+    declared_license_expression_spdx = models.TextField(
         blank=True,
         help_text=_(
-            "The declared license mention or tag or text as found in a "
-            "package manifest."
+            "The SPDX license expression for this package converted "
+            "from its declared_license_expression."
+        ),
+    )
+    license_detections = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of LicenseDetection mappings typically derived "
+            "from its extracted_license_statement or from some other type-specific "
+            "routine or convention."
+        ),
+    )
+    other_license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license expression for this package which is different from the "
+            "declared_license_expression, (i.e. not the primary license) "
+            "routine or convention."
+        ),
+    )
+    other_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(
+            "The other SPDX license expression for this package converted "
+            "from its other_license_expression."
+        ),
+    )
+    other_license_detections = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of LicenseDetection mappings which is different from the "
+            "declared_license_expression, (i.e. not the primary license) "
+            "These are detections for the detection for the license expressions "
+            "in other_license_expression. "
+        ),
+    )
+    extracted_license_statement = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license statement mention, tag or text as found in a "
+            "package manifest and extracted. This can be a string, a list or dict of "
+            "strings possibly nested, as found originally in the manifest."
         ),
     )
     notice_text = models.TextField(
         blank=True,
         help_text=_("A notice text for this package."),
     )
-    manifest_path = models.CharField(
-        max_length=1024,
-        blank=True,
-        help_text=_(
-            "A relative path to the manifest file if any, such as a "
-            "Maven .pom or a npm package.json."
-        ),
-    )
-    contains_source_code = models.BooleanField(null=True, blank=True)
     datasource_id = models.CharField(
         max_length=64,
         blank=True,
@@ -2214,7 +2264,6 @@ class DiscoveredPackage(
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
-        db_index=True,
         help_text=_("Unique identifier for this package."),
     )
     keywords = models.JSONField(default=list, blank=True)
@@ -2229,8 +2278,10 @@ class DiscoveredPackage(
             models.Index(fields=["namespace"]),
             models.Index(fields=["name"]),
             models.Index(fields=["filename"]),
+            models.Index(fields=["package_uid"]),
             models.Index(fields=["primary_language"]),
-            models.Index(fields=["license_expression"]),
+            models.Index(fields=["declared_license_expression"]),
+            models.Index(fields=["other_license_expression"]),
             models.Index(fields=["size"]),
             models.Index(fields=["md5"]),
             models.Index(fields=["sha1"]),
@@ -2335,10 +2386,33 @@ class DiscoveredPackage(
     def spdx_id(self):
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
 
-    def get_license_expression_spdx_id(self):
-        """Return this package license expression using SPDX syntax and keys."""
-        if self.license_expression:
-            return build_spdx_license_expression(self.license_expression)
+    def get_declared_license_expression(self):
+        """
+        Return this package license expression.
+
+        Use `declared_license_expression` when available or compute the expression
+        from `declared_license_expression_spdx`.
+        """
+        from scanpipe.pipes.resolve import convert_spdx_expression
+
+        if self.declared_license_expression:
+            return self.declared_license_expression
+        elif self.declared_license_expression_spdx:
+            return convert_spdx_expression(self.declared_license_expression_spdx)
+        return ""
+
+    def get_declared_license_expression_spdx(self):
+        """
+        Return this package license expression using SPDX keys.
+
+        Use `declared_license_expression_spdx` when available or compute the expression
+        from `declared_license_expression`.
+        """
+        if self.declared_license_expression_spdx:
+            return self.declared_license_expression_spdx
+        elif self.declared_license_expression:
+            return build_spdx_license_expression(self.declared_license_expression)
+        return ""
 
     def as_spdx(self):
         """Return this DiscoveredPackage as an SPDX Package entry."""
@@ -2361,13 +2435,12 @@ class DiscoveredPackage(
                 )
             )
 
-        license_expression_spdx = self.get_license_expression_spdx_id()
         return spdx.Package(
             name=self.name or self.filename,
             spdx_id=self.spdx_id,
             download_location=self.download_url,
-            license_declared=license_expression_spdx,
-            license_concluded=license_expression_spdx,
+            license_declared=self.get_declared_license_expression_spdx(),
+            license_concluded=self.get_declared_license_expression_spdx(),
             copyright_text=self.copyright,
             version=self.version,
             homepage=self.homepage_url,
@@ -2381,7 +2454,7 @@ class DiscoveredPackage(
     def as_cyclonedx(self):
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
-        if expression_spdx := self.get_license_expression_spdx_id():
+        if expression_spdx := self.get_declared_license_expression_spdx():
             licenses = [
                 cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
             ]

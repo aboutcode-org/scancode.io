@@ -57,7 +57,7 @@
             <pre>{{ package.copyright }}</pre>
           {% endif %}
           {# 5. License expression #}
-          {% if package.license_expression %}
+          {% if package.declared_license_expression %}
             <p>This package is licensed under {{ package.expression_links|safe }}</p>
           {% endif %}
           {# 6. Notice text #}

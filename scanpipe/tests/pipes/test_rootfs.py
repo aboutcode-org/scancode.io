@@ -120,7 +120,7 @@ class ScanPipeRootfsPipesTest(TestCase):
             path="root/user/bar.data",
             rootfs_path="/user/bar.data",
             file_type="data",
-            license_expressions=["apache-2.0"],
+            detected_license_expression="apache-2.0",
         )
         rootfs.tag_data_files_with_no_clues(p1)
         resource1.refresh_from_db()

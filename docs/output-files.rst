@@ -183,8 +183,6 @@ similar to the following:
         "license_expression": "mit",
         "declared_license": "MIT",
         "notice_text": "",
-        "manifest_path": "",
-        "contains_source_code": null,
         "missing_resources": [
           "/lib/libc.musl-x86_64.so.1"
         ],

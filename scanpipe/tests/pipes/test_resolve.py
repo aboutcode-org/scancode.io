@@ -25,7 +25,10 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from scanpipe import pipes
+from scanpipe.models import Project
 from scanpipe.pipes import resolve
+from scanpipe.tests import package_data1
 
 
 class ScanPipeResolvePipesTest(TestCase):
@@ -54,21 +57,32 @@ class ScanPipeResolvePipesTest(TestCase):
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
     def test_scanpipe_pipes_resolve_set_license_expression(self):
-        declared_license = {"license": "MIT"}
-        data = resolve.set_license_expression({"declared_license": declared_license})
-        self.assertEqual("mit", data.get("license_expression"))
+        extracted_license_statement = {"license": "MIT"}
+        data = resolve.set_license_expression(
+            {"extracted_license_statement": extracted_license_statement}
+        )
+        self.assertEqual("mit", data.get("declared_license_expression"))
 
-        declared_license = {
+        extracted_license_statement = {
             "classifiers": [
                 "License :: OSI Approved :: Python Software Foundation License"
             ]
         }
-        data = resolve.set_license_expression({"declared_license": declared_license})
-        self.assertEqual("python", data.get("license_expression"))
+        data = resolve.set_license_expression(
+            {"extracted_license_statement": extracted_license_statement}
+        )
+        self.assertEqual("python", data.get("declared_license_expression"))
 
-        declared_license = "GPL 2.0"
-        data = resolve.set_license_expression({"declared_license": declared_license})
-        self.assertEqual("gpl-2.0", data.get("license_expression"))
+        extracted_license_statement = "GPL 2.0"
+        data = resolve.set_license_expression(
+            {"extracted_license_statement": extracted_license_statement}
+        )
+        self.assertEqual("gpl-2.0", data.get("declared_license_expression"))
+
+    def test_scanpipe_pipes_resolve_convert_spdx_expression(self):
+        spdx = "MIT OR GPL-2.0-only WITH LicenseRef-scancode-generic-exception"
+        scancode_expression = "mit OR gpl-2.0 WITH generic-exception"
+        self.assertEqual(scancode_expression, resolve.convert_spdx_expression(spdx))
 
     def test_scanpipe_pipes_resolve_resolve_packages(self):
         # ScanCode.io resolvers
@@ -77,7 +91,7 @@ class ScanPipeResolvePipesTest(TestCase):
         expected = {
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
-            "license_expression": "bsd-new",
+            "declared_license_expression": "bsd-new",
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",
@@ -99,7 +113,7 @@ class ScanPipeResolvePipesTest(TestCase):
         expected = {
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
-            "license_expression": "bsd-new",
+            "declared_license_expression": "bsd-new",
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",
@@ -112,3 +126,32 @@ class ScanPipeResolvePipesTest(TestCase):
         package = resolve.resolve_about_packages(str(input_location))
         expected = {"name": "project"}
         self.assertEqual([expected], package)
+
+    def test_scanpipe_pipes_resolve_spdx_package_to_discovered_package_data(self):
+        p1 = Project.objects.create(name="Analysis")
+        package = pipes.update_or_create_package(p1, package_data1)
+        package_spdx = package.as_spdx()
+        package_data = resolve.spdx_package_to_discovered_package_data(package_spdx)
+        expected = {
+            "name": "adduser",
+            "download_url": "https://download.url/package.zip",
+            "declared_license_expression": "gpl-2.0 AND gpl-2.0-plus",
+            "declared_license_expression_spdx": "GPL-2.0-only AND GPL-2.0-or-later",
+            "extracted_license_statement": "GPL-2.0-only AND GPL-2.0-or-later",
+            "copyright": (
+                "Copyright (c) 2000 Roland Bauerschmidt <rb@debian.org>\n"
+                "Copyright (c) 1997, 1998, 1999 Guy Maor <maor@debian.org>\n"
+                "Copyright (c) 1995 Ted Hajek <tedhajek@boombox.micro.umn.edu>\n"
+                "portions Copyright (c) 1994 Debian Association, Inc."
+            ),
+            "version": "3.118",
+            "homepage_url": "https://packages.debian.org",
+            "filename": "package.zip",
+            "description": "add and remove users and groups",
+            "release_date": "1999-10-10",
+            "type": "deb",
+            "namespace": "debian",
+            "qualifiers": "arch=all",
+            "md5": "76cf50f29e47676962645632737365a7",
+        }
+        self.assertEqual(expected, package_data)

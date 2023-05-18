@@ -152,7 +152,7 @@ def _tag_python_software(project):
             type="windows-program",
             name="Python",
             version=python_version,
-            license_expression="python",
+            declared_license_expression="python",
             copyright="Copyright (c) Python Software Foundation",
             homepage_url="https://www.python.org/",
         )
@@ -193,11 +193,12 @@ def _tag_openjdk_software(project):
         openjdk_versions_by_path[openjdk_root_path] = openjdk_version
 
     for openjdk_path, openjdk_version in openjdk_versions_by_path.items():
+        license_expression = "gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0"
         openjdk_package = Package(
             type="windows-program",
             name="OpenJDK",
             version=openjdk_version,
-            license_expression="gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0",
+            declared_license_expression=license_expression,
             copyright="Copyright (c) Oracle and/or its affiliates",
             homepage_url="http://openjdk.java.net/",
         )

@@ -509,6 +509,22 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         return summary_data
 
+    def check_run_scancode_version(self, pipeline_runs, version_limit="32.2.0"):
+        """
+        Display a warning message if one of the ``pipeline_runs`` scancodeio_version
+        is prior to or currently is ``old_version``.
+        """
+        if run_versions := [run.scancodeio_version for run in pipeline_runs]:
+            message = (
+                "WARNING: Some this project pipelines have been run with an "
+                "out of date ScanCode-toolkit version.\n"
+                "The scan data was migrated, but it is recommended to reset the "
+                "project and re-run the pipelines to benefit from the latest "
+                "scan results improvements."
+            )
+            if min(run_versions) <= version_limit:
+                messages.warning(self.request, message)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
@@ -544,6 +560,9 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
         resource_status_summary = count_group_by(project.codebaseresources, "status")
 
+        pipeline_runs = project.runs.all()
+        self.check_run_scancode_version(pipeline_runs)
+
         context.update(
             {
                 "inputs_with_source": inputs,
@@ -553,6 +572,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "resource_status_summary": resource_status_summary,
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
+                "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
             }
         )
@@ -590,9 +610,15 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
     @staticmethod
     def get_summary(values_list, limit=settings.SCANCODEIO_MOST_COMMON_LIMIT):
-        most_common = dict(Counter(values_list).most_common(limit))
+        counter = Counter(values_list)
 
-        other = len(values_list) - sum(most_common.values())
+        has_only_empty_string = list(counter.keys()) == [""]
+        if has_only_empty_string:
+            return {}
+
+        most_common = dict(counter.most_common(limit))
+
+        other = sum(counter.values()) - sum(most_common.values())
         if other > 0:
             most_common["Other"] = other
 
@@ -606,70 +632,53 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        files_qs = project.codebaseresources.files()
+        file_filter = self.request.GET.get("file-filter")
+        context["file_filter"] = file_filter
 
-        file_filter = self.request.GET.get("file-filter", "all")
+        files = project.codebaseresources.files()
         if file_filter == "in-a-package":
-            files_qs = files_qs.in_package()
+            files = files.in_package()
         elif file_filter == "not-in-a-package":
-            files_qs = files_qs.not_in_package()
+            files = files.not_in_package()
 
-        files = files_qs.only(
-            "programming_language",
-            "mime_type",
-            "holders",
-            "copyrights",
-            "license_expressions",
-        )
+        charts = {
+            "file": {
+                "queryset": files,
+                "fields": [
+                    "programming_language",
+                    "mime_type",
+                    "holders",
+                    "copyrights",
+                    "detected_license_expression",
+                    "compliance_alert",
+                ],
+            },
+            "package": {
+                "queryset": project.discoveredpackages,
+                "fields": ["type", "declared_license_expression"],
+            },
+            "dependency": {
+                "queryset": project.discovereddependencies,
+                "fields": ["type", "is_runtime", "is_optional", "is_resolved"],
+            },
+        }
 
-        packages = project.discoveredpackages.all().only(
-            "type",
-            "license_expression",
-        )
+        for group_name, spec in charts.items():
+            fields = spec["fields"]
+            # Clear the un-needed ordering to get faster queries
+            qs_values = spec["queryset"].values(*fields).order_by()
 
-        dependencies = project.discovereddependencies.all().only(
-            "is_runtime",
-            "is_optional",
-            "is_resolved",
-        )
+            for field_name in fields:
+                if field_name in ["holders", "copyrights"]:
+                    field_values = (
+                        data.get(field_name[:-1])
+                        for entry in qs_values
+                        for data in entry.get(field_name, [])
+                    )
+                else:
+                    field_values = (entry[field_name] for entry in qs_values)
 
-        file_languages = files.values_list("programming_language", flat=True)
-        file_mime_types = files.values_list("mime_type", flat=True)
-        file_holders = files.values_from_json_field("holders", "holder")
-        file_copyrights = files.values_from_json_field("copyrights", "copyright")
-        file_license_keys = files.values_from_json_field("licenses", "key")
-        file_license_categories = files.values_from_json_field("licenses", "category")
-
-        file_compliance_alert = []
-        if scanpipe_app.policies_enabled:
-            file_compliance_alert = files.values_list("compliance_alert", flat=True)
-
-        package_licenses = packages.values_list("license_expression", flat=True)
-        package_types = packages.values_list("type", flat=True)
-
-        dependency_package_type = dependencies.values_list("type", flat=True)
-        dependency_is_runtime = dependencies.values_list("is_runtime", flat=True)
-        dependency_is_optional = dependencies.values_list("is_optional", flat=True)
-        dependency_is_resolved = dependencies.values_list("is_resolved", flat=True)
-
-        context.update(
-            {
-                "programming_languages": self.get_summary(file_languages),
-                "mime_types": self.get_summary(file_mime_types),
-                "holders": self.get_summary(file_holders),
-                "copyrights": self.get_summary(file_copyrights),
-                "file_license_keys": self.get_summary(file_license_keys),
-                "file_license_categories": self.get_summary(file_license_categories),
-                "file_compliance_alert": self.get_summary(file_compliance_alert),
-                "package_licenses": self.get_summary(package_licenses),
-                "package_types": self.get_summary(package_types),
-                "dependency_package_type": self.get_summary(dependency_package_type),
-                "dependency_is_runtime": self.get_summary(dependency_is_runtime),
-                "dependency_is_optional": self.get_summary(dependency_is_optional),
-                "dependency_is_resolved": self.get_summary(dependency_is_resolved),
-                "file_filter": file_filter,
-            }
-        )
+                context[f"{group_name}_{field_name}"] = self.get_summary(field_values)
 
         return context
 
@@ -861,7 +870,7 @@ class CodebaseResourceListView(
         "programming_language",
         "mime_type",
         "tag",
-        "license_expressions",
+        "detected_license_expression",
         {
             "field_name": "compliance_alert",
             "condition": scanpipe_app.policies_enabled,
@@ -890,7 +899,7 @@ class DiscoveredPackageListView(
     prefetch_related = ["codebase_resources"]
     table_columns = [
         "package_url",
-        "license_expression",
+        "declared_license_expression",
         "copyright",
         "primary_language",
         "resources",
@@ -1051,7 +1060,14 @@ class CodebaseResourceDetailsView(
         },
         "detection": {
             "fields": [
-                {"field_name": "license_expressions", "render_func": render_as_yaml},
+                "detected_license_expression",
+                {
+                    "field_name": "detected_license_expression_spdx",
+                    "label": "Detected license expression (SPDX)",
+                },
+                {"field_name": "license_detections", "render_func": render_as_yaml},
+                {"field_name": "license_clues", "render_func": render_as_yaml},
+                "percentage_of_license_text",
                 {"field_name": "copyrights", "render_func": render_as_yaml},
                 {"field_name": "holders", "render_func": render_as_yaml},
                 {"field_name": "authors", "render_func": render_as_yaml},
@@ -1090,58 +1106,57 @@ class CodebaseResourceDetailsView(
     }
 
     @staticmethod
-    def get_annotation_text(entry, field_name, value_key):
-        """
-        Get the license_expression until the data structure is updated on the
-        ScanCode-toolkit side.
-        https://github.com/nexB/scancode-results-analyzer/blob/6c132bc20153d5c96929c
-        f378bd0f06d83db9005/src/results_analyze/analyzer_plugin.py#L131-L198
-        """
-        if field_name == "licenses":
-            return entry.get("matched_rule", {}).get("license_expression")
-        return entry.get(value_key)
-
-    def get_annotations(self, field_name, value_key="value"):
+    def get_annotations(entries, value_key):
         annotations = []
+        annotation_type = "info"
 
-        for entry in getattr(self.object, field_name):
-            annotation_type = "info"
-
-            # Customize the annotation icon based on the policy compliance_alert
-            policy = entry.get("policy")
-            if policy:
-                compliance_alert = policy.get("compliance_alert", None)
-                annotation_type = self.annotation_types.get(compliance_alert)
-
+        for entry in entries:
             annotations.append(
                 {
                     "start_line": entry.get("start_line"),
                     "end_line": entry.get("end_line"),
-                    "text": self.get_annotation_text(entry, field_name, value_key),
+                    "text": entry.get(value_key),
                     "className": f"ace_{annotation_type}",
                 }
             )
 
         return annotations
 
+    def get_license_annotations(self, field_name):
+        annotations = []
+
+        for entry in getattr(self.object, field_name):
+            matches = entry.get("matches", [])
+            annotations.extend(self.get_annotations(matches, "license_expression"))
+
+        return annotations
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        resource = self.object
 
         try:
-            context["file_content"] = self.object.file_content
+            context["file_content"] = resource.file_content
         except OSError:
             context["missing_file_content"] = True
             message = "WARNING: This resource is not available on disk."
             messages.warning(self.request, message)
 
+        license_annotations = self.get_license_annotations("license_detections")
         context["detected_values"] = {
-            "licenses": self.get_annotations("licenses"),
-            "copyrights": self.get_annotations("copyrights"),
-            "holders": self.get_annotations("holders"),
-            "authors": self.get_annotations("authors"),
-            "emails": self.get_annotations("emails", value_key="email"),
-            "urls": self.get_annotations("urls", value_key="url"),
+            "licenses": license_annotations,
         }
+
+        fields = [
+            ("copyrights", "copyright"),
+            ("holders", "holder"),
+            ("authors", "author"),
+            ("emails", "email"),
+            ("urls", "url"),
+        ]
+        for field_name, value_key in fields:
+            annotations = self.get_annotations(getattr(resource, field_name), value_key)
+            context["detected_values"][field_name] = annotations
 
         return context
 
@@ -1180,7 +1195,11 @@ class DiscoveredPackageDetailsView(
         "essentials": {
             "fields": [
                 "package_url",
-                "license_expression",
+                "declared_license_expression",
+                {
+                    "field_name": "declared_license_expression_spdx",
+                    "label": "Declared license expression (SPDX)",
+                },
                 "primary_language",
                 "homepage_url",
                 "download_url",
@@ -1198,10 +1217,25 @@ class DiscoveredPackageDetailsView(
         },
         "terms": {
             "fields": [
-                "license_expression",
-                "declared_license",
+                "declared_license_expression",
+                {
+                    "field_name": "declared_license_expression_spdx",
+                    "label": "Declared license expression (SPDX)",
+                },
+                "other_license_expression",
+                {
+                    "field_name": "other_license_expression_spdx",
+                    "label": "Other license expression (SPDX)",
+                },
+                "extracted_license_statement",
                 "copyright",
+                "holder",
                 "notice_text",
+                {"field_name": "license_detections", "render_func": render_as_yaml},
+                {
+                    "field_name": "other_license_detections",
+                    "render_func": render_as_yaml,
+                },
             ],
             "icon_class": "fas fa-file-contract",
         },
@@ -1228,8 +1262,6 @@ class DiscoveredPackageDetailsView(
                 {"field_name": "parties", "render_func": render_as_yaml},
                 "missing_resources",
                 "modified_resources",
-                "manifest_path",
-                "contains_source_code",
                 "package_uid",
             ],
             "icon_class": "fas fa-plus-square",

@@ -68,14 +68,38 @@
       "sha256": "",
       "sha512": "",
       "copyright": "",
-      "license_expression": "mit",
-      "declared_license": "['MIT']",
+      "holder": "",
+      "declared_license_expression": "mit",
+      "declared_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "start_line": 1,
+              "matched_text": "MIT",
+              "match_coverage": 100.0,
+              "matched_length": 1,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+          "license_expression": "mit"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "['MIT']",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},
       "package_uid": "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "manifest_path": "",
-      "contains_source_code": null,
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
@@ -115,8 +139,11 @@
       "is_archive": true,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -143,8 +170,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -171,8 +201,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -199,8 +232,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -229,8 +265,11 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [],
-      "license_expressions": [],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
       "authors": [],
@@ -241,6 +280,7 @@
           "purl": "pkg:npm/is-npm@1.0.0",
           "sha1": null,
           "type": "npm",
+          "holder": null,
           "sha256": null,
           "sha512": null,
           "parties": [
@@ -290,13 +330,36 @@
           "file_references": [],
           "source_packages": [],
           "bug_tracking_url": null,
-          "declared_license": [
-            "MIT"
-          ],
           "primary_language": "JavaScript",
-          "license_expression": "mit",
+          "license_detections": [
+            {
+              "matches": [
+                {
+                  "score": 100.0,
+                  "matcher": "1-spdx-id",
+                  "end_line": 1,
+                  "rule_url": null,
+                  "start_line": 1,
+                  "matched_text": "MIT",
+                  "match_coverage": 100.0,
+                  "matched_length": 1,
+                  "rule_relevance": 100,
+                  "rule_identifier": "spdx-license-identifier-mit-5da48780aba670b0860c46d899ed42a0f243ff06",
+                  "license_expression": "mit"
+                }
+              ],
+              "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+              "license_expression": "mit"
+            }
+          ],
           "repository_download_url": "https://registry.npmjs.org/is-npm/-/is-npm-1.0.0.tgz",
-          "repository_homepage_url": "https://www.npmjs.com/package/is-npm"
+          "repository_homepage_url": "https://www.npmjs.com/package/is-npm",
+          "other_license_detections": [],
+          "other_license_expression": null,
+          "declared_license_expression": "mit",
+          "extracted_license_statement": "['MIT']",
+          "other_license_expression_spdx": null,
+          "declared_license_expression_spdx": "MIT"
         }
       ],
       "for_packages": [
@@ -323,50 +386,31 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "licenses": [
+      "detected_license_expression": "mit",
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
         {
-          "key": "mit",
-          "name": "MIT License",
-          "owner": "MIT",
-          "score": 100.0,
-          "category": "Permissive",
-          "end_line": 30,
-          "spdx_url": "https://spdx.org/licenses/MIT",
-          "text_url": "http://opensource.org/licenses/mit-license.php",
-          "is_unknown": false,
-          "short_name": "MIT License",
-          "start_line": 28,
-          "homepage_url": "http://opensource.org/licenses/mit-license.php",
-          "is_exception": false,
-          "matched_rule": {
-            "matcher": "2-aho",
-            "licenses": [
-              "mit"
-            ],
-            "identifier": "mit_30.RULE",
-            "has_unknown": false,
-            "rule_length": 2,
-            "is_license_tag": true,
-            "match_coverage": 100.0,
-            "matched_length": 2,
-            "rule_relevance": 100,
-            "is_license_text": false,
-            "is_license_intro": false,
-            "is_license_notice": false,
-            "license_expression": "mit",
-            "is_license_reference": false,
-            "referenced_filenames": []
-          },
-          "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
-          "reference_url": "https://scancode-licensedb.aboutcode.org/mit",
-          "spdx_license_key": "MIT",
-          "scancode_data_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.yml",
-          "scancode_text_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/licenses/mit.LICENSE"
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "2-aho",
+              "end_line": 30,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mit_30.RULE",
+              "start_line": 28,
+              "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)",
+              "match_coverage": 100.0,
+              "matched_length": 2,
+              "rule_relevance": 100,
+              "rule_identifier": "mit_30.RULE",
+              "license_expression": "mit"
+            }
+          ],
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "license_expression": "mit"
         }
       ],
-      "license_expressions": [
-        "mit"
-      ],
+      "license_clues": [],
+      "percentage_of_license_text": 2.78,
       "copyrights": [
         {
           "end_line": 30,
