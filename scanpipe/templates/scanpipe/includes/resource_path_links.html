@@ -1,0 +1,9 @@
+<h1 class="is-size-5 break-all break-word">
+  {% for segment, subpath in object.get_path_segments_with_subpath %}
+    {% if not forloop.last %}
+      <a href="{% url 'project_resources' project.uuid %}?search={{ subpath }}">{{ segment }}</a> /
+    {% else %}
+      <span class="has-text-weight-semibold">{{ segment }}</span>
+    {% endif %}
+  {% endfor %}
+</h1>

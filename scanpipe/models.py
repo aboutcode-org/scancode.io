@@ -1771,6 +1771,29 @@ class CodebaseResource(
         """Return True, if the resource is a symlink."""
         return self.type == self.Type.SYMLINK
 
+    def get_path_segments_with_subpath(self):
+        """
+        Return a list of path segment name along its subpath for this resource.
+
+        Such as::
+        [
+            ('root', 'root'),
+            ('subpath', 'root/subpath'),
+            ('file.txt', 'root/subpath/file.txt'),
+        ]
+        """
+        current_path = ""
+        part_and_subpath = []
+
+        for segment in Path(self.path).parts:
+            if part_and_subpath:
+                current_path += f"/{segment}"
+            else:
+                current_path += f"{segment}"
+            part_and_subpath.append((segment, current_path))
+
+        return part_and_subpath
+
     def compute_compliance_alert(self):
         """Compute and return the compliance_alert value from the licenses policies."""
         if not self.detected_license_expression:
