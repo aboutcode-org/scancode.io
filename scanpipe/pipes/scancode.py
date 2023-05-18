@@ -311,7 +311,7 @@ def _scan_and_save(resource_qs, scan_func, save_func):
             save_func(resource, scan_results, scan_errors)
 
 
-def scan_for_files(project):
+def scan_for_files(project, resource_qs=None):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -319,7 +319,7 @@ def scan_for_files(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = project.codebaseresources.no_status()
+    resource_qs = resource_qs or project.codebaseresources.no_status()
     _scan_and_save(resource_qs, scan_file, save_scan_file_results)
 
 

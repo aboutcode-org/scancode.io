@@ -65,6 +65,7 @@ from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
@@ -1234,6 +1235,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", str(package))
         self.assertEqual(1, resource.discovered_packages.count())
         self.assertEqual(package, resource.discovered_packages.get())
+
+    def test_scanpipe_codebase_resource_get_path_segments_with_subpath(self):
+        resource = make_resource_file(self.project1, path="")
+        self.assertEqual([], resource.get_path_segments_with_subpath())
+
+        resource = make_resource_file(self.project1, path="root/subpath/file.txt")
+        expected = [
+            ("root", "root"),
+            ("subpath", "root/subpath"),
+            ("file.txt", "root/subpath/file.txt"),
+        ]
+        self.assertEqual(expected, resource.get_path_segments_with_subpath())
 
     def test_scanpipe_discovered_package_model_queryset_methods(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
