@@ -238,7 +238,7 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     else:
         codebase_resource.status = flag.SCANNED
 
-    codebase_resource.set_scan_results(scan_results, save=True)
+    codebase_resource.set_scan_results(scan_results)
 
 
 def save_scan_package_results(codebase_resource, scan_results, scan_errors):

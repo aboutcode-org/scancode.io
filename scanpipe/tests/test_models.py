@@ -42,6 +42,7 @@ from django.db import connection
 from django.test import TestCase
 from django.test import TransactionTestCase
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
@@ -497,11 +498,24 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("", run1.scancodeio_version)
 
         run1.set_scancodeio_version()
+        run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual(scancodeio_version, run1.scancodeio_version)
 
         with self.assertRaises(ValueError) as cm:
             run1.set_scancodeio_version()
         self.assertIn("Field scancodeio_version already set to", str(cm.exception))
+
+    def test_scanpipe_run_model_set_current_step(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual("", run1.current_step)
+
+        run1.set_current_step("a" * 300)
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual(256, len(run1.current_step))
+
+        run1.set_current_step("")
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual("", run1.current_step)
 
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
@@ -580,12 +594,28 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_run_model_set_task_ended_method(self):
         run1 = self.create_run()
 
-        run1.set_task_ended(exitcode=0, output="output")
+        # Set a value for `log` on the DB record without impacting the `run1` instance.
+        Run.objects.get(pk=run1.pk).append_to_log("entry in log", save=True)
+        self.assertEqual("", run1.log)
+
+        with CaptureQueriesContext(connection) as queries_context:
+            run1.set_task_ended(exitcode=0, output="output")
+
+        # Ensure that the SQL UPDATE was limited to `update_fields`
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        self.assertTrue(sql.startswith('UPDATE "scanpipe_run" SET "task_end_date"'))
+        self.assertIn("task_exitcode", sql)
+        self.assertIn("task_output", sql)
+        self.assertNotIn("log", sql)
 
         run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
+        # Ensure the initial value for `log` was not overriden during the
+        # `set_task_ended.save()`
+        self.assertIn("entry in log", run1.log)
 
     def test_scanpipe_run_model_set_task_methods(self):
         run1 = self.create_run()
@@ -911,13 +941,13 @@ class ScanPipeModelsTest(TestCase):
             "name": "name",
             "non_resource_field": "value",
         }
-        resource.set_scan_results(scan_results, save=True)
+        resource.set_scan_results(scan_results)
         resource.refresh_from_db()
         self.assertEqual("", resource.name)
         self.assertEqual("mit", resource.detected_license_expression)
 
         resource2 = CodebaseResource.objects.create(project=self.project1, path="file2")
-        resource2.copy_scan_results(from_instance=resource, save=True)
+        resource2.copy_scan_results(from_instance=resource)
         resource.refresh_from_db()
         self.assertEqual("mit", resource2.detected_license_expression)
 
