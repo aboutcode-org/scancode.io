@@ -5,7 +5,7 @@ v33.0.0 (unreleased)
 --------------------
 
 - Upgrade ScanCode-toolkit to latest v32.0.0
-  Warning: This upgrade required schema and data migrations (both included).
+  Warning: This upgrade requires schema and data migrations (both included).
   It is recommended to reset and re-run the pipelines to benefit from the latest
   ScanCode detection improvements.
   Refer to https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst#v3200-next-roadmap

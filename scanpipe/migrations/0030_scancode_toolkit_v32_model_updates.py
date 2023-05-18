@@ -116,6 +116,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="codebaseresource",
             name="percentage_of_license_text",
-            field=models.FloatField(blank=True, help_text="The percentage of words in the whole resource which are legal words, i.e. words that typically contain license related information.", null=True),
+            field=models.FloatField(blank=True, help_text="Percentage of file words detected as license text or notice.", null=True),
         ),
     ]

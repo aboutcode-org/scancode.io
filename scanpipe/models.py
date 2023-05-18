@@ -1497,10 +1497,7 @@ class ScanFieldsModelMixin(models.Model):
     percentage_of_license_text = models.FloatField(
         blank=True,
         null=True,
-        help_text=_(
-            "The percentage of words in the whole resource which are legal words, "
-            "i.e. words that typically contain license related information."
-        ),
+        help_text=_("Percentage of file words detected as license text or notice."),
     )
     copyrights = models.JSONField(
         blank=True,
