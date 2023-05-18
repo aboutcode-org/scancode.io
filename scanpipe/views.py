@@ -832,6 +832,8 @@ class ProjectResultsView(
 
 
 class ProjectRelatedViewMixin:
+    model_label = None
+
     def get_project(self):
         if not getattr(self, "project", None):
             project_uuid = self.kwargs["uuid"]
@@ -844,6 +846,7 @@ class ProjectRelatedViewMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.project
+        context["model_label"] = self.model_label
         return context
 
 
@@ -1026,6 +1029,7 @@ class CodebaseResourceDetailsView(
     generic.DetailView,
 ):
     model = CodebaseResource
+    model_label = "resources"
     slug_field = "path"
     slug_url_kwarg = "path"
     template_name = "scanpipe/resource_detail.html"
@@ -1189,6 +1193,7 @@ class DiscoveredPackageDetailsView(
     generic.DetailView,
 ):
     model = DiscoveredPackage
+    model_label = "packages"
     template_name = "scanpipe/package_detail.html"
     prefetch_related = ["codebase_resources"]
     tabset = {
@@ -1284,6 +1289,7 @@ class DiscoveredDependencyDetailsView(
     generic.DetailView,
 ):
     model = DiscoveredDependency
+    model_label = "dependencies"
     template_name = "scanpipe/dependency_detail.html"
     prefetch_related = ["for_package", "datafile_resource"]
     tabset = {
