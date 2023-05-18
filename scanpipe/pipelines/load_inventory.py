@@ -24,42 +24,48 @@ import json
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import input
-from scanpipe.pipes import scancode
 
 
 class LoadInventory(Pipeline):
     """
-    Load one or more inventory from ScanCode-toolkit and ScanCode.io JSON scan results.
+    Load JSON/XLSX inventory files generated with ScanCode-toolkit or ScanCode.io.
 
-    An inventory is composed of packages, dependencies, and resources.
+    Supported format are ScanCode-toolkit JSON scan results, ScanCode.io JSON output,
+    and ScanCode.io XLSX output.
+
+    An inventory is composed of packages, dependencies, resources, and relations.
     """
 
     @classmethod
     def steps(cls):
         return (
-            cls.get_scan_json_inputs,
+            cls.get_inputs,
             cls.build_inventory_from_scans,
         )
 
-    def get_scan_json_inputs(self):
-        """
-        Locate all the ScanCode JSON scan results from the project's input/ directory.
-        This includes all files with a .json extension.
-        """
-        self.json_input_paths = self.project.inputs(pattern="*.json")
+    def get_inputs(self):
+        """Locate all the supported input files from the project's input/ directory."""
+        # TODO: Provide a common get_inputs(extension) function
+        self.input_paths = [
+            path for path in self.project.inputs() if path.suffix in (".json", ".xlsx")
+        ]
 
     def build_inventory_from_scans(self):
         """
         Process JSON scan results files to populate packages, dependencies, and
         resources.
         """
-        for input_path in self.json_input_paths:
+        for input_path in self.input_paths:
+            if input_path.suffix.endswith(".xlsx"):
+                input.load_inventory_from_xlsx(self.project, input_path)
+                continue
+
             scan_data = json.loads(input_path.read_text())
             tool_name = input.get_tool_name_from_scan_headers(scan_data)
 
             if tool_name == "scancode-toolkit":
-                scancode.load_inventory_from_toolkit_scan(self.project, input_path)
+                input.load_inventory_from_toolkit_scan(self.project, input_path)
             elif tool_name == "scanpipe":
-                scancode.load_inventory_from_scanpipe(self.project, scan_data)
+                input.load_inventory_from_scanpipe(self.project, scan_data)
             else:
                 raise Exception(f"Input not supported: {str(input_path)} ")
