@@ -23,7 +23,7 @@
 import shutil
 from pathlib import Path
 
-from openpyxl import load_workbook
+import openpyxl
 
 from scanpipe import pipes
 from scanpipe.pipes import scancode
@@ -89,19 +89,19 @@ def load_inventory_from_scanpipe(project, scan_data):
 
 worksheet_name_to_object_maker = {
     "PACKAGES": pipes.update_or_create_package,
-    # TODO:
-    # CodebaseResource matching query does not exist.
-    # "DEPENDENCIES": pipes.update_or_create_dependency,
-    # Invalid field name(s) for model CodebaseResource: 'xlsx_errors'.
-    # "RESOURCES": pipes.update_or_create_resource,
-    # "RELATIONS": pipes.get_or_create_relation,
+    "DEPENDENCIES": pipes.update_or_create_dependency,
+    "RESOURCES": pipes.update_or_create_resource,
+    "RELATIONS": pipes.get_or_create_relation,
 }
 
 
 def get_worksheet_data(worksheet):
     """Return the data from provided ``worksheet`` as a list of dict."""
-    # TODO: Handle 1. empty sheet, 2. empty row, 3. unsupported field
-    header = [cell.value for cell in next(worksheet.rows)]
+    try:
+        header = [cell.value for cell in next(worksheet.rows)]
+    except StopIteration:
+        return {}
+
     worksheet_data = [
         dict(zip(header, row))
         for row in worksheet.iter_rows(min_row=2, values_only=True)
@@ -114,7 +114,7 @@ def load_inventory_from_xlsx(project, input_location):
     Create packages, dependencies, resources, and relations loaded from XLSX file
     located at ``input_location``.
     """
-    workbook = load_workbook(input_location, read_only=True, data_only=True)
+    workbook = openpyxl.load_workbook(input_location, read_only=True, data_only=True)
 
     for worksheet_name, object_maker in worksheet_name_to_object_maker.items():
         if worksheet_name not in workbook:
@@ -122,4 +122,7 @@ def load_inventory_from_xlsx(project, input_location):
 
         worksheet_data = get_worksheet_data(worksheet=workbook[worksheet_name])
         for entry_data in worksheet_data:
+            # TODO: "for_packages", "holders", "copyrights" are STR not JSON
+            if entry_data.get("for_packages"):
+                entry_data["for_packages"] = [entry_data["for_packages"]]
             object_maker(project, entry_data)
