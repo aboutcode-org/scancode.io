@@ -36,6 +36,8 @@ class LoadInventory(Pipeline):
     An inventory is composed of packages, dependencies, resources, and relations.
     """
 
+    supported_extensions = [".json", ".xlsx"]
+
     @classmethod
     def steps(cls):
         return (
@@ -45,10 +47,7 @@ class LoadInventory(Pipeline):
 
     def get_inputs(self):
         """Locate all the supported input files from the project's input/ directory."""
-        # TODO: Provide a common get_inputs(extension) function
-        self.input_paths = [
-            path for path in self.project.inputs() if path.suffix in (".json", ".xlsx")
-        ]
+        self.input_paths = self.project.inputs(extensions=self.supported_extensions)
 
     def build_inventory_from_scans(self):
         """

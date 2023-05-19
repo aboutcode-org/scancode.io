@@ -662,15 +662,26 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             for filename, source in self.input_sources.items()
         ]
 
-    def inputs(self, pattern="**/*"):
+    def inputs(self, pattern="**/*", extensions=None):
         """
         Return all files and directories path of the input/ directory matching
         a given `pattern`.
         The default `**/*` pattern means "this directory and all subdirectories,
         recursively".
         Use the `*` pattern to only list the root content.
+        The returned paths can be limited to the provided list of ``extensions``.
         """
-        return self.input_path.glob(pattern)
+        if not extensions:
+            return self.input_path.glob(pattern)
+
+        if not isinstance(extensions, (list, tuple)):
+            raise TypeError("extensions should be a list or tuple")
+
+        return (
+            path
+            for path in self.input_path.glob(pattern)
+            if str(path).endswith(tuple(extensions))
+        )
 
     @property
     def input_files(self):
