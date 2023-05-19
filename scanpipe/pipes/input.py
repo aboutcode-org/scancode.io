@@ -23,9 +23,17 @@
 import shutil
 from pathlib import Path
 
+from django.core.exceptions import FieldDoesNotExist
+from django.core.validators import EMPTY_VALUES
+from django.db import models
+
 import openpyxl
 
 from scanpipe import pipes
+from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
 
 
@@ -87,11 +95,18 @@ def load_inventory_from_scanpipe(project, scan_data):
         pipes.get_or_create_relation(project, relation_data)
 
 
-worksheet_name_to_object_maker = {
-    "PACKAGES": pipes.update_or_create_package,
-    "DEPENDENCIES": pipes.update_or_create_dependency,
-    "RESOURCES": pipes.update_or_create_resource,
-    "RELATIONS": pipes.get_or_create_relation,
+model_to_object_maker_func = {
+    DiscoveredPackage: pipes.update_or_create_package,
+    DiscoveredDependency: pipes.update_or_create_dependency,
+    CodebaseResource: pipes.update_or_create_resource,
+    CodebaseRelation: pipes.get_or_create_relation,
+}
+
+worksheet_name_to_model = {
+    "PACKAGES": DiscoveredPackage,
+    "RESOURCES": CodebaseResource,
+    "DEPENDENCIES": DiscoveredDependency,
+    "RELATIONS": CodebaseRelation,
 }
 
 
@@ -109,6 +124,33 @@ def get_worksheet_data(worksheet):
     return worksheet_data
 
 
+def clean_xlsx_data_to_model_data(model_class, xlsx_data):
+    """Clean the ``xlsx_data`` for compatibility with the database ``model_class``."""
+    opts = model_class._meta
+    cleaned_data = xlsx_data.copy()
+
+    for field_name, value in cleaned_data.items():
+        if value in EMPTY_VALUES:
+            continue
+
+        if field_name == "for_packages":
+            cleaned_data[field_name] = value.splitlines()
+            continue
+
+        try:
+            field = opts.get_field(field_name)
+        except FieldDoesNotExist:
+            continue
+
+        if isinstance(field, models.JSONField):
+            if field.default == list:
+                cleaned_data[field_name] = value.splitlines()
+            elif field.default == dict:
+                continue  # dict stored as JSON are not supported
+
+    return cleaned_data
+
+
 def load_inventory_from_xlsx(project, input_location):
     """
     Create packages, dependencies, resources, and relations loaded from XLSX file
@@ -116,13 +158,12 @@ def load_inventory_from_xlsx(project, input_location):
     """
     workbook = openpyxl.load_workbook(input_location, read_only=True, data_only=True)
 
-    for worksheet_name, object_maker in worksheet_name_to_object_maker.items():
+    for worksheet_name, model_class in worksheet_name_to_model.items():
         if worksheet_name not in workbook:
             continue
 
         worksheet_data = get_worksheet_data(worksheet=workbook[worksheet_name])
-        for entry_data in worksheet_data:
-            # TODO: "for_packages", "holders", "copyrights" are STR not JSON
-            if entry_data.get("for_packages"):
-                entry_data["for_packages"] = [entry_data["for_packages"]]
-            object_maker(project, entry_data)
+        for row_data in worksheet_data:
+            object_maker_func = model_to_object_maker_func.get(model_class)
+            cleaned_data = clean_xlsx_data_to_model_data(model_class, row_data)
+            object_maker_func(project, cleaned_data)

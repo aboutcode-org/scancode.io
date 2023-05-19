@@ -375,7 +375,7 @@ mappings_key_by_fieldname = {
 }
 
 
-def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
+def _adapt_value_for_xlsx(field_name, value, maximum_length=32767, _adapt=True):
     """
     Return two tuples of:
     (``value`` adapted for use in an XLSX cell, error message or None)
@@ -397,19 +397,18 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     if not value:
         return "", error
 
-    if fieldname == "description":
+    if field_name == "description":
         max_description_lines = 5
         value = "\n".join(value.splitlines(False)[:max_description_lines])
 
     # we only get this key in each dict of a list for some fields
-    mapping_key = mappings_key_by_fieldname.get(fieldname)
+    mapping_key = mappings_key_by_fieldname.get(field_name)
     if mapping_key:
         value = [mapping[mapping_key] for mapping in value]
 
     # convert these to text lines, remove duplicates
     if isinstance(value, (list, tuple)):
-        value = (str(v) for v in value if v)
-        value = ordered_unique(value)
+        value = ordered_unique(str(v) for v in value if v)
         value = "\n".join(value)
 
     # convert these to YAML which is the most readable dump format
@@ -425,8 +424,8 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     len_val = len(value)
     if len_val > maximum_length:
         error = (
-            f"The value of: {fieldname} has been truncated from: {len_val} "
-            f"to {maximum_length} length to fit in an XLSL cell maximum length"
+            f"The value of: {field_name} has been truncated from: {len_val} "
+            f"to {maximum_length} length to fit in an XLSX cell maximum length"
         )
         value = value[:maximum_length]
 

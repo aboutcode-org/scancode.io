@@ -674,6 +674,7 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                         data.get(field_name[:-1])
                         for entry in qs_values
                         for data in entry.get(field_name, [])
+                        if isinstance(data, dict)
                     )
                 else:
                     field_values = (entry[field_name] for entry in qs_values)
