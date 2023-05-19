@@ -26,13 +26,13 @@ from timeit import default_timer as timer
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
 from scanpipe.pipes import flag
 from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
-from scanpipe.pipes.js import PROSPECTIVE_JAVASCRIPT_MAP
 
 FROM = "from/"
 TO = "to/"
@@ -387,16 +387,25 @@ def get_diff_ratio(to_resource, from_resource):
     Return a similarity ratio as a float between 0 and 1 by comparing the
     text content of the ``to_resource`` and ``from_resource``.
 
-    Return None if any of the two resources are not text files or if files
+    Return None if any of the two resources are not str or text files or if files
     are not readable.
     """
-    if not (to_resource.is_text and from_resource.is_text):
-        return
+    if isinstance(to_resource, str):
+        to_lines = to_resource.splitlines()
+
+    if isinstance(from_resource, str):
+        from_lines = from_resource.splitlines()
 
     try:
-        to_lines = to_resource.location_path.read_text().splitlines()
-        from_lines = from_resource.location_path.read_text().splitlines()
+        if isinstance(to_resource, CodebaseResource) and to_resource.is_text:
+            to_lines = to_resource.location_path.read_text().splitlines()
+
+        if isinstance(from_resource, CodebaseResource) and from_resource.is_text:
+            from_lines = from_resource.location_path.read_text().splitlines()
     except Exception:
+        return
+
+    if not to_lines or not from_lines:
         return
 
     matcher = difflib.SequenceMatcher(a=from_lines, b=to_lines)
@@ -532,35 +541,34 @@ def map_javascript(project, logger=None):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
     project_files = project.codebaseresources.files().only("path")
 
-    javascript_extensions = PROSPECTIVE_JAVASCRIPT_MAP.keys()
-    from_resources = (
-        project_files.from_codebase()
-        .filter(extension__in=javascript_extensions)
+    to_resources = (
+        project_files.to_codebase()
+        .filter(extension=".map")
         .exclude(name__startswith=".")
     )
 
-    to_resources = project_files.to_codebase()
-    resource_count = from_resources.count()
-
-    # For most case in JavaScript we have one-to-many relation (single source file
-    # may generate up to 7-8 different files), in such case if we start by `to`
-    # side we will need to supply another layer of logic to selectively get those
-    # specific 7-8 file that might relate to a particular file from `from` side.
+    to_resources_minified = (
+        project_files.to_codebase()
+        .filter(extension__in=[".css", ".js"])
+        .exclude(name__startswith=".")
+    )
+    from_resources = project_files.from_codebase()
+    resource_count = to_resources.count()
 
     if logger:
         logger(
-            f"Mapping {resource_count:,d} from/ resources using javascript map "
-            f"against to/ codebase"
+            f"Mapping {resource_count:,d} to/ resources using javascript map "
+            f"against from/ codebase"
         )
 
-    to_resources_index = pathmap.build_index(
-        to_resources.values_list("id", "path"), with_subpaths=True
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
     )
 
-    resource_iterator = from_resources.iterator(chunk_size=2000)
+    resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
-    for resource_index, from_resource in enumerate(resource_iterator):
+    for resource_index, to_map in enumerate(resource_iterator):
         last_percent = pipes.log_progress(
             logger,
             resource_index,
@@ -569,69 +577,78 @@ def map_javascript(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _map_javascript_resource(from_resource, to_resources_index, to_resources)
+        _map_javascript_resource(
+            to_map, to_resources_minified, from_resources_index, from_resources
+        )
 
 
-def _map_javascript_resource(from_resource, to_resources_index, to_resources):
-    path = Path(from_resource.path.lstrip("/"))
+def get_minified_resource(map_resource, minified_resources):
+    """Return the corresponding minified file for a map file."""
+    path = Path(map_resource.path.lstrip("/"))
 
-    basename, from_extension = js.get_basename_and_extension(path.name)
-    path_parts = (path.parent / basename).parts
-    path_parts_len = len(path_parts)
+    minified_file, _ = path.name.split(".map")
+    minified_file_path = path.parent / minified_file
 
-    base_path = path.parent / basename
+    try:
+        minified_resource = minified_resources.get(path=minified_file_path)
+        if js.source_mapping_in_minified(minified_resource, path.name):
+            return minified_resource
+    except CodebaseResource.DoesNotExist:
+        pass
 
-    candidates = PROSPECTIVE_JAVASCRIPT_MAP.get(from_extension, [])
 
-    for candidate in candidates:
-        first_extension = candidate["to_related"][0]
-        match = pathmap.find_paths(f"{base_path}{first_extension}", to_resources_index)
-        if not match:
-            continue
+def _map_javascript_resource(
+    to_map, to_resources_minified, from_resources_index, from_resources
+):
+    content_sha1 = js.source_content_sha1(to_map)
+    sha1_matches = from_resources.filter(sha1__in=content_sha1)
 
-        # Only create relations when the number of matches if inferior or equal to
-        # the current number of path segment matched.
-        if len(match.resource_ids) > match.matched_path_length:
-            continue
+    # Only create relations when the number of sha1 matches if inferior or equal
+    # to the number of sourcesContent in map.
+    if len(sha1_matches) > len(content_sha1):
+        to_map.status = flag.TOO_MANY_MAPS
+        to_map.save()
+        return
 
-        for resource_id in match.resource_ids:
-            first_match = to_resources.get(id=resource_id)
+    matches = [(match, {}) for match in sha1_matches]
 
-            reversed_parent_segment = pathmap.get_reversed_path_segments(
-                str(Path(first_match.path).parent)
-            )
+    # Use diff_ratio if no sha1 match is found.
+    if not bool(matches):
+        sources = js.get_map_sources(to_map)
+        sources_content = js.get_map_sources_content(to_map)
 
-            # Collect the transformed files within the same parent directory.
-            matches = []
-            for extension in candidate["to_related"]:
-                reversed_segments = [f"{basename}{extension}"] + reversed_parent_segment
-                resource_key = pathmap.convert_segments_to_path(reversed_segments)
-                if to_resources_index.exists(resource_key):
-                    value = to_resources_index.get(resource_key)
-                    matches.append(to_resources.get(id=value[1][0]))
+        for source, content in zip(sources, sources_content):
+            prospect = pathmap.find_paths(source, from_resources_index)
 
-            is_compiled = js.is_minified_and_map_compiled_from_source(
-                matches,
-                from_resource,
-                minified_extension=candidate["to_minified_ext"],
-            )
-
-            if not is_compiled and bool(candidate["to_minified_ext"]):
+            # Only create relations when the number of matches if inferior or equal to
+            # the current number of path segment matched.
+            if (
+                not prospect
+                or len(prospect.resource_ids) > prospect.matched_path_length
+            ):
                 continue
 
-            # For those mappings where path matching is the only confirmation,
-            # since they don't have any map file, label such relations as `js_path`.
-            map_type = "js_compiled" if is_compiled else "js_path"
+            for resource_id in prospect.resource_ids:
+                from_source = from_resources.get(id=resource_id)
 
-            extra_data = {
-                "path_score": f"{match.matched_path_length}/{path_parts_len - 1}",
-            }
-
-            for match in matches:
-                pipes.make_relation(
-                    from_resource=from_resource,
-                    to_resource=match,
-                    map_type=map_type,
-                    extra_data=extra_data,
+                diff_ratio = get_diff_ratio(
+                    to_resource=content, from_resource=from_source
                 )
-            break
+
+                if diff_ratio is None or diff_ratio < 0.98:
+                    continue
+
+                matches.append((from_source, {"diff_ratio": f"{diff_ratio:.1%}"}))
+
+    transpiled = [to_map]
+    if minified_resource := get_minified_resource(to_map, to_resources_minified):
+        transpiled.append(minified_resource)
+
+    for resource in transpiled:
+        for match, extra_data in matches:
+            pipes.make_relation(
+                from_resource=match,
+                to_resource=resource,
+                map_type="js_compiled",
+                extra_data=extra_data,
+            )

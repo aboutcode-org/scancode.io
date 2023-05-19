@@ -22,118 +22,16 @@
 
 import hashlib
 import json
-from pathlib import Path
-
-# `PROSPECTIVE_JAVASCRIPT_MAP` maps source file extensions to a list of dict
-# that specifies extension of transformed files. The `to_minified_ext` key in
-# each dict specifies the file extension of the transformed minified file, and
-# the `to_related` key specifies the related file extensions that are generated
-# alongside the transformed file (inclusive of minified file extension).
-#
-# For example, the `.scss` key maps to a list of two dict. The first dict
-# specifies that `.scss` file is transformed into minified `.css` files along
-# with `.css.map` and `_rtl.css`, and the second dict specifies that `.scss`
-# is also transformed into minified `.scss.js` file along with `.scss.js.map`.
-
-PROSPECTIVE_JAVASCRIPT_MAP = {
-    ".scss": [
-        {
-            "to_minified_ext": ".css",
-            "to_related": [".css", ".css.map", "_rtl.css"],
-        },
-        {
-            "to_minified_ext": ".scss.js",
-            "to_related": [".scss.js", ".scss.js.map"],
-        },
-    ],
-    ".js": [
-        {
-            "to_minified_ext": ".js",
-            "to_related": [".js", ".js.map"],
-        },
-    ],
-    ".jsx": [
-        {
-            "to_minified_ext": ".js",
-            "to_related": [".jsx", ".js", ".js.map"],
-        },
-    ],
-    ".ts": [
-        {
-            "to_minified_ext": ".js",
-            "to_related": [".ts", ".js", ".js.map"],
-        },
-    ],
-    ".d.ts": [
-        {
-            "to_minified_ext": None,
-            "to_related": [".ts"],
-        },
-    ],
-    ".css": [
-        {
-            "to_minified_ext": ".css",
-            "to_related": [".css", ".css.map"],
-        },
-    ],
-}
 
 
-def is_minified_and_map_compiled_from_source(
-    to_resources, from_source, minified_extension
-):
-    """Return True if a minified file and its map were compiled from a source file."""
-    if not minified_extension:
-        return False
-    path = Path(from_source.path.lstrip("/"))
-    basename, extension = get_basename_and_extension(path.name)
-    minified_file, minified_map_file = None, None
-
-    source_mapping = f"sourceMappingURL={basename}{minified_extension}.map"
-
-    for resource in to_resources:
-        if resource.path.endswith(minified_extension):
-            minified_file = resource
-        elif resource.path.endswith(f"{minified_extension}.map"):
-            minified_map_file = resource
-
-    if minified_file and minified_map_file:
-        # Check minified_file contains reference to the source file.
-        if source_mapping_in_minified(minified_file, source_mapping):
-            # Check source file's content is in the map file or if the
-            # source file path is in the map file.
-            if source_content_in_map(minified_map_file, from_source) or source_in_map(
-                minified_map_file, str(path)
-            ):
-                return True
-
-    return False
-
-
-def source_mapping_in_minified(resource, source_mapping):
-    """Return True if a string contains a specific string in its last 5 lines."""
+def source_mapping_in_minified(resource, map_file_name):
+    """Return True if a string contains a source mapping in its last 5 lines."""
+    source_mapping = f"sourceMappingURL={map_file_name}"
     lines = resource.file_content.split("\n")
     total_lines = len(lines)
     # Get the last 5 lines.
     tail = 5 if total_lines > 5 else total_lines
     return any(source_mapping in line for line in reversed(lines[-tail:]))
-
-
-def source_in_map(map_file, source_file_path):
-    """
-    Return True if the given source file path exists in the sources list of the
-    specified map file.
-    """
-    with open(map_file.location) as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError:
-            return False
-
-    sources = data.get("sources", [])
-    # Extract the longest possible path that can be used for matching.
-    sources = [source.rsplit("../", 1)[-1] for source in sources if source]
-    return any(source_file_path.endswith(source) for source in sources)
 
 
 def sha1(content):
@@ -142,28 +40,32 @@ def sha1(content):
     return hash_object.hexdigest()
 
 
-def source_content_in_map(map_file, source_file):
-    """Return True if the given source content is in specified map file."""
+def source_content_sha1(map_file):
+    """Return list containing sha1 of sourcesContent."""
+    contents = get_map_sources_content(map_file)
+    return [sha1(content) for content in contents if content]
+
+
+def get_map_sources(map_file):
+    """Return source paths from a map file."""
     with open(map_file.location) as f:
         try:
             data = json.load(f)
         except json.JSONDecodeError:
-            return False
+            return []
+
+    sources = data.get("sources", [])
+    sources = [source.rsplit("../", 1)[-1] for source in sources if source]
+    return sources
+
+
+def get_map_sources_content(map_file):
+    """Return sources contents from a map file."""
+    with open(map_file.location) as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError:
+            return []
 
     contents = data.get("sourcesContent", [])
-    return any(source_file.sha1 == sha1(content) for content in contents)
-
-
-def get_basename_and_extension(filename):
-    """Return the basename and extension of a JavaScript/TypeScript related file."""
-    # The order of extensions in the list matters since
-    # `.d.ts` should be tested first before `.ts`.
-    js_extensions = [".d.ts", ".ts", ".js", ".jsx", ".scss", ".css"]
-    for ext in js_extensions:
-        if filename.endswith(ext):
-            extension = ext
-            break
-    else:
-        raise ValueError(f"{filename} is not JavaScript related")
-    basename = filename[: -len(extension)]
-    return basename, extension
+    return contents
