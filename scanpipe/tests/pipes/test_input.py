@@ -25,6 +25,7 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from scanpipe.models import Project
 from scanpipe.pipes import input
 
 
@@ -49,3 +50,13 @@ class ScanPipeInputPipesTest(TestCase):
             scan_data=json.loads(input_location.read_text())
         )
         self.assertEqual("scancode-toolkit", tool_name)
+
+    def test_scanpipe_pipes_input_load_inventory_from_xlsx(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "outputs" / "asgiref-3.6.0-output.xlsx"
+
+        input.load_inventory_from_xlsx(project1, input_location)
+        self.assertEqual(20, project1.codebaseresources.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
+        self.assertEqual(8, project1.discovereddependencies.count())
+        self.assertEqual(0, project1.codebaserelations.count())
