@@ -73,7 +73,12 @@
     {% block license-list %}
       <h2 id="license_texts">Licenses that apply to {{ project.name }}</h2>
       {% for license in licenses %}
-        <h3 id="license_{{ license.key }}">{{ license.spdx_license_key }}</h3>
+        <h3 id="license_{{ license.key }}">
+          {{ license.spdx_license_key }}
+        </h3>
+        <a href="{{ license.licensedb_url}}" target="_blank">
+          {{ license.licensedb_url}}
+        </a>
         <pre>{{ license.text }}</pre>
         <hr>
       {% endfor %}
