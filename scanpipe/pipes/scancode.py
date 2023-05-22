@@ -481,7 +481,7 @@ def get_virtual_codebase(project, input_location):
     return VirtualCodebase(input_location, temp_dir=str(temp_path), max_in_memory=0)
 
 
-def create_codebase_resources(project, scanned_codebase):
+def create_codebase_resources(project, scanned_codebase, **kwargs):
     """
     Save the resources of a ScanCode `scanned_codebase` scancode.resource.Codebase
     object to the database as a CodebaseResource of the `project`.
@@ -509,6 +509,7 @@ def create_codebase_resources(project, scanned_codebase):
             project=project,
             path=resource_path,
             defaults=resource_data,
+            **kwargs,
         )
 
         for_packages = getattr(scanned_resource, "for_packages", [])
@@ -644,3 +645,34 @@ def make_results_summary(project, scan_results_location):
     ]
 
     return summary
+
+
+def load_inventory_from_toolkit_scan(project, input_location, **kwargs):
+    """
+    Create packages, dependencies, and resources loaded from the ScanCode-toolkit scan
+    results located at `input_location`.
+    """
+    scanned_codebase = get_virtual_codebase(project, input_location)
+    create_discovered_packages(project, scanned_codebase)
+    create_codebase_resources(project, scanned_codebase, **kwargs)
+    create_discovered_dependencies(
+        project, scanned_codebase, strip_datafile_path_root=True
+    )
+
+
+def load_inventory_from_scanpipe(project, scan_data):
+    """
+    Create packages, dependencies, and resources loaded from a ScanCode.io JSON output
+    provided as `scan_data`.
+    """
+    for package_data in scan_data.get("packages", []):
+        pipes.update_or_create_package(project, package_data)
+
+    for resource_data in scan_data.get("files", []):
+        pipes.update_or_create_resource(project, resource_data)
+
+    for dependency_data in scan_data.get("dependencies", []):
+        pipes.update_or_create_dependency(project, dependency_data)
+
+    for relation_data in scan_data.get("relations", []):
+        pipes.get_or_create_relation(project, relation_data)
