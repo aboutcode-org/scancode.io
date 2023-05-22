@@ -125,34 +125,41 @@ def get_worksheet_data(worksheet):
     return worksheet_data
 
 
+def clean_xlsx_field_value(model_class, field_name, value):
+    """Clean the ``value`` for compatibility with the database ``model_class``."""
+    if value in EMPTY_VALUES:
+        return
+
+    if field_name == "for_packages":
+        return value.splitlines()
+
+    elif field_name in ["purl", "for_package_uid", "datafile_path"]:
+        return value
+
+    try:
+        field = model_class._meta.get_field(field_name)
+    except FieldDoesNotExist:
+        return
+
+    if dict_key := mappings_key_by_fieldname.get(field_name):
+        return [{dict_key: entry} for entry in value.splitlines()]
+
+    elif isinstance(field, models.JSONField):
+        if field.default == list:
+            return value.splitlines()
+        elif field.default == dict:
+            return  # dict stored as JSON are not supported
+
+    return value
+
+
 def clean_xlsx_data_to_model_data(model_class, xlsx_data):
     """Clean the ``xlsx_data`` for compatibility with the database ``model_class``."""
-    opts = model_class._meta
-    cleaned_data = xlsx_data.copy()
+    cleaned_data = {}
 
-    for field_name, value in cleaned_data.items():
-        if value in EMPTY_VALUES:
-            continue
-
-        if field_name == "for_packages":
-            cleaned_data[field_name] = value.splitlines()
-            continue
-
-        try:
-            field = opts.get_field(field_name)
-        except FieldDoesNotExist:
-            continue
-
-        if dict_key := mappings_key_by_fieldname.get(field_name):
-            cleaned_data[field_name] = [
-                {dict_key: entry} for entry in value.splitlines()
-            ]
-
-        elif isinstance(field, models.JSONField):
-            if field.default == list:
-                cleaned_data[field_name] = value.splitlines()
-            elif field.default == dict:
-                continue  # dict stored as JSON are not supported
+    for field_name, value in xlsx_data.items():
+        if cleaned_value := clean_xlsx_field_value(model_class, field_name, value):
+            cleaned_data[field_name] = cleaned_value
 
     return cleaned_data
 
@@ -170,10 +177,7 @@ def load_inventory_from_xlsx(project, input_location):
 
         worksheet_data = get_worksheet_data(worksheet=workbook[worksheet_name])
         for row_data in worksheet_data:
-            is_empty_row = not any(row_data.values())
-            if is_empty_row:
-                continue
-
             object_maker_func = model_to_object_maker_func.get(model_class)
             cleaned_data = clean_xlsx_data_to_model_data(model_class, row_data)
-            object_maker_func(project, cleaned_data)
+            if cleaned_data:
+                object_maker_func(project, cleaned_data)

@@ -27,6 +27,7 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import Project
 from scanpipe.pipes import input
 from scanpipe.pipes import output
@@ -80,11 +81,10 @@ class ScanPipeInputPipesTest(TestCase):
         self.assertEqual(4, project2.discovereddependencies.count())
         self.assertEqual(0, project2.codebaserelations.count())
 
-    def test_scanpipe_pipes_input_clean_xlsx_data_to_model_data(self):
+    def test_scanpipe_pipes_input_clean_xlsx_data_to_model_data_resource(self):
         xlsx_data = {"field_does_not_exist": "value", "path": None}
-        expected = {"field_does_not_exist": "value", "path": None}
         results = input.clean_xlsx_data_to_model_data(CodebaseResource, xlsx_data)
-        self.assertEqual(expected, results)
+        self.assertEqual({}, results)
 
         xlsx_data = {
             "path": "asgiref-3.6.0.dist-info/LICENSE",
@@ -93,7 +93,7 @@ class ScanPipeInputPipesTest(TestCase):
             "size": "1552",
             "md5": "f09eb47206614a4954c51db8a94840fa",
             "copyrights": "Copyright 1\nCopyright 2",
-            "holders": "Django Software Foundation and individual contributors",
+            "holders": "Django Software Foundation",
             "for_packages": "pkg:pypi/package@1.0\npkg:pypi/package@2.0",
         }
 
@@ -101,13 +101,43 @@ class ScanPipeInputPipesTest(TestCase):
         expected = {
             "path": "asgiref-3.6.0.dist-info/LICENSE",
             "name": "LICENSE",
-            "tag": None,
             "size": "1552",
             "md5": "f09eb47206614a4954c51db8a94840fa",
             "copyrights": [{"copyright": "Copyright 1"}, {"copyright": "Copyright 2"}],
-            "holders": [
-                {"holder": "Django Software Foundation and individual contributors"}
-            ],
+            "holders": [{"holder": "Django Software Foundation"}],
             "for_packages": ["pkg:pypi/package@1.0", "pkg:pypi/package@2.0"],
+        }
+        self.assertEqual(expected, results)
+
+    def test_scanpipe_pipes_input_clean_xlsx_data_to_model_data_dependency(self):
+        xlsx_data = {"field_does_not_exist": "value", "path": None}
+        results = input.clean_xlsx_data_to_model_data(DiscoveredDependency, xlsx_data)
+        self.assertEqual({}, results)
+
+        xlsx_data = {
+            "purl": "pkg:pypi/typing-extensions",
+            "extracted_requirement": 'typing-extensions; python_version < "3.8"',
+            "scope": "install",
+            "is_runtime": "True",
+            "is_optional": None,
+            "is_resolved": None,
+            "dependency_uid": "pkg:pypi/typing-extensions?uuid=57a6f83a-1763",
+            "for_package_uid": "pkg:pypi/asgiref@3.6.0?uuid=0aa676d0-240c-4838",
+            "datafile_path": "asgiref-3.6.0.dist-info/METADATA",
+            "datasource_id": "pypi_wheel_metadata",
+            "package_type": "pypi",
+            "xlsx_errors": None,
+        }
+
+        results = input.clean_xlsx_data_to_model_data(DiscoveredDependency, xlsx_data)
+        expected = {
+            "purl": "pkg:pypi/typing-extensions",
+            "extracted_requirement": 'typing-extensions; python_version < "3.8"',
+            "scope": "install",
+            "is_runtime": "True",
+            "dependency_uid": "pkg:pypi/typing-extensions?uuid=57a6f83a-1763",
+            "for_package_uid": "pkg:pypi/asgiref@3.6.0?uuid=0aa676d0-240c-4838",
+            "datafile_path": "asgiref-3.6.0.dist-info/METADATA",
+            "datasource_id": "pypi_wheel_metadata",
         }
         self.assertEqual(expected, results)
