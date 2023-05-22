@@ -654,3 +654,5 @@ def _map_javascript_resource(
                 map_type="js_compiled",
                 extra_data=extra_data,
             )
+            resource.status = ""
+            resource.save()
