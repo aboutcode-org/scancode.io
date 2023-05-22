@@ -390,6 +390,8 @@ def get_diff_ratio(to_resource, from_resource):
     Return None if any of the two resources are not str or text files or if files
     are not readable.
     """
+    to_lines, from_lines = None, None
+
     if isinstance(to_resource, str):
         to_lines = to_resource.splitlines()
 

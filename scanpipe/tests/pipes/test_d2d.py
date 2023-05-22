@@ -156,6 +156,10 @@ class ScanPipeD2DPipesTest(TestCase):
         resource2_content = open(resource_files[1], "r").read()
         self.assertEqual(0.5, d2d.get_diff_ratio(resource1, resource2_content))
 
+        self.assertEqual(None, d2d.get_diff_ratio(resource1, None))
+
+        self.assertEqual(None, d2d.get_diff_ratio(resource1, 121))
+
     @mock.patch("scanpipe.pipes.purldb.match_by_sha1")
     def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_by_sha1):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
