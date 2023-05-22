@@ -55,6 +55,53 @@ class ScanPipeInputPipesTest(TestCase):
         )
         self.assertEqual("scancode-toolkit", tool_name)
 
+    def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
+        project = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
+        input.load_inventory_from_toolkit_scan(project, input_location)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(4, project.discovereddependencies.count())
+
+    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe(self):
+        project = Project.objects.create(name="1")
+        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
+        scan_data = json.loads(input_location.read_text())
+        input.load_inventory_from_scanpipe(project, scan_data)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(4, project.discovereddependencies.count())
+
+        # Load again to ensure there is no duplication
+        input.load_inventory_from_scanpipe(project, scan_data)
+        self.assertEqual(18, project.codebaseresources.count())
+        self.assertEqual(2, project.discoveredpackages.count())
+        self.assertEqual(4, project.discovereddependencies.count())
+
+        # Using the JSON output of project1 to load into project2
+        project2 = Project.objects.create(name="2")
+        output_file = output.to_json(project=project)
+        scan_data = json.loads(output_file.read_text())
+        input.load_inventory_from_scanpipe(project2, scan_data)
+        self.assertEqual(18, project2.codebaseresources.count())
+        self.assertEqual(2, project2.discoveredpackages.count())
+        self.assertEqual(4, project2.discovereddependencies.count())
+
+    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe_with_relations(self):
+        project = Project.objects.create(name="1")
+        input_location = self.data_location / "flume-ng-node-d2d.json"
+        scan_data = json.loads(input_location.read_text())
+        input.load_inventory_from_scanpipe(project, scan_data)
+        self.assertEqual(57, project.codebaseresources.count())
+        self.assertEqual(0, project.discoveredpackages.count())
+        self.assertEqual(0, project.discovereddependencies.count())
+        self.assertEqual(18, project.codebaserelations.count())
+
+        # Load again to ensure there is no duplication
+        input.load_inventory_from_scanpipe(project, scan_data)
+        self.assertEqual(57, project.codebaseresources.count())
+        self.assertEqual(18, project.codebaserelations.count())
+
     def test_scanpipe_pipes_input_load_inventory_from_xlsx(self):
         project1 = Project.objects.create(name="Analysis")
         input_location = self.data_location / "outputs" / "asgiref-3.6.0-output.xlsx"
