@@ -356,10 +356,10 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 
 # Some scan attributes such as "copyrights" are list of dicts.
 #
-#  'authors': [{'end_line': 7, 'start_line': 7, 'value': 'John Doe'}],
-#  'copyrights': [{'end_line': 5, 'start_line': 5, 'value': 'Copyright (c) nexB Inc.'}],
+#  'authors': [{'end_line': 7, 'start_line': 7, 'author': 'John Doe'}],
+#  'copyrights': [{'end_line': 5, 'start_line': 5, 'copyright': 'Copyright (c) nexB'}],
 #  'emails': [{'email': 'joe@foobar.com', 'end_line': 1, 'start_line': 1}],
-#  'holders': [{'end_line': 5, 'start_line': 5, 'value': 'nexB Inc.'}],
+#  'holders': [{'end_line': 5, 'start_line': 5, 'holder': 'nexB Inc.'}],
 #  'urls': [{'end_line': 3, 'start_line': 3, 'url': 'https://foobar.com/'}]
 #
 # We therefore use a mapping to find which key to use in these mappings until
@@ -445,7 +445,6 @@ def to_xlsx(project):
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = [
         "extra_data",
-        "extracted_license_statement",
         "license_detections",
         "other_license_detections",
         "license_clues",
