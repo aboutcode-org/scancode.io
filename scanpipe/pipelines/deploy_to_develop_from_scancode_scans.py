@@ -21,19 +21,19 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
-import os
+
 from scanpipe.pipelines.deploy_to_develop import DeployToDevelop
 from scanpipe.pipelines.load_inventory import LoadInventory
-from scanpipe.pipes import scancode
 from scanpipe.pipes import input
+from scanpipe.pipes import scancode
 
 
 class DeployToDevelopFromScancodeScans(DeployToDevelop, LoadInventory):
     """
     Relate deploy and develop code trees.
 
-    This pipeline is expecting 1 scancode-toolkit scan 1 archive file with "from-" and "to-" filename
-    prefixes as inputs:
+    This pipeline is expecting 1 scancode-toolkit scan 1 archive file with "from-" and
+    "to-" filename prefixes as inputs:
     - "from-[FILENAME]" json containing the scancode-toolkit scan results
     - "to-[FILENAME]" archive containing the deployment compiled code
     """
@@ -61,7 +61,7 @@ class DeployToDevelopFromScancodeScans(DeployToDevelop, LoadInventory):
 
         if errors:
             self.add_error("\n".join(errors))
-    
+
     def build_inventory_from_scans(self):
         """
         Process JSON scan results files to populate packages, dependencies, and
@@ -71,6 +71,8 @@ class DeployToDevelopFromScancodeScans(DeployToDevelop, LoadInventory):
         tool_name = input.get_tool_name_from_scan_headers(scan_data)
 
         if tool_name == "scancode-toolkit":
-            scancode.load_inventory_from_toolkit_scan(self.project, self.from_file, tag="from")
+            scancode.load_inventory_from_toolkit_scan(
+                self.project, self.from_file, tag="from"
+            )
         else:
             raise Exception(f"Input not supported: {str(self.from_file)} ")
