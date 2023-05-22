@@ -83,23 +83,23 @@ def make_codebase_resource(project, location, **extra_fields):
 
 def update_or_create_resource(project, resource_data):
     """Get, update or create a CodebaseResource then return it."""
-    resource_path = resource_data.get("path")
-    for_packages = resource_data.pop("for_packages", [])
+    for_packages = resource_data.pop("for_packages", None) or []
 
-    codebase_resource, _ = CodebaseResource.objects.get_or_create(
+    resource = CodebaseResource.objects.get_or_none(
         project=project,
-        path=resource_path,
-        defaults=resource_data,
+        path=resource_data.get("path"),
     )
 
-    if codebase_resource:
-        codebase_resource.update_from_data(resource_data)
+    if resource:
+        resource.update_from_data(resource_data)
+    else:
+        resource = CodebaseResource.create_from_data(project, resource_data)
 
     for package_uid in for_packages:
         package = project.discoveredpackages.get(package_uid=package_uid)
-        codebase_resource.add_package(package)
+        resource.add_package(package)
 
-    return codebase_resource
+    return resource
 
 
 def _clean_package_data(package_data):
