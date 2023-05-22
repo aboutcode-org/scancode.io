@@ -23,10 +23,13 @@
 import json
 from pathlib import Path
 
+from django.core.management import call_command
 from django.test import TestCase
 
+from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import input
+from scanpipe.pipes import output
 
 
 class ScanPipeInputPipesTest(TestCase):
@@ -54,9 +57,57 @@ class ScanPipeInputPipesTest(TestCase):
     def test_scanpipe_pipes_input_load_inventory_from_xlsx(self):
         project1 = Project.objects.create(name="Analysis")
         input_location = self.data_location / "outputs" / "asgiref-3.6.0-output.xlsx"
-
         input.load_inventory_from_xlsx(project1, input_location)
         self.assertEqual(20, project1.codebaseresources.count())
         self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(8, project1.discovereddependencies.count())
         self.assertEqual(0, project1.codebaserelations.count())
+
+    def test_scanpipe_pipes_input_load_inventory_from_project_xlsx_output(self):
+        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project1 = Project.objects.get(name="asgiref")
+        xlsx_output = output.to_xlsx(project1)
+        self.assertEqual(18, project1.codebaseresources.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
+        self.assertEqual(4, project1.discovereddependencies.count())
+        self.assertEqual(0, project1.codebaserelations.count())
+
+        project2 = Project.objects.create(name="project2")
+        input.load_inventory_from_xlsx(project2, xlsx_output)
+        self.assertEqual(18, project2.codebaseresources.count())
+        self.assertEqual(2, project2.discoveredpackages.count())
+        self.assertEqual(4, project2.discovereddependencies.count())
+        self.assertEqual(0, project2.codebaserelations.count())
+
+    def test_scanpipe_pipes_input_clean_xlsx_data_to_model_data(self):
+        xlsx_data = {"field_does_not_exist": "value", "path": None}
+        expected = {"field_does_not_exist": "value", "path": None}
+        results = input.clean_xlsx_data_to_model_data(CodebaseResource, xlsx_data)
+        self.assertEqual(expected, results)
+
+        xlsx_data = {
+            "path": "asgiref-3.6.0.dist-info/LICENSE",
+            "name": "LICENSE",
+            "tag": None,
+            "size": "1552",
+            "md5": "f09eb47206614a4954c51db8a94840fa",
+            "copyrights": "Copyright 1\nCopyright 2",
+            "holders": "Django Software Foundation and individual contributors",
+            "for_packages": "pkg:pypi/package@1.0\npkg:pypi/package@2.0",
+        }
+
+        results = input.clean_xlsx_data_to_model_data(CodebaseResource, xlsx_data)
+        expected = {
+            "path": "asgiref-3.6.0.dist-info/LICENSE",
+            "name": "LICENSE",
+            "tag": None,
+            "size": "1552",
+            "md5": "f09eb47206614a4954c51db8a94840fa",
+            "copyrights": [{"copyright": "Copyright 1"}, {"copyright": "Copyright 2"}],
+            "holders": [
+                {"holder": "Django Software Foundation and individual contributors"}
+            ],
+            "for_packages": ["pkg:pypi/package@1.0", "pkg:pypi/package@2.0"],
+        }
+        self.assertEqual(expected, results)

@@ -35,6 +35,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import scancode
+from scanpipe.pipes.output import mappings_key_by_fieldname
 
 
 def copy_input(input_location, dest_path):
@@ -142,7 +143,12 @@ def clean_xlsx_data_to_model_data(model_class, xlsx_data):
         except FieldDoesNotExist:
             continue
 
-        if isinstance(field, models.JSONField):
+        if dict_key := mappings_key_by_fieldname.get(field_name):
+            cleaned_data[field_name] = [
+                {dict_key: entry} for entry in value.splitlines()
+            ]
+
+        elif isinstance(field, models.JSONField):
             if field.default == list:
                 cleaned_data[field_name] = value.splitlines()
             elif field.default == dict:
@@ -164,6 +170,10 @@ def load_inventory_from_xlsx(project, input_location):
 
         worksheet_data = get_worksheet_data(worksheet=workbook[worksheet_name])
         for row_data in worksheet_data:
+            is_empty_row = not any(row_data.values())
+            if is_empty_row:
+                continue
+
             object_maker_func = model_to_object_maker_func.get(model_class)
             cleaned_data = clean_xlsx_data_to_model_data(model_class, row_data)
             object_maker_func(project, cleaned_data)

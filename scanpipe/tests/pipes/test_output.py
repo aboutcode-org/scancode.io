@@ -354,7 +354,7 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
             None,
             "fffffffffffffffffffffffffffffffffffffffffff0123456",
             None,
-            "32767 length to fit in an XLSL cell maximum length",
+            "32767 length to fit in an XLSX cell maximum length",
         ]
 
         for r, x in zip(values, expected):

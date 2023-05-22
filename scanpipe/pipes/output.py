@@ -362,10 +362,7 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 #  'holders': [{'end_line': 5, 'start_line': 5, 'holder': 'nexB Inc.'}],
 #  'urls': [{'end_line': 3, 'start_line': 3, 'url': 'https://foobar.com/'}]
 #
-# We therefore use a mapping to find which key to use in these mappings until
-# this is fixed updated in scancode-toolkit with these:
-# https://github.com/nexB/scancode-toolkit/pull/2381
-# https://github.com/nexB/scancode-toolkit/issues/2350
+# We therefore use a mapping to find which key to use:
 mappings_key_by_fieldname = {
     "copyrights": "copyright",
     "holders": "holder",
@@ -375,7 +372,7 @@ mappings_key_by_fieldname = {
 }
 
 
-def _adapt_value_for_xlsx(field_name, value, maximum_length=32767, _adapt=True):
+def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     """
     Return two tuples of:
     (``value`` adapted for use in an XLSX cell, error message or None)
@@ -397,12 +394,12 @@ def _adapt_value_for_xlsx(field_name, value, maximum_length=32767, _adapt=True):
     if not value:
         return "", error
 
-    if field_name == "description":
+    if fieldname == "description":
         max_description_lines = 5
         value = "\n".join(value.splitlines(False)[:max_description_lines])
 
     # we only get this key in each dict of a list for some fields
-    mapping_key = mappings_key_by_fieldname.get(field_name)
+    mapping_key = mappings_key_by_fieldname.get(fieldname)
     if mapping_key:
         value = [mapping[mapping_key] for mapping in value]
 
@@ -424,7 +421,7 @@ def _adapt_value_for_xlsx(field_name, value, maximum_length=32767, _adapt=True):
     len_val = len(value)
     if len_val > maximum_length:
         error = (
-            f"The value of: {field_name} has been truncated from: {len_val} "
+            f"The value of: {fieldname} has been truncated from: {len_val} "
             f"to {maximum_length} length to fit in an XLSX cell maximum length"
         )
         value = value[:maximum_length]
@@ -438,13 +435,14 @@ def to_xlsx(project):
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
 
-    Note that the XLSX worksheets contain each an extra "xlxs_errors" column
+    Note that the XLSX worksheets contain each an extra "xlsx_errors" column
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
     """
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = [
         "extra_data",
+        "package_data",
         "license_detections",
         "other_license_detections",
         "license_clues",
