@@ -21,11 +21,13 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import difflib
+from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
 from scanpipe.pipes import flag
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
@@ -63,17 +65,36 @@ def get_resource_codebase_root(project, resource_path):
     return ""
 
 
-def collect_and_create_codebase_resources(project):
+def yield_resources_from_codebase(project):
+    """
+    Yield CodebaseResource instances, including their ``info`` data, ready to be
+    inserted in the database using ``save()`` or ``bulk_create()``.
+    """
+    for resource_path in project.walk_codebase_path():
+        yield pipes.make_codebase_resource(
+            project=project,
+            location=resource_path,
+            save=False,
+            tag=get_resource_codebase_root(project, resource_path),
+        )
+
+
+def collect_and_create_codebase_resources(project, batch_size=5000):
     """
     Collect and create codebase resources including the "to/" and "from/" context using
     the resource tag field.
+
+    The default ``batch_size`` can be overriden, although the benefits of a value
+    greater than 5000 objects are usually not significant.
     """
-    for resource_path in project.walk_codebase_path():
-        pipes.make_codebase_resource(
-            project=project,
-            location=resource_path,
-            tag=get_resource_codebase_root(project, resource_path),
-        )
+    model_class = CodebaseResource
+    objs = yield_resources_from_codebase(project)
+
+    while True:
+        batch = list(islice(objs, batch_size))
+        if not batch:
+            break
+        model_class.objects.bulk_create(batch, batch_size)
 
 
 def get_extracted_path(resource):
