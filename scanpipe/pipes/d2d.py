@@ -66,6 +66,10 @@ def get_resource_codebase_root(project, resource_path):
 
 
 def yield_resources_from_codebase(project):
+    """
+    Yield CodebaseResource instances, including their ``info`` data, ready to be
+    inserted in the database using ``save()`` or ``bulk_create()``.
+    """
     for resource_path in project.walk_codebase_path():
         yield pipes.make_codebase_resource(
             project=project,
