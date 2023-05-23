@@ -83,6 +83,9 @@ def collect_and_create_codebase_resources(project, batch_size=5000):
     """
     Collect and create codebase resources including the "to/" and "from/" context using
     the resource tag field.
+
+    The default ``batch_size`` can be overriden, although the benefits of a value
+    greater than 5000 objects are usually not significant.
     """
     model_class = CodebaseResource
     objs = yield_resources_from_codebase(project)
