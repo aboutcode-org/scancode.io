@@ -65,14 +65,14 @@ def get_tool_name_from_scan_headers(scan_data):
         return tool_name
 
 
-def load_inventory_from_toolkit_scan(project, input_location):
+def load_inventory_from_toolkit_scan(project, input_location, **kwargs):
     """
     Create packages, dependencies, and resources loaded from the ScanCode-toolkit scan
     results located at ``input_location``.
     """
     scanned_codebase = scancode.get_virtual_codebase(project, input_location)
     scancode.create_discovered_packages(project, scanned_codebase)
-    scancode.create_codebase_resources(project, scanned_codebase)
+    scancode.create_codebase_resources(project, scanned_codebase, **kwargs)
     scancode.create_discovered_dependencies(
         project, scanned_codebase, strip_datafile_path_root=True
     )

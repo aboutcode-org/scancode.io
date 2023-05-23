@@ -71,7 +71,7 @@ class DeployToDevelopFromScancodeScans(DeployToDevelop, LoadInventory):
         tool_name = input.get_tool_name_from_scan_headers(scan_data)
 
         if tool_name == "scancode-toolkit":
-            scancode.load_inventory_from_toolkit_scan(
+            input.load_inventory_from_toolkit_scan(
                 self.project, self.from_file, tag="from"
             )
         else:
