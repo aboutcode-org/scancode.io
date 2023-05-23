@@ -587,3 +587,55 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = self.project1.codebaserelations.all()
         self.assertEqual(from_resource, relation[0].from_resource)
         self.assertEqual(from_resource, relation[1].from_resource)
+
+    @mock.patch("scanpipe.pipes.purldb.match_resource_by_sha1")
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_pipes_d2d_match_js_purldb(
+        self, mock_match_resource_by_sha1, mock_request_get
+    ):
+        to_location = self.data_location / "d2d-javascript" / "to" / "unmain.js.map"
+        to_dir = (
+            self.project1.codebase_path
+            / "to/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_input(to_location, to_dir)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        mock_request_get.return_value = [
+            {
+                "package": "http://example.com/api/packages/xyz/",
+                "purl": "pkg:deb/debian/adduser@3.118",
+                "path": "package/dist/SassWarning.js",
+                "type": "file",
+                "sha1": "abcdeac9ce76668a27069d88f30e033e72057dcb",
+            },
+            {
+                "package": "http://example.com/api/packages/zyx/",
+                "purl": "pkg:deb/debian/adduser@3.118",
+                "path": "package/dist/SassWarning.js",
+                "type": "file",
+                "sha1": "abcdeac9ce76668a27069d88f30e033e72057dcb",
+            },
+        ]
+
+        package_data = package_data1.copy()
+        package_data["uuid"] = uuid.uuid4()
+        mock_match_resource_by_sha1.return_value = package_data
+
+        buffer = io.StringIO()
+        d2d.match_js_purldb(self.project1, logger=buffer.write)
+        self.assertEqual(
+            (
+                "Matching 1 .map, .js, .mjs, .ts, .d.ts, .jsx, .tsx, "
+                ".css, .scss, .less, .sass resources against PurlDB"
+            ),
+            buffer.getvalue(),
+        )
+
+        package = self.project1.discoveredpackages.get()
+        self.assertEqual(package_data["name"], package.name)
+        self.assertNotEqual(package_data["uuid"], package.uuid)

@@ -119,3 +119,17 @@ def match_by_sha1(
     if response and response.get("count"):
         results = response["results"]
         return results
+
+
+def match_resource_by_sha1(
+    sha1_list,
+    timeout=None,
+    api_url=PURLDB_API_URL,
+):
+    """Match list SHA1 in the PurlDB resource."""
+    payload = {"sha1": sha1_list}
+    response = request_get(url=f"{api_url}resources/", payload=payload, timeout=timeout)
+
+    if response and response.get("count"):
+        packages = response["results"]
+        return packages
