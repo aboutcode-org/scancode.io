@@ -41,7 +41,7 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
-def make_codebase_resource(project, location, **extra_fields):
+def make_codebase_resource(project, location, save=True, **extra_fields):
     """
     Create a CodebaseResource instance in the database for the given ``project``.
 
@@ -78,7 +78,10 @@ def make_codebase_resource(project, location, **extra_fields):
         path=relative_path,
         **resource_data,
     )
-    codebase_resource.save(save_error=False)
+
+    if save:
+        codebase_resource.save(save_error=False)
+    return codebase_resource
 
 
 def update_or_create_resource(project, resource_data):
