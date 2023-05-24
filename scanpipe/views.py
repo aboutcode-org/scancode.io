@@ -514,7 +514,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         Display a warning message if one of the ``pipeline_runs`` scancodeio_version
         is prior to or currently is ``old_version``.
         """
-        if run_versions := [run.scancodeio_version for run in pipeline_runs]:
+        run_versions = [
+            run.scancodeio_version for run in pipeline_runs if run.scancodeio_version
+        ]
+        if run_versions and min(run_versions) <= version_limit:
             message = (
                 "WARNING: Some this project pipelines have been run with an "
                 "out of date ScanCode-toolkit version.\n"
@@ -522,8 +525,7 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                 "project and re-run the pipelines to benefit from the latest "
                 "scan results improvements."
             )
-            if min(run_versions) <= version_limit:
-                messages.warning(self.request, message)
+            messages.warning(self.request, message)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -674,6 +676,7 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
                         data.get(field_name[:-1])
                         for entry in qs_values
                         for data in entry.get(field_name, [])
+                        if isinstance(data, dict)
                     )
                 else:
                     field_values = (entry[field_name] for entry in qs_values)
@@ -1115,6 +1118,9 @@ class CodebaseResourceDetailsView(
         annotation_type = "info"
 
         for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+
             annotations.append(
                 {
                     "start_line": entry.get("start_line"),

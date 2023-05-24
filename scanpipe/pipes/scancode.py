@@ -609,34 +609,3 @@ def make_results_summary(project, scan_results_location):
     ]
 
     return summary
-
-
-def load_inventory_from_toolkit_scan(project, input_location):
-    """
-    Create packages, dependencies, and resources loaded from the ScanCode-toolkit scan
-    results located at `input_location`.
-    """
-    scanned_codebase = get_virtual_codebase(project, input_location)
-    create_discovered_packages(project, scanned_codebase)
-    create_codebase_resources(project, scanned_codebase)
-    create_discovered_dependencies(
-        project, scanned_codebase, strip_datafile_path_root=True
-    )
-
-
-def load_inventory_from_scanpipe(project, scan_data):
-    """
-    Create packages, dependencies, and resources loaded from a ScanCode.io JSON output
-    provided as `scan_data`.
-    """
-    for package_data in scan_data.get("packages", []):
-        pipes.update_or_create_package(project, package_data)
-
-    for resource_data in scan_data.get("files", []):
-        pipes.update_or_create_resource(project, resource_data)
-
-    for dependency_data in scan_data.get("dependencies", []):
-        pipes.update_or_create_dependency(project, dependency_data)
-
-    for relation_data in scan_data.get("relations", []):
-        pipes.get_or_create_relation(project, relation_data)

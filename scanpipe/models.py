@@ -662,15 +662,26 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             for filename, source in self.input_sources.items()
         ]
 
-    def inputs(self, pattern="**/*"):
+    def inputs(self, pattern="**/*", extensions=None):
         """
         Return all files and directories path of the input/ directory matching
         a given `pattern`.
         The default `**/*` pattern means "this directory and all subdirectories,
         recursively".
         Use the `*` pattern to only list the root content.
+        The returned paths can be limited to the provided list of ``extensions``.
         """
-        return self.input_path.glob(pattern)
+        if not extensions:
+            return self.input_path.glob(pattern)
+
+        if not isinstance(extensions, (list, tuple)):
+            raise TypeError("extensions should be a list or tuple")
+
+        return (
+            path
+            for path in self.input_path.glob(pattern)
+            if str(path).endswith(tuple(extensions))
+        )
 
     @property
     def input_files(self):
@@ -1946,6 +1957,25 @@ class CodebaseResource(
         for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
             yield line_number, "".join(line for _, line in lines_group)
 
+    @classmethod
+    def create_from_data(cls, project, resource_data):
+        """
+        Create and returns a Discover`edPackage for a `project` from the `package_data`.
+        If one of the values of the required fields is not available, a "ProjectError"
+        is created instead of a new DiscoveredPackage instance.
+        """
+        resource_data = resource_data.copy()
+
+        cleaned_data = {
+            field_name: value
+            for field_name, value in resource_data.items()
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+        }
+
+        resource = cls(project=project, **cleaned_data)
+        resource.save()
+        return resource
+
     def add_package(self, discovered_package):
         """Assign the `discovered_package` to this `codebase_resource` instance."""
         self.discovered_packages.add(discovered_package)
@@ -2375,14 +2405,13 @@ class DiscoveredPackage(
         if qualifiers:
             package_data["qualifiers"] = normalize_qualifiers(qualifiers, encode=True)
 
-        cleaned_package_data = {
+        cleaned_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in DiscoveredPackage.model_fields()
-            and value not in EMPTY_VALUES
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
 
-        discovered_package = cls(project=project, **cleaned_package_data)
+        discovered_package = cls(project=project, **cleaned_data)
         # Using save_error=False to not capture potential errors at this level but
         # rather in the CodebaseResource.create_and_add_package method so resource data
         # can be injected in the ProjectError record.
@@ -2720,17 +2749,16 @@ class DiscoveredDependency(
         purl_mapping = PackageURL.from_string(purl).to_dict()
         dependency_data.update(**purl_mapping)
 
-        cleaned_dependency_data = {
+        cleaned_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in DiscoveredDependency.model_fields()
-            and value not in EMPTY_VALUES
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
         discovered_dependency = cls(
             project=project,
             for_package=for_package,
             datafile_resource=datafile_resource,
-            **cleaned_dependency_data,
+            **cleaned_data,
         )
         discovered_dependency.save()
 

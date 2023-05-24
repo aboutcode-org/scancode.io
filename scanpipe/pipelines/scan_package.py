@@ -27,6 +27,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from commoncode.hash import multi_checksums
 
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.scancode import extract_archive
 
@@ -106,9 +107,7 @@ class ScanPackage(Pipeline):
 
     def load_inventory_from_toolkit_scan(self):
         """Process a JSON Scan results to populate codebase resources and packages."""
-        scancode.load_inventory_from_toolkit_scan(
-            self.project, self.scan_output_location
-        )
+        input.load_inventory_from_toolkit_scan(self.project, self.scan_output_location)
 
     def make_summary_from_scan_results(self):
         """Build a summary in JSON format from the generated scan results."""

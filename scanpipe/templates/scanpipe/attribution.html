@@ -15,6 +15,30 @@
       <h1>Attribution for {{ project.name }}</h1>
     {% endblock %}
 
+    {% block description %}
+      <p>
+        This document uses standard identifiers for software packages and licenses as
+        specified by the SPDX and Package URL groups that are co-founded by ScanCode
+        and AboutCode maintainers:
+      </p>
+      <ul>
+        <li>
+          The packages identifiers are Package URLs or PURL using the package-url
+          specification at <a href="https://github.com/package-url/purl-spec" target="_blank">
+          https://github.com/package-url/purl-spec</a>
+        </li>
+        <li>
+          The licenses identifiers are SPDX license expressions using the extended
+          ScanCode LicenseDB
+          <a href="https://scancode-licensedb.aboutcode.org/" target="_blank">https://scancode-licensedb.aboutcode.org/</a>
+          license list and the base
+          <a href="https://spdx.dev/licenses/" target="_blank">https://spdx.dev/licenses/</a>
+          list. The full SPDX specification is at
+          <a href="https://spdx.dev/specifications/" target="_blank">https://spdx.dev/specifications/</a>
+        </li>
+      </ul>
+    {% endblock %}
+
     {% block package-toc %}
       <h2>Licenses, acknowledgments and required copyright notices for open source packages:</h2>
       <ul>
@@ -73,7 +97,12 @@
     {% block license-list %}
       <h2 id="license_texts">Licenses that apply to {{ project.name }}</h2>
       {% for license in licenses %}
-        <h3 id="license_{{ license.key }}">{{ license.spdx_license_key }}</h3>
+        <h3 id="license_{{ license.key }}">
+          {{ license.spdx_license_key }}
+        </h3>
+        <a href="{{ license.licensedb_url}}" target="_blank">
+          {{ license.licensedb_url}}
+        </a>
         <pre>{{ license.text }}</pre>
         <hr>
       {% endfor %}
