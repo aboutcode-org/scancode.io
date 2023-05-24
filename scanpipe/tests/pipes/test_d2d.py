@@ -138,28 +138,6 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("", to1.status)
         self.assertEqual("ignored-meta-inf", to2.status)
 
-    def test_scanpipe_pipes_d2d_get_diff_ratio(self):
-        resource_files = [
-            self.data_location / "codebase" / "a.txt",
-            self.data_location / "codebase" / "b.txt",
-            self.data_location / "codebase" / "c.txt",
-        ]
-        copy_inputs(resource_files, self.project1.codebase_path)
-
-        resource1 = make_resource_file(self.project1, "a.txt")
-        resource2 = make_resource_file(self.project1, "b.txt")
-        self.assertEqual(0.5, d2d.get_diff_ratio(resource1, resource2))
-
-        resource3 = make_resource_file(self.project1, "c.txt")
-        self.assertEqual(0.0, d2d.get_diff_ratio(resource1, resource3))
-
-        resource2_content = open(resource_files[1], "r").read()
-        self.assertEqual(0.5, d2d.get_diff_ratio(resource1, resource2_content))
-
-        self.assertEqual(None, d2d.get_diff_ratio(resource1, None))
-
-        self.assertEqual(None, d2d.get_diff_ratio(resource1, 121))
-
     @mock.patch("scanpipe.pipes.purldb.match_by_sha1")
     def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_by_sha1):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")

@@ -75,12 +75,12 @@ def find_paths(path, index):
     """
     Return a Match for the longest paths matched in the ``index`` automaton for
     a POSIX ``path`` string.
-    Retrun None if there is not matching paths found.
+    Return None if there is not matching paths found.
     """
     segments = get_reversed_path_segments(path)
     reversed_path = convert_segments_to_path(segments)
 
-    # We use iter_long() to get longest matches
+    # We use iter_long() to get the longest matches
     matches = list(index.iter_long(reversed_path))
 
     if not matches:

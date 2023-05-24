@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import difflib
 from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
@@ -29,6 +28,7 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.pipes import flag
+from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
@@ -402,38 +402,6 @@ def flag_to_meta_inf_files(project):
     meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
 
 
-def get_diff_ratio(to_resource, from_resource):
-    """
-    Return a similarity ratio as a float between 0 and 1 by comparing the
-    text content of the ``to_resource`` and ``from_resource``.
-
-    Return None if any of the two resources are not str or text files or if files
-    are not readable.
-    """
-    to_lines, from_lines = None, None
-
-    if isinstance(to_resource, str):
-        to_lines = to_resource.splitlines()
-
-    if isinstance(from_resource, str):
-        from_lines = from_resource.splitlines()
-
-    try:
-        if isinstance(to_resource, CodebaseResource) and to_resource.is_text:
-            to_lines = to_resource.location_path.read_text().splitlines()
-
-        if isinstance(from_resource, CodebaseResource) and from_resource.is_text:
-            from_lines = from_resource.location_path.read_text().splitlines()
-    except Exception:
-        return
-
-    if not to_lines or not from_lines:
-        return
-
-    matcher = difflib.SequenceMatcher(a=from_lines, b=to_lines)
-    return matcher.quick_ratio()
-
-
 def _map_path_resource(
     to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
 ):
@@ -450,9 +418,7 @@ def _map_path_resource(
 
     for resource_id in match.resource_ids:
         from_resource = from_resources.get(id=resource_id)
-        diff_ratio = get_diff_ratio(
-            to_resource=to_resource, from_resource=from_resource
-        )
+        diff_ratio = get_resource_diff_ratio(to_resource, from_resource)
         if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
             continue
 
@@ -636,31 +602,7 @@ def _map_javascript_resource(
 
     # Use diff_ratio if no sha1 match is found.
     if not bool(matches):
-        sources = js.get_map_sources(to_map)
-        sources_content = js.get_map_sources_content(to_map)
-
-        for source, content in zip(sources, sources_content):
-            prospect = pathmap.find_paths(source, from_resources_index)
-
-            # Only create relations when the number of matches if inferior or equal to
-            # the current number of path segment matched.
-            if (
-                not prospect
-                or len(prospect.resource_ids) > prospect.matched_path_length
-            ):
-                continue
-
-            for resource_id in prospect.resource_ids:
-                from_source = from_resources.get(id=resource_id)
-
-                diff_ratio = get_diff_ratio(
-                    to_resource=content, from_resource=from_source
-                )
-
-                if diff_ratio is None or diff_ratio < 0.98:
-                    continue
-
-                matches.append((from_source, {"diff_ratio": f"{diff_ratio:.1%}"}))
+        matches = js.get_matches_by_ratio(to_map, from_resources_index, from_resources)
 
     transpiled = [to_map]
     if minified_resource := get_minified_resource(to_map, to_resources_minified):

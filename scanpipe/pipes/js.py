@@ -23,6 +23,9 @@
 import hashlib
 import json
 
+from scanpipe.pipes import get_text_str_diff_ratio
+from scanpipe.pipes import pathmap
+
 
 def source_mapping_in_minified(resource, map_file_name):
     """Return True if a string contains a source mapping in its last 5 lines."""
@@ -69,3 +72,30 @@ def get_map_sources_content(map_file):
 
     contents = data.get("sourcesContent", [])
     return contents
+
+
+def get_matches_by_ratio(
+    to_map, from_resources_index, from_resources, diff_ratio_threshold=0.98
+):
+    sources = get_map_sources(to_map)
+    sources_content = get_map_sources_content(to_map)
+
+    matches = []
+    for source, content in zip(sources, sources_content):
+        prospect = pathmap.find_paths(source, from_resources_index)
+
+        # Only create relations when the number of matches is inferior or equal to
+        # the current number of path segment matched.
+        too_many_prospects = len(prospect.resource_ids) > prospect.matched_path_length
+        if not prospect or too_many_prospects:
+            continue
+
+        for resource_id in prospect.resource_ids:
+            from_source = from_resources.get(id=resource_id)
+            diff_ratio = get_text_str_diff_ratio(content, from_source.file_content)
+            if not diff_ratio or diff_ratio < diff_ratio_threshold:
+                continue
+
+            matches.append((from_source, {"diff_ratio": f"{diff_ratio:.1%}"}))
+
+    return matches
