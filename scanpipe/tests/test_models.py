@@ -640,7 +640,7 @@ class ScanPipeModelsTest(TestCase):
         run1 = self.create_run()
 
         # Set a value for `log` on the DB record without impacting the `run1` instance.
-        Run.objects.get(pk=run1.pk).append_to_log("entry in log", save=True)
+        Run.objects.get(pk=run1.pk).append_to_log("entry in log")
         self.assertEqual("", run1.log)
 
         with CaptureQueriesContext(connection) as queries_context:
@@ -829,7 +829,7 @@ class ScanPipeModelsTest(TestCase):
             run1.append_to_log("multiline\nmessage")
 
         run1.append_to_log("line1")
-        run1.append_to_log("line2", save=True)
+        run1.append_to_log("line2")
 
         run1.refresh_from_db()
         self.assertEqual("line1\nline2\n", run1.log)

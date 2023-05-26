@@ -100,7 +100,7 @@ class Pipeline:
         timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
         message = f"{timestamp} {message}"
         logger.info(message)
-        self.run.append_to_log(message, save=True)
+        self.run.append_to_log(message)
 
     def execute(self):
         """Execute each steps in the order defined on this pipeline class."""

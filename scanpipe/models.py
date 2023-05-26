@@ -350,7 +350,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def stop_task(self):
         """Stop a "running" task."""
-        self.append_to_log("Stop task requested", save=True)
+        self.append_to_log("Stop task requested")
 
         if not settings.SCANCODEIO_ASYNC:
             self.set_task_stopped()
@@ -384,15 +384,14 @@ class AbstractTaskFieldsModel(models.Model):
         if delete_self:
             self.delete()
 
-    def append_to_log(self, message, save=False):
+    def append_to_log(self, message):
         """Append the ``message`` string to the ``log`` field of this instance."""
         message = message.strip()
         if any(lf in message for lf in ("\n", "\r")):
             raise ValueError("message cannot contain line returns (either CR or LF).")
 
         self.log = self.log + message + "\n"
-        if save:
-            self.save()
+        self.save(update_fields=["log"])
 
 
 class ExtraDataFieldMixin(models.Model):
