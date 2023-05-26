@@ -41,6 +41,7 @@ from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licenses_by_spdx_key
 from licensedcode.cache import get_licensing
+from licensedcode.models import License
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
@@ -635,9 +636,7 @@ def to_cyclonedx(project):
 
 
 def get_expression_as_attribution_links(parsed_expression):
-    template = (
-        '<a href="#license_{symbol.wrapped.key}">{symbol.wrapped.spdx_license_key}</a>'
-    )
+    template = '<a href="#license_{symbol.key}">{symbol.wrapped.spdx_license_key}</a>'
     return parsed_expression.simplify().render(template=template)
 
 
@@ -660,6 +659,38 @@ def get_attribution_template(project):
     return default_template
 
 
+def make_unknown_license_object(license_symbol):
+    """
+    Return a ``License`` object suitable for the provided ``license_symbol``,
+    that is representing a license key unknown by the current toolkit licensed index.
+    """
+    mocked_spdx_license_key = f"LicenseRef-unknown-{license_symbol.key}"
+    return License(
+        key=license_symbol.key,
+        spdx_license_key=mocked_spdx_license_key,
+        text="ERROR: Unknown license key, no text available.",
+        is_builtin=False,
+    )
+
+
+def get_package_expression_symbols(parsed_expression):
+    """
+    Return the list of ``license_symbols`` contained in the ``parsed_expression``.
+    Since unknown license keys are missing a ``License`` set in the ``wrapped``
+    attribute, a special "unknown" ``License`` object is injected.
+    """
+    license_symbols = []
+
+    for parsed_symbol in parsed_expression.symbols:
+        # .decompose() is required for LicenseWithExceptionSymbol support
+        for license_symbol in parsed_symbol.decompose():
+            if not hasattr(license_symbol, "wrapped"):
+                license_symbol.wrapped = make_unknown_license_object(license_symbol)
+            license_symbols.append(license_symbol)
+
+    return license_symbols
+
+
 def to_attribution(project):
     """
     Generate attribution for the provided ``project``.
@@ -678,10 +709,8 @@ def to_attribution(project):
     for package in packages:
         if package.declared_license_expression:
             parsed = licensing.parse(package.declared_license_expression)
+            license_symbols.extend(get_package_expression_symbols(parsed))
             package.expression_links = get_expression_as_attribution_links(parsed)
-            # .decompose() is required for LicenseWithExceptionSymbol support
-            for symbol in parsed.symbols:
-                license_symbols.extend(list(symbol.decompose()))
 
     licenses = [symbol.wrapped for symbol in set(license_symbols)]
     licenses.sort(key=attrgetter("spdx_license_key"))

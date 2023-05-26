@@ -266,10 +266,35 @@ class ScanPipeOutputPipesTest(TestCase):
         output_file = output.to_spdx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
-    def test_scanpipe_pipes_outputs_get_expression_as_attribution_links(self):
-        expression_with_exception = "mit AND gpl-2.0 with classpath-exception-2.0"
+    def test_scanpipe_pipes_outputs_make_unknown_license_object(self):
         licensing = get_licensing()
-        parsed_expression = licensing.parse(expression_with_exception)
+        parsed_expression = licensing.parse("some-unknown-license")
+
+        self.assertEqual(1, len(parsed_expression.symbols))
+        license_symbol = list(parsed_expression.symbols)[0]
+        license_object = output.make_unknown_license_object(license_symbol)
+
+        self.assertEqual("some-unknown-license", license_object.key)
+        self.assertEqual(
+            "LicenseRef-unknown-some-unknown-license", license_object.spdx_license_key
+        )
+        self.assertEqual(
+            "ERROR: Unknown license key, no text available.", license_object.text
+        )
+        self.assertFalse(license_object.is_builtin)
+
+    def test_scanpipe_pipes_outputs_get_package_expression_symbols(self):
+        licensing = get_licensing()
+        parsed_expression = licensing.parse("mit AND some-unknown-license")
+        symbols = output.get_package_expression_symbols(parsed_expression)
+        self.assertEqual(2, len(symbols))
+        self.assertTrue(hasattr(symbols[0], "wrapped"))
+        self.assertTrue(hasattr(symbols[1], "wrapped"))
+
+    def test_scanpipe_pipes_outputs_get_expression_as_attribution_links(self):
+        expression = "mit AND gpl-2.0 with classpath-exception-2.0"
+        licensing = get_licensing()
+        parsed_expression = licensing.parse(expression)
         rendered = output.get_expression_as_attribution_links(parsed_expression)
         expected = (
             '<a href="#license_gpl-2.0">GPL-2.0-only</a>'
@@ -305,8 +330,8 @@ class ScanPipeOutputPipesTest(TestCase):
     def test_scanpipe_pipes_outputs_to_attribution(self):
         project = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
-        expression_with_exception = "mit AND gpl-2.0 with classpath-exception-2.0"
-        package_data["declared_license_expression"] = expression_with_exception
+        expression = "mit AND gpl-2.0 with classpath-exception-2.0 AND missing-unknown"
+        package_data["declared_license_expression"] = expression
         package_data["notice_text"] = "Notice text"
         pipes.update_or_create_package(project, package_data)
 

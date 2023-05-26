@@ -100,9 +100,11 @@
         <h3 id="license_{{ license.key }}">
           {{ license.spdx_license_key }}
         </h3>
-        <a href="{{ license.licensedb_url}}" target="_blank">
-          {{ license.licensedb_url}}
-        </a>
+        {% if license.licensedb_url %}
+          <a href="{{ license.licensedb_url}}" target="_blank">
+            {{ license.licensedb_url}}
+          </a>
+        {% endif %}
         <pre>{{ license.text }}</pre>
         <hr>
       {% endfor %}
