@@ -246,16 +246,14 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Save the resource scan package results in the database.
     Create project errors if any occurred during the scan.
     """
-    package_data = scan_results.get("package_data", [])
-    if package_data:
+    if package_data := scan_results.get("package_data", []):
         codebase_resource.package_data = package_data
         codebase_resource.status = flag.APPLICATION_PACKAGE
-        codebase_resource.save()
+        codebase_resource.save(update_fields=["package_data", "status"])
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = flag.SCANNED_WITH_ERROR
-        codebase_resource.save()
+        codebase_resource.update_status(flag.SCANNED_WITH_ERROR)
 
 
 def _log_progress(scan_func, resource, resource_count, index):
@@ -532,8 +530,7 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     status to "application-package".
     """
     codebase_resource.add_package(discovered_package)
-    codebase_resource.status = flag.APPLICATION_PACKAGE
-    codebase_resource.save()
+    codebase_resource.update_status(flag.APPLICATION_PACKAGE)
 
 
 def _get_license_matches_grouped(project):

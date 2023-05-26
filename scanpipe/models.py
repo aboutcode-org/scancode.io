@@ -1780,6 +1780,11 @@ class CodebaseResource(
 
         super().save(*args, **kwargs)
 
+    def update_status(self, status):
+        """Update this resource status with the provided ``status``."""
+        self.status = status
+        self.save(update_fields=["status"])
+
     @property
     def location_path(self):
         """Return the location of the resource as a Path instance."""

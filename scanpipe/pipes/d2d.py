@@ -315,10 +315,10 @@ def save_java_package_scan_results(codebase_resource, scan_results, scan_errors)
     # note: we do not set a status on resources if we collected this correctly
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = flag.SCANNED_WITH_ERROR
+        codebase_resource.update_status(flag.SCANNED_WITH_ERROR)
     else:
         codebase_resource.extra_data.update(scan_results)
-    codebase_resource.save()
+        codebase_resource.save()
 
 
 def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
@@ -432,8 +432,7 @@ def _map_path_resource(
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
     if len(match.resource_ids) > match.matched_path_length:
-        to_resource.status = flag.TOO_MANY_MAPS
-        to_resource.save()
+        to_resource.update_status(flag.TOO_MANY_MAPS)
         return
 
     for resource_id in match.resource_ids:

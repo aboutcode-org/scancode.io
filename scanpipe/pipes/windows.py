@@ -113,8 +113,7 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=No
         created_package = pipes.update_or_create_package(project, package.to_dict())
         for installed_package_file in installed_package_files:
             installed_package_file.discovered_packages.add(created_package)
-            installed_package_file.status = flag.INSTALLED_PACKAGE
-            installed_package_file.save()
+            installed_package_file.update_status(flag.INSTALLED_PACKAGE)
         created_package.save()
 
 

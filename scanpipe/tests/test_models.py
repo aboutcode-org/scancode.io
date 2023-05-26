@@ -931,6 +931,21 @@ class ScanPipeModelsTest(TestCase):
         # Reset the index value
         scanpipe_app.license_policies_index = None
 
+    def test_scanpipe_codebase_resource_model_update_status(self):
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        self.assertEqual("", resource.status)
+
+        with CaptureQueriesContext(connection) as queries_context:
+            resource.update_status("updated")
+
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        expected = """UPDATE "scanpipe_codebaseresource" SET "status" = 'updated'"""
+        self.assertTrue(sql.startswith(expected))
+
+        resource.refresh_from_db()
+        self.assertEqual("updated", resource.status)
+
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
             "detected_license_expression",
