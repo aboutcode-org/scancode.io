@@ -247,9 +247,10 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Create project errors if any occurred during the scan.
     """
     if package_data := scan_results.get("package_data", []):
-        codebase_resource.package_data = package_data
-        codebase_resource.status = flag.APPLICATION_PACKAGE
-        codebase_resource.save(update_fields=["package_data", "status"])
+        codebase_resource.update(
+            package_data=package_data,
+            status=flag.APPLICATION_PACKAGE,
+        )
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)

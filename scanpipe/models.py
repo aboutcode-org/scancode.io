@@ -1364,16 +1364,15 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         if self.scancodeio_version:
             msg = f"Field scancodeio_version already set to {self.scancodeio_version}"
             raise ValueError(msg)
-        self.scancodeio_version = scancodeio_version
-        self.save(update_fields=["scancodeio_version"])
+
+        self.update(scancodeio_version=scancodeio_version)
 
     def set_current_step(self, message):
         """
         Set the ``message`` value on the ``current_step`` field.
         Truncate the value at 256 characters.
         """
-        self.current_step = message[:256]
-        self.save(update_fields=["current_step"])
+        self.update(current_step=message[:256])
 
     @property
     def pipeline_class(self):
@@ -2872,13 +2871,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             )
         except requests.exceptions.RequestException as exception:
             logger.info(exception)
-            self.delivery_error = str(exception)
-            self.save(update_fields=["delivery_error"])
+            self.update(delivery_error=str(exception))
             return False
 
-        self.response_status_code = response.status_code
-        self.response_text = response.text
-        self.save(update_fields=["response_status_code", "response_text"])
+        self.update(
+            response_status_code=response.status_code,
+            response_text=response.text,
+        )
 
         if self.success:
             logger.info(f"Webhook uuid={self.uuid} delivered and received.")

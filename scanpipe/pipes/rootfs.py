@@ -236,9 +236,10 @@ def _create_system_package(project, purl, package):
             if install_file.path not in modified_resources:
                 modified_resources.append(install_file.path)
 
-    created_package.missing_resources = missing_resources
-    created_package.modified_resources = modified_resources
-    created_package.save()
+    created_package.update(
+        missing_resources=missing_resources,
+        modified_resources=modified_resources,
+    )
 
 
 def scan_rootfs_for_system_packages(project, rootfs):

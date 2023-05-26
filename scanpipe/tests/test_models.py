@@ -507,6 +507,37 @@ class ScanPipeModelsTest(TestCase):
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
+    def test_scanpipe_model_update_mixin(self):
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        self.assertEqual("", resource.status)
+
+        with CaptureQueriesContext(connection) as queries_context:
+            resource.update(status="updated")
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        expected = """UPDATE "scanpipe_codebaseresource" SET "status" = 'updated'"""
+        self.assertTrue(sql.startswith(expected))
+
+        resource.refresh_from_db()
+        self.assertEqual("updated", resource.status)
+
+        package = DiscoveredPackage.objects.create(project=self.project1)
+        purl_data = DiscoveredPackage.extract_purl_data(package_data1)
+
+        with CaptureQueriesContext(connection) as queries_context:
+            package.update(**purl_data)
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        expected = (
+            'UPDATE "scanpipe_discoveredpackage" SET "type" = "deb", '
+            '"namespace" = "debian", "name" = "adduser", "version" = "3.118", '
+            '"qualifiers" = "arch=all", "subpath" = ""'
+        )
+        self.assertTrue(sql.replace("'", '"').startswith(expected))
+
+        package.refresh_from_db()
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.package_url)
+
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)
@@ -888,9 +919,7 @@ class ScanPipeModelsTest(TestCase):
         file_with_long_lines = self.data_location / "decompose_l_u_8hpp_source.html"
         copy_input(file_with_long_lines, self.project1.codebase_path)
 
-        resource.path = "decompose_l_u_8hpp_source.html"
-        resource.save()
-
+        resource.update(path="decompose_l_u_8hpp_source.html")
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
@@ -901,50 +930,30 @@ class ScanPipeModelsTest(TestCase):
 
         license_expression = "bsd-new"
         self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("missing", resource.compliance_alert)
 
         license_expression = "apache-2.0"
         self.assertIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("ok", resource.compliance_alert)
 
         license_expression = "mpl-2.0"
         self.assertIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("warning", resource.compliance_alert)
 
         license_expression = "gpl-3.0"
         self.assertIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
         license_expression = "apache-2.0 AND mpl-2.0 OR gpl-3.0"
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
         # Reset the index value
         scanpipe_app.license_policies_index = None
-
-    def test_scanpipe_codebase_resource_model_update(self):
-        resource = CodebaseResource.objects.create(project=self.project1, path="file")
-        self.assertEqual("", resource.status)
-
-        with CaptureQueriesContext(connection) as queries_context:
-            resource.update(status="updated")
-
-        self.assertEqual(1, len(queries_context.captured_queries))
-        sql = queries_context.captured_queries[0]["sql"]
-        expected = """UPDATE "scanpipe_codebaseresource" SET "status" = 'updated'"""
-        self.assertTrue(sql.startswith(expected))
-
-        resource.refresh_from_db()
-        self.assertEqual("updated", resource.status)
 
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
@@ -1016,15 +1025,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(3, len(qs))
         qs = CodebaseResource.objects.not_empty()
         self.assertEqual(0, len(qs))
-        file.size = 1
-        file.save()
+        file.update(size=1)
         qs = CodebaseResource.objects.empty()
         self.assertEqual(2, len(qs))
         self.assertNotIn(file, qs)
         qs = CodebaseResource.objects.not_empty()
         self.assertEqual(1, len(qs))
-        file.size = 0
-        file.save()
+        file.update(size=0)
         qs = CodebaseResource.objects.empty()
         self.assertEqual(3, len(qs))
 
@@ -1042,8 +1049,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(directory, qs)
         self.assertNotIn(symlink, qs)
 
-        file.license_detections = [{"license_expression": "bsd-new"}]
-        file.save()
+        file.update(license_detections=[{"license_expression": "bsd-new"}])
         qs = CodebaseResource.objects.has_license_detections()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
@@ -1059,8 +1065,7 @@ class ScanPipeModelsTest(TestCase):
         qs = CodebaseResource.objects.unknown_license()
         self.assertEqual(0, len(qs))
 
-        file.detected_license_expression = "gpl-3.0 AND unknown"
-        file.save()
+        file.update(detected_license_expression="gpl-3.0 AND unknown")
         qs = CodebaseResource.objects.unknown_license()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
@@ -1102,12 +1107,9 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual(0, CodebaseResource.objects.from_codebase().count())
         self.assertEqual(0, CodebaseResource.objects.to_codebase().count())
-        file.tag = "to"
-        file.save()
-        symlink.tag = "to"
-        symlink.save()
-        directory.tag = "from"
-        directory.save()
+        file.update(tag="to")
+        symlink.update(tag="to")
+        directory.update(tag="from")
         self.assertEqual(1, CodebaseResource.objects.from_codebase().count())
         self.assertEqual(2, CodebaseResource.objects.to_codebase().count())
 
@@ -1467,14 +1469,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(spdx, package.declared_license_expression_spdx)
         self.assertEqual(spdx, package.get_declared_license_expression_spdx())
 
-        package.declared_license_expression_spdx = ""
-        package.save()
+        package.update(declared_license_expression_spdx="")
         self.assertEqual(expression, package.declared_license_expression)
         self.assertEqual("", package.declared_license_expression_spdx)
         self.assertEqual(spdx, package.get_declared_license_expression_spdx())
 
-        package.declared_license_expression = ""
-        package.save()
+        package.update(declared_license_expression="")
         self.assertEqual("", package.declared_license_expression)
         self.assertEqual("", package.declared_license_expression_spdx)
         self.assertEqual("", package.get_declared_license_expression_spdx())
@@ -1488,14 +1488,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(spdx, package.declared_license_expression_spdx)
         self.assertEqual(expression, package.get_declared_license_expression())
 
-        package.declared_license_expression = ""
-        package.save()
+        package.update(declared_license_expression="")
         self.assertEqual("", package.declared_license_expression)
         self.assertEqual(spdx, package.declared_license_expression_spdx)
         self.assertEqual(expression, package.get_declared_license_expression())
 
-        package.declared_license_expression_spdx = ""
-        package.save()
+        package.update(declared_license_expression_spdx="")
         self.assertEqual("", package.declared_license_expression)
         self.assertEqual("", package.declared_license_expression_spdx)
         self.assertEqual("", package.get_declared_license_expression_spdx())
