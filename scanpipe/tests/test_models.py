@@ -42,6 +42,7 @@ from django.db import connection
 from django.test import TestCase
 from django.test import TransactionTestCase
 from django.test import override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
@@ -506,16 +507,60 @@ class ScanPipeModelsTest(TestCase):
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
+    def test_scanpipe_model_update_mixin(self):
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        self.assertEqual("", resource.status)
+
+        with CaptureQueriesContext(connection) as queries_context:
+            resource.update(status="updated")
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        expected = """UPDATE "scanpipe_codebaseresource" SET "status" = 'updated'"""
+        self.assertTrue(sql.startswith(expected))
+
+        resource.refresh_from_db()
+        self.assertEqual("updated", resource.status)
+
+        package = DiscoveredPackage.objects.create(project=self.project1)
+        purl_data = DiscoveredPackage.extract_purl_data(package_data1)
+
+        with CaptureQueriesContext(connection) as queries_context:
+            package.update(**purl_data)
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        expected = (
+            'UPDATE "scanpipe_discoveredpackage" SET "type" = "deb", '
+            '"namespace" = "debian", "name" = "adduser", "version" = "3.118", '
+            '"qualifiers" = "arch=all", "subpath" = ""'
+        )
+        self.assertTrue(sql.replace("'", '"').startswith(expected))
+
+        package.refresh_from_db()
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.package_url)
+
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.scancodeio_version)
 
         run1.set_scancodeio_version()
+        run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual(scancodeio_version, run1.scancodeio_version)
 
         with self.assertRaises(ValueError) as cm:
             run1.set_scancodeio_version()
         self.assertIn("Field scancodeio_version already set to", str(cm.exception))
+
+    def test_scanpipe_run_model_set_current_step(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual("", run1.current_step)
+
+        run1.set_current_step("a" * 300)
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual(256, len(run1.current_step))
+
+        run1.set_current_step("")
+        run1 = Run.objects.get(pk=run1.pk)
+        self.assertEqual("", run1.current_step)
 
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
@@ -594,12 +639,28 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_run_model_set_task_ended_method(self):
         run1 = self.create_run()
 
-        run1.set_task_ended(exitcode=0, output="output")
+        # Set a value for `log` on the DB record without impacting the `run1` instance.
+        Run.objects.get(pk=run1.pk).append_to_log("entry in log")
+        self.assertEqual("", run1.log)
+
+        with CaptureQueriesContext(connection) as queries_context:
+            run1.set_task_ended(exitcode=0, output="output")
+
+        # Ensure that the SQL UPDATE was limited to `update_fields`
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        self.assertTrue(sql.startswith('UPDATE "scanpipe_run" SET "task_end_date"'))
+        self.assertIn("task_exitcode", sql)
+        self.assertIn("task_output", sql)
+        self.assertNotIn("log", sql)
 
         run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual(0, run1.task_exitcode)
         self.assertEqual("output", run1.task_output)
         self.assertTrue(run1.task_end_date)
+        # Ensure the initial value for `log` was not overriden during the
+        # `set_task_ended.save()`
+        self.assertIn("entry in log", run1.log)
 
     def test_scanpipe_run_model_set_task_methods(self):
         run1 = self.create_run()
@@ -768,7 +829,7 @@ class ScanPipeModelsTest(TestCase):
             run1.append_to_log("multiline\nmessage")
 
         run1.append_to_log("line1")
-        run1.append_to_log("line2", save=True)
+        run1.append_to_log("line2")
 
         run1.refresh_from_db()
         self.assertEqual("line1\nline2\n", run1.log)
@@ -858,9 +919,7 @@ class ScanPipeModelsTest(TestCase):
         file_with_long_lines = self.data_location / "decompose_l_u_8hpp_source.html"
         copy_input(file_with_long_lines, self.project1.codebase_path)
 
-        resource.path = "decompose_l_u_8hpp_source.html"
-        resource.save()
-
+        resource.update(path="decompose_l_u_8hpp_source.html")
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
@@ -871,31 +930,26 @@ class ScanPipeModelsTest(TestCase):
 
         license_expression = "bsd-new"
         self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("missing", resource.compliance_alert)
 
         license_expression = "apache-2.0"
         self.assertIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("ok", resource.compliance_alert)
 
         license_expression = "mpl-2.0"
         self.assertIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("warning", resource.compliance_alert)
 
         license_expression = "gpl-3.0"
         self.assertIn(license_expression, scanpipe_app.license_policies_index)
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
         license_expression = "apache-2.0 AND mpl-2.0 OR gpl-3.0"
-        resource.detected_license_expression = license_expression
-        resource.save()
+        resource.update(detected_license_expression=license_expression)
         self.assertEqual("error", resource.compliance_alert)
 
         # Reset the index value
@@ -925,13 +979,14 @@ class ScanPipeModelsTest(TestCase):
             "name": "name",
             "non_resource_field": "value",
         }
-        resource.set_scan_results(scan_results, save=True)
+        resource.set_scan_results(scan_results, status="scanned")
         resource.refresh_from_db()
         self.assertEqual("", resource.name)
         self.assertEqual("mit", resource.detected_license_expression)
+        self.assertEqual("scanned", resource.status)
 
         resource2 = CodebaseResource.objects.create(project=self.project1, path="file2")
-        resource2.copy_scan_results(from_instance=resource, save=True)
+        resource2.copy_scan_results(from_instance=resource)
         resource.refresh_from_db()
         self.assertEqual("mit", resource2.detected_license_expression)
 
@@ -970,15 +1025,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(3, len(qs))
         qs = CodebaseResource.objects.not_empty()
         self.assertEqual(0, len(qs))
-        file.size = 1
-        file.save()
+        file.update(size=1)
         qs = CodebaseResource.objects.empty()
         self.assertEqual(2, len(qs))
         self.assertNotIn(file, qs)
         qs = CodebaseResource.objects.not_empty()
         self.assertEqual(1, len(qs))
-        file.size = 0
-        file.save()
+        file.update(size=0)
         qs = CodebaseResource.objects.empty()
         self.assertEqual(3, len(qs))
 
@@ -996,8 +1049,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertIn(directory, qs)
         self.assertNotIn(symlink, qs)
 
-        file.license_detections = [{"license_expression": "bsd-new"}]
-        file.save()
+        file.update(license_detections=[{"license_expression": "bsd-new"}])
         qs = CodebaseResource.objects.has_license_detections()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
@@ -1013,8 +1065,7 @@ class ScanPipeModelsTest(TestCase):
         qs = CodebaseResource.objects.unknown_license()
         self.assertEqual(0, len(qs))
 
-        file.detected_license_expression = "gpl-3.0 AND unknown"
-        file.save()
+        file.update(detected_license_expression="gpl-3.0 AND unknown")
         qs = CodebaseResource.objects.unknown_license()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
@@ -1056,12 +1107,9 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual(0, CodebaseResource.objects.from_codebase().count())
         self.assertEqual(0, CodebaseResource.objects.to_codebase().count())
-        file.tag = "to"
-        file.save()
-        symlink.tag = "to"
-        symlink.save()
-        directory.tag = "from"
-        directory.save()
+        file.update(tag="to")
+        symlink.update(tag="to")
+        directory.update(tag="from")
         self.assertEqual(1, CodebaseResource.objects.from_codebase().count())
         self.assertEqual(2, CodebaseResource.objects.to_codebase().count())
 
@@ -1421,14 +1469,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(spdx, package.declared_license_expression_spdx)
         self.assertEqual(spdx, package.get_declared_license_expression_spdx())
 
-        package.declared_license_expression_spdx = ""
-        package.save()
+        package.update(declared_license_expression_spdx="")
         self.assertEqual(expression, package.declared_license_expression)
         self.assertEqual("", package.declared_license_expression_spdx)
         self.assertEqual(spdx, package.get_declared_license_expression_spdx())
 
-        package.declared_license_expression = ""
-        package.save()
+        package.update(declared_license_expression="")
         self.assertEqual("", package.declared_license_expression)
         self.assertEqual("", package.declared_license_expression_spdx)
         self.assertEqual("", package.get_declared_license_expression_spdx())
@@ -1442,14 +1488,12 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(spdx, package.declared_license_expression_spdx)
         self.assertEqual(expression, package.get_declared_license_expression())
 
-        package.declared_license_expression = ""
-        package.save()
+        package.update(declared_license_expression="")
         self.assertEqual("", package.declared_license_expression)
         self.assertEqual(spdx, package.declared_license_expression_spdx)
         self.assertEqual(expression, package.get_declared_license_expression())
 
-        package.declared_license_expression_spdx = ""
-        package.save()
+        package.update(declared_license_expression_spdx="")
         self.assertEqual("", package.declared_license_expression)
         self.assertEqual("", package.declared_license_expression_spdx)
         self.assertEqual("", package.get_declared_license_expression_spdx())
@@ -1600,7 +1644,16 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             project1.update_extra_data("not_a_dict")
 
         data = {"key": "value"}
-        project1.update_extra_data(data)
+        with CaptureQueriesContext(connection) as queries_context:
+            project1.update_extra_data(data)
+
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        expected = (
+            'UPDATE "scanpipe_project" SET "extra_data" = \'{"key": "value"}\'::jsonb'
+        )
+        self.assertTrue(sql.startswith(expected))
+
         self.assertEqual(data, project1.extra_data)
         project1.refresh_from_db()
         self.assertEqual(data, project1.extra_data)

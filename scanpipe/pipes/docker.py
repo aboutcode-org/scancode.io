@@ -218,8 +218,7 @@ def _create_system_package(project, purl, package, layer):
             found_resource = True
             if created_package not in resource.discovered_packages.all():
                 resource.discovered_packages.add(created_package)
-                resource.status = flag.SYSTEM_PACKAGE
-                resource.save()
+                resource.update(status=flag.SYSTEM_PACKAGE)
                 logger.info(f"      added as system-package to: {purl}")
 
             if rootfs.has_hash_diff(install_file, resource):
@@ -230,9 +229,10 @@ def _create_system_package(project, purl, package, layer):
             missing_resources.append(install_file_path)
             logger.info(f"      installed file is missing: {install_file_path}")
 
-    created_package.missing_resources = missing_resources
-    created_package.modified_resources = modified_resources
-    created_package.save()
+    created_package.update(
+        missing_resources=missing_resources,
+        modified_resources=modified_resources,
+    )
 
 
 def scan_image_for_system_packages(project, image):

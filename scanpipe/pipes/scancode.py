@@ -232,13 +232,13 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     Save the resource scan file results in the database.
     Create project errors if any occurred during the scan.
     """
+    status = flag.SCANNED
+
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = flag.SCANNED_WITH_ERROR
-    else:
-        codebase_resource.status = flag.SCANNED
+        status = flag.SCANNED_WITH_ERROR
 
-    codebase_resource.set_scan_results(scan_results, save=True)
+    codebase_resource.set_scan_results(scan_results, status)
 
 
 def save_scan_package_results(codebase_resource, scan_results, scan_errors):
@@ -246,16 +246,15 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Save the resource scan package results in the database.
     Create project errors if any occurred during the scan.
     """
-    package_data = scan_results.get("package_data", [])
-    if package_data:
-        codebase_resource.package_data = package_data
-        codebase_resource.status = flag.APPLICATION_PACKAGE
-        codebase_resource.save()
+    if package_data := scan_results.get("package_data", []):
+        codebase_resource.update(
+            package_data=package_data,
+            status=flag.APPLICATION_PACKAGE,
+        )
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = flag.SCANNED_WITH_ERROR
-        codebase_resource.save()
+        codebase_resource.update(status=flag.SCANNED_WITH_ERROR)
 
 
 def _log_progress(scan_func, resource, resource_count, index):
@@ -532,8 +531,7 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     status to "application-package".
     """
     codebase_resource.add_package(discovered_package)
-    codebase_resource.status = flag.APPLICATION_PACKAGE
-    codebase_resource.save()
+    codebase_resource.update(status=flag.APPLICATION_PACKAGE)
 
 
 def _get_license_matches_grouped(project):
