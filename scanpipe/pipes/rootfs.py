@@ -229,7 +229,7 @@ def _create_system_package(project, purl, package):
 
         if created_package not in codebase_resource.discovered_packages.all():
             codebase_resource.discovered_packages.add(created_package)
-            codebase_resource.update_status(flag.SYSTEM_PACKAGE)
+            codebase_resource.update(status=flag.SYSTEM_PACKAGE)
             logger.info(f"      added as system-package to: {purl}")
 
         if has_hash_diff(install_file, codebase_resource):
@@ -309,7 +309,7 @@ def match_not_analyzed(
         count += 1
         package = matched.discovered_packages.all()[0]
         matchable.discovered_packages.add(package)
-        matchable.update_status(reference_status)
+        matchable.update(status=reference_status)
 
 
 def tag_uninteresting_codebase_resources(project):

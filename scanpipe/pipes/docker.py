@@ -218,7 +218,7 @@ def _create_system_package(project, purl, package, layer):
             found_resource = True
             if created_package not in resource.discovered_packages.all():
                 resource.discovered_packages.add(created_package)
-                resource.update_status(flag.SYSTEM_PACKAGE)
+                resource.update(status=flag.SYSTEM_PACKAGE)
                 logger.info(f"      added as system-package to: {purl}")
 
             if rootfs.has_hash_diff(install_file, resource):

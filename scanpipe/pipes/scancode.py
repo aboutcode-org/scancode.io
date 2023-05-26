@@ -253,7 +253,7 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.update_status(flag.SCANNED_WITH_ERROR)
+        codebase_resource.update(status=flag.SCANNED_WITH_ERROR)
 
 
 def _log_progress(scan_func, resource, resource_count, index):
@@ -530,7 +530,7 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     status to "application-package".
     """
     codebase_resource.add_package(discovered_package)
-    codebase_resource.update_status(flag.APPLICATION_PACKAGE)
+    codebase_resource.update(status=flag.APPLICATION_PACKAGE)
 
 
 def _get_license_matches_grouped(project):

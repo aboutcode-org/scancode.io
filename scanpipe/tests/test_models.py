@@ -931,12 +931,12 @@ class ScanPipeModelsTest(TestCase):
         # Reset the index value
         scanpipe_app.license_policies_index = None
 
-    def test_scanpipe_codebase_resource_model_update_status(self):
+    def test_scanpipe_codebase_resource_model_update(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.status)
 
         with CaptureQueriesContext(connection) as queries_context:
-            resource.update_status("updated")
+            resource.update(status="updated")
 
         self.assertEqual(1, len(queries_context.captured_queries))
         sql = queries_context.captured_queries[0]["sql"]
@@ -1646,7 +1646,16 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             project1.update_extra_data("not_a_dict")
 
         data = {"key": "value"}
-        project1.update_extra_data(data)
+        with CaptureQueriesContext(connection) as queries_context:
+            project1.update_extra_data(data)
+
+        self.assertEqual(1, len(queries_context.captured_queries))
+        sql = queries_context.captured_queries[0]["sql"]
+        expected = (
+            'UPDATE "scanpipe_project" SET "extra_data" = \'{"key": "value"}\'::jsonb'
+        )
+        self.assertTrue(sql.startswith(expected))
+
         self.assertEqual(data, project1.extra_data)
         project1.refresh_from_db()
         self.assertEqual(data, project1.extra_data)

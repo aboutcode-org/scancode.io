@@ -410,7 +410,7 @@ class ExtraDataFieldMixin(models.Model):
             raise ValueError("Argument `data` value must be a dict()")
 
         self.extra_data.update(data)
-        self.save()
+        self.save(update_fields=["extra_data"])
 
     class Meta:
         abstract = True
@@ -1063,7 +1063,25 @@ class ProjectRelatedQuerySet(
             return self.get(*args, **kwargs)
 
 
-class ProjectRelatedModel(models.Model):
+class UpdateMixin:
+    """
+    Provide a ``update()`` method to trigger a save() on the object with the
+    ``update_fields`` automatically set to force a SQL UPDATE.
+    """
+
+    def update(self, **kwargs):
+        """
+        Update this resource with the provided ``kwargs`` values.
+        The full ``save()`` process will be triggered, including signals, and the
+        ``update_fields`` is automatically set.
+        """
+        for field_name, value in kwargs.items():
+            setattr(self, field_name, value)
+
+        self.save(update_fields=list(kwargs.keys()))
+
+
+class ProjectRelatedModel(UpdateMixin, models.Model):
     """A base model for all models that are related to a Project."""
 
     project = models.ForeignKey(
@@ -1780,11 +1798,6 @@ class CodebaseResource(
 
         super().save(*args, **kwargs)
 
-    def update_status(self, status):
-        """Update this resource status with the provided ``status``."""
-        self.status = status
-        self.save(update_fields=["status"])
-
     @property
     def location_path(self):
         """Return the location of the resource as a Path instance."""
@@ -2002,9 +2015,7 @@ class CodebaseResource(
             if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
 
-        resource = cls(project=project, **cleaned_data)
-        resource.save()
-        return resource
+        return cls.objects.create(project=project, **cleaned_data)
 
     def add_package(self, discovered_package):
         """Assign the `discovered_package` to this `codebase_resource` instance."""
@@ -2784,15 +2795,13 @@ class DiscoveredDependency(
             for field_name, value in dependency_data.items()
             if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
-        discovered_dependency = cls(
+
+        return cls.objects.create(
             project=project,
             for_package=for_package,
             datafile_resource=datafile_resource,
             **cleaned_data,
         )
-        discovered_dependency.save()
-
-        return discovered_dependency
 
     @property
     def spdx_id(self):
