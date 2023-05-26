@@ -232,13 +232,13 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     Save the resource scan file results in the database.
     Create project errors if any occurred during the scan.
     """
+    status = flag.SCANNED
+
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = flag.SCANNED_WITH_ERROR
-    else:
-        codebase_resource.status = flag.SCANNED
+        status = flag.SCANNED_WITH_ERROR
 
-    codebase_resource.set_scan_results(scan_results)
+    codebase_resource.set_scan_results(scan_results, status)
 
 
 def save_scan_package_results(codebase_resource, scan_results, scan_errors):

@@ -955,10 +955,11 @@ class ScanPipeModelsTest(TestCase):
             "name": "name",
             "non_resource_field": "value",
         }
-        resource.set_scan_results(scan_results)
+        resource.set_scan_results(scan_results, status="scanned")
         resource.refresh_from_db()
         self.assertEqual("", resource.name)
         self.assertEqual("mit", resource.detected_license_expression)
+        self.assertEqual("scanned", resource.status)
 
         resource2 = CodebaseResource.objects.create(project=self.project1, path="file2")
         resource2.copy_scan_results(from_instance=resource)

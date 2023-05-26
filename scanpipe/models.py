@@ -1562,16 +1562,23 @@ class ScanFieldsModelMixin(models.Model):
     def scan_fields(cls):
         return [field.name for field in ScanFieldsModelMixin._meta.get_fields()]
 
-    def set_scan_results(self, scan_results):
+    def set_scan_results(self, scan_results, status=None):
         """
         Set the values of the current instance's scan-related fields using
         ``scan_results``.
+
+        This instance status can be updated along the scan results by providing the
+        optional ``status`` argument.
         """
         updated_fields = []
         for field_name, value in scan_results.items():
             if value and field_name in self.scan_fields():
                 setattr(self, field_name, value)
                 updated_fields.append(field_name)
+
+        if status:
+            self.status = status
+            updated_fields.append("status")
 
         if updated_fields:
             self.save(update_fields=updated_fields)
