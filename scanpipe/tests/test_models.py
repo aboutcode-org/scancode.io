@@ -224,22 +224,35 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], self.project1.input_files)
         self.assertEqual([], self.project1.input_root)
 
-        new_file_path1 = self.project1.input_path / "file.ext"
+        new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
 
         new_dir1 = self.project1.input_path / "dir1"
         new_dir1.mkdir(parents=True, exist_ok=True)
-        new_file_path2 = new_dir1 / "file2.ext"
+        new_file_path2 = new_dir1 / "file2.tar"
         new_file_path2.touch()
 
         inputs = list(self.project1.inputs())
         expected = [new_dir1, new_file_path1, new_file_path2]
         self.assertEqual(sorted(expected), sorted(inputs))
 
-        expected = ["file.ext", "dir1/file2.ext"]
+        with self.assertRaises(TypeError) as error:
+            self.project1.inputs(extensions="str")
+        self.assertEqual("extensions should be a list or tuple", str(error.exception))
+
+        inputs = list(self.project1.inputs(extensions=["zip"]))
+        self.assertEqual([new_file_path1], inputs)
+
+        inputs = list(self.project1.inputs(extensions=[".tar"]))
+        self.assertEqual([new_file_path2], inputs)
+
+        inputs = list(self.project1.inputs(extensions=[".zip", "tar"]))
+        self.assertEqual(sorted([new_file_path1, new_file_path2]), sorted(inputs))
+
+        expected = ["file.zip", "dir1/file2.tar"]
         self.assertEqual(sorted(expected), sorted(self.project1.input_files))
 
-        expected = ["dir1", "file.ext"]
+        expected = ["dir1", "file.zip"]
         self.assertEqual(sorted(expected), sorted(self.project1.input_root))
 
     @mock.patch("scanpipe.pipes.datetime", mocked_now)

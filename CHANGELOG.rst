@@ -39,6 +39,10 @@ v33.0.0 (unreleased)
   updated during the task execution.
   https://github.com/nexB/scancode.io/issues/726
 
+- Add support for XLSX input in the ``load_inventory`` pipeline.
+  https://github.com/nexB/scancode.io/issues/735
+
+
 v32.2.0 (2023-04-25)
 --------------------
 

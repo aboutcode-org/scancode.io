@@ -356,16 +356,13 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 
 # Some scan attributes such as "copyrights" are list of dicts.
 #
-#  'authors': [{'end_line': 7, 'start_line': 7, 'value': 'John Doe'}],
-#  'copyrights': [{'end_line': 5, 'start_line': 5, 'value': 'Copyright (c) nexB Inc.'}],
+#  'authors': [{'end_line': 7, 'start_line': 7, 'author': 'John Doe'}],
+#  'copyrights': [{'end_line': 5, 'start_line': 5, 'copyright': 'Copyright (c) nexB'}],
 #  'emails': [{'email': 'joe@foobar.com', 'end_line': 1, 'start_line': 1}],
-#  'holders': [{'end_line': 5, 'start_line': 5, 'value': 'nexB Inc.'}],
+#  'holders': [{'end_line': 5, 'start_line': 5, 'holder': 'nexB Inc.'}],
 #  'urls': [{'end_line': 3, 'start_line': 3, 'url': 'https://foobar.com/'}]
 #
-# We therefore use a mapping to find which key to use in these mappings until
-# this is fixed updated in scancode-toolkit with these:
-# https://github.com/nexB/scancode-toolkit/pull/2381
-# https://github.com/nexB/scancode-toolkit/issues/2350
+# We therefore use a mapping to find which key to use:
 mappings_key_by_fieldname = {
     "copyrights": "copyright",
     "holders": "holder",
@@ -408,8 +405,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
 
     # convert these to text lines, remove duplicates
     if isinstance(value, (list, tuple)):
-        value = (str(v) for v in value if v)
-        value = ordered_unique(value)
+        value = ordered_unique(str(v) for v in value if v)
         value = "\n".join(value)
 
     # convert these to YAML which is the most readable dump format
@@ -426,7 +422,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     if len_val > maximum_length:
         error = (
             f"The value of: {fieldname} has been truncated from: {len_val} "
-            f"to {maximum_length} length to fit in an XLSL cell maximum length"
+            f"to {maximum_length} length to fit in an XLSX cell maximum length"
         )
         value = value[:maximum_length]
 
@@ -439,14 +435,14 @@ def to_xlsx(project):
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
 
-    Note that the XLSX worksheets contain each an extra "xlxs_errors" column
+    Note that the XLSX worksheets contain each an extra "xlsx_errors" column
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
     """
     output_file = project.get_output_file_path("results", "xlsx")
     exclude_fields = [
         "extra_data",
-        "extracted_license_statement",
+        "package_data",
         "license_detections",
         "other_license_detections",
         "license_clues",
