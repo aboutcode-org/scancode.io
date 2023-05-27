@@ -42,7 +42,19 @@ function disableEvent(event) {
 
 function dropHandler(event) {
   disableEvent(event);
-  fileInput.files = event.dataTransfer.files;
+  const droppedFiles = event.dataTransfer.files;
+  const updatedFiles = Array.from(fileInput.files);
+
+  for (let file of droppedFiles) {
+    updatedFiles.push(file);
+  }
+  
+  const dataTransfer = new DataTransfer();
+  for (let file of updatedFiles) {
+    dataTransfer.items.add(file);
+  }
+  
+  fileInput.files = dataTransfer.files;
   updateFiles();
 }
 
