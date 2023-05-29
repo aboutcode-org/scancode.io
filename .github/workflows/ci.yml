@@ -52,7 +52,7 @@ jobs:
         run: make docs
 
       - name: Run tests
-        run: bin/python manage.py test --verbosity=2 --noinput -k=test_scanpipe_pipes_scancode_make_results_summary
+        run: bin/python manage.py test --verbosity=2 --noinput
         env:
           SCANCODEIO_DB_NAME: ${{ env.POSTGRES_DB }}
           SCANCODEIO_DB_USER: ${{ env.POSTGRES_USER }}
