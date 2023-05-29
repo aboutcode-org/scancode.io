@@ -42,6 +42,8 @@ v33.0.0 (unreleased)
 - Add support for XLSX input in the ``load_inventory`` pipeline.
   https://github.com/nexB/scancode.io/issues/735
 
+- Add support for unknown licenses in attribution output.
+  https://github.com/nexB/scancode.io/issues/749
 
 v32.2.0 (2023-04-25)
 --------------------
