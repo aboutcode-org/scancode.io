@@ -478,7 +478,7 @@ def create_package_from_purldb_data(project, resource, package_data):
     extracted_resources = project.codebaseresources.to_codebase().filter(
         path__startswith=resource.path
     )
-    pipes.update_or_create_package(
+    package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
         codebase_resources=extracted_resources,
@@ -486,13 +486,14 @@ def create_package_from_purldb_data(project, resource, package_data):
     # Override the status as "purldb match" as we can rely on the codebase relation
     # for the mapping information.
     extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
+    return package
 
 
 def match_purldb_package(project, resource):
     """Match an archive type resource in the PurlDB."""
     if results := purldb.match_package(sha1=resource.sha1):
         package_data = results[0]
-        create_package_from_purldb_data(project, resource, package_data)
+        return create_package_from_purldb_data(project, resource, package_data)
 
 
 def match_purldb_resource(project, resource):
@@ -504,7 +505,7 @@ def match_purldb_resource(project, resource):
     if results := purldb.match_resource(sha1_list=sha1_list):
         package_url = results[0]["package"]
         if package_data := purldb.request_get(url=package_url):
-            create_package_from_purldb_data(project, resource, package_data)
+            return create_package_from_purldb_data(project, resource, package_data)
 
 
 def match_purldb(project, extensions, matcher_func, logger=None):
@@ -524,13 +525,13 @@ def match_purldb(project, extensions, matcher_func, logger=None):
 
     if logger:
         extensions_str = ", ".join(extensions)
-        logger(
-            f"Matching {resource_count:,d} {extensions_str} resources against PurlDB"
-        )
+        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
+    matched_count = 0
+
     for resource_index, to_resource in enumerate(resource_iterator):
         last_percent = pipes.log_progress(
             logger,
@@ -540,7 +541,11 @@ def match_purldb(project, extensions, matcher_func, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        matcher_func(project, to_resource)
+        matched_package = matcher_func(project, to_resource)
+        if matched_package:
+            matched_count += 1
+
+    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
 
 
 def map_javascript(project, logger=None):

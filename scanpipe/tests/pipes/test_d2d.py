@@ -158,7 +158,10 @@ class ScanPipeD2DPipesTest(TestCase):
             matcher_func=d2d.match_purldb_package,
             logger=buffer.write,
         )
-        self.assertEqual("Matching 1 .jar resources against PurlDB", buffer.getvalue())
+        expected = (
+            "Matching 1 .jar resources in PurlDB" "1 resource(s) matched in PurlDB"
+        )
+        self.assertEqual(expected, buffer.getvalue())
 
         package = self.project1.discoveredpackages.get()
         self.assertEqual(package_data["name"], package.name)
@@ -577,10 +580,10 @@ class ScanPipeD2DPipesTest(TestCase):
             matcher_func=d2d.match_purldb_resource,
             logger=buffer.write,
         )
-        self.assertEqual(
-            "Matching 1 .map, .js resources against PurlDB",
-            buffer.getvalue(),
+        expected = (
+            "Matching 1 .map, .js resources in PurlDB" "1 resource(s) matched in PurlDB"
         )
+        self.assertEqual(expected, buffer.getvalue())
 
         package = self.project1.discoveredpackages.get()
         self.assertEqual(package_data["name"], package.name)
