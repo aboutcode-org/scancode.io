@@ -427,7 +427,7 @@
           "license_expression": "lgpl-2.1-plus AND lgpl-2.1"
         }
       ],
-      "extracted_license_statement": "['LGPL-2.1+', 'LGPL-2.1+', 'LGPL-2.1+']",
+      "extracted_license_statement": "- LGPL-2.1+\n- LGPL-2.1+\n- LGPL-2.1+\n",
       "notice_text": "",
       "source_packages": [
         "pkg:deb/libndp"
