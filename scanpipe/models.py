@@ -158,6 +158,14 @@ class HashFieldsMixin(models.Model):
 
 
 class AbstractTaskFieldsModel(models.Model):
+    """
+    Base model including all the fields and methods to synchronize tasks in the
+    database with their related RQ Job.
+
+    Specify ``update_fields`` during each ``save()`` to force a SQL UPDATE in order to
+    avoid any data loss when the model fields are updated during the task execution.
+    """
+
     task_id = models.UUIDField(
         blank=True,
         null=True,
@@ -300,39 +308,37 @@ class AbstractTaskFieldsModel(models.Model):
         self.task_end_date = None
         self.task_exitcode = None
         self.task_output = ""
+        self.save(
+            update_fields=[
+                "task_id",
+                "task_start_date",
+                "task_end_date",
+                "task_exitcode",
+                "task_output",
+            ]
+        )
 
     def set_task_started(self, task_id):
         """Set the `task_id` and `task_start_date` fields before executing the task."""
         self.task_id = task_id
         self.task_start_date = timezone.now()
-        self.save()
+        self.save(update_fields=["task_id", "task_start_date"])
 
-    def set_task_ended(self, exitcode, output="", refresh_first=True):
-        """
-        Set the task-related fields after the task execution.
-
-        An optional `refresh_first` —enabled by default— forces refreshing
-        the instance with the latest data from the database before saving.
-        This prevents losing values saved on the instance during the task
-        execution.
-        """
-        if refresh_first:
-            self.refresh_from_db()
-
+    def set_task_ended(self, exitcode, output=""):
+        """Set the task-related fields after the task execution."""
         self.task_exitcode = exitcode
         self.task_output = output
         self.task_end_date = timezone.now()
-        self.save()
+        self.save(update_fields=["task_exitcode", "task_output", "task_end_date"])
 
     def set_task_queued(self):
         """
-        Set the task as "queued" by updating the `task_id` from None to this instance
-        `pk`.
-        Uses the QuerySet `update` method instead of `save` to prevent overriding
-        any fields that were set but not saved yet in the DB.
+        Set the task as "queued" by updating the ``task_id`` from ``None`` to this
+        instance ``pk``.
         """
-        manager = self.__class__.objects
-        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=self.pk)
+        assert not self.task_id, "task_id is already set"
+        self.task_id = self.pk
+        self.save(update_fields=["task_id"])
 
     def set_task_staled(self):
         """Set the task as "stale" using a special 88 exitcode value."""
@@ -344,7 +350,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     def stop_task(self):
         """Stop a "running" task."""
-        self.append_to_log("Stop task requested", save=True)
+        self.append_to_log("Stop task requested")
 
         if not settings.SCANCODEIO_ASYNC:
             self.set_task_stopped()
@@ -378,15 +384,14 @@ class AbstractTaskFieldsModel(models.Model):
         if delete_self:
             self.delete()
 
-    def append_to_log(self, message, save=False):
+    def append_to_log(self, message):
         """Append the ``message`` string to the ``log`` field of this instance."""
         message = message.strip()
         if any(lf in message for lf in ("\n", "\r")):
             raise ValueError("message cannot contain line returns (either CR or LF).")
 
         self.log = self.log + message + "\n"
-        if save:
-            self.save()
+        self.save(update_fields=["log"])
 
 
 class ExtraDataFieldMixin(models.Model):
@@ -404,7 +409,7 @@ class ExtraDataFieldMixin(models.Model):
             raise ValueError("Argument `data` value must be a dict()")
 
         self.extra_data.update(data)
-        self.save()
+        self.save(update_fields=["extra_data"])
 
     class Meta:
         abstract = True
@@ -527,7 +532,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         self.setup_work_directory()
 
         self.is_archived = True
-        self.save()
+        self.save(update_fields=["is_archived"])
 
     def delete_related_objects(self):
         """
@@ -783,7 +788,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         """
         self.input_sources[filename] = source
         if save:
-            self.save()
+            self.save(update_fields=["input_sources"])
 
     def write_input_file(self, file_object):
         """Write the provided `file_object` to the project's input/ directory."""
@@ -820,7 +825,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         for downloaded in downloads:
             self.move_input_from(downloaded.path)
             self.add_input_source(downloaded.filename, downloaded.uri)
-        self.save()
+        self.save(update_fields=["input_sources"])
 
     def add_uploads(self, uploads):
         """
@@ -830,7 +835,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         for uploaded in uploads:
             self.write_input_file(uploaded)
             self.add_input_source(filename=uploaded.name, source="uploaded")
-        self.save()
+        self.save(update_fields=["input_sources"])
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
@@ -1057,7 +1062,25 @@ class ProjectRelatedQuerySet(
             return self.get(*args, **kwargs)
 
 
-class ProjectRelatedModel(models.Model):
+class UpdateMixin:
+    """
+    Provide a ``update()`` method to trigger a save() on the object with the
+    ``update_fields`` automatically set to force a SQL UPDATE.
+    """
+
+    def update(self, **kwargs):
+        """
+        Update this resource with the provided ``kwargs`` values.
+        The full ``save()`` process will be triggered, including signals, and the
+        ``update_fields`` is automatically set.
+        """
+        for field_name, value in kwargs.items():
+            setattr(self, field_name, value)
+
+        self.save(update_fields=list(kwargs.keys()))
+
+
+class ProjectRelatedModel(UpdateMixin, models.Model):
     """A base model for all models that are related to a Project."""
 
     project = models.ForeignKey(
@@ -1174,7 +1197,7 @@ class UpdateFromDataMixin:
                 updated_fields.append(field_name)
 
         if updated_fields:
-            self.save()
+            self.save(update_fields=updated_fields)
 
         return updated_fields
 
@@ -1260,10 +1283,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
         # In async mode, we want to set the status as "queued" **after** the job was
         # properly "enqueued".
-        # In case the `django_rq.enqueue()` raise an exception (Redis server error),
+        # In case the ``django_rq.enqueue()`` raise an exception (Redis server error),
         # we want to keep the Run status as "not started" rather than "queued".
         # Note that the Run will then be set as "running" at the start of
-        # `execute_pipeline_task()` by calling the `set_task_started()`.
+        # ``execute_pipeline_task()`` by calling the ``set_task_started()``.
         # There's no need to call the following in synchronous single thread mode as
         # the run will be directly set as "running".
         self.set_task_queued()
@@ -1336,11 +1359,19 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 self.set_task_staled()
 
     def set_scancodeio_version(self):
-        """Set the current ScanCode.io version on the `Run.scancodeio_version` field."""
+        """Set the current ScanCode.io version on the ``scancodeio_version`` field."""
         if self.scancodeio_version:
             msg = f"Field scancodeio_version already set to {self.scancodeio_version}"
             raise ValueError(msg)
-        self.scancodeio_version = scancodeio_version
+
+        self.update(scancodeio_version=scancodeio_version)
+
+    def set_current_step(self, message):
+        """
+        Set the ``message`` value on the ``current_step`` field.
+        Truncate the value at 256 characters.
+        """
+        self.update(current_step=message[:256])
 
     @property
     def pipeline_class(self):
@@ -1547,30 +1578,40 @@ class ScanFieldsModelMixin(models.Model):
     def scan_fields(cls):
         return [field.name for field in ScanFieldsModelMixin._meta.get_fields()]
 
-    def set_scan_results(self, scan_results, save=False):
+    def set_scan_results(self, scan_results, status=None):
         """
         Set the values of the current instance's scan-related fields using
-        `scan_results`.
+        ``scan_results``.
+
+        This instance status can be updated along the scan results by providing the
+        optional ``status`` argument.
         """
-        scan_fields = self.scan_fields()
+        updated_fields = []
         for field_name, value in scan_results.items():
-            if value and field_name in scan_fields:
+            if value and field_name in self.scan_fields():
                 setattr(self, field_name, value)
+                updated_fields.append(field_name)
 
-        if save:
-            self.save()
+        if status:
+            self.status = status
+            updated_fields.append("status")
 
-    def copy_scan_results(self, from_instance, save=False):
+        if updated_fields:
+            self.save(update_fields=updated_fields)
+
+    def copy_scan_results(self, from_instance):
         """
-        Copy the scan-related fields values from `from_instance`to the current
+        Copy the scan-related fields values from ``from_instance`` to the current
         instance.
         """
+        updated_fields = []
         for field_name in self.scan_fields():
             value_from_instance = getattr(from_instance, field_name)
             setattr(self, field_name, value_from_instance)
+            updated_fields.append(field_name)
 
-        if save:
-            self.save()
+        if updated_fields:
+            self.save(update_fields=updated_fields)
 
 
 class CodebaseResource(
@@ -1972,9 +2013,7 @@ class CodebaseResource(
             if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
 
-        resource = cls(project=project, **cleaned_data)
-        resource.save()
-        return resource
+        return cls.objects.create(project=project, **cleaned_data)
 
     def add_package(self, discovered_package):
         """Assign the `discovered_package` to this `codebase_resource` instance."""
@@ -2754,15 +2793,13 @@ class DiscoveredDependency(
             for field_name, value in dependency_data.items()
             if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
-        discovered_dependency = cls(
+
+        return cls.objects.create(
             project=project,
             for_package=for_package,
             datafile_resource=datafile_resource,
             **cleaned_data,
         )
-        discovered_dependency.save()
-
-        return discovered_dependency
 
     @property
     def spdx_id(self):
@@ -2833,13 +2870,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             )
         except requests.exceptions.RequestException as exception:
             logger.info(exception)
-            self.delivery_error = str(exception)
-            self.save()
+            self.update(delivery_error=str(exception))
             return False
 
-        self.response_status_code = response.status_code
-        self.response_text = response.text
-        self.save()
+        self.update(
+            response_status_code=response.status_code,
+            response_text=response.text,
+        )
 
         if self.success:
             logger.info(f"Webhook uuid={self.uuid} delivered and received.")

@@ -35,6 +35,7 @@ SCANCODEIO_DB_NAME=scancodeio
 SCANCODEIO_DB_USER=scancodeio
 SCANCODEIO_DB_PASSWORD=scancodeio
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+DATE=$(shell date +"%Y-%m-%d_%H%M")
 
 # Use sudo for postgres, but only on Linux
 UNAME := $(shell uname)
@@ -106,6 +107,9 @@ postgresdb:
 	@${SUDO_POSTGRES} createdb --owner=${SCANCODEIO_DB_USER} ${POSTGRES_INITDB_ARGS} ${SCANCODEIO_DB_NAME}
 	@$(MAKE) migrate
 
+backupdb:
+	pg_dump -Fc ${SCANCODEIO_DB_NAME} > "${SCANCODEIO_DB_NAME}-db-${DATE}.dump"
+
 sqlitedb:
 	@echo "-> Configure SQLite database"
 	@echo SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\" >> ${ENV_FILE}
@@ -147,4 +151,4 @@ docker-images:
 	@mkdir -p dist/
 	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb run test docs bump publish docker-images
+.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images

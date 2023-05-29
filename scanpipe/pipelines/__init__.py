@@ -100,7 +100,7 @@ class Pipeline:
         timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
         message = f"{timestamp} {message}"
         logger.info(message)
-        self.run.append_to_log(message, save=True)
+        self.run.append_to_log(message)
 
     def execute(self):
         """Execute each steps in the order defined on this pipeline class."""
@@ -111,9 +111,7 @@ class Pipeline:
         for current_index, step in enumerate(steps, start=1):
             step_name = step.__name__
 
-            # The `current_step` value is saved in the DB during the `self.log` call.
-            self.run.current_step = f"{current_index}/{steps_count} {step_name}"[:256]
-
+            self.run.set_current_step(f"{current_index}/{steps_count} {step_name}")
             self.log(f"Step [{step_name}] starting")
             start_time = timer()
 
@@ -127,7 +125,7 @@ class Pipeline:
             run_time = timer() - start_time
             self.log(f"Step [{step.__name__}] completed in {humanize_time(run_time)}")
 
-        self.run.current_step = ""
+        self.run.set_current_step("")
         self.log("Pipeline completed")
 
         return 0, ""

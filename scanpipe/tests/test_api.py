@@ -695,7 +695,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Only non started or queued pipelines can be deleted."}
         self.assertEqual(expected, response.data)
 
-        run3.set_task_ended(0)
+        run3.set_task_ended(exitcode=0)
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Only non started or queued pipelines can be deleted."}

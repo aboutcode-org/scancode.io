@@ -229,17 +229,17 @@ def _create_system_package(project, purl, package):
 
         if created_package not in codebase_resource.discovered_packages.all():
             codebase_resource.discovered_packages.add(created_package)
-            codebase_resource.status = flag.SYSTEM_PACKAGE
-            codebase_resource.save()
+            codebase_resource.update(status=flag.SYSTEM_PACKAGE)
             logger.info(f"      added as system-package to: {purl}")
 
         if has_hash_diff(install_file, codebase_resource):
             if install_file.path not in modified_resources:
                 modified_resources.append(install_file.path)
 
-    created_package.missing_resources = missing_resources
-    created_package.modified_resources = modified_resources
-    created_package.save()
+    created_package.update(
+        missing_resources=missing_resources,
+        modified_resources=modified_resources,
+    )
 
 
 def scan_rootfs_for_system_packages(project, rootfs):
@@ -303,18 +303,14 @@ def match_not_analyzed(
     count = 0
     matchables = get_resource_with_md5(project=project, status=not_analyzed_status)
     for matchable in matchables:
-        key = (
-            matchable.md5,
-            matchable.size,
-        )
+        key = (matchable.md5, matchable.size)
         matched = known_resources_by_md5_size.get(key)
         if matched is None:
             continue
         count += 1
         package = matched.discovered_packages.all()[0]
-        matchable.status = reference_status
         matchable.discovered_packages.add(package)
-        matchable.save()
+        matchable.update(status=reference_status)
 
 
 def tag_uninteresting_codebase_resources(project):
