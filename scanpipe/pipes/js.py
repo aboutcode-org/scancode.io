@@ -49,29 +49,29 @@ def source_content_sha1(map_file):
     return [sha1(content) for content in contents if content]
 
 
+def load_json_from_file(location):
+    """Return the deserialized json content from ``location``."""
+    with open(location) as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return
+
+
 def get_map_sources(map_file):
     """Return source paths from a map file."""
-    with open(map_file.location) as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError:
-            return []
-
-    sources = data.get("sources", [])
-    sources = [source.rsplit("../", 1)[-1] for source in sources if source]
-    return sources
+    if data := load_json_from_file(map_file.location):
+        sources = data.get("sources", [])
+        sources = [source.rsplit("../", 1)[-1] for source in sources if source]
+        return sources
+    return []
 
 
 def get_map_sources_content(map_file):
     """Return sources contents from a map file."""
-    with open(map_file.location) as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError:
-            return []
-
-    contents = data.get("sourcesContent", [])
-    return contents
+    if data := load_json_from_file(map_file.location):
+        return data.get("sourcesContent", [])
+    return []
 
 
 def get_matches_by_ratio(
