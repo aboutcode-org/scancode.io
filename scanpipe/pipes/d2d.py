@@ -44,7 +44,7 @@ IGNORED_PATHS = ("gradleTest/",)
 
 
 def get_inputs(project):
-    """Locate the `from` and `to` archives in project inputs directory."""
+    """Locate the ``from`` and ``to`` archives in project inputs directory."""
     from_file = list(project.inputs("from*"))
     to_file = list(project.inputs("to*"))
 
@@ -99,17 +99,17 @@ def collect_and_create_codebase_resources(project, batch_size=5000):
 
 
 def get_extracted_path(resource):
-    """Return the `-extract/` extracted path of provided `resource`."""
+    """Return the ``-extract/`` extracted path of provided ``resource``."""
     return resource.path + "-extract/"
 
 
 def get_extracted_subpath(path):
-    """Return the path segments located after the last `-extract/` segment."""
+    """Return the path segments located after the last ``-extract/`` segment."""
     return path.split("-extract/")[-1]
 
 
 def get_best_path_matches(to_resource, matches):
-    """Return the best `matches` for the provided `to_resource`."""
+    """Return the best ``matches`` for the provided ``to_resource``."""
     path_parts = Path(to_resource.path.lstrip("/")).parts
 
     for path_parts_index in range(1, len(path_parts)):
@@ -270,7 +270,7 @@ def get_indexable_qualified_java_paths(from_resources_dot_java):
 
 def find_java_packages(project, logger=None):
     """
-    Collect the Java packages of Java source files for a `project`.
+    Collect the Java packages of Java source files for a ``project``.
 
     Multiprocessing is enabled by default on this pipe, the number of processes
     can be controlled through the SCANCODEIO_PROCESSES setting.
@@ -302,7 +302,7 @@ def scan_for_java_package(location, with_threading=True):
     """
     Run a Java package scan on provided ``location``.
 
-    Return a dict of scan `results` and a list of `errors`.
+    Return a dict of scan ``results`` and a list of ``errors``.
     """
     scanners = [scancode.Scanner("java_package", jvm.get_java_package)]
     return scancode._scan_resource(location, scanners, with_threading=with_threading)
@@ -490,7 +490,7 @@ def _match_purldb_resource(project, resource):
 
 def match_purldb(project, extensions, logger=None):
     """
-    Match against PurlDB selecting codebase resources using provided `extensions`.
+    Match against PurlDB selecting codebase resources using provided ``extensions``.
     Resources with existing status as not excluded.
     """
     to_resources = (
