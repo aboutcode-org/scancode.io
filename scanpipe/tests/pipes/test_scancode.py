@@ -415,7 +415,6 @@ class ScanPipeScancodePipesTest(TestCase):
 
         scan_output_location = self.data_location / "is-npm-1.0.0_scan_package.json"
         summary = scancode.make_results_summary(project1, scan_output_location)
-
         expected_location = self.data_location / "scancode/is-npm-1.0.0_summary.json"
         if regen:
             expected_location.write_text(json.dumps(summary, indent=2))
