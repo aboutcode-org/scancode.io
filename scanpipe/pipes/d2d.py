@@ -468,30 +468,50 @@ def map_path(project, logger=None):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def _match_purldb_resource(project, resource):
-    if results := purldb.match_by_sha1(sha1=resource.sha1):
-        package_data = results[0].copy()
-        # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
-        # PurlDB match can be found in different projects.
-        package_data.pop("uuid", None)
-        package_data.pop("dependencies", None)
-        extracted_resources = project.codebaseresources.to_codebase().filter(
-            path__startswith=resource.path
-        )
-        pipes.update_or_create_package(
-            project=project,
-            package_data=package_data,
-            codebase_resources=extracted_resources,
-        )
-        # Override the status as "purldb match" as we can rely on the codebase relation
-        # for the mapping information.
-        extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
+def create_package_from_purldb_data(project, resource, package_data):
+    """Create a DiscoveredPackage instance from PurlDB ``package_data``."""
+    package_data = package_data.copy()
+    # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
+    # PurlDB match can be found in different projects.
+    package_data.pop("uuid", None)
+    package_data.pop("dependencies", None)
+    extracted_resources = project.codebaseresources.to_codebase().filter(
+        path__startswith=resource.path
+    )
+    pipes.update_or_create_package(
+        project=project,
+        package_data=package_data,
+        codebase_resources=extracted_resources,
+    )
+    # Override the status as "purldb match" as we can rely on the codebase relation
+    # for the mapping information.
+    extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
 
 
-def match_purldb(project, extensions, logger=None):
+def match_purldb_package(project, resource):
+    """Match an archive type resource in the PurlDB."""
+    if results := purldb.match_package(sha1=resource.sha1):
+        package_data = results[0]
+        create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb_resource(project, resource):
+    """Match a single file resource in the PurlDB."""
+    sha1_list = [resource.sha1]
+    if resource.path.endswith(".map"):
+        sha1_list.extend(js.source_content_sha1_list(resource))
+
+    if results := purldb.match_resource(sha1_list=sha1_list):
+        package_url = results[0]["package"]
+        if package_data := purldb.request_get(url=package_url):
+            create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb(project, extensions, matcher_func, logger=None):
     """
-    Match against PurlDB selecting codebase resources using provided ``extensions``.
-    Resources with existing status as not excluded.
+    Match against PurlDB selecting codebase resources using provided
+    ``package_extensions`` for archive type files, and ``resource_extensions`` for
+    single resource files.
     """
     to_resources = (
         project.codebaseresources.files()
@@ -520,7 +540,7 @@ def match_purldb(project, extensions, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _match_purldb_resource(project, to_resource)
+        matcher_func(project, to_resource)
 
 
 def map_javascript(project, logger=None):
@@ -591,73 +611,3 @@ def _map_javascript_resource(
                 extra_data=extra_data,
             )
             resource.update(status=flag.MAPPED)
-
-
-def _match_js_purldb_resource(project, resource):
-    sha1_list = [resource.sha1]
-    if resource.path.endswith(".map"):
-        sha1_list.extend(js.source_content_sha1_list(resource))
-
-    if results := purldb.match_resource_by_sha1(sha1_list=sha1_list):
-        pacakge_url = results[0]["package"]
-        if package := purldb.request_get(url=pacakge_url):
-            package_data = package.copy()
-            # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
-            # PurlDB match can be found in different projects.
-            package_data.pop("uuid", None)
-            package_data.pop("dependencies", None)
-            extracted_resources = project.codebaseresources.to_codebase().filter(
-                path__startswith=resource.path
-            )
-            pipes.update_or_create_package(
-                project=project,
-                package_data=package_data,
-                codebase_resources=extracted_resources,
-            )
-
-            extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
-
-
-def match_js_purldb(project, logger=None):
-    """Match third-party JavaScript files against PurlDB."""
-    extensions = [
-        ".map",
-        ".js",
-        ".mjs",
-        ".ts",
-        ".d.ts",
-        ".jsx",
-        ".tsx",
-        ".css",
-        ".scss",
-        ".less",
-        ".sass",
-    ]
-    to_resources = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .no_status()
-        .has_value("sha1")
-        .filter(extension__in=extensions)
-    )
-    resource_count = to_resources.count()
-
-    if logger:
-        extensions_str = ", ".join(extensions)
-        logger(
-            f"Matching {resource_count:,d} {extensions_str} resources against PurlDB"
-        )
-
-    resource_iterator = to_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
-        _match_js_purldb_resource(project, to_resource)

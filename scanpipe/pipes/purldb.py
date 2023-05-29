@@ -72,11 +72,7 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
-def request_get(
-    url,
-    payload=None,
-    timeout=None,
-):
+def request_get(url, payload=None, timeout=None):
     """Wrap the HTTP request calls on the API."""
     if not url:
         return
@@ -94,11 +90,7 @@ def request_get(
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def request_post(
-    url,
-    data,
-    timeout=None,
-):
+def request_post(url, data, timeout=None):
     try:
         response = session.post(url, json=data, timeout=timeout)
         response.raise_for_status()
@@ -107,12 +99,8 @@ def request_post(
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def match_by_sha1(
-    sha1,
-    timeout=None,
-    api_url=PURLDB_API_URL,
-):
-    """Match a SHA1 in the PurlDB."""
+def match_package(sha1, timeout=None, api_url=PURLDB_API_URL):
+    """Match a SHA1 in the PurlDB for package-type file."""
     payload = {"sha1": sha1}
     response = request_get(url=f"{api_url}packages/", payload=payload, timeout=timeout)
 
@@ -121,12 +109,8 @@ def match_by_sha1(
         return results
 
 
-def match_resource_by_sha1(
-    sha1_list,
-    timeout=None,
-    api_url=PURLDB_API_URL,
-):
-    """Match list SHA1 in the PurlDB resource."""
+def match_resource(sha1_list, timeout=None, api_url=PURLDB_API_URL):
+    """Match list SHA1 in the PurlDB for a single resource file."""
     payload = {"sha1": sha1_list}
     response = request_get(url=f"{api_url}resources/", payload=payload, timeout=timeout)
 
