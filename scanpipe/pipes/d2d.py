@@ -525,85 +525,61 @@ def match_purldb(project, extensions, logger=None):
 
 def map_javascript(project, logger=None):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
-    project_files = project.codebaseresources.files().only("path")
+    project_files = project.codebaseresources.files()
 
-    to_resources = (
-        project_files.to_codebase()
-        .filter(extension=".map")
-        .exclude(name__startswith=".")
-    )
+    to_resources = project_files.to_codebase().exclude(name__startswith=".")
+    to_resources_dot_map = to_resources.filter(extension=".map")
+    to_resources_minified = to_resources.filter(extension__in=[".css", ".js"])
 
-    to_resources_minified = (
-        project_files.to_codebase()
-        .filter(extension__in=[".css", ".js"])
-        .exclude(name__startswith=".")
-    )
-    from_resources = project_files.from_codebase()
-    resource_count = to_resources.count()
-
+    to_resources_dot_map_count = to_resources_dot_map.count()
     if logger:
         logger(
-            f"Mapping {resource_count:,d} to/ resources using javascript map "
-            f"against from/ codebase"
+            f"Mapping {to_resources_dot_map_count:,d} .map resources using javascript "
+            f"map against from/ codebase"
         )
 
+    from_resources = project_files.from_codebase()
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True
     )
 
-    resource_iterator = to_resources.iterator(chunk_size=2000)
+    resource_iterator = to_resources_dot_map.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
-    for resource_index, to_map in enumerate(resource_iterator):
+    for resource_index, to_dot_map in enumerate(resource_iterator):
         last_percent = pipes.log_progress(
             logger,
             resource_index,
-            resource_count,
+            to_resources_dot_map_count,
             last_percent,
             increment_percent=10,
             start_time=start_time,
         )
         _map_javascript_resource(
-            to_map, to_resources_minified, from_resources_index, from_resources
+            to_dot_map, to_resources_minified, from_resources_index, from_resources
         )
-
-
-def get_minified_resource(map_resource, minified_resources):
-    """Return the corresponding minified file for a map file."""
-    path = Path(map_resource.path.lstrip("/"))
-
-    minified_file, _ = path.name.split(".map")
-    minified_file_path = path.parent / minified_file
-
-    try:
-        minified_resource = minified_resources.get(path=minified_file_path)
-        if js.source_mapping_in_minified(minified_resource, path.name):
-            return minified_resource
-    except CodebaseResource.DoesNotExist:
-        pass
 
 
 def _map_javascript_resource(
     to_map, to_resources_minified, from_resources_index, from_resources
 ):
-    content_sha1 = js.source_content_sha1(to_map)
-    sha1_matches = from_resources.filter(sha1__in=content_sha1)
+    content_sha1_list = js.source_content_sha1_list(to_map)
+    sha1_matches = from_resources.filter(sha1__in=content_sha1_list)
 
     # Only create relations when the number of sha1 matches if inferior or equal
     # to the number of sourcesContent in map.
-    if len(sha1_matches) > len(content_sha1):
-        to_map.status = flag.TOO_MANY_MAPS
-        to_map.save()
+    if len(sha1_matches) > len(content_sha1_list):
+        to_map.update(status=flag.TOO_MANY_MAPS)
         return
 
     matches = [(match, {}) for match in sha1_matches]
 
     # Use diff_ratio if no sha1 match is found.
-    if not bool(matches):
+    if not matches:
         matches = js.get_matches_by_ratio(to_map, from_resources_index, from_resources)
 
     transpiled = [to_map]
-    if minified_resource := get_minified_resource(to_map, to_resources_minified):
+    if minified_resource := js.get_minified_resource(to_map, to_resources_minified):
         transpiled.append(minified_resource)
 
     for resource in transpiled:
@@ -614,14 +590,13 @@ def _map_javascript_resource(
                 map_type="js_compiled",
                 extra_data=extra_data,
             )
-            resource.status = ""
-            resource.save()
+            resource.update(status=flag.MAPPED)
 
 
 def _match_js_purldb_resource(project, resource):
     sha1_list = [resource.sha1]
     if resource.path.endswith(".map"):
-        sha1_list.extend(js.source_content_sha1(resource))
+        sha1_list.extend(js.source_content_sha1_list(resource))
 
     if results := purldb.match_resource_by_sha1(sha1_list=sha1_list):
         pacakge_url = results[0]["package"]

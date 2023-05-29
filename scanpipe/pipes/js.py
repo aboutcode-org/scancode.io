@@ -22,12 +22,13 @@
 
 import hashlib
 import json
+from pathlib import Path
 
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import pathmap
 
 
-def source_mapping_in_minified(resource, map_file_name):
+def is_source_mapping_in_minified(resource, map_file_name):
     """Return True if a string contains a source mapping in its last 5 lines."""
     source_mapping = f"sourceMappingURL={map_file_name}"
     lines = resource.file_content.split("\n")
@@ -43,7 +44,7 @@ def sha1(content):
     return hash_object.hexdigest()
 
 
-def source_content_sha1(map_file):
+def source_content_sha1_list(map_file):
     """Return list containing sha1 of sourcesContent."""
     contents = get_map_sources_content(map_file)
     return [sha1(content) for content in contents if content]
@@ -99,3 +100,18 @@ def get_matches_by_ratio(
             matches.append((from_source, {"diff_ratio": f"{diff_ratio:.1%}"}))
 
     return matches
+
+
+def get_minified_resource(map_resource, minified_resources):
+    """Return the corresponding minified file for a map file."""
+    path = Path(map_resource.path.lstrip("/"))
+
+    minified_file, _ = path.name.split(".map")
+    minified_file_path = path.parent / minified_file
+    minified_resource = minified_resources.get_or_none(path=minified_file_path)
+
+    if not minified_resource:
+        return
+
+    if is_source_mapping_in_minified(minified_resource, path.name):
+        return minified_resource

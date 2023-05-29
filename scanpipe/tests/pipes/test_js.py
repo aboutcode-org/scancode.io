@@ -28,6 +28,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import d2d
 from scanpipe.pipes import js
 from scanpipe.pipes.input import copy_input
+from scanpipe.pipes.input import copy_inputs
 
 
 class ScanPipeJsTest(TestCase):
@@ -43,7 +44,7 @@ class ScanPipeJsTest(TestCase):
         result = js.sha1(source_text)
         self.assertEqual("d6bfcf7d1f8a00cc639b3a186a52453d37c52f61", result)
 
-    def test_scanpipe_pipes_js_source_mapping_in_minified(self):
+    def test_scanpipe_pipes_js_is_source_mapping_in_minified(self):
         to_input_location = self.data_location / "d2d-javascript" / "to" / "main.js"
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
@@ -62,10 +63,10 @@ class ScanPipeJsTest(TestCase):
                 "resources/adaptive_media/js/main.js"
             )
         )
-        result = js.source_mapping_in_minified(to_resource, "main.js.map")
+        result = js.is_source_mapping_in_minified(to_resource, "main.js.map")
         self.assertEqual(True, result)
 
-    def test_scanpipe_pipes_js_source_content_sha1(self):
+    def test_scanpipe_pipes_js_source_content_sha1_list(self):
         to_input_location = self.data_location / "d2d-javascript" / "to" / "main.js.map"
         to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
@@ -84,7 +85,7 @@ class ScanPipeJsTest(TestCase):
                 "resources/adaptive_media/js/main.js.map"
             )
         )
-        result = js.source_content_sha1(to_resource)
+        result = js.source_content_sha1_list(to_resource)
         self.assertEqual(["d6bfcf7d1f8a00cc639b3a186a52453d37c52f61"], result)
 
     def test_scanpipe_pipes_js_get_map_sources(self):
@@ -135,3 +136,44 @@ class ScanPipeJsTest(TestCase):
         result = js.get_map_sources_content(to_resource)
 
         self.assertEqual([expected], result)
+
+    def test_scanpipe_pipes_js_get_minified_resource(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "intelligent robotics platform.lpkg-extract/"
+            "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+            "resources/adaptive_media/js"
+        )
+        to_dir.mkdir(parents=True)
+        resource_files = [
+            self.data_location / "d2d-javascript" / "to" / "main.js.map",
+            self.data_location / "d2d-javascript" / "to" / "main.js",
+        ]
+        copy_inputs(resource_files, to_dir)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        map_file = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/main.js.map"
+            )
+        )
+
+        expected = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/main.js"
+            )
+        )
+
+        project_files = self.project1.codebaseresources.files().no_status()
+        minified_resources = project_files.to_codebase()
+
+        result = js.get_minified_resource(map_file, minified_resources)
+
+        self.assertEqual(expected, result)
