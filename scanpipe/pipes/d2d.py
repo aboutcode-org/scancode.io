@@ -38,7 +38,12 @@ from scanpipe.pipes import scancode
 FROM = "from/"
 TO = "to/"
 
-IGNORED_FILENAMES = ("packageinfo", "package-info.java", "package-info.class")
+IGNORED_FILENAMES = (
+    ".DS_Store",
+    "packageinfo",
+    "package-info.java",
+    "package-info.class",
+)
 IGNORED_EXTENSIONS = ()
 IGNORED_PATHS = ("gradleTest/",)
 
