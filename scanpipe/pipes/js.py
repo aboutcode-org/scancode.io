@@ -84,11 +84,13 @@ def get_matches_by_ratio(
     matches = []
     for source, content in zip(sources, sources_content):
         prospect = pathmap.find_paths(source, from_resources_index)
+        if not prospect:
+            continue
 
         # Only create relations when the number of matches is inferior or equal to
         # the current number of path segment matched.
         too_many_prospects = len(prospect.resource_ids) > prospect.matched_path_length
-        if not prospect or too_many_prospects:
+        if too_many_prospects:
             continue
 
         for resource_id in prospect.resource_ids:
