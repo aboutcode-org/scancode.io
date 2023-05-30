@@ -29,6 +29,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import js
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.pathmap import build_index
 
 
 class ScanPipeJsTest(TestCase):
@@ -177,3 +178,71 @@ class ScanPipeJsTest(TestCase):
         result = js.get_minified_resource(map_file, minified_resources)
 
         self.assertEqual(expected, result)
+
+    def test_scanpipe_pipes_js_get_matches_by_ratio(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "intelligent robotics platform.lpkg-extract/"
+            "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+            "resources/adaptive_media/js"
+        )
+        to_dir.mkdir(parents=True)
+        resource_files = [
+            self.data_location / "d2d-javascript" / "to" / "unmain.js.map",
+            self.data_location / "d2d-javascript" / "to" / "no_path_unmain.js.map",
+        ]
+        copy_inputs(resource_files, to_dir)
+
+        from_input_location = (
+            self.data_location / "d2d-javascript" / "from" / "unmain.js"
+        )
+        from_dir = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        to_map1 = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/unmain.js.map"
+            )
+        )
+
+        to_map2 = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/no_path_unmain.js.map"
+            )
+        )
+
+        from_source = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/unmain.js"
+            )
+        )
+
+        project_files = self.project1.codebaseresources.files()
+        from_resources = project_files.from_codebase()
+        from_resources_index = build_index(
+            from_resources.values_list("id", "path"), with_subpaths=True
+        )
+
+        result1 = js.get_matches_by_ratio(to_map1, from_resources_index, from_resources)
+        expected1 = [(from_source, {"diff_ratio": "100.0%"})]
+
+        result2 = js.get_matches_by_ratio(to_map2, from_resources_index, from_resources)
+
+        self.assertEqual(expected1, result1)
+        self.assertEqual([], result2)
