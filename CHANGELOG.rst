@@ -4,7 +4,7 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
-- Upgrade ScanCode-toolkit to latest v32.0.0
+- Upgrade ScanCode-toolkit to latest v32.0.x
   Warning: This upgrade requires schema and data migrations (both included).
   It is recommended to reset and re-run the pipelines to benefit from the latest
   ScanCode detection improvements.
@@ -44,6 +44,10 @@ v33.0.0 (unreleased)
 
 - Add support for unknown licenses in attribution output.
   https://github.com/nexB/scancode.io/issues/749
+
+- The "Codebase" panel can now be used to browse the Project's codebase/ directory
+  and open related resources details view.
+  https://github.com/nexB/scancode.io/issues/744
 
 v32.2.0 (2023-04-25)
 --------------------

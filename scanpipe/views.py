@@ -27,11 +27,14 @@ import operator
 from collections import Counter
 from collections import namedtuple
 from contextlib import suppress
+from pathlib import Path
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import SuspiciousFileOperation
+from django.core.files.storage.filesystem import FileSystemStorage
 from django.http import FileResponse
 from django.http import Http404
 from django.http import HttpResponse
@@ -683,6 +686,70 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
 
                 context[f"{group_name}_{field_name}"] = self.get_summary(field_values)
 
+        return context
+
+
+class ProjectCodebaseView(
+    ConditionalLoginRequired,
+    ProjectViewMixin,
+    generic.DetailView,
+):
+    template_name = "scanpipe/includes/project_codebase.html"
+
+    @staticmethod
+    def get_tree(project, current_dir):
+        """
+        Return the direct content of the ``current_dir`` as a flat tree.
+
+        The lookups are scoped to the ``project`` codebase/ work directory.
+        The security is handled by the FileSystemStorage and will raise a
+        SuspiciousFileOperation for attempting to look outside the codebase/ directory.
+        """
+        codebase_root = project.codebase_path.resolve()
+        if not codebase_root.exists():
+            raise ValueError("codebase/ work directory not found")
+
+        # Raises ValueError if the codebase_root is not within the workspace_path
+        codebase_root.relative_to(scanpipe_app.workspace_path)
+        fs_storage = FileSystemStorage(location=codebase_root)
+        directories, files = fs_storage.listdir(current_dir)
+
+        def get_node(name, is_dir, location):
+            return {
+                "name": name,
+                "is_dir": is_dir,
+                "location": location,
+            }
+
+        tree = []
+        root_directory = "."
+        include_parent = current_dir and current_dir != root_directory
+        if include_parent:
+            tree.append(
+                get_node(name="..", is_dir=True, location=str(Path(current_dir).parent))
+            )
+
+        for resources, is_dir in [(directories, True), (files, False)]:
+            tree.extend(
+                get_node(name=name, is_dir=is_dir, location=f"{current_dir}/{name}")
+                for name in resources
+            )
+
+        return tree
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        current_dir = self.request.GET.get("current_dir") or "."
+
+        try:
+            codebase_tree = self.get_tree(self.object, current_dir)
+        except FileNotFoundError:
+            raise Http404(f"{current_dir} not found")
+        except (ValueError, SuspiciousFileOperation) as error:
+            raise Http404(error)
+
+        context["current_dir"] = current_dir
+        context["codebase_tree"] = codebase_tree
         return context
 
 

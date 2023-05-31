@@ -88,7 +88,9 @@
         <div class="columns">
           {% if codebase_root %}
             <div class="column">
-              {% include "scanpipe/includes/project_codebase.html" with paths=codebase_root %}
+              <div hx-get="{% url 'project_codebase' project.uuid %}" hx-trigger="load">
+                <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
+              </div>
             </div>
           {% endif %}
           {% if resource_status_summary %}
