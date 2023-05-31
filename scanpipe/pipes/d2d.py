@@ -371,6 +371,7 @@ def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
 
 
 def map_jar_to_source(project, logger=None):
+    """Map .jar files to their related source directory."""
     project_files = project.codebaseresources.files()
     # Include the directories to map on the common source
     from_resources = project.codebaseresources.from_codebase()

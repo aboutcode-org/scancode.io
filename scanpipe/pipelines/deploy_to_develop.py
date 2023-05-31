@@ -128,7 +128,7 @@ class DeployToDevelop(Pipeline):
         d2d.flag_to_meta_inf_files(self.project)
 
     def map_jar_to_source(self):
-        """Map a .class compiled file to its .java source."""
+        """Map .jar files to their related source directory."""
         d2d.map_jar_to_source(project=self.project, logger=self.log)
 
     def map_javascript(self):
