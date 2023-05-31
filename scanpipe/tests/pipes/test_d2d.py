@@ -263,7 +263,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertIn(from2, no_relations)
         self.assertIn(to3, no_relations)
         to3.refresh_from_db()
-        self.assertEqual("no-java-source", to3.status)
+        self.assertEqual("", to3.status)
 
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
         from1 = make_resource_file(
