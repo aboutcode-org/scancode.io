@@ -247,10 +247,6 @@ def map_java_to_class(project, logger=None):
             )
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
-    # Flag not mapped .class in to/ codebase
-    to_resources_dot_class = to_resources.filter(extension=".class")
-    to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
-
 
 def get_indexable_qualified_java_paths_from_values(resource_values):
     """
