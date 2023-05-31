@@ -21,10 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import shutil
 from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
+from django.core.exceptions import SuspiciousFileOperation
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
@@ -34,6 +36,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import make_relation
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_file
+from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -312,6 +315,71 @@ class ScanPipeViewsTest(TestCase):
             "Other languages",
         ]
         self.assertEqual(expected, list(scan_summary_data.keys()))
+
+    def test_scanpipe_views_project_codebase_view(self):
+        url = reverse("project_codebase", args=[self.project1.uuid])
+
+        (self.project1.codebase_path / "dir1").mkdir()
+        (self.project1.codebase_path / "dir1/dir2").mkdir()
+        (self.project1.codebase_path / "file.txt").touch()
+
+        response = self.client.get(url)
+        self.assertContains(response, "/codebase/?current_dir=./dir1")
+        self.assertContains(response, "/resources/./file.txt/")
+
+        data = {"current_dir": "dir1"}
+        response = self.client.get(url, data=data)
+        self.assertContains(response, "..")
+        self.assertContains(response, "/codebase/?current_dir=.")
+        self.assertContains(response, "/codebase/?current_dir=dir1/dir2")
+
+        data = {"current_dir": "not_existing"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        data = {"current_dir": "../"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+    def test_scanpipe_views_project_codebase_view_get_tree(self):
+        get_tree = ProjectCodebaseView.get_tree
+
+        (self.project1.codebase_path / "dir1").mkdir()
+        (self.project1.codebase_path / "dir1/dir2").mkdir()
+        (self.project1.codebase_path / "file.txt").touch()
+
+        with mock.patch.object(scanpipe_app, "workspace_path", ""):
+            self.assertEqual("", scanpipe_app.workspace_path)
+            with self.assertRaises(ValueError) as e:
+                get_tree(self.project1, current_dir="")
+        expected = "is not in the subpath of '' OR one path is relative"
+        self.assertIn(expected, str(e.exception))
+
+        with self.assertRaises(FileNotFoundError):
+            get_tree(self.project1, current_dir="not_existing")
+
+        with self.assertRaises(SuspiciousFileOperation) as e:
+            get_tree(self.project1, current_dir="../../")
+        self.assertIn("is located outside of the base path component", str(e.exception))
+
+        codebase_tree = get_tree(self.project1, current_dir="")
+        expected = [
+            {"name": "dir1", "is_dir": True, "location": "/dir1"},
+            {"name": "file.txt", "is_dir": False, "location": "/file.txt"},
+        ]
+        self.assertEqual(expected, codebase_tree)
+
+        codebase_tree = get_tree(self.project1, current_dir="dir1")
+        expected = [
+            {"name": "..", "is_dir": True, "location": "."},
+            {"name": "dir2", "is_dir": True, "location": "dir1/dir2"},
+        ]
+        self.assertEqual(expected, codebase_tree)
+
+        shutil.rmtree(self.project1.work_directory, ignore_errors=True)
+        self.assertFalse(self.project1.codebase_path.exists())
+        with self.assertRaises(Exception):
+            get_tree(self.project1, current_dir="")
 
     def test_scanpipe_views_project_archive_view(self):
         url = reverse("project_archive", args=[self.project1.uuid])

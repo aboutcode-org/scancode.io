@@ -33,6 +33,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage.filesystem import FileSystemStorage
 from django.http import FileResponse
 from django.http import Http404
@@ -697,15 +698,19 @@ class ProjectCodebaseView(
 
     @staticmethod
     def get_tree(project, current_dir):
+        """
+        Return the direct content of the ``current_dir`` as a flat tree.
+
+        The lookups are scoped to the ``project`` codebase/ work directory.
+        The security is handled by the FileSystemStorage and will raise a
+        SuspiciousFileOperation for attempting to look outside the codebase/ directory.
+        """
         codebase_root = project.codebase_path.resolve()
         if not codebase_root.exists():
-            raise Http404
+            raise ValueError("codebase/ work directory not found")
 
-        try:
-            codebase_root.relative_to(scanpipe_app.workspace_path)
-        except ValueError:
-            raise Http404
-
+        # Raises ValueError if the codebase_root is not within the workspace_path
+        codebase_root.relative_to(scanpipe_app.workspace_path)
         fs_storage = FileSystemStorage(location=codebase_root)
         directories, files = fs_storage.listdir(current_dir)
 
@@ -735,8 +740,16 @@ class ProjectCodebaseView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         current_dir = self.request.GET.get("current_dir") or "."
+
+        try:
+            codebase_tree = self.get_tree(self.object, current_dir)
+        except FileNotFoundError:
+            raise Http404(f"{current_dir} not found")
+        except (ValueError, SuspiciousFileOperation) as error:
+            raise Http404(error)
+
         context["current_dir"] = current_dir
-        context["codebase_tree"] = self.get_tree(self.object, current_dir)
+        context["codebase_tree"] = codebase_tree
         return context
 
 
