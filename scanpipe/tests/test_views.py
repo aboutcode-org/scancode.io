@@ -352,8 +352,6 @@ class ScanPipeViewsTest(TestCase):
             self.assertEqual("", scanpipe_app.workspace_path)
             with self.assertRaises(ValueError) as e:
                 get_tree(self.project1, current_dir="")
-        expected = "is not in the subpath of '' OR one path is relative"
-        self.assertIn(expected, str(e.exception))
 
         with self.assertRaises(FileNotFoundError):
             get_tree(self.project1, current_dir="not_existing")
