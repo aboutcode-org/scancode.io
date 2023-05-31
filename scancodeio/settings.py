@@ -120,6 +120,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_rq",
     "django_probes",
+    "fontawesomefree",
 ]
 
 MIDDLEWARE = [

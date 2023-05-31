@@ -1126,10 +1126,10 @@ class CodebaseResourceDetailsView(
                 "tag",
                 "rootfs_path",
             ],
-            "icon_class": "fas fa-info-circle",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "viewer": {
-            "icon_class": "fas fa-file-code",
+            "icon_class": "fa-solid fa-file-code",
             "template": "scanpipe/tabset/tab_content_viewer.html",
         },
         "detection": {
@@ -1148,11 +1148,11 @@ class CodebaseResourceDetailsView(
                 {"field_name": "emails", "render_func": render_as_yaml},
                 {"field_name": "urls", "render_func": render_as_yaml},
             ],
-            "icon_class": "fas fa-search",
+            "icon_class": "fa-solid fa-search",
         },
         "packages": {
             "fields": ["discovered_packages"],
-            "icon_class": "fas fa-layer-group",
+            "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_packages.html",
         },
         "others": {
@@ -1168,14 +1168,14 @@ class CodebaseResourceDetailsView(
                 "is_key_file",
                 "is_media",
             ],
-            "icon_class": "fas fa-plus-square",
+            "icon_class": "fa-solid fa-plus-square",
         },
         "extra_data": {
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
             "verbose_name": "Extra data",
-            "icon_class": "fas fa-database",
+            "icon_class": "fa-solid fa-database",
         },
     }
 
@@ -1291,7 +1291,7 @@ class DiscoveredPackageDetailsView(
                 "keywords",
                 "description",
             ],
-            "icon_class": "fas fa-info-circle",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "terms": {
             "fields": [
@@ -1315,16 +1315,16 @@ class DiscoveredPackageDetailsView(
                     "render_func": render_as_yaml,
                 },
             ],
-            "icon_class": "fas fa-file-contract",
+            "icon_class": "fa-solid fa-file-contract",
         },
         "resources": {
             "fields": ["codebase_resources"],
-            "icon_class": "fas fa-folder-open",
+            "icon_class": "fa-solid fa-folder-open",
             "template": "scanpipe/tabset/tab_resources.html",
         },
         "dependencies": {
             "fields": ["dependencies"],
-            "icon_class": "fas fa-layer-group",
+            "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_dependencies.html",
         },
         "others": {
@@ -1342,14 +1342,14 @@ class DiscoveredPackageDetailsView(
                 "modified_resources",
                 "package_uid",
             ],
-            "icon_class": "fas fa-plus-square",
+            "icon_class": "fa-solid fa-plus-square",
         },
         "extra_data": {
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
             "verbose_name": "Extra data",
-            "icon_class": "fas fa-database",
+            "icon_class": "fa-solid fa-database",
         },
     }
 
@@ -1380,16 +1380,16 @@ class DiscoveredDependencyDetailsView(
                 "datafile_path",
                 "datasource_id",
             ],
-            "icon_class": "fas fa-info-circle",
+            "icon_class": "fa-solid fa-info-circle",
         },
         "For package": {
             "fields": ["for_package"],
-            "icon_class": "fas fa-layer-group",
+            "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_for_package.html",
         },
         "Datafile resource": {
             "fields": ["datafile_resource"],
-            "icon_class": "fas fa-folder-open",
+            "icon_class": "fa-solid fa-folder-open",
             "template": "scanpipe/tabset/tab_datafile_resource.html",
         },
     }

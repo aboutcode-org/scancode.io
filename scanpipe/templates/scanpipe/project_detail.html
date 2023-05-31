@@ -46,19 +46,19 @@
           <div class="message-body">
             Download results as:
             <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.uuid 'json' %}">
-              JSON <i class="fas fa-download ml-1"></i>
+              JSON <i class="fa-solid fa-download ml-1"></i>
             </a>
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
-              XLSX <i class="fas fa-download ml-1"></i>
+              XLSX <i class="fa-solid fa-download ml-1"></i>
             </a>
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'spdx' %}">
-              SPDX <i class="fas fa-download ml-1"></i>
+              SPDX <i class="fa-solid fa-download ml-1"></i>
             </a>
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'cyclonedx' %}">
-              CycloneDX <i class="fas fa-download ml-1"></i>
+              CycloneDX <i class="fa-solid fa-download ml-1"></i>
             </a>
             <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'attribution' %}">
-              Attribution <i class="fas fa-download ml-1"></i>
+              Attribution <i class="fa-solid fa-download ml-1"></i>
             </a>
           </div>
         </article>
@@ -66,7 +66,7 @@
         <article class="message is-warning">
           <div class="message-body">
             <p class="block">
-              <i class="fas fa-info-circle mr-1"></i>
+              <i class="fa-solid fa-info-circle mr-1"></i>
               Add
               {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
               and execute a <strong>pipeline</strong> to generate some results.
@@ -89,7 +89,7 @@
           {% if codebase_root %}
             <div class="column">
               <div hx-get="{% url 'project_codebase' project.uuid %}" hx-trigger="load">
-                <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
+                <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
               </div>
             </div>
           {% endif %}
@@ -132,7 +132,7 @@
 
     {% if project.resource_count or project.package_count %}
       <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.uuid %}" hx-trigger="load">
-        <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
+        <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
         Loading the charts...
       </section>
     {% endif %}

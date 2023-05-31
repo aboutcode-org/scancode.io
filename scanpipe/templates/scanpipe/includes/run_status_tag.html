@@ -5,12 +5,12 @@
         hx-swap="outerHTML"
   >
     {% if run.status == run.Status.RUNNING %}
-      <i class="fas fa-spinner fa-pulse mr-1" aria-hidden="true"></i>Running
+      <i class="fa-solid fa-spinner fa-pulse mr-1" aria-hidden="true"></i>Running
       {% if display_current_step and run.current_step %}
         {{ run.current_step|truncatechars:30 }}
       {% endif %}
     {% elif run.status == run.Status.QUEUED %}
-      <i class="fas fa-clock mr-1"></i>Queued
+      <i class="fa-solid fa-clock mr-1"></i>Queued
     {% endif %}
   </span>
 {% elif run.status == run.Status.SUCCESS %}

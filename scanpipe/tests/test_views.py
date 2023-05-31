@@ -71,12 +71,12 @@ class ScanPipeViewsTest(TestCase):
         is_archived_filters = """
         <li>
           <a href="?is_archived=" class=" is-active">
-            <i class="fas fa-seedling"></i> 1 Active
+            <i class="fa-solid fa-seedling"></i> 1 Active
           </a>
         </li>
         <li>
           <a href="?is_archived=true" class="">
-            <i class="fas fa-dice-d6"></i> 0 Archived
+            <i class="fa-solid fa-dice-d6"></i> 0 Archived
           </a>
         </li>
         """
@@ -495,7 +495,7 @@ class ScanPipeViewsTest(TestCase):
         run.set_task_queued()
         run.refresh_from_db()
         response = self.client.get(url)
-        expected = '<i class="fas fa-clock mr-1"></i>Queued'
+        expected = '<i class="fa-solid fa-clock mr-1"></i>Queued'
         self.assertContains(response, expected)
         self.assertContains(response, f'hx-get="{url}?current_status={run.status}"')
 
@@ -505,7 +505,8 @@ class ScanPipeViewsTest(TestCase):
         run.refresh_from_db()
         response = self.client.get(url)
         expected = (
-            '<i class="fas fa-spinner fa-pulse mr-1" aria-hidden="true"></i>Running'
+            '<i class="fa-solid fa-spinner fa-pulse mr-1" aria-hidden="true"></i>'
+            "Running"
         )
         self.assertContains(response, expected)
         self.assertContains(response, f'hx-get="{url}?current_status={run.status}"')

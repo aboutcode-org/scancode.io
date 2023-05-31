@@ -236,8 +236,11 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         archived_count = Project.objects.filter(is_archived=True).count()
         self.filters["is_archived"].extra["widget"] = BulmaLinkWidget(
             choices=[
-                ("", f'<i class="fas fa-seedling"></i> {active_count} Active'),
-                ("true", f'<i class="fas fa-dice-d6"></i> {archived_count} Archived'),
+                ("", f'<i class="fa-solid fa-seedling"></i> {active_count} Active'),
+                (
+                    "true",
+                    f'<i class="fa-solid fa-dice-d6"></i> {archived_count} Archived',
+                ),
             ]
         )
 
