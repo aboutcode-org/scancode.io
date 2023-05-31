@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import difflib
 import logging
 import subprocess
 import sys
 import uuid
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -341,3 +343,34 @@ def log_progress(
         log_func(msg)
 
     return last_percent
+
+
+def get_text_str_diff_ratio(str_a, str_b):
+    """
+    Return a similarity ratio as a float between 0 and 1 by comparing the
+    text content of the ``str_a`` and ``str_b``.
+
+    Return None if any of the two resources str is empty.
+    """
+    if not (str_a and str_b):
+        return
+
+    if not isinstance(str_a, str) or not isinstance(str_b, str):
+        raise ValueError("Values must be str")
+
+    matcher = difflib.SequenceMatcher(a=str_a.splitlines(), b=str_b.splitlines())
+    return matcher.quick_ratio()
+
+
+def get_resource_diff_ratio(resource_a, resource_b):
+    """
+    Return a similarity ratio as a float between 0 and 1 by comparing the
+    text content of the CodebaseResource ``resource_a`` and ``resource_b``.
+
+    Return None if any of the two resources are not readable as text.
+    """
+    with suppress(IOError):
+        return get_text_str_diff_ratio(
+            str_a=resource_a.file_content,
+            str_b=resource_b.file_content,
+        )

@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import difflib
 from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
@@ -29,6 +28,8 @@ from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.pipes import flag
+from scanpipe.pipes import get_resource_diff_ratio
+from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
@@ -37,13 +38,18 @@ from scanpipe.pipes import scancode
 FROM = "from/"
 TO = "to/"
 
-IGNORED_FILENAMES = ("packageinfo", "package-info.java", "package-info.class")
+IGNORED_FILENAMES = (
+    ".DS_Store",
+    "packageinfo",
+    "package-info.java",
+    "package-info.class",
+)
 IGNORED_EXTENSIONS = ()
 IGNORED_PATHS = ("gradleTest/",)
 
 
 def get_inputs(project):
-    """Locate the `from` and `to` archives in project inputs directory."""
+    """Locate the ``from`` and ``to`` archives in project inputs directory."""
     from_file = list(project.inputs("from*"))
     to_file = list(project.inputs("to*"))
 
@@ -98,17 +104,17 @@ def collect_and_create_codebase_resources(project, batch_size=5000):
 
 
 def get_extracted_path(resource):
-    """Return the `-extract/` extracted path of provided `resource`."""
+    """Return the ``-extract/`` extracted path of provided ``resource``."""
     return resource.path + "-extract/"
 
 
 def get_extracted_subpath(path):
-    """Return the path segments located after the last `-extract/` segment."""
+    """Return the path segments located after the last ``-extract/`` segment."""
     return path.split("-extract/")[-1]
 
 
 def get_best_path_matches(to_resource, matches):
-    """Return the best `matches` for the provided `to_resource`."""
+    """Return the best ``matches`` for the provided ``to_resource``."""
     path_parts = Path(to_resource.path.lstrip("/")).parts
 
     for path_parts_index in range(1, len(path_parts)):
@@ -269,7 +275,7 @@ def get_indexable_qualified_java_paths(from_resources_dot_java):
 
 def find_java_packages(project, logger=None):
     """
-    Collect the Java packages of Java source files for a `project`.
+    Collect the Java packages of Java source files for a ``project``.
 
     Multiprocessing is enabled by default on this pipe, the number of processes
     can be controlled through the SCANCODEIO_PROCESSES setting.
@@ -301,7 +307,7 @@ def scan_for_java_package(location, with_threading=True):
     """
     Run a Java package scan on provided ``location``.
 
-    Return a dict of scan `results` and a list of `errors`.
+    Return a dict of scan ``results`` and a list of ``errors``.
     """
     scanners = [scancode.Scanner("java_package", jvm.get_java_package)]
     return scancode._scan_resource(location, scanners, with_threading=with_threading)
@@ -400,27 +406,6 @@ def flag_to_meta_inf_files(project):
     meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
 
 
-def get_diff_ratio(to_resource, from_resource):
-    """
-    Return a similarity ratio as a float between 0 and 1 by comparing the
-    text content of the ``to_resource`` and ``from_resource``.
-
-    Return None if any of the two resources are not text files or if files
-    are not readable.
-    """
-    if not (to_resource.is_text and from_resource.is_text):
-        return
-
-    try:
-        to_lines = to_resource.location_path.read_text().splitlines()
-        from_lines = from_resource.location_path.read_text().splitlines()
-    except Exception:
-        return
-
-    matcher = difflib.SequenceMatcher(a=from_lines, b=to_lines)
-    return matcher.quick_ratio()
-
-
 def _map_path_resource(
     to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
 ):
@@ -436,9 +421,7 @@ def _map_path_resource(
 
     for resource_id in match.resource_ids:
         from_resource = from_resources.get(id=resource_id)
-        diff_ratio = get_diff_ratio(
-            to_resource=to_resource, from_resource=from_resource
-        )
+        diff_ratio = get_resource_diff_ratio(to_resource, from_resource)
         if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
             continue
 
@@ -490,30 +473,51 @@ def map_path(project, logger=None):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def _match_purldb_resource(project, resource):
-    if results := purldb.match_by_sha1(sha1=resource.sha1):
-        package_data = results[0].copy()
-        # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
-        # PurlDB match can be found in different projects.
-        package_data.pop("uuid", None)
-        package_data.pop("dependencies", None)
-        extracted_resources = project.codebaseresources.to_codebase().filter(
-            path__startswith=resource.path
-        )
-        pipes.update_or_create_package(
-            project=project,
-            package_data=package_data,
-            codebase_resources=extracted_resources,
-        )
-        # Override the status as "purldb match" as we can rely on the codebase relation
-        # for the mapping information.
-        extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
+def create_package_from_purldb_data(project, resource, package_data):
+    """Create a DiscoveredPackage instance from PurlDB ``package_data``."""
+    package_data = package_data.copy()
+    # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
+    # PurlDB match can be found in different projects.
+    package_data.pop("uuid", None)
+    package_data.pop("dependencies", None)
+    extracted_resources = project.codebaseresources.to_codebase().filter(
+        path__startswith=resource.path
+    )
+    package = pipes.update_or_create_package(
+        project=project,
+        package_data=package_data,
+        codebase_resources=extracted_resources,
+    )
+    # Override the status as "purldb match" as we can rely on the codebase relation
+    # for the mapping information.
+    extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
+    return package
 
 
-def match_purldb(project, extensions, logger=None):
+def match_purldb_package(project, resource):
+    """Match an archive type resource in the PurlDB."""
+    if results := purldb.match_package(sha1=resource.sha1):
+        package_data = results[0]
+        return create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb_resource(project, resource):
+    """Match a single file resource in the PurlDB."""
+    sha1_list = [resource.sha1]
+    if resource.path.endswith(".map"):
+        sha1_list.extend(js.source_content_sha1_list(resource))
+
+    if results := purldb.match_resource(sha1_list=sha1_list):
+        package_url = results[0]["package"]
+        if package_data := purldb.request_get(url=package_url):
+            return create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb(project, extensions, matcher_func, logger=None):
     """
-    Match against PurlDB selecting codebase resources using provided `extensions`.
-    Resources with existing status as not excluded.
+    Match against PurlDB selecting codebase resources using provided
+    ``package_extensions`` for archive type files, and ``resource_extensions`` for
+    single resource files.
     """
     to_resources = (
         project.codebaseresources.files()
@@ -526,13 +530,13 @@ def match_purldb(project, extensions, logger=None):
 
     if logger:
         extensions_str = ", ".join(extensions)
-        logger(
-            f"Matching {resource_count:,d} {extensions_str} resources against PurlDB"
-        )
+        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
+    matched_count = 0
+
     for resource_index, to_resource in enumerate(resource_iterator):
         last_percent = pipes.log_progress(
             logger,
@@ -542,4 +546,78 @@ def match_purldb(project, extensions, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _match_purldb_resource(project, to_resource)
+        matched_package = matcher_func(project, to_resource)
+        if matched_package:
+            matched_count += 1
+
+    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
+
+
+def map_javascript(project, logger=None):
+    """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
+    project_files = project.codebaseresources.files()
+
+    to_resources = project_files.to_codebase().exclude(name__startswith=".")
+    to_resources_dot_map = to_resources.filter(extension=".map")
+    to_resources_minified = to_resources.filter(extension__in=[".css", ".js"])
+
+    to_resources_dot_map_count = to_resources_dot_map.count()
+    if logger:
+        logger(
+            f"Mapping {to_resources_dot_map_count:,d} .map resources using javascript "
+            f"map against from/ codebase"
+        )
+
+    from_resources = project_files.from_codebase()
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_resources_dot_map.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_dot_map in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            to_resources_dot_map_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _map_javascript_resource(
+            to_dot_map, to_resources_minified, from_resources_index, from_resources
+        )
+
+
+def _map_javascript_resource(
+    to_map, to_resources_minified, from_resources_index, from_resources
+):
+    content_sha1_list = js.source_content_sha1_list(to_map)
+    sha1_matches = from_resources.filter(sha1__in=content_sha1_list)
+
+    # Only create relations when the number of sha1 matches if inferior or equal
+    # to the number of sourcesContent in map.
+    if len(sha1_matches) > len(content_sha1_list):
+        to_map.update(status=flag.TOO_MANY_MAPS)
+        return
+
+    matches = [(match, {}) for match in sha1_matches]
+
+    # Use diff_ratio if no sha1 match is found.
+    if not matches:
+        matches = js.get_matches_by_ratio(to_map, from_resources_index, from_resources)
+
+    transpiled = [to_map]
+    if minified_resource := js.get_minified_resource(to_map, to_resources_minified):
+        transpiled.append(minified_resource)
+
+    for resource in transpiled:
+        for match, extra_data in matches:
+            pipes.make_relation(
+                from_resource=match,
+                to_resource=resource,
+                map_type="js_compiled",
+                extra_data=extra_data,
+            )
+            resource.update(status=flag.MAPPED)

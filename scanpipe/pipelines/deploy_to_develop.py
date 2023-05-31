@@ -51,6 +51,7 @@ class DeployToDevelop(Pipeline):
             cls.map_java_to_class,
             cls.flag_to_meta_inf_files,
             cls.map_jar_to_source,
+            cls.map_javascript,
             cls.match_purldb,
             cls.map_path,
             cls.flag_mapped_resources_and_ignored_directories,
@@ -58,7 +59,20 @@ class DeployToDevelop(Pipeline):
         )
 
     extract_recursively = True
-    purldb_match_extensions = [".jar", ".war", ".zip"]
+    purldb_package_extensions = [".jar", ".war", ".zip"]
+    purldb_resource_extensions = [
+        ".map",
+        ".js",
+        ".mjs",
+        ".ts",
+        ".d.ts",
+        ".jsx",
+        ".tsx",
+        ".css",
+        ".scss",
+        ".less",
+        ".sass",
+    ]
 
     def get_inputs(self):
         """Locate the ``from`` and ``to`` archives."""
@@ -117,6 +131,13 @@ class DeployToDevelop(Pipeline):
         """Map a .class compiled file to its .java source."""
         d2d.map_jar_to_source(project=self.project, logger=self.log)
 
+    def map_javascript(self):
+        """
+        Map a packed or minified JavaScript, TypeScript, CSS and SCSS
+        to its source.
+        """
+        d2d.map_javascript(project=self.project, logger=self.log)
+
     def match_purldb(self):
         """Match selected files by extension in PurlDB."""
         if not purldb.is_available():
@@ -125,7 +146,15 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb(
             project=self.project,
-            extensions=self.purldb_match_extensions,
+            extensions=self.purldb_package_extensions,
+            matcher_func=d2d.match_purldb_package,
+            logger=self.log,
+        )
+
+        d2d.match_purldb(
+            project=self.project,
+            extensions=self.purldb_resource_extensions,
+            matcher_func=d2d.match_purldb_resource,
             logger=self.log,
         )
 
