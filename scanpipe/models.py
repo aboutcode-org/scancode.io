@@ -483,6 +483,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             "happened during the archive operation."
         ),
     )
+    notes = models.TextField(blank=True)
     configuration = models.JSONField(default=dict, blank=True)
 
     objects = ProjectQuerySet.as_manager()
