@@ -21,6 +21,9 @@
           {% include 'scanpipe/includes/project_configuration_menu.html' %}
         </div>
         <div class="column">
+          {% if project.notes %}
+            <div>{{ project.notes }}</div>
+          {% endif %}
           <div class="field">
             <div class="control mb-2">
               <div class="tags has-addons">

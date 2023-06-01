@@ -62,6 +62,10 @@ class Command(AddInputCommandMixin, BaseCommand):
                 "Applies only when --execute is provided."
             ),
         )
+        parser.add_argument(
+            "--notes",
+            help=(""),
+        )
 
     def handle(self, *args, **options):
         name = options["name"]
@@ -72,6 +76,9 @@ class Command(AddInputCommandMixin, BaseCommand):
         execute = options["execute"]
 
         project = Project(name=name)
+        if notes := options["notes"]:
+            project.notes = notes
+
         try:
             project.full_clean()
         except ValidationError as e:

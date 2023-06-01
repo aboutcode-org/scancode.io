@@ -260,6 +260,7 @@ class PipelinesIntegrationTest(TestCase):
         "file_type",
         # mime type is inconsistent across systems
         "mime_type",
+        "notes",
     ]
 
     def _without_keys(self, data, exclude_keys):

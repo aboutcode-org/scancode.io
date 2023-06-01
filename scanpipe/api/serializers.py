@@ -129,6 +129,7 @@ class ProjectSerializer(
             "webhook_url",
             "created_date",
             "is_archived",
+            "notes",
             "pipeline",
             "execute_now",
             "input_sources",
