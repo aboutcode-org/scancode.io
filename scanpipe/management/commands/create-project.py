@@ -64,7 +64,7 @@ class Command(AddInputCommandMixin, BaseCommand):
         )
         parser.add_argument(
             "--notes",
-            help=(""),
+            help="Optional notes about the project.",
         )
 
     def handle(self, *args, **options):

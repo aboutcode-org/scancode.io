@@ -21,26 +21,32 @@
           {% include 'scanpipe/includes/project_configuration_menu.html' %}
         </div>
         <div class="column">
-          {% if project.notes %}
-            <div>{{ project.notes }}</div>
-          {% endif %}
-          <div class="field">
-            <div class="control mb-2">
-              <div class="tags has-addons">
-                <span class="tag is-dark">UUID</span>
-                <span class="tag is-info">{{ project.uuid }}</span>
+          <div class="panel">
+            <p class="panel-heading py-2 is-size-6">Infos</p>
+            <div class="panel-block" style="display: block;">
+              <div class="field">
+                <label class="label" for="uuid">UUID</label>
+                <div class="control">
+                  <input type="text" id="uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
+                </div>
               </div>
-            </div>
-            <div class="control">
-              <div class="tags has-addons">
-                <span class="tag is-dark">Work directory</span>
-                <span class="tag is-info">{{ project.work_directory }}</span>
+              <div class="field">
+                <label class="label" for="work_directory">Work directory</label>
+                <div class="control">
+                  <input type="text" id="work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
+                </div>
+              </div>
+              <div class="field">
+                <label class="label" for="notes">Notes</label>
+                <div class="control">
+                  <textarea class="textarea" id="notes" name="notes">{{ project.notes }}</textarea>
+                </div>
               </div>
             </div>
           </div>
           <form method="post" action="{% url 'project_configuration' project.uuid %}">{% csrf_token %}
             {% for section, options in configuration_options.items %}
-              <div class="panel is-info">
+              <div class="panel">
                 <p class="panel-heading py-2 is-size-6">
                   {{ section|title }}
                 </p>
