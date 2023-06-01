@@ -49,6 +49,7 @@ SUPPORTED_DISTROS = [
     "opensuse-tumbleweed",
     "photon",
     "windows",
+    "rocky",
 ]
 
 
