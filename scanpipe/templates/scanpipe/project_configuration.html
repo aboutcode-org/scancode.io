@@ -5,7 +5,7 @@
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Configuration" %}
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Settings" %}
       </div>
     </section>
 
@@ -17,7 +17,24 @@
       </div>
 
       <div class="columns">
-        <div class="column is-three-fifths pr-5 pb-0">
+        <div class="column is-one-quarter">
+          {% include 'scanpipe/includes/project_configuration_menu.html' %}
+        </div>
+        <div class="column">
+          <div class="field">
+            <div class="control mb-2">
+              <div class="tags has-addons">
+                <span class="tag is-dark">UUID</span>
+                <span class="tag is-info">{{ project.uuid }}</span>
+              </div>
+            </div>
+            <div class="control">
+              <div class="tags has-addons">
+                <span class="tag is-dark">Work directory</span>
+                <span class="tag is-info">{{ project.work_directory }}</span>
+              </div>
+            </div>
+          </div>
           <form method="post" action="{% url 'project_configuration' project.uuid %}">{% csrf_token %}
             {% for section, options in configuration_options.items %}
               <div class="panel is-info">
