@@ -23,9 +23,13 @@
 import csv
 import json
 import re
+from operator import attrgetter
+from pathlib import Path
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
+from django.template import Context
+from django.template import Template
 
 import saneyaml
 import xlsxwriter
@@ -36,7 +40,8 @@ from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licenses_by_spdx_key
-from packagedcode.utils import combine_expressions
+from licensedcode.cache import get_licensing
+from licensedcode.models import License
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
@@ -352,16 +357,13 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 
 # Some scan attributes such as "copyrights" are list of dicts.
 #
-#  'authors': [{'end_line': 7, 'start_line': 7, 'value': 'John Doe'}],
-#  'copyrights': [{'end_line': 5, 'start_line': 5, 'value': 'Copyright (c) nexB Inc.'}],
+#  'authors': [{'end_line': 7, 'start_line': 7, 'author': 'John Doe'}],
+#  'copyrights': [{'end_line': 5, 'start_line': 5, 'copyright': 'Copyright (c) nexB'}],
 #  'emails': [{'email': 'joe@foobar.com', 'end_line': 1, 'start_line': 1}],
-#  'holders': [{'end_line': 5, 'start_line': 5, 'value': 'nexB Inc.'}],
+#  'holders': [{'end_line': 5, 'start_line': 5, 'holder': 'nexB Inc.'}],
 #  'urls': [{'end_line': 3, 'start_line': 3, 'url': 'https://foobar.com/'}]
 #
-# We therefore use a mapping to find which key to use in these mappings until
-# this is fixed updated in scancode-toolkit with these:
-# https://github.com/nexB/scancode-toolkit/pull/2381
-# https://github.com/nexB/scancode-toolkit/issues/2350
+# We therefore use a mapping to find which key to use:
 mappings_key_by_fieldname = {
     "copyrights": "copyright",
     "holders": "holder",
@@ -397,9 +399,6 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
         max_description_lines = 5
         value = "\n".join(value.splitlines(False)[:max_description_lines])
 
-    if fieldname == "license_expressions":
-        value = combine_expressions(value)
-
     # we only get this key in each dict of a list for some fields
     mapping_key = mappings_key_by_fieldname.get(fieldname)
     if mapping_key:
@@ -407,8 +406,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
 
     # convert these to text lines, remove duplicates
     if isinstance(value, (list, tuple)):
-        value = (str(v) for v in value if v)
-        value = ordered_unique(value)
+        value = ordered_unique(str(v) for v in value if v)
         value = "\n".join(value)
 
     # convert these to YAML which is the most readable dump format
@@ -425,7 +423,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     if len_val > maximum_length:
         error = (
             f"The value of: {fieldname} has been truncated from: {len_val} "
-            f"to {maximum_length} length to fit in an XLSL cell maximum length"
+            f"to {maximum_length} length to fit in an XLSX cell maximum length"
         )
         value = value[:maximum_length]
 
@@ -438,12 +436,18 @@ def to_xlsx(project):
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
 
-    Note that the XLSX worksheets contain each an extra "xlxs_errors" column
+    Note that the XLSX worksheets contain each an extra "xlsx_errors" column
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
     """
     output_file = project.get_output_file_path("results", "xlsx")
-    exclude_fields = ["licenses", "extra_data", "declared_license"]
+    exclude_fields = [
+        "extra_data",
+        "package_data",
+        "license_detections",
+        "other_license_detections",
+        "license_clues",
+    ]
 
     if not scanpipe_app.policies_enabled:
         exclude_fields.append("compliance_alert")
@@ -627,5 +631,97 @@ def to_cyclonedx(project):
     bom_json = outputter.output_as_string()
     with output_file.open("w") as file:
         file.write(bom_json)
+
+    return output_file
+
+
+def get_expression_as_attribution_links(parsed_expression):
+    template = '<a href="#license_{symbol.key}">{symbol.wrapped.spdx_license_key}</a>'
+    return parsed_expression.simplify().render(template=template)
+
+
+def render_template(template_location, context):
+    """Render a Django template at `template_location` using the `context` dict."""
+    template_string = Path(template_location).read_text()
+    template = Template(template_string)
+    return template.render(Context(context))
+
+
+def get_attribution_template(project):
+    """Return a custom attribution template if provided or the default one."""
+    if config_directory := project.get_codebase_config_directory():
+        custom_template = config_directory / "templates" / "attribution.html"
+        if custom_template.exists():
+            return custom_template
+
+    scanpipe_templates = Path(scanpipe_app.path) / "templates"
+    default_template = scanpipe_templates / "scanpipe" / "attribution.html"
+    return default_template
+
+
+def make_unknown_license_object(license_symbol):
+    """
+    Return a ``License`` object suitable for the provided ``license_symbol``,
+    that is representing a license key unknown by the current toolkit licensed index.
+    """
+    mocked_spdx_license_key = f"LicenseRef-unknown-{license_symbol.key}"
+    return License(
+        key=license_symbol.key,
+        spdx_license_key=mocked_spdx_license_key,
+        text="ERROR: Unknown license key, no text available.",
+        is_builtin=False,
+    )
+
+
+def get_package_expression_symbols(parsed_expression):
+    """
+    Return the list of ``license_symbols`` contained in the ``parsed_expression``.
+    Since unknown license keys are missing a ``License`` set in the ``wrapped``
+    attribute, a special "unknown" ``License`` object is injected.
+    """
+    license_symbols = []
+
+    for parsed_symbol in parsed_expression.symbols:
+        # .decompose() is required for LicenseWithExceptionSymbol support
+        for license_symbol in parsed_symbol.decompose():
+            if not hasattr(license_symbol, "wrapped"):
+                license_symbol.wrapped = make_unknown_license_object(license_symbol)
+            license_symbols.append(license_symbol)
+
+    return license_symbols
+
+
+def to_attribution(project):
+    """
+    Generate attribution for the provided ``project``.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    Custom template can be provided in the
+    `codebase/.scancode/templates/attribution.html` location.
+    """
+    output_file = project.get_output_file_path("results", "attribution.html")
+
+    packages = get_queryset(project, "discoveredpackage")
+
+    licensing = get_licensing()
+    license_symbols = []
+
+    for package in packages:
+        if package.declared_license_expression:
+            parsed = licensing.parse(package.declared_license_expression)
+            license_symbols.extend(get_package_expression_symbols(parsed))
+            package.expression_links = get_expression_as_attribution_links(parsed)
+
+    licenses = [symbol.wrapped for symbol in set(license_symbols)]
+    licenses.sort(key=attrgetter("spdx_license_key"))
+
+    context = {
+        "project": project,
+        "packages": packages,
+        "licenses": licenses,
+    }
+    template_location = get_attribution_template(project)
+    rendered_template = render_template(template_location, context)
+    output_file.write_text(rendered_template)
 
     return output_file

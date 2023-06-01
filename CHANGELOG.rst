@@ -4,6 +4,14 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Upgrade ScanCode-toolkit to latest v32.0.x
+  Warning: This upgrade requires schema and data migrations (both included).
+  It is recommended to reset and re-run the pipelines to benefit from the latest
+  ScanCode detection improvements.
+  Refer to https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst#v3200-next-roadmap
+  for the full list of changes.
+  https://github.com/nexB/scancode.io/issues/569
+
 - Add a new ``deploy_to_develop`` pipeline specialized in creating relations between
   the development source code and binaries or deployed code.
   This pipeline is expecting 2 archive files with "from-" and "to-" filename prefixes
@@ -12,8 +20,34 @@ v33.0.0 (unreleased)
   2. "to-[FILENAME]" archive containing the deployment compiled code
   https://github.com/nexB/scancode.io/issues/659
 
+- Enhance the file viewer UI of the resource details view.
+  A new search for the file content was added.
+  Also, it is now possible to expand the file viewer in full screen mode.
+  https://github.com/nexB/scancode.io/issues/724
+
+- Refine the breadcrumb UI for details view.
+  https://github.com/nexB/scancode.io/issues/717
+
 - Move the "Resources status" panel from the run modal to the project details view.
   https://github.com/nexB/scancode.io/issues/370
+
+- Improve the speed of Project ``reset`` and ``delete`` using the _raw_delete model API.
+  https://github.com/nexB/scancode.io/issues/729
+
+- Specify ``update_fields`` during each ``save()`` related to Run tasks,
+  to force a SQL UPDATE in order to avoid any data loss when the model fields are
+  updated during the task execution.
+  https://github.com/nexB/scancode.io/issues/726
+
+- Add support for XLSX input in the ``load_inventory`` pipeline.
+  https://github.com/nexB/scancode.io/issues/735
+
+- Add support for unknown licenses in attribution output.
+  https://github.com/nexB/scancode.io/issues/749
+
+- The "Codebase" panel can now be used to browse the Project's codebase/ directory
+  and open related resources details view.
+  https://github.com/nexB/scancode.io/issues/744
 
 v32.2.0 (2023-04-25)
 --------------------

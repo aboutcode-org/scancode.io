@@ -20,10 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import difflib
 import logging
 import subprocess
 import sys
 import uuid
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -31,6 +33,7 @@ from timeit import default_timer as timer
 
 from django.db.models import Count
 
+from scanpipe import humanize_time
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -40,29 +43,29 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
-def make_codebase_resource(project, location, **extra_fields):
+def make_codebase_resource(project, location, save=True, **extra_fields):
     """
-    Create a CodebaseResource instance in the database for the given `project`.
+    Create a CodebaseResource instance in the database for the given ``project``.
 
-    The provided `location` is the absolute path of this resource.
+    The provided ``location`` is the absolute path of this resource.
     It must be rooted in `project.codebase_path` as only the relative path within the
     project codebase/ directory is stored in the database.
 
-    Extra fields can be provided as keywords arguments to this function call:
+    Extra fields can be provided as keywords arguments to this function call::
 
-    >>> make_codebase_resource(
-    >>>     project=project,
-    >>>     location=resource.location,
-    >>>     rootfs_path=resource.path,
-    >>>     tag=layer_tag,
-    >>> )
+        make_codebase_resource(
+            project=project,
+            location=resource.location,
+            rootfs_path=resource.path,
+            tag=layer_tag,
+        )
 
-    In this example, `rootfs_path` is an optional path relative to a rootfs root
+    In this example, ``rootfs_path`` is an optional path relative to a rootfs root
     within an Image/VM filesystem context. e.g.: "/var/log/file.log"
 
     All paths use the POSIX separators.
 
-    If a CodebaseResource already exists in the `project` with the same path,
+    If a CodebaseResource already exists in the ``project`` with the same path,
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """
@@ -77,28 +80,31 @@ def make_codebase_resource(project, location, **extra_fields):
         path=relative_path,
         **resource_data,
     )
-    codebase_resource.save(save_error=False)
+
+    if save:
+        codebase_resource.save(save_error=False)
+    return codebase_resource
 
 
 def update_or_create_resource(project, resource_data):
     """Get, update or create a CodebaseResource then return it."""
-    resource_path = resource_data.get("path")
-    for_packages = resource_data.pop("for_packages", [])
+    for_packages = resource_data.pop("for_packages", None) or []
 
-    codebase_resource, _ = CodebaseResource.objects.get_or_create(
+    resource = CodebaseResource.objects.get_or_none(
         project=project,
-        path=resource_path,
-        defaults=resource_data,
+        path=resource_data.get("path"),
     )
 
-    if codebase_resource:
-        codebase_resource.update_from_data(resource_data)
+    if resource:
+        resource.update_from_data(resource_data)
+    else:
+        resource = CodebaseResource.create_from_data(project, resource_data)
 
     for package_uid in for_packages:
         package = project.discoveredpackages.get(package_uid=package_uid)
-        codebase_resource.add_package(package)
+        resource.add_package(package)
 
-    return codebase_resource
+    return resource
 
 
 def _clean_package_data(package_data):
@@ -332,8 +338,39 @@ def log_progress(
             run_time = timer() - start_time
             eta = round(run_time / progress_percentage * (100 - progress_percentage))
             if eta:
-                msg += f" ETA: {round(eta)} seconds"
+                msg += f" ETA: {humanize_time(eta)}"
 
         log_func(msg)
 
     return last_percent
+
+
+def get_text_str_diff_ratio(str_a, str_b):
+    """
+    Return a similarity ratio as a float between 0 and 1 by comparing the
+    text content of the ``str_a`` and ``str_b``.
+
+    Return None if any of the two resources str is empty.
+    """
+    if not (str_a and str_b):
+        return
+
+    if not isinstance(str_a, str) or not isinstance(str_b, str):
+        raise ValueError("Values must be str")
+
+    matcher = difflib.SequenceMatcher(a=str_a.splitlines(), b=str_b.splitlines())
+    return matcher.quick_ratio()
+
+
+def get_resource_diff_ratio(resource_a, resource_b):
+    """
+    Return a similarity ratio as a float between 0 and 1 by comparing the
+    text content of the CodebaseResource ``resource_a`` and ``resource_b``.
+
+    Return None if any of the two resources are not readable as text.
+    """
+    with suppress(IOError):
+        return get_text_str_diff_ratio(
+            str_a=resource_a.file_content,
+            str_b=resource_b.file_content,
+        )

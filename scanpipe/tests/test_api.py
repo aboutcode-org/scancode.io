@@ -367,8 +367,15 @@ class ScanPipeAPITest(TransactionTestCase):
         )
 
         self.assertEqual("", resource["compliance_alert"])
-        self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR
-        self.resource1.save()
+
+        # Using update() to bypass the `compute_compliance_alert` call triggered
+        # when using save().
+        # The purpose of this test is not to assert on the compliance_alert computation
+        # but rather to test the render in the REST API.
+        CodebaseResource.objects.filter(id=self.resource1.id).update(
+            compliance_alert=CodebaseResource.Compliance.ERROR
+        )
+
         response = self.csrf_client.get(url)
         self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 
@@ -688,7 +695,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Only non started or queued pipelines can be deleted."}
         self.assertEqual(expected, response.data)
 
-        run3.set_task_ended(0)
+        run3.set_task_ended(exitcode=0)
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Only non started or queued pipelines can be deleted."}
@@ -719,9 +726,9 @@ class ScanPipeAPITest(TransactionTestCase):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(38, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(42, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(11, len(get_serializer_fields(DiscoveredDependency)))
-        self.assertEqual(30, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(3, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(6, len(get_serializer_fields(ProjectError)))
 

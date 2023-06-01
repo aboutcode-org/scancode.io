@@ -40,10 +40,10 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.pipes import output
+from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
-from scanpipe.tests import license_policies_index
+from scanpipe.tests import FIXTURES_REGEN
 
 scanpipe_app = apps.get_app_config("scanpipe")
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
@@ -148,14 +148,15 @@ class ScanPipeScancodePipesTest(TestCase):
         input_location = str(self.data_location / "notice.NOTICE")
         scan_results, scan_errors = scancode.scan_file(input_location)
         expected = [
-            "copyrights",
-            "holders",
             "authors",
-            "licenses",
-            "license_expressions",
-            "spdx_license_expressions",
-            "percentage_of_license_text",
+            "copyrights",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
             "emails",
+            "holders",
+            "license_clues",
+            "license_detections",
+            "percentage_of_license_text",
             "urls",
         ]
         self.assertEqual(sorted(expected), sorted(scan_results.keys()))
@@ -175,11 +176,12 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(expected_errors, scan_errors)
 
         expected = [
-            "licenses",
-            "license_expressions",
-            "spdx_license_expressions",
-            "percentage_of_license_text",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
             "emails",
+            "license_clues",
+            "license_detections",
+            "percentage_of_license_text",
             "urls",
         ]
         self.assertEqual(sorted(expected), sorted(scan_results.keys()))
@@ -206,12 +208,8 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
-        expected = [
-            "apache-2.0",
-            "apache-2.0",
-            "warranty-disclaimer",
-        ]
-        self.assertEqual(expected, codebase_resource2.license_expressions)
+        expected = "apache-2.0 AND warranty-disclaimer"
+        self.assertEqual(expected, codebase_resource2.detected_license_expression)
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):
         project1 = Project.objects.create(name="Analysis")
@@ -239,7 +237,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.scancode._scan_resource")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
-        scan_results = {"license_expressions": ["mit"]}
+        scan_results = {"detected_license_expression": "mit"}
         scan_errors = []
         mock_scan_resource.return_value = scan_results, scan_errors
 
@@ -260,10 +258,10 @@ class ScanPipeScancodePipesTest(TestCase):
 
         resource1.refresh_from_db()
         self.assertEqual("scanned", resource1.status)
-        self.assertEqual(["mit"], resource1.license_expressions)
+        self.assertEqual("mit", resource1.detected_license_expression)
         resource2.refresh_from_db()
         self.assertEqual("scanned", resource2.status)
-        self.assertEqual(["mit"], resource2.license_expressions)
+        self.assertEqual("mit", resource2.detected_license_expression)
 
         resource3 = CodebaseResource.objects.create(
             project=project1,
@@ -276,7 +274,7 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.scan_for_files(project1)
         resource3.refresh_from_db()
         self.assertEqual("scanned-with-error", resource3.status)
-        self.assertEqual([], resource3.license_expressions)
+        self.assertEqual("", resource3.detected_license_expression)
         self.assertEqual(["copy"], resource3.copyrights)
 
     def test_scanpipe_pipes_scancode_scan_for_package_data_timeout(self):
@@ -372,37 +370,6 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(1, DiscoveredPackage.objects.count())
         self.assertEqual(1, DiscoveredDependency.objects.count())
 
-    def test_scanpipe_pipes_scancode_create_codebase_resources_inject_policy(self):
-        project = Project.objects.create(name="asgiref")
-        # We are using `asgiref-3.3.0_toolkit_scan.json` instead of
-        # `asgiref-3.3.0_scanpipe_output.json` because it is not exactly the same
-        # format as a scancode-toolkit scan
-        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
-        virtual_codebase = scancode.get_virtual_codebase(project, input_location)
-
-        scanpipe_app.license_policies_index = license_policies_index
-        scancode.create_discovered_packages(project, virtual_codebase)
-        scancode.create_codebase_resources(project, virtual_codebase)
-        scancode.create_discovered_dependencies(
-            project, virtual_codebase, strip_datafile_path_root=True
-        )
-        resources = project.codebaseresources
-
-        resource1 = resources.get(path__endswith="asgiref-3.3.0.dist-info/LICENSE")
-        self.assertEqual("bsd-new", resource1.licenses[0]["key"])
-        self.assertNotIn("bsd-new", license_policies_index)
-        self.assertIsNone(resource1.licenses[0]["policy"])
-
-        resource2 = resources.get(path__endswith="asgiref/timeout.py")
-        self.assertEqual("apache-2.0", resource2.licenses[0]["key"])
-        expected = {
-            "label": "Approved License",
-            "color_code": "#008000",
-            "license_key": "apache-2.0",
-            "compliance_alert": "",
-        }
-        self.assertEqual(expected, resource2.licenses[0]["policy"])
-
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")
         exitcode, output = scancode.run_scancode(
@@ -425,71 +392,44 @@ class ScanPipeScancodePipesTest(TestCase):
             scancode.run_scancode(location=None, output_file=None, options=[])
             self.assertIn("--processes 10", mock_run_command.call_args[0][0])
 
-    def test_scanpipe_pipes_scancode_make_results_summary(self):
-        project = Project.objects.create(name="Analysis")
-        scan_results_location = self.data_location / "is-npm-1.0.0_scan_package.json"
-        summary = scancode.make_results_summary(project, scan_results_location)
-        self.assertEqual(10, len(summary.keys()))
+    @skipIf(sys.platform != "linux", "file_type inconsistent across OS.")
+    def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
+        # Ensure the policies index is empty to avoid any side effect on results
+        scanpipe_app.license_policies_index = None
+        # Run the scan_package pipeline to have a proper DB and local files setup
+        pipeline_name = "scan_package"
+        project1 = Project.objects.create(name="Analysis")
 
-        scan_results_location = (
-            self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
-        )
-        summary = scancode.make_results_summary(project, scan_results_location)
-        self.assertEqual(10, len(summary.keys()))
+        input_location = self.data_location / "is-npm-1.0.0.tgz"
+        project1.copy_input_from(input_location)
 
-    def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
-        project = Project.objects.create(name="Analysis")
-        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
-        scancode.load_inventory_from_toolkit_scan(project, input_location)
-        self.assertEqual(18, project.codebaseresources.count())
-        self.assertEqual(2, project.discoveredpackages.count())
-        self.assertEqual(4, project.discovereddependencies.count())
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
 
-    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe(self):
-        project = Project.objects.create(name="1")
-        input_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
-        scan_data = json.loads(input_location.read_text())
-        scancode.load_inventory_from_scanpipe(project, scan_data)
-        self.assertEqual(18, project.codebaseresources.count())
-        self.assertEqual(2, project.discoveredpackages.count())
-        self.assertEqual(4, project.discovereddependencies.count())
+        # Forcing package_uid for proper assertion with expected results
+        package = project1.discoveredpackages.get()
+        uuid = "ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
+        package.update(package_uid=f"pkg:npm/is-npm@1.0.0?uuid={uuid}")
 
-        # Load again to ensure there is no duplication
-        scancode.load_inventory_from_scanpipe(project, scan_data)
-        self.assertEqual(18, project.codebaseresources.count())
-        self.assertEqual(2, project.discoveredpackages.count())
-        self.assertEqual(4, project.discovereddependencies.count())
+        scan_output_location = self.data_location / "is-npm-1.0.0_scan_package.json"
+        summary = scancode.make_results_summary(project1, scan_output_location)
+        expected_location = self.data_location / "scancode/is-npm-1.0.0_summary.json"
+        if regen:
+            expected_location.write_text(json.dumps(summary, indent=2))
 
-        # Using the JSON output of project1 to load into project2
-        project2 = Project.objects.create(name="2")
-        output_file = output.to_json(project=project)
-        scan_data = json.loads(output_file.read_text())
-        scancode.load_inventory_from_scanpipe(project2, scan_data)
-        self.assertEqual(18, project2.codebaseresources.count())
-        self.assertEqual(2, project2.discoveredpackages.count())
-        self.assertEqual(4, project2.discovereddependencies.count())
-
-    def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe_with_relations(self):
-        project = Project.objects.create(name="1")
-        input_location = self.data_location / "flume-ng-node-d2d.json"
-        scan_data = json.loads(input_location.read_text())
-        scancode.load_inventory_from_scanpipe(project, scan_data)
-        self.assertEqual(57, project.codebaseresources.count())
-        self.assertEqual(0, project.discoveredpackages.count())
-        self.assertEqual(0, project.discovereddependencies.count())
-        self.assertEqual(18, project.codebaserelations.count())
-
-        # Load again to ensure there is no duplication
-        scancode.load_inventory_from_scanpipe(project, scan_data)
-        self.assertEqual(57, project.codebaseresources.count())
-        self.assertEqual(18, project.codebaserelations.count())
+        self.assertJSONEqual(expected_location.read_text(), summary)
 
     def test_scanpipe_pipes_scancode_assemble_packages(self):
         project = Project.objects.create(name="Analysis")
-        project_scan_location = self.data_location / "package_assembly_codebase.json"
-        scancode.load_inventory_from_toolkit_scan(project, project_scan_location)
+        filename = "package_assembly_codebase.json"
+        project_scan_location = self.data_location / "scancode" / filename
+        input.load_inventory_from_toolkit_scan(project, project_scan_location)
 
+        project.discoveredpackages.all().delete()
         self.assertEqual(0, project.discoveredpackages.count())
+
         scancode.assemble_packages(project)
         self.assertEqual(1, project.discoveredpackages.count())
 
@@ -498,7 +438,7 @@ class ScanPipeScancodePipesTest(TestCase):
 
         associated_resources = [r.path for r in package.codebase_resources.all()]
         expected_resources = [
-            "get_package_resources/package.json",
-            "get_package_resources/this-should-be-returned",
+            "test/get_package_resources/package.json",
+            "test/get_package_resources/this-should-be-returned",
         ]
         self.assertEqual(sorted(expected_resources), sorted(associated_resources))

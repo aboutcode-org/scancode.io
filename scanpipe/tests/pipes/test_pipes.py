@@ -33,8 +33,11 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import flag
+from scanpipe.pipes import get_resource_diff_ratio
+from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
+from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
@@ -292,3 +295,35 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         )
         self.assertEqual(20, last_percent)
         self.assertEqual("Progress: 20% (20/100)", buffer.getvalue())
+
+    def test_scanpipe_pipes_get_resource_diff_ratio(self):
+        project1 = Project.objects.create(name="Analysis")
+
+        resource_files = [
+            self.data_location / "codebase" / "a.txt",
+            self.data_location / "codebase" / "b.txt",
+            self.data_location / "codebase" / "c.txt",
+        ]
+        copy_inputs(resource_files, project1.codebase_path)
+
+        resource1 = make_resource_file(project1, "a.txt")
+        resource2 = make_resource_file(project1, "b.txt")
+        resource3 = make_resource_file(project1, "c.txt")
+
+        self.assertEqual(0.5, get_resource_diff_ratio(resource1, resource2))
+        self.assertEqual(0.0, get_resource_diff_ratio(resource1, resource3))
+        self.assertEqual(1.0, get_resource_diff_ratio(resource2, resource2))
+
+        resource4 = make_resource_file(project1, "d.txt")
+        self.assertIsNone(get_resource_diff_ratio(resource1, resource4))
+        self.assertIsNone(get_resource_diff_ratio(resource4, resource1))
+
+    def test_scanpipe_pipes_get_text_str_diff_ratio(self):
+        self.assertIsNone(get_text_str_diff_ratio(None, ""))
+        self.assertIsNone(get_text_str_diff_ratio("", "a"))
+
+        self.assertEqual(0.5, get_text_str_diff_ratio("a", "a\nb\nc"))
+
+        with self.assertRaises(ValueError) as error:
+            get_text_str_diff_ratio(1, 2)
+        self.assertEqual("Values must be str", str(error.exception))

@@ -46,19 +46,36 @@ class DeployToDevelop(Pipeline):
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_and_ignored_files,
-            cls.checksum_map,
-            cls.java_to_class_map,
-            cls.jar_to_source_map,
-            cls.purldb_match,
-            cls.path_map,
+            cls.map_checksum,
+            cls.find_java_packages,
+            cls.map_java_to_class,
+            cls.flag_to_meta_inf_files,
+            cls.map_jar_to_source,
+            cls.map_javascript,
+            cls.match_purldb,
+            cls.map_path,
             cls.flag_mapped_resources_and_ignored_directories,
+            cls.scan_mapped_from_for_files,
         )
 
     extract_recursively = True
-    purldb_match_extensions = [".jar", ".war", ".zip"]
+    purldb_package_extensions = [".jar", ".war", ".zip"]
+    purldb_resource_extensions = [
+        ".map",
+        ".js",
+        ".mjs",
+        ".ts",
+        ".d.ts",
+        ".jsx",
+        ".tsx",
+        ".css",
+        ".scss",
+        ".less",
+        ".sass",
+    ]
 
     def get_inputs(self):
-        """Locate the `from` and `to` archives."""
+        """Locate the ``from`` and ``to`` archives."""
         self.from_file, self.to_file = d2d.get_inputs(self.project)
 
         self.from_path = self.project.codebase_path / d2d.FROM
@@ -90,39 +107,68 @@ class DeployToDevelop(Pipeline):
     def flag_empty_and_ignored_files(self):
         """Flag empty and ignored files using names and extensions."""
         flag.flag_empty_codebase_resources(self.project)
-        flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORE_FILENAMES)
-        flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORE_EXTENSIONS)
-        flag.flag_ignored_paths(self.project, paths=d2d.IGNORE_PATHS)
+        flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORED_FILENAMES)
+        flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORED_EXTENSIONS)
+        flag.flag_ignored_paths(self.project, paths=d2d.IGNORED_PATHS)
 
-    def checksum_map(self):
+    def map_checksum(self):
         """Map using SHA1 checksum."""
-        d2d.checksum_map(project=self.project, checksum_field="sha1", logger=self.log)
+        d2d.map_checksum(project=self.project, checksum_field="sha1", logger=self.log)
 
-    def java_to_class_map(self):
+    def find_java_packages(self):
+        """Find the java package of the .java source files."""
+        d2d.find_java_packages(self.project, logger=self.log)
+
+    def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
-        d2d.java_to_class_map(project=self.project, logger=self.log)
+        d2d.map_java_to_class(project=self.project, logger=self.log)
 
-    def jar_to_source_map(self):
-        """Map a .class compiled file to its .java source."""
-        d2d.jar_to_source_map(project=self.project, logger=self.log)
+    def flag_to_meta_inf_files(self):
+        """Flag all ``META-INF/*`` file of the ``to/`` directory as ignored."""
+        d2d.flag_to_meta_inf_files(self.project)
 
-    def purldb_match(self):
+    def map_jar_to_source(self):
+        """Map .jar files to their related source directory."""
+        d2d.map_jar_to_source(project=self.project, logger=self.log)
+
+    def map_javascript(self):
+        """
+        Map a packed or minified JavaScript, TypeScript, CSS and SCSS
+        to its source.
+        """
+        d2d.map_javascript(project=self.project, logger=self.log)
+
+    def match_purldb(self):
         """Match selected files by extension in PurlDB."""
         if not purldb.is_available():
             self.log("PurlDB is not available. Skipping.")
             return
 
-        d2d.purldb_match(
+        d2d.match_purldb(
             project=self.project,
-            extensions=self.purldb_match_extensions,
+            extensions=self.purldb_package_extensions,
+            matcher_func=d2d.match_purldb_package,
             logger=self.log,
         )
 
-    def path_map(self):
+        d2d.match_purldb(
+            project=self.project,
+            extensions=self.purldb_resource_extensions,
+            matcher_func=d2d.match_purldb_resource,
+            logger=self.log,
+        )
+
+    def map_path(self):
         """Map using path similarities."""
-        d2d.path_map(project=self.project, logger=self.log)
+        d2d.map_path(project=self.project, logger=self.log)
 
     def flag_mapped_resources_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
+
+    def scan_mapped_from_for_files(self):
+        """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
+        resource_qs = self.project.codebaseresources
+        mapped_from_files = resource_qs.from_codebase().files().has_relation()
+        scancode.scan_for_files(self.project, mapped_from_files)

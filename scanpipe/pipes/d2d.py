@@ -20,27 +20,36 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import difflib
+from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
 
-from django.core.exceptions import ObjectDoesNotExist
-
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
 from scanpipe.pipes import flag
+from scanpipe.pipes import get_resource_diff_ratio
+from scanpipe.pipes import js
+from scanpipe.pipes import jvm
+from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
+from scanpipe.pipes import scancode
 
 FROM = "from/"
 TO = "to/"
 
-IGNORE_FILENAMES = ("packageinfo",)
-IGNORE_EXTENSIONS = ()
-IGNORE_PATHS = ("gradleTest/",)
+IGNORED_FILENAMES = (
+    ".DS_Store",
+    "packageinfo",
+    "package-info.java",
+    "package-info.class",
+)
+IGNORED_EXTENSIONS = ()
+IGNORED_PATHS = ("gradleTest/",)
 
 
 def get_inputs(project):
-    """Locate the `from` and `to` archives in project inputs directory."""
+    """Locate the ``from`` and ``to`` archives in project inputs directory."""
     from_file = list(project.inputs("from*"))
     to_file = list(project.inputs("to*"))
 
@@ -62,31 +71,50 @@ def get_resource_codebase_root(project, resource_path):
     return ""
 
 
-def collect_and_create_codebase_resources(project):
+def yield_resources_from_codebase(project):
     """
-    Collect and create codebase resources including the "to/" and "from/" context using
-    the resource tag field.
+    Yield CodebaseResource instances, including their ``info`` data, ready to be
+    inserted in the database using ``save()`` or ``bulk_create()``.
     """
     for resource_path in project.walk_codebase_path():
-        pipes.make_codebase_resource(
+        yield pipes.make_codebase_resource(
             project=project,
             location=resource_path,
+            save=False,
             tag=get_resource_codebase_root(project, resource_path),
         )
 
 
+def collect_and_create_codebase_resources(project, batch_size=5000):
+    """
+    Collect and create codebase resources including the "to/" and "from/" context using
+    the resource tag field.
+
+    The default ``batch_size`` can be overriden, although the benefits of a value
+    greater than 5000 objects are usually not significant.
+    """
+    model_class = CodebaseResource
+    objs = yield_resources_from_codebase(project)
+
+    while True:
+        batch = list(islice(objs, batch_size))
+        if not batch:
+            break
+        model_class.objects.bulk_create(batch, batch_size)
+
+
 def get_extracted_path(resource):
-    """Return the `-extract/` extracted path of provided `resource`."""
+    """Return the ``-extract/`` extracted path of provided ``resource``."""
     return resource.path + "-extract/"
 
 
 def get_extracted_subpath(path):
-    """Return the path segments located after the last `-extract/` segment."""
+    """Return the path segments located after the last ``-extract/`` segment."""
     return path.split("-extract/")[-1]
 
 
 def get_best_path_matches(to_resource, matches):
-    """Return the best `matches` for the provided `to_resource`."""
+    """Return the best ``matches`` for the provided ``to_resource``."""
     path_parts = Path(to_resource.path.lstrip("/")).parts
 
     for path_parts_index in range(1, len(path_parts)):
@@ -102,7 +130,7 @@ def get_best_path_matches(to_resource, matches):
     return matches
 
 
-def _resource_checksum_map(to_resource, from_resources, checksum_field):
+def _map_checksum_resource(to_resource, from_resources, checksum_field):
     checksum_value = getattr(to_resource, checksum_field)
     matches = from_resources.filter(**{checksum_field: checksum_value})
     for match in get_best_path_matches(to_resource, matches):
@@ -113,7 +141,7 @@ def _resource_checksum_map(to_resource, from_resources, checksum_field):
         )
 
 
-def checksum_map(project, checksum_field, logger=None):
+def map_checksum(project, checksum_field, logger=None):
     """Map using checksum."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase().has_value(checksum_field)
@@ -140,99 +168,210 @@ def checksum_map(project, checksum_field, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_checksum_map(to_resource, from_resources, checksum_field)
+        _map_checksum_resource(to_resource, from_resources, checksum_field)
 
 
-def _resource_java_to_class_map(to_resource, from_resources):
-    qualified_class = get_extracted_subpath(to_resource.path)
+def _map_java_to_class_resource(to_resource, from_resources, from_classes_index):
+    """
+    Map the ``to_resource`` .class file Resource with a Resource in
+    ``from_resources`` .java files, using the ``from_classes_index`` index of
+    from/ fully qualified Java class names.
+    """
+    normalized_java_path = jvm.get_normalized_java_path(to_resource.path)
+    match = pathmap.find_paths(path=normalized_java_path, index=from_classes_index)
+    if not match:
+        return
 
-    if "$" in to_resource.name:  # inner class
-        path_parts = Path(qualified_class.lstrip("/")).parts
-        parts_without_name = list(path_parts[:-1])
-        from_name = to_resource.name.split("$")[0] + ".java"
-        qualified_java = "/".join(parts_without_name + [from_name])
-    else:
-        qualified_java = qualified_class.replace(".class", ".java")
-
-    matches = from_resources.filter(path__endswith=qualified_java)
-    for match in matches:
+    for resource_id in match.resource_ids:
+        from_resource = from_resources.get(id=resource_id)
+        # compute the root of the packages on the source side
+        from_source_root_parts = from_resource.path.strip("/").split("/")
+        from_source_root = "/".join(
+            from_source_root_parts[: -match.matched_path_length]
+        )
         pipes.make_relation(
-            from_resource=match,
+            from_resource=from_resource,
             to_resource=to_resource,
             map_type="java_to_class",
-            extra_data={
-                "from_source_root": match.path.replace(qualified_java, ""),
-            },
+            extra_data={"from_source_root": f"{from_source_root}/"},
         )
 
 
-def java_to_class_map(project, logger=None):
-    """Map a .java source to its compiled .class using fully qualified name."""
+def map_java_to_class(project, logger=None):
+    """
+    Map to/ compiled Java .class(es) to from/ .java source using Java fully
+    qualified paths and indexing from/ .java files.
+    """
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
 
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class = to_resources.filter(extension=".class")
     resource_count = to_resources_dot_class.count()
     if logger:
         logger(f"Mapping {resource_count:,d} .class resources to .java")
+
+    from_resources_dot_java = from_resources.filter(extension=".java")
+
+    # build an index using from-side Java fully qualified class file names
+    # built from the "java_package" and file name
+    indexables = get_indexable_qualified_java_paths(from_resources_dot_java)
+
+    # we do not index subpath since we want to match only fully qualified names
+    from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
     for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
-        _resource_java_to_class_map(to_resource, from_resources)
+        if logger:
+            last_percent = pipes.log_progress(
+                logger,
+                resource_index,
+                resource_count,
+                last_percent,
+                increment_percent=10,
+                start_time=start_time,
+            )
+        _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
     # Flag not mapped .class in to/ codebase
-    to_resources_dot_class = to_resources.filter(name__endswith=".class")
+    to_resources_dot_class = to_resources.filter(extension=".class")
     to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
 
-def _resource_jar_to_source_map(jar_resource, to_resources, from_resources):
+def get_indexable_qualified_java_paths_from_values(resource_values):
+    """
+    Yield tuples of (resource id, fully-qualified Java path) for indexable
+    classes from a list of ``resource_data`` tuples of "from/" side of the
+    project codebase.
+
+    These ``resource_data`` input tuples are in the form:
+        (resource.id, resource.name, resource.extra_data)
+
+    And the output tuples look like this example::
+        (123, "org/apache/commons/LoggerImpl.java")
+    """
+    for resource_id, resource_name, resource_extra_data in resource_values:
+        java_package = resource_extra_data and resource_extra_data.get("java_package")
+        if not java_package:
+            continue
+        fully_qualified = jvm.get_fully_qualified_java_path(
+            java_package,
+            filename=resource_name,
+        )
+        yield resource_id, fully_qualified
+
+
+def get_indexable_qualified_java_paths(from_resources_dot_java):
+    """
+    Yield tuples of (resource id, fully-qualified Java class name) for indexable
+    classes from the "from/" side of the project codebase using the
+    "java_package" Resource.extra_data.
+    """
+    resource_values = from_resources_dot_java.values_list("id", "name", "extra_data")
+    return get_indexable_qualified_java_paths_from_values(resource_values)
+
+
+def find_java_packages(project, logger=None):
+    """
+    Collect the Java packages of Java source files for a ``project``.
+
+    Multiprocessing is enabled by default on this pipe, the number of processes
+    can be controlled through the SCANCODEIO_PROCESSES setting.
+
+    Note: we use the same API as the ScanCode scans by design
+    """
+    from_java_resources = (
+        project.codebaseresources.files()
+        .no_status()
+        .from_codebase()
+        .has_no_relation()
+        .filter(extension=".java")
+    )
+
+    if logger:
+        logger(
+            f"Finding Java package for {from_java_resources.count():,d} "
+            ".java resources."
+        )
+
+    scancode._scan_and_save(
+        resource_qs=from_java_resources,
+        scan_func=scan_for_java_package,
+        save_func=save_java_package_scan_results,
+    )
+
+
+def scan_for_java_package(location, with_threading=True):
+    """
+    Run a Java package scan on provided ``location``.
+
+    Return a dict of scan ``results`` and a list of ``errors``.
+    """
+    scanners = [scancode.Scanner("java_package", jvm.get_java_package)]
+    return scancode._scan_resource(location, scanners, with_threading=with_threading)
+
+
+def save_java_package_scan_results(codebase_resource, scan_results, scan_errors):
+    """
+    Save the resource Java package scan results in the database as Resource.extra_data.
+    Create project errors if any occurred during the scan.
+    """
+    # The status is only updated in case of errors.
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        codebase_resource.update(status=flag.SCANNED_WITH_ERROR)
+    else:
+        codebase_resource.update_extra_data(scan_results)
+
+
+def _map_jar_to_source_resource(jar_resource, to_resources, from_resources):
     jar_extracted_path = get_extracted_path(jar_resource)
-    jar_extracted_files = to_resources.filter(path__startswith=jar_extracted_path)
+    jar_extracted_dot_class_files = list(
+        to_resources.filter(
+            extension=".class", path__startswith=jar_extracted_path
+        ).values("id", "status")
+    )
 
-    # Flag all META-INF/* file as ignored
-    meta_inf_files = jar_extracted_files.filter(path__contains="META-INF/")
-    meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
-
-    dot_class_files = jar_extracted_files.filter(name__endswith=".class")
-    # Do not continue if some .class files couldn't be mapped.
-    if dot_class_files.has_no_relation().exists():
+    # Rely on the status flag to avoid triggering extra SQL queries.
+    not_mapped_dot_class = [
+        dot_class_file
+        for dot_class_file in jar_extracted_dot_class_files
+        if dot_class_file.get("status") == flag.NO_JAVA_SOURCE
+    ]
+    # Do not continue if any .class files couldn't be mapped.
+    if any(not_mapped_dot_class):
         return
 
-    java_to_class_relations = CodebaseRelation.objects.filter(
-        to_resource__in=dot_class_files, map_type="java_to_class"
-    )
+    # Using ids from already evaluated QuerySet to avoid triggering an expensive
+    # SQL subquery in the following CodebaseRelation QuerySet.
+    dot_class_file_ids = [
+        dot_class_file.get("id") for dot_class_file in jar_extracted_dot_class_files
+    ]
+    java_to_class_extra_data_list = CodebaseRelation.objects.filter(
+        to_resource__in=dot_class_file_ids, map_type="java_to_class"
+    ).values_list("extra_data", flat=True)
+
     from_source_roots = [
-        relation.extra_data.get("from_source_root", "")
-        for relation in java_to_class_relations
+        extra_data.get("from_source_root", "")
+        for extra_data in java_to_class_extra_data_list
     ]
     if len(set(from_source_roots)) != 1:
         # Could not determine a common root directory for the java_to_class files
         return
 
-    try:
-        common_from_resource = from_resources.get(path=from_source_roots[0].rstrip("/"))
-    except ObjectDoesNotExist:
-        return
-
-    pipes.make_relation(
-        from_resource=common_from_resource,
-        to_resource=jar_resource,
-        map_type="jar_to_source",
-    )
+    common_source_root = from_source_roots[0].rstrip("/")
+    if common_from_resource := from_resources.get_or_none(path=common_source_root):
+        pipes.make_relation(
+            from_resource=common_from_resource,
+            to_resource=jar_resource,
+            map_type="jar_to_source",
+        )
 
 
-def jar_to_source_map(project, logger=None):
+def map_jar_to_source(project, logger=None):
+    """Map .jar files to their related source directory."""
     project_files = project.codebaseresources.files()
     # Include the directories to map on the common source
     from_resources = project.codebaseresources.from_codebase()
@@ -242,72 +381,69 @@ def jar_to_source_map(project, logger=None):
     to_jars_count = to_jars.count()
     if logger:
         logger(
-            f"Mapping {to_jars_count:,d} .jar resources using jar_to_source_map "
+            f"Mapping {to_jars_count:,d} .jar resources using map_jar_to_source "
             f"against from/ codebase"
         )
 
-    for jar_resource in to_jars:
-        _resource_jar_to_source_map(jar_resource, to_resources, from_resources)
+    resource_iterator = to_jars.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, jar_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            to_jars_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
 
 
-def get_diff_ratio(to_resource, from_resource):
-    if not (to_resource.is_text and from_resource.is_text):
+def flag_to_meta_inf_files(project):
+    """Flag all ``META-INF/*`` file of the ``to/`` directory as ignored."""
+    to_resources = project.codebaseresources.files().to_codebase()
+    meta_inf_files = to_resources.filter(path__contains="META-INF/")
+    meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
+
+
+def _map_path_resource(
+    to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
+):
+    match = pathmap.find_paths(to_resource.path, from_resources_index)
+    if not match:
         return
 
-    try:
-        to_lines = to_resource.location_path.read_text().splitlines()
-        from_lines = from_resource.location_path.read_text().splitlines()
-    except Exception:
+    # Only create relations when the number of matches if inferior or equal to
+    # the current number of path segment matched.
+    if len(match.resource_ids) > match.matched_path_length:
+        to_resource.update(status=flag.TOO_MANY_MAPS)
         return
 
-    matcher = difflib.SequenceMatcher(a=from_lines, b=to_lines)
-    return matcher.quick_ratio()
-
-
-def _resource_path_map(to_resource, from_resources, diff_ratio_threshold=0.7):
-    path_parts = Path(to_resource.path.lstrip("/")).parts
-    path_parts_len = len(path_parts)
-
-    for path_parts_index in range(1, path_parts_len):
-        current_parts = path_parts[path_parts_index:]
-        current_path = "/".join(current_parts)
-
-        # The slash "/" prefix matters during the match as we do not want to
-        # match on filenames sharing the same ending.
-        # For example: Filter.java and FastFilter.java
-        matches = from_resources.filter(path__endswith=f"/{current_path}")
-        if not matches:
+    for resource_id in match.resource_ids:
+        from_resource = from_resources.get(id=resource_id)
+        diff_ratio = get_resource_diff_ratio(to_resource, from_resource)
+        if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
             continue
 
-        # Only create relations when the number of matches if inferior or equal to
-        # the current number of path segment matched.
-        if len(matches) > len(current_parts):
-            to_resource.status = flag.TOO_MANY_MAPS
-            to_resource.save()
-            break
+        # Do not count the "to/" segment as it is not "matchable"
+        to_path_length = len(to_resource.path.split("/")) - 1
+        extra_data = {
+            "path_score": f"{match.matched_path_length}/{to_path_length}",
+        }
+        if diff_ratio:
+            extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
 
-        for match in matches:
-            diff_ratio = get_diff_ratio(to_resource=to_resource, from_resource=match)
-            if diff_ratio is not None and diff_ratio < diff_ratio_threshold:
-                continue
-
-            extra_data = {
-                "path_score": f"{len(current_parts)}/{path_parts_len - 1}",
-            }
-            if diff_ratio:
-                extra_data["diff_ratio"] = f"{diff_ratio:.1%}"
-
-            pipes.make_relation(
-                from_resource=match,
-                to_resource=to_resource,
-                map_type="path",
-                extra_data=extra_data,
-            )
-        break
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=to_resource,
+            map_type="path",
+            extra_data=extra_data,
+        )
 
 
-def path_map(project, logger=None):
-    """Map using path similarities."""
+def map_path(project, logger=None):
+    """Map using path suffix similarities."""
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
@@ -318,6 +454,10 @@ def path_map(project, logger=None):
             f"Mapping {resource_count:,d} to/ resources using path map "
             f"against from/ codebase"
         )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
@@ -331,33 +471,54 @@ def path_map(project, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_path_map(to_resource, from_resources)
+        _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def _resource_purldb_match(project, resource):
-    if results := purldb.match_by_sha1(sha1=resource.sha1):
-        package_data = results[0].copy()
-        # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
-        # PurlDB match can be found in different projects.
-        package_data.pop("uuid", None)
-        package_data.pop("dependencies", None)
-        extracted_resources = project.codebaseresources.to_codebase().filter(
-            path__startswith=f"{resource.path}"
-        )
-        pipes.update_or_create_package(
-            project=project,
-            package_data=package_data,
-            codebase_resources=extracted_resources,
-        )
-        # Override the status as "purldb match" as we can rely on the codebase relation
-        # for the mapping information.
-        extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
+def create_package_from_purldb_data(project, resource, package_data):
+    """Create a DiscoveredPackage instance from PurlDB ``package_data``."""
+    package_data = package_data.copy()
+    # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
+    # PurlDB match can be found in different projects.
+    package_data.pop("uuid", None)
+    package_data.pop("dependencies", None)
+    extracted_resources = project.codebaseresources.to_codebase().filter(
+        path__startswith=resource.path
+    )
+    package = pipes.update_or_create_package(
+        project=project,
+        package_data=package_data,
+        codebase_resources=extracted_resources,
+    )
+    # Override the status as "purldb match" as we can rely on the codebase relation
+    # for the mapping information.
+    extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
+    return package
 
 
-def purldb_match(project, extensions, logger=None):
+def match_purldb_package(project, resource):
+    """Match an archive type resource in the PurlDB."""
+    if results := purldb.match_package(sha1=resource.sha1):
+        package_data = results[0]
+        return create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb_resource(project, resource):
+    """Match a single file resource in the PurlDB."""
+    sha1_list = [resource.sha1]
+    if resource.path.endswith(".map"):
+        sha1_list.extend(js.source_content_sha1_list(resource))
+
+    if results := purldb.match_resource(sha1_list=sha1_list):
+        package_url = results[0]["package"]
+        if package_data := purldb.request_get(url=package_url):
+            return create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb(project, extensions, matcher_func, logger=None):
     """
-    Match against PurlDB selecting codebase resources using provided `extensions`.
-    Resources with existing status as not excluded.
+    Match against PurlDB selecting codebase resources using provided
+    ``package_extensions`` for archive type files, and ``resource_extensions`` for
+    single resource files.
     """
     to_resources = (
         project.codebaseresources.files()
@@ -370,13 +531,13 @@ def purldb_match(project, extensions, logger=None):
 
     if logger:
         extensions_str = ", ".join(extensions)
-        logger(
-            f"Matching {resource_count:,d} {extensions_str} resources against PurlDB"
-        )
+        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
     last_percent = 0
     start_time = timer()
+    matched_count = 0
+
     for resource_index, to_resource in enumerate(resource_iterator):
         last_percent = pipes.log_progress(
             logger,
@@ -386,4 +547,78 @@ def purldb_match(project, extensions, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        _resource_purldb_match(project, to_resource)
+        matched_package = matcher_func(project, to_resource)
+        if matched_package:
+            matched_count += 1
+
+    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
+
+
+def map_javascript(project, logger=None):
+    """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
+    project_files = project.codebaseresources.files()
+
+    to_resources = project_files.to_codebase().exclude(name__startswith=".")
+    to_resources_dot_map = to_resources.filter(extension=".map")
+    to_resources_minified = to_resources.filter(extension__in=[".css", ".js"])
+
+    to_resources_dot_map_count = to_resources_dot_map.count()
+    if logger:
+        logger(
+            f"Mapping {to_resources_dot_map_count:,d} .map resources using javascript "
+            f"map against from/ codebase"
+        )
+
+    from_resources = project_files.from_codebase()
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_resources_dot_map.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_dot_map in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            to_resources_dot_map_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _map_javascript_resource(
+            to_dot_map, to_resources_minified, from_resources_index, from_resources
+        )
+
+
+def _map_javascript_resource(
+    to_map, to_resources_minified, from_resources_index, from_resources
+):
+    content_sha1_list = js.source_content_sha1_list(to_map)
+    sha1_matches = from_resources.filter(sha1__in=content_sha1_list)
+
+    # Only create relations when the number of sha1 matches if inferior or equal
+    # to the number of sourcesContent in map.
+    if len(sha1_matches) > len(content_sha1_list):
+        to_map.update(status=flag.TOO_MANY_MAPS)
+        return
+
+    matches = [(match, {}) for match in sha1_matches]
+
+    # Use diff_ratio if no sha1 match is found.
+    if not matches:
+        matches = js.get_matches_by_ratio(to_map, from_resources_index, from_resources)
+
+    transpiled = [to_map]
+    if minified_resource := js.get_minified_resource(to_map, to_resources_minified):
+        transpiled.append(minified_resource)
+
+    for resource in transpiled:
+        for match, extra_data in matches:
+            pipes.make_relation(
+                from_resource=match,
+                to_resource=resource,
+                map_type="js_compiled",
+                extra_data=extra_data,
+            )
+            resource.update(status=flag.MAPPED)

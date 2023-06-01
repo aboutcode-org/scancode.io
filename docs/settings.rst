@@ -65,6 +65,25 @@ It defaults to a :guilabel:`var/` directory in the local ScanCode.io codebase.
 
 See :ref:`project_workspace` for more details.
 
+.. _scancodeio_settings_config_dir:
+
+SCANCODEIO_CONFIG_DIR
+---------------------
+
+The location of the :guilabel:`.scancode/` configuration directory within the project
+codebase.
+
+Default: ``.scancode``
+
+This directory allows to provide configuration files and customization for a ScanCode.io
+project directly through the codebase files.
+
+For example, to provide a custom attribution template to your project, add it in a
+:guilabel:`.scancode/` directory located at the root of your codebase before uploading
+it to ScanCode.io. The expected location of the attribution template is::
+
+  .scancode/templates/attribution.html
+
 SCANCODEIO_PROCESSES
 --------------------
 
@@ -126,8 +145,6 @@ The following example explicitly defines a timeout value of 60::
 
     SCANCODE_TOOLKIT_CLI_OPTIONS=--timeout 60
 
-.. _scancodeio_settings_pipelines_dirs:
-
 SCANCODEIO_TASK_TIMEOUT
 -----------------------
 
@@ -151,6 +168,8 @@ The value unit is second and is defined as an integer::
     SCANCODEIO_SCAN_FILE_TIMEOUT=120
 
 Default: ``120`` (2 minutes)
+
+.. _scancodeio_settings_pipelines_dirs:
 
 SCANCODEIO_PIPELINES_DIRS
 -------------------------

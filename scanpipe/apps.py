@@ -87,7 +87,7 @@ class ScanPipeConfig(AppConfig):
 
         # In SYNC mode, the Run instances cleanup is triggered on app.ready()
         # only when the app is started through "runserver".
-        # This cleanup is required if the a running pipeline process gets killed and
+        # This cleanup is required if a running pipeline process gets killed and
         # since KeyboardInterrupt cannot be captured to properly update the Run instance
         # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
@@ -212,7 +212,7 @@ class ScanPipeConfig(AppConfig):
         return bool(self.license_policies_index)
 
     def sync_runs_and_jobs(self):
-        """Synchronize QUEUED and RUNNING Run with their related Jobs."""
+        """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""
         logger.info("Synchronizing QUEUED and RUNNING Run with their related Jobs...")
 
         run_model = self.get_model("Run")

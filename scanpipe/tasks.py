@@ -62,7 +62,7 @@ def execute_pipeline_task(run_pk):
     exitcode, output = pipeline.execute()
 
     info("Update Run instance with exitcode, output, and end_date", run_pk)
-    run.set_task_ended(exitcode, output, refresh_first=True)
+    run.set_task_ended(exitcode, output)
     run.deliver_project_subscriptions()
 
     if run.task_succeeded:

@@ -21,10 +21,12 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
+import shutil
 from pathlib import Path
 from unittest import mock
 
 from django.apps import apps
+from django.core.exceptions import SuspiciousFileOperation
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
@@ -33,8 +35,8 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
 from scanpipe.pipes.input import copy_inputs
-from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_resource_file
+from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -69,12 +71,12 @@ class ScanPipeViewsTest(TestCase):
         is_archived_filters = """
         <li>
           <a href="?is_archived=" class=" is-active">
-            <i class="fas fa-seedling"></i> 1 Active
+            <i class="fa-solid fa-seedling"></i> 1 Active
           </a>
         </li>
         <li>
           <a href="?is_archived=true" class="">
-            <i class="fas fa-dice-d6"></i> 0 Archived
+            <i class="fa-solid fa-dice-d6"></i> 0 Archived
           </a>
         </li>
         """
@@ -212,25 +214,47 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("docker", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
+    def test_scanpipe_views_project_details_charts_view(self):
+        url = reverse("project_charts", args=[self.project1.uuid])
+
+        with self.assertNumQueries(9):
+            response = self.client.get(url)
+
+        self.assertNotContains(response, 'id="package-charts"')
+        self.assertNotContains(response, 'id="dependency-charts"')
+        self.assertNotContains(response, 'id="resource-charts-charts"')
+
+        CodebaseResource.objects.create(
+            project=self.project1,
+            programming_language="Python",
+            type=CodebaseResource.Type.FILE,
+        )
+
+        with self.assertNumQueries(12):
+            response = self.client.get(url)
+        self.assertContains(response, '{"Python": 1}')
+
     def test_scanpipe_views_project_details_charts_compliance_alert(self):
         url = reverse("project_charts", args=[self.project1.uuid])
         expected = 'id="compliance_alert_chart"'
 
-        scanpipe_app.license_policies_index = None
         response = self.client.get(url)
         self.assertNotContains(response, expected)
 
-        scanpipe_app.license_policies_index = license_policies_index
         response = self.client.get(url)
         self.assertNotContains(response, expected)
 
-        CodebaseResource.objects.create(
+        resource = CodebaseResource.objects.create(
             project=self.project1,
-            compliance_alert="error",
             type=CodebaseResource.Type.FILE,
         )
+        CodebaseResource.objects.filter(id=resource.id).update(
+            compliance_alert=CodebaseResource.Compliance.ERROR
+        )
+
         response = self.client.get(url)
         self.assertContains(response, expected)
+        self.assertContains(response, '{"error": 1}')
 
     def test_scanpipe_views_project_details_scan_summary_panels(self):
         url = self.project1.get_absolute_url()
@@ -291,6 +315,69 @@ class ScanPipeViewsTest(TestCase):
             "Other languages",
         ]
         self.assertEqual(expected, list(scan_summary_data.keys()))
+
+    def test_scanpipe_views_project_codebase_view(self):
+        url = reverse("project_codebase", args=[self.project1.uuid])
+
+        (self.project1.codebase_path / "dir1").mkdir()
+        (self.project1.codebase_path / "dir1/dir2").mkdir()
+        (self.project1.codebase_path / "file.txt").touch()
+
+        response = self.client.get(url)
+        self.assertContains(response, "/codebase/?current_dir=./dir1")
+        self.assertContains(response, "/resources/./file.txt/")
+
+        data = {"current_dir": "dir1"}
+        response = self.client.get(url, data=data)
+        self.assertContains(response, "..")
+        self.assertContains(response, "/codebase/?current_dir=.")
+        self.assertContains(response, "/codebase/?current_dir=dir1/dir2")
+
+        data = {"current_dir": "not_existing"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        data = {"current_dir": "../"}
+        response = self.client.get(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+    def test_scanpipe_views_project_codebase_view_get_tree(self):
+        get_tree = ProjectCodebaseView.get_tree
+
+        (self.project1.codebase_path / "dir1").mkdir()
+        (self.project1.codebase_path / "dir1/dir2").mkdir()
+        (self.project1.codebase_path / "file.txt").touch()
+
+        with mock.patch.object(scanpipe_app, "workspace_path", ""):
+            self.assertEqual("", scanpipe_app.workspace_path)
+            with self.assertRaises(ValueError) as e:
+                get_tree(self.project1, current_dir="")
+
+        with self.assertRaises(FileNotFoundError):
+            get_tree(self.project1, current_dir="not_existing")
+
+        with self.assertRaises(SuspiciousFileOperation) as e:
+            get_tree(self.project1, current_dir="../../")
+        self.assertIn("is located outside of the base path component", str(e.exception))
+
+        codebase_tree = get_tree(self.project1, current_dir="")
+        expected = [
+            {"name": "dir1", "is_dir": True, "location": "/dir1"},
+            {"name": "file.txt", "is_dir": False, "location": "/file.txt"},
+        ]
+        self.assertEqual(expected, codebase_tree)
+
+        codebase_tree = get_tree(self.project1, current_dir="dir1")
+        expected = [
+            {"name": "..", "is_dir": True, "location": "."},
+            {"name": "dir2", "is_dir": True, "location": "dir1/dir2"},
+        ]
+        self.assertEqual(expected, codebase_tree)
+
+        shutil.rmtree(self.project1.work_directory, ignore_errors=True)
+        self.assertFalse(self.project1.codebase_path.exists())
+        with self.assertRaises(Exception):
+            get_tree(self.project1, current_dir="")
 
     def test_scanpipe_views_project_archive_view(self):
         url = reverse("project_archive", args=[self.project1.uuid])
@@ -408,16 +495,18 @@ class ScanPipeViewsTest(TestCase):
         run.set_task_queued()
         run.refresh_from_db()
         response = self.client.get(url)
-        expected = '<i class="fas fa-clock mr-1"></i>Queued'
+        expected = '<i class="fa-solid fa-clock mr-1"></i>Queued'
         self.assertContains(response, expected)
         self.assertContains(response, f'hx-get="{url}?current_status={run.status}"')
 
         run.current_step = "1/2 Step A"
+        run.save()
         run.set_task_started(run.pk)
         run.refresh_from_db()
         response = self.client.get(url)
         expected = (
-            '<i class="fas fa-spinner fa-pulse mr-1" aria-hidden="true"></i>Running'
+            '<i class="fa-solid fa-spinner fa-pulse mr-1" aria-hidden="true"></i>'
+            "Running"
         )
         self.assertContains(response, expected)
         self.assertContains(response, f'hx-get="{url}?current_status={run.status}"')
@@ -447,20 +536,6 @@ class ScanPipeViewsTest(TestCase):
         run.set_task_stopped()
         response = self.client.get(url)
         expected = '<span class="tag is-danger">Stopped</span>'
-        self.assertContains(response, expected)
-
-    def test_scanpipe_views_codebase_resource_details_annotations_missing_policy(self):
-        resource1 = CodebaseResource.objects.create(
-            project=self.project1,
-            path="resource1",
-            licenses=[{"key": "key", "policy": None, "start_line": 1, "end_line": 2}],
-        )
-        url = resource1.get_absolute_url()
-
-        response = self.client.get(url)
-        expected = (
-            '{"start_line": 1, "end_line": 2, "text": null, "className": "ace_info"}'
-        )
         self.assertContains(response, expected)
 
     def test_scanpipe_views_codebase_relation_list_view_count(self):

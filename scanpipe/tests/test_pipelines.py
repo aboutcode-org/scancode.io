@@ -380,7 +380,8 @@ class PipelinesIntegrationTest(TestCase):
 
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
-        self.assertPipelineResultEqual(expected_file, scancode_file)
+        # Do not override the regen as this file is generated in regen_test_data
+        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
 
         summary_file = project1.get_latest_output(filename="summary")
         expected_file = (
@@ -719,7 +720,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("pypi", discoveredpackage.type)
         self.assertEqual("django", discoveredpackage.name)
         self.assertEqual("4.0.8", discoveredpackage.version)
-        self.assertEqual("bsd-new", discoveredpackage.license_expression)
+        self.assertEqual("bsd-new", discoveredpackage.declared_license_expression)
 
     def test_scanpipe_inspect_manifest_pipeline_spdx_integration_test(self):
         pipeline_name = "inspect_manifest"
@@ -740,8 +741,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("toml", discoveredpackage.name)
         self.assertEqual("0.10.2", discoveredpackage.version)
         self.assertEqual("https://github.com/uiri/toml", discoveredpackage.homepage_url)
-        self.assertEqual("MIT", discoveredpackage.declared_license)
-        self.assertEqual("mit", discoveredpackage.license_expression)
+        self.assertEqual("MIT", discoveredpackage.extracted_license_statement)
+        self.assertEqual("mit", discoveredpackage.declared_license_expression)
 
     def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration_test(self):
         pipeline_name = "inspect_manifest"
@@ -763,8 +764,8 @@ class PipelinesIntegrationTest(TestCase):
                 "type": "pypi",
                 "name": "toml",
                 "version": "0.10.2",
-                "declared_license": "OFL-1.1\nApache-2.0",
-                "license_expression": "ofl-1.1 AND unknown",
+                "extracted_license_statement": "OFL-1.1\nApache-2.0",
+                "declared_license_expression": "ofl-1.1 OR apache-2.0",
                 "homepage_url": "https://cyclonedx.org/website",
                 "bug_tracking_url": "https://cyclonedx.org/issue-tracker",
                 "vcs_url": "https://cyclonedx.org/vcs",
@@ -774,8 +775,8 @@ class PipelinesIntegrationTest(TestCase):
                 "type": "pypi",
                 "name": "billiard",
                 "version": "3.6.3.0",
-                "declared_license": "BSD-3-Clause",
-                "license_expression": "bsd-new",
+                "extracted_license_statement": "BSD-3-Clause",
+                "declared_license_expression": "bsd-new",
                 "homepage_url": "",
                 "bug_tracking_url": "",
                 "vcs_url": "",
@@ -786,12 +787,12 @@ class PipelinesIntegrationTest(TestCase):
                 "type": "pypi",
                 "name": "fictional",
                 "version": "9.10.2",
-                "declared_license": (
+                "extracted_license_statement": (
                     "LGPL-3.0-or-later"
                     " AND "
                     "LicenseRef-scancode-openssl-exception-lgpl3.0plus"
                 ),
-                "license_expression": (
+                "declared_license_expression": (
                     "lgpl-3.0-plus AND openssl-exception-lgpl-3.0-plus"
                 ),
                 "homepage_url": "https://home.page",
@@ -808,15 +809,21 @@ class PipelinesIntegrationTest(TestCase):
             self.assertEqual(expected["name"], package.name)
             self.assertEqual(expected["version"], package.version)
             self.assertEqual(expected["homepage_url"], package.homepage_url)
-            self.assertEqual(expected["declared_license"], package.declared_license)
-            self.assertEqual(expected["license_expression"], package.license_expression)
+            self.assertEqual(
+                expected["extracted_license_statement"],
+                package.extracted_license_statement,
+            )
+            self.assertEqual(
+                expected["declared_license_expression"],
+                package.declared_license_expression,
+            )
             self.assertEqual(expected["filename"], package.filename)
 
     def test_scanpipe_deploy_to_develop_pipeline_integration_test(self):
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
-        jar_location = self.data_location / "jars"
+        jar_location = self.data_location / "d2d" / "jars"
         project1.copy_input_from(jar_location / "from-flume-ng-node-1.9.0.zip")
         project1.copy_input_from(jar_location / "to-flume-ng-node-1.9.0.zip")
 

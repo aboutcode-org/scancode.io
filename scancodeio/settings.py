@@ -57,6 +57,8 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
 
+SCANCODEIO_CONFIG_DIR = env.str("SCANCODEIO_CONFIG_DIR", default=".scancode")
+
 SCANCODE_TOOLKIT_CLI_OPTIONS = env.list("SCANCODE_TOOLKIT_CLI_OPTIONS", default=[])
 
 SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
@@ -118,6 +120,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "django_rq",
     "django_probes",
+    "fontawesomefree",
 ]
 
 MIDDLEWARE = [

@@ -461,7 +461,7 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--format", "WRONG"])
         message = (
             "Error: argument --format: invalid choice: 'WRONG' "
-            "(choose from 'json', 'csv', 'xlsx', 'spdx', 'cyclonedx')"
+            "(choose from 'json', 'csv', 'xlsx', 'spdx', 'cyclonedx', 'attribution')"
         )
         with self.assertRaisesMessage(CommandError, message):
             call_command("output", *options, stdout=out)

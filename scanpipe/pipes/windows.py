@@ -113,9 +113,7 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=No
         created_package = pipes.update_or_create_package(project, package.to_dict())
         for installed_package_file in installed_package_files:
             installed_package_file.discovered_packages.add(created_package)
-            installed_package_file.status = flag.INSTALLED_PACKAGE
-            installed_package_file.save()
-        created_package.save()
+            installed_package_file.update(status=flag.INSTALLED_PACKAGE)
 
 
 def _tag_python_software(project):
@@ -152,7 +150,7 @@ def _tag_python_software(project):
             type="windows-program",
             name="Python",
             version=python_version,
-            license_expression="python",
+            declared_license_expression="python",
             copyright="Copyright (c) Python Software Foundation",
             homepage_url="https://www.python.org/",
         )
@@ -193,11 +191,12 @@ def _tag_openjdk_software(project):
         openjdk_versions_by_path[openjdk_root_path] = openjdk_version
 
     for openjdk_path, openjdk_version in openjdk_versions_by_path.items():
+        license_expression = "gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0"
         openjdk_package = Package(
             type="windows-program",
             name="OpenJDK",
             version=openjdk_version,
-            license_expression="gpl-2.0 WITH oracle-openjdk-classpath-exception-2.0",
+            declared_license_expression=license_expression,
             copyright="Copyright (c) Oracle and/or its affiliates",
             homepage_url="http://openjdk.java.net/",
         )

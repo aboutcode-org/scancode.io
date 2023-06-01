@@ -1,14 +1,14 @@
-name: Docker Images CI
+name: Test on Docker CI
 
 on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Generate the .env file and the SECRET_KEY
         run: make envfile

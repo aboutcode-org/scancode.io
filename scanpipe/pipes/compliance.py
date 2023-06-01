@@ -56,4 +56,4 @@ def analyze_compliance_licenses(project):
 
     for codebase_resource in qs:
         scan_results, scan_errors = scancode.scan_file(codebase_resource.location)
-        codebase_resource.set_scan_results(scan_results, save=True)
+        codebase_resource.set_scan_results(scan_results)

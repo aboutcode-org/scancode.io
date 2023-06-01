@@ -232,13 +232,13 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     Save the resource scan file results in the database.
     Create project errors if any occurred during the scan.
     """
+    status = flag.SCANNED
+
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = flag.SCANNED_WITH_ERROR
-    else:
-        codebase_resource.status = flag.SCANNED
+        status = flag.SCANNED_WITH_ERROR
 
-    codebase_resource.set_scan_results(scan_results, save=True)
+    codebase_resource.set_scan_results(scan_results, status)
 
 
 def save_scan_package_results(codebase_resource, scan_results, scan_errors):
@@ -246,16 +246,15 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     Save the resource scan package results in the database.
     Create project errors if any occurred during the scan.
     """
-    package_data = scan_results.get("package_data", [])
-    if package_data:
-        codebase_resource.package_data = package_data
-        codebase_resource.status = flag.APPLICATION_PACKAGE
-        codebase_resource.save()
+    if package_data := scan_results.get("package_data", []):
+        codebase_resource.update(
+            package_data=package_data,
+            status=flag.APPLICATION_PACKAGE,
+        )
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
-        codebase_resource.status = flag.SCANNED_WITH_ERROR
-        codebase_resource.save()
+        codebase_resource.update(status=flag.SCANNED_WITH_ERROR)
 
 
 def _log_progress(scan_func, resource, resource_count, index):
@@ -311,7 +310,7 @@ def _scan_and_save(resource_qs, scan_func, save_func):
             save_func(resource, scan_results, scan_errors)
 
 
-def scan_for_files(project):
+def scan_for_files(project, resource_qs=None):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -319,7 +318,7 @@ def scan_for_files(project):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = project.codebaseresources.no_status()
+    resource_qs = resource_qs or project.codebaseresources.no_status()
     _scan_and_save(resource_qs, scan_file, save_scan_file_results)
 
 
@@ -532,8 +531,7 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     status to "application-package".
     """
     codebase_resource.add_package(discovered_package)
-    codebase_resource.status = flag.APPLICATION_PACKAGE
-    codebase_resource.save()
+    codebase_resource.update(status=flag.APPLICATION_PACKAGE)
 
 
 def _get_license_matches_grouped(project):
@@ -542,29 +540,30 @@ def _get_license_matches_grouped(project):
     license_expression.
     """
     license_matches = defaultdict(list)
+    resources_with_license = project.codebaseresources.has_license_detections()
 
-    for resource in project.codebaseresources.has_licenses():
+    for resource in resources_with_license:
         file_cache = []
 
-        for license in resource.licenses:
-            matched_rule = license.get("matched_rule", {})
-            license_expression = matched_rule.get("license_expression")
-            matched_text = license.get("matched_text")
+        for detection_data in resource.license_detections:
+            for match in detection_data.get("matches", []):
+                license_expression = match.get("license_expression")
+                matched_text = match.get("matched_text")
 
-            # Do not include duplicated matched_text for a given license_expression
-            # within the same file
-            cache_key = ":".join([license_expression, resource.path, matched_text])
-            cache_key = hashlib.md5(cache_key.encode()).hexdigest()
-            if cache_key in file_cache:
-                continue
-            file_cache.append(cache_key)
+                # Do not include duplicated matched_text for a given license_expression
+                # within the same file
+                cache_key = ":".join([license_expression, resource.path, matched_text])
+                cache_key = hashlib.md5(cache_key.encode()).hexdigest()
+                if cache_key in file_cache:
+                    continue
+                file_cache.append(cache_key)
 
-            license_matches[license_expression].append(
-                {
-                    "path": resource.path,
-                    "matched_text": matched_text,
-                }
-            )
+                license_matches[license_expression].append(
+                    {
+                        "path": resource.path,
+                        "matched_text": matched_text,
+                    }
+                )
 
     return dict(license_matches)
 
@@ -583,7 +582,8 @@ def make_results_summary(project, scan_results_location):
 
     summary = scan_data.get("summary")
 
-    # Inject the generated `license_matches` in the summary
+    # Inject the generated `license_matches` in the summary from the project
+    # codebase resources.
     summary["license_matches"] = _get_license_matches_grouped(project)
 
     # Inject the `key_files` and their file content in the summary
@@ -607,34 +607,3 @@ def make_results_summary(project, scan_results_location):
     ]
 
     return summary
-
-
-def load_inventory_from_toolkit_scan(project, input_location):
-    """
-    Create packages, dependencies, and resources loaded from the ScanCode-toolkit scan
-    results located at `input_location`.
-    """
-    scanned_codebase = get_virtual_codebase(project, input_location)
-    create_discovered_packages(project, scanned_codebase)
-    create_codebase_resources(project, scanned_codebase)
-    create_discovered_dependencies(
-        project, scanned_codebase, strip_datafile_path_root=True
-    )
-
-
-def load_inventory_from_scanpipe(project, scan_data):
-    """
-    Create packages, dependencies, and resources loaded from a ScanCode.io JSON output
-    provided as `scan_data`.
-    """
-    for package_data in scan_data.get("packages", []):
-        pipes.update_or_create_package(project, package_data)
-
-    for resource_data in scan_data.get("files", []):
-        pipes.update_or_create_resource(project, resource_data)
-
-    for dependency_data in scan_data.get("dependencies", []):
-        pipes.update_or_create_dependency(project, dependency_data)
-
-    for relation_data in scan_data.get("relations", []):
-        pipes.get_or_create_relation(project, relation_data)
