@@ -62,6 +62,7 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+import saneyaml
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from cyclonedx import model as cyclonedx_model
@@ -647,10 +648,32 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return Path(self.work_path / "tmp")
 
     def get_codebase_config_directory(self):
-        """Return the `.scancode` directory if available in the `codebase` directory."""
+        """
+        Return the ``.scancode`` config directory if available in the `codebase`
+        directory.
+        """
         config_directory = self.codebase_path / settings.SCANCODEIO_CONFIG_DIR
         if config_directory.exists():
             return config_directory
+
+    def get_codebase_config_file(self):
+        """Return the ``.scancode/config.yml`` file if available."""
+        if config_directory := self.get_codebase_config_directory():
+            config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
+            if config_file.exists():
+                return config_file
+
+    def get_env(self):
+        """
+        Return the project environment loaded from the ``.scancode/config.yml`` config
+        file, when available, and overriden by the ``configuration`` model field.
+        """
+        env = {}
+        if config_file := self.get_codebase_config_file():
+            env = saneyaml.load(config_file.read_text())
+
+        env.update(self.configuration)
+        return env
 
     def clear_tmp_directory(self):
         """

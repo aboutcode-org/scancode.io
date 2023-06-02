@@ -507,6 +507,33 @@ class ScanPipeModelsTest(TestCase):
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
+    def test_scanpipe_project_get_codebase_config_file(self):
+        self.assertIsNone(self.project1.get_codebase_config_file())
+        config_directory = self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+        config_directory.mkdir()
+        self.assertIsNone(self.project1.get_codebase_config_file())
+        config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
+        config_file.touch()
+        config_file_location = str(self.project1.get_codebase_config_file())
+        self.assertTrue(config_file_location.endswith("codebase/.scancode/config.yml"))
+
+    def test_scanpipe_project_get_env(self):
+        self.assertEqual({}, self.project1.get_env())
+
+        config_directory = self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+        config_directory.mkdir()
+        config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
+        config_file.touch()
+        config_file.write_text("ignored_extensions: .img\nextract_recursively: false")
+        expected = {"ignored_extensions": ".img", "extract_recursively": False}
+        self.assertEqual(expected, self.project1.get_env())
+
+        config = {"extract_recursively": True}
+        self.project1.configuration = config
+        self.project1.save()
+        expected = {"ignored_extensions": ".img", "extract_recursively": True}
+        self.assertEqual(expected, self.project1.get_env())
+
     def test_scanpipe_model_update_mixin(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.status)
