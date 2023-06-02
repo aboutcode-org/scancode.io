@@ -177,3 +177,14 @@ class ArchiveProjectForm(forms.Form):
         initial=False,
         required=False,
     )
+
+
+class ProjectConfiguration(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = [
+            "notes",
+        ]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea"}),
+        }

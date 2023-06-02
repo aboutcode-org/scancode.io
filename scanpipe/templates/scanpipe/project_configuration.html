@@ -21,30 +21,30 @@
           {% include 'scanpipe/includes/project_configuration_menu.html' %}
         </div>
         <div class="column">
-          <div class="panel">
-            <p class="panel-heading py-2 is-size-6">Infos</p>
-            <div class="panel-block" style="display: block;">
-              <div class="field">
-                <label class="label" for="uuid">UUID</label>
-                <div class="control">
-                  <input type="text" id="uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
+          <form method="post" action="{% url 'project_configuration' project.uuid %}">{% csrf_token %}
+            <div class="panel">
+              <p class="panel-heading py-2 is-size-6">Infos</p>
+              <div class="panel-block" style="display: block;">
+                <div class="field">
+                  <label class="label" for="uuid">UUID</label>
+                  <div class="control">
+                    <input type="text" id="uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
+                  </div>
                 </div>
-              </div>
-              <div class="field">
-                <label class="label" for="work_directory">Work directory</label>
-                <div class="control">
-                  <input type="text" id="work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
+                <div class="field">
+                  <label class="label" for="work_directory">Work directory</label>
+                  <div class="control">
+                    <input type="text" id="work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
+                  </div>
                 </div>
-              </div>
-              <div class="field">
-                <label class="label" for="notes">Notes</label>
-                <div class="control">
-                  <textarea class="textarea" id="notes" name="notes">{{ project.notes }}</textarea>
+                <div class="field">
+                  <label class="label" for="id_notes">Notes</label>
+                  <div class="control">
+                    {{ form.notes }}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <form method="post" action="{% url 'project_configuration' project.uuid %}">{% csrf_token %}
             {% for section, options in configuration_options.items %}
               <div class="panel">
                 <p class="panel-heading py-2 is-size-6">
@@ -86,8 +86,8 @@
                 <input type="submit" class="button is-fullwidth is-link" value="Submit">
               </div>
             </div>
+            {{ form.media }}
           </form>
-          {{ form.media }}
         </div>
       </div>
 

@@ -47,6 +47,7 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
+from django.views.generic.edit import UpdateView
 
 import saneyaml
 import xlsxwriter
@@ -64,6 +65,7 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
+from scanpipe.forms import ProjectConfiguration
 from scanpipe.forms import ProjectForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -610,19 +612,23 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         return redirect(project)
 
 
-class ProjectConfigurationView(
-    ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
-):
+class ProjectConfigurationView(ConditionalLoginRequired, ProjectViewMixin, UpdateView):
     template_name = "scanpipe/project_configuration.html"
+
+    form_class = ProjectConfiguration
+    # success_url = reverse_lazy("project_list")
+    success_message = 'The project "{}" settings have been updated.'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["configuration_options"] = scanpipe_app.configuration_options
         return context
 
-    def post(self, request, *args, **kwargs):
+    def form_valid(self, form):
+        response = super().form_valid(form)
         project = self.get_object()
-        return redirect(project)
+        messages.success(self.request, self.success_message.format(project))
+        return response
 
 
 class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
