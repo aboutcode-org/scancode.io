@@ -1505,6 +1505,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         """Resources that have a value for provided `field_name`."""
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
+    def has_directory_content_fingerprint(self):
+        """Resources that have the key `directory_content` set in the `extra_data` field."""
+        return self.filter(~Q(extra_data__directory_content=''))
+
 
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""

@@ -510,7 +510,17 @@ def match_purldb_resource(project, resource):
             return create_package_from_purldb_data(project, resource, package_data)
 
 
-def match_purldb(project, extensions, matcher_func, logger=None):
+def match_purldb_directory(project, resource):
+    """Match a single directory resource in the PurlDB."""
+    fingerprint = resource.extra_data.get('directory_content', '')
+
+    if results := purldb.match_directory(fingerprint=fingerprint):
+        package_url = results[0]["package"]
+        if package_data := purldb.request_get(url=package_url):
+            return create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb_resources(project, extensions, matcher_func, logger=None):
     """
     Match against PurlDB selecting codebase resources using provided
     ``package_extensions`` for archive type files, and ``resource_extensions`` for
@@ -548,6 +558,54 @@ def match_purldb(project, extensions, matcher_func, logger=None):
             matched_count += 1
 
     logger(f"{matched_count:,d} resource(s) matched in PurlDB")
+
+
+def match_purldb_directories(project, logger=None):
+    """
+    Match against PurlDB selecting codebase directory resources.
+    """
+    to_directories = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .no_status()
+        .has_directory_content_fingerprint()
+    )
+    directory_count = to_directories.count()
+
+    if logger:
+        logger(f"Matching {directory_count:,d} directories in PurlDB")
+
+    # iterate through directories
+    directory_iterator = to_directories.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    matched_count = 0
+
+    for directory_index, directory in enumerate(directory_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            directory_index,
+            directory_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        # Skip if we already matched this directory
+        if directory.status == flag.MATCHED_TO_PURLDB:
+            continue
+        package = match_purldb_directory(project, directory)
+        if not package:
+            continue
+        matched_count += 1
+        # Everything under this directory is matched to purldb
+        directory.status = flag.MATCHED_TO_PURLDB
+        resources = []
+        for resource in directory.walk():
+            resource.status = flag.MATCHED_TO_PURLDB
+            resources.append(resource)
+        package.add_resources(resources)
+
+    logger(f"{matched_count:,d} director(y/ies) matched in PurlDB")
 
 
 def map_javascript(project, logger=None):

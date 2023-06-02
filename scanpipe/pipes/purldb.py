@@ -117,3 +117,16 @@ def match_resource(sha1_list, timeout=None, api_url=PURLDB_API_URL):
     if response and response.get("count"):
         packages = response["results"]
         return packages
+
+
+def match_directory(fingerprint, timeout=None, api_url=PURLDB_API_URL):
+    """Match directory content fingerprint in the PurlDB for a single resource directory."""
+    payload = {"fingerprint": fingerprint}
+    response = request_get(
+        url=f"{api_url}approximate_directory_content_index/match/",
+        payload=payload,
+        timeout=timeout
+    )
+
+    if response and len(response) > 0:
+        return response
