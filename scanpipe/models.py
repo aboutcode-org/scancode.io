@@ -1600,6 +1600,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         """Resources with a path that match the provided ``pattern``."""
         return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
 
+    def has_directory_content_fingerprint(self):
+        """Resources that have the key `directory_content` set in the `extra_data` field."""
+        return self.filter(~Q(extra_data__directory_content=''))
+
 
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
