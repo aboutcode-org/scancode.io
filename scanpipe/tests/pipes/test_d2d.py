@@ -139,7 +139,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("ignored-meta-inf", to2.status)
 
     @mock.patch("scanpipe.pipes.purldb.match_package")
-    def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_package):
+    def test_scanpipe_pipes_d2d_match_purldb_resources(self, mock_match_package):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
         # The initial status will be updated to "matched-to-purldb"
         to_2 = make_resource_file(
@@ -152,7 +152,7 @@ class ScanPipeD2DPipesTest(TestCase):
         mock_match_package.return_value = [package_data]
 
         buffer = io.StringIO()
-        d2d.match_purldb(
+        d2d.match_purldb_resources(
             self.project1,
             extensions=[".jar"],
             matcher_func=d2d.match_purldb_package,
@@ -574,7 +574,7 @@ class ScanPipeD2DPipesTest(TestCase):
         mock_match_resource.return_value = package_data
 
         buffer = io.StringIO()
-        d2d.match_purldb(
+        d2d.match_purldb_resources(
             self.project1,
             extensions=[".map", ".js"],
             matcher_func=d2d.match_purldb_resource,

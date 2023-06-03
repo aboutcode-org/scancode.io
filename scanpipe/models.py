@@ -1506,7 +1506,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
     def has_directory_content_fingerprint(self):
-        """Resources that have the key `directory_content` set in the `extra_data` field."""
+        """
+        Resources that have the key `directory_content` set in the `extra_data`
+        field.
+        """
         return self.filter(~Q(extra_data__directory_content=""))
 
 
