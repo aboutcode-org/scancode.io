@@ -577,45 +577,28 @@ def match_purldb_directories(project, logger=None):
     """
     Match against PurlDB selecting codebase directories.
     """
-    to_directories = (
-        project.codebaseresources.directories()
-        .to_codebase()
-        .no_status()
-        .has_directory_content_fingerprint()
-        .order_by("path")
-    )
-    directory_count = to_directories.count()
+    to_directory = project.codebaseresources.get(path="to")
 
     if logger:
-        logger(f"Matching {directory_count:,d} directories in PurlDB")
+        logger("Matching directories from to/ in PurlDB")
 
-    # iterate through directories
-    directory_iterator = to_directories.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
     matched_count = 0
-
-    for directory_index, directory in enumerate(directory_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            directory_index,
-            directory_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
-        # Skip if we already matched this directory
-        if directory.status == flag.MATCHED_TO_PURLDB:
+    for resource in to_directory.walk(topdown=True):
+        # Skip file Resources and anything that has been matched already
+        if resource.is_file or resource.status == flag.MATCHED_TO_PURLDB:
             continue
-        package = match_purldb_directory(project, directory)
+
+        package = match_purldb_directory(project, resource)
         if not package:
             continue
         matched_count += 1
-        # Everything under this directory is matched to purldb
-        directory.status = flag.MATCHED_TO_PURLDB
-        directory.save()
+
+        # Assign all Resources in this Directory to be part of `package` and
+        # update their status
+        resource.status = flag.MATCHED_TO_PURLDB
+        resource.save()
         q = Q()
-        for resource in directory.walk():
+        for resource in resource.walk():
             q |= Q(path=resource.path)
         resources_qs = project.codebaseresources.filter(q)
         resources_qs.update(status=flag.MATCHED_TO_PURLDB)
