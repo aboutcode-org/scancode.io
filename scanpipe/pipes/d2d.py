@@ -513,7 +513,7 @@ def match_purldb_resource(project, resource):
 
 def match_purldb_directory(project, resource):
     """Match a single directory resource in the PurlDB."""
-    fingerprint = resource.extra_data.get('directory_content', '')
+    fingerprint = resource.extra_data.get("directory_content", "")
 
     if results := purldb.match_directory(fingerprint=fingerprint):
         package_url = results[0]["package"]
@@ -563,13 +563,14 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
 
 def match_purldb_directories(project, logger=None):
     """
-    Match against PurlDB selecting codebase directory resources.
+    Match against PurlDB selecting codebase directories.
     """
     to_directories = (
         project.codebaseresources.directories()
         .to_codebase()
         .no_status()
         .has_directory_content_fingerprint()
+        .order_by("path")
     )
     directory_count = to_directories.count()
 
@@ -600,11 +601,13 @@ def match_purldb_directories(project, logger=None):
         matched_count += 1
         # Everything under this directory is matched to purldb
         directory.status = flag.MATCHED_TO_PURLDB
-        resources = []
+        directory.save()
+        q = Q()
         for resource in directory.walk():
-            resource.status = flag.MATCHED_TO_PURLDB
-            resources.append(resource)
-        package.add_resources(resources)
+            q |= Q(path=resource.path)
+        resources_qs = project.codebaseresources.filter(q)
+        resources_qs.update(status=flag.MATCHED_TO_PURLDB)
+        package.add_resources(resources_qs)
 
     logger(f"{matched_count:,d} director(y/ies) matched in PurlDB")
 
