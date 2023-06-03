@@ -125,7 +125,7 @@ def match_directory(fingerprint, timeout=None, api_url=PURLDB_API_URL):
     response = request_get(
         url=f"{api_url}approximate_directory_content_index/match/",
         payload=payload,
-        timeout=timeout
+        timeout=timeout,
     )
 
     if response and len(response) > 0:
