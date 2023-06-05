@@ -7,12 +7,6 @@
   <div class="dropdown-menu" id="dropdown-menu-action" role="menu">
     <div class="dropdown-content">
       <span class="dropdown-item">
-        Settings:
-      </span>
-      <a href="{% url 'project_configuration' project.uuid %}" class="dropdown-item" aria-haspopup="true">
-        <i class="fa-solid fa-sliders-h mr-2"></i>Configuration
-      </a>
-      <span class="dropdown-item">
         Actions:
       </span>
       {% if not project.is_archived %}
