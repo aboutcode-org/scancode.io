@@ -45,7 +45,7 @@ class DeployToDevelop(Pipeline):
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
-            cls.flag_empty_and_ignored_files,
+            cls.flag_empty_and_ignored_resources,
             cls.map_checksum,
             cls.find_java_packages,
             cls.map_java_to_class,
@@ -104,9 +104,13 @@ class DeployToDevelop(Pipeline):
         """Collect and create codebase resources."""
         d2d.collect_and_create_codebase_resources(self.project)
 
-    def flag_empty_and_ignored_files(self):
-        """Flag empty and ignored files using names and extensions."""
+    def flag_empty_and_ignored_resources(self):
+        """Flag empty and ignored resources."""
         flag.flag_empty_codebase_resources(self.project)
+
+        if ignored_patterns := self.env.get("ignored_patterns"):
+            flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
+
         flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORED_FILENAMES)
         flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORED_EXTENSIONS)
         flag.flag_ignored_paths(self.project, paths=d2d.IGNORED_PATHS)

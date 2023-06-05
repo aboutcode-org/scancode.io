@@ -41,6 +41,7 @@ IGNORED_DIRECTORY = "ignored-directory"
 IGNORED_FILENAME = "ignored-filename"
 IGNORED_EXTENSION = "ignored-extension"
 IGNORED_PATH = "ignored-path"
+IGNORED_PATTERN = "ignored-pattern"
 IGNORED_MEDIA_FILE = "ignored-media-file"
 IGNORED_NOT_INTERESTING = "ignored-not-interesting"
 IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
@@ -122,10 +123,13 @@ def flag_ignored_paths(project, paths):
 
 def flag_ignored_patterns(project, patterns):
     """Flag codebase resource as ``ignored`` status from list of ``patterns``."""
+    if isinstance(patterns, str):
+        patterns = patterns.splitlines()
+
     update_count = 0
     for pattern in patterns:
         qs = project.codebaseresources.no_status().path_pattern(pattern)
-        update_count += qs.update(status=IGNORED_PATH)
+        update_count += qs.update(status=IGNORED_PATTERN)
 
     return update_count
 
