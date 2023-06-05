@@ -103,9 +103,9 @@ class ScanPipeFlagPipesTest(TestCase):
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
         self.resource3.refresh_from_db()
-        self.assertEqual("ignored-path", self.resource1.status)
-        self.assertEqual("ignored-path", self.resource2.status)
-        self.assertEqual("ignored-path", self.resource3.status)
+        self.assertEqual("ignored-pattern", self.resource1.status)
+        self.assertEqual("ignored-pattern", self.resource2.status)
+        self.assertEqual("ignored-pattern", self.resource3.status)
 
     def test_scanpipe_pipes_flag_tag_not_analyzed_codebase_resources(self):
         resource1 = CodebaseResource.objects.create(

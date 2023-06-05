@@ -307,8 +307,15 @@ class ScanPipeOutputPipesTest(TestCase):
 
     def test_scanpipe_pipes_outputs_render_template(self):
         template_location = str(self.data_path / "outputs" / "render_me.html")
+        template_string = Path(template_location).read_text()
         context = {"var": "value"}
-        rendered = output.render_template(template_location, context)
+        rendered = output.render_template(template_string, context)
+        self.assertEqual("value", rendered)
+
+    def test_scanpipe_pipes_outputs_render_template_file(self):
+        template_location = str(self.data_path / "outputs" / "render_me.html")
+        context = {"var": "value"}
+        rendered = output.render_template_file(template_location, context)
         self.assertEqual("value", rendered)
 
     def test_scanpipe_pipes_outputs_get_attribution_template(self):

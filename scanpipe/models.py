@@ -663,7 +663,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             if config_file.exists():
                 return config_file
 
-    def get_env(self):
+    def get_env(self, field_name=None):
         """
         Return the project environment loaded from the ``.scancode/config.yml`` config
         file, when available, and overriden by the ``self.configuration`` model field.
@@ -673,6 +673,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             env = saneyaml.load(config_file.read_text())
 
         env.update(self.configuration)
+
+        if field_name:
+            return env.get(field_name)
+
         return env
 
     def clear_tmp_directory(self):
