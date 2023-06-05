@@ -50,26 +50,6 @@ class ScanPipeConfig(AppConfig):
     name = "scanpipe"
     verbose_name = _("ScanPipe")
 
-    # {title: (field_name, type, default, help_text)}
-    configuration_options = {
-        "extraction": [
-            (
-                "extract_recursively",
-                "bool",
-                True,
-                "Extract nested archives-in-archives recursively",
-            ),
-        ],
-        "ignored": [
-            ("ignored_paths", "str", None, ""),
-            ("ignored_filenames", "str", None, ""),
-            ("ignored_extensions", "str", None, ""),
-        ],
-        "attribution": [
-            ("attribution_template", "text", None, "Custom attribution template"),
-        ],
-    }
-
     def __init__(self, app_name, app_module):
         super().__init__(app_name, app_module)
 

@@ -87,40 +87,7 @@
               </div>
             </div>
 
-{#            {% for section, options in configuration_options.items %}#}
-{#              <div class="panel">#}
-{#                <p id="{{ section }}" class="panel-heading py-2 is-size-6">#}
-{#                  {{ section|title }}#}
-{#                </p>#}
-{#                <div class="panel-block is-block px-4">#}
-{#                  {% for name, type, default, help_text in options %}#}
-{#                    {% if type == "str" or type == "text" %}#}
-{#                      <div class="field">#}
-{#                        <label class="label" for="{{ name }}">{{ name }}</label>#}
-{#                        <div class="control">#}
-{#                          {% if type == "str" %}#}
-{#                            <input type="text" name="{{ name }}" class="input" id="id_{{ name }}" value="{{ default|default_if_none:'' }}">#}
-{#                          {% else %}#}
-{#                            <textarea class="textarea" name="{{ name }}" id="id_{{ name }}">{{ default|default_if_none:'' }}</textarea>#}
-{#                          {% endif %}#}
-{#                          <p class="help">{{ help_text }}</p>#}
-{#                        </div>#}
-{#                      </div>#}
-{#                    {% elif type == "bool" %}#}
-{#                      <div class="field">#}
-{#                        <label class="checkbox" for="{{ name }}">#}
-{#                          <input type="checkbox" name="{{ name }}" id="id_{{ name }}"{% if default == True %} checked="checked"{% endif %}>#}
-{#                          {{ name }}#}
-{#                        </label>#}
-{#                        <p class="help">{{ help_text }}</p>#}
-{#                      </div>#}
-{#                    {% endif %}#}
-{#                  {% endfor %}#}
-{#                </div>#}
-{#              </div>#}
-{#            {% endfor %}#}
-
-            <div class="columns mt-4 is-variable is-1">
+            <div class="columns mt-4 mb-5 is-variable is-1">
               <div class="column is-one-third">
                 <a href="{% url 'project_detail' project.uuid %}" class="button is-fullwidth">Cancel</a>
               </div>

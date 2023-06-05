@@ -187,8 +187,8 @@ class ProjectConfiguration(forms.ModelForm):
         widget=forms.Textarea(
             attrs={
                 "class": "textarea",
-                "rows": 2,
-                "placeholder": "*.ext\ntests/*",
+                "rows": 3,
+                "placeholder": "*.xml\ntests/*\n*docs/*.rst",
             },
         ),
     )
@@ -196,7 +196,7 @@ class ProjectConfiguration(forms.ModelForm):
         label="Attribution template",
         required=False,
         help_text="Custom attribution template.",
-        widget=forms.Textarea(attrs={"class": "textarea", "rows": 2}),
+        widget=forms.Textarea(attrs={"class": "textarea", "rows": 3}),
     )
 
     class Meta:

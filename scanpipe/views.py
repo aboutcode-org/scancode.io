@@ -616,13 +616,7 @@ class ProjectConfigurationView(ConditionalLoginRequired, ProjectViewMixin, Updat
     template_name = "scanpipe/project_configuration.html"
 
     form_class = ProjectConfiguration
-    # success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" settings have been updated.'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["configuration_options"] = scanpipe_app.configuration_options
-        return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
