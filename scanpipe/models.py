@@ -666,7 +666,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def get_env(self):
         """
         Return the project environment loaded from the ``.scancode/config.yml`` config
-        file, when available, and overriden by the ``configuration`` model field.
+        file, when available, and overriden by the ``self.configuration`` model field.
         """
         env = {}
         if config_file := self.get_codebase_config_file():

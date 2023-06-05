@@ -180,6 +180,25 @@ class ArchiveProjectForm(forms.Form):
 
 
 class ProjectConfiguration(forms.ModelForm):
+    ignored_patterns = forms.CharField(
+        label="Ignored patterns",
+        required=False,
+        help_text="Provide one or more path patterns to be ignored, one per line.",
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea",
+                "rows": 2,
+                "placeholder": "*.ext\ntests/*",
+            },
+        ),
+    )
+    attribution_template = forms.CharField(
+        label="Attribution template",
+        required=False,
+        help_text="Custom attribution template.",
+        widget=forms.Textarea(attrs={"class": "textarea", "rows": 2}),
+    )
+
     class Meta:
         model = Project
         fields = [

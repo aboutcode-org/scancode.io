@@ -93,6 +93,24 @@ function setupTabs() {
   });
 }
 
+// Menu
+
+function setupMenu() {
+  const $menuLinks = getAll('.menu a');
+
+  function activateMenuItem($menuItem) {
+    const activeLink = document.querySelector('.menu .is-active');
+    activeLink.classList.remove('is-active');
+    $menuItem.classList.add('is-active');
+  }
+
+  $menuLinks.forEach(function ($el) {
+    $el.addEventListener('click', function () {
+      activateMenuItem($el)
+    });
+  });
+}
+
 // Utils, available globally
 
 function getAll(selector) {
@@ -158,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupOpenModalButtons();
   setupCloseModalButtons();
   setupTabs();
+  setupMenu();
 
   // Close modals and dropdowns on pressing "escape" key
   document.addEventListener('keydown', function (event) {
