@@ -99,25 +99,35 @@ def flag_ignored_directories(project):
 
 
 def flag_ignored_filenames(project, filenames):
-    """Flag codebase resource as `ignored` status from list of `filenames`."""
+    """Flag codebase resource as ``ignored`` status from list of ``filenames``."""
     qs = project.codebaseresources.no_status().filter(name__in=filenames)
     return qs.update(status=IGNORED_FILENAME)
 
 
 def flag_ignored_extensions(project, extensions):
-    """Flag codebase resource as `ignored` status from list of `extensions`."""
+    """Flag codebase resource as ``ignored`` status from list of ``extensions``."""
     qs = project.codebaseresources.no_status().filter(extension__in=extensions)
     return qs.update(status=IGNORED_EXTENSION)
 
 
 def flag_ignored_paths(project, paths):
-    """Flag codebase resource as `ignored` status from list of `paths`."""
+    """Flag codebase resource as ``ignored` status from list of `paths`."""
     lookups = Q()
     for path in paths:
         lookups |= Q(path__contains=path)
 
     qs = project.codebaseresources.no_status().filter(lookups)
     return qs.update(status=IGNORED_PATH)
+
+
+def flag_ignored_patterns(project, patterns):
+    """Flag codebase resource as ``ignored`` status from list of ``patterns``."""
+    update_count = 0
+    for pattern in patterns:
+        qs = project.codebaseresources.no_status().path_pattern(pattern)
+        update_count += qs.update(status=IGNORED_PATH)
+
+    return update_count
 
 
 def analyze_scanned_files(project):

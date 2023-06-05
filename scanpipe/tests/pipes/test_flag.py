@@ -43,6 +43,11 @@ class ScanPipeFlagPipesTest(TestCase):
             name="filename.ext",
             extension=".ext",
         )
+        self.resource3 = CodebaseResource.objects.create(
+            project=self.project1,
+            type=CodebaseResource.Type.DIRECTORY,
+            path="dir/subpath/file.zip",
+        )
 
     def test_scanpipe_pipes_flag_flag_empty_codebase_resources(self):
         updated = flag.flag_empty_codebase_resources(self.project1)
@@ -54,11 +59,13 @@ class ScanPipeFlagPipesTest(TestCase):
 
     def test_scanpipe_pipes_flag_flag_ignored_directories(self):
         updated = flag.flag_ignored_directories(self.project1)
-        self.assertEqual(1, updated)
+        self.assertEqual(2, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
+        self.resource3.refresh_from_db()
         self.assertEqual("ignored-directory", self.resource1.status)
         self.assertEqual("", self.resource2.status)
+        self.assertEqual("ignored-directory", self.resource3.status)
 
     def test_scanpipe_pipes_flag_flag_ignored_filenames(self):
         filenames = [self.resource2.name]
@@ -80,11 +87,25 @@ class ScanPipeFlagPipesTest(TestCase):
 
     def test_scanpipe_pipes_flag_flag_ignored_paths(self):
         updated = flag.flag_ignored_paths(self.project1, paths=["dir/"])
-        self.assertEqual(2, updated)
+        self.assertEqual(3, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()
+        self.resource3.refresh_from_db()
         self.assertEqual("ignored-path", self.resource1.status)
         self.assertEqual("ignored-path", self.resource2.status)
+        self.assertEqual("ignored-path", self.resource3.status)
+
+    def test_scanpipe_pipes_flag_flag_ignored_patterns(self):
+        patterns = ["*.ext", "dir/*"]
+        updated = flag.flag_ignored_patterns(self.project1, patterns)
+
+        self.assertEqual(3, updated)
+        self.resource1.refresh_from_db()
+        self.resource2.refresh_from_db()
+        self.resource3.refresh_from_db()
+        self.assertEqual("ignored-path", self.resource1.status)
+        self.assertEqual("ignored-path", self.resource2.status)
+        self.assertEqual("ignored-path", self.resource3.status)
 
     def test_scanpipe_pipes_flag_tag_not_analyzed_codebase_resources(self):
         resource1 = CodebaseResource.objects.create(
@@ -96,7 +117,7 @@ class ScanPipeFlagPipesTest(TestCase):
             status=flag.SCANNED,
         )
         updated = flag.tag_not_analyzed_codebase_resources(self.project1)
-        self.assertEqual(3, updated)
+        self.assertEqual(4, updated)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         self.assertEqual("not-analyzed", resource1.status)

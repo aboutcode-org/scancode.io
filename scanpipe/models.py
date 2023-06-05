@@ -1444,6 +1444,32 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
+# def posix_regex_to_django_regex_lookup(regex_pattern):
+#     """
+#     Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
+#     Django regex lookup.
+#     """
+#     pattern = regex_pattern.replace(".", "\\.")  # Escape dots
+#     pattern = pattern.replace("*", ".*")  # Replace * with .*
+#     pattern = pattern.replace("?", ".")  # Replace ? with .
+#     pattern = re.sub(r"(?<!\\)\\([.*?])", r"\1", pattern)  # Unescape \., \*, \?
+#     pattern = re.sub(r'(?<!\\)(\$)', r'\\\1', pattern)  # Escape $
+#     pattern = f"^{pattern}$"  # Add start and end anchors
+#     return pattern
+
+
+def posix_regex_to_django_regex_lookup(regex_pattern):
+    """
+    Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
+    Django regex lookup.
+    """
+    escaped_pattern = re.escape(regex_pattern)
+    escaped_pattern = escaped_pattern.replace(r"\*", ".*")  # Replace \* with .*
+    escaped_pattern = escaped_pattern.replace(r"\?", ".")  # Replace \? with .
+    escaped_pattern = f"^{escaped_pattern}$"  # Add start and end anchors
+    return escaped_pattern
+
+
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def prefetch_for_serializer(self):
         """
@@ -1529,6 +1555,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_value(self, field_name):
         """Resources that have a value for provided `field_name`."""
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
+
+    def path_pattern(self, pattern):
+        """Resources with a path that match the provided ``pattern``."""
+        return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
 
 
 class ScanFieldsModelMixin(models.Model):
