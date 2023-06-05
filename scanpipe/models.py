@@ -1448,20 +1448,6 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
-# def posix_regex_to_django_regex_lookup(regex_pattern):
-#     """
-#     Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
-#     Django regex lookup.
-#     """
-#     pattern = regex_pattern.replace(".", "\\.")  # Escape dots
-#     pattern = pattern.replace("*", ".*")  # Replace * with .*
-#     pattern = pattern.replace("?", ".")  # Replace ? with .
-#     pattern = re.sub(r"(?<!\\)\\([.*?])", r"\1", pattern)  # Unescape \., \*, \?
-#     pattern = re.sub(r'(?<!\\)(\$)', r'\\\1', pattern)  # Escape $
-#     pattern = f"^{pattern}$"  # Add start and end anchors
-#     return pattern
-
-
 def posix_regex_to_django_regex_lookup(regex_pattern):
     """
     Convert a POSIX-style regex pattern to an equivalent pattern compatible with the

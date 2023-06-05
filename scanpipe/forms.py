@@ -56,7 +56,7 @@ class InputsBaseForm(forms.Form):
         help_text="Provide one or more URLs to download, one per line.",
         widget=forms.Textarea(
             attrs={
-                "class": "textarea",
+                "class": "textarea is-dynamic",
                 "rows": 2,
                 "placeholder": (
                     "https://domain.com/archive.zip\n"
@@ -190,7 +190,7 @@ class ProjectConfiguration(forms.ModelForm):
         help_text="Provide one or more path patterns to be ignored, one per line.",
         widget=forms.Textarea(
             attrs={
-                "class": "textarea",
+                "class": "textarea is-dynamic",
                 "rows": 3,
                 "placeholder": "*.xml\ntests/*\n*docs/*.rst",
             },
@@ -200,7 +200,7 @@ class ProjectConfiguration(forms.ModelForm):
         label="Attribution template",
         required=False,
         help_text="Custom attribution template.",
-        widget=forms.Textarea(attrs={"class": "textarea", "rows": 3}),
+        widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
     )
 
     class Meta:
@@ -211,7 +211,7 @@ class ProjectConfiguration(forms.ModelForm):
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "input"}),
-            "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea"}),
+            "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
         }
 
     def __init__(self, *args, **kwargs):

@@ -111,6 +111,26 @@ function setupMenu() {
   });
 }
 
+// Form
+
+// Dynamic size for the textarea
+function setupDynamicTextarea() {
+  const $dynamicTextareas = getAll('textarea.is-dynamic');
+
+  function setHeight($el) {
+    $el.style.height = "";
+    $el.style.height = $el.scrollHeight + 3 + "px";
+  }
+
+  $dynamicTextareas.forEach(function ($el) {
+    setHeight($el);
+    $el.oninput = () => {
+      setHeight($el);
+    }
+  });
+}
+
+
 // Utils, available globally
 
 function getAll(selector) {
@@ -177,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupCloseModalButtons();
   setupTabs();
   setupMenu();
+  setupDynamicTextarea();
 
   // Close modals and dropdowns on pressing "escape" key
   document.addEventListener('keydown', function (event) {
