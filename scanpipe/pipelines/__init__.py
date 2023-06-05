@@ -47,6 +47,7 @@ class Pipeline:
         self.run = run
         self.project = run.project
         self.pipeline_name = run.pipeline_name
+        self.env = self.project.get_env()
 
     @classmethod
     def steps(cls):
