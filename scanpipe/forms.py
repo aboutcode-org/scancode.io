@@ -183,8 +183,10 @@ class ProjectConfiguration(forms.ModelForm):
     class Meta:
         model = Project
         fields = [
+            "name",
             "notes",
         ]
         widgets = {
+            "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea"}),
         }
