@@ -180,6 +180,10 @@ class ArchiveProjectForm(forms.Form):
 
 
 class ProjectConfiguration(forms.ModelForm):
+    configuration_fields = [
+        "ignored_patterns",
+        "attribution_template",
+    ]
     ignored_patterns = forms.CharField(
         label="Ignored patterns",
         required=False,
@@ -209,3 +213,24 @@ class ProjectConfiguration(forms.ModelForm):
             "name": forms.TextInput(attrs={"class": "input"}),
             "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        """Load initial values from Project ``configuration`` field."""
+        super().__init__(*args, **kwargs)
+        for field_name in self.configuration_fields:
+            field = self.fields[field_name]
+            field.initial = self.instance.configuration.get(field_name)
+
+    def save(self, *args, **kwargs):
+        project = super().save(*args, **kwargs)
+        self.update_project_configuration(project)
+        return project
+
+    def update_project_configuration(self, project):
+        """Update Project ``configuration`` field values from form data."""
+        config = {
+            field_name: self.cleaned_data[field_name]
+            for field_name in self.configuration_fields
+        }
+        project.configuration.update(config)
+        project.save(update_fields=["configuration"])
