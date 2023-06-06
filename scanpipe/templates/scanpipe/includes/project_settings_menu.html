@@ -21,4 +21,27 @@
       </a>
     </li>
   </ul>
+  <hr class="my-4">
+  <p class="menu-label">
+    Actions
+  </p>
+  <ul class="menu-list">
+    {% if not project.is_archived %}
+      <li>
+        <a href="#" class="modal-button" data-target="modal-archive" aria-haspopup="true">
+          <i class="fa-solid fa-dice-d6 mr-2"></i>Archive
+        </a>
+      </li>
+    {% endif %}
+    <li>
+      <a href="#" class="modal-button" data-target="modal-reset" aria-haspopup="true">
+        <i class="fa-solid fa-eraser mr-2"></i>Reset
+      </a>
+    </li>
+    <li>
+      <a href="#" class="modal-button" data-target="modal-delete" aria-haspopup="true">
+        <i class="fa-solid fa-trash-can mr-2"></i>Delete
+      </a>
+    </li>
+  </ul>
 </aside>

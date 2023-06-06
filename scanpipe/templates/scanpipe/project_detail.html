@@ -27,7 +27,6 @@
             <span title="{{ project.created_date|date:'N j, Y, P T' }}" class="ml-4">
               Created {{ project.created_date|naturaltime }}
             </span>
-            {% include "scanpipe/includes/project_actions_dropdown.html" %}
           </span>
         </div>
       </div>
@@ -122,11 +121,6 @@
   </div>
 
   {% include 'scanpipe/includes/run_modal.html' %}
-  {% if not project.is_archived %}
-    {% include "scanpipe/includes/project_archive_modal.html" %}
-  {% endif %}
-  {% include "scanpipe/includes/project_reset_modal.html" %}
-  {% include "scanpipe/includes/project_delete_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -145,8 +139,5 @@
 
     onSubmitOverlay("#add-pipeline-modal form");
     onSubmitOverlay("#add-inputs-modal form");
-    onSubmitOverlay("#modal-archive form");
-    onSubmitOverlay("#modal-reset form");
-    onSubmitOverlay("#modal-delete form");
   </script>
 {% endblock %}

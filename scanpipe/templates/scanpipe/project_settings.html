@@ -4,6 +4,7 @@
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
     {% include 'scanpipe/includes/breadcrumb_detail_view.html' with object_title="Settings" %}
+    <hr class="mx-5 mt-0">
 
     <section class="mx-5 mt-3 pb-1">
       <div id="form-errors" class="notification is-danger {% if not form.errors %}is-hidden{% endif %}">
@@ -111,4 +112,27 @@
 
     </section>
   </div>
+
+  {% if not project.is_archived %}
+    {% include "scanpipe/includes/project_archive_modal.html" %}
+  {% endif %}
+  {% include "scanpipe/includes/project_reset_modal.html" %}
+  {% include "scanpipe/includes/project_delete_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    onSubmitOverlay = function (selector) {
+      let element = document.querySelector(selector);
+      if (element) {
+        element.addEventListener("submit", function() {
+          displayOverlay();
+        });
+      }
+    };
+
+    onSubmitOverlay("#modal-archive form");
+    onSubmitOverlay("#modal-reset form");
+    onSubmitOverlay("#modal-delete form");
+  </script>
 {% endblock %}
