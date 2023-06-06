@@ -49,8 +49,8 @@ class ScanPipeFlagPipesTest(TestCase):
             path="dir/subpath/file.zip",
         )
 
-    def test_scanpipe_pipes_flag_flag_empty_codebase_resources(self):
-        updated = flag.flag_empty_codebase_resources(self.project1)
+    def test_scanpipe_pipes_flag_flag_empty_files(self):
+        updated = flag.flag_empty_files(self.project1)
         self.assertEqual(1, updated)
         self.resource1.refresh_from_db()
         self.resource2.refresh_from_db()

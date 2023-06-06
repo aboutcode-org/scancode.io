@@ -38,7 +38,7 @@ class Docker(RootFS):
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
             cls.tag_uninteresting_codebase_resources,
-            cls.tag_empty_files,
+            cls.flag_empty_files,
             cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,

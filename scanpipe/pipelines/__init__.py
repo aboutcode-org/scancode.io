@@ -39,7 +39,7 @@ from scanpipe import humanize_time
 logger = logging.getLogger(__name__)
 
 
-class Pipeline:
+class BasePipeline:
     """Base class for all pipelines."""
 
     def __init__(self, run):
@@ -149,6 +149,23 @@ class Pipeline:
             yield
         except exceptions as error:
             self.add_error(error)
+
+
+class Pipeline(BasePipeline):
+    """Main class for all pipelines including common step methods."""
+
+    def flag_empty_files(self):
+        """Flag empty files."""
+        from scanpipe.pipes import flag
+
+        flag.flag_empty_files(self.project)
+
+    def flag_ignored_resources(self):
+        """Flag ignored resources based on Project ``ignored_patterns`` setting."""
+        from scanpipe.pipes import flag
+
+        if ignored_patterns := self.env.get("ignored_patterns"):
+            flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
 
 def is_pipeline(obj):

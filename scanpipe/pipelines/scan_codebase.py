@@ -22,7 +22,6 @@
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_inputs
 
@@ -46,7 +45,7 @@ class ScanCodebase(Pipeline):
             cls.copy_inputs_to_codebase_directory,
             cls.extract_archives,
             cls.collect_and_create_codebase_resources,
-            cls.tag_empty_files,
+            cls.flag_empty_files,
             cls.scan_for_application_packages,
             cls.scan_for_files,
         )
@@ -78,10 +77,6 @@ class ScanCodebase(Pipeline):
                 project=self.project,
                 location=str(resource_path),
             )
-
-    def tag_empty_files(self):
-        """Flag empty files."""
-        flag.flag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""

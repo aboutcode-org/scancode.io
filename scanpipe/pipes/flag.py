@@ -83,7 +83,7 @@ RESOURCE_STATUSES = [
 ]
 
 
-def flag_empty_codebase_resources(project):
+def flag_empty_files(project):
     """Flag empty files as ignored."""
     qs = (
         project.codebaseresources.files()

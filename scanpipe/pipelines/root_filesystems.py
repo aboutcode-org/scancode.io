@@ -40,7 +40,7 @@ class RootFS(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
             cls.tag_uninteresting_codebase_resources,
-            cls.tag_empty_files,
+            cls.flag_empty_files,
             cls.scan_for_application_packages,
             cls.match_not_analyzed_to_system_packages,
             cls.scan_for_files,
@@ -92,10 +92,6 @@ class RootFS(Pipeline):
     def tag_uninteresting_codebase_resources(self):
         """Flag files—not worth tracking—that don’t belong to any system packages."""
         rootfs.tag_uninteresting_codebase_resources(self.project)
-
-    def tag_empty_files(self):
-        """Flag empty files."""
-        flag.flag_empty_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""

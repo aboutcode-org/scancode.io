@@ -41,7 +41,7 @@ class DockerWindows(Docker):
             cls.tag_known_software_packages,
             cls.tag_uninteresting_codebase_resources,
             cls.tag_program_files_dirs_as_packages,
-            cls.tag_empty_files,
+            cls.flag_empty_files,
             cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
