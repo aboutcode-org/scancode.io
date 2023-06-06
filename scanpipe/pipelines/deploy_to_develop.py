@@ -26,7 +26,6 @@ from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
-from scanpipe.pipes.codebase import ProjectCodebase
 from scanpipe.pipes.scancode import extract_archives
 
 
@@ -109,8 +108,7 @@ class DeployToDevelop(Pipeline):
 
     def fingerprint_codebase_directories(self):
         """Compute directory fingerprints for matching"""
-        project_codebase = ProjectCodebase(self.project)
-        matchcode.compute_directory_fingerprints(project_codebase)
+        matchcode.fingerprint_codebase_directories(self.project)
 
     def flag_empty_and_ignored_files(self):
         """Flag empty and ignored files using names and extensions."""
