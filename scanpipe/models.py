@@ -666,12 +666,18 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def get_env(self, field_name=None):
         """
         Return the project environment loaded from the ``.scancode/config.yml`` config
-        file, when available, and overriden by the ``self.settings`` model field.
+        file, when available, and overriden by the ``settings`` model field.
+
+        ``field_name`` can be provided to get a single entry from the env.
         """
         env = {}
-        if config_file := self.get_codebase_config_file():
-            env = saneyaml.load(config_file.read_text())
 
+        # 1. Load settings from config file when available.
+        if config_file := self.get_codebase_config_file():
+            with suppress(saneyaml.YAMLError):
+                env = saneyaml.load(config_file.read_text())
+
+        # 2. Update with values from the Project ``settings`` field.
         env.update(self.settings)
 
         if field_name:

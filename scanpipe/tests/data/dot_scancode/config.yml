@@ -1,0 +1,5 @@
+extract_recursively: false
+ignored_patterns:
+  - "*.img"
+  - "docs/*"
+  - "*/tests/*"

@@ -521,19 +521,36 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_project_get_env(self):
         self.assertEqual({}, self.project1.get_env())
 
+        test_config_file = self.data_location / "dot_scancode" / "config.yml"
         config_directory = self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR
         config_directory.mkdir()
-        config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
-        config_file.touch()
-        config_file.write_text("ignored_extensions: .img\nextract_recursively: false")
-        expected = {"ignored_extensions": ".img", "extract_recursively": False}
+        copy_input(test_config_file, config_directory)
+
+        expected = {
+            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
+            "extract_recursively": False,
+        }
         self.assertEqual(expected, self.project1.get_env())
 
         config = {"extract_recursively": True}
         self.project1.settings = config
         self.project1.save()
-        expected = {"ignored_extensions": ".img", "extract_recursively": True}
+        expected = {
+            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
+            "extract_recursively": True,
+        }
         self.assertEqual(expected, self.project1.get_env())
+
+    def test_scanpipe_project_get_env_invalid_yml_content(self):
+        config_directory = self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+        config_directory.mkdir()
+        config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
+        config_file.touch()
+        config_file.write_text("{*this is not valid yml*}")
+
+        config_file_location = str(self.project1.get_codebase_config_file())
+        self.assertTrue(config_file_location.endswith("codebase/.scancode/config.yml"))
+        self.assertEqual({}, self.project1.get_env())
 
     def test_scanpipe_model_update_mixin(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
