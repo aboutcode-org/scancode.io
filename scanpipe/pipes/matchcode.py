@@ -25,9 +25,9 @@ from matchcode_toolkit.fingerprinting import compute_directory_fingerprints
 from scanpipe.pipes.codebase import ProjectCodebase
 
 
-def fingerprint_codebase_directories(self):
+def fingerprint_codebase_directories(project):
     """
     Compute directory fingerprints for matching purposes
     """
-    project_codebase = ProjectCodebase(self.project)
+    project_codebase = ProjectCodebase(project)
     compute_directory_fingerprints(project_codebase)
