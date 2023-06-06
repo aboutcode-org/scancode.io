@@ -434,6 +434,28 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
 
+    def test_scanpipe_views_project_settings_view(self):
+        url = reverse("project_settings", args=[self.project1.uuid])
+        response = self.client.get(url)
+        expected_ids = [
+            "id_name",
+            "id_notes",
+            "id_uuid",
+            "id_work_directory",
+            "id_extract_recursively",
+            "id_ignored_patterns",
+            "id_attribution_template",
+        ]
+        for expected in expected_ids:
+            self.assertContains(response, expected)
+
+        # Forcing a validation error
+        project2 = Project.objects.create(name="p2")
+        data = {"name": project2.name}
+        response = self.client.post(url, data)
+        expected_error = "<li>Project with this Name already exists.</li>"
+        self.assertContains(response, expected_error)
+
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
         run = self.project1.add_pipeline("docker")

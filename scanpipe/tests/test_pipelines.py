@@ -199,6 +199,21 @@ class ScanPipePipelinesTest(TestCase):
         )
         self.assertEqual(expected, str(caught_warning.message))
 
+    def test_scanpipe_pipelines_class_flag_ignored_resources(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        self.assertIsNone(pipeline.env.get("ignored_patterns"))
+
+        project1.settings.update({"ignored_patterns": "*.ext"})
+        project1.save()
+        pipeline = run.make_pipeline_instance()
+
+        with mock.patch("scanpipe.pipes.flag.flag_ignored_patterns") as mock_flag:
+            mock_flag.return_value = None
+            pipeline.flag_ignored_resources()
+        mock_flag.assert_called_with(project1, patterns="*.ext")
+
 
 class RootFSPipelineTest(TestCase):
     def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
