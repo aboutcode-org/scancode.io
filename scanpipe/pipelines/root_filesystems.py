@@ -41,6 +41,7 @@ class RootFS(Pipeline):
             cls.collect_and_create_system_packages,
             cls.tag_uninteresting_codebase_resources,
             cls.flag_empty_files,
+            cls.flag_ignored_resources,
             cls.scan_for_application_packages,
             cls.match_not_analyzed_to_system_packages,
             cls.scan_for_files,

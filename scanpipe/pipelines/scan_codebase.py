@@ -46,6 +46,7 @@ class ScanCodebase(Pipeline):
             cls.extract_archives,
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
+            cls.flag_ignored_resources,
             cls.scan_for_application_packages,
             cls.scan_for_files,
         )
