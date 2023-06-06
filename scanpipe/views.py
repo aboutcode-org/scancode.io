@@ -65,8 +65,8 @@ from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
-from scanpipe.forms import ProjectConfiguration
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -612,10 +612,10 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         return redirect(project)
 
 
-class ProjectConfigurationView(ConditionalLoginRequired, ProjectViewMixin, UpdateView):
-    template_name = "scanpipe/project_configuration.html"
+class ProjectSettingsView(ConditionalLoginRequired, ProjectViewMixin, UpdateView):
+    template_name = "scanpipe/project_settings.html"
 
-    form_class = ProjectConfiguration
+    form_class = ProjectSettingsForm
     success_message = 'The project "{}" settings have been updated.'
 
     def form_valid(self, form):

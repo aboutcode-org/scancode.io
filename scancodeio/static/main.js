@@ -114,7 +114,7 @@ function setupMenu() {
 // Form
 
 // Dynamic size for the textarea
-function setupDynamicTextarea() {
+function setupTextarea() {
   const $dynamicTextareas = getAll('textarea.is-dynamic');
 
   function setHeight($el) {
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupCloseModalButtons();
   setupTabs();
   setupMenu();
-  setupDynamicTextarea();
+  setupTextarea();
 
   // Close modals and dropdowns on pressing "escape" key
   document.addEventListener('keydown', function (event) {

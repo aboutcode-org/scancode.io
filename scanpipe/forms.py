@@ -179,8 +179,8 @@ class ArchiveProjectForm(forms.Form):
     )
 
 
-class ProjectConfiguration(forms.ModelForm):
-    configuration_fields = [
+class ProjectSettingsForm(forms.ModelForm):
+    settings_fields = [
         "ignored_patterns",
         "attribution_template",
     ]
@@ -215,22 +215,22 @@ class ProjectConfiguration(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        """Load initial values from Project ``configuration`` field."""
+        """Load initial values from Project ``settings`` field."""
         super().__init__(*args, **kwargs)
-        for field_name in self.configuration_fields:
+        for field_name in self.settings_fields:
             field = self.fields[field_name]
-            field.initial = self.instance.configuration.get(field_name)
+            field.initial = self.instance.settings.get(field_name)
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
-        self.update_project_configuration(project)
+        self.update_project_settings(project)
         return project
 
-    def update_project_configuration(self, project):
-        """Update Project ``configuration`` field values from form data."""
+    def update_project_settings(self, project):
+        """Update Project ``settings`` field values from form data."""
         config = {
             field_name: self.cleaned_data[field_name]
-            for field_name in self.configuration_fields
+            for field_name in self.settings_fields
         }
-        project.configuration.update(config)
-        project.save(update_fields=["configuration"])
+        project.settings.update(config)
+        project.save(update_fields=["settings"])

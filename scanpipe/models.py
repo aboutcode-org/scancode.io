@@ -485,7 +485,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         ),
     )
     notes = models.TextField(blank=True)
-    configuration = models.JSONField(default=dict, blank=True)
+    settings = models.JSONField(default=dict, blank=True)
 
     objects = ProjectQuerySet.as_manager()
 
@@ -666,13 +666,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     def get_env(self, field_name=None):
         """
         Return the project environment loaded from the ``.scancode/config.yml`` config
-        file, when available, and overriden by the ``self.configuration`` model field.
+        file, when available, and overriden by the ``self.settings`` model field.
         """
         env = {}
         if config_file := self.get_codebase_config_file():
             env = saneyaml.load(config_file.read_text())
 
-        env.update(self.configuration)
+        env.update(self.settings)
 
         if field_name:
             return env.get(field_name)

@@ -265,7 +265,7 @@ def tag_whiteout_codebase_resources(project):
     """
     whiteout_prefix = ".wh."
     qs = project.codebaseresources.no_status()
-    qs.filter(name__startswith=whiteout_prefix).update(status="ignored-whiteout")
+    qs.filter(name__startswith=whiteout_prefix).update(status=flag.IGNORED_WHITEOUT)
 
 
 layer_fields = [

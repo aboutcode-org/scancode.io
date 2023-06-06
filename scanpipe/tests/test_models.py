@@ -530,7 +530,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, self.project1.get_env())
 
         config = {"extract_recursively": True}
-        self.project1.configuration = config
+        self.project1.settings = config
         self.project1.save()
         expected = {"ignored_extensions": ".img", "extract_recursively": True}
         self.assertEqual(expected, self.project1.get_env())
