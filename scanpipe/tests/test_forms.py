@@ -70,12 +70,44 @@ class ScanPipeFormsTest(TestCase):
         obj = form.save()
         self.assertEqual("Test Name", obj.name)
 
-    # TODO: ProjectConfiguration.save() -> validate the configuration field!
-    # TODO: ProjectConfiguration form Do not override the field ``initial``
-    #  if the key is not in the settings
-    def test_scanpipe_forms_project_settings_form(self):
-        data = {}
-        form = ProjectSettingsForm(data=data)
+    def test_scanpipe_forms_project_settings_form_update_name_and_notes(self):
+        data = {
+            "name": "new name",
+            "notes": "some notes",
+        }
+        form = ProjectSettingsForm(data=data, instance=self.project1)
         self.assertTrue(form.is_valid())
-        # obj = form.save()
-        # self.assertEqual("Test Name", obj.name)
+        project = form.save()
+        self.assertEqual(data["name"], project.name)
+        self.assertEqual(data["notes"], project.notes)
+
+    def test_scanpipe_forms_project_settings_form_set_initial_from_settings_field(self):
+        form = ProjectSettingsForm()
+        self.assertTrue(form.fields["extract_recursively"].initial)
+
+        self.assertEqual({}, self.project1.settings)
+        form = ProjectSettingsForm(instance=self.project1)
+        self.assertTrue(form.fields["extract_recursively"].initial)
+
+        self.project1.settings = {"extract_recursively": False}
+        self.project1.save()
+        form = ProjectSettingsForm(instance=self.project1)
+        self.assertFalse(form.fields["extract_recursively"].initial)
+
+    def test_scanpipe_forms_project_settings_form_update_project_settings(self):
+        data = {
+            "name": self.project1.name,
+            "extract_recursively": False,
+            "ignored_patterns": "*.ext\ndir/*",
+        }
+        form = ProjectSettingsForm(data=data, instance=self.project1)
+        self.assertTrue(form.is_valid())
+        project = form.save()
+
+        expected = {
+            "extract_recursively": False,
+            "ignored_patterns": "*.ext\ndir/*",
+            "attribution_template": "",
+        }
+        self.assertEqual(expected, project.settings)
+        self.assertEqual(expected, project.get_env())
