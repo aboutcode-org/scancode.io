@@ -3,11 +3,7 @@
 {% block content %}
   <div class="container is-max-desktop">
     {% include 'scanpipe/includes/navbar_header.html' %}
-    <section class="mx-5">
-      <div class="is-flex is-justify-content-space-between">
-        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Settings" %}
-      </div>
-    </section>
+    {% include 'scanpipe/includes/breadcrumb_detail_view.html' with object_title="Settings" %}
 
     <section class="mx-5 mt-3 pb-1">
       <div id="form-errors" class="notification is-danger {% if not form.errors %}is-hidden{% endif %}">
@@ -43,15 +39,15 @@
                   <p class="help">{{ form.notes.help_text }}</p>
                 </div>
                 <div class="field">
-                  <label class="label" for="uuid">UUID</label>
+                  <label class="label" for="id_uuid">UUID</label>
                   <div class="control">
-                    <input type="text" id="uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
+                    <input type="text" id="id_uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
                   </div>
                 </div>
                 <div class="field">
-                  <label class="label" for="work_directory">Work directory</label>
+                  <label class="label" for="id_work_directory">Work directory</label>
                   <div class="control">
-                    <input type="text" id="work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
+                    <input type="text" id="id_work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
                   </div>
                 </div>
               </div>
