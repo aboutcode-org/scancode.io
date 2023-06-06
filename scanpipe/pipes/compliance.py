@@ -32,13 +32,13 @@ an image (VM or container image).
 Usage example within a Pipeline:
 
 def analyze_licenses_and_sources(self):
-    util.tag_compliance_files(self.project)
+    util.flag_compliance_files(self.project)
     util.analyze_compliance_licenses(self.project)
 """
 
 
-def tag_compliance_files(project):
-    """Tag compliance files status for the provided `project`."""
+def flag_compliance_files(project):
+    """Flag compliance files status for the provided `project`."""
     compliance_dirs = {
         "/licenses": flag.COMPLIANCE_LICENSES,
         "/sourcemirror": flag.COMPLIANCE_SOURCEMIRROR,

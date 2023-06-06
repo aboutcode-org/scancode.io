@@ -79,12 +79,12 @@ class ScanPipeDockerPipesTest(TestCase):
         expected_location = self.data_path / "docker-images.tar.gz-expected-data-2.json"
         self.assertResultsEqual(expected_location, results)
 
-    def test_pipes_docker_tag_whiteout_codebase_resources(self):
+    def test_pipes_docker_flag_whiteout_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
         resource2 = CodebaseResource.objects.create(project=p1, name=".wh.filename2")
 
-        docker.tag_whiteout_codebase_resources(p1)
+        docker.flag_whiteout_codebase_resources(p1)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         self.assertEqual("", resource1.status)

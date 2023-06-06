@@ -107,7 +107,7 @@ class ScanPipeFlagPipesTest(TestCase):
         self.assertEqual("ignored-pattern", self.resource2.status)
         self.assertEqual("ignored-pattern", self.resource3.status)
 
-    def test_scanpipe_pipes_flag_tag_not_analyzed_codebase_resources(self):
+    def test_scanpipe_pipes_flag_flag_not_analyzed_codebase_resources(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1, path="filename.ext"
         )
@@ -116,7 +116,7 @@ class ScanPipeFlagPipesTest(TestCase):
             path="filename1.ext",
             status=flag.SCANNED,
         )
-        updated = flag.tag_not_analyzed_codebase_resources(self.project1)
+        updated = flag.flag_not_analyzed_codebase_resources(self.project1)
         self.assertEqual(4, updated)
         resource1.refresh_from_db()
         resource2.refresh_from_db()

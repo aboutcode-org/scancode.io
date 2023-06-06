@@ -313,9 +313,9 @@ def match_not_analyzed(
         matchable.update(status=reference_status)
 
 
-def tag_uninteresting_codebase_resources(project):
+def flag_uninteresting_codebase_resources(project):
     """
-    Check any file that doesn’t belong to any system package and determine if it's:
+    Flag any file that do not belong to any system package and determine if it's:
     - A temp file
     - Generated
     - Log file of sorts (such as var) using few heuristics
@@ -337,9 +337,9 @@ def tag_uninteresting_codebase_resources(project):
     qs.filter(lookups).update(status=flag.IGNORED_NOT_INTERESTING)
 
 
-def tag_ignorable_codebase_resources(project):
+def flag_ignorable_codebase_resources(project):
     """
-    Tag codebase resource using the glob patterns from commoncode.ignore of
+    Flag codebase resource using the glob patterns from commoncode.ignore of
     ignorable files/directories, if their paths match an ignorable pattern.
     """
     lookups = Q()
@@ -356,9 +356,9 @@ def tag_ignorable_codebase_resources(project):
     qs.filter(lookups).update(status=flag.IGNORED_DEFAULT_IGNORES)
 
 
-def tag_data_files_with_no_clues(project):
+def flag_data_files_with_no_clues(project):
     """
-    Tags CodebaseResources that have a file type of `data` and no detected clues
+    Flag CodebaseResources that have a file type of `data` and no detected clues
     to be uninteresting.
     """
     lookup = Q(
@@ -376,7 +376,7 @@ def tag_data_files_with_no_clues(project):
     qs.filter(lookup).update(status=flag.IGNORED_DATA_FILE_NO_CLUES)
 
 
-def tag_media_files_as_uninteresting(project):
-    """Tags CodebaseResources that are media files to be uninteresting."""
+def flag_media_files_as_uninteresting(project):
+    """Flag CodebaseResources that are media files to be uninteresting."""
     qs = project.codebaseresources.no_status()
     qs.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)

@@ -39,14 +39,14 @@ class RootFS(Pipeline):
             cls.collect_rootfs_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
-            cls.tag_uninteresting_codebase_resources,
+            cls.flag_uninteresting_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
             cls.scan_for_application_packages,
             cls.match_not_analyzed_to_system_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
-            cls.tag_not_analyzed_codebase_resources,
+            cls.flag_not_analyzed_codebase_resources,
         )
 
     def extract_input_files_to_codebase_directory(self):
@@ -90,9 +90,9 @@ class RootFS(Pipeline):
             for rfs in self.root_filesystems:
                 rootfs.scan_rootfs_for_system_packages(self.project, rfs)
 
-    def tag_uninteresting_codebase_resources(self):
+    def flag_uninteresting_codebase_resources(self):
         """Flag files—not worth tracking—that don’t belong to any system packages."""
-        rootfs.tag_uninteresting_codebase_resources(self.project)
+        rootfs.flag_uninteresting_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
@@ -129,6 +129,6 @@ class RootFS(Pipeline):
         """Analyze single file scan results for completeness."""
         flag.analyze_scanned_files(self.project)
 
-    def tag_not_analyzed_codebase_resources(self):
+    def flag_not_analyzed_codebase_resources(self):
         """Check for any leftover files for sanity; there should be none."""
-        flag.tag_not_analyzed_codebase_resources(self.project)
+        flag.flag_not_analyzed_codebase_resources(self.project)
