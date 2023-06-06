@@ -45,7 +45,7 @@ you’ll find information on:
     output-files
     command-line-interface
     rest-api
-    settings
+    application-settings
     distros-os-images
 
 Indices and tables

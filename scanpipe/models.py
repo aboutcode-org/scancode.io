@@ -1879,11 +1879,12 @@ class CodebaseResource(
         Return a list of path segment name along its subpath for this resource.
 
         Such as::
-        [
-            ('root', 'root'),
-            ('subpath', 'root/subpath'),
-            ('file.txt', 'root/subpath/file.txt'),
-        ]
+
+            [
+                ('root', 'root'),
+                ('subpath', 'root/subpath'),
+                ('file.txt', 'root/subpath/file.txt'),
+            ]
         """
         current_path = ""
         part_and_subpath = []

@@ -112,7 +112,7 @@ def flag_ignored_extensions(project, extensions):
 
 
 def flag_ignored_paths(project, paths):
-    """Flag codebase resource as ``ignored` status from list of `paths`."""
+    """Flag codebase resource as ``ignored`` status from list of ``paths``."""
     lookups = Q()
     for path in paths:
         lookups |= Q(path__contains=path)

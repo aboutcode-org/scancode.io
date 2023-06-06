@@ -26,6 +26,7 @@ from django.test import TestCase
 
 from scanpipe.forms import InputsBaseForm
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import Project
 
 
@@ -68,3 +69,13 @@ class ScanPipeFormsTest(TestCase):
         self.assertTrue(form.is_valid())
         obj = form.save()
         self.assertEqual("Test Name", obj.name)
+
+    # TODO: ProjectConfiguration.save() -> validate the configuration field!
+    # TODO: ProjectConfiguration form Do not override the field ``initial``
+    #  if the key is not in the settings
+    def test_scanpipe_forms_project_settings_form(self):
+        data = {}
+        form = ProjectSettingsForm(data=data)
+        self.assertTrue(form.is_valid())
+        # obj = form.save()
+        # self.assertEqual("Test Name", obj.name)
