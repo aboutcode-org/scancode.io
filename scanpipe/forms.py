@@ -181,9 +181,17 @@ class ArchiveProjectForm(forms.Form):
 
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
+        "extract_recursively",
         "ignored_patterns",
         "attribution_template",
     ]
+    extract_recursively = forms.BooleanField(
+        label="Extract recursively",
+        required=False,
+        initial=True,
+        help_text="Extract nested archives-in-archives recursively",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
     ignored_patterns = forms.CharField(
         label="Ignored patterns",
         required=False,
@@ -219,7 +227,9 @@ class ProjectSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field_name in self.settings_fields:
             field = self.fields[field_name]
-            field.initial = self.instance.settings.get(field_name)
+            # Do not override the field ``initial`` if the key is not in the settings
+            if field_name in self.instance.settings:
+                field.initial = self.instance.settings.get(field_name)
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)

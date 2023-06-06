@@ -60,7 +60,6 @@ class DeployToDevelop(Pipeline):
             cls.scan_mapped_from_for_files,
         )
 
-    extract_recursively = True
     purldb_package_extensions = [".jar", ".war", ".zip"]
     purldb_resource_extensions = [
         ".map",
@@ -96,7 +95,7 @@ class DeployToDevelop(Pipeline):
         """Extract recursively from* and to* archives in place with extractcode."""
         extract_errors = extract_archives(
             self.project.codebase_path,
-            recurse=self.extract_recursively,
+            recurse=self.env.get("extract_recursively", True),
         )
 
         if extract_errors:

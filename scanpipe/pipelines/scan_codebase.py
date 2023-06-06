@@ -51,9 +51,6 @@ class ScanCodebase(Pipeline):
             cls.scan_for_files,
         )
 
-    # Set to True to extract recursively nested archives in archives.
-    extract_recursively = False
-
     def copy_inputs_to_codebase_directory(self):
         """
         Copy input files to the project's codebase/ directory.
@@ -65,7 +62,7 @@ class ScanCodebase(Pipeline):
         """Extract archives with extractcode."""
         extract_errors = scancode.extract_archives(
             location=self.project.codebase_path,
-            recurse=self.extract_recursively,
+            recurse=self.env.get("extract_recursively", True),
         )
 
         if extract_errors:
