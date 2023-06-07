@@ -96,7 +96,7 @@ function setupTabs() {
 // Menu
 
 function setupMenu() {
-  const $menuLinks = getAll('.menu a');
+  const $menuLinks = getAll('.menu a:not(.is-stateless)');
 
   function activateMenuItem($menuItem) {
     const activeLink = document.querySelector('.menu .is-active');

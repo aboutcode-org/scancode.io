@@ -624,6 +624,25 @@ class ProjectSettingsView(ConditionalLoginRequired, ProjectViewMixin, UpdateView
         messages.success(self.request, self.success_message.format(project))
         return response
 
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("download"):
+            return self.download_config_file(project=self.get_object())
+        return super().get(request, *args, **kwargs)
+
+    @staticmethod
+    def download_config_file(project):
+        """
+        Download the ``scancode-config.yml`` config file generated from the current
+        project settings.
+        """
+        response = FileResponse(
+            streaming_content=saneyaml.dump(project.settings),
+            content_type="application/x-yaml",
+        )
+        filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
 
 class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
     template_name = "scanpipe/project_charts.html"
