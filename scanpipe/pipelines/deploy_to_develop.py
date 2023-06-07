@@ -47,7 +47,6 @@ class DeployToDevelop(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
-            cls.flag_ignored_d2d_resources,
             cls.map_checksum,
             cls.find_java_packages,
             cls.map_java_to_class,
@@ -104,12 +103,6 @@ class DeployToDevelop(Pipeline):
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
         d2d.collect_and_create_codebase_resources(self.project)
-
-    def flag_ignored_d2d_resources(self):
-        """Flag ignored resources using d2d convention."""
-        flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORED_FILENAMES)
-        flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORED_EXTENSIONS)
-        flag.flag_ignored_paths(self.project, paths=d2d.IGNORED_PATHS)
 
     def map_checksum(self):
         """Map using SHA1 checksum."""
