@@ -115,29 +115,6 @@ class ScanPipeD2DPipesTest(TestCase):
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
 
-    def test_scanpipe_pipes_d2d_flag_to_meta_inf_files(self):
-        from1 = make_resource_file(
-            self.project1,
-            path="from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/MANIFEST.MF",
-        )
-        to1 = make_resource_file(
-            self.project1,
-            path="to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/"
-            "AbstractConfigurationProvider.class",
-        )
-        to2 = make_resource_file(
-            self.project1,
-            path="to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
-        )
-
-        d2d.flag_to_meta_inf_files(self.project1)
-        from1.refresh_from_db()
-        to1.refresh_from_db()
-        to2.refresh_from_db()
-        self.assertEqual("", from1.status)
-        self.assertEqual("", to1.status)
-        self.assertEqual("ignored-meta-inf", to2.status)
-
     @mock.patch("scanpipe.pipes.purldb.match_package")
     def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_package):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")

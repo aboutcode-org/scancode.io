@@ -49,7 +49,6 @@ class DeployToDevelop(Pipeline):
             cls.map_checksum,
             cls.find_java_packages,
             cls.map_java_to_class,
-            cls.flag_to_meta_inf_files,
             cls.map_jar_to_source,
             cls.map_javascript,
             cls.match_purldb,
@@ -122,10 +121,6 @@ class DeployToDevelop(Pipeline):
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_java_to_class(project=self.project, logger=self.log)
-
-    def flag_to_meta_inf_files(self):
-        """Flag all ``META-INF/*`` file of the ``to/`` directory as ignored."""
-        d2d.flag_to_meta_inf_files(self.project)
 
     def map_jar_to_source(self):
         """Map .jar files to their related source directory."""

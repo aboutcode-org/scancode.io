@@ -45,7 +45,6 @@ IGNORED_MEDIA_FILE = "ignored-media-file"
 IGNORED_NOT_INTERESTING = "ignored-not-interesting"
 IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
 IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
-IGNORED_META_INF = "ignored-meta-inf"
 
 COMPLIANCE_LICENSES = "compliance-licenses"
 COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
