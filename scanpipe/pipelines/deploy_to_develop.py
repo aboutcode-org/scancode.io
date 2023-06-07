@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import codebase
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
@@ -116,7 +117,8 @@ class DeployToDevelop(Pipeline):
 
     def fingerprint_codebase_directories(self):
         """Compute directory fingerprints for matching"""
-        matchcode.fingerprint_codebase_directories(self.project)
+        self.virtual_codebase = codebase.get_virtual_codebase(self.project)
+        matchcode.fingerprint_codebase_directories(self.project, self.virtual_codebase)
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
@@ -153,6 +155,7 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_directories(
             project=self.project,
+            virtual_codebase=self.virtual_codebase,
             logger=self.log,
         )
 

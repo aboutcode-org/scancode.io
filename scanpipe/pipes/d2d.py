@@ -573,33 +573,30 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
     logger(f"{matched_count:,d} resource(s) matched in PurlDB")
 
 
-def match_purldb_directories(project, logger=None):
+def match_purldb_directories(project, virtual_codebase, logger=None):
     """
     Match against PurlDB selecting codebase directories.
     """
-    to_directory = project.codebaseresources.get(path="to")
-
     if logger:
         logger("Matching directories from to/ in PurlDB")
 
     matched_count = 0
-    for resource in to_directory.walk(topdown=True):
-        # Skip file Resources and anything that has been matched already
-        if resource.is_file or resource.status == flag.MATCHED_TO_PURLDB:
+    vc_to_directory = virtual_codebase.get_resource("virtual_root/to")
+    for vc_resource in vc_to_directory.walk(virtual_codebase):
+        if vc_resource.is_file or vc_resource.status == flag.MATCHED_TO_PURLDB:
             continue
 
-        package = match_purldb_directory(project, resource)
+        split_vc_resource_path = vc_resource.path.split("virtual_root/")
+        db_resource_path = split_vc_resource_path[-1]
+        db_resource = project.codebaseresources.get(path=db_resource_path)
+        package = match_purldb_directory(project, db_resource)
         if not package:
             continue
         matched_count += 1
 
-        # Assign all Resources in this Directory to be part of `package` and
-        # update their status
-        resource.status = flag.MATCHED_TO_PURLDB
-        resource.save()
-        resources_qs = resource.descendants()
-        resources_qs.update(status=flag.MATCHED_TO_PURLDB)
-        package.add_resources(resources_qs)
+        for r in vc_resource.walk(virtual_codebase):
+            r.status = flag.MATCHED_TO_PURLDB
+            r.save(virtual_codebase)
 
     logger(f"{matched_count:,d} director(y/ies) matched in PurlDB")
 
