@@ -38,8 +38,8 @@ def package_getter(root_dir, **kwargs):
         yield package.purl, package
 
 
-def tag_uninteresting_windows_codebase_resources(project):
-    """Tag known uninteresting files as uninteresting."""
+def flag_uninteresting_windows_codebase_resources(project):
+    """Flag known uninteresting files as uninteresting."""
     uninteresting_files = (
         "DefaultUser_Delta",
         "Sam_Delta",
@@ -91,7 +91,7 @@ def tag_uninteresting_windows_codebase_resources(project):
     qs.filter(lookups).update(status=flag.IGNORED_NOT_INTERESTING)
 
 
-def tag_installed_package_files(project, root_dir_pattern, package, q_objects=None):
+def flag_installed_package_files(project, root_dir_pattern, package, q_objects=None):
     """
     For all CodebaseResources from `project` whose `rootfs_path` starts with
     `root_dir_pattern`, add `package` to the discovered_packages of each
@@ -116,7 +116,7 @@ def tag_installed_package_files(project, root_dir_pattern, package, q_objects=No
             installed_package_file.update(status=flag.INSTALLED_PACKAGE)
 
 
-def _tag_python_software(project):
+def _flag_python_software(project):
     qs = project.codebaseresources.no_status()
     python_root_pattern = r"(?P<root_path>^/(Files/)?Python(?P<version>\d+)?)/.*$"
     python_root_pattern_compiled = re.compile(python_root_pattern)
@@ -154,7 +154,7 @@ def _tag_python_software(project):
             copyright="Copyright (c) Python Software Foundation",
             homepage_url="https://www.python.org/",
         )
-        tag_installed_package_files(
+        flag_installed_package_files(
             project=project,
             root_dir_pattern=python_path,
             package=python_package,
@@ -162,7 +162,7 @@ def _tag_python_software(project):
         )
 
 
-def _tag_openjdk_software(project):
+def _flag_openjdk_software(project):
     qs = project.codebaseresources.no_status()
     openjdk_root_pattern = (
         r"^(?P<root_path>/(Files/)?(open)?jdk(-(?P<version>(\d*)(\.\d+)*))*)/.*$"
@@ -200,14 +200,14 @@ def _tag_openjdk_software(project):
             copyright="Copyright (c) Oracle and/or its affiliates",
             homepage_url="http://openjdk.java.net/",
         )
-        tag_installed_package_files(
+        flag_installed_package_files(
             project=project,
             root_dir_pattern=openjdk_path,
             package=openjdk_package,
         )
 
 
-def tag_known_software(project):
+def flag_known_software(project):
     """
     Find Windows software in `project` by checking CodebaseResources
     to see if their rootfs_path is under a known software root directory. If
@@ -222,8 +222,8 @@ def tag_known_software(project):
     If a version number cannot be determined for an installed software Package,
     then a version number of "nv" will be set.
     """
-    _tag_python_software(project)
-    _tag_openjdk_software(project)
+    _flag_python_software(project)
+    _flag_openjdk_software(project)
 
 
 PROGRAM_FILES_DIRS_TO_IGNORE = (
@@ -232,7 +232,7 @@ PROGRAM_FILES_DIRS_TO_IGNORE = (
 )
 
 
-def tag_program_files(project):
+def flag_program_files(project):
     """
     Report all subdirectories of Program Files and Program Files (x86) as Packages.
 
@@ -270,7 +270,7 @@ def tag_program_files(project):
 
     for root_dir, root_dir_name in program_files_dirname_by_path.items():
         package = Package(type="windows-program", name=root_dir_name, version="nv")
-        tag_installed_package_files(
+        flag_installed_package_files(
             project=project,
             root_dir_pattern=root_dir,
             package=package,

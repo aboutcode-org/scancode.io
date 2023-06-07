@@ -45,7 +45,8 @@ class DeployToDevelop(Pipeline):
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
-            cls.flag_empty_and_ignored_files,
+            cls.flag_empty_files,
+            cls.flag_ignored_resources,
             cls.map_checksum,
             cls.find_java_packages,
             cls.map_java_to_class,
@@ -57,7 +58,6 @@ class DeployToDevelop(Pipeline):
             cls.scan_mapped_from_for_files,
         )
 
-    extract_recursively = True
     purldb_package_extensions = [".jar", ".war", ".zip"]
     purldb_resource_extensions = [
         ".map",
@@ -93,7 +93,7 @@ class DeployToDevelop(Pipeline):
         """Extract recursively from* and to* archives in place with extractcode."""
         extract_errors = extract_archives(
             self.project.codebase_path,
-            recurse=self.extract_recursively,
+            recurse=self.env.get("extract_recursively", True),
         )
 
         if extract_errors:
@@ -102,13 +102,6 @@ class DeployToDevelop(Pipeline):
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
         d2d.collect_and_create_codebase_resources(self.project)
-
-    def flag_empty_and_ignored_files(self):
-        """Flag empty and ignored files using names and extensions."""
-        flag.flag_empty_codebase_resources(self.project)
-        flag.flag_ignored_filenames(self.project, filenames=d2d.IGNORED_FILENAMES)
-        flag.flag_ignored_extensions(self.project, extensions=d2d.IGNORED_EXTENSIONS)
-        flag.flag_ignored_paths(self.project, paths=d2d.IGNORED_PATHS)
 
     def map_checksum(self):
         """Map using SHA1 checksum."""

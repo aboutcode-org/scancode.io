@@ -10,7 +10,9 @@
     <ul>
       <li><a href="{% url 'project_list' %}" class="has-text-grey">Projects</a></li>
       <li><a href="{{ project.get_absolute_url }}" class="has-text-grey">{{ project.name }}</a></li>
-      <li><a href="{% url url_name project.uuid %}" class="has-text-grey">{{ model_label|title }}</a></li>
+      {% if url_name %}
+        <li><a href="{% url url_name project.uuid %}" class="has-text-grey">{{ model_label|title }}</a></li>
+      {% endif %}
     </ul>
   </nav>
 </section>

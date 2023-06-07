@@ -106,6 +106,16 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project")
 
+    def test_scanpipe_management_command_create_project_notes(self):
+        out = StringIO()
+        notes = "Some notes about my project"
+        options = ["--notes", notes]
+
+        call_command("create-project", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        project = Project.objects.get(name="my_project")
+        self.assertEqual(notes, project.notes)
+
     def test_scanpipe_management_command_create_project_pipelines(self):
         out = StringIO()
 

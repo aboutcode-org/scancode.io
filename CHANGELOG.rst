@@ -20,6 +20,20 @@ v33.0.0 (unreleased)
   2. "to-[FILENAME]" archive containing the deployment compiled code
   https://github.com/nexB/scancode.io/issues/659
 
+- Add ability to configure a Project through a new "Settings" form in the UI or by
+  providing a ".scancode-config.yml" configuration file as one of the Project inputs.
+  The "Settings" form allows to rename a Project, add and edit the notes, as well
+  as providing a list of patterns to be ignored during pipeline runs, the choice of
+  extracting archives recursively, and the ability to provide a custom template for
+  attribution.
+  https://github.com/nexB/scancode.io/issues/685
+  https://github.com/nexB/scancode.io/issues/764
+
+- Add ``notes`` field on the Project model. Notes can be updated from the Project
+  settings form. Also, notes can be provided while creating a project through the CLI
+  using the a new ``--notes`` option.
+  https://github.com/nexB/scancode.io/issues/709
+
 - Enhance the file viewer UI of the resource details view.
   A new search for the file content was added.
   Also, it is now possible to expand the file viewer in full screen mode.

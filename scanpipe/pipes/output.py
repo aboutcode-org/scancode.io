@@ -28,6 +28,7 @@ from pathlib import Path
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
+from django.forms.models import model_to_dict
 from django.template import Context
 from django.template import Template
 
@@ -221,6 +222,8 @@ class JSONResultsGenerator:
             "notice": SCAN_NOTICE,
             "uuid": project.uuid,
             "created_date": project.created_date,
+            "notes": project.notes,
+            "settings": project.settings,
             "input_sources": project.input_sources_list,
             "runs": runs.data,
             "extra_data": project.extra_data,
@@ -640,11 +643,15 @@ def get_expression_as_attribution_links(parsed_expression):
     return parsed_expression.simplify().render(template=template)
 
 
-def render_template(template_location, context):
-    """Render a Django template at `template_location` using the `context` dict."""
+def render_template(template_string, context):
+    """Render a Django ``template_string`` using the ``context`` dict."""
+    return Template(template_string).render(Context(context))
+
+
+def render_template_file(template_location, context):
+    """Render a Django template at ``template_location`` using the ``context`` dict."""
     template_string = Path(template_location).read_text()
-    template = Template(template_string)
-    return template.render(Context(context))
+    return render_template(template_string, context)
 
 
 def get_attribution_template(project):
@@ -696,32 +703,46 @@ def to_attribution(project):
     Generate attribution for the provided ``project``.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
+
     Custom template can be provided in the
     `codebase/.scancode/templates/attribution.html` location.
+
+    The model instances are converted into data dict to prevent any data leak as the
+    attribution template is customizable.
     """
     output_file = project.get_output_file_path("results", "attribution.html")
 
-    packages = get_queryset(project, "discoveredpackage")
-
+    project_data = model_to_dict(project, fields=["name", "notes", "created_date"])
+    package_qs = get_queryset(project, "discoveredpackage")
     licensing = get_licensing()
     license_symbols = []
 
-    for package in packages:
+    packages_data = []
+    for package in package_qs:
+        package_data = model_to_dict(package, exclude=["codebase_resources"])
+        package_data["package_url"] = package.package_url
         if package.declared_license_expression:
             parsed = licensing.parse(package.declared_license_expression)
             license_symbols.extend(get_package_expression_symbols(parsed))
-            package.expression_links = get_expression_as_attribution_links(parsed)
+            expression_links = get_expression_as_attribution_links(parsed)
+            package_data["expression_links"] = expression_links
+
+        packages_data.append(package_data)
 
     licenses = [symbol.wrapped for symbol in set(license_symbols)]
     licenses.sort(key=attrgetter("spdx_license_key"))
 
     context = {
-        "project": project,
-        "packages": packages,
+        "project": project_data,
+        "packages": packages_data,
         "licenses": licenses,
     }
-    template_location = get_attribution_template(project)
-    rendered_template = render_template(template_location, context)
-    output_file.write_text(rendered_template)
 
+    if template_string := project.get_env("attribution_template"):
+        rendered_template = render_template(template_string, context)
+    else:
+        template_location = get_attribution_template(project)
+        rendered_template = render_template_file(template_location, context)
+
+    output_file.write_text(rendered_template)
     return output_file

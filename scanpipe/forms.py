@@ -56,7 +56,7 @@ class InputsBaseForm(forms.Form):
         help_text="Provide one or more URLs to download, one per line.",
         widget=forms.Textarea(
             attrs={
-                "class": "textarea",
+                "class": "textarea is-dynamic",
                 "rows": 2,
                 "placeholder": (
                     "https://domain.com/archive.zip\n"
@@ -177,3 +177,96 @@ class ArchiveProjectForm(forms.Form):
         initial=False,
         required=False,
     )
+
+
+class ListTextarea(forms.CharField):
+    """
+    A Django form field that displays as a textarea and converts each line of input
+    into a list of items.
+
+    This field extends the `CharField` and uses the `Textarea` widget to display the
+    input as a textarea.
+    Each line of the textarea input is split into items, removing leading/trailing
+    whitespace and empty lines.
+    The resulting list of items is then stored as the field value.
+    """
+
+    widget = forms.Textarea
+
+    def to_python(self, value):
+        """Split the textarea input into lines and remove empty lines."""
+        if value:
+            return [line.strip() for line in value.splitlines() if line.strip()]
+
+    def prepare_value(self, value):
+        """Join the list items into a string with newlines."""
+        if value is not None:
+            value = "\n".join(value)
+        return value
+
+
+class ProjectSettingsForm(forms.ModelForm):
+    settings_fields = [
+        "extract_recursively",
+        "ignored_patterns",
+        "attribution_template",
+    ]
+    extract_recursively = forms.BooleanField(
+        label="Extract recursively",
+        required=False,
+        initial=True,
+        help_text="Extract nested archives-in-archives recursively",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    ignored_patterns = ListTextarea(
+        label="Ignored patterns",
+        required=False,
+        help_text="Provide one or more path patterns to be ignored, one per line.",
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 3,
+                "placeholder": "*.xml\ntests/*\n*docs/*.rst",
+            },
+        ),
+    )
+    attribution_template = forms.CharField(
+        label="Attribution template",
+        required=False,
+        help_text="Custom attribution template.",
+        widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+
+    class Meta:
+        model = Project
+        fields = [
+            "name",
+            "notes",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "input"}),
+            "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        """Load initial values from Project ``settings`` field."""
+        super().__init__(*args, **kwargs)
+        for field_name in self.settings_fields:
+            field = self.fields[field_name]
+            # Do not override the field ``initial`` if the key is not in the settings
+            if field_name in self.instance.settings:
+                field.initial = self.instance.settings.get(field_name)
+
+    def save(self, *args, **kwargs):
+        project = super().save(*args, **kwargs)
+        self.update_project_settings(project)
+        return project
+
+    def update_project_settings(self, project):
+        """Update Project ``settings`` field values from form data."""
+        config = {
+            field_name: self.cleaned_data[field_name]
+            for field_name in self.settings_fields
+        }
+        project.settings.update(config)
+        project.save(update_fields=["settings"])

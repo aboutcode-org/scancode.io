@@ -79,17 +79,18 @@ For example, the following operations—Steps—are included in the RootFS pipel
 they are leveraging pipes to accomplish pre-defined tasks::
 
     from scanpipe.pipelines import Pipeline
+    from scanpipe.pipes import flag
     from scanpipe.pipes import rootfs
     from scanpipe.pipes import scancode
 
     class RootFS(Pipeline):
         [...]
 
-        def tag_empty_files(self):
+        def flag_empty_files(self):
             """
             Flags empty files.
             """
-            rootfs.tag_empty_codebase_resources(self.project)
+            flag.flag_empty_files(self.project)
 
         def scan_for_application_packages(self):
             """

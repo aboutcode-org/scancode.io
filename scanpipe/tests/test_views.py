@@ -150,16 +150,13 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
-        expected2 = 'id="modal-archive"'
 
         response = self.client.get(url)
         self.assertNotContains(response, expected1)
-        self.assertContains(response, expected2)
 
         self.project1.archive()
         response = self.client.get(url)
         self.assertContains(response, expected1)
-        self.assertNotContains(response, expected2)
 
     @mock.patch("requests.get")
     def test_scanpipe_views_project_details_add_inputs(self, mock_get):
@@ -433,6 +430,40 @@ class ScanPipeViewsTest(TestCase):
         expected = "have been removed."
         self.assertContains(response, expected)
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
+
+    def test_scanpipe_views_project_settings_view(self):
+        url = reverse("project_settings", args=[self.project1.uuid])
+        response = self.client.get(url)
+        expected_ids = [
+            "id_name",
+            "id_notes",
+            "id_uuid",
+            "id_work_directory",
+            "id_extract_recursively",
+            "id_ignored_patterns",
+            "id_attribution_template",
+            'id="modal-archive"',
+            'id="modal-reset"',
+            'id="modal-delete"',
+        ]
+        for expected in expected_ids:
+            self.assertContains(response, expected)
+
+        # Forcing a validation error
+        project2 = Project.objects.create(name="p2")
+        data = {"name": project2.name}
+        response = self.client.post(url, data)
+        expected_error = "<li>Project with this Name already exists.</li>"
+        self.assertContains(response, expected_error)
+
+    def test_scanpipe_views_project_settings_view_download_config_file(self):
+        url = reverse("project_settings", args=[self.project1.uuid])
+        self.project1.settings = {"extract_recursively": False}
+        self.project1.save()
+
+        response = self.client.get(url, data={"download": 1})
+        self.assertEqual(b"extract_recursively: no\n", response.getvalue())
+        self.assertEqual("application/x-yaml", response.headers["Content-Type"])
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):

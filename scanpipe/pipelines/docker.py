@@ -37,12 +37,13 @@ class Docker(RootFS):
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
-            cls.tag_uninteresting_codebase_resources,
-            cls.tag_empty_files,
+            cls.flag_uninteresting_codebase_resources,
+            cls.flag_empty_files,
+            cls.flag_ignored_resources,
             cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
-            cls.tag_not_analyzed_codebase_resources,
+            cls.flag_not_analyzed_codebase_resources,
         )
 
     def extract_images(self):
@@ -80,7 +81,7 @@ class Docker(RootFS):
             for image in self.images:
                 docker.scan_image_for_system_packages(self.project, image)
 
-    def tag_uninteresting_codebase_resources(self):
+    def flag_uninteresting_codebase_resources(self):
         """Flag files that don't belong to any system package."""
-        docker.tag_whiteout_codebase_resources(self.project)
-        rootfs.tag_uninteresting_codebase_resources(self.project)
+        docker.flag_whiteout_codebase_resources(self.project)
+        rootfs.flag_uninteresting_codebase_resources(self.project)

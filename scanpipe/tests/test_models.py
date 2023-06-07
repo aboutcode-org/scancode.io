@@ -59,6 +59,7 @@ from scanpipe.models import ProjectError
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import get_project_work_directory
+from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
@@ -507,6 +508,54 @@ class ScanPipeModelsTest(TestCase):
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
+    def test_scanpipe_project_get_input_config_file(self):
+        self.assertIsNone(self.project1.get_input_config_file())
+        config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
+        config_file.touch()
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+
+    def test_scanpipe_project_get_settings_as_yml(self):
+        self.assertEqual("{}\n", self.project1.get_settings_as_yml())
+
+        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        config_file = copy_input(test_config_file, self.project1.input_path)
+        env_from_test_config = self.project1.get_env().copy()
+        self.project1.settings = env_from_test_config
+        self.project1.save()
+
+        config_file.write_text(self.project1.get_settings_as_yml())
+        self.assertEqual(env_from_test_config, self.project1.get_env())
+
+    def test_scanpipe_project_get_env(self):
+        self.assertEqual({}, self.project1.get_env())
+
+        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        copy_input(test_config_file, self.project1.input_path)
+
+        expected = {
+            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
+            "extract_recursively": False,
+        }
+        self.assertEqual(expected, self.project1.get_env())
+
+        config = {"extract_recursively": True}
+        self.project1.settings = config
+        self.project1.save()
+        expected = {
+            "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
+            "extract_recursively": True,
+        }
+        self.assertEqual(expected, self.project1.get_env())
+
+    def test_scanpipe_project_get_env_invalid_yml_content(self):
+        config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
+        config_file.write_text("{*this is not valid yml*}")
+
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+        self.assertEqual({}, self.project1.get_env())
+
     def test_scanpipe_model_update_mixin(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.status)
@@ -537,6 +586,40 @@ class ScanPipeModelsTest(TestCase):
 
         package.refresh_from_db()
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.package_url)
+
+    def test_scanpipe_model_posix_regex_to_django_regex_lookup(self):
+        test_data = [
+            ("", r"^$"),
+            # Single segment
+            ("example", r"^example$"),
+            # Single segment with dot
+            ("example.xml", r"^example\.xml$"),
+            # Single segment with prefix dot
+            (".example", r"^\.example$"),
+            # Single segment wildcard with dot
+            ("*.xml", r"^.*\.xml$"),
+            ("*_map.xml", r"^.*_map\.xml$"),
+            # Single segment wildcard with slash
+            ("*/.example", r"^.*/\.example$"),
+            ("*/readme.html", r"^.*/readme\.html$"),
+            # Single segment with wildcards
+            ("*README*", r"^.*README.*$"),
+            # Multi segments
+            ("path/to/file", r"^path/to/file$"),
+            # Multi segments with wildcards
+            ("path/*/file", r"^path/.*/file$"),
+            ("*path/to/*", r"^.*path/to/.*$"),
+            # Multiple segments and wildcards
+            ("path/*/to/*/file.*", r"^path/.*/to/.*/file\..*$"),
+            # Escaped character
+            (r"path\*\.txt", r"^path\\.*\\\.txt$"),
+            (r"path/*/foo$.class", r"^path/.*/foo\$\.class$"),
+            # Question mark
+            ("path/file?", r"^path/file.$"),
+        ]
+
+        for pattern, expected in test_data:
+            self.assertEqual(expected, posix_regex_to_django_regex_lookup(pattern))
 
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
@@ -1219,6 +1302,36 @@ class ScanPipeModelsTest(TestCase):
 
         results = qs.less_common("holders", limit=2)
         self.assertQuerySetEqual([resource2], results)
+
+    def test_scanpipe_codebase_resource_queryset_path_pattern(self):
+        make_resource_file(self.project1, path="example")
+        make_resource_file(self.project1, path="example.xml")
+        make_resource_file(self.project1, path=".example")
+        make_resource_file(self.project1, path="example_map.js")
+        make_resource_file(self.project1, path="dir/.example")
+        make_resource_file(self.project1, path="dir/subdir/readme.html")
+        make_resource_file(self.project1, path="foo$.class")
+
+        patterns = [
+            "example",
+            "example.xml",
+            ".example",
+            "*.xml",
+            "*_map.js",
+            "*/.example",
+            "*/readme.html",
+            "*readme*",
+            "dir/subdir/readme.html",
+            "dir/*/readme.html",
+            "*dir/subdir/*",
+            "dir/*/readme.*",
+            r"*$.class",
+            "*readme.htm?",
+        ]
+
+        for pattern in patterns:
+            qs = CodebaseResource.objects.path_pattern(pattern)
+            self.assertEqual(1, qs.count(), pattern)
 
     def test_scanpipe_codebase_resource_descendants(self):
         path = "asgiref-3.3.0-py3-none-any.whl-extract/asgiref"

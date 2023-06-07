@@ -51,10 +51,3 @@ const inputFilesBox = document.querySelector('#input_files_box');
 inputFilesBox.addEventListener("dragenter", disableEvent);
 inputFilesBox.addEventListener("dragover", disableEvent);
 inputFilesBox.addEventListener("drop", dropHandler);
-
-// Dynamic size for the input URLs textarea
-const inputURLs = document.querySelector('#id_input_urls');
-inputURLs.oninput = () => {
-  inputURLs.style.height = "";
-  inputURLs.style.height = inputURLs.scrollHeight + 3 + "px";
-}

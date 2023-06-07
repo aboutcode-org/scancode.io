@@ -62,6 +62,7 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+import saneyaml
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from cyclonedx import model as cyclonedx_model
@@ -483,6 +484,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             "happened during the archive operation."
         ),
     )
+    notes = models.TextField(blank=True)
+    settings = models.JSONField(default=dict, blank=True)
 
     objects = ProjectQuerySet.as_manager()
 
@@ -645,10 +648,48 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return Path(self.work_path / "tmp")
 
     def get_codebase_config_directory(self):
-        """Return the `.scancode` directory if available in the `codebase` directory."""
+        """
+        Return the ``.scancode`` config directory if available in the `codebase`
+        directory.
+        """
         config_directory = self.codebase_path / settings.SCANCODEIO_CONFIG_DIR
         if config_directory.exists():
             return config_directory
+
+    def get_input_config_file(self):
+        """
+        Return the ``scancode-config.yml`` file from the input/ directory if
+        available.
+        """
+        config_file = self.input_path / settings.SCANCODEIO_CONFIG_FILE
+        if config_file.exists():
+            return config_file
+
+    def get_settings_as_yml(self):
+        """Return the ``settings`` file content as yml, suitable for a config file."""
+        return saneyaml.dump(self.settings)
+
+    def get_env(self, field_name=None):
+        """
+        Return the project environment loaded from the ``.scancode/config.yml`` config
+        file, when available, and overriden by the ``settings`` model field.
+
+        ``field_name`` can be provided to get a single entry from the env.
+        """
+        env = {}
+
+        # 1. Load settings from config file when available.
+        if config_file := self.get_input_config_file():
+            with suppress(saneyaml.YAMLError):
+                env = saneyaml.load(config_file.read_text())
+
+        # 2. Update with values from the Project ``settings`` field.
+        env.update(self.settings)
+
+        if field_name:
+            return env.get(field_name)
+
+        return env
 
     def clear_tmp_directory(self):
         """
@@ -1419,6 +1460,18 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
+def posix_regex_to_django_regex_lookup(regex_pattern):
+    """
+    Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
+    Django regex lookup.
+    """
+    escaped_pattern = re.escape(regex_pattern)
+    escaped_pattern = escaped_pattern.replace(r"\*", ".*")  # Replace \* with .*
+    escaped_pattern = escaped_pattern.replace(r"\?", ".")  # Replace \? with .
+    escaped_pattern = f"^{escaped_pattern}$"  # Add start and end anchors
+    return escaped_pattern
+
+
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def prefetch_for_serializer(self):
         """
@@ -1504,6 +1557,10 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_value(self, field_name):
         """Resources that have a value for provided `field_name`."""
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
+
+    def path_pattern(self, pattern):
+        """Resources with a path that match the provided ``pattern``."""
+        return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
 
 
 class ScanFieldsModelMixin(models.Model):
@@ -1828,11 +1885,12 @@ class CodebaseResource(
         Return a list of path segment name along its subpath for this resource.
 
         Such as::
-        [
-            ('root', 'root'),
-            ('subpath', 'root/subpath'),
-            ('file.txt', 'root/subpath/file.txt'),
-        ]
+
+            [
+                ('root', 'root'),
+                ('subpath', 'root/subpath'),
+                ('file.txt', 'root/subpath/file.txt'),
+            ]
         """
         current_path = ""
         part_and_subpath = []

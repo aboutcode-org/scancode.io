@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.db.models import Q
-
 NO_STATUS = ""
 
 SCANNED = "scanned"
@@ -38,9 +36,7 @@ NOT_ANALYZED = "not-analyzed"
 IGNORED_WHITEOUT = "ignored-whiteout"
 IGNORED_EMPTY_FILE = "ignored-empty-file"
 IGNORED_DIRECTORY = "ignored-directory"
-IGNORED_FILENAME = "ignored-filename"
-IGNORED_EXTENSION = "ignored-extension"
-IGNORED_PATH = "ignored-path"
+IGNORED_PATTERN = "ignored-pattern"
 IGNORED_MEDIA_FILE = "ignored-media-file"
 IGNORED_NOT_INTERESTING = "ignored-not-interesting"
 IGNORED_DEFAULT_IGNORES = "ignored-default-ignores"
@@ -54,34 +50,8 @@ MATCHED_TO_PURLDB = "matched-to-purldb"
 TOO_MANY_MAPS = "too-many-maps"
 NO_JAVA_SOURCE = "no-java-source"
 
-RESOURCE_STATUSES = [
-    SCANNED,
-    SCANNED_WITH_ERROR,
-    SYSTEM_PACKAGE,
-    APPLICATION_PACKAGE,
-    INSTALLED_PACKAGE,
-    NO_LICENSES,
-    UNKNOWN_LICENSE,
-    NOT_ANALYZED,
-    IGNORED_WHITEOUT,
-    IGNORED_EMPTY_FILE,
-    IGNORED_FILENAME,
-    IGNORED_EXTENSION,
-    IGNORED_PATH,
-    IGNORED_MEDIA_FILE,
-    IGNORED_NOT_INTERESTING,
-    IGNORED_DEFAULT_IGNORES,
-    IGNORED_DATA_FILE_NO_CLUES,
-    COMPLIANCE_LICENSES,
-    COMPLIANCE_SOURCEMIRROR,
-    MAPPED,
-    MATCHED_TO_PURLDB,
-    TOO_MANY_MAPS,
-    NO_JAVA_SOURCE,
-]
 
-
-def flag_empty_codebase_resources(project):
+def flag_empty_files(project):
     """Flag empty files as ignored."""
     qs = (
         project.codebaseresources.files()
@@ -97,26 +67,17 @@ def flag_ignored_directories(project):
     return qs.update(status=IGNORED_DIRECTORY)
 
 
-def flag_ignored_filenames(project, filenames):
-    """Flag codebase resource as `ignored` status from list of `filenames`."""
-    qs = project.codebaseresources.no_status().filter(name__in=filenames)
-    return qs.update(status=IGNORED_FILENAME)
+def flag_ignored_patterns(project, patterns):
+    """Flag codebase resource as ``ignored`` status from list of ``patterns``."""
+    if isinstance(patterns, str):
+        patterns = patterns.splitlines()
 
+    update_count = 0
+    for pattern in patterns:
+        qs = project.codebaseresources.no_status().path_pattern(pattern)
+        update_count += qs.update(status=IGNORED_PATTERN)
 
-def flag_ignored_extensions(project, extensions):
-    """Flag codebase resource as `ignored` status from list of `extensions`."""
-    qs = project.codebaseresources.no_status().filter(extension__in=extensions)
-    return qs.update(status=IGNORED_EXTENSION)
-
-
-def flag_ignored_paths(project, paths):
-    """Flag codebase resource as `ignored` status from list of `paths`."""
-    lookups = Q()
-    for path in paths:
-        lookups |= Q(path__contains=path)
-
-    qs = project.codebaseresources.no_status().filter(lookups)
-    return qs.update(status=IGNORED_PATH)
+    return update_count
 
 
 def analyze_scanned_files(project):
@@ -126,7 +87,7 @@ def analyze_scanned_files(project):
     scanned_files.unknown_license().update(status=UNKNOWN_LICENSE)
 
 
-def tag_not_analyzed_codebase_resources(project):
+def flag_not_analyzed_codebase_resources(project):
     """Flag codebase resource as `not-analyzed`."""
     return project.codebaseresources.no_status().update(status=NOT_ANALYZED)
 

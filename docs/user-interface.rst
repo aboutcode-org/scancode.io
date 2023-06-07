@@ -95,8 +95,31 @@ the pipeline execution, or download the output files.
     Please refer to the :ref:`output_files` page for more details about your
     scan results.
 
+.. _user_interface_project_settings:
+
+Project Settings
+----------------
+
+The project settings form provides a convenient interface for editing essential project
+details and adding relevant notes. With this form, you have the ability to modify the
+project name, as well as include any additional notes you deem necessary.
+
+In addition to managing project information, the form also offers configuration options
+that are related to the extraction process.
+You can specify a list of items to be ignored during pipeline execution,
+ensuring that only relevant content is considered.
+Furthermore, you have the option to customize the attribution template according to
+your specific requirements.
+
+
+.. tip::
+    Our documentation is treated like code. Make sure to check our
+    `writing guidelines <https://scancode-toolkit.readthedocs.io/en/latest/contribute/contrib_doc.html>`_
+    to help guide new users.
+
+
 Archive a Project
------------------
+^^^^^^^^^^^^^^^^^
 
 After a project is complete, you may want to archive it to prevent any further
 modification to that project.
@@ -114,36 +137,27 @@ operation.
 .. note::
     A project cannot be archived if one of its related run is queued or already running.
 
-.. image:: images/user-interface-archive-action.png
-   :width: 300
-
 .. image:: images/user-interface-archive-modal.png
    :width: 500
 
 Reset a Project
----------------
+^^^^^^^^^^^^^^^
 
 The reset allows to **wipe all database entries and all data on disks** related to a
 project while keeping the :guilabel:`input/` files.
 It can be used to re-run pipelines on a clean slate of the project without having to
 re-upload input files.
 
-.. image:: images/user-interface-reset-action.png
-   :width: 300
-
 .. image:: images/user-interface-reset-modal.png
    :width: 500
 
 Delete a Project
-----------------
+^^^^^^^^^^^^^^^^
 
 If any of your projects is no longer needed, you can delete it from the
 project's details page. Deleting old projects also makes navigating existing
 projects easier. Simply to delete any project, click on the trash icon under
 the project's name.
-
-.. image:: images/user-interface-delete-action.png
-   :width: 300
 
 .. warning::
     Projects get permanently deleted and cannot be restored.

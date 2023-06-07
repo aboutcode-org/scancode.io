@@ -47,6 +47,7 @@ from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
+from django.views.generic.edit import UpdateView
 
 import saneyaml
 import xlsxwriter
@@ -65,6 +66,7 @@ from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
+from scanpipe.forms import ProjectSettingsForm
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -608,6 +610,38 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
             messages.error(request, error_message)
 
         return redirect(project)
+
+
+class ProjectSettingsView(ConditionalLoginRequired, ProjectViewMixin, UpdateView):
+    template_name = "scanpipe/project_settings.html"
+
+    form_class = ProjectSettingsForm
+    success_message = 'The project "{}" settings have been updated.'
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        project = self.get_object()
+        messages.success(self.request, self.success_message.format(project))
+        return response
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("download"):
+            return self.download_config_file(project=self.get_object())
+        return super().get(request, *args, **kwargs)
+
+    @staticmethod
+    def download_config_file(project):
+        """
+        Download the ``scancode-config.yml`` config file generated from the current
+        project settings.
+        """
+        response = FileResponse(
+            streaming_content=project.get_settings_as_yml(),
+            content_type="application/x-yaml",
+        )
+        filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):

@@ -32,7 +32,7 @@ from scanpipe.pipes import windows
 class ScanPipeWindowsPipesTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
 
-    def test_scanpipe_pipes_windows_tag_uninteresting_windows_codebase_resources(self):
+    def test_scanpipe_pipes_windows_flag_uninteresting_windows_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(
             project=p1,
@@ -58,7 +58,7 @@ class ScanPipeWindowsPipesTest(TestCase):
             extension=".txt",
         )
 
-        windows.tag_uninteresting_windows_codebase_resources(p1)
+        windows.flag_uninteresting_windows_codebase_resources(p1)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         resource3.refresh_from_db()
@@ -68,7 +68,7 @@ class ScanPipeWindowsPipesTest(TestCase):
         self.assertEqual("ignored-not-interesting", resource3.status)
         self.assertEqual("", resource4.status)
 
-    def test_scanpipe_pipes_windows_tag_known_software(self):
+    def test_scanpipe_pipes_windows_flag_known_software(self):
         p1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(
             project=p1,
@@ -171,7 +171,7 @@ class ScanPipeWindowsPipesTest(TestCase):
             rootfs_path="/Program Files/something-else/jdk/readme.txt",
         )
 
-        windows.tag_known_software(p1)
+        windows.flag_known_software(p1)
         resource11.refresh_from_db()
         resource12.refresh_from_db()
         resource13.refresh_from_db()
@@ -214,7 +214,7 @@ class ScanPipeWindowsPipesTest(TestCase):
         self.assertEqual("installed-package", resource19.status)
         self.assertEqual("", resource20.status)
 
-    def test_scanpipe_pipes_windows_tag_program_files(self):
+    def test_scanpipe_pipes_windows_flag_program_files(self):
         p1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(
             project=p1,
@@ -246,7 +246,7 @@ class ScanPipeWindowsPipesTest(TestCase):
             path="root/Files/Program Files/common files/sample.dat",
             rootfs_path="/Files/Program Files/common files/sample.dat",
         )
-        windows.tag_program_files(p1)
+        windows.flag_program_files(p1)
         resource1.refresh_from_db()
         resource2.refresh_from_db()
         resource3.refresh_from_db()

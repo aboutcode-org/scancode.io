@@ -38,15 +38,6 @@ from scanpipe.pipes import scancode
 FROM = "from/"
 TO = "to/"
 
-IGNORED_FILENAMES = (
-    ".DS_Store",
-    "packageinfo",
-    "package-info.java",
-    "package-info.class",
-)
-IGNORED_EXTENSIONS = ()
-IGNORED_PATHS = ("gradleTest/",)
-
 
 def get_inputs(project):
     """Locate the ``from`` and ``to`` archives in project inputs directory."""

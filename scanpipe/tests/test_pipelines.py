@@ -30,6 +30,7 @@ from unittest import expectedFailure
 from unittest import mock
 from unittest import skipIf
 
+from django.conf import settings
 from django.test import TestCase
 from django.test import tag
 
@@ -199,6 +200,36 @@ class ScanPipePipelinesTest(TestCase):
         )
         self.assertEqual(expected, str(caught_warning.message))
 
+    def test_scanpipe_pipelines_class_env_loaded_from_config_file(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({}, pipeline.env)
+
+        config_file = project1.input_path / settings.SCANCODEIO_CONFIG_FILE
+        config_file.write_text("{*this is not valid yml*}")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({}, pipeline.env)
+
+        config_file.write_text("extract_recursively: true")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({"extract_recursively": True}, pipeline.env)
+
+    def test_scanpipe_pipelines_class_flag_ignored_resources(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        self.assertIsNone(pipeline.env.get("ignored_patterns"))
+
+        project1.settings.update({"ignored_patterns": "*.ext"})
+        project1.save()
+        pipeline = run.make_pipeline_instance()
+
+        with mock.patch("scanpipe.pipes.flag.flag_ignored_patterns") as mock_flag:
+            mock_flag.return_value = None
+            pipeline.flag_ignored_resources()
+        mock_flag.assert_called_with(project1, patterns="*.ext")
+
 
 class RootFSPipelineTest(TestCase):
     def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
@@ -260,6 +291,8 @@ class PipelinesIntegrationTest(TestCase):
         "file_type",
         # mime type is inconsistent across systems
         "mime_type",
+        "notes",
+        "settings",
     ]
 
     def _without_keys(self, data, exclude_keys):
