@@ -665,6 +665,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         if config_file.exists():
             return config_file
 
+    def get_settings_as_yml(self):
+        """Return the ``settings`` file content as yml, suitable for a config file."""
+        return saneyaml.dump(self.settings)
+
     def get_env(self, field_name=None):
         """
         Return the project environment loaded from the ``.scancode/config.yml`` config

@@ -510,11 +510,22 @@ class ScanPipeModelsTest(TestCase):
 
     def test_scanpipe_project_get_input_config_file(self):
         self.assertIsNone(self.project1.get_input_config_file())
-        self.assertIsNone(self.project1.get_input_config_file())
         config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
         config_file.touch()
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
+
+    def test_scanpipe_project_get_settings_as_yml(self):
+        self.assertEqual("{}\n", self.project1.get_settings_as_yml())
+
+        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        config_file = copy_input(test_config_file, self.project1.input_path)
+        env_from_test_config = self.project1.get_env().copy()
+        self.project1.settings = env_from_test_config
+        self.project1.save()
+
+        config_file.write_text(self.project1.get_settings_as_yml())
+        self.assertEqual(env_from_test_config, self.project1.get_env())
 
     def test_scanpipe_project_get_env(self):
         self.assertEqual({}, self.project1.get_env())

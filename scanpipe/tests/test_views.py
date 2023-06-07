@@ -456,6 +456,15 @@ class ScanPipeViewsTest(TestCase):
         expected_error = "<li>Project with this Name already exists.</li>"
         self.assertContains(response, expected_error)
 
+    def test_scanpipe_views_project_settings_view_download_config_file(self):
+        url = reverse("project_settings", args=[self.project1.uuid])
+        self.project1.settings = {"extract_recursively": False}
+        self.project1.save()
+
+        response = self.client.get(url, data={"download": 1})
+        self.assertEqual(b"extract_recursively: no\n", response.getvalue())
+        self.assertEqual("application/x-yaml", response.headers["Content-Type"])
+
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
         run = self.project1.add_pipeline("docker")

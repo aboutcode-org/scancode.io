@@ -21,7 +21,7 @@ v33.0.0 (unreleased)
   https://github.com/nexB/scancode.io/issues/659
 
 - Add ability to configure a Project through a new "Settings" form in the UI or by
-  providing a ".scancode/config.yml" configuration file in the inputs codebase.
+  providing a ".scancode-config.yml" configuration file as one of the Project inputs.
   The "Settings" form allows to rename a Project, add and edit the notes, as well
   as providing a list of patterns to be ignored during pipeline runs, the choice of
   extracting archives recursively, and the ability to provide a custom template for

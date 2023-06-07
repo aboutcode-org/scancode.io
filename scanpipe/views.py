@@ -636,7 +636,7 @@ class ProjectSettingsView(ConditionalLoginRequired, ProjectViewMixin, UpdateView
         project settings.
         """
         response = FileResponse(
-            streaming_content=saneyaml.dump(project.settings),
+            streaming_content=project.get_settings_as_yml(),
             content_type="application/x-yaml",
         )
         filename = output.safe_filename(settings.SCANCODEIO_CONFIG_FILE)

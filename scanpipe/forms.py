@@ -179,6 +179,31 @@ class ArchiveProjectForm(forms.Form):
     )
 
 
+class ListTextarea(forms.CharField):
+    """
+    A Django form field that displays as a textarea and converts each line of input
+    into a list of items.
+
+    This field extends the `CharField` and uses the `Textarea` widget to display the
+    input as a textarea.
+    Each line of the textarea input is split into items, removing leading/trailing
+    whitespace and empty lines.
+    The resulting list of items is then stored as the field value.
+    """
+
+    widget = forms.Textarea
+
+    def to_python(self, value):
+        """Split the textarea input into lines and remove empty lines."""
+        return [line.strip() for line in value.splitlines() if line.strip()]
+
+    def prepare_value(self, value):
+        """Join the list items into a string with newlines."""
+        if value is not None:
+            value = "\n".join(value)
+        return value
+
+
 class ProjectSettingsForm(forms.ModelForm):
     settings_fields = [
         "extract_recursively",
@@ -192,7 +217,7 @@ class ProjectSettingsForm(forms.ModelForm):
         help_text="Extract nested archives-in-archives recursively",
         widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
     )
-    ignored_patterns = forms.CharField(
+    ignored_patterns = ListTextarea(
         label="Ignored patterns",
         required=False,
         help_text="Provide one or more path patterns to be ignored, one per line.",
