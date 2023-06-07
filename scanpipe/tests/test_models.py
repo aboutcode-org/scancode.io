@@ -508,23 +508,19 @@ class ScanPipeModelsTest(TestCase):
         config_directory = str(self.project1.get_codebase_config_directory())
         self.assertTrue(config_directory.endswith("codebase/.scancode"))
 
-    def test_scanpipe_project_get_codebase_config_file(self):
-        self.assertIsNone(self.project1.get_codebase_config_file())
-        config_directory = self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR
-        config_directory.mkdir()
-        self.assertIsNone(self.project1.get_codebase_config_file())
-        config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
+    def test_scanpipe_project_get_input_config_file(self):
+        self.assertIsNone(self.project1.get_input_config_file())
+        self.assertIsNone(self.project1.get_input_config_file())
+        config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
         config_file.touch()
-        config_file_location = str(self.project1.get_codebase_config_file())
-        self.assertTrue(config_file_location.endswith("codebase/.scancode/config.yml"))
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
 
     def test_scanpipe_project_get_env(self):
         self.assertEqual({}, self.project1.get_env())
 
-        test_config_file = self.data_location / "dot_scancode" / "config.yml"
-        config_directory = self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR
-        config_directory.mkdir()
-        copy_input(test_config_file, config_directory)
+        test_config_file = self.data_location / "settings" / "scancode-config.yml"
+        copy_input(test_config_file, self.project1.input_path)
 
         expected = {
             "ignored_patterns": ["*.img", "docs/*", "*/tests/*"],
@@ -542,14 +538,11 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, self.project1.get_env())
 
     def test_scanpipe_project_get_env_invalid_yml_content(self):
-        config_directory = self.project1.codebase_path / settings.SCANCODEIO_CONFIG_DIR
-        config_directory.mkdir()
-        config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
-        config_file.touch()
+        config_file = self.project1.input_path / settings.SCANCODEIO_CONFIG_FILE
         config_file.write_text("{*this is not valid yml*}")
 
-        config_file_location = str(self.project1.get_codebase_config_file())
-        self.assertTrue(config_file_location.endswith("codebase/.scancode/config.yml"))
+        config_file_location = str(self.project1.get_input_config_file())
+        self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
         self.assertEqual({}, self.project1.get_env())
 
     def test_scanpipe_model_update_mixin(self):

@@ -30,6 +30,7 @@ from unittest import expectedFailure
 from unittest import mock
 from unittest import skipIf
 
+from django.conf import settings
 from django.test import TestCase
 from django.test import tag
 
@@ -198,6 +199,21 @@ class ScanPipePipelinesTest(TestCase):
             f"Use a ``steps(cls)`` classmethod instead."
         )
         self.assertEqual(expected, str(caught_warning.message))
+
+    def test_scanpipe_pipelines_class_env_loaded_from_config_file(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({}, pipeline.env)
+
+        config_file = project1.input_path / settings.SCANCODEIO_CONFIG_FILE
+        config_file.write_text("{*this is not valid yml*}")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({}, pipeline.env)
+
+        config_file.write_text("extract_recursively: true")
+        pipeline = run.make_pipeline_instance()
+        self.assertEqual({"extract_recursively": True}, pipeline.env)
 
     def test_scanpipe_pipelines_class_flag_ignored_resources(self):
         project1 = Project.objects.create(name="Analysis")

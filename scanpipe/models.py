@@ -656,12 +656,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         if config_directory.exists():
             return config_directory
 
-    def get_codebase_config_file(self):
-        """Return the ``.scancode/config.yml`` file if available."""
-        if config_directory := self.get_codebase_config_directory():
-            config_file = config_directory / settings.SCANCODEIO_CONFIG_FILE
-            if config_file.exists():
-                return config_file
+    def get_input_config_file(self):
+        """
+        Return the ``scancode-config.yml`` file from the input/ directory if
+        available.
+        """
+        config_file = self.input_path / settings.SCANCODEIO_CONFIG_FILE
+        if config_file.exists():
+            return config_file
 
     def get_env(self, field_name=None):
         """
@@ -673,7 +675,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         env = {}
 
         # 1. Load settings from config file when available.
-        if config_file := self.get_codebase_config_file():
+        if config_file := self.get_input_config_file():
             with suppress(saneyaml.YAMLError):
                 env = saneyaml.load(config_file.read_text())
 
