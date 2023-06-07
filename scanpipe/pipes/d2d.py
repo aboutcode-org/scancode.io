@@ -391,13 +391,6 @@ def map_jar_to_source(project, logger=None):
         _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
 
 
-def flag_to_meta_inf_files(project):
-    """Flag all ``META-INF/*`` file of the ``to/`` directory as ignored."""
-    to_resources = project.codebaseresources.files().to_codebase()
-    meta_inf_files = to_resources.filter(path__contains="META-INF/")
-    meta_inf_files.no_status().update(status=flag.IGNORED_META_INF)
-
-
 def _map_path_resource(
     to_resource, from_resources, from_resources_index, diff_ratio_threshold=0.7
 ):
