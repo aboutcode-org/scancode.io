@@ -586,10 +586,7 @@ def match_purldb_directories(project, logger=None):
         # update their status
         resource.status = flag.MATCHED_TO_PURLDB
         resource.save()
-        q = Q()
-        for resource in resource.walk():
-            q |= Q(path=resource.path)
-        resources_qs = project.codebaseresources.filter(q)
+        resources_qs = resource.descendants()
         resources_qs.update(status=flag.MATCHED_TO_PURLDB)
         package.add_resources(resources_qs)
 
