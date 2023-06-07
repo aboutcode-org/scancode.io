@@ -292,6 +292,7 @@ class PipelinesIntegrationTest(TestCase):
         # mime type is inconsistent across systems
         "mime_type",
         "notes",
+        "settings",
     ]
 
     def _without_keys(self, data, exclude_keys):

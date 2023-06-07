@@ -130,6 +130,7 @@ class ProjectSerializer(
             "created_date",
             "is_archived",
             "notes",
+            "settings",
             "pipeline",
             "execute_now",
             "input_sources",
@@ -150,6 +151,7 @@ class ProjectSerializer(
         )
 
         exclude_from_list_view = [
+            "settings",
             "input_root",
             "output_root",
             "extra_data",
@@ -404,7 +406,7 @@ def get_model_serializer(model_class):
 def get_serializer_fields(model_class):
     """
     Return a list of fields declared on the Serializer that are related to the
-    a given `model_class`.
+    given `model_class`.
     """
     serializer = get_model_serializer(model_class)
     fields = list(serializer().get_fields().keys())

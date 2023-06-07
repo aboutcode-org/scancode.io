@@ -123,10 +123,8 @@ function setupTextarea() {
   }
 
   $dynamicTextareas.forEach(function ($el) {
-    setHeight($el);
-    $el.oninput = () => {
-      setHeight($el);
-    }
+    $el.oninput = () => { setHeight($el); }
+    $el.onfocus = () => { setHeight($el); }
   });
 }
 

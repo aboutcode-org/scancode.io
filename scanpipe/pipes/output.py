@@ -223,6 +223,7 @@ class JSONResultsGenerator:
             "uuid": project.uuid,
             "created_date": project.created_date,
             "notes": project.notes,
+            "settings": project.settings,
             "input_sources": project.input_sources_list,
             "runs": runs.data,
             "extra_data": project.extra_data,
