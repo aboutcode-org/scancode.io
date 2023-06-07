@@ -41,6 +41,7 @@ you’ll find information on:
     built-in-pipelines
     custom-pipelines
     scanpipe-pipes
+    project-configuration
     data-models
     output-files
     command-line-interface

@@ -111,6 +111,13 @@ ensuring that only relevant content is considered.
 Furthermore, you have the option to customize the attribution template according to
 your specific requirements.
 
+
+.. tip::
+    Our documentation is treated like code. Make sure to check our
+    `writing guidelines <https://scancode-toolkit.readthedocs.io/en/latest/contribute/contrib_doc.html>`_
+    to help guide new users.
+
+
 Archive a Project
 ^^^^^^^^^^^^^^^^^
 
