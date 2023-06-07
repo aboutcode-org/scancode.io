@@ -20,38 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import json
-from io import StringIO
-
-from commoncode.resource import VirtualCodebase
 from matchcode_toolkit.fingerprinting import compute_directory_fingerprints
 
-from scanpipe.pipes.output import JSONResultsGenerator
 
-
-def get_virtual_codebase(project):
-    """
-    Return the codebase from `project` as a VirtualCodebase
-    """
-    # Collect project JSON results into a buffer
-    buf = StringIO()
-    results_generator = JSONResultsGenerator(project)
-    for chunk in results_generator:
-        buf.write(chunk)
-
-    # Rewind buffer, load contents as JSON, and return as VirtualCodebase
-    buf.seek(0)
-    json_scan = json.load(buf)
-    return VirtualCodebase(location=json_scan)
-
-
-def fingerprint_codebase_directories(project):
+def fingerprint_codebase_directories(project, virtual_codebase):
     """
     Compute directory fingerprints for matching purposes
     """
-    # Load project into a VirtualCodebase and compute directory fingerprints in
-    # memory
-    virtual_codebase = get_virtual_codebase(project)
+    # Compute directory fingerprints in memory
     compute_directory_fingerprints(virtual_codebase)
 
     # Bulk update Directories with new fingerprints.
