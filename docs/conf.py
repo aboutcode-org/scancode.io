@@ -29,6 +29,7 @@ author = "nexB Inc."
 extensions = [
     "sphinx.ext.autodoc",
     "sphinxcontrib_django",
+    "sphinx_rtd_dark_mode",  # For the Dark Mode
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -72,3 +73,6 @@ html_theme = "sphinx_rtd_theme"
 # html_static_path = ["_static"]
 
 master_doc = "index"
+
+# user starts in light mode (Default Mode)
+default_dark_mode = False
