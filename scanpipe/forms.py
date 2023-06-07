@@ -195,7 +195,8 @@ class ListTextarea(forms.CharField):
 
     def to_python(self, value):
         """Split the textarea input into lines and remove empty lines."""
-        return [line.strip() for line in value.splitlines() if line.strip()]
+        if value:
+            return [line.strip() for line in value.splitlines() if line.strip()]
 
     def prepare_value(self, value):
         """Join the list items into a string with newlines."""

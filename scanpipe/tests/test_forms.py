@@ -106,7 +106,7 @@ class ScanPipeFormsTest(TestCase):
 
         expected = {
             "extract_recursively": False,
-            "ignored_patterns": "*.ext\ndir/*",
+            "ignored_patterns": ["*.ext", "dir/*"],
             "attribution_template": "",
         }
         self.assertEqual(expected, project.settings)
