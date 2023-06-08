@@ -2629,6 +2629,7 @@ class DiscoveredPackage(
             "primary_language",
             "download_url",
             "homepage_url",
+            "notice_text",
         ]
         properties = [
             cyclonedx_model.Property(

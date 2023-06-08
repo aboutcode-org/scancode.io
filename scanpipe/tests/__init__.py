@@ -127,7 +127,7 @@ package_data1 = {
     "declared_license_expression": "gpl-2.0 AND gpl-2.0-plus",
     "declared_license_expression_spdx": "GPL-2.0-only AND GPL-2.0-or-later",
     "extracted_license_statement": "",
-    "notice_text": None,
+    "notice_text": "Notice\nText",
     "root_path": None,
     "dependencies": [],
     "source_packages": [],

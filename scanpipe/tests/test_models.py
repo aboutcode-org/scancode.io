@@ -1557,20 +1557,21 @@ class ScanPipeModelsTest(TestCase):
             "notice_text": "NOTICE",
             "description": "new description",
             "unknown_field": "value",
+            "sha1": "sha1",
         }
         updated_fields = package.update_from_data(new_data)
-        self.assertEqual(["notice_text"], updated_fields)
+        self.assertEqual(["sha1"], updated_fields)
 
         package.refresh_from_db()
         # PURL field, not updated
         self.assertEqual(package_data1["name"], package.name)
         # Empty field, updated
-        self.assertEqual(new_data["notice_text"], package.notice_text)
+        self.assertEqual(new_data["sha1"], package.sha1)
         # Already a value, not updated
         self.assertEqual(package_data1["description"], package.description)
 
         updated_fields = package.update_from_data(new_data, override=True)
-        self.assertEqual(["description"], updated_fields)
+        self.assertEqual(["notice_text", "description"], updated_fields)
         self.assertEqual(new_data["description"], package.description)
 
     def test_scanpipe_discovered_package_get_declared_license_expression_spdx(self):
@@ -1655,6 +1656,7 @@ class ScanPipeModelsTest(TestCase):
             "aboutcode:filename": "package.zip",
             "aboutcode:homepage_url": "https://packages.debian.org",
             "aboutcode:primary_language": "bash",
+            "aboutcode:notice_text": "Notice\nText",
         }
         self.assertEqual(expected_properties, properties)
 

@@ -93,10 +93,10 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual(datetime.date(1999, 10, 10), package.release_date)
 
         updated_data = dict(package_data1)
-        updated_data["notice_text"] = "NOTICE"
+        updated_data["sha1"] = "123456789"
         updated_package = pipes.update_or_create_package(p1, updated_data)
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", updated_package.purl)
-        self.assertEqual("NOTICE", updated_package.notice_text)
+        self.assertEqual("123456789", updated_package.sha1)
         self.assertEqual(package.pk, updated_package.pk)
 
         resource1 = make_resource_file(project=p1, path="filename.ext")
