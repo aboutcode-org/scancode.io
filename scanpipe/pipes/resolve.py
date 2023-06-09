@@ -92,6 +92,9 @@ def resolve_about_package(input_location):
     if license_expression := about_data.get("license_expression"):
         package_data["declared_license_expression"] = license_expression
 
+    if notice_dict := about_data.get("notice_file"):
+        package_data["notice_text"] = list(notice_dict.values())[0]
+
     for field_name, value in about_data.items():
         if field_name.startswith("checksum_"):
             package_data[field_name.replace("checksum_", "")] = value
