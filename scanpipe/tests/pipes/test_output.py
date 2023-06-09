@@ -349,7 +349,8 @@ class ScanPipeOutputPipesTest(TestCase):
         )
         self.assertEqual(expected, data["expression_links"])
         expected = ["mit", "gpl-2.0"]
-        self.assertEqual(expected, [license.key for license in data["licenses"]])
+        licenses = [license.key for license in data["licenses"]]
+        self.assertEqual(sorted(expected), sorted(licenses))
 
     def test_scanpipe_pipes_outputs_to_attribution(self):
         project = Project.objects.create(name="Analysis")
