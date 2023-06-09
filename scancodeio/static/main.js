@@ -128,6 +128,20 @@ function setupTextarea() {
   });
 }
 
+// Highlights
+
+function setupHighlightControls() {
+    const $highlightShows = getAll(".is-more-show");
+
+    $highlightShows.forEach(function ($el) {
+      $el.addEventListener("click", function () {
+        let text = $el.querySelector("strong").textContent;
+        let newText = text === "Show all" ? "Hide" : "Show all";
+        $el.querySelector("strong").textContent = newText;
+        $el.parentNode.classList.toggle("is-more-clipped");
+      });
+    });
+  }
 
 // Utils, available globally
 
@@ -196,6 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupTabs();
   setupMenu();
   setupTextarea();
+  setupHighlightControls();
 
   // Close modals and dropdowns on pressing "escape" key
   document.addEventListener('keydown', function (event) {

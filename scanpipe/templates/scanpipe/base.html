@@ -36,8 +36,6 @@
       .is-black-link {color: #363636;}
       .is-grey-link {color: #7a7a7a;}
       .is-black-link:hover, .is-grey-link:hover {color: #3273dc; text-decoration: underline;}
-      #project-extra-data figure.highlight {max-height: 300px; overflow-y: scroll;}
-      #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap; word-break: break-all;}
       #inputs-panel .panel-block.dropdown:hover {background-color: #f5f5f5;}
       #inputs-panel .dropdown-menu {width: 85%;}
       a.panel-block {word-break: break-all;}
@@ -65,6 +63,11 @@
       .is-sticky {position: sticky;}
       .top-0 {top: 0;}
       textarea.is-dynamic {min-height: 70px;}
+      #project-extra-data figure.highlight {overflow-y: scroll;}
+      #project-extra-data .is-more-clipped figure.highlight {height: 250px;}
+      #project-extra-data .is-more {position: relative;}
+      #project-extra-data .is-more-show {bottom: -1.25em; height: 2.5em; left: calc(50% - 4.5em); padding: 0; position: absolute; width: 9em; z-index: 1; background-color: #ff9970; border: none; border-radius: 0.5em!important;}
+      #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap; word-break: break-all;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>
