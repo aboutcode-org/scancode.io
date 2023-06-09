@@ -47,6 +47,7 @@ class DeployToDevelop(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
+            cls.map_about_files,
             cls.map_checksum,
             cls.find_java_packages,
             cls.map_java_to_class,
@@ -102,6 +103,10 @@ class DeployToDevelop(Pipeline):
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
         d2d.collect_and_create_codebase_resources(self.project)
+
+    def map_about_files(self):
+        """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
+        d2d.map_about_files(project=self.project, logger=self.log)
 
     def map_checksum(self):
         """Map using SHA1 checksum."""
