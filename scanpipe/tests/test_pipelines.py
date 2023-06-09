@@ -889,6 +889,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
+        print([r.path for r in project1.codebaseresources.all()])
         self.assertEqual(36, project1.codebaseresources.count())
         self.assertEqual(31, project1.codebaserelations.count())
         self.assertEqual(1, project1.discoveredpackages.count())
