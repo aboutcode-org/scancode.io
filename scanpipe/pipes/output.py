@@ -698,6 +698,45 @@ def get_package_expression_symbols(parsed_expression):
     return license_symbols
 
 
+def get_package_data_for_attribution(package, licensing):
+    """
+    Convert the ``package`` instance into a dictionary of values to be available
+    during the attribution generation.
+    """
+    package_data = model_to_dict(package, exclude=["codebase_resources"])
+    package_data["package_url"] = package.package_url
+
+    if license_expression := package.declared_license_expression:
+        parsed = licensing.parse(license_expression)
+        license_symbols = get_package_expression_symbols(parsed)
+
+        package_licenses = [symbol.wrapped for symbol in set(license_symbols)]
+        package_data["licenses"] = package_licenses
+
+        expression_links = get_expression_as_attribution_links(parsed)
+        package_data["expression_links"] = expression_links
+
+    return package_data
+
+
+def get_unique_licenses(packages):
+    """
+    Replace by the following one-liner once this toolkit issues is fixed:
+    https://github.com/nexB/scancode-toolkit/issues/3425
+    licenses = set(license for package in packages for license in package["licenses"])
+    """
+    seen_license_keys = set()
+    licenses = []
+
+    for package in packages:
+        for license in package["licenses"]:
+            if license.key not in seen_license_keys:
+                seen_license_keys.add(license.key)
+                licenses.append(license)
+
+    return licenses
+
+
 def to_attribution(project):
     """
     Generate attribution for the provided ``project``.
@@ -713,28 +752,19 @@ def to_attribution(project):
     output_file = project.get_output_file_path("results", "attribution.html")
 
     project_data = model_to_dict(project, fields=["name", "notes", "created_date"])
-    package_qs = get_queryset(project, "discoveredpackage")
+
     licensing = get_licensing()
-    license_symbols = []
+    packages = [
+        get_package_data_for_attribution(package, licensing)
+        for package in get_queryset(project, "discoveredpackage")
+    ]
 
-    packages_data = []
-    for package in package_qs:
-        package_data = model_to_dict(package, exclude=["codebase_resources"])
-        package_data["package_url"] = package.package_url
-        if package.declared_license_expression:
-            parsed = licensing.parse(package.declared_license_expression)
-            license_symbols.extend(get_package_expression_symbols(parsed))
-            expression_links = get_expression_as_attribution_links(parsed)
-            package_data["expression_links"] = expression_links
-
-        packages_data.append(package_data)
-
-    licenses = [symbol.wrapped for symbol in set(license_symbols)]
-    licenses.sort(key=attrgetter("spdx_license_key"))
+    licenses = get_unique_licenses(packages)
+    licenses = sorted(licenses, key=attrgetter("spdx_license_key"))
 
     context = {
         "project": project_data,
-        "packages": packages_data,
+        "packages": packages,
         "licenses": licenses,
     }
 

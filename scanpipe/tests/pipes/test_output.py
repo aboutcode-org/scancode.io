@@ -334,6 +334,24 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_location = "codebase/.scancode/templates/attribution.html"
         self.assertTrue(template_location.endswith(expected_location))
 
+    def test_scanpipe_pipes_outputs_get_package_data_for_attribution(self):
+        project = Project.objects.create(name="Analysis")
+        package_data = dict(package_data1)
+        expression = "mit AND gpl-2.0 AND mit"
+        package_data["declared_license_expression"] = expression
+        package = pipes.update_or_create_package(project, package_data)
+
+        data = output.get_package_data_for_attribution(package, get_licensing())
+        self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", data["package_url"])
+        expected = (
+            '<a href="#license_gpl-2.0">GPL-2.0-only</a> '
+            'AND <a href="#license_mit">MIT</a>'
+        )
+        self.assertEqual(expected, data["expression_links"])
+        expected = ["mit", "gpl-2.0"]
+        licenses = [license.key for license in data["licenses"]]
+        self.assertEqual(sorted(expected), sorted(licenses))
+
     def test_scanpipe_pipes_outputs_to_attribution(self):
         project = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
