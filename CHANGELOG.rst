@@ -59,6 +59,9 @@ v33.0.0 (unreleased)
 - Add support for unknown licenses in attribution output.
   https://github.com/nexB/scancode.io/issues/749
 
+- Add ``License`` objects to each of the package for attribution generation.
+  https://github.com/nexB/scancode.io/issues/775
+
 - The "Codebase" panel can now be used to browse the Project's codebase/ directory
   and open related resources details view.
   https://github.com/nexB/scancode.io/issues/744
