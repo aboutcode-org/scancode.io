@@ -895,5 +895,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
+        print(json.loads(Path(result_file).read_text()))
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
