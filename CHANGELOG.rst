@@ -4,6 +4,9 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+v32.3.0 (2023-06-12)
+--------------------
+
 - Upgrade ScanCode-toolkit to latest v32.0.x
   Warning: This upgrade requires schema and data migrations (both included).
   It is recommended to reset and re-run the pipelines to benefit from the latest
