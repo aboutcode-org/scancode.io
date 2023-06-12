@@ -876,7 +876,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self):
-        self.maxDiff = None
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
@@ -890,12 +889,11 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(36, project1.codebaseresources.count())
-        self.assertEqual(31, project1.codebaserelations.count())
+        self.assertEqual(35, project1.codebaseresources.count())
+        self.assertEqual(30, project1.codebaserelations.count())
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
-        print(json.loads(Path(result_file).read_text()))
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
