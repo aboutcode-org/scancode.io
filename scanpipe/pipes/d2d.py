@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from contextlib import suppress
+from collections import defaultdict
 from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
@@ -494,7 +495,7 @@ def create_package_from_purldb_data(project, resource, package_data):
 
 def match_purldb_package(project, resource):
     """Match an archive type resource in the PurlDB."""
-    if results := purldb.match_package(sha1=resource.sha1):
+    if results := purldb.match_packages(sha1_list=[resource.sha1]):
         package_data = results[0]
         return create_package_from_purldb_data(project, resource, package_data)
 
@@ -505,7 +506,7 @@ def match_purldb_resource(project, resource):
     if resource.path.endswith(".map"):
         sha1_list.extend(js.source_content_sha1_list(resource))
 
-    if results := purldb.match_resource(sha1_list=sha1_list):
+    if results := purldb.match_resources(sha1_list=sha1_list):
         package_url = results[0]["package"]
         if package_data := purldb.request_get(url=package_url):
             return create_package_from_purldb_data(project, resource, package_data)
@@ -557,6 +558,83 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
         matched_package = matcher_func(project, to_resource)
         if matched_package:
             matched_count += 1
+
+    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
+
+
+def _process_purldb_sha1_matching(project, resources_by_sha1):
+    # Send stuff off to be requested
+    match_count = 0
+    sha1_list = list(resources_by_sha1.keys())
+    if results := purldb.match_resources(sha1_list=sha1_list):
+        # Process match results
+        resources_to_update = []
+        for result in results:
+            # get package
+            package_url = result["package"]
+            if package_data := purldb.request_get(url=package_url):
+                # get Resource
+                sha1 = result['sha1']
+                resources_for_sha1 = resources_by_sha1.get(sha1, [])
+                # get package from package_data
+                package_data = package_data.copy()
+                # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
+                # PurlDB match can be found in different projects.
+                package_data.pop("uuid", None)
+                package_data.pop("dependencies", None)
+                package = pipes.update_or_create_package(
+                    project=project,
+                    package_data=package_data,
+                )
+                for resource in resources_for_sha1:
+                    # assign package to resource
+                    resource.add_package(package)
+                    resource.status = flag.MATCHED_TO_PURLDB
+                    resources_to_update.append(resource)
+                    match_count += 1
+        project.codebaseresources.bulk_update(
+            objs=resources_to_update,
+            fields=[
+                "status",
+            ],
+            batch_size=1000,
+        )
+    return match_count
+
+
+def match_purldb_resources2(project, extensions, logger=None):
+    """Match resources in the PurlDB."""
+    to_resources = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .no_status()
+        .has_value("sha1")
+        .filter(extension__in=extensions)
+    )
+    resource_count = to_resources.count()
+
+    if logger:
+        extensions_str = ", ".join(extensions)
+        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    matched_count = 0
+    resources_by_sha1 = defaultdict(list)
+    for resource_index, to_resource in enumerate(resource_iterator, start=1):
+        if resource_index % 50 == 0:
+            # Send a request off for every 50 Resources iterated
+            matched_count += _process_purldb_sha1_matching(project, resources_by_sha1)
+            resources_by_sha1 = defaultdict(list)
+
+        resources_by_sha1[to_resource.sha1].append(to_resource)
+        if to_resource.path.endswith(".map"):
+            # Add sha1 of JS sources if we have a .map file
+            d = {sha1: to_resource for sha1 in js.source_content_sha1_list(to_resource)}
+            resources_by_sha1.update(d)
+
+    if resources_by_sha1:
+        # Match remaining sha1's
+        matched_count += _process_purldb_sha1_matching(project, resources_by_sha1)
 
     logger(f"{matched_count:,d} resource(s) matched in PurlDB")
 
