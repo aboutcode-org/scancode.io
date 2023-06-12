@@ -74,8 +74,8 @@ def resolve_pypi_packages(input_location):
     return inspector_output.packages
 
 
-def resolve_about_packages(input_location):
-    """Resolve the packages from the `input_location` .ABOUT file."""
+def resolve_about_package(input_location):
+    """Resolve the package from the ``input_location`` .ABOUT file."""
     about = About(location=input_location)
     about_data = about.as_dict()
     package_data = about_data.copy()
@@ -92,12 +92,23 @@ def resolve_about_packages(input_location):
     if license_expression := about_data.get("license_expression"):
         package_data["declared_license_expression"] = license_expression
 
+    if notice_dict := about_data.get("notice_file"):
+        package_data["notice_text"] = list(notice_dict.values())[0]
+
     for field_name, value in about_data.items():
         if field_name.startswith("checksum_"):
             package_data[field_name.replace("checksum_", "")] = value
 
     package_data = DiscoveredPackage.clean_data(package_data)
-    return [package_data]
+    return package_data
+
+
+def resolve_about_packages(input_location):
+    """
+    Wrap ``resolve_about_package`` to return a list as expected by the
+    InspectManifest pipeline.
+    """
+    return [resolve_about_package(input_location)]
 
 
 def convert_spdx_expression(license_expression_spdx):

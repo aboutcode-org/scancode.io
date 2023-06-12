@@ -34,6 +34,9 @@ v33.0.0 (unreleased)
   using the a new ``--notes`` option.
   https://github.com/nexB/scancode.io/issues/709
 
+- Add a mapper function to relate .ABOUT files during the d2d pipeline.
+  https://github.com/nexB/scancode.io/issues/740
+
 - Enhance the file viewer UI of the resource details view.
   A new search for the file content was added.
   Also, it is now possible to expand the file viewer in full screen mode.

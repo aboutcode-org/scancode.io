@@ -874,3 +874,26 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = self.data_location / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
+
+    def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self):
+        pipeline_name = "deploy_to_develop"
+        project1 = Project.objects.create(name="Analysis")
+
+        data_dir = self.data_location / "d2d" / "about_files"
+        project1.copy_input_from(data_dir / "from-with-about-file.zip")
+        project1.copy_input_from(data_dir / "to-with-jar.zip")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(35, project1.codebaseresources.count())
+        self.assertEqual(30, project1.codebaserelations.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
+
+        result_file = output.to_json(project1)
+        expected_file = data_dir / "expected.json"
+        self.assertPipelineResultEqual(expected_file, result_file)

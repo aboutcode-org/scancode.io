@@ -33,6 +33,7 @@ from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
+from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
 
 FROM = "from/"
@@ -606,3 +607,52 @@ def _map_javascript_resource(
                 extra_data=extra_data,
             )
             resource.update(status=flag.MAPPED)
+
+
+def _map_about_file_resource(project, about_file_resource, to_resources):
+    about_file_location = str(about_file_resource.location_path)
+    package_data = resolve.resolve_about_package(about_file_location)
+    if not package_data:
+        return
+
+    filename = package_data.get("filename")
+    if not filename:
+        # Cannot map anything without the about_resource value.
+        return
+
+    # Fetch all resources that are covered by the .ABOUT file.
+    codebase_resources = to_resources.filter(path__contains=f"/{filename.lstrip('/')}")
+    if not codebase_resources:
+        # If there's nothing to map on the ``to/`` do not create the package.
+        return
+
+    # Create the Package using .ABOUT data and assigned related codebase_resources
+    pipes.update_or_create_package(project, package_data, codebase_resources)
+
+    # Map the .ABOUT file resource to all related resources in the ``to/`` side.
+    for to_resource in codebase_resources:
+        pipes.make_relation(
+            from_resource=about_file_resource,
+            to_resource=to_resource,
+            map_type="about_file",
+        )
+
+    codebase_resources.update(status=flag.MAPPED)
+    about_file_resource.update(status=flag.MAPPED)
+
+
+def map_about_files(project, logger=None):
+    """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
+    project_resources = project.codebaseresources
+    from_files = project_resources.files().from_codebase()
+    from_about_files = from_files.filter(extension=".ABOUT")
+    to_resources = project_resources.to_codebase()
+
+    if logger:
+        logger(
+            f"Mapping {from_about_files.count():,d} .ABOUT files found in the from/ "
+            f"codebase."
+        )
+
+    for about_file_resource in from_about_files:
+        _map_about_file_resource(project, about_file_resource, to_resources)

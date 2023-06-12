@@ -287,6 +287,7 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
             ("none", "No map"),
             ("any", "Any map"),
             ("many", "Many map"),
+            ("about_file", "about file"),
             ("java_to_class", "java to class"),
             ("jar_to_source", "jar to source"),
             ("js_compiled", "js compiled"),
