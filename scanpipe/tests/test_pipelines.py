@@ -876,6 +876,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self):
+        self.maxDiff = None
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
