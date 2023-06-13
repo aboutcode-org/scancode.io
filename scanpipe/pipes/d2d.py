@@ -542,7 +542,7 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
     """
     to_resources = (
         project.codebaseresources.files()
-        .to_codebase()
+        # .to_codebase()
         .no_status()
         .has_value("sha1")
         .filter(extension__in=extensions)
