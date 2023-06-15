@@ -656,3 +656,72 @@ def map_about_files(project, logger=None):
 
     for about_file_resource in from_about_files:
         _map_about_file_resource(project, about_file_resource, to_resources)
+
+
+def map_javascript_post_purldb_match(project, logger=None):
+    """Map minified javascript file based on existing PurlDB match."""
+    project_files = project.codebaseresources.files()
+
+    to_resources = project_files.to_codebase()
+
+    to_resources_dot_map = to_resources.filter(status="matched-to-purldb").filter(
+        extension=".map"
+    )
+
+    to_resources_minified = to_resources.no_status().filter(
+        extension__in=[".css", ".js"]
+    )
+
+    to_resources_minified_count = to_resources_minified.count()
+    if logger:
+        logger(
+            f"Mapping {to_resources_minified_count:,d} minified .js and .css "
+            f"resources based on existing PurlDB match"
+        )
+
+    to_resources_dot_map_index = pathmap.build_index(
+        to_resources_dot_map.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_resources_minified.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_minified in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            to_resources_minified_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _map_javascript_post_purldb_match_resource(
+            to_minified, to_resources_dot_map, to_resources_dot_map_index
+        )
+
+
+def _map_javascript_post_purldb_match_resource(
+    to_minified, to_resources_dot_map, to_resources_dot_map_index
+):
+    path = Path(to_minified.path.lstrip("/"))
+    map_file_name = f"{path.name}.map"
+    map_file_path = path.parent / map_file_name
+
+    if not js.is_source_mapping_in_minified(to_minified, map_file_name):
+        return
+
+    prospect = pathmap.find_paths(str(map_file_path), to_resources_dot_map_index)
+    if not prospect:
+        return
+
+    # Only create relations when the number of matches is inferior or equal to
+    # the current number of path segment matched.
+    too_many_prospects = len(prospect.resource_ids) > prospect.matched_path_length
+    if too_many_prospects:
+        return
+
+    map_file = to_resources_dot_map.get(id=prospect.resource_ids[0])
+
+    if package := map_file.discovered_packages.first():
+        package.add_resources([to_minified])
+        to_minified.update(status=flag.MAPPED)
