@@ -106,12 +106,12 @@ def collect_response_results(response, timeout=None):
     results = []
     if response and response.get("count"):
         results.extend(response["results"])
-        next_page = response.get('next')
+        next_page = response.get("next")
         while next_page:
             response = request_get(url=next_page, timeout=timeout)
             if response and response.get("count"):
                 results.extend(response["results"])
-            next_page = response.get('next')
+            next_page = response.get("next")
     return results
 
 
