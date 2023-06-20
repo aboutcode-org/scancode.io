@@ -641,10 +641,13 @@ def match_purldb_resources2(project, extensions, matcher_func, logger=None):
         logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
     matched_count = 0
     resources_by_sha1 = defaultdict(list)
     package_data_by_purldb_urls = {}
-    for to_resource in resource_iterator:
+
+    for resource_index, to_resource in enumerate(resource_iterator):
         if resources_by_sha1 and len(resources_by_sha1) % 85 == 0:
             # Send a request off for every 85th sha1 collected
             # This is to avoid the 4094 byte limit on requests to purldb
@@ -654,6 +657,14 @@ def match_purldb_resources2(project, extensions, matcher_func, logger=None):
                 package_data_by_purldb_urls=package_data_by_purldb_urls,
             )
             resources_by_sha1 = defaultdict(list)
+            last_percent = pipes.log_progress(
+                logger,
+                resource_index,
+                resource_count,
+                last_percent,
+                increment_percent=10,
+                start_time=start_time,
+            )
 
         resources_by_sha1[to_resource.sha1].append(to_resource)
         if to_resource.path.endswith(".map"):
@@ -667,6 +678,14 @@ def match_purldb_resources2(project, extensions, matcher_func, logger=None):
             project=project,
             resources_by_sha1=resources_by_sha1,
             package_data_by_purldb_urls=package_data_by_purldb_urls,
+        )
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
         )
 
     logger(f"{matched_count:,d} resource(s) matched in PurlDB")
