@@ -159,17 +159,17 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
-        d2d.match_purldb_resources(
+        d2d.match_purldb_resources2(
             project=self.project,
             extensions=self.purldb_package_extensions,
-            matcher_func=d2d.match_purldb_package,
+            matcher_func=d2d.match_purldb_package2,
             logger=self.log,
         )
 
-        d2d.match_purldb_resources(
+        d2d.match_purldb_resources2(
             project=self.project,
             extensions=self.purldb_resource_extensions,
-            matcher_func=d2d.match_purldb_resource,
+            matcher_func=d2d.match_purldb_resource2,
             logger=self.log,
         )
 
