@@ -246,3 +246,16 @@ class ScanPipeJsTest(TestCase):
 
         self.assertEqual(expected1, result1)
         self.assertEqual([], result2)
+
+    def test_scanpipe_pipes_js_get_basename_and_extension(self):
+        filename1 = "somefilename1.d.ts"
+        filename2 = "somefilename2.config.js"
+        filename3 = "scripted.ts"
+
+        basename1, extension1 = js.get_basename_and_extension(filename1)
+        basename2, extension2 = js.get_basename_and_extension(filename2)
+        basename3, extension3 = js.get_basename_and_extension(filename3)
+
+        self.assertEqual(("somefilename1", ".d.ts"), (basename1, extension1))
+        self.assertEqual(("somefilename2.config", ".js"), (basename2, extension2))
+        self.assertEqual(("scripted", ".ts"), (basename3, extension3))

@@ -27,6 +27,34 @@ from pathlib import Path
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import pathmap
 
+# `PROSPECTIVE_JAVASCRIPT_MAP` maps transformed JS file to a dict
+# that specifies extension of related files. The `related` key in
+# each dict specifies the file extension of the related transformed file, and
+# the `sources` key specifies the list of possible source extension.
+
+PROSPECTIVE_JAVASCRIPT_MAP = {
+    ".scss.js.map": {
+        "related": [".scss.js", ".css", ".css.map", "_rtl.css"],
+        "sources": [".scss"],
+    },
+    ".js.map": {
+        "related": [".js", ".jsx", ".ts"],
+        "sources": [".jsx", ".ts", ".js"],
+    },
+    ".soy.js.map": {
+        "related": [".soy.js", ".soy"],
+        "sources": [".soy"],
+    },
+    ".css.map": {
+        "related": [".css"],
+        "sources": [".css"],
+    },
+    ".ts": {
+        "related": [],
+        "sources": [".d.ts"],
+    },
+}
+
 
 def is_source_mapping_in_minified(resource, map_file_name):
     """Return True if a string contains a source mapping in its last 5 lines."""
@@ -117,3 +145,32 @@ def get_minified_resource(map_resource, minified_resources):
 
     if is_source_mapping_in_minified(minified_resource, path.name):
         return minified_resource
+
+
+def get_basename_and_extension(filename):
+    """Return the basename and extension of a JavaScript/TypeScript related file."""
+    # The order of extensions in the list matters since
+    # `.d.ts` should be tested first before `.ts`.
+    js_extensions = [
+        ".scss.js.map",
+        ".soy.js.map",
+        ".css.map",
+        ".js.map",
+        ".scss.js",
+        ".soy.js",
+        ".d.ts",
+        ".scss",
+        ".soy",
+        ".css",
+        ".jsx",
+        ".js",
+        ".ts",
+    ]
+    for ext in js_extensions:
+        if filename.endswith(ext):
+            extension = ext
+            break
+    else:
+        raise ValueError(f"{filename} is not JavaScript related")
+    basename = filename[: -len(extension)]
+    return basename, extension
