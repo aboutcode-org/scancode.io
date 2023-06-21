@@ -74,6 +74,7 @@ class DeployToDevelop(Pipeline):
         ".scss",
         ".less",
         ".sass",
+        ".soy",
     ]
 
     def get_inputs(self):
