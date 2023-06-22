@@ -24,9 +24,7 @@ from matchcode_toolkit.fingerprinting import compute_directory_fingerprints
 
 
 def fingerprint_codebase_directories(project, virtual_codebase):
-    """
-    Compute directory fingerprints for matching purposes
-    """
+    """Compute directory fingerprints for matching purposes"""
     # Compute directory fingerprints in memory
     compute_directory_fingerprints(virtual_codebase)
 
