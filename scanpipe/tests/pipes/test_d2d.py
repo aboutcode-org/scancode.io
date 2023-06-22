@@ -128,7 +128,7 @@ class ScanPipeD2DPipesTest(TestCase):
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
 
-    @mock.patch("scanpipe.pipes.purldb.match_package")
+    @mock.patch("scanpipe.pipes.purldb.match_packages")
     def test_scanpipe_pipes_d2d_match_purldb_resources(self, mock_match_package):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
         # The initial status will be updated to flag.MATCHED_TO_PURLDB
@@ -139,6 +139,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         package_data = package_data1.copy()
         package_data["uuid"] = uuid.uuid4()
+        package_data["sha1"] = "abcdef"
         mock_match_package.return_value = [package_data]
 
         buffer = io.StringIO()
@@ -568,7 +569,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from_resource, relation[0].from_resource)
         self.assertEqual(from_resource, relation[1].from_resource)
 
-    @mock.patch("scanpipe.pipes.purldb.match_resource")
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_pipes_d2d_match_js_purldb(self, mock_match_resource, mock_get):
         to_location = self.data_location / "d2d-javascript" / "to" / "unmain.js.map"
@@ -589,14 +590,14 @@ class ScanPipeD2DPipesTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118",
                 "path": "package/dist/SassWarning.js",
                 "type": "file",
-                "sha1": "abcdeac9ce76668a27069d88f30e033e72057dcb",
+                "sha1": "4bbc6d18a574e11fbdcbb74a24f1956bcedcc170",
             },
             {
                 "package": "http://example.com/api/packages/zyx/",
                 "purl": "pkg:deb/debian/adduser@3.118",
                 "path": "package/dist/SassWarning.js",
                 "type": "file",
-                "sha1": "abcdeac9ce76668a27069d88f30e033e72057dcb",
+                "sha1": "d6bfcf7d1f8a00cc639b3a186a52453d37c52f61",
             },
         ]
 

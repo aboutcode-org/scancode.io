@@ -505,91 +505,29 @@ def create_package_from_purldb_data(project, resource, package_data):
     return package
 
 
-def match_purldb_package(project, resource):
-    """Match an archive type resource in the PurlDB."""
-    if results := purldb.match_packages(sha1_list=[resource.sha1]):
-        package_data = results[0]
-        return create_package_from_purldb_data(project, resource, package_data)
-
-
-def match_purldb_resource(project, resource):
-    """Match a single file resource in the PurlDB."""
-    sha1_list = [resource.sha1]
-    if resource.path.endswith(".map"):
-        sha1_list.extend(js.source_content_sha1_list(resource))
-
-    if results := purldb.match_resources(sha1_list=sha1_list):
-        package_url = results[0]["package"]
-        if package_data := purldb.request_get(url=package_url):
-            return create_package_from_purldb_data(project, resource, package_data)
-
-
-def match_purldb_directory(project, resource):
-    """Match a single directory resource in the PurlDB."""
-    fingerprint = resource.extra_data.get("directory_content", "")
-
-    if results := purldb.match_directory(fingerprint=fingerprint):
-        package_url = results[0]["package"]
-        if package_data := purldb.request_get(url=package_url):
-            return create_package_from_purldb_data(project, resource, package_data)
-
-
-def match_purldb_resources(project, extensions, matcher_func, logger=None):
-    """
-    Match against PurlDB selecting codebase resources using provided
-    ``package_extensions`` for archive type files, and ``resource_extensions`` for
-    single resource files.
-    """
-    to_resources = (
-        project.codebaseresources.files()
-        .to_codebase()
-        .no_status()
-        .has_value("sha1")
-        .filter(extension__in=extensions)
-    )
-    resource_count = to_resources.count()
-
-    if logger:
-        extensions_str = ", ".join(extensions)
-        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
-
-    resource_iterator = to_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    matched_count = 0
-
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
-        matched_package = matcher_func(project, to_resource)
-        if matched_package:
-            matched_count += 1
-
-    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
-
-
 def process_purldb_package_data(project, package_data, resources):
     """
     Given a mapping of `package_data`, create a Package from `package_data`, and
     associate the Package to Resources in `resources`.
+
+    Return the number of Resources matched to a Package.
     """
-    match_count = 0
+    match_resources_count = 0
     for resource in resources:
+        matched_to_purldb_before = resource.status == flag.MATCHED_TO_PURLDB
         matched_package = create_package_from_purldb_data(
             project=project, resource=resource, package_data=package_data
         )
-        if matched_package:
-            match_count += 1
-    return match_count
+        resource.refresh_from_db()
+        matched_to_purldb_after = resource.status == flag.MATCHED_TO_PURLDB
+        if matched_package and matched_to_purldb_before != matched_to_purldb_after:
+            # Increment matched_resources_count if we have `matched_package` and
+            # when we are able to match on a Resource for the first time.
+            match_resources_count += 1
+    return match_resources_count
 
 
-def match_purldb_package2(project, resources_by_sha1, **kwargs):
+def match_purldb_package(project, resources_by_sha1, **kwargs):
     # Send stuff off to be requested
     match_count = 0
     sha1_list = list(resources_by_sha1.keys())
@@ -606,7 +544,7 @@ def match_purldb_package2(project, resources_by_sha1, **kwargs):
     return match_count
 
 
-def match_purldb_resource2(
+def match_purldb_resource(
     project, resources_by_sha1, package_data_by_purldb_urls={}, **kwargs
 ):
     # Send stuff off to be requested
@@ -638,8 +576,23 @@ def match_purldb_resource2(
     return match_count
 
 
-def match_purldb_resources2(project, extensions, matcher_func, logger=None):
-    """Match resources in the PurlDB."""
+def match_purldb_directory(project, resource):
+    """Match a single directory resource in the PurlDB."""
+    fingerprint = resource.extra_data.get("directory_content", "")
+
+    if results := purldb.match_directory(fingerprint=fingerprint):
+        package_url = results[0]["package"]
+        if package_data := purldb.request_get(url=package_url):
+            return create_package_from_purldb_data(project, resource, package_data)
+
+
+def match_purldb_resources(project, extensions, matcher_func, logger=None):
+    """
+    Match against PurlDB selecting codebase resources using provided
+    ``package_extensions`` for archive type files, and ``resource_extensions``.
+
+    Match requests are sent off in batches of 85 SHA1s.
+    """
     to_resources = (
         project.codebaseresources.files()
         .to_codebase()
