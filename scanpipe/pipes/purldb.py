@@ -100,9 +100,7 @@ def request_post(url, data, timeout=None):
 
 
 def collect_response_results(response, timeout=None):
-    """
-    Return all results from a purldb API response.
-    """
+    """Return all results from a purldb API response."""
     results = []
     if response and response.get("count"):
         results.extend(response["results"])

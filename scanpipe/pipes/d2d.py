@@ -558,14 +558,10 @@ def match_purldb_resource(
             if package_instance_url not in package_data_by_purldb_urls:
                 # Get and cache package data if we do not have it
                 if package_data := purldb.request_get(url=package_instance_url):
-                    package_data_by_purldb_urls[
-                        package_instance_url
-                    ] = package_data
+                    package_data_by_purldb_urls[package_instance_url] = package_data
             else:
                 # Use cached package data
-                package_data = package_data_by_purldb_urls[
-                    package_instance_url
-                ]
+                package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
             resources = resources_by_sha1.get(sha1, [])
             match_count += process_purldb_package_data(
@@ -658,9 +654,7 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
 
 
 def match_purldb_directories(project, virtual_codebase, logger=None):
-    """
-    Match against PurlDB selecting codebase directories.
-    """
+    """Match against PurlDB selecting codebase directories."""
     if logger:
         logger("Matching directories from to/ in PurlDB")
 
