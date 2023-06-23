@@ -906,3 +906,33 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_populate_purldb_pipeline_integration_test(
+        self, mock_is_available, mock_request_get
+    ):
+        pipeline_name1 = "load_inventory"
+        pipeline_name2 = "populate_purldb"
+        project1 = Project.objects.create(name="Utility: PurlDB")
+
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name1)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        mock_request_get.return_value = {}
+        mock_is_available.return_value = True
+
+        run = project1.add_pipeline(pipeline_name2)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertIn("Populating PurlDB with 2 PURLs", run.log)
+        self.assertIn("Populating PurlDB with 4 PURLs", run.log)

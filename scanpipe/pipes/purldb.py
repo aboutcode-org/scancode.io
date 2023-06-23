@@ -117,3 +117,13 @@ def match_resource(sha1_list, timeout=None, api_url=PURLDB_API_URL):
     if response and response.get("count"):
         packages = response["results"]
         return packages
+
+
+def index_package(purl, timeout=None, api_url=PURLDB_API_URL):
+    """Add PURL to PurlDB for indexing."""
+    payload = {"purl": purl}
+    response = request_get(
+        url=f"{api_url}packages/get_package/", payload=payload, timeout=timeout
+    )
+
+    return response
