@@ -26,12 +26,13 @@ from matchcode_toolkit.fingerprinting import compute_directory_fingerprints
 def fingerprint_codebase_directories(project, virtual_codebase):
     """Compute directory fingerprints for matching purposes"""
     # Compute directory fingerprints in memory
-    compute_directory_fingerprints(virtual_codebase)
+    vc_to_directory = virtual_codebase.get_resource("virtual_root/to")
+    _ = compute_directory_fingerprints(vc_to_directory, virtual_codebase)
 
     # Bulk update Directories with new fingerprints.
     # Code adapted from
     # scanpipe.migrations.0031_scancode_toolkit_v32_data_updates
-    queryset = project.codebaseresources.directories()
+    queryset = project.codebaseresources.directories().to_codebase()
     object_count = queryset.count()
     print(f"\nUpdating directory fingerprints for {object_count:,} directories.")
     chunk_size = 2000

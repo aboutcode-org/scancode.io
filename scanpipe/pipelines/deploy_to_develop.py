@@ -154,7 +154,6 @@ class DeployToDevelop(Pipeline):
 
         d2d.match_purldb_directories(
             project=self.project,
-            virtual_codebase=self.virtual_codebase,
             logger=self.log,
         )
 

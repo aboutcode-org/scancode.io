@@ -641,28 +641,45 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
     logger(f"{matched_count:,d} resource(s) matched in PurlDB")
 
 
-def match_purldb_directories(project, virtual_codebase, logger=None):
+def match_purldb_directories(project, logger=None):
     """Match against PurlDB selecting codebase directories."""
+    to_directories = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .order_by("path")
+    )
+    directory_count = to_directories.count()
+
     if logger:
-        logger("Matching directories from to/ in PurlDB")
+        logger(f"Matching {directory_count:,d} director(y/ies) from to/ in PurlDB")
 
-    matched_count = 0
-    vc_to_directory = virtual_codebase.get_resource("virtual_root/to")
-    for vc_resource in vc_to_directory.walk(virtual_codebase):
-        if vc_resource.is_file or vc_resource.status == flag.MATCHED_TO_PURLDB:
+    directory_iterator = to_directories.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+
+    for directory_index, directory in enumerate(directory_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            directory_index,
+            directory_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        # We refresh the directory to ensure that the status has been updated if
+        # the directory was included in a match to an ancestor directory
+        directory.refresh_from_db()
+
+        if directory.status == flag.MATCHED_TO_PURLDB:
             continue
+        _ = match_purldb_directory(project, directory)
 
-        split_vc_resource_path = vc_resource.path.split("virtual_root/")
-        db_resource_path = split_vc_resource_path[-1]
-        db_resource = project.codebaseresources.get(path=db_resource_path)
-        package = match_purldb_directory(project, db_resource)
-        if not package:
-            continue
-        matched_count += 1
-
-        for r in vc_resource.walk(virtual_codebase):
-            r.status = flag.MATCHED_TO_PURLDB
-            r.save(virtual_codebase)
+    matched_count = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .filter(status=flag.MATCHED_TO_PURLDB)
+        .count()
+    )
 
     logger(f"{matched_count:,d} director(y/ies) matched in PurlDB")
 
