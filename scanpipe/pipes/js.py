@@ -133,7 +133,11 @@ def get_matches_by_ratio(
 
 
 def get_minified_resource(map_resource, minified_resources):
-    """Return the corresponding minified file for a map file."""
+    """
+    Return the corresponding minified_resource given a ``map_resource`` Resource
+    object and a ``minified_resources`` query set of minified JS Resource.
+    Return None if it cannot be found.
+    """
     path = Path(map_resource.path.lstrip("/"))
 
     minified_file, _ = path.name.split(".map")
@@ -147,30 +151,33 @@ def get_minified_resource(map_resource, minified_resources):
         return minified_resource
 
 
-def get_basename_and_extension(filename):
-    """Return the basename and extension of a JavaScript/TypeScript related file."""
+_js_extensions = (
+    ".scss.js.map",
+    ".soy.js.map",
+    ".css.map",
+    ".js.map",
+    ".scss.js",
+    ".soy.js",
+    ".d.ts",
+    ".scss",
+    ".soy",
+    ".css",
+    ".jsx",
+    ".js",
+    ".ts",
+)
+
+
+def get_js_map_basename_and_extension(filename):
+    """
+    Return a 2-tuple pf (basename, extension) of a JavaScript/TypeScript related
+    file. Return None otherwise.
+    """
     # The order of extensions in the list matters since
     # `.d.ts` should be tested first before `.ts`.
-    js_extensions = [
-        ".scss.js.map",
-        ".soy.js.map",
-        ".css.map",
-        ".js.map",
-        ".scss.js",
-        ".soy.js",
-        ".d.ts",
-        ".scss",
-        ".soy",
-        ".css",
-        ".jsx",
-        ".js",
-        ".ts",
-    ]
-    for ext in js_extensions:
+    if not filename.endswith(_js_extensions):
+        return
+    for ext in _js_extensions:
         if filename.endswith(ext):
-            extension = ext
-            break
-    else:
-        raise ValueError(f"{filename} is not JavaScript related")
-    basename = filename[: -len(extension)]
-    return basename, extension
+            basename = filename[: -len(ext)]
+            return basename, ext

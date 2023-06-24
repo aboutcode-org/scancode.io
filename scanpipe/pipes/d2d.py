@@ -595,7 +595,10 @@ def _map_javascript_resource(
         matches = js.get_matches_by_ratio(to_map, from_resources_index, from_resources)
 
     transpiled = [to_map]
-    if minified_resource := js.get_minified_resource(to_map, to_resources_minified):
+    if minified_resource := js.get_minified_resource(
+        map_resource=to_map,
+        minified_resources=to_resources_minified,
+    ):
         transpiled.append(minified_resource)
 
     for resource in transpiled:
@@ -777,9 +780,17 @@ def map_javascript_path(project, logger=None):
 def _map_javascript_path_resource(
     to_resource, to_resources, from_resources_index, from_resources
 ):
+    """
+    Map JavaScript deployed files using their .map files.
+    Return the number of mapped files.
+    """
     path = Path(to_resource.path.lstrip("/"))
 
-    basename, extension = js.get_basename_and_extension(path.name)
+    basename_and_extension = js.get_js_map_basename_and_extension(path.name)
+    if not basename_and_extension:
+        return 0
+
+    basename, extension = basename_and_extension
     path_parts = (path.parent / basename).parts
     path_parts_len = len(path_parts)
 
