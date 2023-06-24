@@ -77,7 +77,9 @@ def request_get(url, payload=None, timeout=None):
     if not url:
         return
 
-    params = {"format": "json"}
+    params = {}
+    if "format=json" not in url:
+        params.update({"format": "json"})
     if payload:
         params.update(payload)
 

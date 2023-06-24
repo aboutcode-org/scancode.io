@@ -610,7 +610,7 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
     package_data_by_purldb_urls = {}
 
     for resource_index, to_resource in enumerate(resource_iterator):
-        if resources_by_sha1 and len(resources_by_sha1) % 85 == 0:
+        if len(resources_by_sha1) == 85:
             # Send a request off for every 85th sha1 collected
             # This is to avoid the 4094 byte limit on requests to purldb
             matched_count += matcher_func(
@@ -632,6 +632,21 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
         if to_resource.path.endswith(".map"):
             # Add sha1 of JS sources if we have a .map file
             for js_sha1 in js.source_content_sha1_list(to_resource):
+                if len(resources_by_sha1) == 85:
+                    matched_count += matcher_func(
+                        project=project,
+                        resources_by_sha1=resources_by_sha1,
+                        package_data_by_purldb_urls=package_data_by_purldb_urls,
+                    )
+                    resources_by_sha1 = defaultdict(list)
+                    last_percent = pipes.log_progress(
+                        logger,
+                        resource_index,
+                        resource_count,
+                        last_percent,
+                        increment_percent=10,
+                        start_time=start_time,
+                    )
                 resources_by_sha1[js_sha1].append(to_resource)
 
     if resources_by_sha1:
@@ -656,9 +671,7 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
 def match_purldb_directories(project, logger=None):
     """Match against PurlDB selecting codebase directories."""
     to_directories = (
-        project.codebaseresources.directories()
-        .to_codebase()
-        .order_by("path")
+        project.codebaseresources.directories().to_codebase().order_by("path")
     )
     directory_count = to_directories.count()
 
