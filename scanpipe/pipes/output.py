@@ -702,8 +702,8 @@ def get_package_expression_symbols(parsed_expression):
 
 def get_package_data_for_attribution(package, licensing):
     """
-    Convert the ``package`` instance into a dictionary of values to be available
-    during the attribution generation.
+    Convert the ``package`` instance into a dictionary of values usable during
+    attribution generation.
     """
     package_data = model_to_dict(package, exclude=["codebase_resources"])
     package_data["package_url"] = package.package_url
@@ -721,8 +721,11 @@ def get_package_data_for_attribution(package, licensing):
     return package_data
 
 
-def get_unique_licenses(packages):
+def get_unique_licenses(packages, logger=None):
     """
+    Return a list of unique License symbol objects preserving ordering.
+    Return an empty list if the packages do not have licenses.
+
     Replace by the following one-liner once this toolkit issues is fixed:
     https://github.com/nexB/scancode-toolkit/issues/3425
     licenses = set(license for package in packages for license in package["licenses"])
@@ -731,15 +734,19 @@ def get_unique_licenses(packages):
     licenses = []
 
     for package in packages:
-        for license in package["licenses"]:
-            if license.key not in seen_license_keys:
-                seen_license_keys.add(license.key)
-                licenses.append(license)
+        if "licenses" not in package:
+            if logger:
+                logger(f"No license for Package {package.purl} in attribution")
+        else:
+            for lic in package.get("licenses") or []:
+                if lic.key not in seen_license_keys:
+                    seen_license_keys.add(lic.key)
+                    licenses.append(lic)
 
     return licenses
 
 
-def to_attribution(project):
+def to_attribution(project, logger=None):
     """
     Generate attribution for the provided ``project``.
     The output file is created in the ``project`` "output/" directory.
@@ -761,7 +768,7 @@ def to_attribution(project):
         for package in get_queryset(project, "discoveredpackage")
     ]
 
-    licenses = get_unique_licenses(packages)
+    licenses = get_unique_licenses(packages, logger=logger)
     licenses = sorted(licenses, key=attrgetter("spdx_license_key"))
 
     context = {
