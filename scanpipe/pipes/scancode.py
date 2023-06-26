@@ -269,7 +269,7 @@ def _scan_and_save(resource_qs, scan_func, save_func):
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the `SCANCODEIO_PROCESSES` setting.
-    Multiprocessing can be disable using `SCANCODEIO_PROCESSES=0`,
+    Multiprocessing can be disabled using `SCANCODEIO_PROCESSES=0`,
     and threading can also be disabled `SCANCODEIO_PROCESSES=-1`
 
     The codebase resources QuerySet is chunked in 2000 results at the time,
