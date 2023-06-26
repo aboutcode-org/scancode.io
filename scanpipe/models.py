@@ -1847,9 +1847,11 @@ class CodebaseResource(
         with the commoncode.resource.Codebase class API.
         """
         if scanpipe_app.policies_enabled:
-            loaded_license_expression = getattr(self, "_loaded_license_expression", [])
+            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
             if self.detected_license_expression != loaded_license_expression:
                 self.compliance_alert = self.compute_compliance_alert()
+                if "update_fields" in kwargs:
+                    kwargs["update_fields"].append("compliance_alert")
 
         super().save(*args, **kwargs)
 

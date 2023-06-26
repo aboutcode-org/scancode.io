@@ -1038,6 +1038,20 @@ class ScanPipeModelsTest(TestCase):
         # Reset the index value
         scanpipe_app.license_policies_index = None
 
+    def test_scanpipe_codebase_resource_model_compliance_alert_update_fields(self):
+        scanpipe_app.license_policies_index = license_policies_index
+        resource = CodebaseResource.objects.create(project=self.project1, path="file")
+        self.assertEqual("", resource.compliance_alert)
+
+        # Ensure the "compliance_alert" field is appended to `update_fields`
+        resource.detected_license_expression = "apache-2.0"
+        resource.save(update_fields=["detected_license_expression"])
+        resource.refresh_from_db()
+        self.assertEqual("ok", resource.compliance_alert)
+
+        # Reset the index value
+        scanpipe_app.license_policies_index = None
+
     def test_scanpipe_scan_fields_model_mixin_methods(self):
         expected = [
             "detected_license_expression",
