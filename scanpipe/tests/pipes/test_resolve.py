@@ -47,7 +47,7 @@ class ScanPipeResolvePipesTest(TestCase):
         input_location = self.manifest_location / "toml.json"
         self.assertEqual("spdx", resolve.get_default_package_type(input_location))
 
-        input_location = self.data_location / "cyclonedx/nested.bom.json"
+        input_location = self.data_location / "cyclonedx/nested.cdx.json"
         self.assertEqual("cyclonedx", resolve.get_default_package_type(input_location))
 
         input_location = self.data_location / "cyclonedx/asgiref-3.3.0.json"

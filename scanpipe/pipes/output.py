@@ -622,7 +622,7 @@ def to_cyclonedx(project):
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
     """
-    output_file = project.get_output_file_path("results", "bom.json")
+    output_file = project.get_output_file_path("results", "cdx.json")
 
     cyclonedx_bom = get_cyclonedx_bom(project)
 

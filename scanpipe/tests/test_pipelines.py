@@ -781,7 +781,7 @@ class PipelinesIntegrationTest(TestCase):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 
-        input_location = self.data_location / "cyclonedx/nested.bom.json"
+        input_location = self.data_location / "cyclonedx/nested.cdx.json"
         project1.copy_input_from(input_location)
 
         run = project1.add_pipeline(pipeline_name)

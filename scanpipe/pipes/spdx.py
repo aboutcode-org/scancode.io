@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import List  # Python 3.8 compatibility
 
 SPDX_SPEC_VERSION = "2.3"
-SPDX_LICENSE_LIST_VERSION = "3.18"
+SPDX_LICENSE_LIST_VERSION = "3.20"
 SPDX_SCHEMA_NAME = "spdx-schema-2.3.json"
 SPDX_SCHEMA_PATH = Path(__file__).parent / "schemas" / SPDX_SCHEMA_NAME
 SPDX_SCHEMA_URL = (

@@ -235,7 +235,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json["metadata"]["tools"][0]["version"] = "31.0.0"
         results = json.dumps(results_json, indent=2)
 
-        expected_location = self.data_path / "cyclonedx/asgiref-3.3.0.bom.json"
+        expected_location = self.data_path / "cyclonedx/asgiref-3.3.0.cdx.json"
         if regen:
             expected_location.write_text(results)
 

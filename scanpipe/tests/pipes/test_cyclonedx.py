@@ -37,7 +37,7 @@ from scanpipe.pipes import cyclonedx
 
 
 class ScanPipeCycloneDXPipesTest(TestCase):
-    bom_file = Path(__file__).parent.parent / "data/cyclonedx/nested.bom.json"
+    bom_file = Path(__file__).parent.parent / "data/cyclonedx/nested.cdx.json"
     bom_json = bom_file.read_text()
     bom_parsed = json.loads(bom_json)
     bom = Bom_1_4(**bom_parsed)
