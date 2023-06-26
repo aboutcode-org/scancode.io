@@ -579,16 +579,7 @@ def map_javascript(project, logger=None):
 def _map_javascript_resource(
     to_map, to_resources_minified, from_resources_index, from_resources
 ):
-    content_sha1_list = js.source_content_sha1_list(to_map)
-    sha1_matches = from_resources.filter(sha1__in=content_sha1_list)
-
-    # Only create relations when the number of sha1 matches if inferior or equal
-    # to the number of sourcesContent in map.
-    if len(sha1_matches) > len(content_sha1_list):
-        to_map.update(status=flag.TOO_MANY_MAPS)
-        return
-
-    matches = [(match, {}) for match in sha1_matches]
+    matches = js.get_matches_by_sha1(to_map, from_resources)
 
     # Use diff_ratio if no sha1 match is found.
     if not matches:
@@ -676,6 +667,11 @@ def map_javascript_post_purldb_match(project, logger=None):
     )
 
     to_resources_minified_count = to_resources_minified.count()
+
+    if not to_resources_dot_map:
+        logger("No PurlDB matched .map file is available. Skipping.")
+        return
+
     if logger:
         logger(
             f"Mapping {to_resources_minified_count:,d} minified .js and .css "

@@ -103,6 +103,29 @@ def get_map_sources_content(map_file):
     return []
 
 
+def get_matches_by_sha1(to_map, from_resources):
+    content_sha1_list = source_content_sha1_list(to_map)
+    sources = get_map_sources(to_map)
+    all_source_path_available = len(sources) == len(content_sha1_list)
+
+    if not all_source_path_available:
+        sha1_matches = from_resources.filter(sha1__in=content_sha1_list)
+
+        # Only create relations when the number of sha1 matches if inferior or equal
+        # to the number of sourcesContent in map.
+        if len(sha1_matches) > len(content_sha1_list):
+            return
+
+        return [(match, {}) for match in sha1_matches]
+
+    matches = []
+    for sha1, source_path in zip(content_sha1_list, sources):
+        if match := from_resources.filter(sha1=sha1, path__endswith=source_path):
+            matches.append((match[0], {}))
+
+    return matches
+
+
 def get_matches_by_ratio(
     to_map, from_resources_index, from_resources, diff_ratio_threshold=0.98
 ):

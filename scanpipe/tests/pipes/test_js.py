@@ -247,6 +247,65 @@ class ScanPipeJsTest(TestCase):
         self.assertEqual(expected1, result1)
         self.assertEqual([], result2)
 
+    def test_scanpipe_pipes_js_get_matches_by_sha1(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "intelligent robotics platform.lpkg-extract/"
+            "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+            "resources/adaptive_media/js"
+        )
+        to_dir.mkdir(parents=True)
+        to_map_input_location = (
+            self.data_location / "d2d-javascript" / "to" / "main.js.map"
+        )
+        copy_input(to_map_input_location, to_dir)
+
+        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_dir = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/"
+            "adaptive_media/js"
+        )
+
+        from_dir_ambiguous = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/"
+            "ambiguous/js"
+        )
+        from_dir.mkdir(parents=True)
+        from_dir_ambiguous.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+        copy_input(from_input_location, from_dir_ambiguous)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        to_map = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/main.js.map"
+            )
+        )
+
+        from_source = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/"
+                "adaptive_media/js/main.js"
+            )
+        )
+
+        project_files = self.project1.codebaseresources.files()
+        from_resources = project_files.from_codebase()
+
+        result = js.get_matches_by_sha1(to_map, from_resources)
+        expected = [(from_source, {})]
+
+        self.assertEqual(expected, result)
+
     def test_scanpipe_pipes_js_get_basename_and_extension(self):
         basename_extension = js.get_js_map_basename_and_extension("notjs.config")
         self.assertIsNone(basename_extension)
