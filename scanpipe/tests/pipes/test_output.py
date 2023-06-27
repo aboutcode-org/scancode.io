@@ -247,7 +247,7 @@ class ScanPipeOutputPipesTest(TestCase):
         project = Project.objects.get(name="asgiref")
 
         with self.assertNumQueries(8):
-            output_file = output.to_spdx(project=project)
+            output_file = output.to_spdx(project=project, include_files=True)
         self.assertIn(output_file.name, project.output_root)
 
         # Patch the `created` date and tool version

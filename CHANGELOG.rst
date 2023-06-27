@@ -7,6 +7,9 @@ v33.0.0 (unreleased)
 - Update the CycloneDX BOM download file extension from ``.bom.json`` to ``.cdx.json``.
   https://github.com/nexB/scancode.io/issues/785
 
+- SPDX download BOM do not include codebase resource files by default anymore.
+  https://github.com/nexB/scancode.io/issues/785
+
 v32.3.0 (2023-06-12)
 --------------------
 

@@ -522,7 +522,7 @@ def _get_spdx_extracted_licenses(license_expressions):
     return extracted_licenses
 
 
-def to_spdx(project):
+def to_spdx(project, include_files=False):
     """
     Generate output for the provided ``project`` in SPDX document format.
     The output file is created in the ``project`` "output/" directory.
@@ -553,10 +553,12 @@ def to_spdx(project):
         if dep.for_package
     ]
 
-    files_as_spdx = [
-        resource.as_spdx()
-        for resource in get_queryset(project, "codebaseresource").files()
-    ]
+    files_as_spdx = []
+    if include_files:
+        files_as_spdx = [
+            resource.as_spdx()
+            for resource in get_queryset(project, "codebaseresource").files()
+        ]
 
     document = spdx.Document(
         name=f"scancodeio_{project.name}",
