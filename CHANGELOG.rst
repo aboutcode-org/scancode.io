@@ -13,6 +13,9 @@ v33.0.0 (unreleased)
 - Add archive_location to the LAYERS worksheet of XLSX output.
   https://github.com/nexB/scancode.io/issues/773
 
+- Add "New Project" button to Project details view.
+  https://github.com/nexB/scancode.io/issues/763
+
 v32.3.0 (2023-06-12)
 --------------------
 
