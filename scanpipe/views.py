@@ -178,6 +178,24 @@ def render_as_yaml(value):
         return saneyaml.dump(value, indent=2)
 
 
+DISPLAYABLE_IMAGE_MIME_TYPE = [
+    "image/apng",
+    "image/avif",
+    "image/bmp",
+    "image/gif",
+    "image/jpeg",
+    "image/png",
+    "image/svg+xml",
+    "image/webp",
+    "image/x-icon",
+]
+
+
+def is_displayable_image_type(resource):
+    """Return True if the ``resource`` file is supported by the HTML <img> tag."""
+    return resource.mime_type and resource.mime_type in DISPLAYABLE_IMAGE_MIME_TYPE
+
+
 class TabSetMixin:
     """
     tabset = {
@@ -193,6 +211,7 @@ class TabSetMixin:
             ]
             "template": "",
             "icon_class": "",
+            "condition": <func>,
         }
     }
     """
@@ -204,6 +223,10 @@ class TabSetMixin:
         tabset_data = {}
 
         for label, tab_definition in self.tabset.items():
+            if condition := tab_definition.get("condition"):
+                if not condition(self.object):
+                    continue
+
             tab_data = {
                 "verbose_name": tab_definition.get("verbose_name"),
                 "icon_class": tab_definition.get("icon_class"),
@@ -1165,6 +1188,11 @@ class CodebaseResourceDetailsView(
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
             "template": "scanpipe/tabset/tab_content_viewer.html",
+        },
+        "image": {
+            "icon_class": "fa-solid fa-image",
+            "template": "scanpipe/tabset/tab_image.html",
+            "condition": is_displayable_image_type,
         },
         "detection": {
             "fields": [

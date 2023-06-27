@@ -16,6 +16,9 @@ v33.0.0 (unreleased)
 - Add "New Project" button to Project details view.
   https://github.com/nexB/scancode.io/issues/763
 
+- Display image type files in the codebase resource details view in a new "Image" tab.
+  https://github.com/nexB/scancode.io/issues/705
+
 v32.3.0 (2023-06-12)
 --------------------
 

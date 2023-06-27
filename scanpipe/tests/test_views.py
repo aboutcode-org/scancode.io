@@ -569,6 +569,17 @@ class ScanPipeViewsTest(TestCase):
         expected = '<span class="tag is-danger">Stopped</span>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_codebase_resource_details_view_tab_image(self):
+        resource1 = make_resource_file(self.project1, "file1.ext")
+        response = self.client.get(resource1.get_absolute_url())
+        self.assertNotContains(response, "tab-image")
+        self.assertNotContains(response, resource1.get_raw_url())
+
+        resource2 = make_resource_file(self.project1, "img.jpg", mime_type="image/jpeg")
+        response = self.client.get(resource2.get_absolute_url())
+        self.assertContains(response, "tab-image")
+        self.assertContains(response, "This resource is not available on disk.")
+
     def test_scanpipe_views_codebase_relation_list_view_count(self):
         url = reverse("project_relations", args=[self.project1.uuid])
 

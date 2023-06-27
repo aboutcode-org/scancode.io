@@ -4,6 +4,6 @@
       This resource is not available on disk.
     </article>
   {% else %}
-    {% include 'scanpipe/includes/resource_file_viewer.html' %}
+    <img src="{{ object.get_raw_url }}" alt="Image rendering">
   {% endif %}
 </div>
