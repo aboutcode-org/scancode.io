@@ -1,12 +1,5 @@
 <section class="mx-5 mb-3">
-  {% if object_title %}
-    <h1 class="is-size-5 break-all has-text-weight-semibold has-text-grey-darker">
-      {{ object_title }}
-    </h1>
-  {% elif template_title %}
-    {% include template_title %}
-  {% endif %}
-  <nav class="breadcrumb has-succeeds-separator" aria-label="breadcrumbs">
+  <nav class="breadcrumb is-medium has-succeeds-separator mb-1" aria-label="breadcrumbs">
     <ul>
       <li><a href="{% url 'project_list' %}" class="has-text-grey">Projects</a></li>
       <li><a href="{{ project.get_absolute_url }}" class="has-text-grey">{{ project.name }}</a></li>
@@ -15,4 +8,11 @@
       {% endif %}
     </ul>
   </nav>
+  {% if object_title %}
+    <h1 class="is-size-5 break-all has-text-weight-semibold has-text-grey-darker">
+      {{ object_title }}
+    </h1>
+  {% elif template_title %}
+    {% include template_title %}
+  {% endif %}
 </section>

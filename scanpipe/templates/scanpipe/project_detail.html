@@ -14,17 +14,19 @@
 
     <section class="is-flex is-justify-content-space-between mx-5 mb-2">
       <div>
-        <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
+        <nav class="breadcrumb has-succeeds-separator is-medium mb-1" aria-label="breadcrumbs">
           <ul>
+            <li>
+              <a href="{% url 'project_list' %}" class="has-text-grey">Projects</a>
+            </li>
             <li class="is-active">
               <a href="#" aria-current="page">{{ project.name }}</a>
             </li>
           </ul>
         </nav>
         <div class="subtitle is-size-6">
-          <a href="{% url 'project_list' %}" class="has-text-grey">← Projects</a>
           <span class="has-text-grey">
-            <span title="{{ project.created_date|date:'N j, Y, P T' }}" class="ml-4">
+            <span title="{{ project.created_date|date:'N j, Y, P T' }}">
               Created {{ project.created_date|naturaltime }}
             </span>
           </span>
