@@ -277,6 +277,7 @@ layer_fields = [
     "size",
     "author",
     "comment",
+    "archive_location",
 ]
 Layer = namedtuple("Layer", layer_fields)
 
@@ -301,6 +302,7 @@ def get_layers_data(project):
                     size=layer.get("size"),
                     author=layer.get("author"),
                     comment=layer.get("comment"),
+                    archive_location=layer.get("archive_location"),
                 )
             )
 

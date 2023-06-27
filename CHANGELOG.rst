@@ -10,6 +10,9 @@ v33.0.0 (unreleased)
 - SPDX download BOM do not include codebase resource files by default anymore.
   https://github.com/nexB/scancode.io/issues/785
 
+- Add archive_location to the LAYERS worksheet of XLSX output.
+  https://github.com/nexB/scancode.io/issues/773
+
 v32.3.0 (2023-06-12)
 --------------------
 

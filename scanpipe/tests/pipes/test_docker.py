@@ -152,6 +152,7 @@ class ScanPipeDockerPipesTest(TestCase):
                 "created": "2022-04-05T00:19:59.790636867Z",
                 "layer_id": "4fc242d58285699eca05db3cc7c7122a2b8e014d9481",
                 "created_by": "/bin/sh -c #(nop) ADD file:3efb3fd9ff852b5b56e4 in / ",
+                "archive_location": "4fc242d58285699eca05db3cc7c712/layer.tar",
             },
             {
                 "size": 2876928,
@@ -160,6 +161,7 @@ class ScanPipeDockerPipesTest(TestCase):
                 "created": "2022-04-05T07:50:46.219557029Z",
                 "layer_id": "fbd7d5451c694bccb661c80cb52dd44824a8d0947b",
                 "created_by": "/bin/sh -c set -eux;",
+                "archive_location": "fbd7d5451c694bccb661c80/layer.tar",
             },
         ]
         p1.update_extra_data(
@@ -179,4 +181,7 @@ class ScanPipeDockerPipesTest(TestCase):
         self.assertEqual(5855232, layers_data[0].size)
         self.assertEqual("Author", layers_data[0].author)
         self.assertEqual("Comment", layers_data[0].comment)
+        self.assertEqual(layers[0]["archive_location"], layers_data[0].archive_location)
+
         self.assertEqual("img-06a4df-layer-02-fbd7d5", layers_data[1].layer_tag)
+        self.assertEqual(layers[1]["archive_location"], layers_data[1].archive_location)
