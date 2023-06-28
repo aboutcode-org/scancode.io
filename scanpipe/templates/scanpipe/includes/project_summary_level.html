@@ -5,7 +5,7 @@
       <p class="heading">Packages</p>
       <p class="{{ title_class }}">
         {% if project.package_count %}
-          <a href="{% url 'project_packages' project.uuid %}">
+          <a href="{% url 'project_packages' project.slug %}">
             {{ project.package_count|intcomma }}
           </a>
         {% else %}
@@ -19,7 +19,7 @@
       <p class="heading">Dependencies</p>
       <p class="{{ title_class }}">
         {% if project.dependency_count %}
-          <a href="{% url 'project_dependencies' project.uuid %}">
+          <a href="{% url 'project_dependencies' project.slug %}">
             {{ project.dependency_count|intcomma }}
           </a>
         {% else %}
@@ -33,7 +33,7 @@
       <p class="heading">Resources</p>
       <p class="{{ title_class }}">
         {% if project.resource_count %}
-          <a href="{% url 'project_resources' project.uuid %}">
+          <a href="{% url 'project_resources' project.slug %}">
             {{ project.resource_count|intcomma }}
           </a>
         {% else %}
@@ -47,7 +47,7 @@
       <div>
         <p class="heading">Relations</p>
         <p class="{{ title_class }}">
-          <a href="{% url 'project_relations' project.uuid %}">
+          <a href="{% url 'project_relations' project.slug %}">
             {{ project.relation_count|intcomma }}
           </a>
         </p>
@@ -59,7 +59,7 @@
       <p class="heading">Errors</p>
       <p class="{{ title_class }}">
         {% if project.error_count %}
-          <a href="{% url 'project_errors' project.uuid %}">
+          <a href="{% url 'project_errors' project.slug %}">
             {{ project.error_count|intcomma }}
           </a>
         {% else %}

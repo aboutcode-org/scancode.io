@@ -21,7 +21,7 @@
         related database entries and all data on disk except for the input/ directory.
       </p>
     </section>
-    <form action="{% url 'project_delete' project.uuid %}" method="post">{% csrf_token %}
+    <form action="{% url 'project_delete' project.slug %}" method="post">{% csrf_token %}
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
         <button class="button is-danger is-no-close" type="submit">Yes, Delete Project</button>

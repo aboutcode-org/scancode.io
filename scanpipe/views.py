@@ -167,12 +167,6 @@ class PrefetchRelatedViewMixin:
         return super().get_queryset().prefetch_related(*self.prefetch_related)
 
 
-class ProjectViewMixin:
-    model = Project
-    slug_url_kwarg = "uuid"
-    slug_field = "uuid"
-
-
 def render_as_yaml(value):
     if value:
         return saneyaml.dump(value, indent=2)
@@ -500,10 +494,11 @@ class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
         return response
 
     def get_success_url(self):
-        return reverse_lazy("project_detail", kwargs={"uuid": self.object.pk})
+        return self.object.get_absolute_url()
 
 
-class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
+class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
     template_name = "scanpipe/project_detail.html"
 
     @staticmethod
@@ -635,7 +630,8 @@ class ProjectDetailView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         return redirect(project)
 
 
-class ProjectSettingsView(ConditionalLoginRequired, ProjectViewMixin, UpdateView):
+class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
+    model = Project
     template_name = "scanpipe/project_settings.html"
 
     form_class = ProjectSettingsForm
@@ -667,7 +663,8 @@ class ProjectSettingsView(ConditionalLoginRequired, ProjectViewMixin, UpdateView
         return response
 
 
-class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.DetailView):
+class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
     template_name = "scanpipe/project_charts.html"
 
     @staticmethod
@@ -746,11 +743,8 @@ class ProjectChartsView(ConditionalLoginRequired, ProjectViewMixin, generic.Deta
         return context
 
 
-class ProjectCodebaseView(
-    ConditionalLoginRequired,
-    ProjectViewMixin,
-    generic.DetailView,
-):
+class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
     template_name = "scanpipe/includes/project_codebase.html"
 
     @staticmethod
@@ -810,9 +804,8 @@ class ProjectCodebaseView(
         return context
 
 
-class ProjectArchiveView(
-    ConditionalLoginRequired, ProjectViewMixin, SingleObjectMixin, FormView
-):
+class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
+    model = Project
     http_method_names = ["post"]
     form_class = ArchiveProjectForm
     success_url = reverse_lazy("project_list")
@@ -836,7 +829,8 @@ class ProjectArchiveView(
         return response
 
 
-class ProjectDeleteView(ConditionalLoginRequired, ProjectViewMixin, generic.DeleteView):
+class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
+    model = Project
     success_url = reverse_lazy("project_list")
     success_message = 'The project "{}" and all its related data have been removed.'
 
@@ -852,7 +846,8 @@ class ProjectDeleteView(ConditionalLoginRequired, ProjectViewMixin, generic.Dele
         return response_redirect
 
 
-class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.DeleteView):
+class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
+    model = Project
     success_message = 'All data, except inputs, for the "{}" project have been removed.'
 
     def form_valid(self, form):
@@ -869,8 +864,8 @@ class ProjectResetView(ConditionalLoginRequired, ProjectViewMixin, generic.Delet
 
 
 @conditional_login_required
-def execute_pipeline_view(request, uuid, run_uuid):
-    project = get_object_or_404(Project, uuid=uuid)
+def execute_pipeline_view(request, slug, run_uuid):
+    project = get_object_or_404(Project, slug=slug)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
     if run.status != run.Status.NOT_STARTED:
@@ -882,8 +877,8 @@ def execute_pipeline_view(request, uuid, run_uuid):
 
 
 @conditional_login_required
-def stop_pipeline_view(request, uuid, run_uuid):
-    project = get_object_or_404(Project, uuid=uuid)
+def stop_pipeline_view(request, slug, run_uuid):
+    project = get_object_or_404(Project, slug=slug)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
     if run.status != run.Status.RUNNING:
@@ -895,8 +890,8 @@ def stop_pipeline_view(request, uuid, run_uuid):
 
 
 @conditional_login_required
-def delete_pipeline_view(request, uuid, run_uuid):
-    project = get_object_or_404(Project, uuid=uuid)
+def delete_pipeline_view(request, slug, run_uuid):
+    project = get_object_or_404(Project, slug=slug)
     run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
     if run.status not in [run.Status.NOT_STARTED, run.Status.QUEUED]:
@@ -928,9 +923,9 @@ def project_results_json_response(project, as_attachment=False):
     return response
 
 
-class ProjectResultsView(
-    ConditionalLoginRequired, ProjectViewMixin, generic.DetailView
-):
+class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         project = self.object
@@ -963,12 +958,13 @@ class ProjectRelatedViewMixin:
 
     def get_project(self):
         if not getattr(self, "project", None):
-            project_uuid = self.kwargs["uuid"]
-            self.project = get_object_or_404(Project, uuid=project_uuid)
+            self.project = get_object_or_404(Project, slug=self.kwargs["slug"])
         return self.project
 
     def get_queryset(self):
-        return super().get_queryset().project(self.get_project())
+        return (
+            super().get_queryset().select_related("project").project(self.get_project())
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1105,7 +1101,7 @@ class CodebaseRelationListView(
             .get_queryset()
             .files()
             .to_codebase()
-            .prefetch_related("related_from__from_resource")
+            .prefetch_related("related_from__from_resource__project")
         )
 
     def get_context_data(self, **kwargs):
@@ -1301,8 +1297,8 @@ class CodebaseResourceDetailsView(
 
 
 @conditional_login_required
-def codebase_resource_diff_view(request, uuid):
-    project = get_object_or_404(Project, uuid=uuid)
+def codebase_resource_diff_view(request, slug):
+    project = get_object_or_404(Project, slug=slug)
 
     project_files = project.codebaseresources.files()
     from_path = request.GET.get("from_path")

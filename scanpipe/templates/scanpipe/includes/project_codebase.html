@@ -9,7 +9,7 @@
          {{ node.name }}
       </a>
     {% else %}
-      <a class="panel-block" href="{% url "resource_detail" project.uuid node.location %}" target="_blank">
+      <a class="panel-block" href="{% url "resource_detail" project.slug node.location %}" target="_blank">
         <span class="panel-icon"><i class="fa-regular fa-file"></i></span>
         {{ node.name }}
       </a>

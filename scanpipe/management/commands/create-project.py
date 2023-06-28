@@ -80,7 +80,7 @@ class Command(AddInputCommandMixin, BaseCommand):
             project.notes = notes
 
         try:
-            project.full_clean()
+            project.full_clean(exclude=["slug"])
         except ValidationError as e:
             raise CommandError("\n".join(e.messages))
 

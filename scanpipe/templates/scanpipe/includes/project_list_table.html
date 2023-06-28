@@ -10,7 +10,7 @@
       </th>
       <td>
         {% if project.discoveredpackages_count %}
-          <a href="{% url 'project_packages' project.uuid %}">
+          <a href="{% url 'project_packages' project.slug %}">
             {{ project.discoveredpackages_count|intcomma }}
           </a>
         {% else %}
@@ -19,7 +19,7 @@
       </td>
       <td>
         {% if project.discovereddependencies_count %}
-          <a href="{% url 'project_dependencies' project.uuid %}">
+          <a href="{% url 'project_dependencies' project.slug %}">
             {{ project.discovereddependencies_count|intcomma }}
           </a>
         {% else %}
@@ -28,7 +28,7 @@
       </td>
       <td>
         {% if project.codebaseresources_count %}
-          <a href="{% url 'project_resources' project.uuid %}">
+          <a href="{% url 'project_resources' project.slug %}">
             {{ project.codebaseresources_count|intcomma }}
           </a>
         {% else %}
@@ -37,7 +37,7 @@
       </td>
       <td>
         {% if project.projecterrors_count %}
-          <a href="{% url 'project_errors' project.uuid %}">
+          <a href="{% url 'project_errors' project.slug %}">
             {{ project.projecterrors_count|intcomma }}
           </a>
         {% else %}

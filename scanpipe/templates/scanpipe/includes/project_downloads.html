@@ -1,19 +1,19 @@
 <article class="message is-info">
   <div class="message-body">
     Download results as:
-    <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.uuid 'json' %}">
+    <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.slug 'json' %}">
       JSON <i class="fa-solid fa-download ml-1"></i>
     </a>
-    <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'xlsx' %}">
       XLSX <i class="fa-solid fa-download ml-1"></i>
     </a>
-    <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'spdx' %}">
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'spdx' %}">
       SPDX <i class="fa-solid fa-download ml-1"></i>
     </a>
-    <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'cyclonedx' %}">
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'cyclonedx' %}">
       CycloneDX <i class="fa-solid fa-download ml-1"></i>
     </a>
-    <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'attribution' %}">
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'attribution' %}">
       Attribution <i class="fa-solid fa-download ml-1"></i>
     </a>
   </div>
