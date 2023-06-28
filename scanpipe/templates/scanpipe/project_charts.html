@@ -8,10 +8,10 @@
   </h3>
   <div class="columns is-gapless">
     <div class="column">
-      <div id="package_type_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="type"></div>
+      <div id="package_type_chart" data-url="{% url 'project_packages' project.slug %}" data-lookup_field="type"></div>
     </div>
     <div class="column">
-      <div id="package_license_chart" data-url="{% url 'project_packages' project.uuid %}" data-lookup_field="declared_license_expression"></div>
+      <div id="package_license_chart" data-url="{% url 'project_packages' project.slug %}" data-lookup_field="declared_license_expression"></div>
     </div>
   </div>
 {% endif %}
@@ -24,18 +24,18 @@
   </h3>
   <div class="columns is-gapless">
     <div class="column">
-      <div id="dependency_type_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="type"></div>
+      <div id="dependency_type_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="type"></div>
     </div>
     <div class="column">
-      <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_runtime"></div>
+      <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="is_runtime"></div>
     </div>
   </div>
   <div class="columns is-gapless">
     <div class="column">
-      <div id="dependency_is_optional_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_optional"></div>
+      <div id="dependency_is_optional_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="is_optional"></div>
     </div>
     <div class="column">
-      <div id="dependency_is_resolved_chart" data-url="{% url 'project_dependencies' project.uuid %}" data-lookup_field="is_resolved"></div>
+      <div id="dependency_is_resolved_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="is_resolved"></div>
     </div>
   </div>
 {% endif %}

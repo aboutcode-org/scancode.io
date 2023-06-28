@@ -20,7 +20,7 @@
         Are you sure you want to do this?
       </p>
     </section>
-    <form action="{% url 'project_archive' project.uuid %}" method="post">{% csrf_token %}
+    <form action="{% url 'project_archive' project.slug %}" method="post">{% csrf_token %}
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
         <button class="button is-warning is-no-close" type="submit">Yes, Archive Project</button>

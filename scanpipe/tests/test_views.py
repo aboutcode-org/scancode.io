@@ -212,7 +212,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertIsNone(run.task_start_date)
 
     def test_scanpipe_views_project_details_charts_view(self):
-        url = reverse("project_charts", args=[self.project1.uuid])
+        url = reverse("project_charts", args=[self.project1.slug])
 
         with self.assertNumQueries(9):
             response = self.client.get(url)
@@ -232,7 +232,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, '{"Python": 1}')
 
     def test_scanpipe_views_project_details_charts_compliance_alert(self):
-        url = reverse("project_charts", args=[self.project1.uuid])
+        url = reverse("project_charts", args=[self.project1.slug])
         expected = 'id="compliance_alert_chart"'
 
         response = self.client.get(url)
@@ -314,7 +314,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(expected, list(scan_summary_data.keys()))
 
     def test_scanpipe_views_project_codebase_view(self):
-        url = reverse("project_codebase", args=[self.project1.uuid])
+        url = reverse("project_codebase", args=[self.project1.slug])
 
         (self.project1.codebase_path / "dir1").mkdir()
         (self.project1.codebase_path / "dir1/dir2").mkdir()
@@ -377,7 +377,7 @@ class ScanPipeViewsTest(TestCase):
             get_tree(self.project1, current_dir="")
 
     def test_scanpipe_views_project_archive_view(self):
-        url = reverse("project_archive", args=[self.project1.uuid])
+        url = reverse("project_archive", args=[self.project1.slug])
         run = self.project1.add_pipeline("docker")
         run.set_task_started(run.pk)
 
@@ -396,7 +396,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertTrue(self.project1.is_archived)
 
     def test_scanpipe_views_project_delete_view(self):
-        url = reverse("project_delete", args=[self.project1.uuid])
+        url = reverse("project_delete", args=[self.project1.slug])
         run = self.project1.add_pipeline("docker")
         run.set_task_started(run.pk)
 
@@ -414,7 +414,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertFalse(Project.objects.filter(name=self.project1.name).exists())
 
     def test_scanpipe_views_project_reset_view(self):
-        url = reverse("project_reset", args=[self.project1.uuid])
+        url = reverse("project_reset", args=[self.project1.slug])
         run = self.project1.add_pipeline("docker")
         run.set_task_started(run.pk)
 
@@ -432,7 +432,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
 
     def test_scanpipe_views_project_settings_view(self):
-        url = reverse("project_settings", args=[self.project1.uuid])
+        url = reverse("project_settings", args=[self.project1.slug])
         response = self.client.get(url)
         expected_ids = [
             "id_name",
@@ -457,7 +457,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected_error)
 
     def test_scanpipe_views_project_settings_view_download_config_file(self):
-        url = reverse("project_settings", args=[self.project1.uuid])
+        url = reverse("project_settings", args=[self.project1.slug])
         self.project1.settings = {"extract_recursively": False}
         self.project1.save()
 
@@ -468,7 +468,7 @@ class ScanPipeViewsTest(TestCase):
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
         run = self.project1.add_pipeline("docker")
-        url = reverse("project_execute_pipeline", args=[self.project1.pk, run.uuid])
+        url = reverse("project_execute_pipeline", args=[self.project1.slug, run.uuid])
 
         response = self.client.get(url, follow=True)
         expected = f"Pipeline {run.pipeline_name} run started."
@@ -490,7 +490,7 @@ class ScanPipeViewsTest(TestCase):
     @mock.patch("scanpipe.models.Run.stop_task")
     def test_scanpipe_views_stop_pipeline_view(self, mock_stop_task):
         run = self.project1.add_pipeline("docker")
-        url = reverse("project_stop_pipeline", args=[self.project1.pk, run.uuid])
+        url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
 
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
@@ -504,7 +504,7 @@ class ScanPipeViewsTest(TestCase):
     @mock.patch("scanpipe.models.Run.delete_task")
     def test_scanpipe_views_delete_pipeline_view(self, mock_delete_task):
         run = self.project1.add_pipeline("docker")
-        url = reverse("project_delete_pipeline", args=[self.project1.pk, run.uuid])
+        url = reverse("project_delete_pipeline", args=[self.project1.slug, run.uuid])
 
         response = self.client.get(url, follow=True)
         expected = f"Pipeline {run.pipeline_name} deleted."
@@ -581,7 +581,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "This resource is not available on disk.")
 
     def test_scanpipe_views_codebase_relation_list_view_count(self):
-        url = reverse("project_relations", args=[self.project1.uuid])
+        url = reverse("project_relations", args=[self.project1.slug])
 
         to_1 = make_resource_file(self.project1, "to/file1.ext")
         to_2 = make_resource_file(self.project1, "to/file2.ext")
@@ -599,7 +599,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "2 to/ resources (3 relations)")
 
     def test_scanpipe_views_codebase_relation_diff_view(self):
-        url = reverse("resource_diff", args=[self.project1.uuid])
+        url = reverse("resource_diff", args=[self.project1.slug])
         data = {
             "from_path": "",
             "to_path": "",

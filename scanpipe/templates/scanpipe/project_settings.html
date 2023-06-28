@@ -18,7 +18,7 @@
           {% include 'scanpipe/includes/project_settings_menu.html' %}
         </div>
         <div class="column">
-          <form method="post" action="{% url 'project_settings' project.uuid %}">{% csrf_token %}
+          <form method="post" action="{% url 'project_settings' project.slug %}">{% csrf_token %}
             <div class="panel">
               <p id="general" class="panel-heading py-2 is-size-6">General</p>
               <div class="panel-block is-block px-4">
@@ -42,7 +42,7 @@
                 <div class="field">
                   <label class="label" for="id_uuid">UUID</label>
                   <div class="control">
-                    <input type="text" id="id_uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
+                    <input type="text" id="id_uuid" class="input" value="{{ project.slug }}" disabled="disabled">
                   </div>
                 </div>
                 <div class="field">
@@ -99,7 +99,7 @@
 
             <div class="columns mt-4 mb-5 is-variable is-1">
               <div class="column is-one-third">
-                <a href="{% url 'project_detail' project.uuid %}" class="button is-fullwidth">Cancel</a>
+                <a href="{% url 'project_detail' project.slug %}" class="button is-fullwidth">Cancel</a>
               </div>
               <div class="column">
                 <input type="submit" class="button is-fullwidth is-link" value="Update">

@@ -416,6 +416,14 @@ class ExtraDataFieldMixin(models.Model):
         abstract = True
 
 
+def get_project_slug(project):
+    """
+    Return a "slug" value for the provided ``project`` based on the slugify name
+    attribute combined with the ``short_uuid`` to ensure its uniqueness.
+    """
+    return f"{slugify(project.name)}-{project.short_uuid}"
+
+
 def get_project_work_directory(project):
     """
     Return the work directory location for a given `project`.
@@ -424,7 +432,7 @@ def get_project_work_directory(project):
     A short version of the `project` uuid is added as a suffix to ensure
     uniqueness of the work directory location.
     """
-    project_workspace_id = f"{slugify(project.name)}-{project.short_uuid}"
+    project_workspace_id = get_project_slug(project)
     return f"{scanpipe_app.workspace_path}/projects/{project_workspace_id}"
 
 
@@ -468,6 +476,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         max_length=100,
         help_text=_("Name for this project."),
     )
+    slug = models.SlugField(
+        unique=True,
+        max_length=110,  # enough for name.max_length + len(short_uuid)
+    )
     WORK_DIRECTORIES = ["input", "output", "codebase", "tmp"]
     work_directory = models.CharField(
         max_length=2048,
@@ -505,9 +517,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Save this project instance.
         The workspace directories are set up during project creation.
         """
+        if not self.slug:
+            self.slug = get_project_slug(project=self)
+
         if not self.work_directory:
             self.work_directory = get_project_work_directory(project=self)
             self.setup_work_directory()
+
         super().save(*args, **kwargs)
 
     def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
@@ -941,7 +957,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def get_absolute_url(self):
         """Return this project's details URL."""
-        return reverse("project_detail", args=[self.uuid])
+        return reverse("project_detail", args=[self.slug])
 
     @cached_property
     def resource_count(self):
@@ -2020,11 +2036,11 @@ class CodebaseResource(
                 yield child
 
     def get_absolute_url(self):
-        return reverse("resource_detail", args=[self.project_id, self.path])
+        return reverse("resource_detail", args=[self.project.slug, self.path])
 
     def get_raw_url(self):
         """Return the URL to access the RAW content of the resource."""
-        return reverse("resource_raw", args=[self.project_id, self.path])
+        return reverse("resource_raw", args=[self.project.slug, self.path])
 
     @property
     def file_content(self):
@@ -2452,7 +2468,7 @@ class DiscoveredPackage(
         return self.package_url or str(self.uuid)
 
     def get_absolute_url(self):
-        return reverse("package_detail", args=[self.project_id, self.pk])
+        return reverse("package_detail", args=[self.project.slug, self.pk])
 
     @cached_property
     def resources(self):
@@ -2772,7 +2788,7 @@ class DiscoveredDependency(
         return self.dependency_uid
 
     def get_absolute_url(self):
-        return reverse("dependency_detail", args=[self.project_id, self.pk])
+        return reverse("dependency_detail", args=[self.project.slug, self.pk])
 
     @property
     def purl(self):

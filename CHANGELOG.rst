@@ -17,7 +17,10 @@ v33.0.0 (unreleased)
   https://github.com/nexB/scancode.io/issues/763
 
 - Display image type files in the codebase resource details view in a new "Image" tab.
-  https://github.com/nexB/scancode.io/issues/705
+
+- Add ``slug`` field on the Project model. That field is used in URLs instead of the
+  ``uuid``.
+  https://github.com/nexB/scancode.io/issues/745
 
 v32.3.0 (2023-06-12)
 --------------------
