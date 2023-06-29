@@ -296,13 +296,7 @@
       "percentage_of_license_text": null,
       "copyrights": [],
       "holders": [],
-      "authors": [
-        {
-          "author": "Apache Maven",
-          "end_line": 1,
-          "start_line": 1
-        }
-      ],
+      "authors": [],
       "package_data": [],
       "for_packages": [],
       "emails": [],

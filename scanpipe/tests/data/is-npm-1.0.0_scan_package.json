@@ -154,6 +154,11 @@
       "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
       "license_expression": "mit",
       "detection_count": 2
+    },
+    {
+      "identifier": "mit-a822f434-d61f-f2b1-c792-8b8cb9e7b9bf",
+      "license_expression": "mit",
+      "detection_count": 1
     }
   ],
   "files": [
@@ -413,7 +418,13 @@
       "percentage_of_license_text": 3.33,
       "copyrights": [],
       "holders": [],
-      "authors": [],
+      "authors": [
+        {
+          "author": "Sindre Sorhus",
+          "start_line": 7,
+          "end_line": 8
+        }
+      ],
       "emails": [
         {
           "email": "sindresorhus@gmail.com",
