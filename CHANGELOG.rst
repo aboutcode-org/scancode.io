@@ -4,6 +4,12 @@ Changelog
 v33.0.0 (unreleased)
 --------------------
 
+- Add multiple new filtering option to list views table headers.
+  Refactored the way to define filters using the table_columns view attribute.
+  https://github.com/nexB/scancode.io/issues/216
+  https://github.com/nexB/scancode.io/issues/580
+  https://github.com/nexB/scancode.io/issues/506
+
 - Update the CycloneDX BOM download file extension from ``.bom.json`` to ``.cdx.json``.
   https://github.com/nexB/scancode.io/issues/785
 
