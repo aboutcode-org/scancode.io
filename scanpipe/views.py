@@ -323,16 +323,20 @@ class TableColumnsMixin:
 
             sort_name = column_data.get("sort_name") or field_name
             if sort_name in sortable_fields:
+                is_sorted = sort_name == active_sort.lstrip("-")
+
                 sort_direction = ""
+                if is_sorted and not active_sort.startswith("-"):
+                    sort_direction = "-"
 
-                if active_sort.endswith(sort_name):
-                    if not active_sort.startswith("-"):
-                        sort_direction = "-"
-
+                column_data["is_sorted"] = is_sorted
                 column_data["sort_direction"] = sort_direction
                 query_dict = self.request.GET.copy()
                 query_dict["sort"] = f"{sort_direction}{sort_name}"
                 column_data["sort_query"] = query_dict.urlencode()
+
+            if filter_fieldname := column_data.get("filter_fieldname"):
+                column_data["filter"] = filterset.form[filter_fieldname]
 
             columns_data.append(column_data)
 
@@ -346,6 +350,7 @@ class TableColumnsMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["columns_data"] = self.get_columns_data()
+        context["request_query_string"] = self.request.GET.urlencode()
         return context
 
 
@@ -599,6 +604,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "scan_summary": scan_summary,
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
+                "file_filter": self.request.GET.get("file-filter", "all"),
             }
         )
 
@@ -691,7 +697,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        file_filter = self.request.GET.get("file-filter")
+        file_filter = self.request.GET.get("file-filter", "all")
         context["file_filter"] = file_filter
 
         files = project.codebaseresources.files()
@@ -988,20 +994,35 @@ class CodebaseResourceListView(
     prefetch_related = ["discovered_packages"]
     table_columns = [
         "path",
-        "status",
-        "type",
+        {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
+        {
+            "field_name": "type",
+            "filter_fieldname": "type",
+        },
         "size",
         "name",
         "extension",
         "programming_language",
         "mime_type",
         "tag",
-        "detected_license_expression",
+        {
+            "field_name": "detected_license_expression",
+            "filter_fieldname": "detected_license_expression",
+        },
         {
             "field_name": "compliance_alert",
             "condition": scanpipe_app.policies_enabled,
+            "filter_fieldname": "compliance_alert",
+            "filter_is_right": True,
         },
-        "packages",
+        {
+            "field_name": "packages",
+            "filter_fieldname": "in_package",
+            "filter_is_right": True,
+        },
     ]
 
     def get_context_data(self, **kwargs):
@@ -1025,8 +1046,14 @@ class DiscoveredPackageListView(
     prefetch_related = ["codebase_resources"]
     table_columns = [
         "package_url",
-        "declared_license_expression",
-        "copyright",
+        {
+            "field_name": "declared_license_expression",
+            "filter_fieldname": "declared_license_expression",
+        },
+        {
+            "field_name": "copyright",
+            "filter_fieldname": "copyright",
+        },
         "primary_language",
         "resources",
     ]
@@ -1087,6 +1114,7 @@ RelationRow = namedtuple(
 class CodebaseRelationListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
 ):
@@ -1094,6 +1122,25 @@ class CodebaseRelationListView(
     filterset_class = ResourceFilterSet
     template_name = "scanpipe/relation_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
+    table_columns = [
+        {
+            "field_name": "path",
+            "label": "To resource",
+        },
+        {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
+        {
+            "field_name": "related_from__map_type",
+            "label": "Map type",
+            "filter_fieldname": "relation_map_type",
+        },
+        {
+            "field_name": "related_from__from_resource__path",
+            "label": "From resource",
+        },
+    ]
 
     def get_queryset(self):
         return (

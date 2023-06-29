@@ -25,22 +25,22 @@
               <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
             </td>
             <td>
-              {{ dependency.type }}
+              <a href="?type={{ dependency.type }}" class="is-black-link">{{ dependency.type }}</a>
             </td>
             <td>
               {{ dependency.extracted_requirement }}
             </td>
             <td class="break-normal">
-              {{ dependency.scope }}
+              <a href="?scope={{ dependency.scope }}" class="is-black-link">{{ dependency.scope }}</a>
             </td>
             <td>
-              {{ dependency.is_runtime }}
+              <a href="?is_runtime={{ dependency.is_runtime }}" class="is-black-link">{{ dependency.is_runtime }}</a>
             </td>
             <td>
-              {{ dependency.is_optional }}
+              <a href="?is_optional={{ dependency.is_optional }}" class="is-black-link">{{ dependency.is_optional }}</a>
             </td>
             <td>
-              {{ dependency.is_resolved }}
+              <a href="?is_resolved={{ dependency.is_resolved }}" class="is-black-link">{{ dependency.is_resolved }}</a>
             </td>
             <td>
               {% if dependency.for_package %}
@@ -54,6 +54,12 @@
             </td>
             <td>
               {{ dependency.datasource_id }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="42" class="has-text-centered p-3">
+              No Dependencies found. <a href="?">Clear search and filters</a>
             </td>
           </tr>
         {% endfor %}

@@ -1,6 +1,6 @@
-<a href="?sort={% if "-" not in filter.data.sort %}-{% endif %}{{ field_name }}" class="is-black-link">
-  {{ label }}
+<a href="?{{ column.sort_query }}" class="is-black-link">
+  {{ column.label }}
 </a>
-{% if field_name in filter.data.sort %}
-  <i class="fa-solid fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+{% if column.is_sorted %}
+  <i class="fa-solid fa-sort-{% if column.sort_direction == "-" %}down{% else %}up{% endif %}"></i>
 {% endif %}

@@ -124,7 +124,7 @@
     </section>
 
     {% if project.resource_count or project.package_count %}
-      <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.slug %}" hx-trigger="load">
+      <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load">
         <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
         Loading the charts...
       </section>

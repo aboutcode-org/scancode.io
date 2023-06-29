@@ -52,6 +52,12 @@
               <pre class="log wrap p-0" style="max-height: 150px;"><code>{{ error.traceback }}</code></pre>
             </td>
           </tr>
+        {% empty %}
+          <tr>
+            <td colspan="42" class="has-text-centered p-3">
+              No Errors found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>

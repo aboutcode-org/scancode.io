@@ -160,6 +160,10 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
+# Forms and filters
+
+FILTERS_EMPTY_CHOICE_LABEL = env.str("FILTERS_EMPTY_CHOICE_LABEL", default="All")
+
 # Templates
 
 TEMPLATES = [
