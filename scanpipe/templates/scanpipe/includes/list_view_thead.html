@@ -12,7 +12,7 @@
           </div>
           {% if column.filter %}
             <div class="ml-1">
-              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=column.filter is_right=column.filter_is_right only %}
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter=column.filter is_right=column.filter_is_right only %}
             </div>
           {% endif %}
         </div>

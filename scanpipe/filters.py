@@ -41,10 +41,11 @@ from scanpipe.models import Run
 scanpipe_app = apps.get_app_config("scanpipe")
 
 PAGE_VAR = "page"
+EMPTY_VAR = "_EMPTY_"
 
 
 class FilterSetUtilsMixin:
-    empty_value = "_EMPTY_"
+    empty_value = EMPTY_VAR
     other_value = "_OTHER_"
 
     @staticmethod
@@ -314,6 +315,14 @@ class StatusFilter(django_filters.ChoiceFilter):
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget = [
+        "status",
+        "type",
+        "compliance_alert",
+        "in_package",
+        "relation_map_type",
+    ]
+
     search = django_filters.CharFilter(
         label="Search",
         field_name="path",
@@ -338,7 +347,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
     )
     compliance_alert = django_filters.ChoiceFilter(
-        choices=[("_EMPTY_", "Empty value")] + CodebaseResource.Compliance.choices
+        choices=[(EMPTY_VAR, "Empty value")] + CodebaseResource.Compliance.choices,
     )
     in_package = InPackageFilter(label="In a package")
     status = StatusFilter()
@@ -386,9 +395,13 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         if status_filter := self.filters.get("status"):
             status_filter.extra.update({"choices": self.get_status_choices()})
 
+        # Set the `BulmaDropdownWidget`` widget for defined ``dropdown_widget``.
+        for field_name in self.dropdown_widget:
+            self.filters[field_name].extra["widget"] = BulmaDropdownWidget()
+
     def get_status_choices(self):
         default_choices = [
-            ("_EMPTY_", "No status"),
+            (EMPTY_VAR, "No status"),
             ("any", "Any status"),
         ]
         status_values = (
