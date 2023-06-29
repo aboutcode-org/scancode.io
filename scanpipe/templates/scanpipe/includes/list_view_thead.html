@@ -2,19 +2,38 @@
   <tr>
     {% for column in columns_data %}
       <th id="column-{{ column.field_name }}" {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
-        {% if column.sort_query %}
-          <a class="is-black-link" href="?{{ column.sort_query }}">{{ column.label }}</a>
-          {% if column.field_name in filter.data.sort %}
-            <i class="fa-solid fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
-          {% endif %}
-        {% else %}
-          {{ column.label }}
-        {% endif %}
-        {% if column.field_name == "status" %}
-          <div class="is-pulled-right">
-            {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.status only %}
+
+        <div class="is-flex is-justify-content-space-between">
+          <div>
+            {% if column.sort_query %}
+              <a class="is-black-link" href="?{{ column.sort_query }}">{{ column.label }}</a>
+              {% if column.field_name in filter.data.sort %}
+                <i class="fa-solid fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+              {% endif %}
+            {% else %}
+              {{ column.label }}
+            {% endif %}
           </div>
-        {% endif %}
+
+          {% if column.field_name == "status" %}
+            <div class="ml-1">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.status only %}
+            </div>
+          {% elif column.field_name == "type" %}
+            <div class="ml-1">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.type only %}
+            </div>
+          {% elif column.field_name == "compliance_alert" %}
+            <div class="ml-1">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.compliance_alert is_right=True only %}
+            </div>
+          {% elif column.field_name == "packages" %}
+            <div class="ml-1">
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.in_package is_right=True only %}
+            </div>
+          {% endif %}
+        </div>
+
       </th>
     {% endfor %}
   </tr>

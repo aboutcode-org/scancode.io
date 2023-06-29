@@ -268,8 +268,8 @@ class JSONContainsFilter(django_filters.CharFilter):
 class InPackageFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
-            ("true", "Yes"),
-            ("false", "No"),
+            ("true", "In a package"),
+            ("false", "Not in a package"),
         )
         super().__init__(*args, **kwargs)
 
@@ -340,12 +340,11 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     compliance_alert = django_filters.ChoiceFilter(
         choices=CodebaseResource.Compliance.choices + [("_EMPTY_", "EMPTY")]
     )
-    in_package = InPackageFilter(label="In a Package")
-    status = StatusFilter(empty_label="All")
+    in_package = InPackageFilter(label="In a package")
+    status = StatusFilter()
     relation_map_type = RelationMapTypeFilter(
         label="Relation map type",
         field_name="related_from__map_type",
-        empty_label="All",
     )
 
     class Meta:
