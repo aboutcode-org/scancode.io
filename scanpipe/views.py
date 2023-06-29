@@ -323,12 +323,13 @@ class TableColumnsMixin:
 
             sort_name = column_data.get("sort_name") or field_name
             if sort_name in sortable_fields:
+                is_sorted = sort_name == active_sort.lstrip("-")
+
                 sort_direction = ""
+                if is_sorted and not active_sort.startswith("-"):
+                    sort_direction = "-"
 
-                if active_sort.endswith(sort_name):
-                    if not active_sort.startswith("-"):
-                        sort_direction = "-"
-
+                column_data["is_sorted"] = is_sorted
                 column_data["sort_direction"] = sort_direction
                 query_dict = self.request.GET.copy()
                 query_dict["sort"] = f"{sort_direction}{sort_name}"
@@ -1087,6 +1088,7 @@ RelationRow = namedtuple(
 class CodebaseRelationListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
 ):
@@ -1094,6 +1096,22 @@ class CodebaseRelationListView(
     filterset_class = ResourceFilterSet
     template_name = "scanpipe/relation_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
+    table_columns = [
+        {
+            "field_name": "path",
+            "label": "To resource",
+        },
+        "status",
+        {
+            "field_name": "related_from__map_type",
+            "label": "Map type",
+            # TODO: filter: relation_map_type
+        },
+        {
+            "field_name": "related_from__from_resource__path",
+            "label": "From resource",
+        },
+    ]
 
     def get_queryset(self):
         return (

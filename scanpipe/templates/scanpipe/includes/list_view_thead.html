@@ -2,19 +2,14 @@
   <tr>
     {% for column in columns_data %}
       <th id="column-{{ column.field_name }}" {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
-
         <div class="is-flex is-justify-content-space-between">
           <div>
             {% if column.sort_query %}
-              <a class="is-black-link" href="?{{ column.sort_query }}">{{ column.label }}</a>
-              {% if column.field_name in filter.data.sort %}
-                <i class="fa-solid fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
-              {% endif %}
+              {% include 'scanpipe/includes/filter_sort.html' with column=column only %}
             {% else %}
               {{ column.label }}
             {% endif %}
           </div>
-
           {% if column.field_name == "status" %}
             <div class="ml-1">
               {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.status only %}
@@ -33,7 +28,6 @@
             </div>
           {% endif %}
         </div>
-
       </th>
     {% endfor %}
   </tr>
