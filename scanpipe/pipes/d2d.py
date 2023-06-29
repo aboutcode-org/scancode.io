@@ -579,23 +579,17 @@ def map_javascript(project, logger=None):
 def _map_javascript_resource(
     to_map, to_resources_minified, from_resources_index, from_resources
 ):
-    content_sha1_list = js.source_content_sha1_list(to_map)
-    sha1_matches = from_resources.filter(sha1__in=content_sha1_list)
-
-    # Only create relations when the number of sha1 matches if inferior or equal
-    # to the number of sourcesContent in map.
-    if len(sha1_matches) > len(content_sha1_list):
-        to_map.update(status=flag.TOO_MANY_MAPS)
-        return
-
-    matches = [(match, {}) for match in sha1_matches]
+    matches = js.get_matches_by_sha1(to_map, from_resources)
 
     # Use diff_ratio if no sha1 match is found.
     if not matches:
         matches = js.get_matches_by_ratio(to_map, from_resources_index, from_resources)
 
     transpiled = [to_map]
-    if minified_resource := js.get_minified_resource(to_map, to_resources_minified):
+    if minified_resource := js.get_minified_resource(
+        map_resource=to_map,
+        minified_resources=to_resources_minified,
+    ):
         transpiled.append(minified_resource)
 
     for resource in transpiled:
@@ -656,3 +650,180 @@ def map_about_files(project, logger=None):
 
     for about_file_resource in from_about_files:
         _map_about_file_resource(project, about_file_resource, to_resources)
+
+
+def map_javascript_post_purldb_match(project, logger=None):
+    """Map minified javascript file based on existing PurlDB match."""
+    project_files = project.codebaseresources.files()
+
+    to_resources = project_files.to_codebase()
+
+    to_resources_dot_map = to_resources.filter(status="matched-to-purldb").filter(
+        extension=".map"
+    )
+
+    to_resources_minified = to_resources.no_status().filter(
+        extension__in=[".css", ".js"]
+    )
+
+    to_resources_minified_count = to_resources_minified.count()
+
+    if not to_resources_dot_map:
+        logger("No PurlDB matched .map file is available. Skipping.")
+        return
+
+    if logger:
+        logger(
+            f"Mapping {to_resources_minified_count:,d} minified .js and .css "
+            f"resources based on existing PurlDB match"
+        )
+
+    to_resources_dot_map_index = pathmap.build_index(
+        to_resources_dot_map.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_resources_minified.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_minified in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            to_resources_minified_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _map_javascript_post_purldb_match_resource(
+            to_minified, to_resources_dot_map, to_resources_dot_map_index
+        )
+
+
+def _map_javascript_post_purldb_match_resource(
+    to_minified, to_resources_dot_map, to_resources_dot_map_index
+):
+    path = Path(to_minified.path.lstrip("/"))
+    map_file_name = f"{path.name}.map"
+    map_file_path = path.parent / map_file_name
+
+    if not js.is_source_mapping_in_minified(to_minified, map_file_name):
+        return
+
+    prospect = pathmap.find_paths(str(map_file_path), to_resources_dot_map_index)
+    if not prospect:
+        return
+
+    # Only create relations when the number of matches is inferior or equal to
+    # the current number of path segment matched.
+    too_many_prospects = len(prospect.resource_ids) > prospect.matched_path_length
+    if too_many_prospects:
+        return
+
+    map_file = to_resources_dot_map.get(id=prospect.resource_ids[0])
+
+    if package := map_file.discovered_packages.first():
+        package.add_resources([to_minified])
+        to_minified.update(status=flag.MAPPED)
+
+
+def map_javascript_path(project, logger=None):
+    """Map javascript file based on path."""
+    project_files = project.codebaseresources.files().only("path")
+
+    to_resources_key = (
+        project_files.to_codebase()
+        .no_status()
+        .filter(extension__in=[".map", ".ts"])
+        .exclude(name__startswith=".")
+    )
+
+    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
+
+    from_resources = project_files.from_codebase()
+    resource_count = to_resources_key.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources using javascript map "
+            f"against from/ codebase"
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_resources_key.iterator(chunk_size=2000)
+    last_percent = 0
+    map_count = 0
+    start_time = timer()
+
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        map_count += _map_javascript_path_resource(
+            to_resource, to_resources, from_resources_index, from_resources
+        )
+
+    logger(f"{map_count:,d} resource(s) mapped")
+
+
+def _map_javascript_path_resource(
+    to_resource, to_resources, from_resources_index, from_resources
+):
+    """
+    Map JavaScript deployed files using their .map files.
+    Return the number of mapped files.
+    """
+    path = Path(to_resource.path.lstrip("/"))
+
+    basename_and_extension = js.get_js_map_basename_and_extension(path.name)
+    if not basename_and_extension:
+        return 0
+
+    basename, extension = basename_and_extension
+    path_parts = (path.parent / basename).parts
+    path_parts_len = len(path_parts)
+
+    base_path = path.parent / basename
+
+    prospect = js.PROSPECTIVE_JAVASCRIPT_MAP.get(extension, {})
+
+    max_matched_path = 0
+    from_resource = None
+    for source_ext in prospect.get("sources", []):
+        match = pathmap.find_paths(f"{base_path}{source_ext}", from_resources_index)
+
+        # Only create relations when the number of matches if inferior or equal to
+        # the current number of path segment matched.
+        if not match or len(match.resource_ids) > match.matched_path_length:
+            continue
+
+        if match.matched_path_length > max_matched_path:
+            max_matched_path = match.matched_path_length
+            from_resource = from_resources.get(id=match.resource_ids[0])
+            extra_data = {"path_score": f"{match.matched_path_length}/{path_parts_len}"}
+
+    if not from_resource:
+        return 0
+
+    transpiled = [to_resource]
+    for related_ext in prospect.get("related", []):
+        try:
+            transpiled.append(to_resources.get(path=f"{base_path}{related_ext}"))
+        except CodebaseResource.DoesNotExist:
+            pass
+
+    for match in transpiled:
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=match,
+            map_type="js_path",
+            extra_data=extra_data,
+        )
+    return len(transpiled)

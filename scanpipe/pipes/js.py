@@ -27,6 +27,34 @@ from pathlib import Path
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import pathmap
 
+# `PROSPECTIVE_JAVASCRIPT_MAP` maps transformed JS file to a dict
+# that specifies extension of related files. The `related` key in
+# each dict specifies the file extension of the related transformed file, and
+# the `sources` key specifies the list of possible source extension.
+
+PROSPECTIVE_JAVASCRIPT_MAP = {
+    ".scss.js.map": {
+        "related": [".scss.js", ".css", ".css.map", "_rtl.css"],
+        "sources": [".scss"],
+    },
+    ".js.map": {
+        "related": [".js", ".jsx", ".ts"],
+        "sources": [".jsx", ".ts", ".js"],
+    },
+    ".soy.js.map": {
+        "related": [".soy.js", ".soy"],
+        "sources": [".soy"],
+    },
+    ".css.map": {
+        "related": [".css"],
+        "sources": [".css"],
+    },
+    ".ts": {
+        "related": [],
+        "sources": [".d.ts"],
+    },
+}
+
 
 def is_source_mapping_in_minified(resource, map_file_name):
     """Return True if a string contains a source mapping in its last 5 lines."""
@@ -75,6 +103,29 @@ def get_map_sources_content(map_file):
     return []
 
 
+def get_matches_by_sha1(to_map, from_resources):
+    content_sha1_list = source_content_sha1_list(to_map)
+    sources = get_map_sources(to_map)
+    all_source_path_available = len(sources) == len(content_sha1_list)
+
+    if not all_source_path_available:
+        sha1_matches = from_resources.filter(sha1__in=content_sha1_list)
+
+        # Only create relations when the number of sha1 matches if inferior or equal
+        # to the number of sourcesContent in map.
+        if len(sha1_matches) > len(content_sha1_list):
+            return
+
+        return [(match, {}) for match in sha1_matches]
+
+    matches = []
+    for sha1, source_path in zip(content_sha1_list, sources):
+        if match := from_resources.filter(sha1=sha1, path__endswith=source_path):
+            matches.append((match[0], {}))
+
+    return matches
+
+
 def get_matches_by_ratio(
     to_map, from_resources_index, from_resources, diff_ratio_threshold=0.98
 ):
@@ -105,7 +156,11 @@ def get_matches_by_ratio(
 
 
 def get_minified_resource(map_resource, minified_resources):
-    """Return the corresponding minified file for a map file."""
+    """
+    Return the corresponding minified_resource given a ``map_resource`` Resource
+    object and a ``minified_resources`` query set of minified JS Resource.
+    Return None if it cannot be found.
+    """
     path = Path(map_resource.path.lstrip("/"))
 
     minified_file, _ = path.name.split(".map")
@@ -117,3 +172,35 @@ def get_minified_resource(map_resource, minified_resources):
 
     if is_source_mapping_in_minified(minified_resource, path.name):
         return minified_resource
+
+
+_js_extensions = (
+    ".scss.js.map",
+    ".soy.js.map",
+    ".css.map",
+    ".js.map",
+    ".scss.js",
+    ".soy.js",
+    ".d.ts",
+    ".scss",
+    ".soy",
+    ".css",
+    ".jsx",
+    ".js",
+    ".ts",
+)
+
+
+def get_js_map_basename_and_extension(filename):
+    """
+    Return a 2-tuple pf (basename, extension) of a JavaScript/TypeScript related
+    file. Return None otherwise.
+    """
+    # The order of extensions in the list matters since
+    # `.d.ts` should be tested first before `.ts`.
+    if not filename.endswith(_js_extensions):
+        return
+    for ext in _js_extensions:
+        if filename.endswith(ext):
+            basename = filename[: -len(ext)]
+            return basename, ext
