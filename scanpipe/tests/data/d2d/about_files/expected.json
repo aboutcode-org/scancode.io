@@ -102,10 +102,7 @@
       "for_packages": [],
       "emails": [],
       "urls": [],
-      "extra_data": {
-        "directory_content": "000000033f52f50e504846d97460c403fde541ac",
-        "directory_structure": "00000003d6bf5be2eee1bd134fe3037c1ad33ef8"
-      }
+      "extra_data": {}
     },
     {
       "path": "from/flume-ng-node-1.8.0-sources.ABOUT",
@@ -537,8 +534,8 @@
       "emails": [],
       "urls": [],
       "extra_data": {
-        "directory_content": "00000015f6b057b61fd72b9c3429b9d20282eedf",
-        "directory_structure": "00000015d76554188eea461e1a07cfb2adbb3c15"
+        "directory_content": null,
+        "directory_structure": null
       }
     },
     {
