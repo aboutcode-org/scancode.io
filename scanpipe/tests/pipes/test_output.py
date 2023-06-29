@@ -24,6 +24,7 @@ import collections
 import json
 import shutil
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
 
@@ -531,6 +532,72 @@ class ScanPipeXLSXOutputPipesTest(TestCase):
         )
         self.assertEqual(result, "value1\nbar\nfoo")
         self.assertEqual(error, None)
+
+    def test_get_unique_licenses_returns_unique_and_preserve_order(self):
+        @dataclass
+        class Lic:
+            key: str
+
+        packages = [
+            {
+                "name": "foo",
+                "purl": "pkg:generic/foo",
+                "licenses": [Lic("foo"), Lic("bar"), Lic("foo")],
+            }
+        ]
+        result = output.get_unique_licenses(packages)
+        expected = [Lic("foo"), Lic("bar")]
+        self.assertEqual(result, expected)
+
+        packages = [
+            {
+                "name": "foo",
+                "purl": "pkg:generic/foo",
+                "licenses": [Lic("bar"), Lic("foo"), Lic("foo")],
+            }
+        ]
+        result = output.get_unique_licenses(packages)
+        expected = [Lic("bar"), Lic("foo")]
+        self.assertEqual(result, expected)
+
+        packages = [
+            {
+                "name": "foo",
+                "purl": "pkg:generic/foo",
+                "licenses": [Lic("bar")],
+            }
+        ]
+        result = output.get_unique_licenses(packages)
+        expected = [Lic("bar")]
+        self.assertEqual(result, expected)
+
+    def test_get_unique_licenses_does_not_fail_on_empties(self):
+        packages = [
+            {
+                "name": "foo",
+                "purl": "pkg:generic/foo",
+                "licenses": [],
+            }
+        ]
+        result = output.get_unique_licenses(packages)
+        expected = []
+        self.assertEqual(result, expected)
+
+        packages = [
+            {
+                "name": "foo",
+                "purl": "pkg:generic/foo",
+                "licenses": None,
+            }
+        ]
+        result = output.get_unique_licenses(packages)
+        expected = []
+        self.assertEqual(result, expected)
+
+        packages = [{"name": "foo"}]
+        result = output.get_unique_licenses(packages)
+        expected = []
+        self.assertEqual(result, expected)
 
 
 def get_cell_texts(original_text, test_dir, workbook_name):
