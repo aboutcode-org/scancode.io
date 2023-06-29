@@ -28,9 +28,11 @@
                   <a href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
                 </td>
               {% endif %}
-              <td>{{ resource.status }}</td>
               <td>
-                {{ relation.map_type }}
+                <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
+              </td>
+              <td>
+                <a href="?relation_map_type={{ relation.map_type }}" class="is-black-link">{{ relation.map_type }}</a>
                 {% if relation.extra_data.path_score %}
                   {{ relation.extra_data.path_score }}
                 {% endif %}
@@ -52,7 +54,9 @@
               <td class="break-all">
                 <a class="has-text-danger" href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
               </td>
-              <td>{{ resource.status }}</td>
+              <td>
+                <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
+              </td>
               <td></td>
               <td></td>
             </tr>

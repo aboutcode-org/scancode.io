@@ -458,7 +458,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "vcs_url",
             "type",
             "declared_license_expression",
+            "declared_license_expression_spdx",
             "other_license_expression",
+            "other_license_expression_spdx",
             "extracted_license_statement",
             "copyright",
         ]
