@@ -721,7 +721,7 @@ def get_package_data_for_attribution(package, licensing):
     return package_data
 
 
-def get_unique_licenses(packages, logger=None):
+def get_unique_licenses(packages):
     """
     Return a list of unique License symbol objects preserving ordering.
     Return an empty list if the packages do not have licenses.
@@ -734,19 +734,15 @@ def get_unique_licenses(packages, logger=None):
     licenses = []
 
     for package in packages:
-        if "licenses" not in package:
-            if logger:
-                logger(f"No license for Package {package.purl} in attribution")
-        else:
-            for lic in package.get("licenses") or []:
-                if lic.key not in seen_license_keys:
-                    seen_license_keys.add(lic.key)
-                    licenses.append(lic)
+        for license in package.get("licenses") or []:
+            if license.key not in seen_license_keys:
+                seen_license_keys.add(license.key)
+                licenses.append(license)
 
     return licenses
 
 
-def to_attribution(project, logger=None):
+def to_attribution(project):
     """
     Generate attribution for the provided ``project``.
     The output file is created in the ``project`` "output/" directory.
@@ -768,7 +764,7 @@ def to_attribution(project, logger=None):
         for package in get_queryset(project, "discoveredpackage")
     ]
 
-    licenses = get_unique_licenses(packages, logger=logger)
+    licenses = get_unique_licenses(packages)
     licenses = sorted(licenses, key=attrgetter("spdx_license_key"))
 
     context = {
