@@ -20,20 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.db.models import Q
-
-from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
 
 
 class PopulatePurlDB(Pipeline):
-    """
-    Populate PurlDB with project packages.
-
-    Ignore PURLs where namespace matches the pattern supplied
-    under ``ignored_namespace`` in scancode-config.yml.
-    """
+    """Populate PurlDB with project packages."""
 
     @classmethod
     def steps(cls):
@@ -42,39 +34,24 @@ class PopulatePurlDB(Pipeline):
             cls.populate_purldb_discovereddependency,
         )
 
-    @property
-    def ignored_namespaces(self):
-        return self.env.get("ignored_namespaces", [])
-
     def populate_purldb_discoveredpackage(self):
         """Add DiscoveredPackage to PurlDB."""
-        feed_purldb(
-            package_object=self.project.discoveredpackages,
-            ignored_namespaces=self.ignored_namespaces,
-            logger=self.log,
-        )
+        packages = self.project.discoveredpackages.all()
+
+        self.log(f"Populating PurlDB with {len(packages):,d} DiscoveredPackage")
+        feed_purldb(packages=packages)
 
     def populate_purldb_discovereddependency(self):
         """Add DiscoveredDependency to PurlDB."""
-        feed_purldb(
-            package_object=self.project.discovereddependencies,
-            ignored_namespaces=self.ignored_namespaces,
-            logger=self.log,
-        )
+        packages = self.project.discovereddependencies.all()
+
+        self.log(f"Populating PurlDB with {len(packages):,d} DiscoveredDependency")
+        feed_purldb(packages=packages)
 
 
-def feed_purldb(package_object, ignored_namespaces, logger):
+def feed_purldb(packages):
     if not purldb.is_available():
         raise Exception("PurlDB is not configured.")
 
-    combined_pattern = Q()
-    for pattern in ignored_namespaces:
-        combined_pattern |= Q(
-            namespace__regex=posix_regex_to_django_regex_lookup(pattern)
-        )
-
-    packages = package_object.exclude(combined_pattern)
-
-    logger(f"Populating PurlDB with {len(packages):,d} PURLs")
     for purl in list(set(packages)):
         purldb.index_package(purl)

@@ -934,5 +934,5 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertIn("Populating PurlDB with 2 PURLs", run.log)
-        self.assertIn("Populating PurlDB with 4 PURLs", run.log)
+        self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
+        self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
