@@ -10,21 +10,9 @@
               {{ column.label }}
             {% endif %}
           </div>
-          {% if column.field_name == "status" %}
+          {% if column.filter %}
             <div class="ml-1">
-              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.status only %}
-            </div>
-          {% elif column.field_name == "type" %}
-            <div class="ml-1">
-              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.type only %}
-            </div>
-          {% elif column.field_name == "compliance_alert" %}
-            <div class="ml-1">
-              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.compliance_alert is_right=True only %}
-            </div>
-          {% elif column.field_name == "packages" %}
-            <div class="ml-1">
-              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=filter.form.in_package is_right=True only %}
+              {% include 'scanpipe/includes/filter_dropdown_choices_field.html' with filter_form_field=column.filter is_right=column.filter_is_right only %}
             </div>
           {% endif %}
         </div>

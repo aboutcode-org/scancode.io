@@ -335,6 +335,9 @@ class TableColumnsMixin:
                 query_dict["sort"] = f"{sort_direction}{sort_name}"
                 column_data["sort_query"] = query_dict.urlencode()
 
+            if filter_fieldname := column_data.get("filter_fieldname"):
+                column_data["filter"] = filterset.form[filter_fieldname]
+
             columns_data.append(column_data)
 
         return columns_data
@@ -989,8 +992,14 @@ class CodebaseResourceListView(
     prefetch_related = ["discovered_packages"]
     table_columns = [
         "path",
-        "status",
-        "type",
+        {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
+        {
+            "field_name": "type",
+            "filter_fieldname": "type",
+        },
         "size",
         "name",
         "extension",
@@ -1001,8 +1010,14 @@ class CodebaseResourceListView(
         {
             "field_name": "compliance_alert",
             "condition": scanpipe_app.policies_enabled,
+            "filter_fieldname": "compliance_alert",
+            "filter_is_right": True,
         },
-        "packages",
+        {
+            "field_name": "packages",
+            "filter_fieldname": "in_package",
+            "filter_is_right": True,
+        },
     ]
 
     def get_context_data(self, **kwargs):
@@ -1101,11 +1116,14 @@ class CodebaseRelationListView(
             "field_name": "path",
             "label": "To resource",
         },
-        "status",
+        {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
         {
             "field_name": "related_from__map_type",
             "label": "Map type",
-            # TODO: filter: relation_map_type
+            "filter_fieldname": "relation_map_type",
         },
         {
             "field_name": "related_from__from_resource__path",

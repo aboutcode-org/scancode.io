@@ -338,7 +338,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
     )
     compliance_alert = django_filters.ChoiceFilter(
-        choices=[("_EMPTY_", "No values")] + CodebaseResource.Compliance.choices
+        choices=[("_EMPTY_", "Empty value")] + CodebaseResource.Compliance.choices
     )
     in_package = InPackageFilter(label="In a package")
     status = StatusFilter()
