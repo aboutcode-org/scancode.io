@@ -138,8 +138,8 @@ class ScanPipeViewsTest(TestCase):
         data = {"page": "2"}
         response = self.client.get(url, data=data)
 
-        expected = '<a class="is-black-link" href="?page=2&amp;sort=name">Name</a>'
-        self.assertContains(response, expected)
+        expected = '<a href="?page=2&amp;sort=name" class="is-black-link">Name</a>'
+        self.assertContains(response, expected, html=True)
         expected = '<li><a href="?status=" class="dropdown-item is-active">All</a></li>'
         self.assertContains(response, expected)
         expected = '<a href="?pipeline=" class="dropdown-item is-active">All</a>'
