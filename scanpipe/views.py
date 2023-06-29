@@ -604,6 +604,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "scan_summary": scan_summary,
                 "pipeline_runs": pipeline_runs,
                 "codebase_root": codebase_root,
+                "file_filter": self.request.GET.get("file-filter", "all"),
             }
         )
 
@@ -696,7 +697,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
-        file_filter = self.request.GET.get("file-filter")
+        file_filter = self.request.GET.get("file-filter", "all")
         context["file_filter"] = file_filter
 
         files = project.codebaseresources.files()
