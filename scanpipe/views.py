@@ -1007,7 +1007,10 @@ class CodebaseResourceListView(
         "programming_language",
         "mime_type",
         "tag",
-        "detected_license_expression",
+        {
+            "field_name": "detected_license_expression",
+            "filter_fieldname": "detected_license_expression",
+        },
         {
             "field_name": "compliance_alert",
             "condition": scanpipe_app.policies_enabled,
@@ -1042,8 +1045,14 @@ class DiscoveredPackageListView(
     prefetch_related = ["codebase_resources"]
     table_columns = [
         "package_url",
-        "declared_license_expression",
-        "copyright",
+        {
+            "field_name": "declared_license_expression",
+            "filter_fieldname": "declared_license_expression",
+        },
+        {
+            "field_name": "copyright",
+            "filter_fieldname": "copyright",
+        },
         "primary_language",
         "resources",
     ]

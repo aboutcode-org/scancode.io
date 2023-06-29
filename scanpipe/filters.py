@@ -23,6 +23,7 @@
 from django.apps import apps
 from django.core.validators import EMPTY_VALUES
 from django.db import models
+from django.db.models import Q
 from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.http import urlencode
 from django.utils.translation import gettext as _
@@ -42,11 +43,14 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 PAGE_VAR = "page"
 EMPTY_VAR = "_EMPTY_"
+ANY_VAR = "_ANY_"
+OTHER_VAR = "_OTHER_"
 
 
 class FilterSetUtilsMixin:
     empty_value = EMPTY_VAR
-    other_value = "_OTHER_"
+    any_value = ANY_VAR
+    other_value = OTHER_VAR
 
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
@@ -123,6 +127,8 @@ class FilterSetUtilsMixin:
             field_name = self.filters[name].field_name
             if value == self.empty_value:
                 queryset = queryset.filter(**{f"{field_name}__in": EMPTY_VALUES})
+            elif value == self.any_value:
+                queryset = queryset.filter(~Q(**{f"{field_name}__in": EMPTY_VALUES}))
             elif value == self.other_value and hasattr(queryset, "less_common"):
                 return queryset.less_common(name)
             else:
@@ -169,6 +175,16 @@ class BulmaLinkWidget(LinkWidget):
 
 class BulmaDropdownWidget(BulmaLinkWidget):
     extra_css_class = "dropdown-item"
+
+
+class HasValueDropdownWidget(BulmaDropdownWidget):
+    def __init__(self, attrs=None, choices=()):
+        super().__init__(attrs)
+        self.choices = (
+            ("", "All"),
+            (EMPTY_VAR, "None"),
+            (ANY_VAR, "Any"),
+        )
 
 
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
@@ -347,7 +363,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
     )
     compliance_alert = django_filters.ChoiceFilter(
-        choices=[(EMPTY_VAR, "Empty value")] + CodebaseResource.Compliance.choices,
+        choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
     )
     in_package = InPackageFilter(label="In a package")
     status = StatusFilter()
@@ -398,6 +414,9 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         # Set the `BulmaDropdownWidget`` widget for defined ``dropdown_widget``.
         for field_name in self.dropdown_widget:
             self.filters[field_name].extra["widget"] = BulmaDropdownWidget()
+
+        license_expression_filer = self.filters["detected_license_expression"]
+        license_expression_filer.extra["widget"] = HasValueDropdownWidget()
 
     def get_status_choices(self):
         default_choices = [
@@ -464,6 +483,12 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "extracted_license_statement",
             "copyright",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        license_expression_filer = self.filters["declared_license_expression"]
+        license_expression_filer.extra["widget"] = HasValueDropdownWidget()
+        self.filters["copyright"].extra["widget"] = HasValueDropdownWidget()
 
 
 class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
