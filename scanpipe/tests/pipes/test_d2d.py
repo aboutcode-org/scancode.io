@@ -35,6 +35,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 
@@ -160,6 +161,50 @@ class ScanPipeD2DPipesTest(TestCase):
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()
             self.assertEqual(flag.MATCHED_TO_PURLDB, resource.status)
+            self.assertEqual(package, resource.discovered_packages.get())
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_pipes_d2d_match_purldb_directories(self, mock_request_get):
+        to_1 = make_resource_directory(
+            self.project1,
+            "to/package.jar-extract/",
+            extra_data={"directory_content": "abcdef"},
+        )
+        to_2 = make_resource_file(self.project1, "to/package.jar-extract/a.class")
+        to_3 = make_resource_file(self.project1, "to/package.jar-extract/b.class")
+        package_data = package_data1.copy()
+        package_data["uuid"] = uuid.uuid4()
+        mock_request_get.side_effect = [
+            [
+                {
+                    "fingerprint": "abcdef",
+                    "matched_fingerprint": "abcdef",
+                    "package": "http://private.purldb.io/api/packages/package-id-123",
+                }
+            ],
+            package_data,
+            [],
+        ]
+
+        buffer = io.StringIO()
+        d2d.match_purldb_directories(
+            self.project1,
+            logger=buffer.write,
+        )
+
+        expected = (
+            "Matching 1 director(y/ies) from to/ in PurlDB"
+            "1 director(y/ies) matched in PurlDB"
+        )
+        self.assertEqual(expected, buffer.getvalue())
+
+        package = self.project1.discoveredpackages.get()
+        self.assertEqual(package_data["name"], package.name)
+        self.assertNotEqual(package_data["uuid"], package.uuid)
+
+        for resource in [to_1, to_2, to_3]:
+            resource.refresh_from_db()
+            self.assertEqual("matched-to-purldb", resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_pipes_d2d_get_best_path_matches_same_name(self):
