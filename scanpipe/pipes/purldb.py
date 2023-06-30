@@ -120,10 +120,19 @@ def match_resource(sha1_list, timeout=None, api_url=PURLDB_API_URL):
 
 
 def index_package(purl, timeout=None, api_url=PURLDB_API_URL):
-    """Add PURL to PurlDB for indexing."""
+    """Add a PURL to PurlDB for indexing."""
     payload = {"purl": purl}
     response = request_get(
         url=f"{api_url}packages/get_package/", payload=payload, timeout=timeout
     )
 
     return response
+
+
+def feed_purldb(packages):
+    """Feed PurlDB with list of PURLs for indexing."""
+    if not is_available():
+        raise Exception("PurlDB is not configured.")
+
+    for purl in packages:
+        index_package(purl)
