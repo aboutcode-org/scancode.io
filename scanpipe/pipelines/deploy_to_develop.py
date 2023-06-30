@@ -153,15 +153,15 @@ class DeployToDevelop(Pipeline):
             self.log("PurlDB is not available. Skipping.")
             return
 
-        d2d.match_purldb_directories(
-            project=self.project,
-            logger=self.log,
-        )
-
         d2d.match_purldb_resources(
             project=self.project,
             extensions=self.purldb_package_extensions,
             matcher_func=d2d.match_purldb_package,
+            logger=self.log,
+        )
+
+        d2d.match_purldb_directories(
+            project=self.project,
             logger=self.log,
         )
 
