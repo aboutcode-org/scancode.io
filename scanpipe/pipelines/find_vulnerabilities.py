@@ -52,5 +52,11 @@ class FindVulnerabilities(Pipeline):
 
         for package in packages:
             purl = vulnerablecode.get_base_purl(package.package_url)
-            vulnerabilities = vulnerablecode.get_vulnerabilities_by_purl(purl)
-            package.update_extra_data({"discovered_vulnerabilities": vulnerabilities})
+            if vulnerabilities := vulnerablecode.get_vulnerabilities_by_purl(purl):
+                data = {}
+                package_vulnerabilities = vulnerabilities[0]
+                for field in ["fixing_vulnerabilities", "affected_by_vulnerabilities"]:
+                    if value := package_vulnerabilities.get(field):
+                        data[field] = value
+                if data:
+                    package.update(**data)
