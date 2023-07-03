@@ -313,6 +313,20 @@ class ScanPipeViewsTest(TestCase):
         ]
         self.assertEqual(expected, list(scan_summary_data.keys()))
 
+    def test_scanpipe_views_project_details_codebase_root(self):
+        (self.project1.codebase_path / "z.txt").touch()
+        (self.project1.codebase_path / "a.txt").touch()
+        (self.project1.codebase_path / "z").mkdir()
+        (self.project1.codebase_path / "a").mkdir()
+        (self.project1.codebase_path / "Zdir").mkdir()
+        (self.project1.codebase_path / "Dir").mkdir()
+
+        url = self.project1.get_absolute_url()
+        response = self.client.get(url)
+        codebase_root = response.context_data["codebase_root"]
+        expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
+        self.assertEqual(expected, [path.name for path in codebase_root])
+
     def test_scanpipe_views_project_codebase_view(self):
         url = reverse("project_codebase", args=[self.project1.slug])
 
@@ -337,6 +351,20 @@ class ScanPipeViewsTest(TestCase):
         data = {"current_dir": "../"}
         response = self.client.get(url, data=data)
         self.assertEqual(404, response.status_code)
+
+    def test_scanpipe_views_project_codebase_view_ordering(self):
+        url = reverse("project_codebase", args=[self.project1.slug])
+        (self.project1.codebase_path / "z.txt").touch()
+        (self.project1.codebase_path / "a.txt").touch()
+        (self.project1.codebase_path / "z").mkdir()
+        (self.project1.codebase_path / "a").mkdir()
+        (self.project1.codebase_path / "Zdir").mkdir()
+        (self.project1.codebase_path / "Dir").mkdir()
+
+        response = self.client.get(url)
+        codebase_tree = response.context_data["codebase_tree"]
+        expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
+        self.assertEqual(expected, [path.get("name") for path in codebase_tree])
 
     def test_scanpipe_views_project_codebase_view_get_tree(self):
         get_tree = ProjectCodebaseView.get_tree

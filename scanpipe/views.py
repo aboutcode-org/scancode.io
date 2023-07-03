@@ -584,9 +584,9 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
 
         codebase_root = sorted(
             project.codebase_path.glob("*"),
-            key=operator.methodcaller("is_dir"),
-            reverse=True,
+            key=operator.attrgetter("name"),
         )
+        codebase_root.sort(key=operator.methodcaller("is_file"))
 
         resource_status_summary = count_group_by(project.codebaseresources, "status")
 
@@ -786,7 +786,7 @@ class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
                 get_node(name="..", is_dir=True, location=str(Path(current_dir).parent))
             )
 
-        for resources, is_dir in [(directories, True), (files, False)]:
+        for resources, is_dir in [(sorted(directories), True), (sorted(files), False)]:
             tree.extend(
                 get_node(name=name, is_dir=is_dir, location=f"{current_dir}/{name}")
                 for name in resources

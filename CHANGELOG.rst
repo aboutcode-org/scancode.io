@@ -28,6 +28,9 @@ v33.0.0 (unreleased)
   ``uuid``.
   https://github.com/nexB/scancode.io/issues/745
 
+- Fix the ordering of the Codebase panel in the Project details view.
+  https://github.com/nexB/scancode.io/issues/795
+
 v32.3.0 (2023-06-12)
 --------------------
 
