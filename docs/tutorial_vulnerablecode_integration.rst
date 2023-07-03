@@ -20,14 +20,14 @@ You can either run your own instance of VulnerableCode or connect to the public 
 Authentication is provided using an API key that you can obtain by registering at
 https://public.vulnerablecode.io/account/request_api_key/
 
-Set the VulnerableCode URL and API key in your local settings:
+Set the ``VULNERABLECODE_URL`` and ``VULNERABLECODE_API_KEY`` in your local settings:
   - in the ``docker.env`` file if your run with docker
   - in the ``.env`` for a local development deployment
 
-The resulting ``docker.env``/``.env`` file should contain the following::
+For example::
 
-    VULNERABLECODE_URL = "https://public.vulnerablecode.io/"
-    VULNERABLECODE_API_KEY = "<VulnerableCode API key>"
+    VULNERABLECODE_URL=https://public.vulnerablecode.io/
+    VULNERABLECODE_API_KEY=c1fa7dc1fd0a408880ba2dfdf63c1124abca9477
 
 .. note::
     Optionally contact nexB support at support@nexb.com with your API user email if

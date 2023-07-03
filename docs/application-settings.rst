@@ -271,3 +271,13 @@ default the ``UTC`` time zone is used::
 .. note::
     You can view a detailed list of time zones `here.
     <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
+
+VULNERABLECODE
+--------------
+
+You can either run your own instance of VulnerableCode or connect to the public one.
+Authentication is provided using an API key that you can obtain by registering at
+https://public.vulnerablecode.io/account/request_api_key/ ::
+
+    VULNERABLECODE_URL=https://public.vulnerablecode.io/
+    VULNERABLECODE_API_KEY=c1fa7dc1fd0a408880ba2dfdf63c1124abca9477
