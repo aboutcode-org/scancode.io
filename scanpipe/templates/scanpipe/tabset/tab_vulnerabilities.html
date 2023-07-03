@@ -1,0 +1,12 @@
+<div class="content">
+  <p class="panel-heading py-2 px-2 is-size-6 mb-0">
+    Affected by vulnerabilities
+    <span class="tag is-danger is-rounded">{{ tab_data.fields.affected_by_vulnerabilities.value|length }}</span>
+  </p>
+  {% include 'scanpipe/includes/vulnerabilities_table.html' with vulnerabilities=tab_data.fields.affected_by_vulnerabilities.value empty_message="This package is not known to be affected by vulnerabilities." %}
+  <p class="panel-heading py-2 px-2 is-size-6 mb-0 mt-5">
+    Fixing vulnerabilities
+    <span class="tag is-success is-rounded">{{ tab_data.fields.fixing_vulnerabilities.value|length }}</span>
+  </p>
+  {% include 'scanpipe/includes/vulnerabilities_table.html' with vulnerabilities=tab_data.fields.fixing_vulnerabilities.value empty_message="This package is not known to fix vulnerabilities." %}
+</div>
