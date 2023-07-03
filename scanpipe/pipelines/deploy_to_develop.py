@@ -54,6 +54,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript,
             cls.match_purldb,
             cls.map_javascript_post_purldb_match,
+            cls.map_javascript_npm_lookup,
             cls.map_javascript_path,
             cls.map_path,
             cls.flag_mapped_resources_and_ignored_directories,
@@ -159,6 +160,14 @@ class DeployToDevelop(Pipeline):
     def map_javascript_post_purldb_match(self):
         """Map minified javascript file based on existing PurlDB match."""
         d2d.map_javascript_post_purldb_match(project=self.project, logger=self.log)
+
+    def map_javascript_npm_lookup(self):
+        """Map unmatched ``node_modules`` files."""
+        if not purldb.is_available():
+            self.log("PurlDB is not available. Skipping.")
+            return
+
+        d2d.map_javascript_npm_lookup(project=self.project, logger=self.log)
 
     def map_javascript_path(self):
         """Map javascript file based on path."""

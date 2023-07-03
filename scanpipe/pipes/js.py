@@ -24,6 +24,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from packageurl import PackageURL
+
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import pathmap
 
@@ -204,3 +206,21 @@ def get_js_map_basename_and_extension(filename):
         if filename.endswith(ext):
             basename = filename[: -len(ext)]
             return basename, ext
+
+
+def get_purl_from_node_module(node_module_directory):
+    """Return PURL for given a `node_modules` package directory."""
+    path = Path(node_module_directory.path)
+    path_parts = path.parts
+
+    npm_package = path_parts[-1]
+
+    if "$" in npm_package:
+        _, npm_package = npm_package.split("$")
+
+    # Handle the scoped pacakage.
+    if "%2F" in npm_package:
+        npm_package = npm_package.replace("%2F", "/")
+        npm_package = f"%40{npm_package}"
+
+    return PackageURL.from_string(f"pkg:npm/{npm_package}")
