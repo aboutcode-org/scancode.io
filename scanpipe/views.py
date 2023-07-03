@@ -1372,6 +1372,8 @@ class DiscoveredPackageDetailsView(
 ):
     model = DiscoveredPackage
     model_label = "packages"
+    slug_field = "uuid"
+    slug_url_kwarg = "uuid"
     template_name = "scanpipe/package_detail.html"
     prefetch_related = ["codebase_resources"]
     tabset = {
@@ -1468,6 +1470,8 @@ class DiscoveredDependencyDetailsView(
 ):
     model = DiscoveredDependency
     model_label = "dependencies"
+    slug_field = "dependency_uid"
+    slug_url_kwarg = "dependency_uid"
     template_name = "scanpipe/dependency_detail.html"
     prefetch_related = ["for_package", "datafile_resource"]
     tabset = {

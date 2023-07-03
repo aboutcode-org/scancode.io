@@ -2468,7 +2468,7 @@ class DiscoveredPackage(
         return self.package_url or str(self.uuid)
 
     def get_absolute_url(self):
-        return reverse("package_detail", args=[self.project.slug, self.pk])
+        return reverse("package_detail", args=[self.project.slug, self.uuid])
 
     @cached_property
     def resources(self):
@@ -2788,7 +2788,9 @@ class DiscoveredDependency(
         return self.dependency_uid
 
     def get_absolute_url(self):
-        return reverse("dependency_detail", args=[self.project.slug, self.pk])
+        return reverse(
+            "dependency_detail", args=[self.project.slug, self.dependency_uid]
+        )
 
     @property
     def purl(self):

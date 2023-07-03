@@ -31,6 +31,11 @@ v33.0.0 (unreleased)
 - Fix the ordering of the Codebase panel in the Project details view.
   https://github.com/nexB/scancode.io/issues/795
 
+- Do not rely on the internal ``id`` PK for package and dependency details URLs.
+  Package details URL is now based on ``uuid`` and the dependency details URL is based
+  on ``dependency_uid``.
+  https://github.com/nexB/scancode.io/issues/331
+
 v32.3.0 (2023-06-12)
 --------------------
 
