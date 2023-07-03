@@ -47,12 +47,12 @@ urlpatterns = [
         name="project_resources",
     ),
     path(
-        "project/<slug:slug>/packages/<int:pk>/",
+        "project/<slug:slug>/packages/<uuid:uuid>/",
         views.DiscoveredPackageDetailsView.as_view(),
         name="package_detail",
     ),
     path(
-        "project/<slug:slug>/dependencies/<int:pk>/",
+        "project/<slug:slug>/dependencies/<path:dependency_uid>/",
         views.DiscoveredDependencyDetailsView.as_view(),
         name="dependency_detail",
     ),
