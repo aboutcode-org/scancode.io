@@ -2204,7 +2204,8 @@ class CodebaseRelation(
 
 
 class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
-    pass
+    def vulnerable(self):
+        return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
 
 
 class AbstractPackage(models.Model):
@@ -2403,6 +2404,21 @@ class AbstractPackage(models.Model):
         abstract = True
 
 
+class VulnerabilityMixin(models.Model):
+    """Add the vulnerability related fields and methods."""
+
+    affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
+    fixing_vulnerabilities = models.JSONField(blank=True, default=list)
+
+    @property
+    def is_vulnerable(self):
+        """Returns True if this instance is affected by vulnerabilities."""
+        return bool(self.affected_by_vulnerabilities)
+
+    class Meta:
+        abstract = True
+
+
 class DiscoveredPackage(
     ProjectRelatedModel,
     ExtraDataFieldMixin,
@@ -2410,6 +2426,7 @@ class DiscoveredPackage(
     UpdateFromDataMixin,
     HashFieldsMixin,
     PackageURLMixin,
+    VulnerabilityMixin,
     AbstractPackage,
 ):
     """
