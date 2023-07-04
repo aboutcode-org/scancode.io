@@ -439,6 +439,22 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         return super().filter_for_lookup(field, lookup_type)
 
 
+class IsVulnerable(django_filters.ChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs["choices"] = (
+            ("yes", "Affected by vulnerabilities"),
+            ("no", "No vulnerabilities found"),
+        )
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value == "yes":
+            return qs.filter(~Q(**{f"{self.field_name}__in": EMPTY_VALUES}))
+        elif value == "no":
+            return qs.filter(**{f"{self.field_name}__in": EMPTY_VALUES})
+        return qs
+
+
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
         label="Search", field_name="name", lookup_expr="icontains"
@@ -453,6 +469,10 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
     )
     purl = PackageURLFilter(label="Package URL")
+    is_vulnerable = IsVulnerable(
+        field_name="affected_by_vulnerabilities",
+        widget=BulmaDropdownWidget,
+    )
 
     class Meta:
         model = DiscoveredPackage
@@ -483,6 +503,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "other_license_expression_spdx",
             "extracted_license_statement",
             "copyright",
+            "is_vulnerable",
         ]
 
     def __init__(self, *args, **kwargs):

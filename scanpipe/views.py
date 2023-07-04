@@ -1046,7 +1046,10 @@ class DiscoveredPackageListView(
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
     prefetch_related = ["codebase_resources"]
     table_columns = [
-        "package_url",
+        {
+            "field_name": "package_url",
+            "filter_fieldname": "is_vulnerable",
+        },
         {
             "field_name": "declared_license_expression",
             "filter_fieldname": "declared_license_expression",
