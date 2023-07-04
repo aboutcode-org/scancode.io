@@ -222,6 +222,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         field_name="runs__pipeline_name",
         choices=scanpipe_app.get_pipeline_choices(include_blank=False),
         widget=BulmaDropdownWidget,
+        distinct=True,
     )
     status = django_filters.ChoiceFilter(
         label="Status",
@@ -234,6 +235,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ("failed", "Failure"),
         ],
         widget=BulmaDropdownWidget,
+        distinct=True,
     )
 
     class Meta:
