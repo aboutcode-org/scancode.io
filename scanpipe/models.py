@@ -2408,7 +2408,6 @@ class VulnerabilityMixin(models.Model):
     """Add the vulnerability related fields and methods."""
 
     affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
-    fixing_vulnerabilities = models.JSONField(blank=True, default=list)
 
     @property
     def is_vulnerable(self):

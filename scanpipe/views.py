@@ -1436,7 +1436,7 @@ class DiscoveredPackageDetailsView(
             "template": "scanpipe/tabset/tab_dependencies.html",
         },
         "vulnerabilities": {
-            "fields": ["affected_by_vulnerabilities", "fixing_vulnerabilities"],
+            "fields": ["affected_by_vulnerabilities"],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
         },

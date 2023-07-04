@@ -3,10 +3,54 @@
     Affected by vulnerabilities
     <span class="tag is-danger is-rounded">{{ tab_data.fields.affected_by_vulnerabilities.value|length }}</span>
   </p>
-  {% include 'scanpipe/includes/vulnerabilities_table.html' with vulnerabilities=tab_data.fields.affected_by_vulnerabilities.value empty_message="This package is not known to be affected by vulnerabilities." %}
-  <p class="panel-heading py-2 px-2 is-size-6 mb-0 mt-5">
-    Fixing vulnerabilities
-    <span class="tag is-success is-rounded">{{ tab_data.fields.fixing_vulnerabilities.value|length }}</span>
-  </p>
-  {% include 'scanpipe/includes/vulnerabilities_table.html' with vulnerabilities=tab_data.fields.fixing_vulnerabilities.value empty_message="This package is not known to fix vulnerabilities." %}
+  <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+    <thead>
+      <tr>
+        <th style="width: 210px;">Vulnerability</th>
+        <th>Summary</th>
+        <th style="width: 210px;">Aliases</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for vulnerability in tab_data.fields.affected_by_vulnerabilities.value %}
+        <tr>
+          <td>
+            <a href="{{ vulnerablecode_url }}vulnerabilities/{{ vulnerability.vulnerability_id }}" target="_blank">
+              {{ vulnerability.vulnerability_id }}
+              <i class="fa-solid fa-up-right-from-square is-small"></i>
+            </a>
+          </td>
+          <td>
+            {{ vulnerability.summary }}
+          </td>
+          <td>
+            {% for alias in vulnerability.aliases %}
+              {% if alias|slice:":3" == "CVE" %}
+                <a href="https://nvd.nist.gov/vuln/detail/{{ alias }}" target="_blank">{{ alias }}
+                  <i class="fa-solid fa-up-right-from-square is-small"></i>
+                </a>
+              {% elif alias|slice:":4" == "GHSA" %}
+                <a href="https://github.com/advisories/{{ alias }}" target="_blank">{{ alias }}
+                  <i class="fa-solid fa-up-right-from-square is-small"></i>
+                </a>
+              {% elif alias|slice:":3" == "NPM" %}
+                <a href="https://github.com/nodejs/security-wg/blob/main/vuln/npm/{{ alias|slice:"4:" }}.json" target="_blank">{{ alias }}
+                  <i class="fa-solid fa-up-right-from-square is-small"></i>
+                </a>
+              {% else %}
+                {{ alias }}
+              {% endif %}
+              <br>
+            {% endfor %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="42">
+            This package is not known to be affected by vulnerabilities.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>

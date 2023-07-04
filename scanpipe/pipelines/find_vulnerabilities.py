@@ -50,13 +50,12 @@ class FindVulnerabilities(Pipeline):
         """Check for vulnerabilities on each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
 
+        # https://github.com/nexB/vulnerablecode/issues/1219#issuecomment-1620123301
         for package in packages:
             purl = vulnerablecode.get_base_purl(package.package_url)
             if vulnerabilities := vulnerablecode.get_vulnerabilities_by_purl(purl):
-                data = {}
                 package_vulnerabilities = vulnerabilities[0]
-                for field in ["fixing_vulnerabilities", "affected_by_vulnerabilities"]:
-                    if value := package_vulnerabilities.get(field):
-                        data[field] = value
-                if data:
-                    package.update(**data)
+                if affected_by := package_vulnerabilities.get(
+                    "affected_by_vulnerabilities"
+                ):
+                    package.update(affected_by_vulnerabilities=affected_by)
