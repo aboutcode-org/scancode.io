@@ -319,6 +319,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "file_references",
             "missing_resources",
             "modified_resources",
+            "affected_by_vulnerabilities",
         ]
 
 
