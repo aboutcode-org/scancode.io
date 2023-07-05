@@ -392,7 +392,6 @@ class ScanPipeScancodePipesTest(TestCase):
             scancode.run_scancode(location=None, output_file=None, options=[])
             self.assertIn("--processes 10", mock_run_command.call_args[0][0])
 
-    @skipIf(sys.platform != "linux", "file_type inconsistent across OS.")
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results
         scanpipe_app.license_policies_index = None
@@ -412,6 +411,11 @@ class ScanPipeScancodePipesTest(TestCase):
         package = project1.discoveredpackages.get()
         uuid = "ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
         package.update(package_uid=f"pkg:npm/is-npm@1.0.0?uuid={uuid}")
+
+        # Patching the ``file_type`` values as those OS dependant.
+        # Note that we cannot use proper ``mock`` as the ``scan_package`` pipeline
+        # uses a subprocess call to run the ``scancode`` command.
+        project1.codebaseresources.all().update(file_type="")
 
         scan_output_location = self.data_location / "is-npm-1.0.0_scan_package.json"
         summary = scancode.make_results_summary(project1, scan_output_location)

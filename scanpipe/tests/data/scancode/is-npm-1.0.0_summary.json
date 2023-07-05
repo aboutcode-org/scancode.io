@@ -50,7 +50,7 @@
       "sha256": "e98b263545fe62a00c73b57412cbdbcd0792e013a76f9c88342623ab5e8467c1",
       "sha512": "",
       "mime_type": "text/plain",
-      "file_type": "UTF-8 Unicode text",
+      "file_type": "",
       "programming_language": "",
       "is_binary": false,
       "is_text": true,
@@ -207,7 +207,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     }
   ]
 }
