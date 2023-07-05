@@ -1,8 +1,15 @@
 Changelog
 =========
 
-v33.0.0 (unreleased)
+v32.4.0 (unreleased)
 --------------------
+
+- Upgrade vulnerablecode integration:
+  - Add ``affected_by_vulnerabilities`` field on ``DiscoveredPackage`` model.
+  - Add UI for showing package vulnerabilities in details view.
+  - Add packages filtering by ``is_vulnerable``.
+  - Include vulnerability data in the JSON results.
+  https://github.com/nexB/scancode.io/issues/600
 
 - Add multiple new filtering option to list views table headers.
   Refactored the way to define filters using the table_columns view attribute.
