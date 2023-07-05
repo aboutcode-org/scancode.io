@@ -991,6 +991,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         return self.discoveredpackages.count()
 
     @cached_property
+    def vulnerable_package_count(self):
+        """Return the number of vulnerable packages related to this project."""
+        return self.discoveredpackages.vulnerable().count()
+
+    @cached_property
     def dependency_count(self):
         """Return the number of dependencies related to this project."""
         return self.discovereddependencies.count()

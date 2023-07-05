@@ -8,9 +8,9 @@
           <a href="{% url 'project_packages' project.slug %}">
             {{ project.package_count|intcomma }}
           </a>
-          {% if project.discoveredpackages.vulnerable.count %}
+          {% if project.vulnerable_package_count %}
             <a href="{% url 'project_packages' project.slug %}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-2">
-              {{ project.discoveredpackages.vulnerable.count|intcomma }}
+              {{ project.vulnerable_package_count|intcomma }}
               <i class="fa-solid fa-bug is-size-6"></i>
             </a>
           {% endif %}
