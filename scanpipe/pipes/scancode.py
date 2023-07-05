@@ -546,19 +546,26 @@ def _get_license_matches_grouped(project):
         file_cache = []
 
         for detection_data in resource.license_detections:
+            detected_license_expression = detection_data.get("license_expression")
             for match in detection_data.get("matches", []):
-                license_expression = match.get("license_expression")
-                matched_text = match.get("matched_text")
+                match_license_expression = match.get("license_expression")
+                # Do not include those match.expression when not part of the main
+                # detected_license_expression as those are not counted in the summary
+                if match_license_expression not in detected_license_expression:
+                    continue
 
+                matched_text = match.get("matched_text")
                 # Do not include duplicated matched_text for a given license_expression
                 # within the same file
-                cache_key = ":".join([license_expression, resource.path, matched_text])
+                cache_key = ":".join(
+                    [match_license_expression, resource.path, matched_text]
+                )
                 cache_key = hashlib.md5(cache_key.encode()).hexdigest()
                 if cache_key in file_cache:
                     continue
                 file_cache.append(cache_key)
 
-                license_matches[license_expression].append(
+                license_matches[match_license_expression].append(
                     {
                         "path": resource.path,
                         "matched_text": matched_text,
