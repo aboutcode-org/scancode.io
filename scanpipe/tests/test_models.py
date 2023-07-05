@@ -1979,6 +1979,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             "codebase_resources",
             "package_uid",
             "filename",
+            "affected_by_vulnerabilities",
         ]
 
         discovered_package_fields = [

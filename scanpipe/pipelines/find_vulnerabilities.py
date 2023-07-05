@@ -28,7 +28,7 @@ class FindVulnerabilities(Pipeline):
     """
     Find vulnerabilities for discovered packages in the VulnerableCode database.
 
-    Vulnerability data is stored in the extra_data field of each package.
+    Vulnerability data is stored on each package instance.
     """
 
     @classmethod
@@ -47,10 +47,6 @@ class FindVulnerabilities(Pipeline):
             raise Exception("VulnerableCode is not available.")
 
     def lookup_vulnerabilities(self):
-        """Check for vulnerabilities on each of the project's discovered package."""
+        """Check for vulnerabilities for each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
-
-        for package in packages:
-            purl = vulnerablecode.get_base_purl(package.package_url)
-            vulnerabilities = vulnerablecode.get_vulnerabilities_by_purl(purl)
-            package.update_extra_data({"discovered_vulnerabilities": vulnerabilities})
+        vulnerablecode.fetch_vulnerabilities(packages)

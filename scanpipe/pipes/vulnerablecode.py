@@ -72,21 +72,12 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
-def get_base_purl(purl):
-    """Return the `purl` without qualifiers and subpath."""
-    return purl.split("?")[0]
-
-
-def get_purls(packages, base=False):
+def get_purls(packages):
     """
     Return the PURLs for the given list of `packages`.
     Do not include qualifiers nor subpath when `base` is provided.
     """
-    return [
-        get_base_purl(package_url) if base else package_url
-        for package in packages
-        if (package_url := package.package_url)
-    ]
+    return [package_url for package in packages if (package_url := package.package_url)]
 
 
 def request_get(
@@ -148,7 +139,7 @@ def get_vulnerabilities_by_purl(
     return _get_vulnerabilities(
         url=f"{api_url}packages/",
         field_name="purl",
-        field_value=get_base_purl(purl),
+        field_value=purl,
         timeout=timeout,
     )
 
@@ -197,3 +188,34 @@ def bulk_search_by_cpes(
 
     logger.debug(f"VulnerableCode: url={url} cpes_count={len(cpes)}")
     return request_post(url, data, timeout)
+
+
+def get_unique_vulnerabilities(packages_data):
+    """
+    Return the unique instance of vulnerabilities for the provided ``packages_data``.
+
+    Note this should be implemented on the VulnerableCode side, see:
+    https://github.com/nexB/vulnerablecode/issues/1219#issuecomment-1620123301
+    """
+    if not packages_data:
+        return
+
+    unique_vulnerabilities = []
+    seen_vulnerability_ids = set()
+
+    for package_entry in packages_data:
+        for vulnerability in package_entry.get("affected_by_vulnerabilities", []):
+            vulnerability_id = vulnerability.get("vulnerability_id")
+            if vulnerability_id not in seen_vulnerability_ids:
+                unique_vulnerabilities.append(vulnerability)
+                seen_vulnerability_ids.add(vulnerability_id)
+
+    return unique_vulnerabilities
+
+
+def fetch_vulnerabilities(packages):
+    """Fetch and store vulnerabilities for each provided ``packages``."""
+    for package in packages:
+        if packages_data := get_vulnerabilities_by_purl(package.package_url):
+            if unique_vulnerabilities := get_unique_vulnerabilities(packages_data):
+                package.update(affected_by_vulnerabilities=unique_vulnerabilities)

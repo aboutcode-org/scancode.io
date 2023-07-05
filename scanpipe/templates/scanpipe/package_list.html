@@ -23,8 +23,8 @@
           <tr class="break-word">
             <td style="min-width: 500px;" title="{{ package.package_uid }}">
               <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
-              {% if package.extra_data.discovered_vulnerabilities %}
-                <a href="{{ package.get_absolute_url }}#extra_data">
+              {% if package.is_vulnerable %}
+                <a href="{{ package.get_absolute_url }}#vulnerabilities">
                   <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
                 </a>
               {% endif %}

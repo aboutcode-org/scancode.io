@@ -169,7 +169,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/distroless/libc6@2.31-13%2Bdeb11u3?architecture=amd64",
@@ -226,7 +227,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/distroless/libssl1.1@1.1.1n-0%2Bdeb11u2?architecture=amd64",
@@ -283,7 +285,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/distroless/netbase@6.3?architecture=all",
@@ -338,7 +341,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/distroless/openssl@1.1.1n-0%2Bdeb11u2?architecture=amd64",
@@ -393,7 +397,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/distroless/tzdata@2021a-1%2Bdeb11u4?architecture=all",
@@ -448,7 +453,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [],

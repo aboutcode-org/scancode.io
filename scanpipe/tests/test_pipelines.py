@@ -691,8 +691,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         package1.refresh_from_db()
-        expected = {"discovered_vulnerabilities": vulnerability_data}
-        self.assertEqual(expected, package1.extra_data)
+        expected = vulnerability_data[0]["affected_by_vulnerabilities"]
+        self.assertEqual(expected, package1.affected_by_vulnerabilities)
 
     def test_scanpipe_inspect_manifest_pipeline_integration_test(self):
         pipeline_name = "inspect_manifest"

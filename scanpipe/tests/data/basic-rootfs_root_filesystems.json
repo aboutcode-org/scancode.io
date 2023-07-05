@@ -182,7 +182,8 @@
       "missing_resources": [
         "/basic-rootfs.tar.gz-extract/usr/share/doc/libncurses5/copyright"
       ],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64",
@@ -287,7 +288,8 @@
       "missing_resources": [
         "/basic-rootfs.tar.gz-extract/usr/share/doc/libndp0/copyright"
       ],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [],

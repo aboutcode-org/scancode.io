@@ -262,7 +262,8 @@ class TabSetMixin:
             return render_func(field_value)
 
         if isinstance(field_value, list):
-            field_value = "\n".join(field_value)
+            with suppress(TypeError):
+                field_value = "\n".join(field_value)
 
         return field_value
 
@@ -1045,7 +1046,10 @@ class DiscoveredPackageListView(
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
     prefetch_related = ["codebase_resources"]
     table_columns = [
-        "package_url",
+        {
+            "field_name": "package_url",
+            "filter_fieldname": "is_vulnerable",
+        },
         {
             "field_name": "declared_license_expression",
             "filter_fieldname": "declared_license_expression",
@@ -1279,7 +1283,7 @@ class CodebaseResourceDetailsView(
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
-            "verbose_name": "Extra data",
+            "verbose_name": "Extra",
             "icon_class": "fa-solid fa-database",
         },
     }
@@ -1434,6 +1438,11 @@ class DiscoveredPackageDetailsView(
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_dependencies.html",
         },
+        "vulnerabilities": {
+            "fields": ["affected_by_vulnerabilities"],
+            "icon_class": "fa-solid fa-bug",
+            "template": "scanpipe/tabset/tab_vulnerabilities.html",
+        },
         "others": {
             "fields": [
                 {"field_name": "size", "render_func": filesizeformat},
@@ -1455,10 +1464,15 @@ class DiscoveredPackageDetailsView(
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
             ],
-            "verbose_name": "Extra data",
+            "verbose_name": "Extra",
             "icon_class": "fa-solid fa-database",
         },
     }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["vulnerablecode_url"] = settings.VULNERABLECODE_URL
+        return context
 
 
 class DiscoveredDependencyDetailsView(

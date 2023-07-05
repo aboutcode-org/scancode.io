@@ -204,7 +204,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/alpine-keys@2.4-r1?arch=x86_64",
@@ -432,7 +433,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/apk-tools@2.12.7-r3?arch=x86_64",
@@ -505,7 +507,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/busybox@1.34.1-r5?arch=x86_64",
@@ -589,7 +592,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/ca-certificates-bundle@20211220-r0?arch=x86_64",
@@ -673,7 +677,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64",
@@ -746,7 +751,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/libcrypto1.1@1.1.1n-r0?arch=x86_64",
@@ -854,7 +860,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/libretls@3.3.4-r3?arch=x86_64",
@@ -938,7 +945,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/libssl1.1@1.1.1n-r0?arch=x86_64",
@@ -1022,7 +1030,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/musl@1.2.2-r7?arch=x86_64",
@@ -1106,7 +1115,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/musl-utils@1.2.2-r7?arch=x86_64",
@@ -1179,7 +1189,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/scanelf@1.3.3-r0?arch=x86_64",
@@ -1252,7 +1263,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/ssl_client@1.34.1-r5?arch=x86_64",
@@ -1325,7 +1337,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:alpine/zlib@1.2.12-r0?arch=x86_64",
@@ -1409,7 +1422,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [],

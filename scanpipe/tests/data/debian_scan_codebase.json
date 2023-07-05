@@ -264,7 +264,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64",
@@ -385,7 +386,8 @@
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [],
