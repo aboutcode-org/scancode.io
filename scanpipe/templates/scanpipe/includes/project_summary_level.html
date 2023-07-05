@@ -3,7 +3,7 @@
   <div class="level-item has-text-centered">
     <div>
       <p class="heading">Packages</p>
-      <p class="{{ title_class }} is-flex is-align-items-center">
+      <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.package_count %}
           <a href="{% url 'project_packages' project.slug %}">
             {{ project.package_count|intcomma }}

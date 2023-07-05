@@ -69,6 +69,7 @@ from scanpipe.tests import license_policies_index
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -1406,7 +1407,7 @@ class ScanPipeModelsTest(TestCase):
         ]
         self.assertEqual(expected, resource.get_path_segments_with_subpath())
 
-    def test_scanpipe_discovered_package_model_queryset_methods(self):
+    def test_scanpipe_discovered_package_queryset_for_package_url(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         inputs = [
             ("pkg:deb/debian/adduser@3.118?arch=all", 1),
@@ -1419,6 +1420,15 @@ class ScanPipeModelsTest(TestCase):
         for purl, expected_count in inputs:
             qs = DiscoveredPackage.objects.for_package_url(purl)
             self.assertEqual(expected_count, qs.count(), msg=purl)
+
+    def test_scanpipe_discovered_package_queryset_vulnerable(self):
+        p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        p2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
+        p2.update(
+            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        )
+        self.assertNotIn(p1, DiscoveredPackage.objects.vulnerable())
+        self.assertIn(p2, DiscoveredPackage.objects.vulnerable())
 
     @skipIf(sys.platform != "linux", "Ordering differs on macOS.")
     def test_scanpipe_codebase_resource_model_walk_method(self):
@@ -1715,6 +1725,14 @@ class ScanPipeModelsTest(TestCase):
         updated_fields = dependency.update_from_data(new_data, override=True)
         self.assertEqual(["scope"], updated_fields)
         self.assertEqual(new_data["scope"], dependency.scope)
+
+    def test_scanpipe_discovered_dependency_model_is_vulnerable_property(self):
+        package = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        self.assertFalse(package.is_vulnerable)
+        package.update(
+            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        )
+        self.assertTrue(package.is_vulnerable)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

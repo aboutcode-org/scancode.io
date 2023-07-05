@@ -681,9 +681,18 @@ class PipelinesIntegrationTest(TestCase):
                     {
                         "vulnerability_id": "VCID-cah8-awtr-aaad",
                         "summary": "An issue was discovered.",
-                    }
+                    },
                 ],
-            }
+            },
+            {
+                "purl": "pkg:deb/debian/adduser@3.118?qualifiers=1",
+                "affected_by_vulnerabilities": [
+                    {
+                        "vulnerability_id": "VCID-cah8-awtr-aaad",
+                        "summary": "An issue was discovered.",
+                    },
+                ],
+            },
         ]
         mock_get_vulnerabilities.return_value = vulnerability_data
 

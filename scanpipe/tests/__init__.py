@@ -138,6 +138,13 @@ package_data1 = {
     "package_uid": "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b",
 }
 
+package_data2 = {
+    "type": "deb",
+    "namespace": "debian",
+    "name": "adduser",
+    "version": "3.119",
+}
+
 for_package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
 
 dependency_data1 = {

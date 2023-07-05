@@ -26,11 +26,15 @@ from django.test import TestCase
 from django.utils import timezone
 
 from scanpipe.filters import FilterSetUtilsMixin
+from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 
 
 class ScanPipeFilterTest(TestCase):
@@ -138,3 +142,19 @@ class ScanPipeFilterTest(TestCase):
         }
         filterset = ProjectFilterSet(data)
         self.assertEqual([], list(filterset.qs))
+
+    def test_scanpipe_filters_package_filterset_is_vulnerable(self):
+        p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        p2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
+        p2.update(
+            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        )
+
+        filterset = PackageFilterSet(data={"is_vulnerable": ""})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = PackageFilterSet(data={"is_vulnerable": "no"})
+        self.assertEqual([p1], list(filterset.qs))
+
+        filterset = PackageFilterSet(data={"is_vulnerable": "yes"})
+        self.assertEqual([p2], list(filterset.qs))

@@ -32,10 +32,12 @@ from django.test import override_settings
 from django.urls import reverse
 
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_file
+from scanpipe.tests import package_data1
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
@@ -659,3 +661,13 @@ class ScanPipeViewsTest(TestCase):
         }
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
+
+    def test_scanpipe_views_discovered_package_details_view_tab_vulnerabilities(self):
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package1.update(
+            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        )
+        response = self.client.get(package1.get_absolute_url())
+        self.assertContains(response, "tab-vulnerabilities")
+        self.assertContains(response, '<section id="tab-vulnerabilities"')
+        self.assertContains(response, "VCID-cah8-awtr-aaad")
