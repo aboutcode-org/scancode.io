@@ -79,11 +79,13 @@ function setupTabs() {
     document.location.hash = targetId.replace('tab-', '');
   }
 
-  // Activate the related tab if hash is present in URL
-  if (document.location.hash !== "") {
-    let tabName = document.location.hash.slice(1);
-    let tabLink = document.querySelector(`a[data-target="tab-${tabName}"]`);
-    if (tabLink) activateTab(tabLink);
+  // Activate the related tab using the current URL hash
+  function activateTabFromHash() {
+    if (document.location.hash !== "") {
+      let tabName = document.location.hash.slice(1);
+      let tabLink = document.querySelector(`a[data-target="tab-${tabName}"]`);
+      if (tabLink) activateTab(tabLink);
+    }
   }
 
   $tabLinks.forEach(function ($el) {
@@ -91,6 +93,12 @@ function setupTabs() {
       activateTab($el)
     });
   });
+
+  // Activate the related tab if hash is present in the URL on page loading
+  activateTabFromHash();
+  // Enable tab history navigation (using previous/next browser button for example)
+  // by detecting URL hash changes.
+  window.addEventListener("hashchange", () => {activateTabFromHash()});
 }
 
 // Menu
