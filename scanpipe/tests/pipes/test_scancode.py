@@ -446,3 +446,53 @@ class ScanPipeScancodePipesTest(TestCase):
             "test/get_package_resources/this-should-be-returned",
         ]
         self.assertEqual(sorted(expected_resources), sorted(associated_resources))
+
+    def test_scanpipe_pipes_scancode_get_detection_data(self):
+        detection_entry = {
+            "matches": [
+                {
+                    "score": 99.0,
+                    "matcher": "2-aho",
+                    "end_line": 76,
+                    "start_line": 76,
+                    "matched_text": "licensed under CC-BY-NC,",
+                    "match_coverage": 100.0,
+                    "matched_length": 5,
+                    "rule_relevance": 99,
+                    "rule_identifier": "cc-by-nc-4.0_16.RULE",
+                    "license_expression": "cc-by-nc-4.0",
+                },
+                {
+                    "score": 99.0,
+                    "matcher": "2-aho",
+                    "end_line": 76,
+                    "start_line": 76,
+                    "matched_text": "licensed under CC-BY-",
+                    "match_coverage": 100.0,
+                    "matched_length": 4,
+                    "rule_relevance": 99,
+                    "rule_identifier": "cc-by-4.0_84.RULE",
+                    "license_expression": "cc-by-4.0",
+                },
+            ],
+            "identifier": "cc_by_nc_4_0_and_cc_by_4_0-3e419bd6-97a4-a144-35ab",
+            "license_expression": "cc-by-nc-4.0 AND cc-by-4.0",
+        }
+
+        expected = {
+            "license_expression": "cc-by-nc-4.0 AND cc-by-4.0",
+            "identifier": "cc_by_nc_4_0_and_cc_by_4_0-3e419bd6-97a4-a144-35ab",
+            "matches": [
+                {
+                    "license_expression": "cc-by-nc-4.0",
+                    "matched_text": "licensed under CC-BY-NC,",
+                },
+                {
+                    "license_expression": "cc-by-4.0",
+                    "matched_text": "licensed under CC-BY-",
+                },
+            ],
+        }
+
+        results = scancode.get_detection_data(detection_entry)
+        self.assertEqual(expected, results)
