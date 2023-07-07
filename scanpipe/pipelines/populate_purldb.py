@@ -25,7 +25,7 @@ from scanpipe.pipes.purldb import feed_purldb
 
 
 class PopulatePurlDB(Pipeline):
-    """Populate PurlDB with project packages."""
+    """Populate PurlDB with project discovered packages and dependencies."""
 
     @classmethod
     def steps(cls):
@@ -36,7 +36,7 @@ class PopulatePurlDB(Pipeline):
 
     def populate_purldb_discoveredpackage(self):
         """Add DiscoveredPackage to PurlDB."""
-        packages = self.project.discoveredpackages.all().distinct()
+        packages = self.project.discoveredpackages.all()
 
         self.log(f"Populating PurlDB with {len(packages):,d} DiscoveredPackage")
         feed_purldb(packages=packages)

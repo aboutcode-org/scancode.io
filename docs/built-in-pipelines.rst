@@ -63,6 +63,14 @@ Load Inventory From Scan
     :members:
     :member-order: bysource
 
+.. _pipeline_populate_purldb:
+
+Populate PurlDB
+---------------
+.. autoclass:: scanpipe.pipelines.populate_purldb.PopulatePurlDB()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_root_filesystems:
 
 Root Filesystem Analysis
