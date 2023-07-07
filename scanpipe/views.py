@@ -172,6 +172,10 @@ def render_as_yaml(value):
         return saneyaml.dump(value, indent=2)
 
 
+def render_qs_to_list(qs):
+    return list(qs.all())
+
+
 DISPLAYABLE_IMAGE_MIME_TYPE = [
     "image/apng",
     "image/avif",
@@ -1199,6 +1203,7 @@ class CodebaseRelationListView(
 class CodebaseResourceDetailsView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    PrefetchRelatedViewMixin,
     TabSetMixin,
     generic.DetailView,
 ):
@@ -1215,7 +1220,11 @@ class CodebaseResourceDetailsView(
         "": "ok",
         None: "info",
     }
-    prefetch_related = ["discovered_packages"]
+    prefetch_related = [
+        "discovered_packages",
+        "related_from__from_resource__project",
+        "related_to__to_resource__project",
+    ]
     tabset = {
         "essentials": {
             "fields": [
@@ -1263,6 +1272,20 @@ class CodebaseResourceDetailsView(
             "fields": ["discovered_packages"],
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_packages.html",
+        },
+        "relations": {
+            "fields": [
+                {
+                    "field_name": "related_from",
+                    "render_func": render_qs_to_list,
+                },
+                {
+                    "field_name": "related_to",
+                    "render_func": render_qs_to_list,
+                },
+            ],
+            "icon_class": "fa-solid fa-link",
+            "template": "scanpipe/tabset/tab_relations.html",
         },
         "others": {
             "fields": [
