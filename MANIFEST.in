@@ -11,6 +11,7 @@ include *.yaml
 include *.env
 include *ignore
 include Dockerfile
+include .VERSION
 
 graft scancodeio
 graft scanpipe
