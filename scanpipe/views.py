@@ -176,6 +176,10 @@ def render_qs_to_list(qs):
     return list(qs.all())
 
 
+def has_no_values(instance, fields_data):
+    return not any([field_data.get("value") for field_data in fields_data.values()])
+
+
 DISPLAYABLE_IMAGE_MIME_TYPE = [
     "image/apng",
     "image/avif",
@@ -209,7 +213,8 @@ class TabSetMixin:
             ]
             "template": "",
             "icon_class": "",
-            "condition": <func>,
+            "display_condition": <func>,
+            "disable_condition": <func>,
         }
     }
     """
@@ -221,19 +226,32 @@ class TabSetMixin:
         tabset_data = {}
 
         for label, tab_definition in self.tabset.items():
-            if condition := tab_definition.get("condition"):
-                if not condition(self.object):
-                    continue
-
-            tab_data = {
-                "verbose_name": tab_definition.get("verbose_name"),
-                "icon_class": tab_definition.get("icon_class"),
-                "template": tab_definition.get("template"),
-                "fields": self.get_fields_data(tab_definition.get("fields", [])),
-            }
-            tabset_data[label] = tab_data
+            if tab_data := self.get_tab_data(label, tab_definition):
+                tabset_data[label] = tab_data
 
         return tabset_data
+
+    def get_tab_data(self, label, tab_definition):
+        """Return the data for a single tab based on the ``tab_definition``."""
+        if display_condition := tab_definition.get("display_condition"):
+            if not display_condition(self.object):
+                return
+
+        fields_data = self.get_fields_data(fields=tab_definition.get("fields", []))
+
+        is_disabled = False
+        if disable_condition := tab_definition.get("disable_condition"):
+            is_disabled = disable_condition(self.object, fields_data)
+
+        tab_data = {
+            "verbose_name": tab_definition.get("verbose_name"),
+            "icon_class": tab_definition.get("icon_class"),
+            "template": tab_definition.get("template"),
+            "fields": fields_data,
+            "disabled": is_disabled,
+        }
+
+        return tab_data
 
     def get_fields_data(self, fields):
         """Return the tab fields including their values for display."""
@@ -1241,6 +1259,22 @@ class CodebaseResourceDetailsView(
             ],
             "icon_class": "fa-solid fa-info-circle",
         },
+        "others": {
+            "fields": [
+                {"field_name": "size", "render_func": filesizeformat},
+                "md5",
+                "sha1",
+                "sha256",
+                "sha512",
+                "is_binary",
+                "is_text",
+                "is_archive",
+                "is_key_file",
+                "is_media",
+            ],
+            "icon_class": "fa-solid fa-plus-square",
+            "disable_condition": has_no_values,
+        },
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
             "template": "scanpipe/tabset/tab_content_viewer.html",
@@ -1248,7 +1282,7 @@ class CodebaseResourceDetailsView(
         "image": {
             "icon_class": "fa-solid fa-image",
             "template": "scanpipe/tabset/tab_image.html",
-            "condition": is_displayable_image_type,
+            "display_condition": is_displayable_image_type,
         },
         "detection": {
             "fields": [
@@ -1267,11 +1301,18 @@ class CodebaseResourceDetailsView(
                 {"field_name": "urls", "render_func": render_as_yaml},
             ],
             "icon_class": "fa-solid fa-search",
+            "disable_condition": has_no_values,
         },
         "packages": {
-            "fields": ["discovered_packages"],
+            "fields": [
+                {
+                    "field_name": "discovered_packages",
+                    "render_func": render_qs_to_list,
+                },
+            ],
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_packages.html",
+            "disable_condition": has_no_values,
         },
         "relations": {
             "fields": [
@@ -1286,21 +1327,7 @@ class CodebaseResourceDetailsView(
             ],
             "icon_class": "fa-solid fa-link",
             "template": "scanpipe/tabset/tab_relations.html",
-        },
-        "others": {
-            "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
-                "is_binary",
-                "is_text",
-                "is_archive",
-                "is_key_file",
-                "is_media",
-            ],
-            "icon_class": "fa-solid fa-plus-square",
+            "disable_condition": has_no_values,
         },
         "extra_data": {
             "fields": [
@@ -1308,6 +1335,7 @@ class CodebaseResourceDetailsView(
             ],
             "verbose_name": "Extra",
             "icon_class": "fa-solid fa-database",
+            "disable_condition": has_no_values,
         },
     }
 
