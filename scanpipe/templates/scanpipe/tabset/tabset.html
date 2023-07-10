@@ -1,9 +1,9 @@
 {% load humanize %}
 <div class="tabs is-boxed mx-5 mb-3">
   <ul>
-    {% for label, tab_data in tabset_data.items %}
+    {% for tab_id, tab_data in tabset_data.items %}
       <li{% if forloop.first %} class="is-active"{% endif %}>
-        <a {% if tab_data.disabled %}class="is-disabled" {% else %}data-target="tab-{{ label }}{% endif %}">
+        <a {% if tab_data.disabled %}class="is-disabled" {% else %}data-target="tab-{{ tab_id }}{% endif %}">
           {% if tab_data.icon_class %}
             <span class="icon is-small"><i class="{{ tab_data.icon_class }}"></i></span>
           {% endif %}
@@ -11,7 +11,7 @@
             {% if tab_data.verbose_name %}
               {{ tab_data.verbose_name }}
             {% else %}
-              {{ label|capfirst }}
+              {{ tab_id|capfirst }}
             {% endif %}
             {% if tab_data.label_count %}
               <span class="tag is-rounded">{{ tab_data.label_count|intcomma }}</span>
@@ -23,9 +23,9 @@
   </ul>
 </div>
 
-{% for label, tab_data in tabset_data.items %}
+{% for tab_id, tab_data in tabset_data.items %}
   {% if not tab_data.disabled %}
-    <section id="tab-{{ label }}" class="tab-content mx-5 px-1 mb-3{% if forloop.first %} is-active{% endif %}">
+    <section id="tab-{{ tab_id }}" class="tab-content mx-5 px-1 mb-3{% if forloop.first %} is-active{% endif %}">
       {% if tab_data.template %}
         {% include tab_data.template with tab_data=tab_data %}
       {% else %}

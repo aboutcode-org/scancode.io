@@ -198,16 +198,18 @@ def is_displayable_image_type(resource):
 class TabSetMixin:
     """
     tabset = {
-        "<tab_label>": {
+        "<tab_id>": {
             "fields": [
                 "<field_name>",
                 "<field_name>",
                 {
                     "field_name": "<field_name>",
                     "label": None,
+                    "template": None,
                     "render_func": None,
                 },
-            ]
+            ],
+            "verbose_name": "",
             "template": "",
             "icon_class": "",
             "display_condition": <func>,
@@ -222,13 +224,13 @@ class TabSetMixin:
         """Return the tabset data structure used in template rendering."""
         tabset_data = {}
 
-        for label, tab_definition in self.tabset.items():
-            if tab_data := self.get_tab_data(label, tab_definition):
-                tabset_data[label] = tab_data
+        for tab_id, tab_definition in self.tabset.items():
+            if tab_data := self.get_tab_data(tab_definition):
+                tabset_data[tab_id] = tab_data
 
         return tabset_data
 
-    def get_tab_data(self, label, tab_definition):
+    def get_tab_data(self, tab_definition):
         """Return the data for a single tab based on the ``tab_definition``."""
         if display_condition := tab_definition.get("display_condition"):
             if not display_condition(self.object):
@@ -1539,29 +1541,31 @@ class DiscoveredDependencyDetailsView(
     tabset = {
         "essentials": {
             "fields": [
-                "dependency_uid",
                 "package_url",
+                {
+                    "field_name": "for_package",
+                    "template": "scanpipe/tabset/field_for_package.html",
+                },
+                {
+                    "field_name": "datafile_resource",
+                    "template": "scanpipe/tabset/field_datafile_resource.html",
+                },
                 "package_type",
                 "extracted_requirement",
                 "scope",
-                "is_runtime",
-                "is_optional",
-                "is_resolved",
-                "for_package_uid",
-                "datafile_path",
                 "datasource_id",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },
-        "For package": {
-            "fields": ["for_package"],
-            "icon_class": "fa-solid fa-layer-group",
-            "template": "scanpipe/tabset/tab_for_package.html",
-        },
-        "Datafile resource": {
-            "fields": ["datafile_resource"],
-            "icon_class": "fa-solid fa-folder-open",
-            "template": "scanpipe/tabset/tab_datafile_resource.html",
+        "others": {
+            "fields": [
+                "dependency_uid",
+                "for_package_uid",
+                "is_runtime",
+                "is_optional",
+                "is_resolved",
+            ],
+            "icon_class": "fa-solid fa-plus-square",
         },
     }
 

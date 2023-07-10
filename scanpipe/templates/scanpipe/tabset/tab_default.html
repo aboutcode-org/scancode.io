@@ -4,7 +4,11 @@
       {{ field_data.label }}
     </dt>
     <dd class="mb-4">
-      <pre class="break-all wrap is-small">{{ field_data.value|default:''|default_if_none:''|urlize }}</pre>
+      {% if field_data.template %}
+        {% include field_data.template with field_data=field_data only %}
+      {% else %}
+        {% include 'scanpipe/tabset/field_default.html' with field_data=field_data only %}
+      {% endif %}
     </dd>
   {% endfor %}
 </dl>
