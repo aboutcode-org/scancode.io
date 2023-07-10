@@ -1429,7 +1429,7 @@ class DiscoveredPackageDetailsView(
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     template_name = "scanpipe/package_detail.html"
-    prefetch_related = ["codebase_resources"]
+    prefetch_related = ["codebase_resources__project", "dependencies__project"]
     tabset = {
         "essentials": {
             "fields": [
