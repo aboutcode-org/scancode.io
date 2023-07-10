@@ -35,6 +35,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage.filesystem import FileSystemStorage
+from django.db.models.manager import Manager
 from django.http import FileResponse
 from django.http import Http404
 from django.http import HttpResponse
@@ -172,6 +173,14 @@ def render_as_yaml(value):
         return saneyaml.dump(value, indent=2)
 
 
+def fields_have_no_values(fields_data):
+    return not any([field_data.get("value") for field_data in fields_data.values()])
+
+
+def do_not_disable(*args, **kwargs):
+    return False
+
+
 DISPLAYABLE_IMAGE_MIME_TYPE = [
     "image/apng",
     "image/avif",
@@ -193,19 +202,22 @@ def is_displayable_image_type(resource):
 class TabSetMixin:
     """
     tabset = {
-        "<tab_label>": {
+        "<tab_id>": {
             "fields": [
                 "<field_name>",
                 "<field_name>",
                 {
                     "field_name": "<field_name>",
                     "label": None,
+                    "template": None,
                     "render_func": None,
                 },
-            ]
+            ],
+            "verbose_name": "",
             "template": "",
             "icon_class": "",
-            "condition": <func>,
+            "display_condition": <func>,
+            "disable_condition": <func>,
         }
     }
     """
@@ -216,20 +228,37 @@ class TabSetMixin:
         """Return the tabset data structure used in template rendering."""
         tabset_data = {}
 
-        for label, tab_definition in self.tabset.items():
-            if condition := tab_definition.get("condition"):
-                if not condition(self.object):
-                    continue
-
-            tab_data = {
-                "verbose_name": tab_definition.get("verbose_name"),
-                "icon_class": tab_definition.get("icon_class"),
-                "template": tab_definition.get("template"),
-                "fields": self.get_fields_data(tab_definition.get("fields", [])),
-            }
-            tabset_data[label] = tab_data
+        for tab_id, tab_definition in self.tabset.items():
+            if tab_data := self.get_tab_data(tab_definition):
+                tabset_data[tab_id] = tab_data
 
         return tabset_data
+
+    def get_tab_data(self, tab_definition):
+        """Return the data for a single tab based on the ``tab_definition``."""
+        if display_condition := tab_definition.get("display_condition"):
+            if not display_condition(self.object):
+                return
+
+        fields_data = self.get_fields_data(fields=tab_definition.get("fields", []))
+
+        is_disabled = False
+        if disable_condition := tab_definition.get("disable_condition"):
+            is_disabled = disable_condition(self.object, fields_data)
+        # This can be bypassed by providing ``do_not_disable`` to ``disable_condition``
+        elif fields_have_no_values(fields_data):
+            is_disabled = True
+
+        tab_data = {
+            "verbose_name": tab_definition.get("verbose_name"),
+            "icon_class": tab_definition.get("icon_class"),
+            "template": tab_definition.get("template"),
+            "fields": fields_data,
+            "disabled": is_disabled,
+            "label_count": self.get_label_count(fields_data),
+        }
+
+        return tab_data
 
     def get_fields_data(self, fields):
         """Return the tab fields including their values for display."""
@@ -261,6 +290,9 @@ class TabSetMixin:
         if field_value and render_func:
             return render_func(field_value)
 
+        if isinstance(field_value, Manager):
+            return list(field_value.all())
+
         if isinstance(field_value, list):
             with suppress(TypeError):
                 field_value = "\n".join(field_value)
@@ -271,6 +303,18 @@ class TabSetMixin:
     def get_field_label(field_name):
         """Return a formatted label for display based on the `field_name`."""
         return field_name.replace("_", " ").capitalize().replace("url", "URL")
+
+    @staticmethod
+    def get_label_count(fields_data):
+        """
+        Return the count of objects to be displayed in the tab label.
+
+        This only support tabs with a single field that has a single `list` for value.
+        """
+        if len(fields_data.keys()) == 1:
+            value = list(fields_data.values())[0].get("value")
+            if isinstance(value, list):
+                return len(value)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1199,6 +1243,7 @@ class CodebaseRelationListView(
 class CodebaseResourceDetailsView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    PrefetchRelatedViewMixin,
     TabSetMixin,
     generic.DetailView,
 ):
@@ -1215,7 +1260,11 @@ class CodebaseResourceDetailsView(
         "": "ok",
         None: "info",
     }
-    prefetch_related = ["discovered_packages"]
+    prefetch_related = [
+        "discovered_packages",
+        "related_from__from_resource__project",
+        "related_to__to_resource__project",
+    ]
     tabset = {
         "essentials": {
             "fields": [
@@ -1232,14 +1281,31 @@ class CodebaseResourceDetailsView(
             ],
             "icon_class": "fa-solid fa-info-circle",
         },
+        "others": {
+            "fields": [
+                {"field_name": "size", "render_func": filesizeformat},
+                "md5",
+                "sha1",
+                "sha256",
+                "sha512",
+                "is_binary",
+                "is_text",
+                "is_archive",
+                "is_key_file",
+                "is_media",
+            ],
+            "icon_class": "fa-solid fa-plus-square",
+        },
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
             "template": "scanpipe/tabset/tab_content_viewer.html",
+            "disable_condition": do_not_disable,
         },
         "image": {
             "icon_class": "fa-solid fa-image",
             "template": "scanpipe/tabset/tab_image.html",
-            "condition": is_displayable_image_type,
+            "disable_condition": do_not_disable,
+            "display_condition": is_displayable_image_type,
         },
         "detection": {
             "fields": [
@@ -1264,20 +1330,10 @@ class CodebaseResourceDetailsView(
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_packages.html",
         },
-        "others": {
-            "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
-                "is_binary",
-                "is_text",
-                "is_archive",
-                "is_key_file",
-                "is_media",
-            ],
-            "icon_class": "fa-solid fa-plus-square",
+        "relations": {
+            "fields": ["related_from", "related_to"],
+            "icon_class": "fa-solid fa-link",
+            "template": "scanpipe/tabset/tab_relations.html",
         },
         "extra_data": {
             "fields": [
@@ -1379,7 +1435,7 @@ class DiscoveredPackageDetailsView(
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     template_name = "scanpipe/package_detail.html"
-    prefetch_related = ["codebase_resources"]
+    prefetch_related = ["codebase_resources__project", "dependencies__project"]
     tabset = {
         "essentials": {
             "fields": [
@@ -1403,6 +1459,23 @@ class DiscoveredPackageDetailsView(
                 "description",
             ],
             "icon_class": "fa-solid fa-info-circle",
+        },
+        "others": {
+            "fields": [
+                {"field_name": "size", "render_func": filesizeformat},
+                "release_date",
+                "md5",
+                "sha1",
+                "sha256",
+                "sha512",
+                "datasource_id",
+                "file_references",
+                {"field_name": "parties", "render_func": render_as_yaml},
+                "missing_resources",
+                "modified_resources",
+                "package_uid",
+            ],
+            "icon_class": "fa-solid fa-plus-square",
         },
         "terms": {
             "fields": [
@@ -1443,23 +1516,6 @@ class DiscoveredPackageDetailsView(
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
         },
-        "others": {
-            "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
-                "release_date",
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
-                "datasource_id",
-                "file_references",
-                {"field_name": "parties", "render_func": render_as_yaml},
-                "missing_resources",
-                "modified_resources",
-                "package_uid",
-            ],
-            "icon_class": "fa-solid fa-plus-square",
-        },
         "extra_data": {
             "fields": [
                 {"field_name": "extra_data", "render_func": render_as_yaml},
@@ -1491,29 +1547,31 @@ class DiscoveredDependencyDetailsView(
     tabset = {
         "essentials": {
             "fields": [
-                "dependency_uid",
                 "package_url",
+                {
+                    "field_name": "for_package",
+                    "template": "scanpipe/tabset/field_for_package.html",
+                },
+                {
+                    "field_name": "datafile_resource",
+                    "template": "scanpipe/tabset/field_datafile_resource.html",
+                },
                 "package_type",
                 "extracted_requirement",
                 "scope",
-                "is_runtime",
-                "is_optional",
-                "is_resolved",
-                "for_package_uid",
-                "datafile_path",
                 "datasource_id",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },
-        "For package": {
-            "fields": ["for_package"],
-            "icon_class": "fa-solid fa-layer-group",
-            "template": "scanpipe/tabset/tab_for_package.html",
-        },
-        "Datafile resource": {
-            "fields": ["datafile_resource"],
-            "icon_class": "fa-solid fa-folder-open",
-            "template": "scanpipe/tabset/tab_datafile_resource.html",
+        "others": {
+            "fields": [
+                "dependency_uid",
+                "for_package_uid",
+                "is_runtime",
+                "is_optional",
+                "is_resolved",
+            ],
+            "icon_class": "fa-solid fa-plus-square",
         },
     }
 
