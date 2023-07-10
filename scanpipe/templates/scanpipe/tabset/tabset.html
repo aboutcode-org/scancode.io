@@ -13,10 +13,10 @@
             {% else %}
               {{ tab_id|capfirst }}
             {% endif %}
-            {% if tab_data.label_count %}
-              <span class="tag is-rounded">{{ tab_data.label_count|intcomma }}</span>
-            {% endif %}
           </span>
+          {% if tab_data.label_count %}
+            <span class="tag is-rounded">{{ tab_data.label_count|intcomma }}</span>
+          {% endif %}
         </a>
       </li>
     {% endfor %}

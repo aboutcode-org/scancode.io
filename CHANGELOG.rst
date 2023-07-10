@@ -4,6 +4,13 @@ Changelog
 v32.4.0 (unreleased)
 --------------------
 
+- Refine the details views and tabs:
+  - Add a "Relations" tab in the Resource details view
+  - Disable empty tabs by default
+  - Display the count of items in the tab label
+  - Improve query performances for details views
+  https://github.com/nexB/scancode.io/issues/799
+
 - Upgrade vulnerablecode integration:
   - Add ``affected_by_vulnerabilities`` field on ``DiscoveredPackage`` model.
   - Add UI for showing package vulnerabilities in details view.

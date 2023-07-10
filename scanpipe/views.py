@@ -177,6 +177,10 @@ def fields_have_no_values(fields_data):
     return not any([field_data.get("value") for field_data in fields_data.values()])
 
 
+def do_not_disable(*args, **kwargs):
+    return False
+
+
 DISPLAYABLE_IMAGE_MIME_TYPE = [
     "image/apng",
     "image/avif",
@@ -241,7 +245,7 @@ class TabSetMixin:
         is_disabled = False
         if disable_condition := tab_definition.get("disable_condition"):
             is_disabled = disable_condition(self.object, fields_data)
-        # This can be bypassed by provided an always True ``disable_condition``
+        # This can be bypassed by providing ``do_not_disable`` to ``disable_condition``
         elif fields_have_no_values(fields_data):
             is_disabled = True
 
@@ -1295,10 +1299,12 @@ class CodebaseResourceDetailsView(
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
             "template": "scanpipe/tabset/tab_content_viewer.html",
+            "disable_condition": do_not_disable,
         },
         "image": {
             "icon_class": "fa-solid fa-image",
             "template": "scanpipe/tabset/tab_image.html",
+            "disable_condition": do_not_disable,
             "display_condition": is_displayable_image_type,
         },
         "detection": {
