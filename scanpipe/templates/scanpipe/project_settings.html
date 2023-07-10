@@ -83,6 +83,21 @@
             </div>
 
             <div class="panel">
+              <p id="scancode" class="panel-heading py-2 is-size-6">ScanCode</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="label" for="{{ form.scancode_license_score.id_for_label }}">
+                    {{ form.scancode_license_score.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.scancode_license_score }}
+                  </div>
+                  <p class="help">{{ form.scancode_license_score.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
               <p id="attribution" class="panel-heading py-2 is-size-6">Attribution</p>
               <div class="panel-block is-block px-4">
                 <div class="field">

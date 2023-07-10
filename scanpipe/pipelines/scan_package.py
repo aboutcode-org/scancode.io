@@ -93,12 +93,16 @@ class ScanPackage(Pipeline):
         """Scan extracted codebase/ content."""
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
+        scancode_options = self.scancode_options.copy()
+
+        if min_license_score := self.project.get_env("scancode_license_score"):
+            scancode_options.append(f"--license-score {min_license_score}")
 
         with self.save_errors(scancode.ScancodeError):
             scancode.run_scancode(
                 location=str(self.project.codebase_path),
                 output_file=self.scan_output_location,
-                options=self.scancode_options,
+                options=scancode_options,
                 raise_on_error=True,
             )
 
