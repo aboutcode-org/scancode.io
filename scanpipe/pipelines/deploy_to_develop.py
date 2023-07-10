@@ -56,6 +56,7 @@ class DeployToDevelop(Pipeline):
             cls.match_purldb,
             cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
+            cls.map_javascript_colocation,
             cls.map_path,
             cls.flag_mapped_resources_and_ignored_directories,
             cls.scan_mapped_from_for_files,
@@ -161,6 +162,10 @@ class DeployToDevelop(Pipeline):
     def map_javascript_path(self):
         """Map javascript file based on path."""
         d2d.map_javascript_path(project=self.project, logger=self.log)
+
+    def map_javascript_colocation(self):
+        """Map JavaScript files based on neighborhood file mapping."""
+        d2d.map_javascript_colocation(project=self.project, logger=self.log)
 
     def map_path(self):
         """Map using path similarities."""

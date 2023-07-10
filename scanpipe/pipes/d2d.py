@@ -26,6 +26,8 @@ from timeit import default_timer as timer
 
 from django.db.models import Q
 
+from commoncode.paths import common_prefix
+
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -787,7 +789,7 @@ def map_javascript_path(project, logger=None):
 
 
 def _map_javascript_path_resource(
-    to_resource, to_resources, from_resources_index, from_resources
+    to_resource, to_resources, from_resources_index, from_resources, map_type="js_path"
 ):
     """
     Map JavaScript deployed files using their .map files.
@@ -836,7 +838,92 @@ def _map_javascript_path_resource(
         pipes.make_relation(
             from_resource=from_resource,
             to_resource=match,
-            map_type="js_path",
+            map_type=map_type,
             extra_data=extra_data,
         )
+        match.update(status=flag.MAPPED)
     return len(transpiled)
+
+
+def map_javascript_colocation(project, logger=None):
+    """Map JavaScript files based on neighborhood file mapping."""
+    project_files = project.codebaseresources.files().only("path")
+
+    to_resources_key = (
+        project_files.to_codebase()
+        .no_status()
+        .filter(extension__in=[".map", ".ts"])
+        .exclude(name__startswith=".")
+    )
+
+    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
+
+    from_resources = project_files.from_codebase()
+    resource_count = to_resources_key.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources using javascript map "
+            f"against from/ codebase"
+        )
+
+    resource_iterator = to_resources_key.iterator(chunk_size=2000)
+    last_percent = 0
+    map_count = 0
+    start_time = timer()
+
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        map_count += _map_javascript_colocation_resource(
+            to_resource, to_resources, from_resources
+        )
+
+    logger(f"{map_count:,d} resource(s) mapped")
+
+
+def _map_javascript_colocation_resource(to_resource, to_resources, from_resources):
+    """Map JavaScript files based on neighborhood file mapping."""
+    path = to_resource.path
+
+    if to_resource.status or "-extract/" not in path:
+        return 0
+
+    coloaction_path, _ = path.rsplit("-extract/", 1)
+
+    neighboring_relations = CodebaseRelation.objects.filter(
+        to_resource__path__startswith=coloaction_path,
+        map_type__in=["java_to_class", "js_compiled", "sha1"],
+    )
+
+    if not neighboring_relations:
+        return 0
+
+    common_parent = neighboring_relations[0].from_resource.path
+    for relation in neighboring_relations:
+        s2 = relation.from_resource.path
+        common_parent, _ = common_prefix(common_parent, s2)
+
+    # No colocation mapping if the common parent is the root directory.
+    if not common_parent or len(Path(common_parent).parts) < 2:
+        return 0
+
+    from_neighboring_resources = from_resources.filter(path__startswith=common_parent)
+
+    from_neighboring_resources_index = pathmap.build_index(
+        from_neighboring_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    return _map_javascript_path_resource(
+        to_resource,
+        to_resources,
+        from_neighboring_resources_index,
+        from_neighboring_resources,
+        map_type="js_colocation",
+    )
