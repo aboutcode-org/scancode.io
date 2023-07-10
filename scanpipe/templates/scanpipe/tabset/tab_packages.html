@@ -1,10 +1,37 @@
 <div class="content">
-  <strong>{{ tab_data.fields.discovered_packages.label }}</strong>
-  <ul>
-    {% for package in tab_data.fields.discovered_packages.value.all %}
-      <li>
-        <a href="{{ package.get_absolute_url }}">{{ package }}</a>
-      </li>
-    {% endfor %}
-  </ul>
+  {% if tab_data.fields.discovered_packages.value.all %}
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>Package URL</th>
+          <th>Declared license expression</th>
+          <th>Primary language</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for package in tab_data.fields.discovered_packages.value.all %}
+          <tr class="break-word">
+            <td title="{{ package.package_uid }}">
+              <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
+              {% if package.is_vulnerable %}
+                <a href="{{ package.get_absolute_url }}#vulnerabilities">
+                  <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
+                </a>
+              {% endif %}
+            </td>
+            <td>
+              {{ package.declared_license_expression }}
+            </td>
+            <td>
+              {{ package.primary_language }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <article class="box has-text-centered border-dashed mt-5">
+      No packages associated to this resource.
+    </article>
+  {% endif %}
 </div>
