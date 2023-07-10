@@ -249,6 +249,7 @@ class TabSetMixin:
             "template": tab_definition.get("template"),
             "fields": fields_data,
             "disabled": is_disabled,
+            "label_count": self.get_label_count(fields_data),
         }
 
         return tab_data
@@ -296,6 +297,18 @@ class TabSetMixin:
     def get_field_label(field_name):
         """Return a formatted label for display based on the `field_name`."""
         return field_name.replace("_", " ").capitalize().replace("url", "URL")
+
+    @staticmethod
+    def get_label_count(fields_data):
+        """
+        Return the count of objects to be displayed in the tab label.
+
+        This only support tabs with a single field that has a single `list` for value.
+        """
+        if len(fields_data.keys()) == 1:
+            value = list(fields_data.values())[0].get("value")
+            if isinstance(value, list):
+                return len(value)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

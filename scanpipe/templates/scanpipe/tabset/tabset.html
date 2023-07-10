@@ -1,3 +1,4 @@
+{% load humanize %}
 <div class="tabs is-boxed mx-5 mb-3">
   <ul>
     {% for label, tab_data in tabset_data.items %}
@@ -11,6 +12,9 @@
               {{ tab_data.verbose_name }}
             {% else %}
               {{ label|capfirst }}
+            {% endif %}
+            {% if tab_data.label_count %}
+              <span class="tag is-rounded">{{ tab_data.label_count|intcomma }}</span>
             {% endif %}
           </span>
         </a>
