@@ -35,6 +35,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage.filesystem import FileSystemStorage
+from django.db.models.manager import Manager
 from django.http import FileResponse
 from django.http import Http404
 from django.http import HttpResponse
@@ -172,11 +173,7 @@ def render_as_yaml(value):
         return saneyaml.dump(value, indent=2)
 
 
-def render_qs_to_list(qs):
-    return list(qs.all())
-
-
-def has_no_values(instance, fields_data):
+def fields_have_no_values(fields_data):
     return not any([field_data.get("value") for field_data in fields_data.values()])
 
 
@@ -242,6 +239,9 @@ class TabSetMixin:
         is_disabled = False
         if disable_condition := tab_definition.get("disable_condition"):
             is_disabled = disable_condition(self.object, fields_data)
+        # This can be bypassed by provided an always True ``disable_condition``
+        elif fields_have_no_values(fields_data):
+            is_disabled = True
 
         tab_data = {
             "verbose_name": tab_definition.get("verbose_name"),
@@ -282,6 +282,9 @@ class TabSetMixin:
 
         if field_value and render_func:
             return render_func(field_value)
+
+        if isinstance(field_value, Manager):
+            return list(field_value.all())
 
         if isinstance(field_value, list):
             with suppress(TypeError):
@@ -1273,7 +1276,6 @@ class CodebaseResourceDetailsView(
                 "is_media",
             ],
             "icon_class": "fa-solid fa-plus-square",
-            "disable_condition": has_no_values,
         },
         "viewer": {
             "icon_class": "fa-solid fa-file-code",
@@ -1301,33 +1303,16 @@ class CodebaseResourceDetailsView(
                 {"field_name": "urls", "render_func": render_as_yaml},
             ],
             "icon_class": "fa-solid fa-search",
-            "disable_condition": has_no_values,
         },
         "packages": {
-            "fields": [
-                {
-                    "field_name": "discovered_packages",
-                    "render_func": render_qs_to_list,
-                },
-            ],
+            "fields": ["discovered_packages"],
             "icon_class": "fa-solid fa-layer-group",
             "template": "scanpipe/tabset/tab_packages.html",
-            "disable_condition": has_no_values,
         },
         "relations": {
-            "fields": [
-                {
-                    "field_name": "related_from",
-                    "render_func": render_qs_to_list,
-                },
-                {
-                    "field_name": "related_to",
-                    "render_func": render_qs_to_list,
-                },
-            ],
+            "fields": ["related_from", "related_to"],
             "icon_class": "fa-solid fa-link",
             "template": "scanpipe/tabset/tab_relations.html",
-            "disable_condition": has_no_values,
         },
         "extra_data": {
             "fields": [
@@ -1335,7 +1320,6 @@ class CodebaseResourceDetailsView(
             ],
             "verbose_name": "Extra",
             "icon_class": "fa-solid fa-database",
-            "disable_condition": has_no_values,
         },
     }
 
@@ -1455,6 +1439,23 @@ class DiscoveredPackageDetailsView(
             ],
             "icon_class": "fa-solid fa-info-circle",
         },
+        "others": {
+            "fields": [
+                {"field_name": "size", "render_func": filesizeformat},
+                "release_date",
+                "md5",
+                "sha1",
+                "sha256",
+                "sha512",
+                "datasource_id",
+                "file_references",
+                {"field_name": "parties", "render_func": render_as_yaml},
+                "missing_resources",
+                "modified_resources",
+                "package_uid",
+            ],
+            "icon_class": "fa-solid fa-plus-square",
+        },
         "terms": {
             "fields": [
                 "declared_license_expression",
@@ -1493,23 +1494,6 @@ class DiscoveredPackageDetailsView(
             "fields": ["affected_by_vulnerabilities"],
             "icon_class": "fa-solid fa-bug",
             "template": "scanpipe/tabset/tab_vulnerabilities.html",
-        },
-        "others": {
-            "fields": [
-                {"field_name": "size", "render_func": filesizeformat},
-                "release_date",
-                "md5",
-                "sha1",
-                "sha256",
-                "sha512",
-                "datasource_id",
-                "file_references",
-                {"field_name": "parties", "render_func": render_as_yaml},
-                "missing_resources",
-                "modified_resources",
-                "package_uid",
-            ],
-            "icon_class": "fa-solid fa-plus-square",
         },
         "extra_data": {
             "fields": [

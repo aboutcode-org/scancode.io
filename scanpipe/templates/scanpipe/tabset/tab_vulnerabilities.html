@@ -1,12 +1,8 @@
 <div class="content">
-  <p class="panel-heading py-2 px-2 is-size-6 mb-0">
-    Affected by vulnerabilities
-    <span class="tag is-danger is-rounded">{{ tab_data.fields.affected_by_vulnerabilities.value|length }}</span>
-  </p>
   <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
     <thead>
       <tr>
-        <th style="width: 210px;">Vulnerability</th>
+        <th style="width: 210px;">Affected by</th>
         <th>Summary</th>
         <th style="width: 210px;">Aliases</th>
       </tr>
@@ -42,12 +38,6 @@
               {% endif %}
               <br>
             {% endfor %}
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="42">
-            This package is not known to be affected by vulnerabilities.
           </td>
         </tr>
       {% endfor %}
