@@ -43,7 +43,7 @@ class PopulatePurlDB(Pipeline):
 
     def populate_purldb_discovereddependency(self):
         """Add DiscoveredDependency to PurlDB."""
-        packages = self.project.discovereddependencies.all().distinct()
+        packages = self.project.discovereddependencies.all()
 
         self.log(f"Populating PurlDB with {len(packages):,d} DiscoveredDependency")
         feed_purldb(packages=packages)
