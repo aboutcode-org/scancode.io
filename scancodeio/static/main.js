@@ -81,11 +81,16 @@ function setupTabs() {
 
   // Activate the related tab using the current URL hash
   function activateTabFromHash() {
+    let tabLink;
+
     if (document.location.hash !== "") {
       let tabName = document.location.hash.slice(1);
-      let tabLink = document.querySelector(`a[data-target="tab-${tabName}"]`);
-      if (tabLink) activateTab(tabLink);
+      tabLink = document.querySelector(`a[data-target="tab-${tabName}"]`);
     }
+    else if ($tabLinks.length) {
+      tabLink = $tabLinks[0];
+    }
+    if (tabLink) activateTab(tabLink);
   }
 
   $tabLinks.forEach(function ($el) {
