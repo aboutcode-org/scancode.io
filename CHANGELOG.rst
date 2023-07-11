@@ -50,6 +50,12 @@ v32.4.0 (unreleased)
   on ``dependency_uid``.
   https://github.com/nexB/scancode.io/issues/331
 
+- Add a "License score" project setting that can be used to limit the returned license
+  matches with a score above the provided one.
+  This is leveraging the ScanCode-toolkit ``--license-score`` option, see:
+  https://scancode-toolkit.readthedocs.io/en/stable/cli-reference/basic-options.html#license-score-option
+  https://github.com/nexB/scancode.io/issues/335
+
 v32.3.0 (2023-06-12)
 --------------------
 

@@ -199,23 +199,28 @@ def _scan_resource(
     return results, errors
 
 
-def scan_file(location, with_threading=True):
+def scan_file(location, with_threading=True, min_license_score=0, **kwargs):
     """
     Run a license, copyright, email, and url scan on a provided `location`,
     using the scancode-toolkit direct API.
 
     Return a dictionary of scan `results` and a list of `errors`.
     """
+    scancode_get_licenses = partial(
+        scancode_api.get_licenses,
+        min_score=min_license_score,
+        include_text=True,
+    )
     scanners = [
         Scanner("copyrights", scancode_api.get_copyrights),
-        Scanner("licenses", partial(scancode_api.get_licenses, include_text=True)),
+        Scanner("licenses", scancode_get_licenses),
         Scanner("emails", scancode_api.get_emails),
         Scanner("urls", scancode_api.get_urls),
     ]
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def scan_for_package_data(location, with_threading=True):
+def scan_for_package_data(location, with_threading=True, **kwargs):
     """
     Run a package scan on provided `location` using the scancode-toolkit direct API.
 
@@ -262,7 +267,7 @@ def _log_progress(scan_func, resource, resource_count, index):
     logger.info(f"{scan_func.__name__} {progress} completed pk={resource.pk}")
 
 
-def _scan_and_save(resource_qs, scan_func, save_func):
+def _scan_and_save(resource_qs, scan_func, save_func, scan_func_kwargs=None):
     """
     Run the `scan_func` on the codebase resources if the provided `resource_qs`.
     The `save_func` is called to save the results.
@@ -278,6 +283,9 @@ def _scan_and_save(resource_qs, scan_func, save_func):
     Note that all database related actions are executed in this main process as the
     database connection does not always fork nicely in the pool processes.
     """
+    if not scan_func_kwargs:
+        scan_func_kwargs = {}
+
     resource_count = resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
     resource_iterator = resource_qs.iterator(chunk_size=2000)
@@ -288,7 +296,9 @@ def _scan_and_save(resource_qs, scan_func, save_func):
         with_threading = False if max_workers == -1 else True
         for index, resource in enumerate(resource_iterator):
             _log_progress(scan_func, resource, resource_count, index)
-            scan_results, scan_errors = scan_func(resource.location, with_threading)
+            scan_results, scan_errors = scan_func(
+                resource.location, with_threading, **scan_func_kwargs
+            )
             save_func(resource, scan_results, scan_errors)
         return
 
@@ -319,7 +329,12 @@ def scan_for_files(project, resource_qs=None):
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     resource_qs = resource_qs or project.codebaseresources.no_status()
-    _scan_and_save(resource_qs, scan_file, save_scan_file_results)
+
+    scan_func_kwargs = {}
+    if license_score := project.get_env("scancode_license_score"):
+        scan_func_kwargs["min_license_score"] = license_score
+
+    _scan_and_save(resource_qs, scan_file, save_scan_file_results, scan_func_kwargs)
 
 
 def scan_for_application_packages(project):
