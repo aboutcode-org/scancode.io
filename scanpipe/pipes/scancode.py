@@ -199,7 +199,7 @@ def _scan_resource(
     return results, errors
 
 
-def scan_file(location, with_threading=True, min_license_score=0):
+def scan_file(location, with_threading=True, min_license_score=0, **kwargs):
     """
     Run a license, copyright, email, and url scan on a provided `location`,
     using the scancode-toolkit direct API.

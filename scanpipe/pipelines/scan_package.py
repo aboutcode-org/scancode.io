@@ -95,8 +95,8 @@ class ScanPackage(Pipeline):
         self.scan_output_location = str(scan_output_path.absolute())
         scancode_options = self.scancode_options.copy()
 
-        if min_license_score := self.project.get_env("scancode_license_score"):
-            scancode_options.append(f"--license-score {min_license_score}")
+        if license_score := self.project.get_env("scancode_license_score"):
+            scancode_options.append(f"--license-score {license_score}")
 
         with self.save_errors(scancode.ScancodeError):
             scancode.run_scancode(

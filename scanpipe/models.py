@@ -416,6 +416,24 @@ class ExtraDataFieldMixin(models.Model):
         abstract = True
 
 
+class UpdateMixin:
+    """
+    Provide a ``update()`` method to trigger a save() on the object with the
+    ``update_fields`` automatically set to force a SQL UPDATE.
+    """
+
+    def update(self, **kwargs):
+        """
+        Update this resource with the provided ``kwargs`` values.
+        The full ``save()`` process will be triggered, including signals, and the
+        ``update_fields`` is automatically set.
+        """
+        for field_name, value in kwargs.items():
+            setattr(self, field_name, value)
+
+        self.save(update_fields=list(kwargs.keys()))
+
+
 def get_project_slug(project):
     """
     Return a "slug" value for the provided ``project`` based on the slugify name
@@ -461,7 +479,7 @@ class ProjectQuerySet(models.QuerySet):
         return self.annotate(**annotations)
 
 
-class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
+class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     """
     The Project encapsulates all analysis processing.
     Multiple analysis pipelines can be run on the same project.
@@ -1122,24 +1140,6 @@ class ProjectRelatedQuerySet(
         """Get the object from provided lookups or get None"""
         with suppress(self.model.DoesNotExist, ValidationError):
             return self.get(*args, **kwargs)
-
-
-class UpdateMixin:
-    """
-    Provide a ``update()`` method to trigger a save() on the object with the
-    ``update_fields`` automatically set to force a SQL UPDATE.
-    """
-
-    def update(self, **kwargs):
-        """
-        Update this resource with the provided ``kwargs`` values.
-        The full ``save()`` process will be triggered, including signals, and the
-        ``update_fields`` is automatically set.
-        """
-        for field_name, value in kwargs.items():
-            setattr(self, field_name, value)
-
-        self.save(update_fields=list(kwargs.keys()))
 
 
 class ProjectRelatedModel(UpdateMixin, models.Model):

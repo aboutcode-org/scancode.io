@@ -186,6 +186,19 @@ class ScanPipeScancodePipesTest(TestCase):
         ]
         self.assertEqual(sorted(expected), sorted(scan_results.keys()))
 
+    def test_scanpipe_pipes_scancode_scan_file_min_license_score(self):
+        input_location = str(self.data_location / "notice.NOTICE")
+
+        scan_results, _ = scancode.scan_file(input_location)
+        license_detections = scan_results.get("license_detections")
+        self.assertEqual(1, len(license_detections))
+        self.assertEqual(3, len(license_detections[0].get("matches")))
+
+        scan_results, _ = scancode.scan_file(input_location, min_license_score=99)
+        license_detections = scan_results.get("license_detections")
+        self.assertEqual(1, len(license_detections))
+        self.assertEqual(1, len(license_detections[0].get("matches")))
+
     def test_scanpipe_pipes_scancode_scan_file_and_save_results(self):
         project1 = Project.objects.create(name="Analysis")
         codebase_resource1 = CodebaseResource.objects.create(
@@ -276,6 +289,19 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual("scanned-with-error", resource3.status)
         self.assertEqual("", resource3.detected_license_expression)
         self.assertEqual(["copy"], resource3.copyrights)
+
+    @mock.patch("scanpipe.pipes.scancode._scan_and_save")
+    def test_scanpipe_pipes_scancode_scan_for_files_scancode_license_score(
+        self, mock_scan_and_save
+    ):
+        project1 = Project.objects.create(
+            name="Analysis",
+            settings={"scancode_license_score": 99},
+        )
+
+        scancode.scan_for_files(project1)
+        expected = {"min_license_score": 99}
+        self.assertEqual(expected, mock_scan_and_save.call_args_list[-1].args[-1])
 
     def test_scanpipe_pipes_scancode_scan_for_package_data_timeout(self):
         input_location = str(self.data_location / "notice.NOTICE")
