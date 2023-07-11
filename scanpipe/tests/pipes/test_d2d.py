@@ -28,6 +28,7 @@ from unittest import mock
 
 from django.test import TestCase
 
+from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
@@ -457,7 +458,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.map_javascript(self.project1, logger=buffer.write)
         expected = (
-            "Mapping 1 .map resources using javascript map against from/ codebase"
+            "Mapping 1 .map resources using javascript map against from/ codebase."
         )
         self.assertIn(expected, buffer.getvalue())
 
@@ -505,7 +506,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.map_javascript(self.project1, logger=buffer.write)
         expected = (
-            "Mapping 1 .map resources using javascript map against from/ codebase"
+            "Mapping 1 .map resources using javascript map against from/ codebase."
         )
         self.assertIn(expected, buffer.getvalue())
 
@@ -602,7 +603,7 @@ class ScanPipeD2DPipesTest(TestCase):
             logger=buffer.write,
         )
         expected = (
-            "Mapping 1 minified .js and .css resources based on existing PurlDB match"
+            "Mapping 1 minified .js and .css resources based on existing PurlDB match."
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -652,3 +653,127 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = self.project1.codebaserelations.all()
         self.assertEqual(from_resource, relation[0].from_resource)
         self.assertEqual(from_resource, relation[1].from_resource)
+
+    def test_scanpipe_pipes_d2d_map_javascript_colocation(self):
+        to_dir1 = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "intelligent robotics platform.lpkg-extract/"
+            "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+            "resources/adaptive_media/js"
+        )
+        to_dir1.mkdir(parents=True)
+        to_resource_files1 = [
+            self.data_location / "d2d-javascript" / "to" / "main.js.map",
+            self.data_location / "d2d-javascript" / "to" / "main.js",
+        ]
+        copy_inputs(to_resource_files1, to_dir1)
+
+        to_resource_file3 = self.data_location / "d2d-javascript" / "to" / "unmain.js"
+        to_dir3 = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "intelligent robotics platform.lpkg-extract/"
+            "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+            "resources/adaptive_media/jsx"
+        )
+        to_dir3.mkdir(parents=True)
+        copy_input(to_resource_file3, to_dir3)
+
+        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_dir1 = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        from_dir1.mkdir(parents=True)
+        copy_input(from_input_location, from_dir1)
+
+        from_dir2 = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "ambiguous-machine-cloud/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        from_dir2.mkdir(parents=True)
+        copy_input(from_input_location, from_dir2)
+
+        from_dir3 = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "adaptive_media/jsx"
+        )
+        from_dir3.mkdir(parents=True)
+        copy_input(from_input_location, from_dir3)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        from_resource1 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+        to_resource1 = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/main.js"
+            )
+        )
+
+        from_resource3 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "adaptive_media/jsx/main.js"
+            )
+        )
+        to_resource3 = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/jsx/unmain.js"
+            )
+        )
+
+        pipes.make_relation(
+            from_resource=from_resource1,
+            to_resource=to_resource1,
+            map_type="js_compiled",
+        )
+
+        pipes.make_relation(
+            from_resource=from_resource3,
+            to_resource=to_resource3,
+            map_type="js_compiled",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_javascript_colocation(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 to/ resources against from/ codebase "
+            "based on neighborhood file mapping."
+        )
+
+        relation = self.project1.codebaserelations.filter(
+            to_resource__path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/main.js.map"
+            ),
+        )
+        from_expected = to_resource3 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(from_expected, relation[0].from_resource)
