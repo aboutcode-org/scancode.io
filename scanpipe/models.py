@@ -1692,6 +1692,103 @@ class ScanFieldsModelMixin(models.Model):
             self.save(update_fields=updated_fields)
 
 
+class ComplianceAlertMixin(models.Model):
+    """
+    Include the ``compliance_alert`` field and related code to compute its value.
+    Add the db `indexes` in Meta of the concrete model:
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["compliance_alert"]),
+        ]
+    """
+
+    license_expression_field = None
+
+    class Compliance(models.TextChoices):
+        OK = "ok"
+        WARNING = "warning"
+        ERROR = "error"
+        MISSING = "missing"
+
+    compliance_alert = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=Compliance.choices,
+        editable=False,
+        help_text=_(
+            "Indicates how the license expression complies with provided policies."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """
+        Store the ``license_expression_field`` on loading this instance from the
+        database value.
+        The cached value is then used to detect changes on `save()`.
+        """
+        new = super().from_db(db, field_names, values)
+
+        if cls.license_expression_field in field_names:
+            field_index = field_names.index(cls.license_expression_field)
+            new._loaded_license_expression = values[field_index]
+
+        return new
+
+    def save(self, codebase=None, *args, **kwargs):
+        """
+        Injects policies, if the feature is enabled, when the
+        ``license_expression_field`` field value has changed.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        if scanpipe_app.policies_enabled:
+            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
+            license_expression = getattr(self, self.license_expression_field, "")
+            if license_expression != loaded_license_expression:
+                self.compliance_alert = self.compute_compliance_alert()
+                if "update_fields" in kwargs:
+                    kwargs["update_fields"].append("compliance_alert")
+
+        super().save(*args, **kwargs)
+
+    def compute_compliance_alert(self):
+        """Compute and return the compliance_alert value from the licenses policies."""
+        license_expression = getattr(self, self.license_expression_field, "")
+        if not license_expression:
+            return ""
+
+        alerts = []
+        policy_index = scanpipe_app.license_policies_index
+
+        licensing = get_licensing()
+        parsed = licensing.parse(license_expression, simple=True)
+        license_keys = licensing.license_keys(parsed)
+
+        for license_key in license_keys:
+            if policy := policy_index.get(license_key):
+                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
+            else:
+                alerts.append(self.Compliance.MISSING)
+
+        compliance_ordered_by_severity = [
+            self.Compliance.ERROR,
+            self.Compliance.WARNING,
+            self.Compliance.MISSING,
+        ]
+
+        for compliance_severity in compliance_ordered_by_severity:
+            if compliance_severity in alerts:
+                return compliance_severity
+
+        return self.Compliance.OK
+
+
 class CodebaseResource(
     ProjectRelatedModel,
     ScanFieldsModelMixin,
@@ -1699,6 +1796,7 @@ class CodebaseResource(
     SaveProjectErrorMixin,
     UpdateFromDataMixin,
     HashFieldsMixin,
+    ComplianceAlertMixin,
     models.Model,
 ):
     """
@@ -1707,6 +1805,8 @@ class CodebaseResource(
 
     These model fields should be kept in line with `commoncode.resource.Resource`.
     """
+
+    license_expression_field = "detected_license_expression"
 
     path = models.CharField(
         max_length=2000,
@@ -1788,25 +1888,6 @@ class CodebaseResource(
     is_archive = models.BooleanField(default=False)
     is_key_file = models.BooleanField(default=False)
     is_media = models.BooleanField(default=False)
-
-    class Compliance(models.TextChoices):
-        """List of compliance alert values."""
-
-        OK = "ok"
-        WARNING = "warning"
-        ERROR = "error"
-        MISSING = "missing"
-
-    compliance_alert = models.CharField(
-        max_length=10,
-        blank=True,
-        choices=Compliance.choices,
-        editable=False,
-        help_text=_(
-            "Indicates how the detected licenses in a codebase resource complies with "
-            "provided policies."
-        ),
-    )
     package_data = models.JSONField(
         default=list,
         blank=True,
@@ -1842,39 +1923,6 @@ class CodebaseResource(
 
     def __str__(self):
         return self.path
-
-    @classmethod
-    def from_db(cls, db, field_names, values):
-        """
-        Store the `detected_license_expression` field on loading this instance from the
-        database value.
-        The cached value is then used to detect changes on `save()`.
-        """
-        new = super().from_db(db, field_names, values)
-
-        if "detected_license_expression" in field_names:
-            field_index = field_names.index("detected_license_expression")
-            new._loaded_license_expression = values[field_index]
-
-        return new
-
-    def save(self, codebase=None, *args, **kwargs):
-        """
-        Save the current resource instance.
-        Injects policies, if the feature is enabled, when the
-        `detected_license_expression` field value is changed.
-
-        `codebase` is not used in this context but required for compatibility
-        with the commoncode.resource.Codebase class API.
-        """
-        if scanpipe_app.policies_enabled:
-            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
-            if self.detected_license_expression != loaded_license_expression:
-                self.compliance_alert = self.compute_compliance_alert()
-                if "update_fields" in kwargs:
-                    kwargs["update_fields"].append("compliance_alert")
-
-        super().save(*args, **kwargs)
 
     @property
     def location_path(self):
@@ -1926,36 +1974,6 @@ class CodebaseResource(
             part_and_subpath.append((segment, current_path))
 
         return part_and_subpath
-
-    def compute_compliance_alert(self):
-        """Compute and return the compliance_alert value from the licenses policies."""
-        if not self.detected_license_expression:
-            return ""
-
-        alerts = []
-        policy_index = scanpipe_app.license_policies_index
-
-        licensing = get_licensing()
-        parsed = licensing.parse(self.detected_license_expression, simple=True)
-        license_keys = licensing.license_keys(parsed)
-
-        for license_key in license_keys:
-            if policy := policy_index.get(license_key):
-                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
-            else:
-                alerts.append(self.Compliance.MISSING)
-
-        compliance_ordered_by_severity = [
-            self.Compliance.ERROR,
-            self.Compliance.WARNING,
-            self.Compliance.MISSING,
-        ]
-
-        for compliance_severity in compliance_ordered_by_severity:
-            if compliance_severity in alerts:
-                return compliance_severity
-
-        return self.Compliance.OK
 
     def parent_path(self):
         """Return the parent path for this CodebaseResource or None."""
@@ -2431,6 +2449,7 @@ class DiscoveredPackage(
     HashFieldsMixin,
     PackageURLMixin,
     VulnerabilityMixin,
+    ComplianceAlertMixin,
     AbstractPackage,
 ):
     """
@@ -2441,6 +2460,8 @@ class DiscoveredPackage(
     packages, such as Debian, RPM, npm, Maven, or PyPI packages.
     See https://github.com/package-url for more details.
     """
+
+    license_expression_field = "declared_license_expression"
 
     uuid = models.UUIDField(
         verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
@@ -2476,6 +2497,7 @@ class DiscoveredPackage(
             models.Index(fields=["sha1"]),
             models.Index(fields=["sha256"]),
             models.Index(fields=["sha512"]),
+            models.Index(fields=["compliance_alert"]),
         ]
         constraints = [
             models.UniqueConstraint(

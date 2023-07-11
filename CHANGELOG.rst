@@ -4,6 +4,9 @@ Changelog
 v32.4.0 (unreleased)
 --------------------
 
+- Add support for license policies and complaince alert for Discovered Packages.
+  https://github.com/nexB/scancode.io/issues/151
+
 - Refine the details views and tabs:
   - Add a "Relations" tab in the Resource details view
   - Disable empty tabs by default
