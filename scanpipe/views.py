@@ -1072,7 +1072,7 @@ class CodebaseResourceListView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["include_compliance_alert"] = scanpipe_app.policies_enabled
+        context["display_compliance_alert"] = scanpipe_app.policies_enabled
         return context
 
 
@@ -1099,12 +1099,22 @@ class DiscoveredPackageListView(
             "filter_fieldname": "declared_license_expression",
         },
         {
+            "field_name": "compliance_alert",
+            "condition": scanpipe_app.policies_enabled,
+            "filter_fieldname": "compliance_alert",
+        },
+        {
             "field_name": "copyright",
             "filter_fieldname": "copyright",
         },
         "primary_language",
         "resources",
     ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["display_compliance_alert"] = scanpipe_app.policies_enabled
+        return context
 
 
 class DiscoveredDependencyListView(

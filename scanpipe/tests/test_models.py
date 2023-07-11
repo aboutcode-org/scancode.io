@@ -1998,6 +1998,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             "package_uid",
             "filename",
             "affected_by_vulnerabilities",
+            "compliance_alert",
         ]
 
         discovered_package_fields = [

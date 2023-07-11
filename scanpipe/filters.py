@@ -466,6 +466,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         fields=[
             "declared_license_expression",
             "other_license_expression",
+            "compliance_alert",
             "copyright",
             "primary_language",
         ],
@@ -473,6 +474,10 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     purl = PackageURLFilter(label="Package URL")
     is_vulnerable = IsVulnerable(
         field_name="affected_by_vulnerabilities",
+        widget=BulmaDropdownWidget,
+    )
+    compliance_alert = django_filters.ChoiceFilter(
+        choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
         widget=BulmaDropdownWidget,
     )
 
@@ -506,6 +511,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "extracted_license_statement",
             "copyright",
             "is_vulnerable",
+            "compliance_alert",
         ]
 
     def __init__(self, *args, **kwargs):
