@@ -1689,6 +1689,30 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("vcs", external_references[0].type)
         self.assertEqual("https://packages.vcs.url", external_references[0].url)
 
+    def test_scanpipe_discovered_package_model_compliance_alert(self):
+        scanpipe_app.license_policies_index = license_policies_index
+        package_data = package_data1.copy()
+        package_data["declared_license_expression"] = ""
+        package = DiscoveredPackage.create_from_data(self.project1, package_data)
+        self.assertEqual("", package.compliance_alert)
+
+        license_expression = "bsd-new"
+        self.assertNotIn(license_expression, scanpipe_app.license_policies_index)
+        package.update(declared_license_expression=license_expression)
+        self.assertEqual("missing", package.compliance_alert)
+
+        license_expression = "apache-2.0"
+        self.assertIn(license_expression, scanpipe_app.license_policies_index)
+        package.update(declared_license_expression=license_expression)
+        self.assertEqual("ok", package.compliance_alert)
+
+        license_expression = "apache-2.0 AND mpl-2.0 OR gpl-3.0"
+        package.update(declared_license_expression=license_expression)
+        self.assertEqual("error", package.compliance_alert)
+
+        # Reset the index value
+        scanpipe_app.license_policies_index = None
+
     def test_scanpipe_model_create_user_creates_auth_token(self):
         basic_user = User.objects.create_user(username="basic_user")
         self.assertTrue(basic_user.auth_token.key)
