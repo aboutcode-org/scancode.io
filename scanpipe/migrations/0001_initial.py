@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('project', 'path'),
             },
-            bases=(scanpipe.models.SaveProjectErrorMixin, models.Model),
+            bases=(scanpipe.models.SaveProjectMessageMixin, models.Model),
         ),
         migrations.CreateModel(
             name='Project',
@@ -132,7 +132,7 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['uuid'],
             },
-            bases=(scanpipe.models.SaveProjectErrorMixin, models.Model),
+            bases=(scanpipe.models.SaveProjectMessageMixin, models.Model),
         ),
         migrations.AddField(
             model_name='codebaseresource',

@@ -236,7 +236,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         # Duplicated path: skip the creation and no project error added
         pipes.make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
-        self.assertEqual(0, p1.projecterrors.count())
+        self.assertEqual(0, p1.projectmessages.count())
 
     def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")
@@ -249,8 +249,8 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         scancode.add_resource_to_package("not_available", resource1, project1)
         self.assertFalse(resource1.for_packages)
-        self.assertEqual(1, project1.projecterrors.count())
-        error = project1.projecterrors.get()
+        self.assertEqual(1, project1.projectmessages.count())
+        error = project1.projectmessages.get()
         self.assertEqual("assemble_package", error.model)
         expected = {"resource": "filename.ext", "package_uid": "not_available"}
         self.assertEqual(expected, error.details)

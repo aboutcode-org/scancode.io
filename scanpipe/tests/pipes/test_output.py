@@ -40,7 +40,7 @@ from scancode_config import __version__ as scancode_toolkit_version
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.pipes import output
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import mocked_now
@@ -161,7 +161,7 @@ class ScanPipeOutputPipesTest(TestCase):
             "codebaseresource-2010-10-10-10-10-10.csv",
             "discovereddependency-2010-10-10-10-10-10.csv",
             "discoveredpackage-2010-10-10-10-10-10.csv",
-            "projecterror-2010-10-10-10-10-10.csv",
+            "projectmessage-2010-10-10-10-10-10.csv",
         ]
 
         for csv_file in csv_files:
@@ -204,8 +204,12 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
-        ProjectError.objects.create(
-            project=project, model="Model", details={}, message="Error"
+        ProjectMessage.objects.create(
+            project=project,
+            severity=ProjectMessage.Severity.ERROR,
+            description="Error",
+            model="Model",
+            details={},
         )
 
         output_file = output.to_xlsx(project=project)

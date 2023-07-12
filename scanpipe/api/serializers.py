@@ -30,7 +30,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import fetch_urls
@@ -139,7 +139,7 @@ class ProjectSerializer(
             "next_run",
             "runs",
             "extra_data",
-            "error_count",
+            "message_count",
             "resource_count",
             "package_count",
             "dependency_count",
@@ -155,7 +155,7 @@ class ProjectSerializer(
             "input_root",
             "output_root",
             "extra_data",
-            "error_count",
+            "message_count",
             "resource_count",
             "package_count",
             "dependency_count",
@@ -361,12 +361,20 @@ class CodebaseRelationSerializer(serializers.ModelSerializer):
         ]
 
 
-class ProjectErrorSerializer(serializers.ModelSerializer):
+class ProjectMessageSerializer(serializers.ModelSerializer):
     traceback = serializers.SerializerMethodField()
 
     class Meta:
-        model = ProjectError
-        fields = ["uuid", "model", "message", "details", "traceback", "created_date"]
+        model = ProjectMessage
+        fields = [
+            "uuid",
+            "severity",
+            "description",
+            "model",
+            "details",
+            "traceback",
+            "created_date",
+        ]
 
     def get_traceback(self, project_error):
         return project_error.traceback.splitlines()
@@ -397,7 +405,7 @@ def get_model_serializer(model_class):
         DiscoveredPackage: DiscoveredPackageSerializer,
         DiscoveredDependency: DiscoveredDependencySerializer,
         CodebaseRelation: CodebaseRelationSerializer,
-        ProjectError: ProjectErrorSerializer,
+        ProjectMessage: ProjectMessageSerializer,
     }.get(model_class, None)
 
     if not serializer:

@@ -588,7 +588,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         _, deleted_counter = self.discoveredpackages.all().delete()
 
         relationships = [
-            self.projecterrors,
+            self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
             self.codebaseresources,
@@ -952,24 +952,38 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         with suppress(ObjectDoesNotExist):
             return self.runs.failed().latest("created_date")
 
-    def add_error(self, error, model, details=None):
+    def add_message(self, severity, description, model="", details=None, traceback=""):
         """
-        Create a "ProjectError" record from the provided `error` Exception for this
-        project.
-        The `model` attribute can be provided as a string or as a Model class.
+        Create a ProjectMessage record for this Project.
+
+        The ``model`` attribute can be provided as a string or as a Model class.
         """
         if inspect.isclass(model):
             model = model.__name__
 
+        return ProjectMessage.objects.create(
+            project=self,
+            severity=severity,
+            description=description,
+            model=model,
+            details=details or {},
+            traceback=traceback,
+        )
+
+    def add_error(self, error, model, details=None):
+        """
+        Create a ProjectMessage record from the provided `error` Exception for this
+        project.
+        """
         traceback = ""
         if hasattr(error, "__traceback__"):
             traceback = "".join(format_tb(error.__traceback__))
 
-        return ProjectError.objects.create(
-            project=self,
+        return self.add_message(
+            severity=ProjectMessage.Severity.ERROR,
+            description=str(error),
             model=model,
-            details=details or {},
-            message=str(error),
+            details=details,
             traceback=traceback,
         )
 
@@ -1019,9 +1033,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.discovereddependencies.count()
 
     @cached_property
-    def error_count(self):
-        """Return the number of errors related to this project."""
-        return self.projecterrors.count()
+    def message_count(self):
+        """Return the number of messages related to this project."""
+        return self.projectmessages.count()
 
     @cached_property
     def relation_count(self):
@@ -1159,10 +1173,21 @@ class ProjectRelatedModel(UpdateMixin, models.Model):
         return [field.name for field in cls._meta.get_fields()]
 
 
-class ProjectError(UUIDPKModel, ProjectRelatedModel):
-    """Stores errors and exceptions raised during a pipeline run."""
+class ProjectMessage(UUIDPKModel, ProjectRelatedModel):
+    """Stores messages such as errors and exceptions raised during a pipeline run."""
 
-    created_date = models.DateTimeField(auto_now_add=True, editable=False)
+    class Severity(models.TextChoices):
+        INFO = "info"
+        WARNING = "warning"
+        ERROR = "error"
+
+    severity = models.CharField(
+        max_length=10,
+        choices=Severity.choices,
+        editable=False,
+        help_text=_("Severity level of the message."),
+    )
+    description = models.TextField(blank=True, help_text=_("Description."))
     model = models.CharField(max_length=100, help_text=_("Name of the model class."))
     details = models.JSONField(
         default=dict,
@@ -1170,19 +1195,23 @@ class ProjectError(UUIDPKModel, ProjectRelatedModel):
         encoder=DjangoJSONEncoder,
         help_text=_("Data that caused the error."),
     )
-    message = models.TextField(blank=True, help_text=_("Error message."))
     traceback = models.TextField(blank=True, help_text=_("Exception traceback."))
+    created_date = models.DateTimeField(auto_now_add=True, editable=False)
 
     class Meta:
         ordering = ["created_date"]
+        indexes = [
+            models.Index(fields=["severity"]),
+            models.Index(fields=["model"]),
+        ]
 
     def __str__(self):
-        return f"[{self.pk}] {self.model}: {self.message}"
+        return f"[{self.pk}] {self.model}: {self.description}"
 
 
-class SaveProjectErrorMixin:
+class SaveProjectMessageMixin:
     """
-    Uses `SaveProjectErrorMixin` on a model to create a "ProjectError" entry
+    Uses `SaveProjectMessageMixin` on a model to create a "ProjectError" entry
     from a raised exception during `save()` instead of stopping the analysis process.
 
     The creation of a "ProjectError" can be skipped providing False for the `save_error`
@@ -1211,7 +1240,7 @@ class SaveProjectErrorMixin:
         if "project" not in fields:
             return [
                 checks.Error(
-                    "'project' field is required when using SaveProjectErrorMixin.",
+                    "'project' field is required when using SaveProjectMessageMixin.",
                     obj=cls,
                     id="scanpipe.models.E001",
                 )
@@ -1220,7 +1249,7 @@ class SaveProjectErrorMixin:
         return []
 
     def add_error(self, error):
-        """Create a "ProjectError" record from a given `error` Exception instance."""
+        """Create a "ProjectMessage" record from a given `error` Exception instance."""
         return self.project.add_error(
             error=error,
             model=self.__class__,
@@ -1793,7 +1822,7 @@ class CodebaseResource(
     ProjectRelatedModel,
     ScanFieldsModelMixin,
     ExtraDataFieldMixin,
-    SaveProjectErrorMixin,
+    SaveProjectMessageMixin,
     UpdateFromDataMixin,
     HashFieldsMixin,
     ComplianceAlertMixin,
@@ -2444,7 +2473,7 @@ class VulnerabilityMixin(models.Model):
 class DiscoveredPackage(
     ProjectRelatedModel,
     ExtraDataFieldMixin,
-    SaveProjectErrorMixin,
+    SaveProjectMessageMixin,
     UpdateFromDataMixin,
     HashFieldsMixin,
     PackageURLMixin,
@@ -2741,7 +2770,7 @@ class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQueryS
 
 class DiscoveredDependency(
     ProjectRelatedModel,
-    SaveProjectErrorMixin,
+    SaveProjectMessageMixin,
     UpdateFromDataMixin,
     PackageURLMixin,
 ):

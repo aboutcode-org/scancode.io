@@ -59,9 +59,9 @@ from scancodeio.auth import conditional_login_required
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
-from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
+from scanpipe.filters import ProjectMessageFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
@@ -72,7 +72,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import count_group_by
@@ -484,9 +484,9 @@ class ProjectListView(
             "sort_name": "codebaseresources_count",
         },
         {
-            "field_name": "projecterrors",
-            "label": "Errors",
-            "sort_name": "projecterrors_count",
+            "field_name": "projectmessages",
+            "label": "Messages",
+            "sort_name": "projectmessages_count",
         },
         {
             "field_name": "runs",
@@ -506,7 +506,7 @@ class ProjectListView(
                 "codebaseresources",
                 "discoveredpackages",
                 "discovereddependencies",
-                "projecterrors",
+                "projectmessages",
             )
         )
 
@@ -1144,20 +1144,24 @@ class DiscoveredDependencyListView(
     ]
 
 
-class ProjectErrorListView(
+class ProjectMessageListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
     FilterView,
 ):
-    model = ProjectError
-    filterset_class = ErrorFilterSet
-    template_name = "scanpipe/error_list.html"
+    model = ProjectMessage
+    filterset_class = ProjectMessageFilterSet
+    template_name = "scanpipe/project_message_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("error", 50)
     table_columns = [
+        {
+            "field_name": "severity",
+            "filter_fieldname": "severity",
+        },
         "model",
-        "message",
+        "description",
         "details",
         "traceback",
     ]

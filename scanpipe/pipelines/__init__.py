@@ -132,7 +132,7 @@ class BasePipeline:
         return 0, ""
 
     def add_error(self, error):
-        """Create a `ProjectError` record on the current `project`."""
+        """Create a ``ProjectMessage`` ERROR record on the current `project`."""
         self.project.add_error(error, model=self.pipeline_name)
 
     @contextmanager

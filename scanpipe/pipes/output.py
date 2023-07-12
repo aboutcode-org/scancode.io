@@ -86,7 +86,7 @@ def get_queryset(project, model_name):
         "codebaserelation": (
             project.codebaserelations.select_related("from_resource", "to_resource")
         ),
-        "projecterror": project.projecterrors.all(),
+        "projectmessage": project.projectmessages.all(),
     }
     return querysets.get(model_name)
 
@@ -138,7 +138,7 @@ def to_csv(project):
         "discoveredpackage",
         "discovereddependency",
         "codebaseresource",
-        "projecterror",
+        "projectmessage",
     ]
 
     output_files = []
@@ -285,7 +285,7 @@ model_name_to_worksheet_name = {
     "discovereddependency": "DEPENDENCIES",
     "codebaseresource": "RESOURCES",
     "codebaserelation": "RELATIONS",
-    "projecterror": "ERRORS",
+    "projectmessage": "MESSAGES",
 }
 
 
@@ -460,7 +460,7 @@ def to_xlsx(project):
         "discovereddependency",
         "codebaseresource",
         "codebaserelation",
-        "projecterror",
+        "projectmessage",
     ]
 
     with xlsxwriter.Workbook(output_file) as workbook:

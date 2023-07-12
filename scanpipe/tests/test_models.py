@@ -55,7 +55,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import get_project_work_directory
@@ -159,7 +159,7 @@ class ScanPipeModelsTest(TestCase):
         expected = {
             "scanpipe.DiscoveredPackage_codebase_resources": 1,
             "scanpipe.DiscoveredPackage": 1,
-            "scanpipe.ProjectError": 0,
+            "scanpipe.ProjectMessage": 0,
             "scanpipe.CodebaseRelation": 0,
             "scanpipe.DiscoveredDependency": 0,
             "scanpipe.CodebaseResource": 1,
@@ -199,7 +199,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.reset()
 
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
-        self.assertEqual(0, self.project1.projecterrors.count())
+        self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(0, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
@@ -488,7 +488,7 @@ class ScanPipeModelsTest(TestCase):
         project_qs = Project.objects.with_counts(
             "codebaseresources",
             "discoveredpackages",
-            "projecterrors",
+            "projectmessages",
         )
 
         project = project_qs.get(pk=self.project_asgiref.pk)
@@ -496,8 +496,8 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(18, project.codebaseresources.count())
         self.assertEqual(2, project.discoveredpackages_count)
         self.assertEqual(2, project.discoveredpackages.count())
-        self.assertEqual(2, project.projecterrors_count)
-        self.assertEqual(2, project.projecterrors.count())
+        self.assertEqual(2, project.projectmessages_count)
+        self.assertEqual(2, project.projectmessages.count())
 
     def test_scanpipe_project_related_queryset_get_or_none(self):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
@@ -1801,10 +1801,10 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             model="Package",
             details=details,
         )
-        self.assertEqual(error, ProjectError.objects.get())
+        self.assertEqual(error, ProjectMessage.objects.get())
         self.assertEqual("Package", error.model)
         self.assertEqual(details, error.details)
-        self.assertEqual("Error message", error.message)
+        self.assertEqual("Error message", error.description)
         self.assertEqual("", error.traceback)
 
     def test_scanpipe_project_model_update_extra_data(self):
@@ -1841,10 +1841,10 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         codebase_resource = CodebaseResource.objects.create(project=project1)
         error = codebase_resource.add_error(Exception("Error message"))
 
-        self.assertEqual(error, ProjectError.objects.get())
+        self.assertEqual(error, ProjectMessage.objects.get())
         self.assertEqual("CodebaseResource", error.model)
         self.assertTrue(error.details)
-        self.assertEqual("Error message", error.message)
+        self.assertEqual("Error message", error.description)
         self.assertEqual("", error.traceback)
 
     def test_scanpipe_codebase_resource_model_add_errors(self):
@@ -1852,7 +1852,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         codebase_resource = CodebaseResource.objects.create(project=project1)
         codebase_resource.add_error(Exception("Error1"))
         codebase_resource.add_error(Exception("Error2"))
-        self.assertEqual(2, ProjectError.objects.count())
+        self.assertEqual(2, ProjectMessage.objects.count())
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_project_error_model_save_non_valid_related_object(self):
@@ -1865,14 +1865,14 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         # The DiscoveredPackage was not created
         self.assertIsNone(package.id)
         self.assertEqual(0, DiscoveredPackage.objects.count())
-        # A ProjectError was saved instead
-        self.assertEqual(1, project1.projecterrors.count())
+        # A ProjectMessage was saved instead
+        self.assertEqual(1, project1.projectmessages.count())
 
-        error = project1.projecterrors.get()
+        error = project1.projectmessages.get()
         self.assertEqual("DiscoveredPackage", error.model)
         self.assertEqual(long_value, error.details["filename"])
         self.assertEqual(
-            "value too long for type character varying(255)", error.message
+            "value too long for type character varying(255)", error.description
         )
 
         codebase_resource = CodebaseResource.objects.create(
@@ -1880,7 +1880,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         )
         self.assertIsNone(codebase_resource.id)
         self.assertEqual(0, CodebaseResource.objects.count())
-        self.assertEqual(2, project1.projecterrors.count())
+        self.assertEqual(2, project1.projectmessages.count())
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_package_model_create_from_data(self):
@@ -1904,26 +1904,26 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         incomplete_data["name"] = ""
         self.assertIsNone(DiscoveredPackage.create_from_data(project1, incomplete_data))
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        error = project1.projecterrors.latest("created_date")
+        error = project1.projectmessages.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
         expected_message = "No values for the following required fields: name"
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_message, error.description)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])
         self.assertEqual("", error.traceback)
 
         package_count = DiscoveredPackage.objects.count()
-        project_error_count = ProjectError.objects.count()
+        project_message_count = ProjectMessage.objects.count()
         bad_data = dict(package_data1)
         bad_data["version"] = "a" * 200
         # The exception are not capture at the DiscoveredPackage.create_from_data but
         # rather in the CodebaseResource.create_and_add_package method so resource data
-        # can be injected in the ProjectError record.
+        # can be injected in the ProjectMessage record.
         with self.assertRaises(DataError):
             DiscoveredPackage.create_from_data(project1, bad_data)
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        self.assertEqual(project_error_count, ProjectError.objects.count())
+        self.assertEqual(project_message_count, ProjectMessage.objects.count())
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
@@ -1965,10 +1965,10 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             DiscoveredDependency.create_from_data(project1, incomplete_data)
         )
         self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
-        error = project1.projecterrors.latest("created_date")
+        error = project1.projectmessages.latest("created_date")
         self.assertEqual("DiscoveredDependency", error.model)
         expected_message = "No values for the following required fields: dependency_uid"
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_message, error.description)
         self.assertEqual(dependency_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["dependency_uid"])
         self.assertEqual("", error.traceback)
@@ -2002,10 +2002,10 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         package = resource.create_and_add_package(bad_data)
         self.assertIsNone(package)
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        error = project1.projecterrors.latest("created_date")
+        error = project1.projectmessages.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
         expected_message = "value too long for type character varying(100)"
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_message, error.description)
         self.assertEqual(bad_data["version"], error.details["version"])
         self.assertTrue(error.details["codebase_resource_pk"])
         self.assertEqual(resource.path, error.details["codebase_resource_path"])

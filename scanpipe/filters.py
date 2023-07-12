@@ -36,7 +36,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -199,7 +199,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "discoveredpackages_count",
             "discovereddependencies_count",
             "codebaseresources_count",
-            "projecterrors_count",
+            "projectmessages_count",
         ],
         empty_label="Newest",
         choices=(
@@ -212,8 +212,8 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ("discovereddependencies_count", "Dependencies (-)"),
             ("-codebaseresources_count", "Resources (+)"),
             ("codebaseresources_count", "Resources (-)"),
-            ("-projecterrors_count", "Errors (+)"),
-            ("projecterrors_count", "Errors (-)"),
+            ("-projectmessages_count", "Messages (+)"),
+            ("projectmessages_count", "Messages (-)"),
         ),
         widget=BulmaDropdownWidget,
     )
@@ -547,21 +547,27 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ]
 
 
-class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = django_filters.CharFilter(
-        label="Search", field_name="message", lookup_expr="icontains"
+        label="Search", field_name="description", lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
+            "severity",
             "model",
         ],
     )
 
     class Meta:
-        model = ProjectError
+        model = ProjectMessage
         fields = [
             "search",
+            "severity",
             "model",
-            "message",
+            "description",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filters["severity"].extra["widget"] = BulmaDropdownWidget()

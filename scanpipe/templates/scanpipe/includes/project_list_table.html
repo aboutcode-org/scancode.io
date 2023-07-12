@@ -36,9 +36,9 @@
         {% endif %}
       </td>
       <td>
-        {% if project.projecterrors_count %}
-          <a href="{% url 'project_errors' project.slug %}">
-            {{ project.projecterrors_count|intcomma }}
+        {% if project.projectmessages_count %}
+          <a href="{% url 'project_messages' project.slug %}">
+            {{ project.projectmessages_count|intcomma }}
           </a>
         {% else %}
           <span>0</span>
