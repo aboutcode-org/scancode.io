@@ -902,7 +902,7 @@ def _map_javascript_colocation_resource(
 
     neighboring_relations = project.codebaserelations.filter(
         to_resource__path__startswith=coloaction_path,
-        map_type__in=["java_to_class", "js_compiled", "sha1"],
+        map_type__in=["java_to_class", "js_compiled"],
     )
 
     if not neighboring_relations:
