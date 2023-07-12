@@ -273,6 +273,7 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
 
 class DiscoveredPackageSerializer(serializers.ModelSerializer):
     purl = serializers.CharField(source="package_url")
+    compliance_alert = serializers.CharField()
 
     class Meta:
         model = DiscoveredPackage
@@ -311,6 +312,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "other_license_expression_spdx",
             "other_license_detections",
             "extracted_license_statement",
+            "compliance_alert",
             "notice_text",
             "source_packages",
             "extra_data",

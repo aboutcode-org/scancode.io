@@ -27,6 +27,6 @@ from scancodeio import __version__ as scancodeio_version
 
 def versions(request):
     return {
-        "SCANCODEIO_VERSION": scancodeio_version,
+        "SCANCODEIO_VERSION": scancodeio_version.lstrip("v"),
         "SCANCODE_TOOLKIT_VERSION": scancode_toolkit_version,
     }

@@ -200,6 +200,7 @@
       "other_license_expression_spdx": "",
       "other_license_detections": [],
       "extracted_license_statement": "- MIT\n",
+      "compliance_alert": "",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {},

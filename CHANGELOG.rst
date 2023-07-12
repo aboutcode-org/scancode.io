@@ -4,6 +4,16 @@ Changelog
 v32.4.0 (unreleased)
 --------------------
 
+- Add support for license policies and complaince alert for Discovered Packages.
+  https://github.com/nexB/scancode.io/issues/151
+
+- Refine the details views and tabs:
+  - Add a "Relations" tab in the Resource details view
+  - Disable empty tabs by default
+  - Display the count of items in the tab label
+  - Improve query performances for details views
+  https://github.com/nexB/scancode.io/issues/799
+
 - Upgrade vulnerablecode integration:
   - Add ``affected_by_vulnerabilities`` field on ``DiscoveredPackage`` model.
   - Add UI for showing package vulnerabilities in details view.
@@ -42,6 +52,12 @@ v32.4.0 (unreleased)
   Package details URL is now based on ``uuid`` and the dependency details URL is based
   on ``dependency_uid``.
   https://github.com/nexB/scancode.io/issues/331
+
+- Add a "License score" project setting that can be used to limit the returned license
+  matches with a score above the provided one.
+  This is leveraging the ScanCode-toolkit ``--license-score`` option, see:
+  https://scancode-toolkit.readthedocs.io/en/stable/cli-reference/basic-options.html#license-score-option
+  https://github.com/nexB/scancode.io/issues/335
 
 v32.3.0 (2023-06-12)
 --------------------

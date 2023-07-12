@@ -99,6 +99,7 @@ class ScanPipeFormsTest(TestCase):
             "name": self.project1.name,
             "extract_recursively": False,
             "ignored_patterns": "*.ext\ndir/*",
+            "scancode_license_score": 10,
         }
         form = ProjectSettingsForm(data=data, instance=self.project1)
         self.assertTrue(form.is_valid())
@@ -108,6 +109,7 @@ class ScanPipeFormsTest(TestCase):
             "extract_recursively": False,
             "ignored_patterns": ["*.ext", "dir/*"],
             "attribution_template": "",
+            "scancode_license_score": 10,
         }
         self.assertEqual(expected, project.settings)
         self.assertEqual(expected, project.get_env())

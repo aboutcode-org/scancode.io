@@ -1,0 +1,47 @@
+<div class="content">
+  {% if tab_data.fields.related_from.value %}
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>From resource</th>
+          <th>Status</th>
+          <th>Map type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for relation in tab_data.fields.related_from.value %}
+          <tr>
+            <td class="break-all">
+              <a href="{{ relation.from_resource.get_absolute_url }}#relations">{{ relation.from_resource.path }}</a>
+            </td>
+            <td>{{ relation.from_resource.status }}</td>
+            <td>{{ relation.map_type }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if tab_data.fields.related_to.value %}
+    <table class="table is-bordered is-narrow is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>To resource</th>
+          <th>Status</th>
+          <th>Map type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for relation in tab_data.fields.related_to.value %}
+          <tr>
+            <td class="break-all">
+              <a href="{{ relation.to_resource.get_absolute_url }}#relations">{{ relation.to_resource.path }}</a>
+            </td>
+            <td>{{ relation.to_resource.status }}</td>
+            <td>{{ relation.map_type }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>

@@ -35,7 +35,9 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
+from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import dependency_data1
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.views import ProjectCodebaseView
@@ -610,6 +612,43 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "tab-image")
         self.assertContains(response, "This resource is not available on disk.")
 
+    def test_scanpipe_views_codebase_resource_details_view_tabset(self):
+        resource1 = make_resource_file(self.project1, "file1.ext")
+        response = self.client.get(resource1.get_absolute_url())
+        self.assertContains(response, 'data-target="tab-essentials"')
+        self.assertContains(response, 'id="tab-essentials"')
+        self.assertContains(response, 'data-target="tab-others"')
+        self.assertContains(response, 'id="tab-others"')
+        self.assertContains(response, 'data-target="tab-viewer"')
+        self.assertContains(response, 'id="tab-viewer"')
+        self.assertNotContains(response, 'data-target="tab-detection"')
+        self.assertNotContains(response, 'id="tab-detection"')
+        self.assertNotContains(response, 'data-target="tab-packages"')
+        self.assertNotContains(response, 'id="tab-packages"')
+        self.assertNotContains(response, 'data-target="tab-relations"')
+        self.assertNotContains(response, 'id="tab-relations"')
+        self.assertNotContains(response, 'data-target="tab-extra_data"')
+        self.assertNotContains(response, 'id="tab-extra_data"')
+
+        resource1.detected_license_expression = "mit"
+        resource1.extra_data = {"extra": "data"}
+        resource1.save()
+        resource1.create_and_add_package(package_data1)
+        make_relation(
+            from_resource=resource1,
+            to_resource=make_resource_file(self.project1, "from/file2.ext"),
+            map_type="path",
+        )
+        response = self.client.get(resource1.get_absolute_url())
+        self.assertContains(response, 'data-target="tab-detection"')
+        self.assertContains(response, 'id="tab-detection"')
+        self.assertContains(response, 'data-target="tab-packages"')
+        self.assertContains(response, 'id="tab-packages"')
+        self.assertContains(response, 'data-target="tab-relations"')
+        self.assertContains(response, 'id="tab-relations"')
+        self.assertContains(response, 'data-target="tab-extra_data"')
+        self.assertContains(response, 'id="tab-extra_data"')
+
     def test_scanpipe_views_codebase_relation_list_view_count(self):
         url = reverse("project_relations", args=[self.project1.slug])
 
@@ -661,6 +700,42 @@ class ScanPipeViewsTest(TestCase):
         }
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
+
+    def test_scanpipe_views_discovered_package_details_view_tabset(self):
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        response = self.client.get(package1.get_absolute_url())
+        self.assertContains(response, 'data-target="tab-essentials"')
+        self.assertContains(response, 'id="tab-essentials"')
+        self.assertContains(response, 'data-target="tab-others"')
+        self.assertContains(response, 'id="tab-others"')
+        self.assertContains(response, 'data-target="tab-terms"')
+        self.assertContains(response, 'id="tab-terms"')
+        self.assertNotContains(response, 'data-target="tab-resources"')
+        self.assertNotContains(response, 'id="tab-resources"')
+        self.assertNotContains(response, 'data-target="tab-dependencies"')
+        self.assertNotContains(response, 'id="tab-dependencies"')
+        self.assertNotContains(response, 'data-target="tab-vulnerabilities"')
+        self.assertNotContains(response, 'id="tab-vulnerabilities"')
+        self.assertNotContains(response, 'data-target="tab-extra_data"')
+        self.assertNotContains(response, 'id="tab-extra_data"')
+
+        package1.add_resources([make_resource_file(self.project1, "file1.ext")])
+        package1.update(
+            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}],
+            extra_data={"extra": "data"},
+        )
+        dependency_data = dependency_data1.copy()
+        dependency_data["datafile_path"] = ""
+        update_or_create_dependency(self.project1, dependency_data)
+        response = self.client.get(package1.get_absolute_url())
+        self.assertContains(response, 'data-target="tab-resources"')
+        self.assertContains(response, 'id="tab-resources"')
+        self.assertContains(response, 'data-target="tab-dependencies"')
+        self.assertContains(response, 'id="tab-dependencies"')
+        self.assertContains(response, 'data-target="tab-vulnerabilities"')
+        self.assertContains(response, 'id="tab-vulnerabilities"')
+        self.assertContains(response, 'data-target="tab-extra_data"')
+        self.assertContains(response, 'id="tab-extra_data"')
 
     def test_scanpipe_views_discovered_package_details_view_tab_vulnerabilities(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)

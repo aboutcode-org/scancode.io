@@ -1,7 +1,7 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
@@ -14,7 +14,7 @@
     {% endif %}
 
     <section class="section mt-6 pt-0 columns is-mobile">
-      <div class="column is-half is-offset-one-quarter">
+      <div class="column is-6 is-offset-3">
         <form class="box" method="post" action="{% url 'login' %}">
           {% csrf_token %}
 

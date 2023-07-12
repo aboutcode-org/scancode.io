@@ -1,7 +1,7 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
     {% include 'scanpipe/includes/breadcrumb_detail_view.html' with object_title="Settings" %}
     <hr class="mx-5 mt-0">
@@ -78,6 +78,21 @@
                     {{ form.ignored_patterns }}
                   </div>
                   <p class="help">{{ form.ignored_patterns.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <p id="scancode" class="panel-heading py-2 is-size-6">ScanCode</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="label" for="{{ form.scancode_license_score.id_for_label }}">
+                    {{ form.scancode_license_score.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.scancode_license_score }}
+                  </div>
+                  <p class="help">{{ form.scancode_license_score.help_text }}</p>
                 </div>
               </div>
             </div>
