@@ -19,6 +19,20 @@ def migrate_error_to_message_data(apps, schema_editor):
         )
 
 
+def reverse_migrate_message_to_error_data(apps, schema_editor):
+    ProjectError = apps.get_model("scanpipe", "ProjectError")
+    ProjectMessage = apps.get_model("scanpipe", "ProjectMessage")
+
+    for project_message in ProjectMessage.objects.all():
+        ProjectError.objects.create(
+            project=project_message.project,
+            message=project_message.description,
+            model=project_message.model,
+            details=project_message.details,
+            traceback=project_message.traceback,
+        )
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("scanpipe", "0040_projectmessage"),
@@ -27,6 +41,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(
             migrate_error_to_message_data,
-            reverse_code=migrations.RunPython.noop,
+            reverse_code=reverse_migrate_message_to_error_data,
         ),
     ]
