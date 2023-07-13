@@ -37,34 +37,31 @@ class PopulatePurlDB(Pipeline):
     def populate_purldb_discoveredpackage(self):
         """Add DiscoveredPackage to PurlDB."""
         packages = self.project.discoveredpackages.all()
-        feed_purldb(
+        self.feed_purldb(
             packages=packages,
             package_type="DiscoveredPackage",
-            logger=self.log,
         )
 
     def populate_purldb_discovereddependency(self):
         """Add DiscoveredDependency to PurlDB."""
         packages = self.project.discovereddependencies.all()
-        feed_purldb(
+        self.feed_purldb(
             packages=packages,
             package_type="DiscoveredDependency",
-            logger=self.log,
         )
 
+    def feed_purldb(self, packages, package_type):
+        """Feed PurlDB with list of PURLs for indexing."""
+        if not purldb.is_available():
+            raise Exception("PurlDB is not available.")
 
-def feed_purldb(packages, package_type, logger):
-    """Feed PurlDB with list of PURLs for indexing."""
-    if not purldb.is_available():
-        raise Exception("PurlDB is not available.")
+        package_urls = [pacakage.purl for pacakage in packages]
+        self.log(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
 
-    package_urls = [pacakage.purl for pacakage in packages]
-    logger(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
+        response = purldb.submit_purls(purls=package_urls)
+        indexed_packages_count = response["indexed_packages_count"]
+        unindexed_packages_count = response["unindexed_packages_count"]
 
-    response = purldb.submit_purls(purls=package_urls)
-    indexed_packages_count = response["indexed_packages_count"]
-    unindexed_packages_count = response["unindexed_packages_count"]
-
-    logger(f"{indexed_packages_count:,d} PURLs queued for indexing in PurlDB")
-    if unindexed_packages_count > 0:
-        logger(f"Couldn't index {unindexed_packages_count:,d} unsupported PURLs")
+        self.log(f"{indexed_packages_count:,d} PURLs queued for indexing in PurlDB")
+        if unindexed_packages_count > 0:
+            self.log(f"Couldn't index {unindexed_packages_count:,d} unsupported PURLs")
