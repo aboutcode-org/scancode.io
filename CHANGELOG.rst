@@ -1,7 +1,10 @@
 Changelog
 =========
 
-v32.4.0 (unreleased)
+v32.5.0 (unreleased)
+--------------------
+
+v32.4.0 (2023-07-13)
 --------------------
 
 - Add support for license policies and complaince alert for Discovered Packages.
