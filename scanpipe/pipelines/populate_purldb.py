@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes.purldb import feed_purldb
+from scanpipe.pipes.purldb import submit_purls
 
 
 class PopulatePurlDB(Pipeline):
@@ -37,13 +37,27 @@ class PopulatePurlDB(Pipeline):
     def populate_purldb_discoveredpackage(self):
         """Add DiscoveredPackage to PurlDB."""
         packages = self.project.discoveredpackages.all()
+        package_urls = [pacakage.purl for pacakage in packages]
 
-        self.log(f"Populating PurlDB with {len(packages):,d} DiscoveredPackage")
-        feed_purldb(packages=packages)
+        self.log(f"Populating PurlDB with {len(package_urls):,d} DiscoveredPackage")
+        response = submit_purls(purls=package_urls)
+        indexed_packages_count = response["indexed_packages_count"]
+        unindexed_packages_count = response["unindexed_packages_count"]
+
+        self.log(f"{indexed_packages_count:,d} PURLs queued for indexing in PurlDB")
+        if unindexed_packages_count > 0:
+            self.log(f"Couldn't index {unindexed_packages_count:,d} unsupported PURLs")
 
     def populate_purldb_discovereddependency(self):
         """Add DiscoveredDependency to PurlDB."""
         packages = self.project.discovereddependencies.all()
+        package_urls = [pacakage.purl for pacakage in packages]
 
-        self.log(f"Populating PurlDB with {len(packages):,d} DiscoveredDependency")
-        feed_purldb(packages=packages)
+        self.log(f"Populating PurlDB with {len(package_urls):,d} DiscoveredDependency")
+        response = submit_purls(purls=package_urls)
+        indexed_packages_count = response["indexed_packages_count"]
+        unindexed_packages_count = response["unindexed_packages_count"]
+
+        self.log(f"{indexed_packages_count:,d} PURLs queued for indexing in PurlDB")
+        if unindexed_packages_count > 0:
+            self.log(f"Couldn't index {unindexed_packages_count:,d} unsupported PURLs")

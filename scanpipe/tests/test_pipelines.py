@@ -907,10 +907,10 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
     def test_scanpipe_populate_purldb_pipeline_integration_test(
-        self, mock_is_available, mock_request_get
+        self, mock_is_available, mock_request_post
     ):
         pipeline_name1 = "load_inventory"
         pipeline_name2 = "populate_purldb"
@@ -925,7 +925,15 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        mock_request_get.return_value = {}
+        def mock_request_post_return(url, data, timeout):
+            return {
+                "indexed_packages_count": len(data["package_urls"]),
+                "indexed_packages": data["package_urls"],
+                "unindexed_packages_count": 0,
+                "unindexed_packages": [],
+            }
+
+        mock_request_post.side_effect = mock_request_post_return
         mock_is_available.return_value = True
 
         run = project1.add_pipeline(pipeline_name2)
@@ -935,4 +943,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
+        self.assertIn("2 PURLs queued for indexing in PurlDB", run.log)
         self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
+        self.assertIn("4 PURLs queued for indexing in PurlDB", run.log)
