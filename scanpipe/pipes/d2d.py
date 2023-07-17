@@ -558,7 +558,7 @@ def map_javascript(project, logger=None):
             f"map against from/ codebase."
         )
 
-    from_resources = project_files.from_codebase()
+    from_resources = project_files.from_codebase().exclude(path__contains="/test/")
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True
     )
@@ -750,11 +750,12 @@ def map_javascript_path(project, logger=None):
         .no_status()
         .filter(extension__in=[".map", ".ts"])
         .exclude(name__startswith=".")
+        .exclude(path__contains="/node_modules/")
     )
 
     to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
 
-    from_resources = project_files.from_codebase()
+    from_resources = project_files.from_codebase().exclude(path__contains="/test/")
     resource_count = to_resources_key.count()
 
     if logger:
@@ -810,7 +811,7 @@ def _map_javascript_path_resource(
     prospect = js.PROSPECTIVE_JAVASCRIPT_MAP.get(extension, {})
 
     max_matched_path = 0
-    from_resource = None
+    from_resource, extra_data = None, None
     for source_ext in prospect.get("sources", []):
         match = pathmap.find_paths(f"{base_path}{source_ext}", from_resources_index)
 
@@ -819,30 +820,22 @@ def _map_javascript_path_resource(
         if not match or len(match.resource_ids) > match.matched_path_length:
             continue
 
+        # Don't map resources solely based on their names.
+        if match.matched_path_length <= 1:
+            continue
+
         if match.matched_path_length > max_matched_path:
             max_matched_path = match.matched_path_length
             from_resource = from_resources.get(id=match.resource_ids[0])
             extra_data = {"path_score": f"{match.matched_path_length}/{path_parts_len}"}
 
-    if not from_resource:
-        return 0
-
-    transpiled = [to_resource]
-    for related_ext in prospect.get("related", []):
-        try:
-            transpiled.append(to_resources.get(path=f"{base_path}{related_ext}"))
-        except CodebaseResource.DoesNotExist:
-            pass
-
-    for match in transpiled:
-        pipes.make_relation(
-            from_resource=from_resource,
-            to_resource=match,
-            map_type=map_type,
-            extra_data=extra_data,
-        )
-        match.update(status=flag.MAPPED)
-    return len(transpiled)
+    return js.map_related_files(
+        to_resources,
+        to_resource,
+        from_resource,
+        map_type,
+        extra_data,
+    )
 
 
 def map_javascript_colocation(project, logger=None):

@@ -27,6 +27,9 @@ from pathlib import Path
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 
+from scanpipe import pipes
+from scanpipe.models import CodebaseResource
+from scanpipe.pipes import flag
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import pathmap
 
@@ -95,7 +98,7 @@ def get_map_sources(map_file):
     if data := load_json_from_file(map_file.location):
         sources = data.get("sources", [])
         sources = [source.rsplit("../", 1)[-1] for source in sources if source]
-        return sources
+        return [source for source in sources if len(Path(source).parts) > 1]
     return []
 
 
@@ -163,7 +166,7 @@ def get_matches_by_ratio(
 
             match = (from_source, {"diff_ratio": f"{diff_ratio:.1%}"})
 
-        # For a given pair of source path and source content there should be 
+        # For a given pair of source path and source content there should be
         # one and only one from resource.
         if not too_many_match:
             matches.append(match)
@@ -220,3 +223,33 @@ def get_js_map_basename_and_extension(filename):
         if filename.endswith(ext):
             basename = filename[: -len(ext)]
             return basename, ext
+
+
+def map_related_files(to_resources, to_resource, from_resource, map_type, extra_data):
+    if not from_resource:
+        return 0
+
+    path = Path(to_resource.path.lstrip("/"))
+    basename_and_extension = get_js_map_basename_and_extension(path.name)
+    basename, extension = basename_and_extension
+    base_path = path.parent / basename
+
+    prospect = PROSPECTIVE_JAVASCRIPT_MAP.get(extension, {})
+
+    transpiled = [to_resource]
+    for related_ext in prospect.get("related", []):
+        try:
+            transpiled.append(to_resources.get(path=f"{base_path}{related_ext}"))
+        except CodebaseResource.DoesNotExist:
+            pass
+
+    for match in transpiled:
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=match,
+            map_type=map_type,
+            extra_data=extra_data,
+        )
+        match.update(status=flag.MAPPED)
+
+    return len(transpiled)
