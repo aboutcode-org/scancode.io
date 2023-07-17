@@ -24,6 +24,9 @@ import hashlib
 import json
 from pathlib import Path
 
+from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist
+
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import pathmap
 
@@ -120,8 +123,11 @@ def get_matches_by_sha1(to_map, from_resources):
 
     matches = []
     for sha1, source_path in zip(content_sha1_list, sources):
-        if match := from_resources.filter(sha1=sha1, path__endswith=source_path):
-            matches.append((match[0], {}))
+        try:
+            match = from_resources.get(sha1=sha1, path__endswith=source_path)
+            matches.append((match, {}))
+        except (MultipleObjectsReturned, ObjectDoesNotExist):
+            pass
 
     return matches
 
@@ -144,13 +150,23 @@ def get_matches_by_ratio(
         if too_many_prospects:
             continue
 
+        match, too_many_match = None, False
         for resource_id in prospect.resource_ids:
             from_source = from_resources.get(id=resource_id)
             diff_ratio = get_text_str_diff_ratio(content, from_source.file_content)
             if not diff_ratio or diff_ratio < diff_ratio_threshold:
                 continue
 
-            matches.append((from_source, {"diff_ratio": f"{diff_ratio:.1%}"}))
+            if match:
+                too_many_match = True
+                break
+
+            match = (from_source, {"diff_ratio": f"{diff_ratio:.1%}"})
+
+        # For a given pair of source path and source content there should be 
+        # one and only one from resource.
+        if not too_many_match:
+            matches.append(match)
 
     return matches
 
