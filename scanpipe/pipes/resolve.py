@@ -89,6 +89,10 @@ def resolve_about_package(input_location):
     if about_resource := about_data.get("about_resource"):
         package_data["filename"] = list(about_resource.keys())[0]
 
+    if ignored_resources := about_data.get("ignored_resources"):
+        extra_data = {"ignored_resources": list(ignored_resources.keys())}
+        package_data["extra_data"] = extra_data
+
     if license_expression := about_data.get("license_expression"):
         package_data["declared_license_expression"] = license_expression
 

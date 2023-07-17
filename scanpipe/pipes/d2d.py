@@ -24,6 +24,8 @@ from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
 
+from django.db.models import Q
+
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
@@ -614,11 +616,22 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
         # Cannot map anything without the about_resource value.
         return
 
+    ignored_resources = []
+    if extra_data := package_data.get("extra_data"):
+        ignored_resources = extra_data.get("ignored_resources")
+
     # Fetch all resources that are covered by the .ABOUT file.
     codebase_resources = to_resources.filter(path__contains=f"/{filename.lstrip('/')}")
     if not codebase_resources:
         # If there's nothing to map on the ``to/`` do not create the package.
         return
+
+    # Ignore resources for paths in `ignored_resources` attribute
+    if ignored_resources:
+        lookups = Q()
+        for resource_path in ignored_resources:
+            lookups |= Q(**{"path__contains": resource_path})
+        codebase_resources = codebase_resources.filter(~lookups)
 
     # Create the Package using .ABOUT data and assigned related codebase_resources
     pipes.update_or_create_package(project, package_data, codebase_resources)
