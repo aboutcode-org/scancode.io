@@ -168,7 +168,7 @@ def get_matches_by_ratio(
 
         # For a given pair of source path and source content there should be
         # one and only one from resource.
-        if not too_many_match:
+        if not too_many_match and match:
             matches.append(match)
 
     return matches
