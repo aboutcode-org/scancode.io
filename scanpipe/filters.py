@@ -307,6 +307,8 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
             ("any", "Any map"),
             ("many", "Many map"),
             ("about_file", "about file"),
+            ("dwarf_compiled_paths", "dwarf compiled paths"),
+            ("dwarf_included_paths", "dwarf included paths"),
             ("java_to_class", "java to class"),
             ("jar_to_source", "jar to source"),
             ("js_compiled", "js compiled"),
@@ -373,6 +375,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     relation_map_type = RelationMapTypeFilter(
         label="Relation map type",
         field_name="related_from__map_type",
+        distinct=True,
     )
 
     class Meta:

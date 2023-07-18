@@ -840,3 +840,80 @@ def _map_javascript_path_resource(
             extra_data=extra_data,
         )
     return len(transpiled)
+
+
+def _map_dwarf_path_resource(to_resource, from_resources, from_resources_index):
+    dwarf_source_paths = to_resource.extra_data.get("dwarf_source_paths") or {}
+    compiled_paths = dwarf_source_paths.get("compiled_paths") or []
+    included_paths = dwarf_source_paths.get("included_paths") or []
+    paths_and_map_type = [
+        (compiled_paths, "dwarf_compiled_paths"),
+        (included_paths, "dwarf_included_paths"),
+    ]
+
+    for paths, map_type in paths_and_map_type:
+        for path in paths:
+            match = pathmap.find_paths(path, from_resources_index)
+            if not match:
+                continue
+
+            # Only create relations when the number of matches if inferior or equal to
+            # the current number of path segment matched.
+            if len(match.resource_ids) > match.matched_path_length:
+                to_resource.update(status=flag.TOO_MANY_MAPS)
+                continue
+
+            for resource_id in match.resource_ids:
+                from_resource = from_resources.get(id=resource_id)
+
+                # Do not count the "to/" segment as it is not "matchable"
+                to_path_length = len(to_resource.path.split("/")) - 1
+                extra_data = {
+                    "path_score": f"{match.matched_path_length}/{to_path_length}",
+                }
+
+                pipes.make_relation(
+                    from_resource=from_resource,
+                    to_resource=to_resource,
+                    map_type=map_type,
+                    extra_data=extra_data,
+                )
+
+
+def map_dwarf_path(project, logger=None):
+    """Map DWARF paths suffix similarities."""
+    project_files = project.codebaseresources.files().no_status()
+    from_resources = project_files.from_codebase()
+    to_resources = project_files.to_codebase().has_no_relation()
+
+    # TODO: Review the performances of this
+    # Replace by something along: .exclude(extra_data__dwarf_source_paths=[])
+    to_resources = to_resources.json_field_contains(
+        field_name="extra_data",
+        value="dwarf_source_paths",
+    )
+    resource_count = to_resources.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources using DWARF path map "
+            f"against from/ codebase"
+        )
+
+    from_resources_index = pathmap.build_index(
+        from_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_resources.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        _map_dwarf_path_resource(to_resource, from_resources, from_resources_index)
