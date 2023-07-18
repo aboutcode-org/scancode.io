@@ -97,7 +97,11 @@ def get_map_sources(map_file):
     """Return source paths from a map file."""
     if data := load_json_from_file(map_file.location):
         sources = data.get("sources", [])
-        sources = [source.rsplit("../", 1)[-1] for source in sources if source]
+        sources = [
+            source.rsplit("../", 1)[-1]
+            for source in sources
+            if source and not source.startswith("webpack:///")
+        ]
         return [source for source in sources if len(Path(source).parts) > 1]
     return []
 
