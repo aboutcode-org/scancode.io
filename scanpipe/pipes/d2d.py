@@ -885,13 +885,7 @@ def map_dwarf_path(project, logger=None):
     project_files = project.codebaseresources.files().no_status()
     from_resources = project_files.from_codebase()
     to_resources = project_files.to_codebase().has_no_relation()
-
-    # TODO: Review the performances of this
-    # Replace by something along: .exclude(extra_data__dwarf_source_paths=[])
-    to_resources = to_resources.json_field_contains(
-        field_name="extra_data",
-        value="dwarf_source_paths",
-    )
+    to_resources = to_resources.filter(extra_data__has_key="dwarf_source_paths")
     resource_count = to_resources.count()
 
     if logger:
