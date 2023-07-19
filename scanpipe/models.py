@@ -897,8 +897,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
     def delete_input(self, name):
         """Delete the provided ``name`` input from dick and from ``input_sources``."""
-        input_file_path = self.input_path / name
-        input_file_path.unlink(missing_ok=True)
+        file_path = self.input_path / name
+        file_path.unlink(missing_ok=True)
         self.input_sources.pop(name)
         self.save(update_fields=["input_sources"])
 

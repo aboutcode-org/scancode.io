@@ -965,6 +965,20 @@ def delete_input_view(request, slug, input_name):
     return redirect(project)
 
 
+@conditional_login_required
+def download_input_view(request, slug, input_name):
+    project = get_object_or_404(Project, slug=slug)
+
+    file_path = project.input_path / input_name
+    if not file_path.exists():
+        raise Http404(f"{file_path} not found")
+
+    return FileResponse(
+        file_path.open("rb"),
+        as_attachment=True,
+    )
+
+
 def project_results_json_response(project, as_attachment=False):
     """
     Return the results as JSON compatible with ScanCode data format.

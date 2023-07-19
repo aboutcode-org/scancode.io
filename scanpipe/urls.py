@@ -137,6 +137,11 @@ urlpatterns = [
         name="project_delete_input",
     ),
     path(
+        "project/<slug:slug>/download_input/<str:input_name>/",
+        views.download_input_view,
+        name="project_download_input",
+    ),
+    path(
         "project/add/",
         views.ProjectCreateView.as_view(),
         name="project_add",
