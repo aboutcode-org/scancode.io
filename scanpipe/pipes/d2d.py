@@ -43,17 +43,17 @@ TO = "to/"
 
 
 def get_inputs(project):
-    """Locate the ``from`` and ``to`` archives in project inputs directory."""
-    from_file = list(project.inputs("from*"))
-    to_file = list(project.inputs("to*"))
+    """Locate the ``from`` and ``to`` input files in project inputs/ directory."""
+    from_files = list(project.inputs("from*"))
+    to_files = list(project.inputs("to*"))
 
-    if len(from_file) != 1:
-        raise FileNotFoundError("from* archive not found.")
+    if len(from_files) < 1:
+        raise FileNotFoundError("from* input files not found.")
 
-    if len(to_file) != 1:
-        raise FileNotFoundError("to* archive not found.")
+    if len(to_files) < 1:
+        raise FileNotFoundError("to* input files not found.")
 
-    return from_file[0], to_file[0]
+    return from_files, to_files
 
 
 def get_resource_codebase_root(project, resource_path):

@@ -46,19 +46,29 @@ class ScanPipeD2DPipesTest(TestCase):
     def test_scanpipe_pipes_d2d_get_inputs(self):
         with self.assertRaises(FileNotFoundError) as error:
             d2d.get_inputs(self.project1)
-        self.assertEqual("from* archive not found.", str(error.exception))
+        self.assertEqual("from* input files not found.", str(error.exception))
 
         _, input_location = tempfile.mkstemp(prefix="from-")
         self.project1.copy_input_from(input_location)
 
         with self.assertRaises(FileNotFoundError) as error:
             d2d.get_inputs(self.project1)
-        self.assertEqual("to* archive not found.", str(error.exception))
+        self.assertEqual("to* input files not found.", str(error.exception))
 
         _, input_location = tempfile.mkstemp(prefix="to-")
         self.project1.copy_input_from(input_location)
 
-        self.assertEqual(2, len(d2d.get_inputs(self.project1)))
+        from_files, to_files = d2d.get_inputs(self.project1)
+        self.assertEqual(1, len(from_files))
+        self.assertEqual(1, len(to_files))
+
+        _, input_location = tempfile.mkstemp(prefix="from-")
+        self.project1.copy_input_from(input_location)
+        _, input_location = tempfile.mkstemp(prefix="to-")
+        self.project1.copy_input_from(input_location)
+        from_files, to_files = d2d.get_inputs(self.project1)
+        self.assertEqual(2, len(from_files))
+        self.assertEqual(2, len(to_files))
 
     def test_scanpipe_pipes_d2d_get_resource_codebase_root(self):
         input_location = self.data_location / "codebase" / "a.txt"
