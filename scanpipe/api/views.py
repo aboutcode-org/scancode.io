@@ -254,7 +254,7 @@ class ProjectViewSet(
     def add_input(self, request, *args, **kwargs):
         project = self.get_object()
 
-        if not project.can_add_input:
+        if not project.can_change_inputs:
             message = {
                 "status": "Cannot add inputs once a pipeline has started to execute."
             }

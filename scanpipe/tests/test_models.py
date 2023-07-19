@@ -350,17 +350,17 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertEqual({"missing.zip": "uploaded"}, missing_inputs)
 
-    def test_scanpipe_project_model_can_add_input(self):
-        self.assertTrue(self.project1.can_add_input)
+    def test_scanpipe_project_model_can_change_inputs(self):
+        self.assertTrue(self.project1.can_change_inputs)
 
         run = self.project1.add_pipeline("docker")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
-        self.assertTrue(self.project1.can_add_input)
+        self.assertTrue(self.project1.can_change_inputs)
 
         run.task_start_date = timezone.now()
         run.save()
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
-        self.assertFalse(self.project1.can_add_input)
+        self.assertFalse(self.project1.can_change_inputs)
 
     def test_scanpipe_project_model_add_input_source(self):
         self.assertEqual({}, self.project1.input_sources)

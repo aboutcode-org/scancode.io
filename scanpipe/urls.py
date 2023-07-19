@@ -132,6 +132,11 @@ urlpatterns = [
         name="project_delete_pipeline",
     ),
     path(
+        "project/<slug:slug>/delete_input/<str:input_name>/",
+        views.delete_input_view,
+        name="project_delete_input",
+    ),
+    path(
         "project/add/",
         views.ProjectCreateView.as_view(),
         name="project_add",

@@ -953,6 +953,18 @@ def delete_pipeline_view(request, slug, run_uuid):
     return redirect(project)
 
 
+@conditional_login_required
+def delete_input_view(request, slug, input_name):
+    project = get_object_or_404(Project, slug=slug)
+
+    if not project.can_change_inputs:
+        raise Http404("Inputs cannot be deleted on this project.")
+
+    project.delete_input(name=input_name)
+    messages.success(request, f"Input {input_name} deleted.")
+    return redirect(project)
+
+
 def project_results_json_response(project, as_attachment=False):
     """
     Return the results as JSON compatible with ScanCode data format.

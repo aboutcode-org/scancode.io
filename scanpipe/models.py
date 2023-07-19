@@ -852,9 +852,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.codebase_path.rglob("*")
 
     @cached_property
-    def can_add_input(self):
-        """Return True until one pipeline run has started to execute on the project."""
-        return not self.runs.has_start_date().exists()
+    def can_change_inputs(self):
+        """
+        Return True until one pipeline run has started its execution on the project.
+        Always False when the project is archived.
+        """
+        return not self.is_archived and not self.runs.has_start_date().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
@@ -891,6 +894,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
+
+    def delete_input(self, name):
+        """Delete the provided ``name`` input from dick and from ``input_sources``."""
+        input_file_path = self.input_path / name
+        input_file_path.unlink(missing_ok=True)
+        self.input_sources.pop(name)
+        self.save(update_fields=["input_sources"])
 
     def add_downloads(self, downloads):
         """

@@ -36,7 +36,7 @@ class Command(AddInputCommandMixin, ProjectCommand):
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
 
-        if not self.project.can_add_input:
+        if not self.project.can_change_inputs:
             raise CommandError(
                 "Cannot add inputs once a pipeline has started to execute on a project."
             )
