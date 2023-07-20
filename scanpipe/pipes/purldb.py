@@ -92,7 +92,7 @@ def request_get(url, payload=None, timeout=None):
 
 def request_post(url, data, timeout=None):
     try:
-        response = session.post(url, json=data, timeout=timeout)
+        response = session.post(url, data=data, timeout=timeout)
         response.raise_for_status()
         return response.json()
     except (requests.RequestException, ValueError, TypeError) as exception:
@@ -117,3 +117,13 @@ def match_resource(sha1_list, timeout=None, api_url=PURLDB_API_URL):
     if response and response.get("count"):
         packages = response["results"]
         return packages
+
+
+def submit_purls(purls, timeout=None, api_url=PURLDB_API_URL):
+    """Submit list PURLs to PurlDB for indexing."""
+    payload = {"package_urls": purls}
+    response = request_post(
+        url=f"{api_url}packages/index_packages/", data=payload, timeout=timeout
+    )
+
+    return response
