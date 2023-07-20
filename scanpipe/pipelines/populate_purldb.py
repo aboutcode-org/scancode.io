@@ -30,23 +30,21 @@ class PopulatePurlDB(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.populate_purldb_discoveredpackage,
-            cls.populate_purldb_discovereddependency,
+            cls.populate_purldb_with_discovered_packages,
+            cls.populate_purldb_with_discovered_dependencies,
         )
 
-    def populate_purldb_discoveredpackage(self):
+    def populate_purldb_with_discovered_packages(self):
         """Add DiscoveredPackage to PurlDB."""
-        packages = self.project.discoveredpackages.all()
         self.feed_purldb(
-            packages=packages,
+            packages=self.project.discoveredpackages.all(),
             package_type="DiscoveredPackage",
         )
 
-    def populate_purldb_discovereddependency(self):
+    def populate_purldb_with_discovered_dependencies(self):
         """Add DiscoveredDependency to PurlDB."""
-        packages = self.project.discovereddependencies.all()
         self.feed_purldb(
-            packages=packages,
+            packages=self.project.discovereddependencies.all(),
             package_type="DiscoveredDependency",
         )
 
@@ -59,9 +57,9 @@ class PopulatePurlDB(Pipeline):
         self.log(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
 
         response = purldb.submit_purls(purls=package_urls)
-        queued_packages_count = response["queued_packages_count"]
-        unqueued_packages_count = response["unqueued_packages_count"]
-        unsupported_packages_count = response["unsupported_packages_count"]
+        queued_packages_count = response.get("queued_packages_count", 0)
+        unqueued_packages_count = response.get("unqueued_packages_count", 0)
+        unsupported_packages_count = response.get("unsupported_packages_count", 0)
 
         if queued_packages_count > 0:
             self.log(
@@ -77,5 +75,5 @@ class PopulatePurlDB(Pipeline):
 
         if unsupported_packages_count > 0:
             self.log(
-                f"Couldn't index {unsupported_packages_count:,d} " f"unsupported PURLs"
+                f"Couldn't index {unsupported_packages_count:,d} unsupported PURLs"
             )
