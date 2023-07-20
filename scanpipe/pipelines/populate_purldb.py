@@ -59,9 +59,23 @@ class PopulatePurlDB(Pipeline):
         self.log(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
 
         response = purldb.submit_purls(purls=package_urls)
-        indexed_packages_count = response["indexed_packages_count"]
-        unindexed_packages_count = response["unindexed_packages_count"]
+        queued_packages_count = response["queued_packages_count"]
+        unqueued_packages_count = response["unqueued_packages_count"]
+        unsupported_packages_count = response["unsupported_packages_count"]
 
-        self.log(f"{indexed_packages_count:,d} PURLs queued for indexing in PurlDB")
-        if unindexed_packages_count > 0:
-            self.log(f"Couldn't index {unindexed_packages_count:,d} unsupported PURLs")
+        if queued_packages_count > 0:
+            self.log(
+                f"Successfully queued {queued_packages_count:,d} "
+                f"PURLs for indexing in PurlDB"
+            )
+
+        if unqueued_packages_count > 0:
+            self.log(
+                f"{unqueued_packages_count:,d} PURLs were already "
+                f"present in PurlDB index queue"
+            )
+
+        if unsupported_packages_count > 0:
+            self.log(
+                f"Couldn't index {unsupported_packages_count:,d} " f"unsupported PURLs"
+            )

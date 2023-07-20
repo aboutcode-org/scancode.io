@@ -927,10 +927,12 @@ class PipelinesIntegrationTest(TestCase):
 
         def mock_request_post_return(url, data, timeout):
             return {
-                "indexed_packages_count": len(data["package_urls"]),
-                "indexed_packages": data["package_urls"],
-                "unindexed_packages_count": 0,
-                "unindexed_packages": [],
+                "queued_packages_count": len(data["package_urls"]),
+                "queued_packages": data["package_urls"],
+                "unqueued_packages_count": 1,
+                "unqueued_packages": [],
+                "unsupported_packages_count": 1,
+                "unsupported_packages": [],
             }
 
         mock_request_post.side_effect = mock_request_post_return
@@ -943,6 +945,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
-        self.assertIn("2 PURLs queued for indexing in PurlDB", run.log)
+        self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
+        self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
         self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
-        self.assertIn("4 PURLs queued for indexing in PurlDB", run.log)
+        self.assertIn("Successfully queued 4 PURLs for indexing in PurlDB", run.log)
