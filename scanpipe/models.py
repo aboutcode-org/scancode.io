@@ -852,9 +852,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.codebase_path.rglob("*")
 
     @cached_property
-    def can_add_input(self):
-        """Return True until one pipeline run has started to execute on the project."""
-        return not self.runs.has_start_date().exists()
+    def can_change_inputs(self):
+        """
+        Return True until one pipeline run has started its execution on the project.
+        Always False when the project is archived.
+        """
+        return not self.is_archived and not self.runs.has_start_date().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
@@ -879,9 +882,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Copy the file at `input_location` to the current project's input/
         directory.
         """
-        from scanpipe.pipes.input import copy_inputs
+        from scanpipe.pipes.input import copy_input
 
-        copy_inputs([input_location], self.input_path)
+        copy_input(input_location, self.input_path)
 
     def move_input_from(self, input_location):
         """
@@ -891,6 +894,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
+
+    def delete_input(self, name):
+        """Delete the provided ``name`` input from disk and from ``input_sources``."""
+        file_path = self.input_path / name
+        file_path.unlink(missing_ok=True)
+
+        if self.input_sources.pop(name, None):
+            self.save(update_fields=["input_sources"])
+            return True
 
     def add_downloads(self, downloads):
         """

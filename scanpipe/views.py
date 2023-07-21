@@ -46,6 +46,7 @@ from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
 from django.views import generic
+from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 from django.views.generic.edit import UpdateView
@@ -951,6 +952,33 @@ def delete_pipeline_view(request, slug, run_uuid):
     run.delete_task()
     messages.success(request, f"Pipeline {run.pipeline_name} deleted.")
     return redirect(project)
+
+
+@require_POST
+@conditional_login_required
+def delete_input_view(request, slug, input_name):
+    project = get_object_or_404(Project, slug=slug)
+
+    if not project.can_change_inputs:
+        raise Http404("Inputs cannot be deleted on this project.")
+
+    deleted = project.delete_input(name=input_name)
+    if deleted:
+        messages.success(request, f"Input {input_name} deleted.")
+    else:
+        messages.error(request, f"Input {input_name} not found.")
+    return redirect(project)
+
+
+@conditional_login_required
+def download_input_view(request, slug, input_name):
+    project = get_object_or_404(Project, slug=slug)
+
+    file_path = project.input_path / input_name
+    if not file_path.exists():
+        raise Http404(f"{file_path} not found")
+
+    return FileResponse(file_path.open("rb"), as_attachment=True)
 
 
 def project_results_json_response(project, as_attachment=False):

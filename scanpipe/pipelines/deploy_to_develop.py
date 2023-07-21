@@ -25,7 +25,6 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
-from scanpipe.pipes.scancode import extract_archives
 
 
 class DeployToDevelop(Pipeline):
@@ -78,24 +77,27 @@ class DeployToDevelop(Pipeline):
     ]
 
     def get_inputs(self):
-        """Locate the ``from`` and ``to`` archives."""
-        self.from_file, self.to_file = d2d.get_inputs(self.project)
-
-        self.from_path = self.project.codebase_path / d2d.FROM
-        self.to_path = self.project.codebase_path / d2d.TO
+        """Locate the ``from`` and ``to`` input files."""
+        self.from_files, self.to_files = d2d.get_inputs(self.project)
 
     def extract_inputs_to_codebase_directory(self):
         """Extract input files to the project's codebase/ directory."""
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project.codebase_path / d2d.FROM),
+            (self.to_files, self.project.codebase_path / d2d.TO),
+        ]
+
         errors = []
-        errors += scancode.extract_archive(self.from_file, self.from_path)
-        errors += scancode.extract_archive(self.to_file, self.to_path)
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                errors += scancode.extract_archive(input_file_path, codebase_path)
 
         if errors:
             self.add_error("\n".join(errors))
 
     def extract_archives_in_place(self):
         """Extract recursively from* and to* archives in place with extractcode."""
-        extract_errors = extract_archives(
+        extract_errors = scancode.extract_archives(
             self.project.codebase_path,
             recurse=self.env.get("extract_recursively", True),
         )
