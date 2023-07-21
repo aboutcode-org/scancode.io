@@ -882,9 +882,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Copy the file at `input_location` to the current project's input/
         directory.
         """
-        from scanpipe.pipes.input import copy_inputs
+        from scanpipe.pipes.input import copy_input
 
-        copy_inputs([input_location], self.input_path)
+        copy_input(input_location, self.input_path)
 
     def move_input_from(self, input_location):
         """
@@ -896,11 +896,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         move_inputs([input_location], self.input_path)
 
     def delete_input(self, name):
-        """Delete the provided ``name`` input from dick and from ``input_sources``."""
+        """Delete the provided ``name`` input from disk and from ``input_sources``."""
         file_path = self.input_path / name
         file_path.unlink(missing_ok=True)
-        self.input_sources.pop(name)
-        self.save(update_fields=["input_sources"])
+
+        if self.input_sources.pop(name, None):
+            self.save(update_fields=["input_sources"])
+            return True
 
     def add_downloads(self, downloads):
         """

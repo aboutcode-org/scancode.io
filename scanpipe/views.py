@@ -960,8 +960,11 @@ def delete_input_view(request, slug, input_name):
     if not project.can_change_inputs:
         raise Http404("Inputs cannot be deleted on this project.")
 
-    project.delete_input(name=input_name)
-    messages.success(request, f"Input {input_name} deleted.")
+    deleted = project.delete_input(name=input_name)
+    if deleted:
+        messages.success(request, f"Input {input_name} deleted.")
+    else:
+        messages.error(request, f"Input {input_name} not found.")
     return redirect(project)
 
 
@@ -973,10 +976,7 @@ def download_input_view(request, slug, input_name):
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
-    return FileResponse(
-        file_path.open("rb"),
-        as_attachment=True,
-    )
+    return FileResponse(file_path.open("rb"), as_attachment=True)
 
 
 def project_results_json_response(project, as_attachment=False):

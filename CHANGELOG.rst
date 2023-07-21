@@ -4,6 +4,14 @@ Changelog
 v32.5.0 (unreleased)
 --------------------
 
+- Add support for multiple to/from input files in the ``deploy_to_develop`` pipeline.
+  https://github.com/nexB/scancode.io/issues/813
+
+- Add the ability to delete and download project inputs.
+  Note that the inputs cannot be modified (added or deleted) once a pipeline run as
+  started on the project.
+  https://github.com/nexB/scancode.io/issues/813
+
 v32.4.0 (2023-07-13)
 --------------------
 
