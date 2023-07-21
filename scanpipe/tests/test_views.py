@@ -210,7 +210,10 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_details_delete_input_view(self):
         url = reverse("project_delete_input", args=[self.project1.slug, "file.zip"])
-        response = self.client.get(url, follow=True)
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(url, follow=True)
         self.assertRedirects(response, self.project1.get_absolute_url())
         expected = '<div class="message-body">Input file.zip not found.</div>'
         self.assertContains(response, expected, html=True)
@@ -223,13 +226,13 @@ class ScanPipeViewsTest(TestCase):
         self.project1.update(is_archived=True)
         self.assertFalse(self.project1.can_change_inputs)
         url = reverse("project_delete_input", args=[self.project1.slug, filename])
-        response = self.client.get(url)
+        response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
         self.project1.update(is_archived=False)
         self.project1 = Project.objects.get(pk=self.project1.pk)
         self.assertTrue(self.project1.can_change_inputs)
-        response = self.client.get(url, follow=True)
+        response = self.client.post(url, follow=True)
         self.assertRedirects(response, self.project1.get_absolute_url())
         expected = f'<div class="message-body">Input {filename} deleted.</div>'
         self.assertContains(response, expected, html=True)

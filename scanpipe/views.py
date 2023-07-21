@@ -46,6 +46,7 @@ from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
 from django.views import generic
+from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.edit import FormView
 from django.views.generic.edit import UpdateView
@@ -953,6 +954,7 @@ def delete_pipeline_view(request, slug, run_uuid):
     return redirect(project)
 
 
+@require_POST
 @conditional_login_required
 def delete_input_view(request, slug, input_name):
     project = get_object_or_404(Project, slug=slug)
