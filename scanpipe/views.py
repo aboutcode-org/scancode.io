@@ -994,9 +994,8 @@ def project_results_json_response(project, as_attachment=False):
         content_type="application/json",
     )
 
-    filename = output.safe_filename(f"scancodeio_{project.name}.json")
-
     if as_attachment:
+        filename = output.safe_filename(f"scancodeio_{project.name}.json")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     return response

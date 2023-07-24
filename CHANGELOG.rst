@@ -4,6 +4,10 @@ Changelog
 v32.5.0 (unreleased)
 --------------------
 
+- Add new `outputs` REST API action that list projects output files including an URL
+  to download the file.
+  https://github.com/nexB/scancode.io/issues/678
+
 - Add support for multiple to/from input files in the ``deploy_to_develop`` pipeline.
   https://github.com/nexB/scancode.io/issues/813
 

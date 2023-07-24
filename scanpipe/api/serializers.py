@@ -199,7 +199,7 @@ class ProjectSerializer(
         Note that even when `execute_now` is True, the pipeline execution is always
         delayed after the actual database save and commit of the Project creation
         process, using the `transaction.on_commit` callback system.
-        This ensure the Project data integrity before running any pipelines.
+        This ensures the Project data integrity before running any pipelines.
         """
         upload_file = validated_data.pop("upload_file", None)
         input_urls = validated_data.pop("input_urls", [])

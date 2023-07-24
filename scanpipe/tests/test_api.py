@@ -707,6 +707,31 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Only non started or queued pipelines can be deleted."}
         self.assertEqual(expected, response.data)
 
+    def test_scanpipe_api_project_action_outputs(self):
+        url = reverse("project-outputs", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual([], response.data)
+
+        output_file = self.project1.get_output_file_path("scan", "txt")
+        output_file.write_text("content")
+        response = self.csrf_client.get(url)
+        download_url = f"http://testserver{url}?filename={output_file.name}"
+        expected = [
+            {
+                "download_url": download_url,
+                "filename": output_file.name,
+            }
+        ]
+        self.assertEqual(expected, response.data)
+
+        response = self.csrf_client.get(download_url)
+        self.assertEqual(b"content", response.getvalue())
+
+        response = self.csrf_client.get(f"http://testserver{url}?filename=NOT_FOUND")
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Output file NOT_FOUND not found"}
+        self.assertEqual(expected, response.data)
+
     def test_scanpipe_api_serializer_get_model_serializer(self):
         self.assertEqual(
             DiscoveredPackageSerializer, get_model_serializer(DiscoveredPackage)
