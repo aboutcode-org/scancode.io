@@ -51,12 +51,6 @@ create an **environment file**, and **build the Docker image**::
     As the ``docker-compose`` v1 command is officially deprecated by Docker, you will
     only find references to the ``docker compose`` v2 command in this documentation.
 
-.. note::
-    You need to rebuild the image whenever ScanCode.io's source code has been
-    modified or updated::
-
-        docker compose build
-
 Run the App
 ^^^^^^^^^^^
 
@@ -103,6 +97,30 @@ An overview of the web application usage is available at :ref:`user_interface`.
 
         docker compose pause  # to pause/suspend
         docker compose unpause  # to unpause/resume
+
+Upgrade the App
+^^^^^^^^^^^^^^^
+
+**Update your local** `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
+and **build the Docker image**::
+
+    cd scancode.io
+    git pull
+    docker compose build
+
+.. warning::
+    The Docker image has been updated to run as a non-root user.
+    If you encounter "permissions" issues while running the ScanCode.io Docker images
+    following the ``docker compose build``, you will need to update the the permissions
+    of the ``/var/scancodeio/`` directory of the Docker volumes using::
+
+        docker compose run -u 0:0 web chown -R app:app /var/scancodeio/
+
+    See also https://github.com/nexB/scancode.io/issues/399
+
+.. note::
+    You need to rebuild the image whenever ScanCode.io's source code has been
+    modified or updated.
 
 Execute a Command
 ^^^^^^^^^^^^^^^^^
