@@ -1780,6 +1780,33 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertTrue(package.is_vulnerable)
 
+    def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
+        scanpipe_only_fields = [
+            "id",
+            "uuid",
+            "project",
+            "missing_resources",
+            "modified_resources",
+            "codebase_resources",
+            "package_uid",
+            "filename",
+            "affected_by_vulnerabilities",
+            "compliance_alert",
+        ]
+
+        discovered_package_fields = [
+            field.name
+            for field in DiscoveredPackage._meta.get_fields()
+            if field.name not in scanpipe_only_fields
+        ]
+        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
+
+        for toolkit_field in toolkit_package_fields:
+            self.assertIn(toolkit_field, discovered_package_fields)
+
+        for scanpipe_field in discovered_package_fields:
+            self.assertIn(scanpipe_field, toolkit_package_fields)
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
@@ -1812,22 +1839,43 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         project1.add_pipeline(pipeline_name, execute_now=True)
         mock_execute_task.assert_called_once()
 
+    def test_scanpipe_project_model_add_info(self):
+        project1 = Project.objects.create(name="Analysis")
+        message = project1.add_info(description="This is an info")
+        self.assertEqual(message, ProjectMessage.objects.get())
+        self.assertEqual("", message.model)
+        self.assertEqual(ProjectMessage.Severity.INFO, message.severity)
+        self.assertEqual({}, message.details)
+        self.assertEqual("This is an info", message.description)
+        self.assertEqual("", message.traceback)
+
+    def test_scanpipe_project_model_add_warning(self):
+        project1 = Project.objects.create(name="Analysis")
+        message = project1.add_warning(description="This is a warning")
+        self.assertEqual(message, ProjectMessage.objects.get())
+        self.assertEqual("", message.model)
+        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
+        self.assertEqual({}, message.details)
+        self.assertEqual("This is a warning", message.description)
+        self.assertEqual("", message.traceback)
+
     def test_scanpipe_project_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")
         details = {
             "name": "value",
             "release_date": datetime.fromisoformat("2008-02-01"),
         }
-        error = project1.add_error(
-            error=Exception("Error message"),
+        message = project1.add_error(
             model="Package",
             details=details,
+            exception=Exception("Error message"),
         )
-        self.assertEqual(error, ProjectMessage.objects.get())
-        self.assertEqual("Package", error.model)
-        self.assertEqual(details, error.details)
-        self.assertEqual("Error message", error.description)
-        self.assertEqual("", error.traceback)
+        self.assertEqual(message, ProjectMessage.objects.get())
+        self.assertEqual("Package", message.model)
+        self.assertEqual(ProjectMessage.Severity.ERROR, message.severity)
+        self.assertEqual(details, message.details)
+        self.assertEqual("Error message", message.description)
+        self.assertEqual("", message.traceback)
 
     def test_scanpipe_project_model_update_extra_data(self):
         project1 = Project.objects.create(name="Analysis")
@@ -1987,13 +2035,14 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             DiscoveredDependency.create_from_data(project1, incomplete_data)
         )
         self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
-        error = project1.projectmessages.latest("created_date")
-        self.assertEqual("DiscoveredDependency", error.model)
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("DiscoveredDependency", message.model)
+        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
         expected_message = "No values for the following required fields: dependency_uid"
-        self.assertEqual(expected_message, error.description)
-        self.assertEqual(dependency_data1["purl"], error.details["purl"])
-        self.assertEqual("", error.details["dependency_uid"])
-        self.assertEqual("", error.traceback)
+        self.assertEqual(expected_message, message.description)
+        self.assertEqual(dependency_data1["purl"], message.details["purl"])
+        self.assertEqual("", message.details["dependency_uid"])
+        self.assertEqual("", message.traceback)
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")
@@ -2013,7 +2062,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertFalse(package3.package_uid)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
-    def test_scanpipe_codebase_resource_create_and_add_package_errors(self):
+    def test_scanpipe_codebase_resource_create_and_add_package_warnings(self):
         project1 = Project.objects.create(name="Analysis")
         resource = CodebaseResource.objects.create(project=project1, path="p")
 
@@ -2024,38 +2073,12 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         package = resource.create_and_add_package(bad_data)
         self.assertIsNone(package)
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        error = project1.projectmessages.latest("created_date")
-        self.assertEqual("DiscoveredPackage", error.model)
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("DiscoveredPackage", message.model)
+        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
         expected_message = "value too long for type character varying(100)"
-        self.assertEqual(expected_message, error.description)
-        self.assertEqual(bad_data["version"], error.details["version"])
-        self.assertTrue(error.details["codebase_resource_pk"])
-        self.assertEqual(resource.path, error.details["codebase_resource_path"])
-        self.assertIn("in save", error.traceback)
-
-    def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
-        scanpipe_only_fields = [
-            "id",
-            "uuid",
-            "project",
-            "missing_resources",
-            "modified_resources",
-            "codebase_resources",
-            "package_uid",
-            "filename",
-            "affected_by_vulnerabilities",
-            "compliance_alert",
-        ]
-
-        discovered_package_fields = [
-            field.name
-            for field in DiscoveredPackage._meta.get_fields()
-            if field.name not in scanpipe_only_fields
-        ]
-        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
-
-        for toolkit_field in toolkit_package_fields:
-            self.assertIn(toolkit_field, discovered_package_fields)
-
-        for scanpipe_field in discovered_package_fields:
-            self.assertIn(scanpipe_field, toolkit_package_fields)
+        self.assertEqual(expected_message, message.description)
+        self.assertEqual(bad_data["version"], message.details["version"])
+        self.assertTrue(message.details["codebase_resource_pk"])
+        self.assertEqual(resource.path, message.details["codebase_resource_path"])
+        self.assertIn("in save", message.traceback)
