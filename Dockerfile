@@ -60,27 +60,29 @@ RUN apt-get update \
 
 # Create the APP_USER group and user
 RUN addgroup --system $APP_USER \
- && adduser --system --group --no-create-home --home=$APP_DIR $APP_USER
+ && adduser --system --group --home=$APP_DIR $APP_USER \
+ && chown $APP_USER:$APP_USER $APP_DIR
 
 # Create the /var/APP_NAME directory with proper permission for APP_USER
 RUN mkdir -p /var/$APP_NAME \
  && chown $APP_USER:$APP_USER /var/$APP_NAME
 
-# Setup the work directory and the virtualenv
+# Setup the work directory and the user as APP_USER for the remaining stages
 WORKDIR $APP_DIR
+USER $APP_USER
+
+# Create the virtualenv
 RUN python -m venv $VIRTUAL_ENV
 # Enable the virtualenv, similar effect as "source activate"
 ENV PATH $VIRTUAL_ENV/bin:$PATH
 
+# Create static/ and workspace/ directories
+RUN mkdir -p /var/$APP_NAME/static/ \
+ && mkdir -p /var/$APP_NAME/workspace/
+
 # Install the dependencies before the codebase COPY for proper Docker layer caching
-COPY setup.cfg setup.py $APP_DIR
+COPY --chown=$APP_USER:$APP_USER setup.cfg setup.py $APP_DIR
 RUN pip install --no-cache-dir .
 
 # Copy the codebase and set the proper permissions for the APP_USER
-COPY . $APP_DIR
-RUN chown -R $APP_USER:$APP_USER $APP_DIR
-
-# Set the user as APP_USER for the remaining stages
-USER $APP_USER
-RUN mkdir -p /var/$APP_NAME/static/ \
- && mkdir -p /var/$APP_NAME/workspace/
+COPY --chown=$APP_USER:$APP_USER . $APP_DIR
