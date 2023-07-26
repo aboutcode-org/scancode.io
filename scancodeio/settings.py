@@ -108,6 +108,7 @@ INSTALLED_APPS = [
     # Local apps
     # Must come before Third-party apps for proper templates override
     "scanpipe",
+    "scantext",
     # Django built-in
     "django.contrib.auth",
     "django.contrib.contenttypes",

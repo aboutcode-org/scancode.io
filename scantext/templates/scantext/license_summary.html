@@ -1,0 +1,121 @@
+{% extends 'scanpipe/base.html' %}
+{% load static humanize %}
+
+{% block extrahead %}
+  <style>
+    {% for mcolor in detected_licenses.match_colors %}{{ mcolor }}{% endfor %}
+
+    .license-match {
+      max-height: 90vh;
+      white-space: pre-wrap;
+      overflow: scroll;
+      border: 1px solid #cdcdcd;
+      border-radius: 4px;
+      color: rgb(14, 16, 26);
+      font-size: 16px;
+      font-weight: 400;
+      cursor: help;
+      padding: 20px;
+    }
+
+    .panel {
+      position: sticky;
+      top: 3vh;
+    }
+
+    .license-token {
+      opacity: 0.3;
+    }
+
+    .highlight {
+      opacity: 1;
+    }
+
+    a {
+      display: block;
+    }
+
+    .dropdown-content, table {
+       width: 330px;
+       max-width: 430px;
+    }
+
+    tr {
+      display: flex;
+      justify-content: stretch;
+    }
+
+    td {
+      flex: 1;
+    }
+
+    td:nth-child(2) {
+      word-break: break-all;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container is-fullwidth">
+  {% include 'scanpipe/includes/navbar_header.html' %}
+
+  {% include 'scantext/includes/license_summary_header.html' with detected_licenses=detected_licenses %}
+  <hr class="mx-1">
+
+  <section class="tab-container">
+    {% include 'scantext/includes/license_summary_detail.html' with detected_licenses=detected_licenses %}
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script type="text/javascript">
+    const panelBlocks = document.querySelectorAll('.license-block')
+    const panelBtns = document.querySelectorAll('.card-header-title')
+    const tokens = document.querySelectorAll('.license-token')
+
+    // Click on panels => highlight both panel and tokens
+
+    panelBtns.forEach((block, index) => {
+      block.addEventListener('click', (e) => {
+        panelBlocks.forEach((blk, idx) => {
+          blk.classList.remove(`matched${idx%7}`)
+        })
+
+        tokens.forEach((tkn, ind) => {
+          tkn.classList.remove('highlight')
+          id = tkn.getAttribute('data-id')
+          if (id && id == index) {
+            color_id = id%7
+            tkn.classList.add('highlight')
+            panelBlocks[id].classList.add(`matched${color_id}`)
+          }
+        })
+      })
+    })
+
+    // Click on tokens => highlight both panel and tokens
+
+    tokens.forEach((tkn, index) => {
+      tkn.addEventListener('click', (e) => {
+        panelBlocks.forEach((blk, idx) => {
+          blk.classList.remove(`matched${idx%7}`)
+        })
+
+        id = tkn.getAttribute('data-id') 
+        tokens.forEach((tn, ind) => {
+          tn.classList.remove('highlight')
+          tid = tn.getAttribute('data-id')
+          if (id && id == tid) {
+            color_id = tid%7
+            tn.classList.add('highlight')
+            panelBlocks[tid].classList.add(`matched${color_id}`)
+          }
+        })
+      })
+    })
+
+
+  </script>
+{% endblock %}

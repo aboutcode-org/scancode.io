@@ -20,41 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.conf import settings
-from django.contrib.auth import views as auth_views
-from django.urls import include
 from django.urls import path
-from django.views.generic import RedirectView
 
-from rest_framework.routers import DefaultRouter
+from scantext import views
 
-from scancodeio import licenses
-from scanpipe.api.views import ProjectViewSet
-from scanpipe.api.views import RunViewSet
-from scanpipe.views import AccountProfileView
-
-api_router = DefaultRouter()
-api_router.register(r"projects", ProjectViewSet)
-api_router.register(r"runs", RunViewSet)
-
-auth_urlpatterns = [
-    path("accounts/login/", auth_views.LoginView.as_view(), name="login"),
-    path(
-        "accounts/logout/",
-        auth_views.LogoutView.as_view(next_page="login"),
-        name="logout",
-    ),
-    path("accounts/profile/", AccountProfileView.as_view(), name="account_profile"),
+urlpatterns = [
+    path("", views.license_scanview, name="license_scan"),
 ]
-
-
-urlpatterns = auth_urlpatterns + [
-    path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
-    path("scantext/", include("scantext.urls")),
-    path("", include("scanpipe.urls")),
-    path("", RedirectView.as_view(url="project/")),
-]
-
-if settings.DEBUG and settings.DEBUG_TOOLBAR:
-    urlpatterns.append(path("__debug__/", include("debug_toolbar.urls")))

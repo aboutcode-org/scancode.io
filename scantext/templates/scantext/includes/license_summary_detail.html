@@ -1,0 +1,90 @@
+<div class="columns mb-5 mx-1">
+  <div class="column is-one-third">
+    <p class="title is-5">Detected Licenses</p>
+    <div class="panel is-light is-shadowless">
+    {% for license in detected_licenses.license_matches %}
+      <div class="license-block panel-block is-flex is-justify-content-space-between p-0" data-match="matched{{ license.mid }}">
+        <a class="atag" href="#{{ license.mid }}">
+          <div class="card-header-title">
+            <span class="mr-2">{{ license.mid|add:1 }}.</span>{{ license.license_expression }}
+          </div>
+        </a>
+        <div class="is-flex is-justify-content-row is-align-items-center">
+          <p class="tag is-6 mx-1 is-light {% if license.score == 100 %} is-success {% else %} is-warning {% endif %}">{{ license.score }}%</p>
+          <div class="dropdown is-hoverable is-right">
+              <p class="card-header-icon">
+                <span class="icon">
+                  <i class="fa fa-info-circle" aria-hidden="true"></i>
+                </span>
+              </p>
+            <div class="dropdown-menu">
+              <div class="dropdown-content py-0">
+                <table class="table is-striped is-size-6 is-hoverable mb-0" >
+                  <tr>
+                    <td><strong>License Expression</strong></td>
+                    <td>{{ license.license_expression }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Score</strong></td>
+                    <td>{{ license.score }}%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Matched Line(s)</strong></td>
+                    <td>{% if license.start_line == license.end_line %} {{ license.start_line }} {% else %} {{ license.start_line }} - {{ license.end_line }} {% endif %}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rule Identifier</strong></td>
+                    <td>
+                    {% if license.rule_text_url %}
+                        <a href="{{ license.rule_text_url }}" target="_blank">{{ license.rule_identifier }}</a>
+                    {% else %}
+                        {{ license.rule_identifier }}
+                    {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Matcher</strong></td>
+                    <td>{{ license.matcher }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Match Coverage</strong></td>
+                    <td>{{ license.match_coverage }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Matched Length</strong></td>
+                    <td>{{ license.matched_length }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Key(s)</strong></td>
+                    <td>
+                    {% for key in license.licenses %}
+                        <a href="{{ key.reference_url }}" target="_blank"><span class="mr-2">{{ key.key }}</span></a>
+                    {% endfor %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rule Relevance</strong></td>
+                    <td>{{ license.rule_relevance }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rule Length</strong></td>
+                    <td>{{ license.rule_length }}</td>
+                  </tr>
+                </table>
+                <div class="panel-heading py-2 is-size-7 is-dark is-flex has-background-white">
+                  <!-- report license hyperlink -->
+                  {% include 'scantext/includes/license_report.html' with license=license %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+  </div>
+  <div class="column is-two-third">
+    <p class="title is-5">Input Text</p>
+    <div class="license-match">{% for token in detected_licenses.license_tokens %}<span class="license-token matched{{ token.match_ids.0 }}" data-id="{{ token.match_ids.0 }}" id="{{ token.match_ids.0 }}" title="{{ token.match_rules }}">{{ token.value }}</span>{% endfor %}</div>
+  </div>
+</div>

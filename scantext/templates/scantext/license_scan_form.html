@@ -1,0 +1,53 @@
+{% extends "scanpipe/base.html" %}
+{% load static humanize %}
+
+{% block content %}
+<div class="container is-max-desktop">
+  {% include 'scanpipe/includes/navbar_header.html' %}
+  <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
+
+  <section class="mx-5 mb-4">
+    <div class="mb-4">
+        <h1 class="title is-4">Scan License</h1>
+    </div>
+
+    <form action="{% url 'license_scan' %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form.input_text }}
+      <div class="columns mt-1">
+        <div class="file has-name is-fullwidth column is-half">
+          <label class="file-label">
+            {{ form.input_file }}
+            <span class="file-cta">
+              <span class="file-icon">
+                <i class="fas fa-upload"></i>
+              </span>
+              <span class="file-label-text">Choose a text file to scan…</span>
+            </span>
+            <span class="file-name is-hidden"></span>
+          </label>
+        </div>
+        <div class="column is-half">
+          <input type="submit" class="button is-fullwidth is-link" value="Scan License">
+        </div>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script type="text/javascript">
+    const fileInput = document.querySelector('#id_input_file');
+    fileInput.onchange = updateFile;
+
+    // Update the file name on upload
+    function updateFile() {
+      const fileName = document.querySelector('.file-name');
+      if (fileInput.files.length > 0) {
+        fileName.classList.remove('is-hidden')
+        fileName.innerHTML = fileInput.files[0].name;
+      }
+    }
+  </script>
+{% endblock %}
