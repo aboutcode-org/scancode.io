@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import concurrent.futures
-import hashlib
 import json
 import logging
 import multiprocessing
@@ -549,43 +548,44 @@ def set_codebase_resource_for_package(codebase_resource, discovered_package):
     codebase_resource.update(status=flag.APPLICATION_PACKAGE)
 
 
-def _get_license_matches_grouped(project):
+def get_detection_data(detection_entry):
+    license_expression = detection_entry.get("license_expression")
+    identifier = detection_entry.get("identifier")
+    matches = []
+
+    for match in detection_entry.get("matches", []):
+        match_license_expression = match.get("license_expression")
+        # Do not include those match.expression when not part of this detection
+        # entry license_expression as those are not counted in the summary
+        if match_license_expression in license_expression:
+            matches.append(
+                {
+                    "license_expression": match_license_expression,
+                    "matched_text": match.get("matched_text"),
+                }
+            )
+
+    return {
+        "license_expression": license_expression,
+        "identifier": identifier,
+        "matches": matches,
+    }
+
+
+def get_license_matches_grouped(project):
     """
-    Return a dictionary of all license_matches of a given `project` grouped by
-    license_expression.
+    Return a dictionary of all license_matches of a given ``project`` grouped by
+    ``resource.detected_license_expression``.
     """
-    license_matches = defaultdict(list)
     resources_with_license = project.codebaseresources.has_license_detections()
+    license_matches = defaultdict(dict)
 
     for resource in resources_with_license:
-        file_cache = []
-
-        for detection_data in resource.license_detections:
-            detected_license_expression = detection_data.get("license_expression")
-            for match in detection_data.get("matches", []):
-                match_license_expression = match.get("license_expression")
-                # Do not include those match.expression when not part of the main
-                # detected_license_expression as those are not counted in the summary
-                if match_license_expression not in detected_license_expression:
-                    continue
-
-                matched_text = match.get("matched_text")
-                # Do not include duplicated matched_text for a given license_expression
-                # within the same file
-                cache_key = ":".join(
-                    [match_license_expression, resource.path, matched_text]
-                )
-                cache_key = hashlib.md5(cache_key.encode()).hexdigest()
-                if cache_key in file_cache:
-                    continue
-                file_cache.append(cache_key)
-
-                license_matches[match_license_expression].append(
-                    {
-                        "path": resource.path,
-                        "matched_text": matched_text,
-                    }
-                )
+        matches = [
+            get_detection_data(detection_entry)
+            for detection_entry in resource.license_detections
+        ]
+        license_matches[resource.detected_license_expression][resource.path] = matches
 
     return dict(license_matches)
 
@@ -606,7 +606,7 @@ def make_results_summary(project, scan_results_location):
 
     # Inject the generated `license_matches` in the summary from the project
     # codebase resources.
-    summary["license_matches"] = _get_license_matches_grouped(project)
+    summary["license_matches"] = get_license_matches_grouped(project)
 
     # Inject the `key_files` and their file content in the summary
     key_files = []

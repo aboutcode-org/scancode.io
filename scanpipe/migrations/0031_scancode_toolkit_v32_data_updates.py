@@ -74,7 +74,7 @@ def compute_resource_detected_license_expression(apps, schema_editor):
         # AttributeError: 'LicenseSymbol' object has no attribute 'wrapped'
         try:
             license_expression_spdx = build_spdx_license_expression(combined_expression)
-        except AttributeError as error:
+        except Exception as error:
             ProjectError.objects.create(
                 project=resource.project,
                 message=str(error),

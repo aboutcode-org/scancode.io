@@ -62,7 +62,6 @@ from scanpipe.models import get_project_work_directory
 from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
-from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
@@ -350,17 +349,17 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertEqual({"missing.zip": "uploaded"}, missing_inputs)
 
-    def test_scanpipe_project_model_can_add_input(self):
-        self.assertTrue(self.project1.can_add_input)
+    def test_scanpipe_project_model_can_change_inputs(self):
+        self.assertTrue(self.project1.can_change_inputs)
 
         run = self.project1.add_pipeline("docker")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
-        self.assertTrue(self.project1.can_add_input)
+        self.assertTrue(self.project1.can_change_inputs)
 
         run.task_start_date = timezone.now()
         run.save()
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
-        self.assertFalse(self.project1.can_add_input)
+        self.assertFalse(self.project1.can_change_inputs)
 
     def test_scanpipe_project_model_add_input_source(self):
         self.assertEqual({}, self.project1.input_sources)
@@ -369,9 +368,32 @@ class ScanPipeModelsTest(TestCase):
         self.project1.refresh_from_db()
         self.assertEqual({"filename": "source"}, self.project1.input_sources)
 
+    def test_scanpipe_project_model_delete_input(self):
+        self.assertEqual({}, self.project1.input_sources)
+        self.assertEqual([], list(self.project1.inputs()))
+        deleted = self.project1.delete_input(name="not_existing")
+        self.assertFalse(deleted)
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.input_path)
+        self.project1.add_input_source(
+            filename=file_location.name, source="uploaded", save=True
+        )
+        self.project1.refresh_from_db()
+        self.assertEqual({file_location.name: "uploaded"}, self.project1.input_sources)
+        self.assertEqual(
+            [file_location.name], [path.name for path in self.project1.inputs()]
+        )
+
+        deleted = self.project1.delete_input(name=file_location.name)
+        self.assertTrue(deleted)
+        self.project1.refresh_from_db()
+        self.assertEqual({}, self.project1.input_sources)
+        self.assertEqual([], list(self.project1.inputs()))
+
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data_location / "notice.NOTICE"
-        copy_inputs([file_location], self.project1.tmp_path)
+        copy_input(file_location, self.project1.tmp_path)
 
         download = Download(
             uri="https://example.com/filename.zip",

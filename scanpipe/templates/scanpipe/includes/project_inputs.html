@@ -3,8 +3,8 @@
     Inputs
   </p>
   {% for input in inputs_with_source %}
-    <div class="panel-block is-justify-content-space-between dropdown is-hoverable is-up is-cursor-help">
-      <div class="break-all pr-1">
+    <div class="panel-block is-justify-content-space-between is-up">
+      <div class="break-all pr-1 is-cursor-help dropdown is-hoverable">
         <div class="panel-icon pt-1">
           <div class="dropdown-trigger">
             <i class="is-size-6 {% if input.is_file %}fa-regular fa-file{% else %}fa-solid fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.name|slugify }}"></i>
@@ -25,17 +25,22 @@
               </div>
             </div>
           </div>
-        </div>{{ input.name }}
+        </div>
+        {{ input.name }}
       </div>
-      <div class="is-family-monospace is-size-7">
+      <div class="is-size-7">
         {% if input.is_file %}
-          {{ input.size|filesizeformat }}
+          <span class="mr-2">{{ input.size|filesizeformat }}</span>
+        {% endif %}
+        <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input.name %}"><i class="fa-solid fa-download"></i></a>
+        {% if project.can_change_inputs %}
+          <a class="modal-button is-grey-link is-clickable ml-1" data-target="modal-inputs-delete" aria-haspopup="true" data-url="{% url 'project_delete_input' project.slug input.name %}" data-filename="{{ input.name }}" href="#"><i class="fa-regular fa-trash-can"></i></a>
         {% endif %}
       </div>
     </div>
   {% endfor %}
   <div class="panel-block">
-    {% if project.can_add_input and not project.is_archived %}
+    {% if project.can_change_inputs %}
       <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-inputs-modal" aria-haspopup="true">Add inputs</button>
       {% include "scanpipe/includes/add_inputs_modal.html" %}
     {% else %}
@@ -43,3 +48,6 @@
     {% endif %}
   </div>
 </article>
+{% if project.can_change_inputs %}
+  {% include 'scanpipe/includes/project_inputs_delete_modal.html' %}
+{% endif %}

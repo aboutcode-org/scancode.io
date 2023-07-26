@@ -898,11 +898,55 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(35, project1.codebaseresources.count())
-        self.assertEqual(30, project1.codebaserelations.count())
+        self.assertEqual(43, project1.codebaseresources.count())
+        self.assertEqual(31, project1.codebaserelations.count())
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_populate_purldb_pipeline_integration_test(
+        self, mock_is_available, mock_request_post
+    ):
+        pipeline_name1 = "load_inventory"
+        pipeline_name2 = "populate_purldb"
+        project1 = Project.objects.create(name="Utility: PurlDB")
+
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name1)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        def mock_request_post_return(url, data, timeout):
+            return {
+                "queued_packages_count": len(data["package_urls"]),
+                "queued_packages": data["package_urls"],
+                "unqueued_packages_count": 1,
+                "unqueued_packages": [],
+                "unsupported_packages_count": 1,
+                "unsupported_packages": [],
+            }
+
+        mock_request_post.side_effect = mock_request_post_return
+        mock_is_available.return_value = True
+
+        run = project1.add_pipeline(pipeline_name2)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
+        self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
+        self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
+        self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
+        self.assertIn("Successfully queued 4 PURLs for indexing in PurlDB", run.log)

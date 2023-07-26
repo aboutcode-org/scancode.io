@@ -63,6 +63,14 @@ Load Inventory From Scan
     :members:
     :member-order: bysource
 
+.. _pipeline_populate_purldb:
+
+Populate PurlDB
+---------------
+.. autoclass:: scanpipe.pipelines.populate_purldb.PopulatePurlDB()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_root_filesystems:
 
 Root Filesystem Analysis
@@ -76,6 +84,14 @@ Root Filesystem Analysis
 Scan Codebase
 -------------
 .. autoclass:: scanpipe.pipelines.scan_codebase.ScanCodebase()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_scan_codebase_package:
+
+Scan Codebase Package
+---------------------
+.. autoclass:: scanpipe.pipelines.scan_codebase_package.ScanCodebasePackage()
     :members:
     :member-order: bysource
 

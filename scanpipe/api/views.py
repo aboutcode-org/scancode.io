@@ -26,6 +26,7 @@ from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
+from django.http import FileResponse
 
 import django_filters
 from rest_framework import mixins
@@ -254,7 +255,7 @@ class ProjectViewSet(
     def add_input(self, request, *args, **kwargs):
         project = self.get_object()
 
-        if not project.can_add_input:
+        if not project.can_change_inputs:
             message = {
                 "status": "Cannot add inputs once a pipeline has started to execute."
             }
@@ -327,6 +328,25 @@ class ProjectViewSet(
                 f"All data, except inputs, for the {project} project have been removed."
             )
             return Response({"status": message})
+
+    @action(detail=True, methods=["get"])
+    def outputs(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if filename := request.query_params.get("filename"):
+            file_path = project.output_path / filename
+            if file_path.exists():
+                return FileResponse(file_path.open("rb"))
+
+            message = {"status": f"Output file {filename} not found"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        action_url = self.reverse_action(self.outputs.url_name, args=[project.pk])
+        output_data = [
+            {"filename": output, "download_url": f"{action_url}?filename={output}"}
+            for output in project.output_root
+        ]
+        return Response(output_data)
 
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):

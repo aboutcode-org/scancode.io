@@ -25,16 +25,32 @@
   ],
   "other_languages": [],
   "license_matches": {
-    "mit": [
-      {
-        "path": "package/package.json",
-        "matched_text": "  \"license\": \"MIT\","
-      },
-      {
-        "path": "package/readme.md",
-        "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
-      }
-    ]
+    "mit": {
+      "package/package.json": [
+        {
+          "license_expression": "mit",
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "matches": [
+            {
+              "license_expression": "mit",
+              "matched_text": "  \"license\": \"MIT\","
+            }
+          ]
+        }
+      ],
+      "package/readme.md": [
+        {
+          "license_expression": "mit",
+          "identifier": "mit-3fce6ea2-8abd-6c6b-3ede-a37af7c6efee",
+          "matches": [
+            {
+              "license_expression": "mit",
+              "matched_text": "## License\n\nMIT \u00a9 [Sindre Sorhus](http://sindresorhus.com)"
+            }
+          ]
+        }
+      ]
+    }
   },
   "key_files": [
     {

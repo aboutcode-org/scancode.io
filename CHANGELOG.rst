@@ -1,7 +1,36 @@
 Changelog
 =========
 
-v32.4.0 (unreleased)
+v32.5.0 (unreleased)
+--------------------
+
+WARNING: After upgrading the ScanCode.io codebase to this version,
+and following the ``docker compose build``,
+the permissions of the ``/var/scancodeio/`` directory of the Docker volumes require
+to be updated for the new ``app`` user, using:
+``docker compose run -u 0:0 web chown -R app:app /var/scancodeio/``
+
+- Run Docker as non-root user using virtualenv.
+  WARNING: The permissions of the ``/var/scancodeio/`` directory in the Docker volumes
+  require to be updated for the new ``app`` user.
+  https://github.com/nexB/scancode.io/issues/399
+
+- Add a new ``ScanCodebasePackage`` pipeline to scan a codebase for packages only.
+  https://github.com/nexB/scancode.io/issues/815
+
+- Add new ``outputs`` REST API action that list projects output files including an URL
+  to download the file.
+  https://github.com/nexB/scancode.io/issues/678
+
+- Add support for multiple to/from input files in the ``deploy_to_develop`` pipeline.
+  https://github.com/nexB/scancode.io/issues/813
+
+- Add the ability to delete and download project inputs.
+  Note that the inputs cannot be modified (added or deleted) once a pipeline run as
+  started on the project.
+  https://github.com/nexB/scancode.io/issues/813
+
+v32.4.0 (2023-07-13)
 --------------------
 
 - Add support for license policies and complaince alert for Discovered Packages.
