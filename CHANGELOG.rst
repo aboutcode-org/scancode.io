@@ -4,7 +4,10 @@ Changelog
 v32.5.0 (unreleased)
 --------------------
 
-- Add new `outputs` REST API action that list projects output files including an URL
+- Add a new ``ScanCodebasePackage`` pipeline to scan a codebase for packages only.
+  https://github.com/nexB/scancode.io/issues/815
+
+- Add new ``outputs`` REST API action that list projects output files including an URL
   to download the file.
   https://github.com/nexB/scancode.io/issues/678
 
