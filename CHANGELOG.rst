@@ -15,7 +15,10 @@ to be updated for the new ``app`` user, using:
   require to be updated for the new ``app`` user.
   https://github.com/nexB/scancode.io/issues/399
 
-- Add new `outputs` REST API action that list projects output files including an URL
+- Add a new ``ScanCodebasePackage`` pipeline to scan a codebase for packages only.
+  https://github.com/nexB/scancode.io/issues/815
+
+- Add new ``outputs`` REST API action that list projects output files including an URL
   to download the file.
   https://github.com/nexB/scancode.io/issues/678
 
