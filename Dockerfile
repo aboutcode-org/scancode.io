@@ -22,18 +22,19 @@
 
 FROM --platform=linux/amd64 python:3.11
 
-LABEL org.opencontainers.image.source=https://github.com/nexB/scancode.io
+LABEL org.opencontainers.image.source="https://github.com/nexB/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
-WORKDIR /app
+ENV APP_NAME scancodeio
+ENV APP_USER app
+ENV APP_DIR /opt/$APP_NAME
+ENV VIRTUAL_ENV /opt/$APP_NAME/venv
 
-# Python settings: force unbuffered stdout and stderr (i.e. they are flushed to terminal immediately)
+# Force Python unbuffered stdout and stderr (they are flushed to terminal immediately)
 ENV PYTHONUNBUFFERED 1
-# Python settings: do not write pyc files
+# Do not write Python .pyc files
 ENV PYTHONDONTWRITEBYTECODE 1
-# Add the workdir in the Python path for scancodeio modules availability in entry points
-ENV PYTHONPATH "${PYTHONPATH}:/app"
 
 # OS requirements as per
 # https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
@@ -57,11 +58,29 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN mkdir -p /var/scancodeio/static/ \
- && mkdir -p /var/scancodeio/workspace/
+# Create the APP_USER group and user
+RUN addgroup --system $APP_USER \
+ && adduser --system --group --no-create-home --home=$APP_DIR $APP_USER
 
-# Keep the dependencies installation before the COPY of the app/ for proper caching
-COPY setup.cfg setup.py /app/
-RUN pip install .
+# Create the /var/APP_NAME directory with proper permission for APP_USER
+RUN mkdir -p /var/$APP_NAME \
+ && chown $APP_USER:$APP_USER /var/$APP_NAME
 
-COPY . /app
+# Setup the work directory and the virtualenv
+WORKDIR $APP_DIR
+RUN python -m venv $VIRTUAL_ENV
+# Enable the virtualenv, similar effect as "source activate"
+ENV PATH $VIRTUAL_ENV/bin:$PATH
+
+# Install the dependencies before the codebase COPY for proper Docker layer caching
+COPY setup.cfg setup.py $APP_DIR
+RUN pip install --no-cache-dir .
+
+# Copy the codebase and set the proper permissions for the APP_USER
+COPY . $APP_DIR
+RUN chown -R $APP_USER:$APP_USER $APP_DIR
+
+# Set the user as APP_USER for the remaining stages
+USER $APP_USER
+RUN mkdir -p /var/$APP_NAME/static/ \
+ && mkdir -p /var/$APP_NAME/workspace/

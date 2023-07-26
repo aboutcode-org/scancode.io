@@ -4,6 +4,17 @@ Changelog
 v32.5.0 (unreleased)
 --------------------
 
+WARNING: After upgrading the ScanCode.io codebase to this version,
+and following the ``docker compose build``,
+the permissions of the ``/var/scancodeio/`` directory of the Docker volumes require
+to be updated for the new ``app`` user, using:
+``docker compose run -u 0:0 web chown -R app:app /var/scancodeio/``
+
+- Run Docker as non-root user using virtualenv.
+  WARNING: The permissions of the ``/var/scancodeio/`` directory in the Docker volumes
+  require to be updated for the new ``app`` user.
+  https://github.com/nexB/scancode.io/issues/399
+
 - Add new `outputs` REST API action that list projects output files including an URL
   to download the file.
   https://github.com/nexB/scancode.io/issues/678
