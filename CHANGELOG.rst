@@ -15,6 +15,9 @@ to be updated for the new ``app`` user, using:
   require to be updated for the new ``app`` user.
   https://github.com/nexB/scancode.io/issues/399
 
+- Add column sort and filters in dependency list view.
+  https://github.com/nexB/scancode.io/issues/823
+
 - Add a new ``ScanCodebasePackage`` pipeline to scan a codebase for packages only.
   https://github.com/nexB/scancode.io/issues/815
 
