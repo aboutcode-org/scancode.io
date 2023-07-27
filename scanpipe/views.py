@@ -1159,15 +1159,35 @@ class DiscoveredDependencyListView(
     prefetch_related = ["for_package", "datafile_resource"]
     table_columns = [
         "package_url",
-        "package_type",
+        {
+            "field_name": "type",
+            "label": "Package type",
+            "filter_fieldname": "type",
+        },
         "extracted_requirement",
-        "scope",
-        "is_runtime",
-        "is_optional",
-        "is_resolved",
+        {
+            "field_name": "scope",
+            "filter_fieldname": "scope",
+        },
+        {
+            "field_name": "is_runtime",
+            "filter_fieldname": "is_runtime",
+        },
+        {
+            "field_name": "is_optional",
+            "filter_fieldname": "is_optional",
+        },
+        {
+            "field_name": "is_resolved",
+            "filter_fieldname": "is_resolved",
+        },
         "for_package",
         "datafile_resource",
-        "datasource_id",
+        {
+            "field_name": "datasource_id",
+            "filter_fieldname": "datasource_id",
+            "filter_is_right": True,
+        },
     ]
 
 

@@ -25,14 +25,18 @@ import uuid
 from django.test import TestCase
 from django.utils import timezone
 
+from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import FilterSetUtilsMixin
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.tests import dependency_data1
+from scanpipe.tests import dependency_data2
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
 
@@ -158,3 +162,44 @@ class ScanPipeFilterTest(TestCase):
 
         filterset = PackageFilterSet(data={"is_vulnerable": "yes"})
         self.assertEqual([p2], list(filterset.qs))
+
+    def test_scanpipe_filters_dependency_filterset(self):
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
+        CodebaseResource.objects.create(
+            project=self.project1,
+            path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+        )
+        CodebaseResource.objects.create(
+            project=self.project1,
+            path="data.tar.gz-extract/Gemfile.lock",
+        )
+        d1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
+        d2 = DiscoveredDependency.create_from_data(self.project1, dependency_data2)
+
+        filterset = DependencyFilterSet(data={"is_resolved": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"is_resolved": True})
+        self.assertEqual([d2], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"is_resolved": False})
+        self.assertEqual([d1], list(filterset.qs))
+
+        filterset = DependencyFilterSet(data={"type": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"type": "pypi"})
+        self.assertEqual([d1], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"type": "gem"})
+        self.assertEqual([d2], list(filterset.qs))
+
+        filterset = DependencyFilterSet(data={"scope": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"scope": "install"})
+        self.assertEqual([d1], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"scope": "dependencies"})
+        self.assertEqual([d2], list(filterset.qs))
+
+        filterset = DependencyFilterSet(data={"datasource_id": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"datasource_id": "pypi_sdist_pkginfo"})
+        self.assertEqual([d1], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"datasource_id": "gemfile_lock"})
+        self.assertEqual([d2], list(filterset.qs))

@@ -53,7 +53,7 @@
               {% endif %}
             </td>
             <td>
-              {{ dependency.datasource_id }}
+              <a href="?datasource_id={{ dependency.datasource_id }}" class="is-black-link">{{ dependency.datasource_id }}</a>
             </td>
           </tr>
         {% empty %}
