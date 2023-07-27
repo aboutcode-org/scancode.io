@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from packageurl import PackageURL
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
 
@@ -36,24 +38,34 @@ class PopulatePurlDB(Pipeline):
 
     def populate_purldb_with_discovered_packages(self):
         """Add DiscoveredPackage to PurlDB."""
+        packages = self.project.discoveredpackages.all()
+        package_urls = [pacakage.purl for pacakage in packages]
         self.feed_purldb(
-            packages=self.project.discoveredpackages.all(),
+            package_urls=package_urls,
             package_type="DiscoveredPackage",
         )
 
     def populate_purldb_with_discovered_dependencies(self):
         """Add DiscoveredDependency to PurlDB."""
+        packages_resolved = self.project.discovereddependencies.filter(is_resolved=True)
+
+        distinct_results = packages_resolved.values(
+            "type", "namespace", "name", "version"
+        )
+
+        distinct_combinations = {tuple(item.values()) for item in distinct_results}
+        package_urls = [str(PackageURL(*values)) for values in distinct_combinations]
         self.feed_purldb(
-            packages=self.project.discovereddependencies.all(),
+            package_urls=package_urls,
             package_type="DiscoveredDependency",
         )
 
-    def feed_purldb(self, packages, package_type):
+    def feed_purldb(self, package_urls, package_type):
         """Feed PurlDB with list of PURLs for indexing."""
         if not purldb.is_available():
             raise Exception("PurlDB is not available.")
 
-        package_urls = [pacakage.purl for pacakage in packages]
+        # package_urls = [pacakage.purl for pacakage in packages]
         self.log(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
 
         response = purldb.submit_purls(purls=package_urls)

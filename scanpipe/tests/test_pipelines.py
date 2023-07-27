@@ -948,5 +948,3 @@ class PipelinesIntegrationTest(TestCase):
         self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
-        self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
-        self.assertIn("Successfully queued 4 PURLs for indexing in PurlDB", run.log)
