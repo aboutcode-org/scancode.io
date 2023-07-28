@@ -33,6 +33,11 @@ to be updated for the new ``app`` user, using:
   started on the project.
   https://github.com/nexB/scancode.io/issues/813
 
+- Fix root_filesystem data structure stored on the Project ``extra_data`` field.
+  This was causing a conflict with the expected docker images data structure
+  when generating an XLSX output.
+  https://github.com/nexB/scancode.io/issues/824
+
 v32.4.0 (2023-07-13)
 --------------------
 

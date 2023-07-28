@@ -185,3 +185,9 @@ class ScanPipeDockerPipesTest(TestCase):
 
         self.assertEqual("img-06a4df-layer-02-fbd7d5", layers_data[1].layer_tag)
         self.assertEqual(layers[1]["archive_location"], layers_data[1].archive_location)
+
+        from_old_rootfs = {
+            "images": {"name": "packageurl-python-main.zip-extract", "distro": {}}
+        }
+        p1.update_extra_data(from_old_rootfs)
+        self.assertEqual([], docker.get_layers_data(p1))

@@ -19,31 +19,33 @@
         }
       ],
       "extra_data": {
-        "images": {
-          "name": "basic-rootfs.tar.gz-extract",
-          "distro": {
-            "os": "linux",
-            "architecture": null,
-            "name": "Debian GNU/Linux",
-            "version": "9 (stretch)",
-            "identifier": "debian",
-            "id_like": null,
-            "version_codename": null,
-            "version_id": "9",
-            "pretty_name": "Debian GNU/Linux 9 (stretch)",
-            "cpe_name": null,
-            "home_url": "https://www.debian.org/",
-            "documentation_url": null,
-            "support_url": "https://www.debian.org/support",
-            "bug_report_url": "https://bugs.debian.org/",
-            "privacy_policy_url": null,
-            "build_id": null,
-            "variant": null,
-            "variant_id": null,
-            "logo": null,
-            "extra_data": {}
+        "root_filesystems": [
+          {
+            "name": "basic-rootfs.tar.gz-extract",
+            "distro": {
+              "os": "linux",
+              "architecture": null,
+              "name": "Debian GNU/Linux",
+              "version": "9 (stretch)",
+              "identifier": "debian",
+              "id_like": null,
+              "version_codename": null,
+              "version_id": "9",
+              "pretty_name": "Debian GNU/Linux 9 (stretch)",
+              "cpe_name": null,
+              "home_url": "https://www.debian.org/",
+              "documentation_url": null,
+              "support_url": "https://www.debian.org/support",
+              "bug_report_url": "https://bugs.debian.org/",
+              "privacy_policy_url": null,
+              "build_id": null,
+              "variant": null,
+              "variant_id": null,
+              "logo": null,
+              "extra_data": {}
+            }
           }
-        }
+        ]
       }
     }
   ],

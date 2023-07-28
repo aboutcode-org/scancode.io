@@ -285,7 +285,10 @@ Layer = namedtuple("Layer", layer_fields)
 def get_layers_data(project):
     """Get list of structured layers data from project extra_data field."""
     layers_data = []
+
     images = project.extra_data.get("images", [])
+    if not type(images) == list:
+        return []
 
     for image in images:
         image_id = image.get("image_id")
