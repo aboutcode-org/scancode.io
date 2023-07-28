@@ -272,12 +272,30 @@ default the ``UTC`` time zone is used::
     You can view a detailed list of time zones `here.
     <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
 
+.. _scancodeio_settings_purldb:
+
+PURLDB
+------
+
+Provide the URL and API key of your `PurlDB <https://github.com/nexB/purldb/>`_
+instance.
+
+ ::
+
+    PURLDB_URL=https://your-purldb-domain/
+    PURLDB_API_KEY=apikeyexample
+
+.. _scancodeio_settings_vulnerablecode:
+
 VULNERABLECODE
 --------------
 
-You can either run your own instance of VulnerableCode or connect to the public one.
+You can either run your own instance of
+`VulnerableCode <https://github.com/nexB/vulnerablecode/>`_
+or connect to the public one.
+
 Authentication is provided using an API key that you can obtain by registering at
 https://public.vulnerablecode.io/account/request_api_key/ ::
 
     VULNERABLECODE_URL=https://public.vulnerablecode.io/
-    VULNERABLECODE_API_KEY=c1fa7dc1fd0a408880ba2dfdf63c1124abca9477
+    VULNERABLECODE_API_KEY=apikeyexample
