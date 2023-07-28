@@ -73,6 +73,20 @@ It does not not compute such summary.
 You can also have a look at the different steps for each pipeline from the
 :ref:`built_in_pipelines` documentation.
 
+Can I run multiple pipelines in parallel?
+-----------------------------------------
+
+Yes, you can run multiple pipelines in parallel by starting your Docker containers
+with the desired number of workers using the following command::
+
+    docker compose up --scale worker=2
+
+.. note:: You can also add extra workers by running the command while the ScanCode.io
+   services are already running. For example, to add 2 extra workers to the 2
+   currently running ones, use the following command::
+
+        sudo docker compose up --scale worker=4
+
 Can I pause/resume a running pipeline?
 --------------------------------------
 

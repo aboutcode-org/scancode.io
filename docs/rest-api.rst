@@ -156,6 +156,16 @@ Using Python and the **"requests"** library:
         response = requests.post(api_url, data=data, files=files)
         response.json()
 
+    You have the flexibility to explicitly set the filename, content_type, and
+    headers for your uploaded files using the following code:
+
+    .. code-block:: python
+
+        files = {"upload_file": ("inventory.json", file_contents, "application/json")}
+
+    For more information on this topic, refer to the following link:
+    https://docs.python-requests.org/en/latest/user/quickstart/#post-a-multipart-encoded-file
+
 When creating a project, the response will include the project's details URL
 value among the returned data.
 You can make a GET request to this URL, which returns all available information

@@ -113,10 +113,9 @@ your specific requirements.
 
 
 .. tip::
-    Our documentation is treated like code. Make sure to check our
-    `writing guidelines <https://scancode-toolkit.readthedocs.io/en/latest/contribute/contrib_doc.html>`_
-    to help guide new users.
-
+    To generate the project configuration file ``scancode-config.yml``, navigate to the
+    Project Settings UI and click on the **Config file** link in the left section under
+    **Download**.
 
 Archive a Project
 ^^^^^^^^^^^^^^^^^
