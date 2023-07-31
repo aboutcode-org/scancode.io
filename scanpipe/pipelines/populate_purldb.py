@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from packageurl import PackageURL
+from univers.version_range import RANGE_CLASS_BY_SCHEMES
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
@@ -54,9 +55,31 @@ class PopulatePurlDB(Pipeline):
         )
 
         distinct_combinations = {tuple(item.values()) for item in distinct_results}
-        package_urls = [str(PackageURL(*values)) for values in distinct_combinations]
+        package_urls = {str(PackageURL(*values)) for values in distinct_combinations}
+
+        packages_unresolved = self.project.discovereddependencies.filter(
+            is_resolved=False
+        ).exclude(extracted_requirement="*")
+
+        distinct_unresolved_results = packages_unresolved.values(
+            "type", "namespace", "name", "extracted_requirement"
+        )
+
+        distinct_unresolved = {
+            tuple(item.values()) for item in distinct_unresolved_results
+        }
+
+        for item in distinct_unresolved:
+            if range_class := RANGE_CLASS_BY_SCHEMES.get(item[0]):
+                vers = range_class.from_native(item[3])
+                constraints = vers.constraints
+                if not constraints:
+                    continue
+                version = str(constraints[0].version)
+                package_urls.add(str(PackageURL(*item[:3], version)))
+
         self.feed_purldb(
-            package_urls=package_urls,
+            package_urls=list(package_urls),
             package_type="DiscoveredDependency",
         )
 
