@@ -908,7 +908,7 @@ def _map_javascript_npm_lookup_resource(
     project,
 ):
     """Map unmatched ``node_modules`` files."""
-    purl = js.get_purl_from_node_module(to_directory)
+    purl = js.get_purl_from_node_module(to_directory.path)
     matched = to_resources.filter(path__startswith=to_directory.path)
     if not matched:
         return 0

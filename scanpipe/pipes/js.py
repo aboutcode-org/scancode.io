@@ -210,7 +210,7 @@ def get_js_map_basename_and_extension(filename):
 
 def get_purl_from_node_module(node_module_directory):
     """Return PURL for given a `node_modules` package directory."""
-    path = Path(node_module_directory.path)
+    path = Path(node_module_directory)
     path_parts = path.parts
 
     npm_package = path_parts[-1]
