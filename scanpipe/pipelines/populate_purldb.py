@@ -22,6 +22,7 @@
 
 from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
+from univers.version_range import InvalidVersionRange
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
@@ -71,7 +72,11 @@ class PopulatePurlDB(Pipeline):
 
         for item in distinct_unresolved:
             if range_class := RANGE_CLASS_BY_SCHEMES.get(item[0]):
-                vers = range_class.from_native(item[3])
+                try:
+                    vers = range_class.from_native(item[3])
+                except InvalidVersionRange:
+                    continue
+
                 constraints = vers.constraints
                 if not constraints:
                     continue
