@@ -215,7 +215,8 @@ def _create_system_package(project, purl, package):
     codebase_resources = project.codebaseresources.all()
 
     for install_file in installed_files:
-        rootfs_path = pipes.normalize_path(install_file.path)
+        install_file_path = install_file.get_path(strip_root=True)
+        rootfs_path = pipes.normalize_path(install_file_path)
         logger.info(f"   installed file rootfs_path: {rootfs_path}")
 
         try:
