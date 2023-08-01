@@ -598,9 +598,8 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
     package_data_by_purldb_urls = {}
 
     for resource_index, to_resource in enumerate(resource_iterator):
-        if len(resources_by_sha1) == 85:
-            # Send a request off for every 85th sha1 collected
-            # This is to avoid the 4094 byte limit on requests to purldb
+        if len(resources_by_sha1) == 1000:
+            # Send a request off for every 1000th sha1 collected
             matched_count += matcher_func(
                 project=project,
                 resources_by_sha1=resources_by_sha1,
@@ -620,7 +619,7 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
         if to_resource.path.endswith(".map"):
             # Add sha1 of JS sources if we have a .map file
             for js_sha1 in js.source_content_sha1_list(to_resource):
-                if len(resources_by_sha1) == 85:
+                if len(resources_by_sha1) == 1000:
                     matched_count += matcher_func(
                         project=project,
                         resources_by_sha1=resources_by_sha1,
