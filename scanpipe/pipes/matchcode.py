@@ -26,7 +26,7 @@ from matchcode_toolkit.fingerprinting import compute_directory_fingerprints
 def fingerprint_codebase_directories(project, virtual_codebase):
     """Compute directory fingerprints for matching purposes"""
     # Compute directory fingerprints in memory
-    vc_to_directory = virtual_codebase.get_resource("virtual_root/to")
+    vc_to_directory = virtual_codebase.get_resource("to")
     _ = compute_directory_fingerprints(vc_to_directory, virtual_codebase)
 
     # Bulk update Directories with new fingerprints.
@@ -40,8 +40,7 @@ def fingerprint_codebase_directories(project, virtual_codebase):
 
     unsaved_objects = []
     for index, resource in enumerate(iterator, start=1):
-        vc_path = f"virtual_root/{resource.path}"
-        vc_resource = virtual_codebase.get_resource(vc_path)
+        vc_resource = virtual_codebase.get_resource(resource.path)
 
         extra_data_keys = [
             "directory_content",
