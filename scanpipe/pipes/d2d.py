@@ -124,6 +124,15 @@ def get_best_path_matches(to_resource, matches):
     return matches
 
 
+def get_from_files_for_scanning(resources):
+    """
+    Return resources in the "from/" side which has been mapped to the "to/"
+    side, but are not mapped using ABOUT files.
+    """
+    mapped_from_files = resources.from_codebase().files().has_relation()
+    return mapped_from_files.filter(~Q(status=flag.ABOUT_MAPPED))
+
+
 def _map_checksum_resource(to_resource, from_resources, checksum_field):
     checksum_value = getattr(to_resource, checksum_field)
     matches = from_resources.filter(**{checksum_field: checksum_value})
@@ -644,8 +653,8 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
             map_type="about_file",
         )
 
-    codebase_resources.update(status=flag.MAPPED)
-    about_file_resource.update(status=flag.MAPPED)
+    codebase_resources.update(status=flag.ABOUT_MAPPED)
+    about_file_resource.update(status=flag.ABOUT_MAPPED)
 
 
 def map_about_files(project, logger=None):
@@ -664,6 +673,11 @@ def map_about_files(project, logger=None):
     for about_file_resource in from_about_files:
         _map_about_file_resource(project, about_file_resource, to_resources)
 
+        about_file_companions = about_file_resource.siblings().filter(
+            name__contains=about_file_resource.name_without_extension
+        )
+        about_file_companions.update(status=flag.ABOUT_MAPPED)
+
 
 def map_javascript_post_purldb_match(project, logger=None):
     """Map minified javascript file based on existing PurlDB match."""
@@ -671,7 +685,7 @@ def map_javascript_post_purldb_match(project, logger=None):
 
     to_resources = project_files.to_codebase()
 
-    to_resources_dot_map = to_resources.filter(status="matched-to-purldb").filter(
+    to_resources_dot_map = to_resources.filter(status=flag.MATCHED_TO_PURLDB).filter(
         extension=".map"
     )
 

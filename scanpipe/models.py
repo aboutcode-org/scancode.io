@@ -1944,6 +1944,13 @@ class CodebaseResource(
         return self.project.codebase_path / path
 
     @property
+    def name_without_extension(self):
+        """Return the name of the resource without it's extension."""
+        if self.extension:
+            return self.name.replace(self.extension, "")
+        return self.name
+
+    @property
     def location(self):
         """Return the location of the resource as a string."""
         return str(self.location_path)
