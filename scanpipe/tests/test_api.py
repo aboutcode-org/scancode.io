@@ -303,6 +303,34 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual([expected], response.data["input_sources"])
         self.assertEqual(["archive.zip"], response.data["input_root"])
 
+        mock_get.side_effect = [
+            mock.Mock(content=b"\x00", headers={}, status_code=200, url="archive.zip"),
+            mock.Mock(
+                content=b"\x00", headers={}, status_code=200, url="second.tar.gz"
+            ),
+        ]
+        data = {
+            "name": "Upload 2 archives",
+            "input_urls": [
+                "https://example.com/archive.zip",
+                "https://example.com/second.tar.gz",
+            ],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        created_project_detail_url = response.data["url"]
+        response = self.csrf_client.get(created_project_detail_url)
+        expected = [
+            {"filename": "archive.zip", "source": "https://example.com/archive.zip"},
+            {
+                "filename": "second.tar.gz",
+                "source": "https://example.com/second.tar.gz",
+            },
+        ]
+        self.assertEqual(expected, response.data["input_sources"])
+        expected = ["archive.zip", "second.tar.gz"]
+        self.assertEqual(expected, sorted(response.data["input_root"]))
+
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))

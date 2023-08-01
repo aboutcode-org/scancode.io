@@ -104,7 +104,7 @@ class ProjectSerializer(
         help_text="Execute pipeline now",
     )
     upload_file = serializers.FileField(write_only=True, required=False)
-    input_urls = serializers.CharField(
+    input_urls = serializers.ListField(
         write_only=True,
         required=False,
         style={"base_template": "textarea.html"},
