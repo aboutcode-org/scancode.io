@@ -102,24 +102,16 @@ def get_codebase_tree(codebase, fields):
     return codebase_dict
 
 
-def get_virtual_codebase(project):
+def get_basic_virtual_to_codebase(project):
     """
-    Return the codebase from `project` as a VirtualCodebase.
+    Return the to/ codebase from `project` as a VirtualCodebase.
 
-    Paths are prefixed with a fake root path segment of `virtual_root`. This is
-    due to the implementation of VirtualCodebase, where a common root path is
-    needed for all Resources in the VirtualCodebase.
+    The only Resource fields that are populated are path and sha1.
     """
-    # Collect project JSON results into a buffer
-    buf = StringIO()
-    results_generator = JSONResultsGenerator(project)
-    for chunk in results_generator:
-        buf.write(chunk)
-
-    # Rewind buffer, load contents as JSON, and return as VirtualCodebase
-    buf.seek(0)
-    json_scan = json.load(buf)
-    return VirtualCodebase(location=json_scan)
+    to_resources = project.codebaseresources.to_codebase()
+    resources = [dict(path=r.path, sha1=r.sha1) for r in to_resources]
+    data = dict(files=resources)
+    return VirtualCodebase(location=data)
 
 
 class ProjectCodebase:
