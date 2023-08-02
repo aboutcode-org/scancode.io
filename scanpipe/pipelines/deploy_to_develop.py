@@ -116,8 +116,7 @@ class DeployToDevelop(Pipeline):
 
     def fingerprint_codebase_directories(self):
         """Compute directory fingerprints for matching"""
-        virtual_codebase = codebase.get_basic_virtual_to_codebase(self.project)
-        matchcode.fingerprint_codebase_directories(self.project, virtual_codebase)
+        matchcode.fingerprint_codebase_directories(self.project, to_codebase_only=True)
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
