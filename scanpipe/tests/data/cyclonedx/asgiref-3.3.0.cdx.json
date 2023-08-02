@@ -56,6 +56,10 @@
           "value": "https://github.com/django/asgiref/"
         },
         {
+          "name": "aboutcode:notice_text",
+          "value": "NOTICE_TEXT"
+        },
+        {
           "name": "aboutcode:primary_language",
           "value": "Python"
         }

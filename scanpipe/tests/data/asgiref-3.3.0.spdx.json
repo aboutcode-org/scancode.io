@@ -51,6 +51,9 @@
           "referenceType": "purl",
           "referenceLocator": "pkg:pypi/asgiref@3.3.0"
         }
+      ],
+      "attributionTexts": [
+        "NOTICE_TEXT"
       ]
     },
     {
