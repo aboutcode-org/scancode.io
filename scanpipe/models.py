@@ -2646,6 +2646,10 @@ class DiscoveredPackage(
             if (checksum_value := getattr(self, algorithm))
         ]
 
+        attribution_texts = []
+        if self.notice_text:
+            attribution_texts.append(self.notice_text)
+
         external_refs = []
 
         if package_url := self.package_url:
@@ -2669,6 +2673,7 @@ class DiscoveredPackage(
             filename=self.filename,
             description=self.description,
             release_date=str(self.release_date) if self.release_date else "",
+            attribution_texts=attribution_texts,
             checksums=checksums,
             external_refs=external_refs,
         )
