@@ -38,6 +38,9 @@ to be updated for the new ``app`` user, using:
   when generating an XLSX output.
   https://github.com/nexB/scancode.io/issues/824
 
+- Fix the SPDX output to include missing detailed license texts for LicenseRef.
+  https://github.com/nexB/scancode.io/issues/841
+
 v32.4.0 (2023-07-13)
 --------------------
 
