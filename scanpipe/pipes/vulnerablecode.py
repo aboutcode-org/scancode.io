@@ -72,11 +72,22 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
+def chunked(iterable, chunk_size):
+    """
+    Break an `iterable` into lists of `chunk_size` length.
+
+    >>> list(chunked([1, 2, 3, 4, 5], 2))
+    [[1, 2], [3, 4], [5]]
+    >>> list(chunked([1, 2, 3, 4, 5], 3))
+    [[1, 2, 3], [4, 5]]
+    """
+    for index in range(0, len(iterable), chunk_size):
+        end = index + chunk_size
+        yield iterable[index:end]
+
+
 def get_purls(packages):
-    """
-    Return the PURLs for the given list of `packages`.
-    Do not include qualifiers nor subpath when `base` is provided.
-    """
+    """Return the PURLs for the given list of `packages`."""
     return [package_url for package in packages if (package_url := package.package_url)]
 
 
@@ -190,32 +201,32 @@ def bulk_search_by_cpes(
     return request_post(url, data, timeout)
 
 
-def get_unique_vulnerabilities(packages_data):
+def fetch_vulnerabilities(packages, chunk_size=500, logger=logger.info):
     """
-    Return the unique instance of vulnerabilities for the provided ``packages_data``.
-
-    Note this should be implemented on the VulnerableCode side, see:
-    https://github.com/nexB/vulnerablecode/issues/1219#issuecomment-1620123301
+    Fetch and store vulnerabilities for each provided ``packages``.
+    The PURLs are used for the lookups in batch of ``chunk_size`` per request.
     """
-    if not packages_data:
-        return
+    vulnerabilities_by_purl = {}
 
-    unique_vulnerabilities = []
-    seen_vulnerability_ids = set()
+    for purls_batch in chunked(get_purls(packages), chunk_size):
+        for entry in bulk_search_by_purl(purls_batch):
+            vulnerabilities_by_purl[entry["purl"]] = entry
 
-    for package_entry in packages_data:
-        for vulnerability in package_entry.get("affected_by_vulnerabilities", []):
-            vulnerability_id = vulnerability.get("vulnerability_id")
-            if vulnerability_id not in seen_vulnerability_ids:
-                unique_vulnerabilities.append(vulnerability)
-                seen_vulnerability_ids.add(vulnerability_id)
-
-    return unique_vulnerabilities
-
-
-def fetch_vulnerabilities(packages):
-    """Fetch and store vulnerabilities for each provided ``packages``."""
+    unsaved_objects = []
     for package in packages:
-        if packages_data := get_vulnerabilities_by_purl(package.package_url):
-            if unique_vulnerabilities := get_unique_vulnerabilities(packages_data):
-                package.update(affected_by_vulnerabilities=unique_vulnerabilities)
+        if package_data := vulnerabilities_by_purl.get(package.package_url):
+            if affected_by := package_data.get("affected_by_vulnerabilities", []):
+                package.affected_by_vulnerabilities = affected_by
+                unsaved_objects.append(package)
+
+    if unsaved_objects:
+        model_class = unsaved_objects[0].__class__
+        model_class.objects.bulk_update(
+            objs=unsaved_objects,
+            fields=["affected_by_vulnerabilities"],
+            batch_size=1000,
+        )
+        logger(
+            f"{len(unsaved_objects)} {model_class._meta.verbose_name_plural} updated "
+            f"with vulnerability data."
+        )

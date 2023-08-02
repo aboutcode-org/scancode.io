@@ -35,7 +35,7 @@ class FindVulnerabilities(Pipeline):
     def steps(cls):
         return (
             cls.check_vulnerablecode_service_availability,
-            cls.lookup_vulnerabilities,
+            cls.lookup_packages_vulnerabilities,
         )
 
     def check_vulnerablecode_service_availability(self):
@@ -46,7 +46,7 @@ class FindVulnerabilities(Pipeline):
         if not vulnerablecode.is_available():
             raise Exception("VulnerableCode is not available.")
 
-    def lookup_vulnerabilities(self):
+    def lookup_packages_vulnerabilities(self):
         """Check for vulnerabilities for each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
-        vulnerablecode.fetch_vulnerabilities(packages)
+        vulnerablecode.fetch_vulnerabilities(packages, logger=self.log)

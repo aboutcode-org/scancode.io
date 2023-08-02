@@ -38,6 +38,9 @@ to be updated for the new ``app`` user, using:
   when generating an XLSX output.
   https://github.com/nexB/scancode.io/issues/824
 
+- Update the ``fetch_vulnerabilities`` pipe to make the API requests by batch of purls.
+  https://github.com/nexB/scancode.io/issues/835
+
 v32.4.0 (2023-07-13)
 --------------------
 
