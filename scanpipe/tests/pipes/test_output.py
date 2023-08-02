@@ -285,9 +285,9 @@ class ScanPipeOutputPipesTest(TestCase):
         self.assertEqual("LicenseRef-scancode-ac3filter", license_infos["licenseId"])
         self.assertEqual("AC3Filter License", license_infos["name"])
         expected = [
+            "https://scancode-licensedb.aboutcode.org/ac3filter",
             "https://github.com/nexB/scancode-toolkit/tree/develop/src/"
             "licensedcode/data/licenses/ac3filter.LICENSE",
-            "https://scancode-licensedb.aboutcode.org/ac3filter",
             "http://www.ac3filter.net/wiki/Download_AC3Filter",
             "http://ac3filter.net",
             "http://ac3filter.net/forum",
