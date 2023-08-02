@@ -482,6 +482,8 @@ def _get_spdx_extracted_licenses(license_expressions):
     licensing = Licensing()
     license_index = get_licenses_by_spdx_key()
     urls_fields = [
+        "licensedb_url",
+        "scancode_url",
         "faq_url",
         "homepage_url",
         "osi_url",
