@@ -38,6 +38,10 @@ to be updated for the new ``app`` user, using:
   when generating an XLSX output.
   https://github.com/nexB/scancode.io/issues/824
 
+- Add support for multiple input URLs, and adding multiple pipelines in the project
+  creation REST API.
+  https://github.com/nexB/scancode.io/issues/828
+
 v32.4.0 (2023-07-13)
 --------------------
 
