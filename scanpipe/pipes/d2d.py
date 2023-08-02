@@ -29,7 +29,6 @@ from django.db.models import Q
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
-from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -910,19 +909,21 @@ def _map_javascript_npm_lookup_resource(
     """Map unmatched ``node_modules`` files."""
     purl = js.get_purl_from_node_module(to_directory.path)
     matched = to_resources.filter(path__startswith=to_directory.path)
+    matched_count = matched.count()
+
     if not matched:
         return 0
 
-    try:
-        package = project.discoveredpackages.get(
-            type=purl.type,
-            namespace="" if not purl.namespace else purl.namespace,
-            name=purl.name,
-            version=purl.version,
-        )
-        package.add_resources(matched)
+    package = project.discoveredpackages.filter(
+        type=purl.type,
+        namespace="" if not purl.namespace else purl.namespace,
+        name=purl.name,
+        version=purl.version,
+    ).first()
 
-    except DiscoveredPackage.DoesNotExist:
+    if package:
+        package.add_resources(matched)
+    else:
         if results := purldb.fetch_package(purl=str(purl)):
             package_data = results[0]
             package_data.pop("uuid", None)
@@ -937,4 +938,4 @@ def _map_javascript_npm_lookup_resource(
             return 0
 
     matched.update(status=flag.NPM_LOOKUP)
-    return len(matched)
+    return matched_count
