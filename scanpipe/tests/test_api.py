@@ -331,6 +331,54 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = ["archive.zip", "second.tar.gz"]
         self.assertEqual(expected, sorted(response.data["input_root"]))
 
+    def test_scanpipe_api_project_create_multiple_pipelines(self):
+        data = {
+            "name": "Single string",
+            "pipeline": "docker",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Single list",
+            "pipeline": ["docker"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Multi list",
+            "pipeline": ["docker", "scan_package"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("scan_package", response.data["runs"][1]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Multi string",
+            "pipeline": "docker,scan_package",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
+            "pipeline": [
+                ErrorDetail(
+                    string='"docker,scan_package" is not a valid choice.',
+                    code="invalid_choice",
+                )
+            ]
+        }
+        self.assertEqual(expected, response.data)
+
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))
