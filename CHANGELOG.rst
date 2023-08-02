@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v32.5.0 (unreleased)
+v32.5.0 (2023-08-02)
 --------------------
 
 WARNING: After upgrading the ScanCode.io codebase to this version,
