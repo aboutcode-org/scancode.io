@@ -8,6 +8,14 @@ v32.6.0 (unreleased)
   creation REST API.
   https://github.com/nexB/scancode.io/issues/828
 
+- Update the ``fetch_vulnerabilities`` pipe to make the API requests by batch of purls.
+  https://github.com/nexB/scancode.io/issues/835
+
+- Add vulnerability support for discovered dependencies.
+  The dependency data is loaded using the ``find_vulnerabilities`` pipeline backed by
+  a VulnerableCode database.
+  https://github.com/nexB/scancode.io/issues/835
+
 v32.5.0 (2023-08-02)
 --------------------
 

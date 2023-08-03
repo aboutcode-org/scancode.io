@@ -1026,6 +1026,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.discoveredpackages.vulnerable().count()
 
     @cached_property
+    def vulnerable_dependency_count(self):
+        """Return the number of vulnerable dependencies related to this project."""
+        return self.discovereddependencies.vulnerable().count()
+
+    @cached_property
     def dependency_count(self):
         """Return the number of dependencies related to this project."""
         return self.discovereddependencies.count()
@@ -2245,9 +2250,29 @@ class CodebaseRelation(
         return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
 
 
-class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+class VulnerabilityMixin(models.Model):
+    """Add the vulnerability related fields and methods."""
+
+    affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
+
+    @property
+    def is_vulnerable(self):
+        """Returns True if this instance is affected by vulnerabilities."""
+        return bool(self.affected_by_vulnerabilities)
+
+    class Meta:
+        abstract = True
+
+
+class VulnerabilityQuerySetMixin:
     def vulnerable(self):
         return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+
+
+class DiscoveredPackageQuerySet(
+    VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
+):
+    pass
 
 
 class AbstractPackage(models.Model):
@@ -2441,20 +2466,6 @@ class AbstractPackage(models.Model):
         blank=True,
         help_text=_("A list of parties such as a person, project or organization."),
     )
-
-    class Meta:
-        abstract = True
-
-
-class VulnerabilityMixin(models.Model):
-    """Add the vulnerability related fields and methods."""
-
-    affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
-
-    @property
-    def is_vulnerable(self):
-        """Returns True if this instance is affected by vulnerabilities."""
-        return bool(self.affected_by_vulnerabilities)
 
     class Meta:
         abstract = True
@@ -2746,7 +2757,9 @@ class DiscoveredPackage(
         )
 
 
-class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+class DiscoveredDependencyQuerySet(
+    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+):
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -2767,6 +2780,7 @@ class DiscoveredDependency(
     ProjectRelatedModel,
     SaveProjectErrorMixin,
     UpdateFromDataMixin,
+    VulnerabilityMixin,
     PackageURLMixin,
 ):
     """

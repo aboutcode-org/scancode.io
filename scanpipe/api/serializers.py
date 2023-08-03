@@ -363,6 +363,7 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "datafile_path",
             "datasource_id",
             "package_type",
+            "affected_by_vulnerabilities",
         ]
 
 
