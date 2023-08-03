@@ -1944,6 +1944,13 @@ class CodebaseResource(
         return self.project.codebase_path / path
 
     @property
+    def name_without_extension(self):
+        """Return the name of the resource without it's extension."""
+        if self.extension:
+            return self.name.rpartition(self.extension)[0]
+        return self.name
+
+    @property
     def location(self):
         """Return the location of the resource as a string."""
         return str(self.location_path)
@@ -2646,6 +2653,10 @@ class DiscoveredPackage(
             if (checksum_value := getattr(self, algorithm))
         ]
 
+        attribution_texts = []
+        if self.notice_text:
+            attribution_texts.append(self.notice_text)
+
         external_refs = []
 
         if package_url := self.package_url:
@@ -2669,6 +2680,7 @@ class DiscoveredPackage(
             filename=self.filename,
             description=self.description,
             release_date=str(self.release_date) if self.release_date else "",
+            attribution_texts=attribution_texts,
             checksums=checksums,
             external_refs=external_refs,
         )
