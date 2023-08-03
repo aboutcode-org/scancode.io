@@ -516,7 +516,12 @@ def process_purldb_package_data(project, package_data, resources):
 
 
 def match_purldb_package(project, resources_by_sha1, **kwargs):
-    # Send stuff off to be requested
+    """
+    Given a mapping of lists of CodebaseResources by their sha1 values,
+    `resources_by_sha1`, send those sha1 values to purldb packages API endpoint,
+    process the matched Package data, then return the number of
+    CodebaseResources that were matched to a Package.
+    """
     match_count = 0
     sha1_list = list(resources_by_sha1.keys())
     if results := purldb.match_packages(sha1_list=sha1_list):
@@ -535,7 +540,12 @@ def match_purldb_package(project, resources_by_sha1, **kwargs):
 def match_purldb_resource(
     project, resources_by_sha1, package_data_by_purldb_urls={}, **kwargs
 ):
-    # Send stuff off to be requested
+    """
+    Given a mapping of lists of CodebaseResources by their sha1 values,
+    `resources_by_sha1`, send those sha1 values to purldb resources API
+    endpoint, process the matched Package data, then return the number of
+    CodebaseResources that were matched to a Package.
+    """
     match_count = 0
     sha1_list = list(resources_by_sha1.keys())
     if results := purldb.match_resources(sha1_list=sha1_list):
@@ -575,7 +585,7 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
     Match against PurlDB selecting codebase resources using provided
     ``package_extensions`` for archive type files, and ``resource_extensions``.
 
-    Match requests are sent off in batches of 85 SHA1s.
+    Match requests are sent off in batches of 1000 SHA1s.
     """
     to_resources = (
         project.codebaseresources.files()
