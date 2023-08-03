@@ -1947,7 +1947,7 @@ class CodebaseResource(
     def name_without_extension(self):
         """Return the name of the resource without it's extension."""
         if self.extension:
-            return self.name.replace(self.extension, "")
+            return self.name.rpartition(self.extension)[0]
         return self.name
 
     @property

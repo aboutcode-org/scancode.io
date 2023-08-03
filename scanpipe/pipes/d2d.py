@@ -673,8 +673,10 @@ def map_about_files(project, logger=None):
     for about_file_resource in from_about_files:
         _map_about_file_resource(project, about_file_resource, to_resources)
 
-        about_file_companions = about_file_resource.siblings().filter(
-            name__contains=about_file_resource.name_without_extension
+        about_file_companions = (
+            about_file_resource.siblings()
+            .filter(name__startswith=about_file_resource.name_without_extension)
+            .filter(extension__in=[".LICENSE", ".NOTICE"])
         )
         about_file_companions.update(status=flag.ABOUT_MAPPED)
 
