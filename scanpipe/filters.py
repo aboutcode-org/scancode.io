@@ -563,6 +563,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "is_optional",
         "is_resolved",
         "datasource_id",
+        "is_vulnerable",
     ]
 
     search = django_filters.CharFilter(
@@ -589,6 +590,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
     is_resolved = StrictBooleanFilter()
+    is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
     class Meta:
         model = DiscoveredDependency
@@ -607,6 +609,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_optional",
             "is_resolved",
             "datasource_id",
+            "is_vulnerable",
         ]
 
 

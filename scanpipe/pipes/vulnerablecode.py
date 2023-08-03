@@ -201,7 +201,7 @@ def bulk_search_by_cpes(
     return request_post(url, data, timeout)
 
 
-def fetch_vulnerabilities(packages, chunk_size=500, logger=logger.info):
+def fetch_vulnerabilities(packages, chunk_size=1000, logger=logger.info):
     """
     Fetch and store vulnerabilities for each provided ``packages``.
     The PURLs are used for the lookups in batch of ``chunk_size`` per request.
@@ -209,8 +209,9 @@ def fetch_vulnerabilities(packages, chunk_size=500, logger=logger.info):
     vulnerabilities_by_purl = {}
 
     for purls_batch in chunked(get_purls(packages), chunk_size):
-        for entry in bulk_search_by_purl(purls_batch):
-            vulnerabilities_by_purl[entry["purl"]] = entry
+        response_data = bulk_search_by_purl(purls_batch)
+        for vulnerability_data in response_data:
+            vulnerabilities_by_purl[vulnerability_data["purl"]] = vulnerability_data
 
     unsaved_objects = []
     for package in packages:
