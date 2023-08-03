@@ -179,6 +179,7 @@ def bulk_search_by_purl(
 
     data = {
         "purls": purls,
+        "vulnerabilities_only": True,
     }
 
     logger.debug(f"VulnerableCode: url={url} purls_count={len(purls)}")

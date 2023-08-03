@@ -1585,11 +1585,6 @@ class DiscoveredPackageDetailsView(
         },
     }
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["vulnerablecode_url"] = settings.VULNERABLECODE_URL
-        return context
-
 
 class DiscoveredDependencyDetailsView(
     ConditionalLoginRequired,
