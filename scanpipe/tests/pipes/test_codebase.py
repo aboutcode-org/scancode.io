@@ -160,3 +160,40 @@ class ScanPipeCodebasePipesTest(TestCase):
             "asgiref-3.3.0-py3-none-any.whl-extract",
         ]
         self.assertEqual(expected_bottom_up_paths, bottom_up_paths)
+
+    def test_scanpipe_pipes_codebase_get_basic_virtual_codebase(self):
+        fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
+        call_command("loaddata", fixtures, **{"verbosity": 0})
+        project = Project.objects.get(name="asgiref")
+        resources = project.codebaseresources.all()
+        virtual_codebase = codebase.get_basic_virtual_codebase(resources)
+        topdown_paths = list(r.path for r in virtual_codebase.walk(topdown=True))
+        expected_topdown_paths = [
+            "virtual_root",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/__init__.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/compatibility.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/current_thread_executor.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/local.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/server.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/sync.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/testing.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/timeout.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref/wsgi.py",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/LICENSE",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/RECORD",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/"
+            "top_level.txt",
+            "virtual_root/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+        ]
+        self.assertEqual(expected_topdown_paths, topdown_paths)
+
+        # Check to see that the few fields are populated
+        resource = virtual_codebase.get_resource("virtual_root/asgiref-3.3.0-py3-none-any.whl")
+        self.assertEqual("c03f67211a311b13d1294ac8af7cb139ee34c4f9", resource.sha1)
+        self.assertEqual(19948, resource.size)
+        self.assertEqual(True, resource.is_file)
