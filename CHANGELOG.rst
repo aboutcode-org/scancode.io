@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v32.6.0 (unreleased)
+--------------------
+
+- Add support for multiple input URLs, and adding multiple pipelines in the project
+  creation REST API.
+  https://github.com/nexB/scancode.io/issues/828
+
 v32.5.0 (2023-08-02)
 --------------------
 
