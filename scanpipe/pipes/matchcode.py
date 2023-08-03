@@ -33,7 +33,6 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
     If `to_codebase_only` is True, then we are only saving the directory
     fingerprints for directories from the to/ codebase of a d2d project.
     """
-
     # Bulk update Directories with new fingerprints.
     # Code adapted from
     # scanpipe.migrations.0031_scancode_toolkit_v32_data_updates
@@ -47,10 +46,10 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
     iterator = queryset.iterator(chunk_size=chunk_size)
 
     unsaved_objects = []
-    has_virtual_codebase_prefix = virtual_codebase.root.path == "virtual_codebase"
+    has_virtual_root_prefix = virtual_codebase.root.path == "virtual_root"
     for index, directory in enumerate(iterator, start=1):
-        if has_virtual_codebase_prefix:
-            vc_path = f"virtual_codebase/{directory.path}"
+        if has_virtual_root_prefix:
+            vc_path = f"virtual_root/{directory.path}"
         else:
             vc_path = directory.path
 
@@ -94,4 +93,6 @@ def fingerprint_codebase_directories(project, to_codebase_only=False):
         resources = resources.to_codebase()
     virtual_codebase = codebase.get_basic_virtual_codebase(resources)
     virtual_codebase = compute_codebase_directory_fingerprints(virtual_codebase)
-    save_directory_fingerprints(project, virtual_codebase, to_codebase_only=to_codebase_only)
+    save_directory_fingerprints(
+        project, virtual_codebase, to_codebase_only=to_codebase_only
+    )
