@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import codebase
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
