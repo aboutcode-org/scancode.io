@@ -31,6 +31,7 @@ from django.test import TestCase
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
+from scanpipe.pipes import flag
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_file
@@ -128,9 +129,9 @@ class ScanPipeD2DPipesTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.match_package")
     def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_package):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
-        # The initial status will be updated to "matched-to-purldb"
+        # The initial status will be updated to flag.MATCHED_TO_PURLDB
         to_2 = make_resource_file(
-            self.project1, "to/package.jar-extract/a.class", status="mapped"
+            self.project1, "to/package.jar-extract/a.class", status=flag.MAPPED
         )
         to_3 = make_resource_file(self.project1, "to/package.jar-extract/b.class")
 
@@ -156,7 +157,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()
-            self.assertEqual("matched-to-purldb", resource.status)
+            self.assertEqual(flag.MATCHED_TO_PURLDB, resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_pipes_d2d_get_best_path_matches_same_name(self):
