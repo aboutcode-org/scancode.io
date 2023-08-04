@@ -549,11 +549,7 @@ def map_javascript(project, logger=None):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
     project_files = project.codebaseresources.files()
 
-    to_resources = (
-        project_files.to_codebase()
-        .exclude(name__startswith=".")
-        .exclude(path__contains="/node_modules/")
-    )
+    to_resources = project_files.to_codebase().exclude(name__startswith=".")
     to_resources_dot_map = to_resources.filter(extension=".map")
     to_resources_minified = to_resources.filter(extension__in=[".css", ".js"])
 
@@ -564,11 +560,7 @@ def map_javascript(project, logger=None):
             f"map against from/ codebase."
         )
 
-    from_resources = (
-        project_files.from_codebase()
-        .exclude(path__contains="/test/")
-        .exclude(path__contains="/node_modules/")
-    )
+    from_resources = project_files.from_codebase().exclude(path__contains="/test/")
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True
     )
