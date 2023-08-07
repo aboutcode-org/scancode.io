@@ -278,7 +278,7 @@ def run_command(cmd, log_output=False):
 
     process = subprocess.Popen(
         cmd,
-        shell=False,
+        shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=True,

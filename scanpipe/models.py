@@ -2966,7 +2966,7 @@ class DiscoveredDependency(
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
 
     def as_spdx(self):
-        """Return this Package as an SPDX Package entry."""
+        """Return this Dependency as an SPDX Package entry."""
         from scanpipe.pipes import spdx
 
         external_refs = []
