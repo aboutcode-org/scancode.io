@@ -16,6 +16,10 @@ v32.6.0 (unreleased)
   a VulnerableCode database.
   https://github.com/nexB/scancode.io/issues/835
 
+- Fix root filesystem scanning for installed packages and archived Linux distributions.
+  Allows the scan to discover system packages from `rpmdb.sqlite` and other sources.
+  https://github.com/nexB/scancode.io/pull/840
+
 v32.5.0 (2023-08-02)
 --------------------
 
