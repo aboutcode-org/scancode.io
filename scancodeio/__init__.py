@@ -26,7 +26,7 @@ import sys
 import warnings
 from pathlib import Path
 
-VERSION = "32.5.0"
+VERSION = "32.5.1"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
