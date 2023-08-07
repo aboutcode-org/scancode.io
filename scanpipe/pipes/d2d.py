@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from contextlib import suppress
 from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
@@ -745,7 +746,7 @@ def _map_javascript_post_purldb_match_resource(
 
 def map_javascript_path(project, logger=None):
     """Map javascript file based on path."""
-    project_files = project.codebaseresources.files().only("path")
+    project_files = project.codebaseresources.files()
 
     to_resources_key = (
         project_files.to_codebase()
@@ -842,7 +843,7 @@ def _map_javascript_path_resource(
 
 def map_javascript_colocation(project, logger=None):
     """Map JavaScript files based on neighborhood file mapping."""
-    project_files = project.codebaseresources.files().only("path")
+    project_files = project.codebaseresources.files()
 
     to_resources_key = (
         project_files.to_codebase()
@@ -914,8 +915,8 @@ def _map_javascript_colocation_resource(
 
     from_neighboring_resources = from_resources.filter(path__startswith=common_parent)
 
-    try:
-        if sources := js.get_map_sources(to_resource):
+    if sources := js.get_map_sources(to_resource):
+        with suppress(MultipleObjectsReturned, ObjectDoesNotExist):
             from_resource = from_neighboring_resources.get(path__endswith=sources[0])
             return js.map_related_files(
                 to_resources,
@@ -924,8 +925,19 @@ def _map_javascript_colocation_resource(
                 "js_colocation",
                 {},
             )
-    except (MultipleObjectsReturned, ObjectDoesNotExist):
-        pass
+
+    # try:
+    #     if sources := js.get_map_sources(to_resource):
+    #         from_resource = from_neighboring_resources.get(path__endswith=sources[0])
+    #         return js.map_related_files(
+    #             to_resources,
+    #             to_resource,
+    #             from_resource,
+    #             "js_colocation",
+    #             {},
+    #         )
+    # except (MultipleObjectsReturned, ObjectDoesNotExist):
+    #     pass
 
     from_neighboring_resources_index = pathmap.build_index(
         from_neighboring_resources.values_list("id", "path"), with_subpaths=True

@@ -22,6 +22,7 @@
 
 import hashlib
 import json
+from contextlib import suppress
 from pathlib import Path
 
 from django.core.exceptions import MultipleObjectsReturned
@@ -132,9 +133,11 @@ def get_matches_by_sha1(to_map, from_resources):
     for sha1, source_path in zip(content_sha1_list, sources):
         try:
             match = from_resources.get(sha1=sha1, path__endswith=source_path)
-            matches.append((match, {}))
         except (MultipleObjectsReturned, ObjectDoesNotExist):
-            pass
+            match = None
+
+        if match:
+            matches.append((match, {}))
 
     return matches
 
@@ -157,7 +160,8 @@ def get_matches_by_ratio(
         if too_many_prospects:
             continue
 
-        match, too_many_match = None, False
+        match = None
+        too_many_match = False
         for resource_id in prospect.resource_ids:
             from_source = from_resources.get(id=resource_id)
             diff_ratio = get_text_str_diff_ratio(content, from_source.file_content)
@@ -242,10 +246,8 @@ def map_related_files(to_resources, to_resource, from_resource, map_type, extra_
 
     transpiled = [to_resource]
     for related_ext in prospect.get("related", []):
-        try:
+        with suppress(CodebaseResource.DoesNotExist):
             transpiled.append(to_resources.get(path=f"{base_path}{related_ext}"))
-        except CodebaseResource.DoesNotExist:
-            pass
 
     for match in transpiled:
         pipes.make_relation(
