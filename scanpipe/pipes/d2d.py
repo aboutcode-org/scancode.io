@@ -926,19 +926,6 @@ def _map_javascript_colocation_resource(
                 {},
             )
 
-    # try:
-    #     if sources := js.get_map_sources(to_resource):
-    #         from_resource = from_neighboring_resources.get(path__endswith=sources[0])
-    #         return js.map_related_files(
-    #             to_resources,
-    #             to_resource,
-    #             from_resource,
-    #             "js_colocation",
-    #             {},
-    #         )
-    # except (MultipleObjectsReturned, ObjectDoesNotExist):
-    #     pass
-
     from_neighboring_resources_index = pathmap.build_index(
         from_neighboring_resources.values_list("id", "path"), with_subpaths=True
     )
