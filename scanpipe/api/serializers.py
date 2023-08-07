@@ -65,6 +65,24 @@ class PipelineChoicesMixin:
         self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices()
 
 
+class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
+    """Forcing outputs as list() in place of set() to keep the ordering integrity."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str) or not hasattr(data, "__iter__"):
+            self.fail("not_a_list", input_type=type(data).__name__)
+        if not self.allow_empty and len(data) == 0:
+            self.fail("empty")
+
+        return [
+            super(serializers.MultipleChoiceField, self).to_internal_value(item)
+            for item in data
+        ]
+
+    def to_representation(self, value):
+        return [self.choice_strings_to_values.get(str(item), item) for item in value]
+
+
 class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
     project = serializers.HyperlinkedRelatedField(
         view_name="project-detail", read_only=True
@@ -94,7 +112,7 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
 class ProjectSerializer(
     ExcludeFromListViewMixin, PipelineChoicesMixin, serializers.ModelSerializer
 ):
-    pipeline = serializers.ChoiceField(
+    pipeline = OrderedMultipleChoiceField(
         choices=(),
         required=False,
         write_only=True,
@@ -104,7 +122,7 @@ class ProjectSerializer(
         help_text="Execute pipeline now",
     )
     upload_file = serializers.FileField(write_only=True, required=False)
-    input_urls = serializers.CharField(
+    input_urls = serializers.ListField(
         write_only=True,
         required=False,
         style={"base_template": "textarea.html"},
@@ -203,7 +221,7 @@ class ProjectSerializer(
         """
         upload_file = validated_data.pop("upload_file", None)
         input_urls = validated_data.pop("input_urls", [])
-        pipeline = validated_data.pop("pipeline", None)
+        pipeline = validated_data.pop("pipeline", [])
         execute_now = validated_data.pop("execute_now", False)
         webhook_url = validated_data.pop("webhook_url", None)
 
@@ -222,8 +240,8 @@ class ProjectSerializer(
         if webhook_url:
             project.add_webhook_subscription(webhook_url)
 
-        if pipeline:
-            project.add_pipeline(pipeline, execute_now)
+        for pipeline_name in pipeline:
+            project.add_pipeline(pipeline_name, execute_now)
 
         return project
 
@@ -345,6 +363,7 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "datafile_path",
             "datasource_id",
             "package_type",
+            "affected_by_vulnerabilities",
         ]
 
 

@@ -1,7 +1,22 @@
 Changelog
 =========
 
-v32.5.0 (unreleased)
+v32.6.0 (unreleased)
+--------------------
+
+- Add support for multiple input URLs, and adding multiple pipelines in the project
+  creation REST API.
+  https://github.com/nexB/scancode.io/issues/828
+
+- Update the ``fetch_vulnerabilities`` pipe to make the API requests by batch of purls.
+  https://github.com/nexB/scancode.io/issues/835
+
+- Add vulnerability support for discovered dependencies.
+  The dependency data is loaded using the ``find_vulnerabilities`` pipeline backed by
+  a VulnerableCode database.
+  https://github.com/nexB/scancode.io/issues/835
+
+v32.5.0 (2023-08-02)
 --------------------
 
 WARNING: After upgrading the ScanCode.io codebase to this version,
@@ -37,6 +52,12 @@ to be updated for the new ``app`` user, using:
   This was causing a conflict with the expected docker images data structure
   when generating an XLSX output.
   https://github.com/nexB/scancode.io/issues/824
+
+- Fix the SPDX output to include missing detailed license texts for LicenseRef.
+  Add ``licensedb_url`` and ``scancode_url`` to the SPDX ``ExtractedLicensingInfo``
+  ``seeAlsos``.
+  Include the ``Package.notice_text`` as the SPDX ``attribution_texts``.
+  https://github.com/nexB/scancode.io/issues/841
 
 v32.4.0 (2023-07-13)
 --------------------
