@@ -24,6 +24,7 @@ import cgi
 import json
 import logging
 import os
+import re
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -190,6 +191,11 @@ def fetch_docker_image(docker_reference, to=None):
     Docker references are documented here:
     https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
     """
+
+    whitelist = r"^docker://[a-zA-Z0-9_.:/@-]+$"
+    if not re.match(whitelist, docker_reference):
+        raise ValueError("Invalid Docker reference.")
+
     name = python_safe_name(docker_reference.replace("docker://", ""))
     filename = f"{name}.tar"
     download_directory = to or tempfile.mkdtemp()
