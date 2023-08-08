@@ -954,20 +954,11 @@ def _map_javascript_colocation_resource(
         map_type="js_colocation",
     )
 
-    for match in transpiled:
-        pipes.make_relation(
-            from_resource=from_resource,
-            to_resource=match,
-            map_type="js_path",
-            extra_data=extra_data,
-        )
-    return len(transpiled)
-
 
 def map_javascript_npm_lookup(project, logger=None):
     """Map unmatched ``node_modules`` files."""
-    project_directories = project.codebaseresources.directories().only("path")
-    project_files = project.codebaseresources.files().only("path")
+    project_directories = project.codebaseresources.directories()
+    project_files = project.codebaseresources.files()
 
     to_directories_key = (
         project_directories.to_codebase()
