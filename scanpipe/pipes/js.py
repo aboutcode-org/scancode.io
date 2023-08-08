@@ -22,10 +22,17 @@
 
 import hashlib
 import json
+from contextlib import suppress
 from pathlib import Path
+
+from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist
 
 from packageurl import PackageURL
 
+from scanpipe import pipes
+from scanpipe.models import CodebaseResource
+from scanpipe.pipes import flag
 from scanpipe.pipes import get_text_str_diff_ratio
 from scanpipe.pipes import pathmap
 
@@ -93,8 +100,12 @@ def get_map_sources(map_file):
     """Return source paths from a map file."""
     if data := load_json_from_file(map_file.location):
         sources = data.get("sources", [])
-        sources = [source.rsplit("../", 1)[-1] for source in sources if source]
-        return sources
+        sources = [
+            source.rsplit("../", 1)[-1]
+            for source in sources
+            if source and not source.startswith("webpack:///")
+        ]
+        return [source for source in sources if len(Path(source).parts) > 1]
     return []
 
 
@@ -122,8 +133,13 @@ def get_matches_by_sha1(to_map, from_resources):
 
     matches = []
     for sha1, source_path in zip(content_sha1_list, sources):
-        if match := from_resources.filter(sha1=sha1, path__endswith=source_path):
-            matches.append((match[0], {}))
+        try:
+            match = from_resources.get(sha1=sha1, path__endswith=source_path)
+        except (MultipleObjectsReturned, ObjectDoesNotExist):
+            match = None
+
+        if match:
+            matches.append((match, {}))
 
     return matches
 
@@ -146,13 +162,24 @@ def get_matches_by_ratio(
         if too_many_prospects:
             continue
 
+        match = None
+        too_many_match = False
         for resource_id in prospect.resource_ids:
             from_source = from_resources.get(id=resource_id)
             diff_ratio = get_text_str_diff_ratio(content, from_source.file_content)
             if not diff_ratio or diff_ratio < diff_ratio_threshold:
                 continue
 
-            matches.append((from_source, {"diff_ratio": f"{diff_ratio:.1%}"}))
+            if match:
+                too_many_match = True
+                break
+
+            match = (from_source, {"diff_ratio": f"{diff_ratio:.1%}"})
+
+        # For a given pair of source path and source content there should be
+        # one and only one from resource.
+        if not too_many_match and match:
+            matches.append(match)
 
     return matches
 
@@ -206,6 +233,34 @@ def get_js_map_basename_and_extension(filename):
         if filename.endswith(ext):
             basename = filename[: -len(ext)]
             return basename, ext
+
+
+def map_related_files(to_resources, to_resource, from_resource, map_type, extra_data):
+    if not from_resource:
+        return 0
+
+    path = Path(to_resource.path.lstrip("/"))
+    basename_and_extension = get_js_map_basename_and_extension(path.name)
+    basename, extension = basename_and_extension
+    base_path = path.parent / basename
+
+    prospect = PROSPECTIVE_JAVASCRIPT_MAP.get(extension, {})
+
+    transpiled = [to_resource]
+    for related_ext in prospect.get("related", []):
+        with suppress(CodebaseResource.DoesNotExist):
+            transpiled.append(to_resources.get(path=f"{base_path}{related_ext}"))
+
+    for match in transpiled:
+        pipes.make_relation(
+            from_resource=from_resource,
+            to_resource=match,
+            map_type=map_type,
+            extra_data=extra_data,
+        )
+        match.update(status=flag.MAPPED)
+
+    return len(transpiled)
 
 
 def get_purl_from_node_module(node_module_directory):

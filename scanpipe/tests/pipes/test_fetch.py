@@ -79,6 +79,12 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertIn("--override-os=linux --override-arch=amd64", cmd)
         self.assertTrue(cmd.endswith("debian_10_9.tar"))
 
+    def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
+        url = 'docker://;echo${IFS}"PoC"${IFS}"'
+        with self.assertRaises(ValueError) as cm:
+            fetch.fetch_docker_image(url)
+        self.assertEqual("Invalid Docker reference.", str(cm.exception))
+
     @mock.patch("requests.get")
     def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
         urls = [

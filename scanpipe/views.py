@@ -1158,7 +1158,10 @@ class DiscoveredDependencyListView(
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
     prefetch_related = ["for_package", "datafile_resource"]
     table_columns = [
-        "package_url",
+        {
+            "field_name": "package_url",
+            "filter_fieldname": "is_vulnerable",
+        },
         {
             "field_name": "type",
             "label": "Package type",
@@ -1582,11 +1585,6 @@ class DiscoveredPackageDetailsView(
         },
     }
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["vulnerablecode_url"] = settings.VULNERABLECODE_URL
-        return context
-
 
 class DiscoveredDependencyDetailsView(
     ConditionalLoginRequired,
@@ -1629,6 +1627,11 @@ class DiscoveredDependencyDetailsView(
                 "is_resolved",
             ],
             "icon_class": "fa-solid fa-plus-square",
+        },
+        "vulnerabilities": {
+            "fields": ["affected_by_vulnerabilities"],
+            "icon_class": "fa-solid fa-bug",
+            "template": "scanpipe/tabset/tab_vulnerabilities.html",
         },
     }
 

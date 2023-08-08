@@ -344,6 +344,7 @@ class RelationMapTypeFilter(django_filters.ChoiceFilter):
             ("java_to_class", "java to class"),
             ("jar_to_source", "jar to source"),
             ("js_compiled", "js compiled"),
+            ("js_colocation", "js colocation"),
             ("js_path", "js path"),
             ("path", "path"),
             ("sha1", "sha1"),
@@ -563,6 +564,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "is_optional",
         "is_resolved",
         "datasource_id",
+        "is_vulnerable",
     ]
 
     search = django_filters.CharFilter(
@@ -589,6 +591,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     is_runtime = StrictBooleanFilter()
     is_optional = StrictBooleanFilter()
     is_resolved = StrictBooleanFilter()
+    is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
     class Meta:
         model = DiscoveredDependency
@@ -607,6 +610,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_optional",
             "is_resolved",
             "datasource_id",
+            "is_vulnerable",
         ]
 
 

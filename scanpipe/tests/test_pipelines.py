@@ -654,9 +654,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
-    @mock.patch("scanpipe.pipes.vulnerablecode.get_vulnerabilities_by_purl")
+    @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
     def test_scanpipe_find_vulnerabilities_pipeline_integration_test(
-        self, mock_get_vulnerabilities, mock_is_configured, mock_is_available
+        self, mock_bulk_search_by_purl, mock_is_configured, mock_is_available
     ):
         pipeline_name = "find_vulnerabilities"
         project1 = Project.objects.create(name="Analysis")
@@ -676,7 +676,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_is_available.return_value = True
         vulnerability_data = [
             {
-                "purl": "pkg:deb/debian/adduser@3.118",
+                "purl": "pkg:deb/debian/adduser@3.118?arch=all",
                 "affected_by_vulnerabilities": [
                     {
                         "vulnerability_id": "VCID-cah8-awtr-aaad",
@@ -694,7 +694,7 @@ class PipelinesIntegrationTest(TestCase):
                 ],
             },
         ]
-        mock_get_vulnerabilities.return_value = vulnerability_data
+        mock_bulk_search_by_purl.return_value = vulnerability_data
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
