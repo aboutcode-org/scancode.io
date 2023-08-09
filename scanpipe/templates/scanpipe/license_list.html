@@ -1,0 +1,43 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: Licenses{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <nav class="breadcrumb is-medium has-succeeds-separator mb-1" aria-label="breadcrumbs">
+        <ul>
+          <li><a href="/" class="has-text-grey">Home</a></li>
+          <li class="is-active"><a href="#" aria-current="page">Licenses</a></li>
+        </ul>
+      </nav>
+      <div>{{ object_list|length|intcomma }} results</div>
+    </section>
+  </div>
+
+  <div class="container is-fluid mb-3">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth break-word">
+      {% include 'scanpipe/includes/list_view_thead.html' %}
+      <tbody>
+        {% for license in object_list %}
+          <tr>
+            <td>
+              <a href="{% url 'license_detail' license.key %}">{{ license.key }}</a>
+            </td>
+            <td>{{ license.short_name }}</td>
+            <td>{{ license.spdx_license_key }}</td>
+            <td>{{ license.category }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="42" class="has-text-centered p-3">
+              No Licenses found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

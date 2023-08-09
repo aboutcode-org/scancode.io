@@ -1695,3 +1695,109 @@ class CodebaseResourceRawView(
             )
 
         raise Http404
+
+
+class LicenseListView(
+    ConditionalLoginRequired,
+    TableColumnsMixin,
+    generic.ListView,
+):
+    template_name = "scanpipe/license_list.html"
+    table_columns = [
+        "key",
+        "short_name",
+        {
+            "field_name": "spdx_license_key",
+            "label": "SPDX license key",
+        },
+        "category",
+    ]
+
+    def get_queryset(self):
+        return list(scanpipe_app.scancode_licenses.values())
+
+
+class LicenseDetailsView(
+    ConditionalLoginRequired,
+    TabSetMixin,
+    generic.DetailView,
+):
+    model_label = "licenses"
+    slug_url_kwarg = "key"
+    template_name = "scanpipe/license_detail.html"
+    tabset = {
+        "essentials": {
+            "fields": [
+                "key",
+                "name",
+                "short_name",
+                "category",
+                "owner",
+                {
+                    "field_name": "spdx_license_key",
+                    "label": "SPDX license key",
+                },
+                {
+                    "field_name": "other_spdx_license_keys",
+                    "label": "Other SPDX license keys",
+                },
+                {
+                    "field_name": "standard_notice",
+                    "display_condition": bool,
+                },
+                {
+                    "field_name": "notes",
+                    "display_condition": bool,
+                },
+                "language",
+            ],
+            "icon_class": "fa-solid fa-circle-info",
+        },
+        "license_text": {
+            "fields": [
+                {
+                    "field_name": "text",
+                    "template": "scanpipe/tabset/field_raw.html",
+                },
+            ],
+            "verbose_name": "License text",
+            "icon_class": "fa-solid fa-file-lines",
+        },
+        "urls": {
+            "fields": [
+                "homepage_url",
+                {
+                    "field_name": "licensedb_url",
+                    "label": "LicenseDB URL",
+                },
+                {
+                    "field_name": "spdx_url",
+                    "label": "SPDX URL",
+                },
+                {
+                    "field_name": "scancode_url",
+                    "label": "ScanCode URL",
+                },
+                "text_urls",
+                {
+                    "field_name": "osi_url",
+                    "label": "OSI URL",
+                },
+                {
+                    "field_name": "faq_url",
+                    "label": "FAQ URL",
+                },
+                "other_urls",
+            ],
+            "verbose_name": "URLs",
+            "icon_class": "fa-solid fa-link",
+        },
+    }
+
+    def get_object(self, queryset=None):
+        key = self.kwargs.get(self.slug_url_kwarg)
+        licenses = scanpipe_app.scancode_licenses
+        try:
+            return licenses[key]
+        except KeyError:
+            raise Http404(f"License {key} not found.")
