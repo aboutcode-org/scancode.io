@@ -287,7 +287,7 @@ def get_layers_data(project):
     layers_data = []
 
     images = project.extra_data.get("images", [])
-    if not type(images) == list:
+    if not isinstance(images, list):
         return []
 
     for image in images:
