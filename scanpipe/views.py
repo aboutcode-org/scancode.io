@@ -1767,8 +1767,14 @@ class LicenseDetailsView(
                     "field_name": "other_spdx_license_keys",
                     "label": "Other SPDX license keys",
                 },
-                "standard_notice",
-                "notes",
+                {
+                    "field_name": "standard_notice",
+                    "display_condition": bool,
+                },
+                {
+                    "field_name": "notes",
+                    "display_condition": bool,
+                },
                 "language",
             ],
             "icon_class": "fa-solid fa-circle-info",
