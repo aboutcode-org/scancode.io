@@ -107,11 +107,10 @@ def get_basic_virtual_codebase(resources_qs):
     scanpipe.pipes.matchcode.fingerprint_codebase_directories
     """
     resources = [
-        dict(path=r.path, sha1=r.sha1, size=r.size, is_file=r.is_file)
+        {"path": r.path, "sha1": r.sha1, "size": r.size, "is_file": r.is_file}
         for r in resources_qs
     ]
-    data = dict(files=resources)
-    return VirtualCodebase(location=data)
+    return VirtualCodebase(location={"files": resources})
 
 
 class ProjectCodebase:
