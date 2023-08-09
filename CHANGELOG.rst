@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v32.5.2 (unreleased)
+--------------------
+
+- Migrate license views to to the main UI. The list and detail views are now implemented
+  using class-based views.
+  https://github.com/nexB/scancode.io/issues/847
+
 v32.5.1 (2023-08-07)
 --------------------
 

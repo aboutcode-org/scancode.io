@@ -161,5 +161,15 @@ urlpatterns = [
         views.ProjectListView.as_view(),
         name="project_list",
     ),
+    path(
+        "license/<str:key>/",
+        views.LicenseDetailsView.as_view(),
+        name="license_detail",
+    ),
+    path(
+        "license/",
+        views.LicenseListView.as_view(),
+        name="license_list",
+    ),
     path("monitor/", include("django_rq.urls")),
 ]

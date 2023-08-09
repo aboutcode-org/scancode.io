@@ -28,7 +28,6 @@ from django.views.generic import RedirectView
 
 from rest_framework.routers import DefaultRouter
 
-from scancodeio import licenses
 from scanpipe.api.views import ProjectViewSet
 from scanpipe.api.views import RunViewSet
 from scanpipe.views import AccountProfileView
@@ -50,7 +49,6 @@ auth_urlpatterns = [
 
 urlpatterns = auth_urlpatterns + [
     path("api/", include(api_router.urls)),
-    path("license/", include(licenses.urls)),
     path("", include("scanpipe.urls")),
     path("", RedirectView.as_view(url="project/")),
 ]
