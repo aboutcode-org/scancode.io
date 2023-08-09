@@ -299,10 +299,10 @@ class PipelinesIntegrationTest(TestCase):
         """
         Return the `data` excluding the provided `exclude_keys`.
         """
-        if type(data) == list:
+        if isinstance(data, list):
             return [self._without_keys(entry, exclude_keys) for entry in data]
 
-        if type(data) == dict:
+        if isinstance(data, dict):
             return {
                 key: self._without_keys(value, exclude_keys)
                 if type(value) in [list, dict]
@@ -318,13 +318,13 @@ class PipelinesIntegrationTest(TestCase):
         Return the `data`, where any `package_uid` value has been normalized
         with `purl_with_fake_uuid()`
         """
-        if type(data) == list:
+        if isinstance(data, list):
             return [self._normalize_package_uids(entry) for entry in data]
 
-        if type(data) == dict:
+        if isinstance(data, dict):
             normalized_data = {}
             for key, value in data.items():
-                if type(value) in [list, dict]:
+                if isinstance(value, (list, dict)):
                     value = self._normalize_package_uids(value)
                 if (
                     key in ("package_uid", "dependency_uid", "for_package_uid")
