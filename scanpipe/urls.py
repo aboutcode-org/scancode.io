@@ -162,7 +162,7 @@ urlpatterns = [
         name="project_list",
     ),
     path(
-        "license/<path:key>/",
+        "license/<str:key>/",
         views.LicenseDetailsView.as_view(),
         name="license_detail",
     ),
