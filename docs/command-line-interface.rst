@@ -49,7 +49,6 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
         create-project
         delete-project
         execute
-        graph
         list-project
         output
         show-pipeline
@@ -217,22 +216,6 @@ Optional arguments:
 - ``--print`` Print the output to stdout instead of creating a file. This is not
   compatible with the XLSX and CSV formats.
   It cannot be used when multiple formats are provided.
-
-`$ scanpipe graph [PIPELINE_NAME ...]`
---------------------------------------
-
-Generates one or more pipeline graph image as PNG using
-`Graphviz <https://graphviz.org/>`_.
-The output images are named using the pipeline name with a ``.png`` extension.
-
-Optional arguments:
-
-- ``--list`` Displays a list of all available pipelines.
-
-- ``--output OUTPUT`` Specifies the directory to which the output is written.
-
-.. note::
-    By default, output files are created in the current working directory.
 
 
 `$ scanpipe archive-project --project PROJECT`
