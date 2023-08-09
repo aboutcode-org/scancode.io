@@ -75,8 +75,10 @@ def is_source_mapping_in_minified(resource, map_file_name):
 
 def sha1(content):
     """Calculate the SHA-1 hash of a string."""
-    hash_object = hashlib.sha1(content.encode())
-    return hash_object.hexdigest()
+    # The following hash is not used in any security context. It is only used
+    # to generate a value for matching purposes, collisions are acceptable and
+    # "content" is not coming from user-generated input.
+    return hashlib.sha1(content.encode()).hexdigest()  # nosec
 
 
 def source_content_sha1_list(map_file):
