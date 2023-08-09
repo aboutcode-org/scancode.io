@@ -35,6 +35,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 import saneyaml
+from licensedcode.cache import get_licensing
 from licensedcode.models import load_licenses
 
 try:
@@ -166,6 +167,7 @@ class ScanPipeConfig(AppConfig):
         return load_licenses()
 
     scancode_licenses = cached_property(get_scancode_licenses)
+    licensing = get_licensing()
 
     def set_policies(self):
         """

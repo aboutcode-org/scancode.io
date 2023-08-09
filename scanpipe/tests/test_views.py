@@ -44,6 +44,7 @@ from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
+from scanpipe.views import render_license_expression_as_links
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -822,3 +823,30 @@ class ScanPipeViewsTest(TestCase):
         xss_url = reverse("license_detail", args=[xss])
         response = self.client.get(xss_url)
         self.assertEqual(response.status_code, 404)
+
+    def test_render_license_expression_as_links(self):
+        expression = "apache-2.0"
+        expected = '<a href="/license/apache-2.0/">apache-2.0</a>'
+        self.assertEqual(expected, render_license_expression_as_links(expression))
+
+        expression = "apache-2.0 AND mit"
+        expected = (
+            '<a href="/license/apache-2.0/">apache-2.0</a> AND '
+            '<a href="/license/mit/">mit</a>'
+        )
+        self.assertEqual(expected, render_license_expression_as_links(expression))
+
+        expression = "gpl-2.0 WITH classpath-exception-2.0"
+        expected = (
+            '<a href="/license/gpl-2.0/">gpl-2.0</a> WITH '
+            '<a href="/license/classpath-exception-2.0/">classpath-exception-2.0</a>'
+        )
+        self.assertEqual(expected, render_license_expression_as_links(expression))
+
+        expression = "not-valid"
+        expected = "not-valid"
+        self.assertEqual(expected, render_license_expression_as_links(expression))
+
+        expression = "apache-2.0 AND not-valid"
+        expected = "apache-2.0 AND not-valid"
+        self.assertEqual(expected, render_license_expression_as_links(expression))

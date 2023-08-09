@@ -45,6 +45,7 @@ from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
 from django.urls import reverse_lazy
+from django.utils.safestring import mark_safe
 from django.views import generic
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
@@ -54,6 +55,7 @@ from django.views.generic.edit import UpdateView
 import saneyaml
 import xlsxwriter
 from django_filters.views import FilterView
+from license_expression import ExpressionError
 
 from scancodeio.auth import ConditionalLoginRequired
 from scancodeio.auth import conditional_login_required
@@ -172,6 +174,21 @@ class PrefetchRelatedViewMixin:
 def render_as_yaml(value):
     if value:
         return saneyaml.dump(value, indent=2)
+
+
+def render_license_expression_as_links(license_expression):
+    try:
+        parsed = scanpipe_app.licensing.parse(
+            license_expression,
+            validate=True,
+            strict=False,
+            simple=False,
+        )
+    except ExpressionError:
+        return license_expression
+
+    template = '<a href="/license/{symbol.key}/">{symbol.key}</a>'
+    return mark_safe(parsed.render_as_readable(template=template))
 
 
 def fields_have_no_values(fields_data):
@@ -1369,7 +1386,10 @@ class CodebaseResourceDetailsView(
         },
         "detection": {
             "fields": [
-                "detected_license_expression",
+                {
+                    "field_name": "detected_license_expression",
+                    "render_func": render_license_expression_as_links,
+                },
                 {
                     "field_name": "detected_license_expression_spdx",
                     "label": "Detected license expression (SPDX)",
@@ -1500,7 +1520,10 @@ class DiscoveredPackageDetailsView(
         "essentials": {
             "fields": [
                 "package_url",
-                "declared_license_expression",
+                {
+                    "field_name": "declared_license_expression",
+                    "render_func": render_license_expression_as_links,
+                },
                 {
                     "field_name": "declared_license_expression_spdx",
                     "label": "Declared license expression (SPDX)",
@@ -1539,7 +1562,10 @@ class DiscoveredPackageDetailsView(
         },
         "terms": {
             "fields": [
-                "declared_license_expression",
+                {
+                    "field_name": "declared_license_expression",
+                    "render_func": render_license_expression_as_links,
+                },
                 {
                     "field_name": "declared_license_expression_spdx",
                     "label": "Declared license expression (SPDX)",
