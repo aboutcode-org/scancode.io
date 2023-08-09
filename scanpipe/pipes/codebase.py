@@ -105,7 +105,8 @@ class ProjectCodebase:
     project = None
 
     def __init__(self, project):
-        assert isinstance(project, Project)
+        if not isinstance(project, Project):
+            raise ValueError("Provided value for project is not a Project instance.")
         self.project = project
 
     @property

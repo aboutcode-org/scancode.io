@@ -97,7 +97,8 @@ def get_normalized_java_path(path):
         >>> get_normalized_java_path("foo/org/common/Bar.class")
         'foo/org/common/Bar.java'
     """
-    assert path.endswith(".class")
+    if not path.endswith(".class"):
+        raise ValueError("Only path ending with .class are supported.")
     path = Path(path.strip("/"))
     class_name = path.name
     if "$" in class_name:  # inner class

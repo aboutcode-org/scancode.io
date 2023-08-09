@@ -337,7 +337,9 @@ class AbstractTaskFieldsModel(models.Model):
         Set the task as "queued" by updating the ``task_id`` from ``None`` to this
         instance ``pk``.
         """
-        assert not self.task_id, "task_id is already set"
+        if self.task_id:
+            raise ValueError("task_id is already set")
+
         self.task_id = self.pk
         self.save(update_fields=["task_id"])
 
