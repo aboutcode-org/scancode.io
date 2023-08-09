@@ -694,7 +694,7 @@ def match_purldb_directories(project, logger=None):
 
         if directory.status == flag.MATCHED_TO_PURLDB:
             continue
-        _ = match_purldb_directory(project, directory)
+        match_purldb_directory(project, directory)
 
     matched_count = (
         project.codebaseresources.directories()

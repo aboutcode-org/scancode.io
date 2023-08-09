@@ -20,9 +20,13 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import logging
+
 from matchcode_toolkit.fingerprinting import compute_codebase_directory_fingerprints
 
 from scanpipe.pipes import codebase
+
+logger = logging.getLogger(__name__)
 
 
 def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=False):
@@ -41,7 +45,7 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
         queryset = queryset.to_codebase()
 
     object_count = queryset.count()
-    print(f"\nUpdating directory fingerprints for {object_count:,} directories.")
+    logger.info(f"\nUpdating directory fingerprints for {object_count:,} directories.")
     chunk_size = 2000
     iterator = queryset.iterator(chunk_size=chunk_size)
 
@@ -71,9 +75,9 @@ def save_directory_fingerprints(project, virtual_codebase, to_codebase_only=Fals
         unsaved_objects.append(directory)
 
         if not (index % chunk_size) and unsaved_objects:
-            print(f"  {index:,} / {object_count:,} directories processed")
+            logger.info(f"  {index:,} / {object_count:,} directories processed")
 
-    print("Updating directory DB objects...")
+    logger.info("Updating directory DB objects...")
     project.codebaseresources.bulk_update(
         objs=unsaved_objects,
         fields=["extra_data"],
