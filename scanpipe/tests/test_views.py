@@ -798,14 +798,14 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
 
-    def test_license_list_view(self):
+    def test_scanpipe_views_license_list_view(self):
         url = reverse("license_list")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         expected = '<a href="/license/apache-2.0/">apache-2.0</a>'
         self.assertContains(response, expected)
 
-    def test_license_details_view(self):
+    def test_scanpipe_views_license_details_view(self):
         license_url = reverse("license_detail", args=["apache-2.0"])
         response = self.client.get(license_url)
         self.assertEqual(response.status_code, 200)
