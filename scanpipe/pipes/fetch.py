@@ -48,7 +48,7 @@ def fetch_http(uri, to=None):
     Download a given `uri` in a temporary directory and return the directory's
     path.
     """
-    response = requests.get(uri)
+    response = requests.get(uri, timeout=5)
 
     if response.status_code != 200:
         raise requests.RequestException
