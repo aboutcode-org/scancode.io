@@ -20,8 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from contextlib import suppress
 from collections import defaultdict
+from contextlib import suppress
 from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
@@ -44,6 +44,7 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
+from scanpipe.pipes import vulnerablecode
 
 FROM = "from/"
 TO = "to/"
@@ -592,12 +593,15 @@ def match_purldb_directory(project, resource):
             return create_package_from_purldb_data(project, resource, package_data)
 
 
-def match_purldb_resources(project, extensions, matcher_func, logger=None):
+def match_purldb_resources(
+    project, extensions, matcher_func, chunk_size=1000, logger=None
+):
     """
     Match against PurlDB selecting codebase resources using provided
     ``package_extensions`` for archive type files, and ``resource_extensions``.
 
-    Match requests are sent off in batches of 1000 SHA1s.
+    Match requests are sent off in batches of 1000 SHA1s. This number is set
+    using `chunk_size`.
     """
     to_resources = (
         project.codebaseresources.files()
@@ -612,59 +616,28 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
         extensions_str = ", ".join(extensions)
         logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
 
-    resource_iterator = to_resources.iterator(chunk_size=2000)
+    resource_iterator = to_resources.paginated(per_page=chunk_size)
     last_percent = 0
     start_time = timer()
     matched_count = 0
     resources_by_sha1 = defaultdict(list)
     package_data_by_purldb_urls = {}
+    resource_index = -1
 
-    for resource_index, to_resource in enumerate(resource_iterator):
-        if len(resources_by_sha1) == 1000:
-            # Send a request off for every 1000th sha1 collected
-            matched_count += matcher_func(
-                project=project,
-                resources_by_sha1=resources_by_sha1,
-                package_data_by_purldb_urls=package_data_by_purldb_urls,
-            )
-            resources_by_sha1 = defaultdict(list)
-            last_percent = pipes.log_progress(
-                logger,
-                resource_index,
-                resource_count,
-                last_percent,
-                increment_percent=10,
-                start_time=start_time,
-            )
+    for resources_batch in resource_iterator:
+        for to_resource in resources_batch:
+            resources_by_sha1[to_resource.sha1].append(to_resource)
+            if to_resource.path.endswith(".map"):
+                for js_sha1 in js.source_content_sha1_list(to_resource):
+                    resources_by_sha1[js_sha1].append(to_resource)
+            resource_index += 1
 
-        resources_by_sha1[to_resource.sha1].append(to_resource)
-        if to_resource.path.endswith(".map"):
-            # Add sha1 of JS sources if we have a .map file
-            for js_sha1 in js.source_content_sha1_list(to_resource):
-                if len(resources_by_sha1) == 1000:
-                    matched_count += matcher_func(
-                        project=project,
-                        resources_by_sha1=resources_by_sha1,
-                        package_data_by_purldb_urls=package_data_by_purldb_urls,
-                    )
-                    resources_by_sha1 = defaultdict(list)
-                    last_percent = pipes.log_progress(
-                        logger,
-                        resource_index,
-                        resource_count,
-                        last_percent,
-                        increment_percent=10,
-                        start_time=start_time,
-                    )
-                resources_by_sha1[js_sha1].append(to_resource)
-
-    if resources_by_sha1:
-        # Match remaining sha1's
         matched_count += matcher_func(
             project=project,
             resources_by_sha1=resources_by_sha1,
             package_data_by_purldb_urls=package_data_by_purldb_urls,
         )
+
         last_percent = pipes.log_progress(
             logger,
             resource_index,
