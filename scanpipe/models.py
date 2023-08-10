@@ -51,7 +51,6 @@ from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
 from django.db.models.functions import Cast
-
 from django.db.models.functions import Lower
 from django.dispatch import receiver
 from django.forms import model_to_dict
