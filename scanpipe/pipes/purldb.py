@@ -115,9 +115,19 @@ def collect_response_results(response, data, timeout=None):
     return results
 
 
-def match_packages(sha1_list, timeout=None, api_url=PURLDB_API_URL):
-    """Match a list of SHA1 in the PurlDB for package-type files."""
-    data = {"sha1": sha1_list}
+def match_packages(
+    sha1_list, enhance_package_data=False, timeout=None, api_url=PURLDB_API_URL
+):
+    """
+    Match a list of SHA1 in the PurlDB for package-type files.
+
+    If `enhance_package_data` is True, then purldb will enhance Package data for
+    matched Packages, if possible.
+    """
+    data = {
+        "sha1": sha1_list,
+        "enhance_package_data": enhance_package_data,
+    }
     response = request_post(
         url=f"{api_url}packages/filter_by_checksums/", data=data, timeout=timeout
     )
