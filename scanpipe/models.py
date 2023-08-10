@@ -38,6 +38,7 @@ from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
@@ -50,6 +51,7 @@ from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models import TextField
 from django.db.models.functions import Cast
+
 from django.db.models.functions import Lower
 from django.dispatch import receiver
 from django.forms import model_to_dict
@@ -1606,6 +1608,13 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         field.
         """
         return self.filter(~Q(extra_data__directory_content=""))
+
+    def paginated(self, per_page=5000):
+        """
+        Iterate over a (large) QuerySet by chunks of ``per_page`` items.
+        """
+        for page in Paginator(self, per_page=per_page):
+            yield page.object_list
 
 
 class ScanFieldsModelMixin(models.Model):
