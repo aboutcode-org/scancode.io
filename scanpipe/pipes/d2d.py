@@ -43,7 +43,6 @@ from scanpipe.pipes import pathmap
 from scanpipe.pipes import purldb
 from scanpipe.pipes import resolve
 from scanpipe.pipes import scancode
-from scanpipe.pipes import vulnerablecode
 
 FROM = "from/"
 TO = "to/"
