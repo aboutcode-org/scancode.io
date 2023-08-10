@@ -43,6 +43,7 @@ from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
 from scancode import cli as scancode_cli
+from scancode.cli import run_scan as scancode_run_scan
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
@@ -428,31 +429,39 @@ def assemble_packages(project):
                     logger.info(f"Unknown Package assembly item type: {item!r}")
 
 
-def run_scancode(location, output_file, options, raise_on_error=False):
+def run_scan(location, output_file, options, raise_on_error=False):
     """
     Scan the `location` content and write the results into an `output_file`.
     The `scancode` executable will run using the provided `options`.
     If `raise_on_error` is enabled, a ScancodeError will be raised if the
     exitcode is greater than 0.
     """
-    options_from_settings = settings.SCANCODE_TOOLKIT_CLI_OPTIONS
+    # options_from_settings = settings.SCANCODE_TOOLKIT_CLI_OPTIONS
     max_workers = get_max_workers(keep_available=1)
 
-    scancode_args = [
-        pipes.get_bin_executable("scancode"),
-        shlex.quote(location),
-        *options_from_settings,
-        *options,
-        f"--processes {max_workers}",
-        "--verbose",
-        f"--json-pp {shlex.quote(output_file)}",
-    ]
+    # ``pretty_params`` is injected in the scan results ``options`` header
+    pretty_params = {option: True for option in sorted(options)}
+    # Converts the options into arguments for the run_scan function call.
+    run_scan_kwargs = {
+        option.lstrip("-").replace("-", "_"): True for option in sorted(options)
+    }
 
-    exitcode, output = pipes.run_command(scancode_args, log_output=True)
-    if exitcode > 0 and raise_on_error:
-        raise ScancodeError(output)
+    # exitcode, output = pipes.run_command(scancode_args, log_output=True)
+    success, results = scancode_run_scan(
+        input=shlex.quote(location),
+        processes=max_workers,
+        quiet=False,
+        verbose=True,
+        return_results=True,
+        pretty_params=pretty_params,
+        **run_scan_kwargs,
+    )
 
-    return exitcode, output
+    if success:
+        Path(output_file).write_text(json.dumps(results, indent=2))
+    elif raise_on_error:
+        raise ScancodeError(results)
+    # return results
 
 
 def get_virtual_codebase(project, input_location):
