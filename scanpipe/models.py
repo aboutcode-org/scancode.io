@@ -1609,9 +1609,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q(extra_data__directory_content=""))
 
     def paginated(self, per_page=5000):
-        """
-        Iterate over a (large) QuerySet by chunks of ``per_page`` items.
-        """
+        """Iterate over a (large) QuerySet by chunks of ``per_page`` items."""
         for page in Paginator(self, per_page=per_page):
             yield page.object_list
 

@@ -183,68 +183,9 @@
       "is_archive": false,
       "is_media": false,
       "is_key_file": false,
-      "detected_license_expression": "apache-2.0",
-      "detected_license_expression_spdx": "Apache-2.0",
-      "license_detections": [
-        {
-          "matches": [
-            {
-              "score": 100.0,
-              "matcher": "2-aho",
-              "end_line": 8,
-              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/spdx_license_id_apache-2.0_for_apache-2.0.RULE",
-              "start_line": 8,
-              "matched_text": "license_expression: apache-2.0",
-              "match_coverage": 100.0,
-              "matched_length": 3,
-              "rule_relevance": 100,
-              "rule_identifier": "spdx_license_id_apache-2.0_for_apache-2.0.RULE",
-              "license_expression": "apache-2.0"
-            },
-            {
-              "score": 100.0,
-              "matcher": "2-aho",
-              "end_line": 11,
-              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/spdx_license_id_apache-2.0_for_apache-2.0.RULE",
-              "start_line": 11,
-              "matched_text": "  - key: apache-2.0",
-              "match_coverage": 100.0,
-              "matched_length": 3,
-              "rule_relevance": 100,
-              "rule_identifier": "spdx_license_id_apache-2.0_for_apache-2.0.RULE",
-              "license_expression": "apache-2.0"
-            },
-            {
-              "score": 100.0,
-              "matcher": "2-aho",
-              "end_line": 12,
-              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_1039.RULE",
-              "start_line": 12,
-              "matched_text": "    name: Apache License 2.0",
-              "match_coverage": 100.0,
-              "matched_length": 5,
-              "rule_relevance": 100,
-              "rule_identifier": "apache-2.0_1039.RULE",
-              "license_expression": "apache-2.0"
-            },
-            {
-              "score": 100.0,
-              "matcher": "2-aho",
-              "end_line": 13,
-              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/apache-2.0_176.RULE",
-              "start_line": 13,
-              "matched_text": "    file: apache-2.0.LICENSE",
-              "match_coverage": 100.0,
-              "matched_length": 4,
-              "rule_relevance": 100,
-              "rule_identifier": "apache-2.0_176.RULE",
-              "license_expression": "apache-2.0"
-            }
-          ],
-          "identifier": "apache_2_0-6ac1a8f1-4540-e467-4f69-5e1984b60129",
-          "license_expression": "apache-2.0"
-        }
-      ],
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
       "license_clues": [],
       "percentage_of_license_text": null,
       "copyrights": [],
@@ -253,13 +194,7 @@
       "package_data": [],
       "for_packages": [],
       "emails": [],
-      "urls": [
-        {
-          "url": "https://repo1.maven.org/maven2/log4j/log4j/1.2.13/log4j-1.2.13.jar",
-          "end_line": 6,
-          "start_line": 6
-        }
-      ],
+      "urls": [],
       "extra_data": {}
     },
     {
