@@ -515,7 +515,9 @@ def process_purldb_package_data(project, package_data, resources):
     return match_resources_count
 
 
-def match_purldb_package(project, resources_by_sha1, **kwargs):
+def match_purldb_package(
+    project, resources_by_sha1, enhance_package_data=True, **kwargs
+):
     """
     Given a mapping of lists of CodebaseResources by their sha1 values,
     `resources_by_sha1`, send those sha1 values to purldb packages API endpoint,
@@ -524,7 +526,10 @@ def match_purldb_package(project, resources_by_sha1, **kwargs):
     """
     match_count = 0
     sha1_list = list(resources_by_sha1.keys())
-    if results := purldb.match_packages(sha1_list=sha1_list):
+    if results := purldb.match_packages(
+        sha1_list=sha1_list,
+        enhance_package_data=enhance_package_data,
+    ):
         # Process matched Package data
         for package_data in results:
             sha1 = package_data["sha1"]
