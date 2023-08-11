@@ -50,17 +50,29 @@ class ScanPackage(Pipeline):
             cls.make_summary_from_scan_results,
         )
 
-    scancode_options = [
-        "--copyright",
-        "--email",
-        "--info",
-        "--license",
-        "--license-text",
-        "--package",
-        "--url",
-        "--classify",
-        "--summary",
-    ]
+    # scancode_options = [
+    #     "--copyright",
+    #     "--email",
+    #     "--info",
+    #     "--license",
+    #     "--license-text",
+    #     "--package",
+    #     "--url",
+    #     "--classify",
+    #     "--summary",
+    # ]
+
+    scancode_run_scan_args = {
+        "copyright": True,
+        "email": True,
+        "info": True,
+        "license": True,
+        "license_text": True,
+        "package": True,
+        "url": True,
+        "classify": True,
+        "summary": True,
+    }
 
     def get_package_archive_input(self):
         """Locate the input package archive in the project's input/ directory."""
@@ -94,15 +106,15 @@ class ScanPackage(Pipeline):
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
 
-        scancode_options = self.scancode_options.copy()
+        run_scan_args = self.scancode_run_scan_args.copy()
         if license_score := self.project.get_env("scancode_license_score"):
-            scancode_options.append(f"--license-score {license_score}")
+            run_scan_args["min_license_score"] = license_score
 
         with self.save_errors(scancode.ScancodeError):
             scancode.run_scan(
                 location=str(self.project.codebase_path),
                 output_file=self.scan_output_location,
-                options=scancode_options,
+                run_scan_args=run_scan_args,
                 raise_on_error=True,
             )
 
