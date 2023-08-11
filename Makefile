@@ -77,7 +77,11 @@ doc8:
 
 valid: isort black doc8 check
 
-check: doc8
+bandit:
+	@echo "-> Run source code security analyzer"
+	@${ACTIVATE} bandit -r scanpipe scancodeio --quiet --exclude test_spdx.py
+
+check: doc8 bandit
 	@echo "-> Run flake8 (pycodestyle, pyflakes, mccabe) validation"
 	@${ACTIVATE} flake8 .
 	@echo "-> Run isort imports ordering validation"
@@ -151,4 +155,4 @@ docker-images:
 	@mkdir -p dist/
 	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images
+.PHONY: virtualenv conf dev envfile install check bandit valid isort clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images
