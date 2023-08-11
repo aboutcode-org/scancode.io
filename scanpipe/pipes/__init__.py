@@ -261,20 +261,13 @@ def _stream_process(process, stream_to=logger.info):
     return has_terminated
 
 
-def run_command(cmd, log_output=False):
+def run_command(cmd):
     """
     Return (exitcode, output) of executing the provided `cmd` in a shell.
     `cmd` can be provided as a string or as a list of arguments.
-
-    If `log_output` is True, the stdout and stderr of the process will be captured
-    and streamed to the `logger`.
     """
     if isinstance(cmd, list):
         cmd = " ".join(cmd)
-
-    if not log_output:
-        exitcode, output = subprocess.getstatusoutput(cmd)
-        return exitcode, output
 
     process = subprocess.Popen(
         cmd,
