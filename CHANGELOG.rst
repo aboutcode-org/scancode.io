@@ -4,6 +4,14 @@ Changelog
 v32.5.2 (unreleased)
 --------------------
 
+- Replace the ``scancode.run_scancode`` function by a new ``run_scan`` that interact
+  with scancode-toolkit scanners without using subprocess. This new function is used
+  in the ``scan_package`` pipeline.
+  The ``SCANCODE_TOOLKIT_CLI_OPTIONS`` settings was renamed
+  ``SCANCODE_TOOLKIT_RUN_SCAN_ARGS``. Refer to the documentation for the next "dict"
+  syntax.
+  https://github.com/nexB/scancode.io/issues/798
+
 - Migrate license views to to the main UI. The list and detail views are now implemented
   using class-based views.
   https://github.com/nexB/scancode.io/issues/847

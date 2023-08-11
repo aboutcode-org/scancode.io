@@ -398,25 +398,27 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")
-        exitcode, output = scancode.run_scancode(
+        output = scancode.run_scan(
             location=str(project.codebase_path),
             output_file=str(project.get_output_file_path("scancode", "json")),
-            options=["--info"],
+            run_scan_args={"info": True},
         )
-        self.assertEqual(0, exitcode)
-        self.assertEqual("", output)
+        self.assertIsNone(output)
 
-    @mock.patch("scanpipe.pipes.run_command")
-    def test_scanpipe_pipes_scancode_run_scancode_cli_options(self, mock_run_command):
-        mock_run_command.return_value = 0, ""
+    @mock.patch("scanpipe.pipes.scancode.scancode_run_scan")
+    def test_scanpipe_pipes_scancode_run_scan_args(self, mock_run_scan):
+        mock_run_scan.return_value = True, "{}"
+        output_file = tempfile.mktemp()
 
-        with override_settings(SCANCODE_TOOLKIT_CLI_OPTIONS=["--timeout 60"]):
-            scancode.run_scancode(location=None, output_file=None, options=[])
-            self.assertIn("--timeout 60", mock_run_command.call_args[0][0])
+        with override_settings(SCANCODE_TOOLKIT_RUN_SCAN_ARGS={"timeout": 60}):
+            scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
+            run_scan_kwargs = mock_run_scan.call_args.kwargs
+            self.assertEqual(60, run_scan_kwargs.get("timeout"))
 
         with override_settings(SCANCODEIO_PROCESSES=10):
-            scancode.run_scancode(location=None, output_file=None, options=[])
-            self.assertIn("--processes 10", mock_run_command.call_args[0][0])
+            scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
+            run_scan_kwargs = mock_run_scan.call_args.kwargs
+            self.assertEqual(10, run_scan_kwargs.get("processes"))
 
     def test_scanpipe_pipes_scancode_make_results_summary(self, regen=FIXTURES_REGEN):
         # Ensure the policies index is empty to avoid any side effect on results
