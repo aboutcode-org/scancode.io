@@ -4,7 +4,10 @@ Changelog
 v32.5.2 (unreleased)
 --------------------
 
-- The ``SCANCODE_TOOLKIT_CLI_OPTIONS`` settings was renamed
+- Replace the ``scancode.run_scancode`` function by a new ``run_scan`` that interact
+  with scancode-toolkit scanners without using subprocess. This new function is used
+  in the ``scan_package`` pipeline.
+  The ``SCANCODE_TOOLKIT_CLI_OPTIONS`` settings was renamed
   ``SCANCODE_TOOLKIT_RUN_SCAN_ARGS``. Refer to the documentation for the next "dict"
   syntax.
   https://github.com/nexB/scancode.io/issues/798
