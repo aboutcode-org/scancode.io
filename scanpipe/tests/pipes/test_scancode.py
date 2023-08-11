@@ -408,7 +408,7 @@ class ScanPipeScancodePipesTest(TestCase):
     @mock.patch("scanpipe.pipes.scancode.scancode_run_scan")
     def test_scanpipe_pipes_scancode_run_scan_args(self, mock_run_scan):
         mock_run_scan.return_value = True, "{}"
-        output_file = tempfile.mktemp()
+        output_file = tempfile.mkstemp()[1]
 
         with override_settings(SCANCODE_TOOLKIT_RUN_SCAN_ARGS={"timeout": 60}):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
