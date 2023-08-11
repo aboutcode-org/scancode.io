@@ -39,7 +39,6 @@ from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
 from packagedcode import get_package_handler
 from packagedcode import models as packagedcode_models
-from scancode import ScancodeError
 from scancode import Scanner
 from scancode import api as scancode_api
 from scancode import cli as scancode_cli
@@ -434,7 +433,7 @@ def get_pretty_params(args):
     return {f"--{key.replace('_', '-')}": value for key, value in args.items()}
 
 
-def run_scan(location, output_file, run_scan_args, raise_on_error=False):
+def run_scan(location, output_file, run_scan_args):
     """
     Scan the `location` content and write the results into an `output_file`.
     If `raise_on_error` is enabled, a ScancodeError will be raised if an error occurs
@@ -443,6 +442,9 @@ def run_scan(location, output_file, run_scan_args, raise_on_error=False):
     run_args = settings.SCANCODE_TOOLKIT_RUN_SCAN_ARGS.copy()
     # The run_scan_args should override any values provided in the settings
     run_args.update(run_scan_args)
+
+    if "timeout" in run_args:
+        run_args["timeout"] = int(run_args.get("timeout"))
 
     success, results = scancode_run_scan(
         input=shlex.quote(location),
@@ -457,13 +459,13 @@ def run_scan(location, output_file, run_scan_args, raise_on_error=False):
 
     if success:
         Path(output_file).write_text(json.dumps(results, indent=2))
-    else:
-        errors = []
-        if headers := results.get("headers", []):
-            errors = headers[0].get("errors", [])
-        if raise_on_error:
-            raise ScancodeError(results)
-        return errors
+        return
+
+    errors = {}
+    for file in results.get("files", []):
+        if scan_errors := file.get("scan_errors"):
+            errors[file.get("path")] = scan_errors
+    return errors
 
 
 def get_virtual_codebase(project, input_location):

@@ -403,7 +403,7 @@ class ScanPipeScancodePipesTest(TestCase):
             output_file=str(project.get_output_file_path("scancode", "json")),
             run_scan_args={"info": True},
         )
-        self.assertEqual(None, output)
+        self.assertIsNone(output)
 
     @mock.patch("scanpipe.pipes.scancode.scancode_run_scan")
     def test_scanpipe_pipes_scancode_run_scan_args(self, mock_run_scan):
