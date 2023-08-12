@@ -91,6 +91,10 @@ check: doc8 bandit
 	@echo "-> Run docstring validation"
 	@${ACTIVATE} pydocstyle scanpipe scancodeio
 
+check-deploy:
+	@echo "-> Check Django deployment settings"
+	${MANAGE} check --deploy
+
 clean:
 	@echo "-> Clean the Python env"
 	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ .cache/ pip-selfcheck.json pyvenv.cfg
@@ -155,4 +159,4 @@ docker-images:
 	@mkdir -p dist/
 	@docker save postgres redis scancodeio_worker scancodeio_web nginx | gzip > dist/scancodeio-images-`git describe --tags`.tar.gz
 
-.PHONY: virtualenv conf dev envfile install check bandit valid isort clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images
+.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images

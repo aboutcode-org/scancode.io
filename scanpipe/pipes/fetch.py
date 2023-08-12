@@ -284,6 +284,8 @@ def fetch_urls(urls):
         urls = [url.strip() for url in urls.split()]
 
     for url in urls:
+        if not url:
+            continue
         fetcher = _get_fetcher(url)
         logger.info(f'Fetching "{url}" using {fetcher.__name__}')
         try:

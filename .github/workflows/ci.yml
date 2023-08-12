@@ -48,6 +48,9 @@ jobs:
       - name: Validate code format
         run: make check
 
+      - name: Check Django deployment settings
+        run: make check-deploy
+
       - name: Build the documentation
         run: make docs
 
