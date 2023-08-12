@@ -4,6 +4,15 @@ Changelog
 v32.5.2 (unreleased)
 --------------------
 
+- Add bandit analyzer and Django "check --deploy"  to the check/validation stack.
+  This helps to ensure that we do not introduce know code vulnerabilities and
+  deployment issues to the codebase.
+  https://github.com/nexB/scancode.io/issues/850
+
+- Migrate the run_command function into a safer usage of the subprocess module.
+  Also fix various warnings returned by the bandit analyzer.
+  https://github.com/nexB/scancode.io/issues/850
+
 - Replace the ``scancode.run_scancode`` function by a new ``run_scan`` that interact
   with scancode-toolkit scanners without using subprocess. This new function is used
   in the ``scan_package`` pipeline.
