@@ -334,20 +334,25 @@ class InPackageFilter(django_filters.ChoiceFilter):
         return qs
 
 
+MAP_TYPE_CHOICES = (
+    ("about_file", "about file"),
+    ("java_to_class", "java to class"),
+    ("jar_to_source", "jar to source"),
+    ("js_compiled", "js compiled"),
+    ("js_colocation", "js colocation"),
+    ("js_path", "js path"),
+    ("path", "path"),
+    ("sha1", "sha1"),
+)
+
+
 class RelationMapTypeFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
             ("none", "No map"),
             ("any", "Any map"),
             ("many", "Many map"),
-            ("about_file", "about file"),
-            ("java_to_class", "java to class"),
-            ("jar_to_source", "jar to source"),
-            ("js_compiled", "js compiled"),
-            ("js_colocation", "js colocation"),
-            ("js_path", "js path"),
-            ("path", "path"),
-            ("sha1", "sha1"),
+            *MAP_TYPE_CHOICES,
         )
         super().__init__(*args, **kwargs)
 
@@ -631,4 +636,36 @@ class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "search",
             "model",
             "message",
+        ]
+
+
+class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "status",
+        "map_type",
+    ]
+
+    search = django_filters.CharFilter(
+        label="Search",
+        field_name="to_resource__path",
+        lookup_expr="icontains",
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "from_resource",
+            "to_resource",
+            "map_type",
+        ],
+    )
+    map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
+    # TODO: Choices
+    status = StatusFilter(field_name="from_resource__status")
+
+    class Meta:
+        model = ProjectError
+        fields = [
+            "search",
+            "map_type",
+            "status",
         ]
