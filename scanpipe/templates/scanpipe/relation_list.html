@@ -25,7 +25,8 @@
             <tr>
               {% if forloop.first %}
                 <td class="break-all" rowspan="{{ resource.related_from.all|length }}">
-                  <a href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
+                  {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                  <a href="{% url 'resource_detail' project.slug resource.path %}#viewer">{{ resource.path }}</a>
                 </td>
               {% endif %}
               <td>
@@ -46,13 +47,13 @@
                 {% endif %}
               </td>
               <td class="break-all">
-                <a href="{{ relation.from_resource.get_absolute_url }}#viewer">{{ relation.from_resource.path }}</a>
+                <a href="{% url 'resource_detail' project.slug resource.path %}#viewer">{{ relation.from_resource.path }}</a>
               </td>
             </tr>
           {% empty %}
             <tr>
               <td class="break-all">
-                <a class="has-text-danger" href="{{ resource.get_absolute_url }}#viewer">{{ resource.path }}</a>
+                <a class="has-text-danger" href="{% url 'resource_detail' project.slug resource.path %}#viewer">{{ resource.path }}</a>
               </td>
               <td>
                 <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
