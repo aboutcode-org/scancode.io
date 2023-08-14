@@ -46,6 +46,7 @@ you’ll find information on:
     output-files
     command-line-interface
     rest-api
+    automation
     application-settings
     distros-os-images
 

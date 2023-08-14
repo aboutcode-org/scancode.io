@@ -299,10 +299,10 @@ class PipelinesIntegrationTest(TestCase):
         """
         Return the `data` excluding the provided `exclude_keys`.
         """
-        if type(data) == list:
+        if isinstance(data, list):
             return [self._without_keys(entry, exclude_keys) for entry in data]
 
-        if type(data) == dict:
+        if isinstance(data, dict):
             return {
                 key: self._without_keys(value, exclude_keys)
                 if type(value) in [list, dict]
@@ -318,13 +318,13 @@ class PipelinesIntegrationTest(TestCase):
         Return the `data`, where any `package_uid` value has been normalized
         with `purl_with_fake_uuid()`
         """
-        if type(data) == list:
+        if isinstance(data, list):
             return [self._normalize_package_uids(entry) for entry in data]
 
-        if type(data) == dict:
+        if isinstance(data, dict):
             normalized_data = {}
             for key, value in data.items():
-                if type(value) in [list, dict]:
+                if isinstance(value, (list, dict)):
                     value = self._normalize_package_uids(value)
                 if (
                     key in ("package_uid", "dependency_uid", "for_package_uid")
@@ -654,9 +654,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
-    @mock.patch("scanpipe.pipes.vulnerablecode.get_vulnerabilities_by_purl")
+    @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
     def test_scanpipe_find_vulnerabilities_pipeline_integration_test(
-        self, mock_get_vulnerabilities, mock_is_configured, mock_is_available
+        self, mock_bulk_search_by_purl, mock_is_configured, mock_is_available
     ):
         pipeline_name = "find_vulnerabilities"
         project1 = Project.objects.create(name="Analysis")
@@ -676,7 +676,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_is_available.return_value = True
         vulnerability_data = [
             {
-                "purl": "pkg:deb/debian/adduser@3.118",
+                "purl": "pkg:deb/debian/adduser@3.118?arch=all",
                 "affected_by_vulnerabilities": [
                     {
                         "vulnerability_id": "VCID-cah8-awtr-aaad",
@@ -694,7 +694,7 @@ class PipelinesIntegrationTest(TestCase):
                 ],
             },
         ]
-        mock_get_vulnerabilities.return_value = vulnerability_data
+        mock_bulk_search_by_purl.return_value = vulnerability_data
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)

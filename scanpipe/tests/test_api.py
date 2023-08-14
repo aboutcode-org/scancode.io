@@ -303,6 +303,82 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual([expected], response.data["input_sources"])
         self.assertEqual(["archive.zip"], response.data["input_root"])
 
+        mock_get.side_effect = [
+            mock.Mock(content=b"\x00", headers={}, status_code=200, url="archive.zip"),
+            mock.Mock(
+                content=b"\x00", headers={}, status_code=200, url="second.tar.gz"
+            ),
+        ]
+        data = {
+            "name": "Upload 2 archives",
+            "input_urls": [
+                "https://example.com/archive.zip",
+                "https://example.com/second.tar.gz",
+            ],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        created_project_detail_url = response.data["url"]
+        response = self.csrf_client.get(created_project_detail_url)
+        expected = [
+            {"filename": "archive.zip", "source": "https://example.com/archive.zip"},
+            {
+                "filename": "second.tar.gz",
+                "source": "https://example.com/second.tar.gz",
+            },
+        ]
+        self.assertEqual(expected, response.data["input_sources"])
+        expected = ["archive.zip", "second.tar.gz"]
+        self.assertEqual(expected, sorted(response.data["input_root"]))
+
+    def test_scanpipe_api_project_create_multiple_pipelines(self):
+        data = {
+            "name": "Single string",
+            "pipeline": "docker",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Single list",
+            "pipeline": ["docker"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Multi list",
+            "pipeline": ["docker", "scan_package"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("scan_package", response.data["runs"][1]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Multi string",
+            "pipeline": "docker,scan_package",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
+            "pipeline": [
+                ErrorDetail(
+                    string='"docker,scan_package" is not a valid choice.',
+                    code="invalid_choice",
+                )
+            ]
+        }
+        self.assertEqual(expected, response.data)
+
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))
@@ -752,7 +828,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
         self.assertEqual(44, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(11, len(get_serializer_fields(DiscoveredDependency)))
+        self.assertEqual(12, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
         self.assertEqual(3, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(6, len(get_serializer_fields(ProjectError)))

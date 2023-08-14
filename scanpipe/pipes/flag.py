@@ -45,6 +45,7 @@ IGNORED_DATA_FILE_NO_CLUES = "ignored-data-file-no-clues"
 COMPLIANCE_LICENSES = "compliance-licenses"
 COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
 
+ABOUT_MAPPED = "about-mapped"
 MAPPED = "mapped"
 MATCHED_TO_PURLDB = "matched-to-purldb"
 TOO_MANY_MAPS = "too-many-maps"
