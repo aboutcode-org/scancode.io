@@ -52,7 +52,8 @@
                 <ul>
                   {% for resource in package.resources %}
                     <li>
-                      <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
+                      {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                      <a href="{% url 'resource_detail' project.slug resource.path %}" title="{{ resource.path }}">{{ resource.name }}</a>
                     </li>
                   {% endfor %}
                 </ul>
