@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v32.5.3 (unreleased)
+--------------------
+
+- Improve DiscoveredPackageListView query performances refining the prefetch_related.
+  https://github.com/nexB/scancode.io/issues/856
+
 v32.5.2 (2023-08-14)
 --------------------
 

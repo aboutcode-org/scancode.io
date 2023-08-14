@@ -35,6 +35,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage.filesystem import FileSystemStorage
+from django.db.models import Prefetch
 from django.db.models.manager import Manager
 from django.http import FileResponse
 from django.http import Http404
@@ -1115,7 +1116,13 @@ class DiscoveredPackageListView(
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
-    prefetch_related = ["codebase_resources"]
+    prefetch_related = [
+        Prefetch(
+            "codebase_resources",
+            # Cancel the default ordering for better performances
+            queryset=CodebaseResource.objects.order_by().only("path", "name"),
+        ),
+    ]
     table_columns = [
         {
             "field_name": "package_url",
