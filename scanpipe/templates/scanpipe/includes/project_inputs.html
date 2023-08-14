@@ -32,7 +32,7 @@
         {% if input.is_file %}
           <span class="mr-2">{{ input.size|filesizeformat }}</span>
         {% endif %}
-        <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input.name %}"><i class="fa-solid fa-download"></i></a>
+        <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input.name %}"><span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span></a>
         {% if project.can_change_inputs %}
           <a class="modal-button is-grey-link is-clickable ml-1" data-target="modal-inputs-delete" aria-haspopup="true" data-url="{% url 'project_delete_input' project.slug input.name %}" data-filename="{{ input.name }}" href="#"><i class="fa-regular fa-trash-can"></i></a>
         {% endif %}
