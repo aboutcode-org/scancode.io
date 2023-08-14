@@ -2,5 +2,17 @@
 {% load humanize %}
 
 {% block paginator_count %}
-  {{ paginator.count|intcomma }} to/ resources ({{ relation_count|intcomma }} relations)
+  {{ paginator.count|intcomma }} relations
+  <a href="{% url 'project_resources' project.slug %}?tag=to&relation_map_type=none&status=_EMPTY_" target="_blank" class="button is-small is-info is-outlined">
+    <span>Un-mapped <strong>to/</strong> resources</span>
+    <span class="icon">
+      <i class="fa-solid fa-external-link-alt"></i>
+    </span>
+  </a>
+  <a href="{% url 'project_resources' project.slug %}?tag=from&relation_map_type=none&status=_EMPTY_" target="_blank" class="button is-small is-info is-outlined">
+    <span>Un-mapped <strong>from/</strong> resources</span>
+    <span class="icon">
+      <i class="fa-solid fa-external-link-alt"></i>
+    </span>
+  </a>
 {% endblock %}

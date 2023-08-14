@@ -1263,6 +1263,7 @@ class CodebaseRelationListView(
             .get_queryset()
             .files()
             .to_codebase()
+            .has_relation()
             .prefetch_related("related_from__from_resource__project")
         )
 
