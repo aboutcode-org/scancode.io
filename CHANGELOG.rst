@@ -1,8 +1,20 @@
 Changelog
 =========
 
-v32.5.2 (unreleased)
+v32.5.2 (2023-08-14)
 --------------------
+
+Security release: This release addresses the security issue detailed below.
+We encourage all users of ScanCode.io to upgrade as soon as possible.
+
+- GHSA-6xcx-gx7r-rccj: Reflected Cross-Site Scripting (XSS) in license endpoint
+  The ``license_details_view`` function was subject to cross-site scripting (XSS)
+  attack due to inadequate validation and sanitization of the key parameter.
+  The license views were migrated class-based views are the inputs are now properly
+  sanitized.
+  Credit to @0xmpij for reporting the vulnerability.
+  https://github.com/nexB/scancode.io/security/advisories/GHSA-6xcx-gx7r-rccj
+  https://github.com/nexB/scancode.io/issues/847
 
 - Add bandit analyzer and Django "check --deploy"  to the check/validation stack.
   This helps to ensure that we do not introduce know code vulnerabilities and
@@ -21,10 +33,6 @@ v32.5.2 (unreleased)
   syntax.
   https://github.com/nexB/scancode.io/issues/798
 
-- Migrate license views to to the main UI. The list and detail views are now implemented
-  using class-based views.
-  https://github.com/nexB/scancode.io/issues/847
-
 v32.5.1 (2023-08-07)
 --------------------
 
@@ -34,6 +42,7 @@ We encourage all users of ScanCode.io to upgrade as soon as possible.
 - GHSA-2ggp-cmvm-f62f: Command injection in docker image fetch process
   The ``fetch_docker_image`` function was subject to potential injection attack.
   The user inputs are now sanitized before calling the subprocess function.
+  Credit to @0xmpij for reporting the vulnerability.
   https://github.com/nexB/scancode.io/security/advisories/GHSA-2ggp-cmvm-f62f
 
 ---
