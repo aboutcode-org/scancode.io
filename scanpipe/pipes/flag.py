@@ -47,6 +47,7 @@ COMPLIANCE_SOURCEMIRROR = "compliance-sourcemirror"
 
 ABOUT_MAPPED = "about-mapped"
 MAPPED = "mapped"
+ARCHIVE_PROCESSED = "archive-processed"
 MATCHED_TO_PURLDB = "matched-to-purldb"
 TOO_MANY_MAPS = "too-many-maps"
 NO_JAVA_SOURCE = "no-java-source"
