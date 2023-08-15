@@ -111,7 +111,6 @@ def populate_purldb_with_discovered_packages(project, logger=None):
 
 def populate_purldb_with_discovered_dependencies(project, logger=None):
     """Add DiscoveredDependency to PurlDB."""
-
     packages = [{"purl": purl} for purl in get_unique_reolved_purls(project)]
 
     unresolved_packages = get_unresolved_pacakages(project)
