@@ -32,6 +32,7 @@ import django_filters
 from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -372,6 +373,19 @@ class StatusFilter(django_filters.ChoiceFilter):
             return qs.status()
         return super().filter(qs, value)
 
+    @staticmethod
+    def get_status_choices(qs, include_any=False):
+        """Return the list of unique status for resources in ``project``."""
+        default_choices = [(EMPTY_VAR, "No status")]
+        if include_any:
+            default_choices.append(("any", "Any status"))
+
+        status_values = (
+            qs.order_by("status").values_list("status", flat=True).distinct()
+        )
+        value_choices = [(status, status) for status in status_values if status]
+        return default_choices + value_choices
+
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
@@ -457,21 +471,16 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if status_filter := self.filters.get("status"):
-            status_filter.extra.update({"choices": self.get_status_choices()})
+            status_filter.extra.update(
+                {
+                    "choices": status_filter.get_status_choices(
+                        self.queryset, include_any=True
+                    )
+                }
+            )
 
         license_expression_filer = self.filters["detected_license_expression"]
         license_expression_filer.extra["widget"] = HasValueDropdownWidget()
-
-    def get_status_choices(self):
-        default_choices = [
-            (EMPTY_VAR, "No status"),
-            ("any", "Any status"),
-        ]
-        status_values = (
-            self.queryset.order_by("status").values_list("status", flat=True).distinct()
-        )
-        value_choices = [(status, status) for status in status_values if status]
-        return default_choices + value_choices
 
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
@@ -659,13 +668,22 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
     )
     map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
-    # TODO: Choices
-    status = StatusFilter(field_name="from_resource__status")
+    status = StatusFilter(field_name="to_resource__status")
 
     class Meta:
-        model = ProjectError
+        model = CodebaseRelation
         fields = [
             "search",
             "map_type",
             "status",
         ]
+
+    def __init__(self, *args, **kwargs):
+        project = kwargs.pop("project")
+        super().__init__(*args, **kwargs)
+        if project:
+            status_filter = self.filters.get("status")
+            qs = CodebaseResource.objects.filter(project=project)
+            status_filter.extra.update(
+                {"choices": status_filter.get_status_choices(qs)}
+            )

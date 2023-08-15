@@ -85,6 +85,10 @@ from scanpipe.pipes import output
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+# Cancel the default ordering for better performances
+unordered_resources = CodebaseResource.objects.order_by()
+
+
 LICENSE_CLARITY_FIELDS = [
     (
         "Declared license",
@@ -1121,8 +1125,7 @@ class DiscoveredPackageListView(
     prefetch_related = [
         Prefetch(
             "codebase_resources",
-            # Cancel the default ordering for better performances
-            queryset=CodebaseResource.objects.order_by().only("path", "name"),
+            queryset=unordered_resources.only("path", "name"),
         ),
     ]
     table_columns = [
@@ -1202,6 +1205,9 @@ class DiscoveredDependencyListView(
         },
     ]
 
+    def get_queryset(self):
+        return super().get_queryset().order_by("dependency_uid")
+
 
 class ProjectErrorListView(
     ConditionalLoginRequired,
@@ -1228,10 +1234,10 @@ RelationRow = namedtuple(
 )
 
 
-# TODO: Prefetch related and QS optimization
 class CodebaseRelationListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    PrefetchRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
@@ -1239,6 +1245,13 @@ class CodebaseRelationListView(
     model = CodebaseRelation
     filterset_class = RelationFilterSet
     template_name = "scanpipe/relation_list.html"
+    prefetch_related = [
+        Prefetch(
+            "to_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+        Prefetch("from_resource", queryset=unordered_resources.only("path", "is_text")),
+    ]
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
     table_columns = [
         "to_resource",
@@ -1252,6 +1265,12 @@ class CodebaseRelationListView(
         },
         "from_resource",
     ]
+
+    def get_filterset_kwargs(self, filterset_class):
+        """Add the project in the filterset kwargs for computing status choices."""
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        kwargs.update({"project": self.project})
+        return kwargs
 
     @staticmethod
     def get_rows(qs):
