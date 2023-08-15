@@ -927,8 +927,8 @@ class PipelinesIntegrationTest(TestCase):
 
         def mock_request_post_return(url, data, timeout):
             return {
-                "queued_packages_count": len(data["package_urls"]),
-                "queued_packages": data["package_urls"],
+                "queued_packages_count": len(data["packages"]),
+                "queued_packages": data["packages"],
                 "unqueued_packages_count": 1,
                 "unqueued_packages": [],
                 "unsupported_packages_count": 1,
