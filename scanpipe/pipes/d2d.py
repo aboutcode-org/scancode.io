@@ -960,3 +960,32 @@ def _map_javascript_colocation_resource(
         from_neighboring_resources,
         map_type="js_colocation",
     )
+
+
+def flag_processed_archives(project):
+    """
+    Resources without an assigned status which are package archives, and all
+    resources inside the archive has a status, should also be considered as
+    processed.
+    """
+    to_resources = project.codebaseresources.files().to_codebase()
+    to_resources_archives = to_resources.no_status().filter(is_archive=True)
+
+    for to_archive in to_resources_archives:
+        archive_extract_path = to_archive.path + "-extract"
+        archive_extract_resource = to_resources.filter(path=archive_extract_path)
+
+        # There are archives which are not extracted by default, so
+        # we check if the extracted archive exists
+        if not archive_extract_resource.exists():
+            continue
+
+        archive_resources_unmapped = to_resources.no_status().filter(
+            path__startswith=archive_extract_path
+        )
+        # If there are resources in the archives which are unmapped,
+        # they are not considered as processed
+        if archive_resources_unmapped.exists():
+            continue
+
+        to_archive.update(status=flag.ARCHIVE_PROCESSED)

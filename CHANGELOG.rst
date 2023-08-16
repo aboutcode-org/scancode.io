@@ -17,6 +17,10 @@ v32.5.3 (unreleased)
 - Enhance Package search to handle full ``pkg:`` purls and segment of purls.
   https://github.com/nexB/scancode.io/issues/859
 
+- Add a new step in the ``deploy_to_develop`` pipeline where we tag archives as
+  processed, if all the resources in their extracted directory is mapped/processed.
+  https://github.com/nexB/scancode.io/issues/827
+
 v32.5.2 (2023-08-14)
 --------------------
 
