@@ -14,6 +14,9 @@ v32.5.3 (unreleased)
 - Fix the ``map_java_to_class`` d2d pipe to skip if no ``.java`` file is found.
   https://github.com/nexB/scancode.io/issues/853
 
+- Enhance Package search to handle full ``pkg:`` purls and segment of purls.
+  https://github.com/nexB/scancode.io/issues/859
+
 v32.5.2 (2023-08-14)
 --------------------
 
