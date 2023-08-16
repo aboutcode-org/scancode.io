@@ -212,6 +212,32 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("sha1", relation.map_type)
         self.assertEqual(from_2, relation.from_resource)
 
+    def test_scanpipe_pipes_d2d_flag_processed_archives(self):
+        to_archive = make_resource_file(
+            self.project1,
+            path="to/archive.lpkg",
+            is_archive=True
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract",
+            status=flag.IGNORED_DIRECTORY
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file1.txt",
+            status=flag.MATCHED_TO_PURLDB
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file2.txt",
+            status=flag.MATCHED_TO_PURLDB
+        )
+
+        d2d.flag_processed_archives(self.project1)
+        to_archive.refresh_from_db()
+        self.assertEqual(to_archive.status, flag.ARCHIVE_PROCESSED)
+
     def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(
             self.project1,
