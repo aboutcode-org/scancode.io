@@ -11,6 +11,9 @@ v32.5.3 (unreleased)
 - Improve DiscoveredPackageListView query performances refining the prefetch_related.
   https://github.com/nexB/scancode.io/issues/856
 
+- Fix the ``map_java_to_class`` d2d pipe to skip if no ``.java`` file is found.
+  https://github.com/nexB/scancode.io/issues/853
+
 v32.5.2 (2023-08-14)
 --------------------
 
