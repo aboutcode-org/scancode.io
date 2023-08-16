@@ -4,7 +4,7 @@
   </p>
   {% for input in inputs_with_source %}
     <div class="panel-block is-justify-content-space-between is-up">
-      <div class="break-all pr-1 is-cursor-help dropdown is-hoverable">
+      <div class="break-all pr-2 is-cursor-help dropdown is-hoverable">
         <div class="panel-icon pt-1">
           <div class="dropdown-trigger">
             <i class="is-size-6 {% if input.is_file %}fa-regular fa-file{% else %}fa-solid fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.name|slugify }}"></i>
@@ -28,9 +28,9 @@
         </div>
         {{ input.name }}
       </div>
-      <div class="is-size-7">
+      <div class="is-flex is-size-7">
         {% if input.is_file %}
-          <span class="mr-2">{{ input.size|filesizeformat }}</span>
+          <span class="mr-1">{{ input.size|filesizeformat }}</span>
         {% endif %}
         <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input.name %}"><span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span></a>
         {% if project.can_change_inputs %}
