@@ -4,6 +4,10 @@ Changelog
 v32.5.3 (unreleased)
 --------------------
 
+- Improve the performance of the codebase relations list view to support large number
+  of entries.
+  https://github.com/nexB/scancode.io/issues/858
+
 - Improve DiscoveredPackageListView query performances refining the prefetch_related.
   https://github.com/nexB/scancode.io/issues/856
 
