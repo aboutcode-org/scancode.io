@@ -968,9 +968,9 @@ def flag_processed_archives(project):
         archive_extract_path = to_archive.path + "-extract"
         archive_extract_resource = to_resources.filter(path=archive_extract_path)
 
-        # TODO:There are archives which are not extracted by default, these need to
-        # be accounted for. See https://github.com/nexB/scancode.io/issues/827
-        if not archive_extract_resource:
+        # There are archives which are not extracted by default, so
+        # we check if the extracted archive exists
+        if not archive_extract_resource.exists():
             continue
 
         archive_resources_unmapped = to_resources.no_status().filter(
@@ -978,7 +978,7 @@ def flag_processed_archives(project):
         )
         # If there are resources in the archives which are unmapped,
         # they are not considered as processed
-        if archive_resources_unmapped:
+        if archive_resources_unmapped.exists():
             continue
 
         to_archive.update(status=flag.ARCHIVE_PROCESSED)
