@@ -327,7 +327,9 @@ def scan_for_files(project, resource_qs=None):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = resource_qs or project.codebaseresources.no_status()
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.no_status()
 
     scan_func_kwargs = {}
     if license_score := project.get_env("scancode_license_score"):
