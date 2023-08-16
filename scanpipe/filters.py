@@ -507,15 +507,29 @@ class IsVulnerable(django_filters.ChoiceFilter):
         return qs
 
 
+class DiscoveredPackageSearchFilter(django_filters.CharFilter):
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        if value.startswith("pkg:"):
+            return qs.for_package_url(value)
+
+        search_fields = ["type", "namespace", "name", "version"]
+        lookups = Q()
+        for field_names in search_fields:
+            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
+
+        return qs.filter(lookups)
+
+
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "is_vulnerable",
         "compliance_alert",
     ]
 
-    search = django_filters.CharFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
-    )
+    search = DiscoveredPackageSearchFilter(label="Search", lookup_expr="icontains")
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
