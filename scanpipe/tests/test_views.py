@@ -30,6 +30,7 @@ from django.core.exceptions import SuspiciousFileOperation
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
+from django.urls.exceptions import NoReverseMatch
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
@@ -715,7 +716,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(3, self.project1.relation_count)
 
         response = self.client.get(url)
-        self.assertContains(response, "2 to/ resources (3 relations)")
+        self.assertContains(response, "3 relations")
 
     def test_scanpipe_views_codebase_relation_diff_view(self):
         url = reverse("resource_diff", args=[self.project1.slug])
@@ -796,3 +797,28 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
+
+    def test_scanpipe_views_license_list_view(self):
+        url = reverse("license_list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        expected = '<a href="/license/apache-2.0/">apache-2.0</a>'
+        self.assertContains(response, expected)
+
+    def test_scanpipe_views_license_details_view(self):
+        license_url = reverse("license_detail", args=["apache-2.0"])
+        response = self.client.get(license_url)
+        self.assertEqual(response.status_code, 200)
+
+        dummy_license_url = reverse("license_detail", args=["abcdefg"])
+        response = self.client.get(dummy_license_url)
+        self.assertEqual(response.status_code, 404)
+
+        xss = "%3Cscript%3Ealert(document.cookie);%3C/script%3E/"
+        with self.assertRaises(NoReverseMatch):
+            reverse("license_detail", args=[xss])
+
+        xss = "%3Cscript%3Ealert(document.cookie);%3C"
+        xss_url = reverse("license_detail", args=[xss])
+        response = self.client.get(xss_url)
+        self.assertEqual(response.status_code, 404)

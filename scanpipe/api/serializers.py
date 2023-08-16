@@ -69,7 +69,9 @@ class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
     """Forcing outputs as list() in place of set() to keep the ordering integrity."""
 
     def to_internal_value(self, data):
-        if isinstance(data, str) or not hasattr(data, "__iter__"):
+        if isinstance(data, str):
+            data = [data]
+        if not hasattr(data, "__iter__"):
             self.fail("not_a_list", input_type=type(data).__name__)
         if not self.allow_empty and len(data) == 0:
             self.fail("empty")
@@ -81,6 +83,15 @@ class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
 
     def to_representation(self, value):
         return [self.choice_strings_to_values.get(str(item), item) for item in value]
+
+
+class StrListField(serializers.ListField):
+    """ListField that allows also a str as value."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            data = [data]
+        return super().to_internal_value(data)
 
 
 class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
@@ -122,7 +133,7 @@ class ProjectSerializer(
         help_text="Execute pipeline now",
     )
     upload_file = serializers.FileField(write_only=True, required=False)
-    input_urls = serializers.ListField(
+    input_urls = StrListField(
         write_only=True,
         required=False,
         style={"base_template": "textarea.html"},
@@ -374,9 +385,11 @@ class CodebaseRelationSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodebaseRelation
         fields = [
-            "from_resource",
             "to_resource",
+            "status",
             "map_type",
+            "score",
+            "from_resource",
         ]
 
 

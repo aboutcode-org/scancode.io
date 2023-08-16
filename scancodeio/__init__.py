@@ -21,12 +21,14 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import os
-import subprocess
 import sys
 import warnings
+from contextlib import suppress
 from pathlib import Path
 
-VERSION = "32.5.1"
+import git
+
+VERSION = "32.5.2"
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
@@ -36,7 +38,7 @@ SCAN_NOTICE = PROJECT_DIR.joinpath("scan.NOTICE").read_text()
 def get_version(version):
     """Return the version including the git describe tag when available."""
     # The codebase is a git clone
-    if git_describe := get_git_describe_from_command():
+    if git_describe := get_git_describe_from_local_checkout():
         return git_describe
 
     # The codebase is an extracted git archive
@@ -46,18 +48,13 @@ def get_version(version):
     return version
 
 
-def get_git_describe_from_command():
+def get_git_describe_from_local_checkout():
     """
-    Return the git describe tag from executing the ``git describe --tags`` command.
+    Return the git describe tag from the local checkout.
     This will only provide a result when the codebase is a git clone.
     """
-    git_describe = subprocess.run(
-        "git describe --tags",
-        capture_output=True,
-        shell=True,
-        text=True,
-    )
-    return git_describe.stdout.strip()
+    with suppress(git.GitError):
+        return git.Repo(".").git.describe(tags=True, always=True)
 
 
 def get_git_describe_from_version_file(version_file_location=ROOT_DIR / ".VERSION"):

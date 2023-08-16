@@ -337,7 +337,9 @@ class AbstractTaskFieldsModel(models.Model):
         Set the task as "queued" by updating the ``task_id`` from ``None`` to this
         instance ``pk``.
         """
-        assert not self.task_id, "task_id is already set"
+        if self.task_id:
+            raise ValueError("task_id is already set")
+
         self.task_id = self.pk
         self.save(update_fields=["task_id"])
 
@@ -406,7 +408,7 @@ class ExtraDataFieldMixin(models.Model):
 
     def update_extra_data(self, data):
         """Update the `extra_data` field with the provided `data` dict."""
-        if type(data) != dict:
+        if not isinstance(data, dict):
             raise ValueError("Argument `data` value must be a dict()")
 
         self.extra_data.update(data)
@@ -2248,6 +2250,17 @@ class CodebaseRelation(
 
     def __str__(self):
         return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
+
+    @property
+    def status(self):
+        return self.to_resource.status
+
+    @property
+    def score(self):
+        score = self.extra_data.get("path_score", "")
+        if diff_ratio := self.extra_data.get("diff_ratio", ""):
+            score += f" diff_ratio: {diff_ratio}"
+        return score
 
 
 class VulnerabilityMixin(models.Model):

@@ -213,6 +213,28 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("sha1", relation.map_type)
         self.assertEqual(from_2, relation.from_resource)
 
+    def test_scanpipe_pipes_d2d_flag_processed_archives(self):
+        to_archive = make_resource_file(
+            self.project1, path="to/archive.lpkg", is_archive=True
+        )
+        make_resource_file(
+            self.project1, path="to/archive.lpkg-extract", status=flag.IGNORED_DIRECTORY
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file1.txt",
+            status=flag.MATCHED_TO_PURLDB,
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file2.txt",
+            status=flag.MATCHED_TO_PURLDB,
+        )
+
+        d2d.flag_processed_archives(self.project1)
+        to_archive.refresh_from_db()
+        self.assertEqual(to_archive.status, flag.ARCHIVE_PROCESSED)
+
     def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(
             self.project1,
@@ -265,6 +287,13 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertIn(to3, no_relations)
         to3.refresh_from_db()
         self.assertEqual("no-java-source", to3.status)
+
+    def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
+        make_resource_file(self.project1, path="to/Abstract.class")
+        buffer = io.StringIO()
+        d2d.map_java_to_class(self.project1, logger=buffer.write)
+        expected = "Mapping 1 .class resources to .java" "No .java resources to map."
+        self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
         from1 = make_resource_file(

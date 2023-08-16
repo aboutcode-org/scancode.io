@@ -34,7 +34,7 @@ from django.test import TestCase
 
 import xlsxwriter
 from licensedcode.cache import get_licensing
-from lxml import etree
+from lxml import etree  # nosec
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scanpipe import pipes
@@ -669,7 +669,10 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     # </sst>
 
     shared_strings = extract_dir / "xl" / "sharedStrings.xml"
-    sstet = etree.parse(str(shared_strings))
+    # Using lxml.etree.parse to parse untrusted XML data is known to be vulnerable
+    # to XML attacks. This is not an issue here as we are parsing a properly crafted
+    # test file, not a maliciously crafted one.
+    sstet = etree.parse(str(shared_strings))  # nosec
     # in our special case the text we care is the last element of the XML
 
     return [t.text for t in sstet.getroot().iter()]

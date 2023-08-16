@@ -163,6 +163,25 @@ class ScanPipeFilterTest(TestCase):
         filterset = PackageFilterSet(data={"is_vulnerable": "yes"})
         self.assertEqual([p2], list(filterset.qs))
 
+    def test_scanpipe_filters_package_filterset_search(self):
+        p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        DiscoveredPackage.create_from_data(self.project1, package_data2)
+
+        filterset = PackageFilterSet(data={})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.package_url})
+        self.assertEqual([p1], list(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.version})
+        self.assertEqual([p1], list(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.name})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.type})
+        self.assertEqual(2, len(filterset.qs))
+
     def test_scanpipe_filters_dependency_filterset(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         CodebaseResource.objects.create(

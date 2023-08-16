@@ -25,7 +25,6 @@ import io
 import json
 import operator
 from collections import Counter
-from collections import namedtuple
 from contextlib import suppress
 from pathlib import Path
 
@@ -35,6 +34,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage.filesystem import FileSystemStorage
+from django.db.models import Prefetch
 from django.db.models.manager import Manager
 from django.http import FileResponse
 from django.http import Http404
@@ -63,12 +63,14 @@ from scanpipe.filters import DependencyFilterSet
 from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
+from scanpipe.filters import RelationFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -80,6 +82,10 @@ from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
 scanpipe_app = apps.get_app_config("scanpipe")
+
+
+# Cancel the default ordering for better performances
+unordered_resources = CodebaseResource.objects.order_by()
 
 
 LICENSE_CLARITY_FIELDS = [
@@ -1115,7 +1121,12 @@ class DiscoveredPackageListView(
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
-    prefetch_related = ["codebase_resources"]
+    prefetch_related = [
+        Prefetch(
+            "codebase_resources",
+            queryset=unordered_resources.only("path", "name"),
+        ),
+    ]
     table_columns = [
         {
             "field_name": "package_url",
@@ -1193,6 +1204,9 @@ class DiscoveredDependencyListView(
         },
     ]
 
+    def get_queryset(self):
+        return super().get_queryset().order_by("dependency_uid")
+
 
 class ProjectErrorListView(
     ConditionalLoginRequired,
@@ -1213,91 +1227,46 @@ class ProjectErrorListView(
     ]
 
 
-RelationRow = namedtuple(
-    "RelationRow",
-    field_names=["to_resource", "status", "map_type", "score", "from_resource"],
-)
-
-
 class CodebaseRelationListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    PrefetchRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
 ):
-    model = CodebaseResource
-    filterset_class = ResourceFilterSet
+    model = CodebaseRelation
+    filterset_class = RelationFilterSet
     template_name = "scanpipe/relation_list.html"
+    prefetch_related = [
+        Prefetch(
+            "to_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+        Prefetch(
+            "from_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+    ]
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
     table_columns = [
-        {
-            "field_name": "path",
-            "label": "To resource",
-        },
+        "to_resource",
         {
             "field_name": "status",
             "filter_fieldname": "status",
         },
         {
-            "field_name": "related_from__map_type",
-            "label": "Map type",
-            "filter_fieldname": "relation_map_type",
+            "field_name": "map_type",
+            "filter_fieldname": "map_type",
         },
-        {
-            "field_name": "related_from__from_resource__path",
-            "label": "From resource",
-        },
+        "from_resource",
     ]
 
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .files()
-            .to_codebase()
-            .prefetch_related("related_from__from_resource__project")
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["relation_count"] = context["filter"].qs.has_relation().count()
-        return context
-
-    @staticmethod
-    def get_rows(qs):
-        for resource in qs:
-            relations = resource.related_from.all()
-            if not relations:
-                yield RelationRow(resource.path, resource.status, "", "", "")
-            else:
-                for relation in resource.related_from.all():
-                    score = relation.extra_data.get("path_score", "")
-                    if diff_ratio := relation.extra_data.get("diff_ratio", ""):
-                        score += f" diff_ratio: {diff_ratio}"
-                    yield RelationRow(
-                        resource.path,
-                        resource.status,
-                        relation.map_type,
-                        score,
-                        relation.from_resource.path,
-                    )
-
-    def export_xlsx_file_response(self):
-        filtered_qs = self.filterset.qs
-        output_file = io.BytesIO()
-
-        with xlsxwriter.Workbook(output_file) as workbook:
-            output._add_xlsx_worksheet(
-                workbook=workbook,
-                worksheet_name="RELATIONS",
-                rows=self.get_rows(qs=filtered_qs),
-                fields=RelationRow._fields,
-            )
-
-        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
-        output_file.seek(0)
-        return FileResponse(output_file, as_attachment=True, filename=filename)
+    def get_filterset_kwargs(self, filterset_class):
+        """Add the project in the filterset kwargs for computing status choices."""
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        kwargs.update({"project": self.project})
+        return kwargs
 
 
 class CodebaseResourceDetailsView(
@@ -1695,3 +1664,103 @@ class CodebaseResourceRawView(
             )
 
         raise Http404
+
+
+class LicenseListView(
+    ConditionalLoginRequired,
+    TableColumnsMixin,
+    generic.ListView,
+):
+    template_name = "scanpipe/license_list.html"
+    table_columns = [
+        "key",
+        "short_name",
+        {
+            "field_name": "spdx_license_key",
+            "label": "SPDX license key",
+        },
+        "category",
+    ]
+
+    def get_queryset(self):
+        return list(scanpipe_app.scancode_licenses.values())
+
+
+class LicenseDetailsView(
+    ConditionalLoginRequired,
+    TabSetMixin,
+    generic.DetailView,
+):
+    model_label = "licenses"
+    slug_url_kwarg = "key"
+    template_name = "scanpipe/license_detail.html"
+    tabset = {
+        "essentials": {
+            "fields": [
+                "key",
+                "name",
+                "short_name",
+                "category",
+                "owner",
+                {
+                    "field_name": "spdx_license_key",
+                    "label": "SPDX license key",
+                },
+                {
+                    "field_name": "other_spdx_license_keys",
+                    "label": "Other SPDX license keys",
+                },
+                "standard_notice",
+                "notes",
+                "language",
+            ],
+            "icon_class": "fa-solid fa-circle-info",
+        },
+        "license_text": {
+            "fields": [
+                {
+                    "field_name": "text",
+                    "template": "scanpipe/tabset/field_raw.html",
+                },
+            ],
+            "verbose_name": "License text",
+            "icon_class": "fa-solid fa-file-lines",
+        },
+        "urls": {
+            "fields": [
+                "homepage_url",
+                {
+                    "field_name": "licensedb_url",
+                    "label": "LicenseDB URL",
+                },
+                {
+                    "field_name": "spdx_url",
+                    "label": "SPDX URL",
+                },
+                {
+                    "field_name": "scancode_url",
+                    "label": "ScanCode URL",
+                },
+                "text_urls",
+                {
+                    "field_name": "osi_url",
+                    "label": "OSI URL",
+                },
+                {
+                    "field_name": "faq_url",
+                    "label": "FAQ URL",
+                },
+                "other_urls",
+            ],
+            "verbose_name": "URLs",
+            "icon_class": "fa-solid fa-link",
+        },
+    }
+
+    def get_object(self, queryset=None):
+        key = self.kwargs.get(self.slug_url_kwarg)
+        licenses = scanpipe_app.scancode_licenses
+        try:
+            return licenses[key]
+        except KeyError:
+            raise Http404(f"License {key} not found.")

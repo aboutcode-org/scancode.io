@@ -58,7 +58,7 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript_path,
             cls.map_javascript_colocation,
             cls.map_path,
-            cls.flag_mapped_resources_and_ignored_directories,
+            cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.scan_mapped_from_for_files,
         )
 
@@ -182,10 +182,11 @@ class DeployToDevelop(Pipeline):
         """Map using path similarities."""
         d2d.map_path(project=self.project, logger=self.log)
 
-    def flag_mapped_resources_and_ignored_directories(self):
+    def flag_mapped_resources_archives_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
+        d2d.flag_processed_archives(self.project)
 
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""

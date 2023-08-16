@@ -1,6 +1,58 @@
 Changelog
 =========
 
+v32.5.3 (unreleased)
+--------------------
+
+- Improve the performance of the codebase relations list view to support large number
+  of entries.
+  https://github.com/nexB/scancode.io/issues/858
+
+- Improve DiscoveredPackageListView query performances refining the prefetch_related.
+  https://github.com/nexB/scancode.io/issues/856
+
+- Fix the ``map_java_to_class`` d2d pipe to skip if no ``.java`` file is found.
+  https://github.com/nexB/scancode.io/issues/853
+
+- Enhance Package search to handle full ``pkg:`` purls and segment of purls.
+  https://github.com/nexB/scancode.io/issues/859
+
+- Add a new step in the ``deploy_to_develop`` pipeline where we tag archives as
+  processed, if all the resources in their extracted directory is mapped/processed.
+  https://github.com/nexB/scancode.io/issues/827
+
+v32.5.2 (2023-08-14)
+--------------------
+
+Security release: This release addresses the security issue detailed below.
+We encourage all users of ScanCode.io to upgrade as soon as possible.
+
+- GHSA-6xcx-gx7r-rccj: Reflected Cross-Site Scripting (XSS) in license endpoint
+  The ``license_details_view`` function was subject to cross-site scripting (XSS)
+  attack due to inadequate validation and sanitization of the key parameter.
+  The license views were migrated class-based views are the inputs are now properly
+  sanitized.
+  Credit to @0xmpij for reporting the vulnerability.
+  https://github.com/nexB/scancode.io/security/advisories/GHSA-6xcx-gx7r-rccj
+  https://github.com/nexB/scancode.io/issues/847
+
+- Add bandit analyzer and Django "check --deploy"  to the check/validation stack.
+  This helps to ensure that we do not introduce know code vulnerabilities and
+  deployment issues to the codebase.
+  https://github.com/nexB/scancode.io/issues/850
+
+- Migrate the run_command function into a safer usage of the subprocess module.
+  Also fix various warnings returned by the bandit analyzer.
+  https://github.com/nexB/scancode.io/issues/850
+
+- Replace the ``scancode.run_scancode`` function by a new ``run_scan`` that interact
+  with scancode-toolkit scanners without using subprocess. This new function is used
+  in the ``scan_package`` pipeline.
+  The ``SCANCODE_TOOLKIT_CLI_OPTIONS`` settings was renamed
+  ``SCANCODE_TOOLKIT_RUN_SCAN_ARGS``. Refer to the documentation for the next "dict"
+  syntax.
+  https://github.com/nexB/scancode.io/issues/798
+
 v32.5.1 (2023-08-07)
 --------------------
 
@@ -10,6 +62,7 @@ We encourage all users of ScanCode.io to upgrade as soon as possible.
 - GHSA-2ggp-cmvm-f62f: Command injection in docker image fetch process
   The ``fetch_docker_image`` function was subject to potential injection attack.
   The user inputs are now sanitized before calling the subprocess function.
+  Credit to @0xmpij for reporting the vulnerability.
   https://github.com/nexB/scancode.io/security/advisories/GHSA-2ggp-cmvm-f62f
 
 ---

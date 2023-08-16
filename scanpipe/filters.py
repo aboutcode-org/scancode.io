@@ -32,6 +32,7 @@ import django_filters
 from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -334,20 +335,25 @@ class InPackageFilter(django_filters.ChoiceFilter):
         return qs
 
 
+MAP_TYPE_CHOICES = (
+    ("about_file", "about file"),
+    ("java_to_class", "java to class"),
+    ("jar_to_source", "jar to source"),
+    ("js_compiled", "js compiled"),
+    ("js_colocation", "js colocation"),
+    ("js_path", "js path"),
+    ("path", "path"),
+    ("sha1", "sha1"),
+)
+
+
 class RelationMapTypeFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
             ("none", "No map"),
             ("any", "Any map"),
             ("many", "Many map"),
-            ("about_file", "about file"),
-            ("java_to_class", "java to class"),
-            ("jar_to_source", "jar to source"),
-            ("js_compiled", "js compiled"),
-            ("js_colocation", "js colocation"),
-            ("js_path", "js path"),
-            ("path", "path"),
-            ("sha1", "sha1"),
+            *MAP_TYPE_CHOICES,
         )
         super().__init__(*args, **kwargs)
 
@@ -366,6 +372,19 @@ class StatusFilter(django_filters.ChoiceFilter):
         if value == "any":
             return qs.status()
         return super().filter(qs, value)
+
+    @staticmethod
+    def get_status_choices(qs, include_any=False):
+        """Return the list of unique status for resources in ``project``."""
+        default_choices = [(EMPTY_VAR, "No status")]
+        if include_any:
+            default_choices.append(("any", "Any status"))
+
+        status_values = (
+            qs.order_by("status").values_list("status", flat=True).distinct()
+        )
+        value_choices = [(status, status) for status in status_values if status]
+        return default_choices + value_choices
 
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
@@ -452,21 +471,16 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if status_filter := self.filters.get("status"):
-            status_filter.extra.update({"choices": self.get_status_choices()})
+            status_filter.extra.update(
+                {
+                    "choices": status_filter.get_status_choices(
+                        self.queryset, include_any=True
+                    )
+                }
+            )
 
         license_expression_filer = self.filters["detected_license_expression"]
         license_expression_filer.extra["widget"] = HasValueDropdownWidget()
-
-    def get_status_choices(self):
-        default_choices = [
-            (EMPTY_VAR, "No status"),
-            ("any", "Any status"),
-        ]
-        status_values = (
-            self.queryset.order_by("status").values_list("status", flat=True).distinct()
-        )
-        value_choices = [(status, status) for status in status_values if status]
-        return default_choices + value_choices
 
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
@@ -493,15 +507,29 @@ class IsVulnerable(django_filters.ChoiceFilter):
         return qs
 
 
+class DiscoveredPackageSearchFilter(django_filters.CharFilter):
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        if value.startswith("pkg:"):
+            return qs.for_package_url(value)
+
+        search_fields = ["type", "namespace", "name", "version"]
+        lookups = Q()
+        for field_names in search_fields:
+            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
+
+        return qs.filter(lookups)
+
+
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "is_vulnerable",
         "compliance_alert",
     ]
 
-    search = django_filters.CharFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
-    )
+    search = DiscoveredPackageSearchFilter(label="Search", lookup_expr="icontains")
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
@@ -632,3 +660,44 @@ class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "model",
             "message",
         ]
+
+
+class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "status",
+        "map_type",
+    ]
+
+    search = django_filters.CharFilter(
+        label="Search",
+        field_name="to_resource__path",
+        lookup_expr="icontains",
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "from_resource",
+            "to_resource",
+            "map_type",
+        ],
+    )
+    map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
+    status = StatusFilter(field_name="to_resource__status")
+
+    class Meta:
+        model = CodebaseRelation
+        fields = [
+            "search",
+            "map_type",
+            "status",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        project = kwargs.pop("project")
+        super().__init__(*args, **kwargs)
+        if project:
+            status_filter = self.filters.get("status")
+            qs = CodebaseResource.objects.filter(project=project)
+            status_filter.extra.update(
+                {"choices": status_filter.get_status_choices(qs)}
+            )

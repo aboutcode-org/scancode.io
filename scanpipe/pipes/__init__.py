@@ -22,13 +22,11 @@
 
 import difflib
 import logging
-import subprocess
 import sys
 import uuid
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-from time import sleep
 from timeit import default_timer as timer
 
 from django.db.models import Count
@@ -249,46 +247,6 @@ def count_group_by(queryset, field_name):
 def get_bin_executable(filename):
     """Return the location of the `filename` executable binary."""
     return str(Path(sys.executable).parent / filename)
-
-
-def _stream_process(process, stream_to=logger.info):
-    exitcode = process.poll()
-
-    for line in process.stdout:
-        stream_to(line.rstrip("\n"))
-
-    has_terminated = exitcode is not None
-    return has_terminated
-
-
-def run_command(cmd, log_output=False):
-    """
-    Return (exitcode, output) of executing the provided `cmd` in a shell.
-    `cmd` can be provided as a string or as a list of arguments.
-
-    If `log_output` is True, the stdout and stderr of the process will be captured
-    and streamed to the `logger`.
-    """
-    if isinstance(cmd, list):
-        cmd = " ".join(cmd)
-
-    if not log_output:
-        exitcode, output = subprocess.getstatusoutput(cmd)
-        return exitcode, output
-
-    process = subprocess.Popen(
-        cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    )
-
-    while _stream_process(process):
-        sleep(1)
-
-    exitcode = process.poll()
-    return exitcode, ""
 
 
 def remove_prefix(text, prefix):
