@@ -493,9 +493,11 @@ class ScanPipeAPITest(TransactionTestCase):
 
         relation = response.data["results"][0]
         expected = {
-            "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
             "to_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            "status": "",
             "map_type": "java_to_class",
+            "score": "",
+            "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         }
         self.assertEqual(expected, relation)
 
@@ -830,7 +832,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(44, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(12, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
-        self.assertEqual(3, len(get_serializer_fields(CodebaseRelation)))
+        self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
         self.assertEqual(6, len(get_serializer_fields(ProjectError)))
 
         with self.assertRaises(LookupError):
