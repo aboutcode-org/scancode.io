@@ -385,9 +385,11 @@ class CodebaseRelationSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodebaseRelation
         fields = [
-            "from_resource",
             "to_resource",
+            "status",
             "map_type",
+            "score",
+            "from_resource",
         ]
 
 

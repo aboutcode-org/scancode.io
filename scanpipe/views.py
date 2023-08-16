@@ -25,7 +25,6 @@ import io
 import json
 import operator
 from collections import Counter
-from collections import namedtuple
 from contextlib import suppress
 from pathlib import Path
 
@@ -1228,12 +1227,6 @@ class ProjectErrorListView(
     ]
 
 
-RelationRow = namedtuple(
-    "RelationRow",
-    field_names=["to_resource", "status", "map_type", "score", "from_resource"],
-)
-
-
 class CodebaseRelationListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
@@ -1250,7 +1243,10 @@ class CodebaseRelationListView(
             "to_resource",
             queryset=unordered_resources.only("path", "is_text", "status"),
         ),
-        Prefetch("from_resource", queryset=unordered_resources.only("path", "is_text")),
+        Prefetch(
+            "from_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
     ]
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
     table_columns = [
@@ -1271,36 +1267,6 @@ class CodebaseRelationListView(
         kwargs = super().get_filterset_kwargs(filterset_class)
         kwargs.update({"project": self.project})
         return kwargs
-
-    @staticmethod
-    def get_rows(qs):
-        for relation in qs:
-            score = relation.extra_data.get("path_score", "")
-            if diff_ratio := relation.extra_data.get("diff_ratio", ""):
-                score += f" diff_ratio: {diff_ratio}"
-            yield RelationRow(
-                relation.to_resource.path,
-                relation.to_resource.status,
-                relation.map_type,
-                score,
-                relation.from_resource.path,
-            )
-
-    def export_xlsx_file_response(self):
-        filtered_qs = self.filterset.qs
-        output_file = io.BytesIO()
-
-        with xlsxwriter.Workbook(output_file) as workbook:
-            output._add_xlsx_worksheet(
-                workbook=workbook,
-                worksheet_name="RELATIONS",
-                rows=self.get_rows(qs=filtered_qs),
-                fields=RelationRow._fields,
-            )
-
-        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
-        output_file.seek(0)
-        return FileResponse(output_file, as_attachment=True, filename=filename)
 
 
 class CodebaseResourceDetailsView(
