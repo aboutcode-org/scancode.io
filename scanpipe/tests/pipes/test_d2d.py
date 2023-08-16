@@ -214,24 +214,20 @@ class ScanPipeD2DPipesTest(TestCase):
 
     def test_scanpipe_pipes_d2d_flag_processed_archives(self):
         to_archive = make_resource_file(
-            self.project1,
-            path="to/archive.lpkg",
-            is_archive=True
+            self.project1, path="to/archive.lpkg", is_archive=True
         )
         make_resource_file(
-            self.project1,
-            path="to/archive.lpkg-extract",
-            status=flag.IGNORED_DIRECTORY
+            self.project1, path="to/archive.lpkg-extract", status=flag.IGNORED_DIRECTORY
         )
         make_resource_file(
             self.project1,
             path="to/archive.lpkg-extract/file1.txt",
-            status=flag.MATCHED_TO_PURLDB
+            status=flag.MATCHED_TO_PURLDB,
         )
         make_resource_file(
             self.project1,
             path="to/archive.lpkg-extract/file2.txt",
-            status=flag.MATCHED_TO_PURLDB
+            status=flag.MATCHED_TO_PURLDB,
         )
 
         d2d.flag_processed_archives(self.project1)
