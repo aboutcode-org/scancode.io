@@ -28,6 +28,8 @@ from pathlib import Path
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 
+from packageurl import PackageURL
+
 from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.pipes import flag
@@ -261,3 +263,21 @@ def map_related_files(to_resources, to_resource, from_resource, map_type, extra_
         match.update(status=flag.MAPPED)
 
     return len(transpiled)
+
+
+def get_purl_from_node_module(node_module_directory):
+    """Return PURL for given a `node_modules` package directory."""
+    path = Path(node_module_directory)
+    path_parts = path.parts
+
+    npm_package = path_parts[-1]
+
+    if "$" in npm_package:
+        _, npm_package = npm_package.split("$")
+
+    # Handle the scoped pacakage.
+    if "%2F" in npm_package:
+        npm_package = npm_package.replace("%2F", "/")
+        npm_package = f"%40{npm_package}"
+
+    return PackageURL.from_string(f"pkg:npm/{npm_package}")

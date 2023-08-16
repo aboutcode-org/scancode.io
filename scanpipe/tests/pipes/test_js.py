@@ -319,3 +319,20 @@ class ScanPipeJsTest(TestCase):
         for ext in js._js_extensions:
             basename, extension = js.get_js_map_basename_and_extension(f"file{ext}")
             self.assertEqual(("file", ext), (basename, extension))
+
+    def test_scanpipe_pipes_js_get_purl_from_node_module(self):
+        node_module_directory1 = "atls!template-util$codemirror@5.65.2/"
+        expected1 = "pkg:npm/codemirror@5.65.2"
+        result1 = str(js.get_purl_from_node_module(node_module_directory1))
+
+        node_module_directory2 = "@atls!sig-local$babel%2Fruntime@7.17.9/"
+        expected2 = "pkg:npm/%40babel/runtime@7.17.9"
+        result2 = str(js.get_purl_from_node_module(node_module_directory2))
+
+        node_module_directory3 = "codemirror@5.65.2/"
+        expected3 = "pkg:npm/codemirror@5.65.2"
+        result3 = str(js.get_purl_from_node_module(node_module_directory3))
+
+        self.assertEqual(expected1, result1)
+        self.assertEqual(expected2, result2)
+        self.assertEqual(expected3, result3)

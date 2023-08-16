@@ -38,6 +38,7 @@ from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
+from scanpipe.tests import package_data3
 
 
 class ScanPipeD2DPipesTest(TestCase):
@@ -863,3 +864,46 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(from_expected, relation[0].from_resource)
+
+    def test_scanpipe_pipes_d2d_map_javascript_npm_lookup(self):
+        to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
+        to_mini = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_dir = (
+            self.project1.codebase_path
+            / "to/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "node_modules/@adaptive-media-web$luxon@1.27.0"
+        )
+
+        to_dir.mkdir(parents=True)
+        copy_input(to_mini, to_dir)
+        copy_input(to_map, to_dir)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        to_map_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "node_modules/@adaptive-media-web$luxon@1.27.0/main.js.map"
+            )
+        )
+
+        package_data = package_data3.copy()
+        package_data["uuid"] = uuid.uuid4()
+
+        d2d.create_package_from_purldb_data(
+            self.project1, to_map_resource, package_data
+        )
+
+        buffer = io.StringIO()
+        d2d.map_javascript_npm_lookup(
+            self.project1,
+            logger=buffer.write,
+        )
+        expected = "Mapping 1 to/ resources using javascript map against from/ codebase"
+        self.assertIn(expected, buffer.getvalue())
+
+        result = self.project1.codebaseresources.filter(status=flag.NPM_LOOKUP).count()
+
+        self.assertEqual(1, result)

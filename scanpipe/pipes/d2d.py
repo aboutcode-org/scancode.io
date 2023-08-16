@@ -1117,3 +1117,102 @@ def flag_processed_archives(project):
             continue
 
         to_archive.update(status=flag.ARCHIVE_PROCESSED)
+
+
+def map_javascript_npm_lookup(project, logger=None):
+    """Map unmatched ``node_modules`` files."""
+    project_directories = project.codebaseresources.directories()
+    project_files = project.codebaseresources.files()
+
+    to_directories_key = (
+        project_directories.to_codebase()
+        .no_status()
+        .filter(path__regex=r"^.*\/node_modules\/(?!.*\/)")
+        .distinct()
+    )
+
+    to_resources = (
+        project_files.to_codebase()
+        .no_status()
+        .filter(path__regex=r"^.*\/node_modules\/.*$")
+    )
+
+    if not to_directories_key:
+        logger("No unmatched ``node_modules`` file is available. Skipping.")
+        return
+
+    resource_count = to_resources.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources using javascript map "
+            f"against from/ codebase"
+        )
+
+    to_resources_index = pathmap.build_index(
+        to_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    resource_iterator = to_directories_key.iterator(chunk_size=2000)
+    last_percent = 0
+    map_count = 0
+    start_time = timer()
+
+    for resource_index, to_directory in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        map_count += _map_javascript_npm_lookup_resource(
+            to_directory,
+            to_resources,
+            to_resources_index,
+            project,
+        )
+
+    logger(f"{map_count:,d} resource(s) mapped")
+
+
+def _map_javascript_npm_lookup_resource(
+    to_directory,
+    to_resources,
+    to_resources_index,
+    project,
+):
+    """Map unmatched ``node_modules`` files."""
+    purl = js.get_purl_from_node_module(to_directory.path)
+    matched = to_resources.filter(path__startswith=to_directory.path)
+    matched_count = matched.count()
+
+    if not matched:
+        return 0
+
+    package = project.discoveredpackages.filter(
+        type=purl.type,
+        namespace="" if not purl.namespace else purl.namespace,
+        name=purl.name,
+        version=purl.version,
+    ).first()
+
+    if package:
+        package.add_resources(matched)
+    else:
+        if results := purldb.fetch_package(purl=str(purl)):
+            package_data = results[0]
+            package_data.pop("uuid", None)
+            package_data.pop("dependencies", None)
+
+            package = pipes.update_or_create_package(
+                project=project,
+                package_data=package_data,
+                codebase_resources=matched,
+            )
+        else:
+            return 0
+
+    matched.update(status=flag.NPM_LOOKUP)
+    return matched_count

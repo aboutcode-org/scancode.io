@@ -156,6 +156,55 @@ package_data2 = {
     "version": "3.119",
 }
 
+package_data3 = {
+    "type": "npm",
+    "namespace": "",
+    "name": "luxon",
+    "version": "1.27.0",
+    "qualifiers": "",
+    "subpath": "",
+    "filename": "luxon-1.27.0.tgz",
+    "package_content": "source_archive",
+    "purl": "pkg:npm/luxon@1.27.0",
+    "primary_language": "JavaScript",
+    "description": "Immutable date wrapper",
+    "release_date": None,
+    "parties": [
+        {
+            "type": "person",
+            "role": "author",
+            "name": "Isaac Cambron",
+            "email": None,
+            "url": None,
+        },
+        {
+            "type": "person",
+            "role": "maintainer",
+            "name": "icambron",
+            "email": "icambron@gmail.com",
+            "url": None,
+        },
+    ],
+    "keywords": ["date", "immutable"],
+    "homepage_url": "https://github.com/moment/luxon#readme",
+    "download_url": "https://registry.npmjs.org/luxon/-/luxon-1.27.0.tgz",
+    "bug_tracking_url": "https://github.com/moment/luxon/issues",
+    "code_view_url": None,
+    "vcs_url": "https://packages.vcs.url",
+    "repository_homepage_url": None,
+    "repository_download_url": None,
+    "api_data_url": None,
+    "size": None,
+    "md5": None,
+    "sha1": "ae10c69113d85dab8f15f5e8390d0cbeddf4f00f",
+    "sha256": None,
+    "sha512": None,
+    "copyright": "Copyright (c) JS Foundation and other contributors",
+    "holder": None,
+    "declared_license_expression": "mit",
+    "declared_license_expression_spdx": "MIT",
+}
+
 for_package_uid = "pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"
 
 dependency_data1 = {
