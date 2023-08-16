@@ -59,25 +59,31 @@ class ScanPipeFetchPipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.fetch.get_docker_image_platform")
     @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
-    @mock.patch("scanpipe.pipes.run_command")
+    @mock.patch("scanpipe.pipes.fetch.run_command_safely")
     def test_scanpipe_pipes_fetch_docker_image(
-        self, mock_run_command, mock_skopeo, mock_platform
+        self, mock_run_command_safely, mock_skopeo, mock_platform
     ):
         url = "docker://debian:10.9"
 
         mock_platform.return_value = "linux", "amd64", ""
         mock_skopeo.return_value = "skopeo"
-        mock_run_command.return_value = 1, "error"
+        mock_run_command_safely.side_effect = Exception
 
-        with self.assertRaises(fetch.FetchDockerImageError):
+        with self.assertRaises(Exception):
             fetch.fetch_docker_image(url)
 
-        mock_run_command.assert_called_once()
-        cmd = mock_run_command.call_args[0][0]
-        self.assertTrue(cmd.startswith("skopeo copy --insecure-policy"))
-        self.assertIn("docker://debian:10.9 docker-archive:/", cmd)
-        self.assertIn("--override-os=linux --override-arch=amd64", cmd)
-        self.assertTrue(cmd.endswith("debian_10_9.tar"))
+        mock_run_command_safely.assert_called_once()
+        cmd_args = mock_run_command_safely.call_args[0][0]
+        expected = (
+            "skopeo",
+            "copy",
+            "--insecure-policy",
+            "--override-os=linux",
+            "--override-arch=amd64",
+            "docker://debian:10.9",
+        )
+        self.assertEqual(expected, cmd_args[0:6])
+        self.assertTrue(cmd_args[-1].endswith("debian_10_9.tar"))
 
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
         url = 'docker://;echo${IFS}"PoC"${IFS}"'

@@ -1525,159 +1525,221 @@
   ],
   "relations": [
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/DEPENDENCIES",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/LICENSE",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/MANIFEST.MF",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/EnvVarResolverProperties.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/MaterializedConfiguration.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PropertiesFileConfigurationProvider.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/SimpleMaterializedConfiguration.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/StaticZooKeeperConfigurationProvider.class",
-      "map_type": "about_file"
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract",
       "to_resource": "to/flume-ng-node-1.9.0.jar",
-      "map_type": "jar_to_source"
+      "status": "about-mapped",
+      "map_type": "jar_to_source",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract"
     },
     {
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java",
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class",
-      "map_type": "java_to_class"
+      "status": "mapped",
+      "map_type": "java_to_class",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/ConfigurationProvider.java"
     }
   ]
 }

@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import datetime
-import tempfile
 import uuid
 from io import StringIO
 from pathlib import Path
@@ -35,8 +34,6 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
-from scanpipe.management.commands.graph import is_graphviz_installed
-from scanpipe.management.commands.graph import pipeline_graph_dot
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -65,31 +62,6 @@ def raise_interrupt(run_pk):
 class ScanPipeManagementCommandTest(TestCase):
     pipeline_name = "docker"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
-
-    def test_scanpipe_management_command_graph(self):
-        out = StringIO()
-        temp_dir = tempfile.mkdtemp()
-
-        if not is_graphviz_installed():
-            expected = "Graphviz is not installed."
-            with self.assertRaisesMessage(CommandError, expected):
-                call_command("graph", self.pipeline_name)
-            return
-
-        call_command("graph", self.pipeline_name, "--output", temp_dir, stdout=out)
-        out_value = out.getvalue()
-        self.assertIn("Graph(s) generated:", out_value)
-        self.assertIn("docker.png", out_value)
-        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
-        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
-
-    def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
-        output_dot = pipeline_graph_dot(self.pipeline_name, self.pipeline_class)
-        self.assertIn("rankdir=TB;", output_dot)
-        self.assertIn('"extract_images"[label=<<b>extract_images</b>>', output_dot)
-        self.assertIn('"extract_layers"[label=<<b>extract_layers</b>>', output_dot)
-        self.assertIn("extract_images -> extract_layers;", output_dot)
-        self.assertIn("extract_layers -> find_images_os_and_distro;", output_dot)
 
     def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()

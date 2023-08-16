@@ -25,7 +25,8 @@
               {% if resource.is_dir %}
                 {{ resource.path }}
               {% else %}
-                <a href="{{ resource.get_absolute_url }}">{{ resource.path }}</a>
+                {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.path }}</a>
               {% endif %}
             </td>
             <td>

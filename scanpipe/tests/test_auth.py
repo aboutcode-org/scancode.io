@@ -33,7 +33,7 @@ from scancodeio.auth import is_authenticated_when_required
 
 User = get_user_model()
 
-TEST_PASSWORD = "secret"
+TEST_PASSWORD = str(uuid.uuid4())
 
 login_url = reverse("login")
 project_list_url = reverse("project_list")

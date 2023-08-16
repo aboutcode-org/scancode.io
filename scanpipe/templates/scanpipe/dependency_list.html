@@ -22,9 +22,10 @@
         {% for dependency in object_list %}
           <tr class="break-word">
             <td style="min-width: 300px;" title="{{ dependency.dependency_uid }}">
-              <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
+              {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+              <a href="{% url 'dependency_detail' project.slug dependency.dependency_uid %}">{{ dependency.purl }}</a>
               {% if dependency.is_vulnerable %}
-                <a href="{{ dependency.get_absolute_url }}#vulnerabilities">
+                <a href="{% url 'dependency_detail' project.slug dependency.dependency_uid %}#vulnerabilities">
                   <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
                 </a>
               {% endif %}
@@ -49,12 +50,14 @@
             </td>
             <td>
               {% if dependency.for_package %}
-                <a href="{{ dependency.for_package.get_absolute_url }}" title="{{ dependency.for_package.purl }}">{{ dependency.for_package.purl }}</a>
+                {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                <a href="{% url 'package_detail' project.slug dependency.for_package.uuid %}" title="{{ dependency.for_package.purl }}">{{ dependency.for_package.purl }}</a>
               {% endif %}
             </td>
             <td>
               {% if dependency.datafile_resource %}
-                <a href="{{ dependency.datafile_resource.get_absolute_url }}" title="{{ dependency.datafile_resource.path }}">{{ dependency.datafile_resource.name }}</a>
+                {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                <a href="{% url 'resource_detail' project.slug dependency.datafile_resource.path %}" title="{{ dependency.datafile_resource.path }}">{{ dependency.datafile_resource.name }}</a>
               {% endif %}
             </td>
             <td>

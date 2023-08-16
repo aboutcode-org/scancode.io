@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="{% static 'highlight-10.6.0.css' %}" crossorigin="anonymous">
     <style>
       .width-100, .select, .select select {width: 100%;}
+      .width-1 {width: 1rem !important;}
+      .height-1 {height: 1rem !important;}
       .has-border-radius {border-radius: 6px;}
       .help-text {color: #333333; text-decoration: underline;}
       .is-help-text {cursor: help; color: #333333; border-bottom: dotted 1px #cccccc;}
@@ -72,7 +74,7 @@
       #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap; word-break: break-all;}
       #codebase-relation-list table {table-layout: fixed;}
       #codebase-relation-list th#column-status {width: 110px;}
-      #codebase-relation-list th#column-related_from__map_type {width: 145px;}
+      #codebase-relation-list th#column-map_type {width: 145px;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>

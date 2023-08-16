@@ -323,7 +323,7 @@ def flag_uninteresting_codebase_resources(project):
     - Log file of sorts (such as var) using few heuristics
     """
     uninteresting_and_transient = (
-        "/tmp/",
+        "/tmp/",  # nosec
         "/etc/",
         "/proc/",
         "/dev/",

@@ -221,6 +221,9 @@ def map_java_to_class(project, logger=None):
         logger(f"Mapping {resource_count:,d} .class resources to .java")
 
     from_resources_dot_java = from_resources.filter(extension=".java")
+    if not from_resources_dot_java.exists():
+        logger("No .java resources to map.")
+        return
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -452,6 +455,10 @@ def map_path(project, logger=None):
             f"Mapping {resource_count:,d} to/ resources using path map "
             f"against from/ codebase"
         )
+
+    if not from_resources.exists():
+        logger("No from/ resources to map.")
+        return
 
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True
@@ -687,7 +694,7 @@ def map_javascript(project, logger=None):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
     project_files = project.codebaseresources.files()
 
-    to_resources = project_files.to_codebase().exclude(name__startswith=".")
+    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
     to_resources_dot_map = to_resources.filter(extension=".map")
     to_resources_minified = to_resources.filter(extension__in=[".css", ".js"])
 
@@ -1081,3 +1088,32 @@ def _map_javascript_colocation_resource(
         from_neighboring_resources,
         map_type="js_colocation",
     )
+
+
+def flag_processed_archives(project):
+    """
+    Resources without an assigned status which are package archives, and all
+    resources inside the archive has a status, should also be considered as
+    processed.
+    """
+    to_resources = project.codebaseresources.files().to_codebase()
+    to_resources_archives = to_resources.no_status().filter(is_archive=True)
+
+    for to_archive in to_resources_archives:
+        archive_extract_path = to_archive.path + "-extract"
+        archive_extract_resource = to_resources.filter(path=archive_extract_path)
+
+        # There are archives which are not extracted by default, so
+        # we check if the extracted archive exists
+        if not archive_extract_resource.exists():
+            continue
+
+        archive_resources_unmapped = to_resources.no_status().filter(
+            path__startswith=archive_extract_path
+        )
+        # If there are resources in the archives which are unmapped,
+        # they are not considered as processed
+        if archive_resources_unmapped.exists():
+            continue
+
+        to_archive.update(status=flag.ARCHIVE_PROCESSED)
