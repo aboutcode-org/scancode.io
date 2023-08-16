@@ -220,6 +220,9 @@ def map_java_to_class(project, logger=None):
         logger(f"Mapping {resource_count:,d} .class resources to .java")
 
     from_resources_dot_java = from_resources.filter(extension=".java")
+    if not from_resources_dot_java.exists():
+        logger("No .java resources to map.")
+        return
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -455,6 +458,10 @@ def map_path(project, logger=None):
             f"Mapping {resource_count:,d} to/ resources using path map "
             f"against from/ codebase"
         )
+
+    if not from_resources.exists():
+        logger("No from/ resources to map.")
+        return
 
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True

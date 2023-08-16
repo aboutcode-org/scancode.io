@@ -287,6 +287,13 @@ class ScanPipeD2DPipesTest(TestCase):
         to3.refresh_from_db()
         self.assertEqual("no-java-source", to3.status)
 
+    def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
+        make_resource_file(self.project1, path="to/Abstract.class")
+        buffer = io.StringIO()
+        d2d.map_java_to_class(self.project1, logger=buffer.write)
+        expected = "Mapping 1 .class resources to .java" "No .java resources to map."
+        self.assertIn(expected, buffer.getvalue())
+
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
         from1 = make_resource_file(
             self.project1,

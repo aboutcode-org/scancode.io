@@ -4,8 +4,15 @@ Changelog
 v32.5.3 (unreleased)
 --------------------
 
+- Improve the performance of the codebase relations list view to support large number
+  of entries.
+  https://github.com/nexB/scancode.io/issues/858
+
 - Improve DiscoveredPackageListView query performances refining the prefetch_related.
   https://github.com/nexB/scancode.io/issues/856
+
+- Fix the ``map_java_to_class`` d2d pipe to skip if no ``.java`` file is found.
+  https://github.com/nexB/scancode.io/issues/853
 
 - Add a new step in the ``deploy_to_develop`` pipeline where we tag archives as
   processed, if all the resources in their extracted directory is mapped/processed.

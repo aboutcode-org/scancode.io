@@ -2251,6 +2251,17 @@ class CodebaseRelation(
     def __str__(self):
         return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
 
+    @property
+    def status(self):
+        return self.to_resource.status
+
+    @property
+    def score(self):
+        score = self.extra_data.get("path_score", "")
+        if diff_ratio := self.extra_data.get("diff_ratio", ""):
+            score += f" diff_ratio: {diff_ratio}"
+        return score
+
 
 class VulnerabilityMixin(models.Model):
     """Add the vulnerability related fields and methods."""
