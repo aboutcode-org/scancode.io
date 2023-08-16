@@ -716,7 +716,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(3, self.project1.relation_count)
 
         response = self.client.get(url)
-        self.assertContains(response, "2 to/ resources (3 relations)")
+        self.assertContains(response, "3 relations")
 
     def test_scanpipe_views_codebase_relation_diff_view(self):
         url = reverse("resource_diff", args=[self.project1.slug])
