@@ -927,7 +927,7 @@ class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
 class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateView):
     model = Project
     form_class = ProjectCloneForm
-    template_name = "scanpipe/project_clone_form.html"
+    template_name = "scanpipe/includes/project_clone_form.html"
 
 
 @conditional_login_required

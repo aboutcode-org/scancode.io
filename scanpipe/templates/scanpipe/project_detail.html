@@ -39,10 +39,7 @@
           </span>
           <span>Settings</span>
         </a>
-        <button href="{% url 'project_add' %}" class="button is-smaller is-link is-outlined modal-button"
-                data-target="clone-modal" aria-haspopup="true"
-                hx-get="{% url 'project_clone' project.slug %}" hx-trigger="click once" hx-target="#clone-modal-form-body"
-        >
+        <button href="{% url 'project_add' %}" class="button is-smaller is-link is-outlined modal-button" data-target="clone-modal" aria-haspopup="true">
           <span class="icon width-1">
             <i class="fa-regular fa-clone"></i>
           </span>

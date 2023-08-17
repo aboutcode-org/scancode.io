@@ -6,12 +6,12 @@
       <button class="delete" aria-label="close"></button>
     </header>
     <form action="{% url 'project_clone' project.slug %}" method="post">{% csrf_token %}
-      <section id="clone-modal-form-body" class="modal-card-body">
+      <section id="clone-modal-form-body" class="modal-card-body" hx-get="{% url 'project_clone' project.slug %}" hx-trigger="revealed">
         Loading form...
       </section>
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button" type="reset">Cancel</button>
-        <button class="button is-no-close clone" type="submit">Clone Project</button>
+        <button class="button is-no-close is-link" type="submit">Clone Project</button>
       </footer>
     </form>
   </div>
