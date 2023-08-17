@@ -282,3 +282,39 @@ class ProjectSettingsForm(forms.ModelForm):
         }
         project.settings.update(config)
         project.save(update_fields=["settings"])
+
+
+class ProjectCloneForm(forms.Form):
+    clone_name = forms.CharField()
+    copy_inputs = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="Extract nested archives-in-archives recursively",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    copy_pipelines = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="Extract nested archives-in-archives recursively",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    copy_settings = forms.BooleanField(
+        label="",
+        initial=True,
+        required=False,
+        help_text="Copy settings",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    execute_now = forms.BooleanField(
+        label="Execute pipeline(s) now",
+        initial=False,
+        required=False,
+    )
+
+    def __init__(self, instance, *args, **kwargs):
+        self.project = instance
+        super().__init__(*args, **kwargs)
+        self.fields["clone_name"].initial = f"{self.project.name} clone"
+
+    def save(self, *args, **kwargs):
+        return self.project.clone(**self.cleaned_data)

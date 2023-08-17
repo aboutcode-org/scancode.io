@@ -92,6 +92,11 @@ urlpatterns = [
         name="project_reset",
     ),
     path(
+        "project/<slug:slug>/clone/",
+        views.ProjectCloneView.as_view(),
+        name="project_clone",
+    ),
+    path(
         "project/<slug:slug>/settings/",
         views.ProjectSettingsView.as_view(),
         name="project_settings",
