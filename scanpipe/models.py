@@ -642,6 +642,31 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         self.setup_work_directory()
 
+    def clone(
+        self,
+        clone_name,
+        copy_inputs=False,
+        copy_pipelines=False,
+        copy_settings=False,
+        execute_now=False,
+    ):
+        """Clone this project using the provided ``clone_name`` as new project name."""
+        cloned_project = Project.objects.create(
+            name=clone_name,
+            input_sources=self.input_sources if copy_inputs else {},
+            settings=self.settings if copy_settings else {},
+        )
+
+        if copy_inputs:
+            for input_location in self.inputs():
+                cloned_project.copy_input_from(input_location)
+
+        if copy_pipelines:
+            for run in self.runs.all():
+                cloned_project.add_pipeline(run.pipeline_name, execute_now)
+
+        return cloned_project
+
     def _raise_if_run_in_progress(self):
         """
         Raise a `RunInProgressError` exception if one of the project related run is
