@@ -611,6 +611,10 @@ def match_purldb_resources(
     )
     resource_count = to_resources.count()
 
+    if not to_resources.exists():
+        logger(f"{resource_count:,d} resource(s) matched in PurlDB")
+        return
+
     if logger:
         extensions_str = ", ".join(extensions)
         logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
