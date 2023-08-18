@@ -54,6 +54,19 @@ def make_resource_file(project, path, **extra):
     )
 
 
+def make_resource_directory(project, path, **extra):
+    return CodebaseResource.objects.create(
+        project=project,
+        path=path,
+        name=path.split("/")[-1],
+        extension="." + path.split(".")[-1],
+        type=CodebaseResource.Type.DIRECTORY,
+        is_text=True,
+        tag=path.split("/")[0],
+        **extra
+    )
+
+
 resource_data1 = {
     "path": "notice.NOTICE",
     "type": "file",
