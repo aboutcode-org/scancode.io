@@ -39,6 +39,7 @@ from django.db.models.manager import Manager
 from django.http import FileResponse
 from django.http import Http404
 from django.http import HttpResponse
+from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -924,10 +925,22 @@ class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
         return redirect(project)
 
 
+class HTTPResponseHXRedirect(HttpResponseRedirect):
+    status_code = 200
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["HX-Redirect"] = self["Location"]
+
+
 class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateView):
     model = Project
     form_class = ProjectCloneForm
     template_name = "scanpipe/includes/project_clone_form.html"
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        return HTTPResponseHXRedirect(self.get_success_url())
 
 
 @conditional_login_required

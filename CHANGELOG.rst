@@ -21,6 +21,9 @@ v32.5.3 (unreleased)
   processed, if all the resources in their extracted directory is mapped/processed.
   https://github.com/nexB/scancode.io/issues/827
 
+- Add the ability to clone a project.
+  https://github.com/nexB/scancode.io/issues/874
+
 v32.5.2 (2023-08-14)
 --------------------
 

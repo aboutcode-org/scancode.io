@@ -5,7 +5,7 @@
       <p class="modal-card-title">Clone this project</p>
       <button class="delete" aria-label="close"></button>
     </header>
-    <form action="{% url 'project_clone' project.slug %}" method="post">{% csrf_token %}
+    <form hx-post="{% url 'project_clone' project.slug %}" hx-target="#clone-modal-form-body">{% csrf_token %}
       <section id="clone-modal-form-body" class="modal-card-body" hx-get="{% url 'project_clone' project.slug %}" hx-trigger="revealed">
         Loading form...
       </section>
