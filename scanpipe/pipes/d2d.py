@@ -20,11 +20,16 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from contextlib import suppress
 from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
 
+from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+
+from commoncode.paths import common_prefix
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -43,17 +48,17 @@ TO = "to/"
 
 
 def get_inputs(project):
-    """Locate the ``from`` and ``to`` archives in project inputs directory."""
-    from_file = list(project.inputs("from*"))
-    to_file = list(project.inputs("to*"))
+    """Locate the ``from`` and ``to`` input files in project inputs/ directory."""
+    from_files = list(project.inputs("from*"))
+    to_files = list(project.inputs("to*"))
 
-    if len(from_file) != 1:
-        raise FileNotFoundError("from* archive not found.")
+    if len(from_files) < 1:
+        raise FileNotFoundError("from* input files not found.")
 
-    if len(to_file) != 1:
-        raise FileNotFoundError("to* archive not found.")
+    if len(to_files) < 1:
+        raise FileNotFoundError("to* input files not found.")
 
-    return from_file[0], to_file[0]
+    return from_files, to_files
 
 
 def get_resource_codebase_root(project, resource_path):
@@ -122,6 +127,15 @@ def get_best_path_matches(to_resource, matches):
             return subpath_matches
 
     return matches
+
+
+def get_from_files_for_scanning(resources):
+    """
+    Return resources in the "from/" side which has been mapped to the "to/"
+    side, but are not mapped using ABOUT files.
+    """
+    mapped_from_files = resources.from_codebase().files().has_relation()
+    return mapped_from_files.filter(~Q(status=flag.ABOUT_MAPPED))
 
 
 def _map_checksum_resource(to_resource, from_resources, checksum_field):
@@ -206,6 +220,9 @@ def map_java_to_class(project, logger=None):
         logger(f"Mapping {resource_count:,d} .class resources to .java")
 
     from_resources_dot_java = from_resources.filter(extension=".java")
+    if not from_resources_dot_java.exists():
+        logger("No .java resources to map.")
+        return
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -442,6 +459,10 @@ def map_path(project, logger=None):
             f"against from/ codebase"
         )
 
+    if not from_resources.exists():
+        logger("No from/ resources to map.")
+        return
+
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True
     )
@@ -545,7 +566,7 @@ def map_javascript(project, logger=None):
     """Map a packed or minified JavaScript, TypeScript, CSS and SCSS to its source."""
     project_files = project.codebaseresources.files()
 
-    to_resources = project_files.to_codebase().exclude(name__startswith=".")
+    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
     to_resources_dot_map = to_resources.filter(extension=".map")
     to_resources_minified = to_resources.filter(extension__in=[".css", ".js"])
 
@@ -553,10 +574,10 @@ def map_javascript(project, logger=None):
     if logger:
         logger(
             f"Mapping {to_resources_dot_map_count:,d} .map resources using javascript "
-            f"map against from/ codebase"
+            f"map against from/ codebase."
         )
 
-    from_resources = project_files.from_codebase()
+    from_resources = project_files.from_codebase().exclude(path__contains="/test/")
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True
     )
@@ -644,8 +665,8 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
             map_type="about_file",
         )
 
-    codebase_resources.update(status=flag.MAPPED)
-    about_file_resource.update(status=flag.MAPPED)
+    codebase_resources.update(status=flag.ABOUT_MAPPED)
+    about_file_resource.update(status=flag.ABOUT_MAPPED)
 
 
 def map_about_files(project, logger=None):
@@ -664,6 +685,13 @@ def map_about_files(project, logger=None):
     for about_file_resource in from_about_files:
         _map_about_file_resource(project, about_file_resource, to_resources)
 
+        about_file_companions = (
+            about_file_resource.siblings()
+            .filter(name__startswith=about_file_resource.name_without_extension)
+            .filter(extension__in=[".LICENSE", ".NOTICE"])
+        )
+        about_file_companions.update(status=flag.ABOUT_MAPPED)
+
 
 def map_javascript_post_purldb_match(project, logger=None):
     """Map minified javascript file based on existing PurlDB match."""
@@ -671,7 +699,7 @@ def map_javascript_post_purldb_match(project, logger=None):
 
     to_resources = project_files.to_codebase()
 
-    to_resources_dot_map = to_resources.filter(status="matched-to-purldb").filter(
+    to_resources_dot_map = to_resources.filter(status=flag.MATCHED_TO_PURLDB).filter(
         extension=".map"
     )
 
@@ -688,7 +716,7 @@ def map_javascript_post_purldb_match(project, logger=None):
     if logger:
         logger(
             f"Mapping {to_resources_minified_count:,d} minified .js and .css "
-            f"resources based on existing PurlDB match"
+            f"resources based on existing PurlDB match."
         )
 
     to_resources_dot_map_index = pathmap.build_index(
@@ -741,24 +769,25 @@ def _map_javascript_post_purldb_match_resource(
 
 def map_javascript_path(project, logger=None):
     """Map javascript file based on path."""
-    project_files = project.codebaseresources.files().only("path")
+    project_files = project.codebaseresources.files()
 
     to_resources_key = (
         project_files.to_codebase()
         .no_status()
         .filter(extension__in=[".map", ".ts"])
         .exclude(name__startswith=".")
+        .exclude(path__contains="/node_modules/")
     )
 
     to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
 
-    from_resources = project_files.from_codebase()
+    from_resources = project_files.from_codebase().exclude(path__contains="/test/")
     resource_count = to_resources_key.count()
 
     if logger:
         logger(
             f"Mapping {resource_count:,d} to/ resources using javascript map "
-            f"against from/ codebase"
+            f"against from/ codebase."
         )
 
     from_resources_index = pathmap.build_index(
@@ -787,7 +816,7 @@ def map_javascript_path(project, logger=None):
 
 
 def _map_javascript_path_resource(
-    to_resource, to_resources, from_resources_index, from_resources
+    to_resource, to_resources, from_resources_index, from_resources, map_type="js_path"
 ):
     """
     Map JavaScript deployed files using their .map files.
@@ -808,7 +837,7 @@ def _map_javascript_path_resource(
     prospect = js.PROSPECTIVE_JAVASCRIPT_MAP.get(extension, {})
 
     max_matched_path = 0
-    from_resource = None
+    from_resource, extra_data = None, None
     for source_ext in prospect.get("sources", []):
         match = pathmap.find_paths(f"{base_path}{source_ext}", from_resources_index)
 
@@ -817,29 +846,149 @@ def _map_javascript_path_resource(
         if not match or len(match.resource_ids) > match.matched_path_length:
             continue
 
+        # Don't map resources solely based on their names.
+        if match.matched_path_length <= 1:
+            continue
+
         if match.matched_path_length > max_matched_path:
             max_matched_path = match.matched_path_length
             from_resource = from_resources.get(id=match.resource_ids[0])
             extra_data = {"path_score": f"{match.matched_path_length}/{path_parts_len}"}
 
-    if not from_resource:
+    return js.map_related_files(
+        to_resources,
+        to_resource,
+        from_resource,
+        map_type,
+        extra_data,
+    )
+
+
+def map_javascript_colocation(project, logger=None):
+    """Map JavaScript files based on neighborhood file mapping."""
+    project_files = project.codebaseresources.files()
+
+    to_resources_key = (
+        project_files.to_codebase()
+        .no_status()
+        .filter(extension__in=[".map", ".ts"])
+        .exclude(name__startswith=".")
+        .exclude(path__contains="/node_modules/")
+    )
+
+    to_resources = project_files.to_codebase().no_status().exclude(name__startswith=".")
+
+    from_resources = project_files.from_codebase().exclude(path__contains="/test/")
+    resource_count = to_resources_key.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources against from/ codebase"
+            " based on neighborhood file mapping."
+        )
+
+    resource_iterator = to_resources_key.iterator(chunk_size=2000)
+    last_percent = 0
+    map_count = 0
+    start_time = timer()
+
+    for resource_index, to_resource in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        map_count += _map_javascript_colocation_resource(
+            to_resource, to_resources, from_resources, project
+        )
+
+    logger(f"{map_count:,d} resource(s) mapped")
+
+
+def _map_javascript_colocation_resource(
+    to_resource, to_resources, from_resources, project
+):
+    """Map JavaScript files based on neighborhood file mapping."""
+    path = to_resource.path
+
+    if to_resource.status or "-extract/" not in path:
         return 0
 
-    transpiled = [to_resource]
-    for related_ext in prospect.get("related", []):
-        try:
-            transpiled.append(to_resources.get(path=f"{base_path}{related_ext}"))
-        except CodebaseResource.DoesNotExist:
-            pass
+    coloaction_path, _ = path.rsplit("-extract/", 1)
 
-    for match in transpiled:
-        pipes.make_relation(
-            from_resource=from_resource,
-            to_resource=match,
-            map_type="js_path",
-            extra_data=extra_data,
+    neighboring_relations = project.codebaserelations.filter(
+        to_resource__path__startswith=coloaction_path,
+        map_type__in=["java_to_class", "js_compiled"],
+    )
+
+    if not neighboring_relations:
+        return 0
+
+    common_parent = neighboring_relations[0].from_resource.path
+    for relation in neighboring_relations:
+        s2 = relation.from_resource.path
+        common_parent, _ = common_prefix(common_parent, s2)
+
+    # No colocation mapping if the common parent is the root directory.
+    if not common_parent or len(Path(common_parent).parts) < 2:
+        return 0
+
+    from_neighboring_resources = from_resources.filter(path__startswith=common_parent)
+
+    if sources := js.get_map_sources(to_resource):
+        with suppress(MultipleObjectsReturned, ObjectDoesNotExist):
+            from_resource = from_neighboring_resources.get(path__endswith=sources[0])
+            return js.map_related_files(
+                to_resources,
+                to_resource,
+                from_resource,
+                "js_colocation",
+                {},
+            )
+
+    from_neighboring_resources_index = pathmap.build_index(
+        from_neighboring_resources.values_list("id", "path"), with_subpaths=True
+    )
+
+    return _map_javascript_path_resource(
+        to_resource,
+        to_resources,
+        from_neighboring_resources_index,
+        from_neighboring_resources,
+        map_type="js_colocation",
+    )
+
+
+def flag_processed_archives(project):
+    """
+    Resources without an assigned status which are package archives, and all
+    resources inside the archive has a status, should also be considered as
+    processed.
+    """
+    to_resources = project.codebaseresources.files().to_codebase()
+    to_resources_archives = to_resources.no_status().filter(is_archive=True)
+
+    for to_archive in to_resources_archives:
+        archive_extract_path = to_archive.path + "-extract"
+        archive_extract_resource = to_resources.filter(path=archive_extract_path)
+
+        # There are archives which are not extracted by default, so
+        # we check if the extracted archive exists
+        if not archive_extract_resource.exists():
+            continue
+
+        archive_resources_unmapped = to_resources.no_status().filter(
+            path__startswith=archive_extract_path
         )
-    return len(transpiled)
+        # If there are resources in the archives which are unmapped,
+        # they are not considered as processed
+        if archive_resources_unmapped.exists():
+            continue
+
+        to_archive.update(status=flag.ARCHIVE_PROCESSED)
 
 
 def _map_dwarf_path_resource(to_resource, from_resources, from_resources_index):

@@ -299,10 +299,10 @@ class PipelinesIntegrationTest(TestCase):
         """
         Return the `data` excluding the provided `exclude_keys`.
         """
-        if type(data) == list:
+        if isinstance(data, list):
             return [self._without_keys(entry, exclude_keys) for entry in data]
 
-        if type(data) == dict:
+        if isinstance(data, dict):
             return {
                 key: self._without_keys(value, exclude_keys)
                 if type(value) in [list, dict]
@@ -318,13 +318,13 @@ class PipelinesIntegrationTest(TestCase):
         Return the `data`, where any `package_uid` value has been normalized
         with `purl_with_fake_uuid()`
         """
-        if type(data) == list:
+        if isinstance(data, list):
             return [self._normalize_package_uids(entry) for entry in data]
 
-        if type(data) == dict:
+        if isinstance(data, dict):
             normalized_data = {}
             for key, value in data.items():
-                if type(value) in [list, dict]:
+                if isinstance(value, (list, dict)):
                     value = self._normalize_package_uids(value)
                 if (
                     key in ("package_uid", "dependency_uid", "for_package_uid")
@@ -654,9 +654,9 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
-    @mock.patch("scanpipe.pipes.vulnerablecode.get_vulnerabilities_by_purl")
+    @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
     def test_scanpipe_find_vulnerabilities_pipeline_integration_test(
-        self, mock_get_vulnerabilities, mock_is_configured, mock_is_available
+        self, mock_bulk_search_by_purl, mock_is_configured, mock_is_available
     ):
         pipeline_name = "find_vulnerabilities"
         project1 = Project.objects.create(name="Analysis")
@@ -676,7 +676,7 @@ class PipelinesIntegrationTest(TestCase):
         mock_is_available.return_value = True
         vulnerability_data = [
             {
-                "purl": "pkg:deb/debian/adduser@3.118",
+                "purl": "pkg:deb/debian/adduser@3.118?arch=all",
                 "affected_by_vulnerabilities": [
                     {
                         "vulnerability_id": "VCID-cah8-awtr-aaad",
@@ -694,7 +694,7 @@ class PipelinesIntegrationTest(TestCase):
                 ],
             },
         ]
-        mock_get_vulnerabilities.return_value = vulnerability_data
+        mock_bulk_search_by_purl.return_value = vulnerability_data
 
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
@@ -906,3 +906,47 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_populate_purldb_pipeline_integration_test(
+        self, mock_is_available, mock_request_post
+    ):
+        pipeline_name1 = "load_inventory"
+        pipeline_name2 = "populate_purldb"
+        project1 = Project.objects.create(name="Utility: PurlDB")
+
+        input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name1)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        def mock_request_post_return(url, data, timeout):
+            return {
+                "queued_packages_count": len(data["package_urls"]),
+                "queued_packages": data["package_urls"],
+                "unqueued_packages_count": 1,
+                "unqueued_packages": [],
+                "unsupported_packages_count": 1,
+                "unsupported_packages": [],
+            }
+
+        mock_request_post.side_effect = mock_request_post_return
+        mock_is_available.return_value = True
+
+        run = project1.add_pipeline(pipeline_name2)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
+        self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
+        self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
+        self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
+        self.assertIn("Successfully queued 4 PURLs for indexing in PurlDB", run.log)

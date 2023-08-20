@@ -132,6 +132,16 @@ urlpatterns = [
         name="project_delete_pipeline",
     ),
     path(
+        "project/<slug:slug>/delete_input/<str:input_name>/",
+        views.delete_input_view,
+        name="project_delete_input",
+    ),
+    path(
+        "project/<slug:slug>/download_input/<str:input_name>/",
+        views.download_input_view,
+        name="project_download_input",
+    ),
+    path(
         "project/add/",
         views.ProjectCreateView.as_view(),
         name="project_add",
@@ -150,6 +160,16 @@ urlpatterns = [
         "project/",
         views.ProjectListView.as_view(),
         name="project_list",
+    ),
+    path(
+        "license/<str:key>/",
+        views.LicenseDetailsView.as_view(),
+        name="license_detail",
+    ),
+    path(
+        "license/",
+        views.LicenseListView.as_view(),
+        name="license_list",
     ),
     path("monitor/", include("django_rq.urls")),
 ]

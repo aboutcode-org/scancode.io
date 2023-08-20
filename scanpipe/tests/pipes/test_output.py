@@ -34,7 +34,7 @@ from django.test import TestCase
 
 import xlsxwriter
 from licensedcode.cache import get_licensing
-from lxml import etree
+from lxml import etree  # nosec
 from scancode_config import __version__ as scancode_toolkit_version
 
 from scanpipe import pipes
@@ -266,6 +266,34 @@ class ScanPipeOutputPipesTest(TestCase):
         shutil.rmtree(project.work_directory)
         output_file = output.to_spdx(project=project)
         self.assertIn(output_file.name, project.output_root)
+
+    def test_scanpipe_pipes_outputs_to_spdx_extracted_licenses(self):
+        project = Project.objects.create(name="Analysis")
+        package_data = dict(package_data1)
+        # ac3filter resolves as LicenseRef-scancode-ac3filter
+        expression = "mit AND ac3filter"
+        package_data["declared_license_expression"] = expression
+        pipes.update_or_create_package(project, package_data)
+
+        output_file = output.to_spdx(project=project, include_files=True)
+        self.assertIn(output_file.name, project.output_root)
+
+        results_json = json.loads(output_file.read_text())
+        # mit is part of the SPDX license list, thus not in hasExtractedLicensingInfos
+        self.assertEqual(1, len(results_json["hasExtractedLicensingInfos"]))
+        license_infos = results_json["hasExtractedLicensingInfos"][0]
+        self.assertEqual("LicenseRef-scancode-ac3filter", license_infos["licenseId"])
+        self.assertEqual("AC3Filter License", license_infos["name"])
+        expected = [
+            "https://scancode-licensedb.aboutcode.org/ac3filter",
+            "https://github.com/nexB/scancode-toolkit/tree/develop/src/"
+            "licensedcode/data/licenses/ac3filter.LICENSE",
+            "http://www.ac3filter.net/wiki/Download_AC3Filter",
+            "http://ac3filter.net",
+            "http://ac3filter.net/forum",
+        ]
+        self.assertEqual(expected, license_infos["seeAlsos"])
+        self.assertTrue(license_infos["extractedText"].startswith("License:"))
 
     def test_scanpipe_pipes_outputs_make_unknown_license_object(self):
         licensing = get_licensing()
@@ -641,7 +669,10 @@ def get_cell_texts(original_text, test_dir, workbook_name):
     # </sst>
 
     shared_strings = extract_dir / "xl" / "sharedStrings.xml"
-    sstet = etree.parse(str(shared_strings))
+    # Using lxml.etree.parse to parse untrusted XML data is known to be vulnerable
+    # to XML attacks. This is not an issue here as we are parsing a properly crafted
+    # test file, not a maliciously crafted one.
+    sstet = etree.parse(str(shared_strings))  # nosec
     # in our special case the text we care is the last element of the XML
 
     return [t.text for t in sstet.getroot().iter()]

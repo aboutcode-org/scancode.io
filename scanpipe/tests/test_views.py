@@ -30,12 +30,14 @@ from django.core.exceptions import SuspiciousFileOperation
 from django.test import TestCase
 from django.test import override_settings
 from django.urls import reverse
+from django.urls.exceptions import NoReverseMatch
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
 from scanpipe.pipes import update_or_create_dependency
+from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import make_resource_file
@@ -189,6 +191,55 @@ class ScanPipeViewsTest(TestCase):
         expected = {"archive.zip": "https://example.com/archive.zip"}
         self.project1.refresh_from_db()
         self.assertEqual(expected, self.project1.input_sources)
+
+    def test_scanpipe_views_project_details_download_input_view(self):
+        url = reverse("project_download_input", args=[self.project1.slug, "file.zip"])
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.input_path)
+        filename = file_location.name
+        url = reverse("project_download_input", args=[self.project1.slug, filename])
+        response = self.client.get(url)
+        self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
+        self.assertEqual("application/octet-stream", response.headers["Content-Type"])
+        self.assertEqual(
+            'attachment; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
+    def test_scanpipe_views_project_details_delete_input_view(self):
+        url = reverse("project_delete_input", args=[self.project1.slug, "file.zip"])
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(url, follow=True)
+        self.assertRedirects(response, self.project1.get_absolute_url())
+        expected = '<div class="message-body">Input file.zip not found.</div>'
+        self.assertContains(response, expected, html=True)
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.input_path)
+        filename = file_location.name
+        self.project1.add_input_source(filename=filename, source="uploaded", save=True)
+
+        self.project1.update(is_archived=True)
+        self.assertFalse(self.project1.can_change_inputs)
+        url = reverse("project_delete_input", args=[self.project1.slug, filename])
+        response = self.client.post(url)
+        self.assertEqual(404, response.status_code)
+
+        self.project1.update(is_archived=False)
+        self.project1 = Project.objects.get(pk=self.project1.pk)
+        self.assertTrue(self.project1.can_change_inputs)
+        response = self.client.post(url, follow=True)
+        self.assertRedirects(response, self.project1.get_absolute_url())
+        expected = f'<div class="message-body">Input {filename} deleted.</div>'
+        self.assertContains(response, expected, html=True)
+        self.project1.refresh_from_db()
+        self.assertEqual({}, self.project1.input_sources)
+        self.assertEqual([], list(self.project1.inputs()))
 
     def test_scanpipe_views_project_details_missing_inputs(self):
         self.project1.add_input_source(
@@ -665,7 +716,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(3, self.project1.relation_count)
 
         response = self.client.get(url)
-        self.assertContains(response, "2 to/ resources (3 relations)")
+        self.assertContains(response, "3 relations")
 
     def test_scanpipe_views_codebase_relation_diff_view(self):
         url = reverse("resource_diff", args=[self.project1.slug])
@@ -746,3 +797,28 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
+
+    def test_scanpipe_views_license_list_view(self):
+        url = reverse("license_list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        expected = '<a href="/license/apache-2.0/">apache-2.0</a>'
+        self.assertContains(response, expected)
+
+    def test_scanpipe_views_license_details_view(self):
+        license_url = reverse("license_detail", args=["apache-2.0"])
+        response = self.client.get(license_url)
+        self.assertEqual(response.status_code, 200)
+
+        dummy_license_url = reverse("license_detail", args=["abcdefg"])
+        response = self.client.get(dummy_license_url)
+        self.assertEqual(response.status_code, 404)
+
+        xss = "%3Cscript%3Ealert(document.cookie);%3C/script%3E/"
+        with self.assertRaises(NoReverseMatch):
+            reverse("license_detail", args=[xss])
+
+        xss = "%3Cscript%3Ealert(document.cookie);%3C"
+        xss_url = reverse("license_detail", args=[xss])
+        response = self.client.get(xss_url)
+        self.assertEqual(response.status_code, 404)

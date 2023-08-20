@@ -32,6 +32,7 @@ import django_filters
 from django_filters.widgets import LinkWidget
 from packageurl.contrib.django.filters import PackageURLFilter
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -47,10 +48,91 @@ ANY_VAR = "_ANY_"
 OTHER_VAR = "_OTHER_"
 
 
+class ParentAllValuesFilter(django_filters.ChoiceFilter):
+    """
+    Similar to ``django_filters.AllValuesFilter`` but using the queryset of the parent
+    ``FilterSet``.
+    """
+
+    @property
+    def field(self):
+        qs = self.parent.queryset.distinct()
+        qs = qs.order_by(self.field_name).values_list(self.field_name, flat=True)
+        self.extra["choices"] = [(o, o) for o in qs]
+        return super().field
+
+
+class StrictBooleanFilter(django_filters.ChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs["choices"] = (
+            (True, _("Yes")),
+            (False, _("No")),
+        )
+        super().__init__(*args, **kwargs)
+
+
+class BulmaLinkWidget(LinkWidget):
+    """Replace LinkWidget rendering with Bulma CSS classes."""
+
+    extra_css_class = ""
+
+    def render_option(self, name, selected_choices, option_value, option_label):
+        option_value = str(option_value)
+        if option_label == BLANK_CHOICE_DASH[0][1]:
+            option_label = _("All")
+
+        data = self.data.copy()
+        data[name] = option_value
+        selected = data == self.data or option_value in selected_choices
+
+        # Do not include the pagination in the filter query string.
+        data.pop(PAGE_VAR, None)
+
+        css_class = str(self.extra_css_class)
+        if selected:
+            css_class += " is-active"
+
+        try:
+            url = data.urlencode()
+        except AttributeError:
+            url = urlencode(data, doseq=True)
+
+        return self.option_string().format(
+            css_class=css_class,
+            query_string=url,
+            label=str(option_label),
+        )
+
+    def option_string(self):
+        return '<li><a href="?{query_string}" class="{css_class}">{label}</a></li>'
+
+
+class BulmaDropdownWidget(BulmaLinkWidget):
+    extra_css_class = "dropdown-item"
+
+
+class HasValueDropdownWidget(BulmaDropdownWidget):
+    def __init__(self, attrs=None, choices=()):
+        super().__init__(attrs)
+        self.choices = (
+            ("", "All"),
+            (EMPTY_VAR, "None"),
+            (ANY_VAR, "Any"),
+        )
+
+
 class FilterSetUtilsMixin:
     empty_value = EMPTY_VAR
     any_value = ANY_VAR
     other_value = OTHER_VAR
+    dropdown_widget_class = BulmaDropdownWidget
+    dropdown_widget_fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the widget class for defined ``dropdown_widget_fields``.
+        for field_name in self.dropdown_widget_fields:
+            self.filters[field_name].extra["widget"] = self.dropdown_widget_class
 
     @staticmethod
     def remove_field_from_query_dict(query_dict, field_name, remove_value=None):
@@ -137,57 +219,13 @@ class FilterSetUtilsMixin:
         return queryset
 
 
-class BulmaLinkWidget(LinkWidget):
-    """Replace LinkWidget rendering with Bulma CSS classes."""
-
-    extra_css_class = ""
-
-    def render_option(self, name, selected_choices, option_value, option_label):
-        option_value = str(option_value)
-        if option_label == BLANK_CHOICE_DASH[0][1]:
-            option_label = _("All")
-
-        data = self.data.copy()
-        data[name] = option_value
-        selected = data == self.data or option_value in selected_choices
-
-        # Do not include the pagination in the filter query string.
-        data.pop(PAGE_VAR, None)
-
-        css_class = str(self.extra_css_class)
-        if selected:
-            css_class += " is-active"
-
-        try:
-            url = data.urlencode()
-        except AttributeError:
-            url = urlencode(data, doseq=True)
-
-        return self.option_string().format(
-            css_class=css_class,
-            query_string=url,
-            label=str(option_label),
-        )
-
-    def option_string(self):
-        return '<li><a href="?{query_string}" class="{css_class}">{label}</a></li>'
-
-
-class BulmaDropdownWidget(BulmaLinkWidget):
-    extra_css_class = "dropdown-item"
-
-
-class HasValueDropdownWidget(BulmaDropdownWidget):
-    def __init__(self, attrs=None, choices=()):
-        super().__init__(attrs)
-        self.choices = (
-            ("", "All"),
-            (EMPTY_VAR, "None"),
-            (ANY_VAR, "Any"),
-        )
-
-
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "sort",
+        "pipeline",
+        "status",
+    ]
+
     search = django_filters.CharFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
@@ -215,13 +253,11 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ("-projecterrors_count", "Errors (+)"),
             ("projecterrors_count", "Errors (-)"),
         ),
-        widget=BulmaDropdownWidget,
     )
     pipeline = django_filters.ChoiceFilter(
         label="Pipeline",
         field_name="runs__pipeline_name",
         choices=scanpipe_app.get_pipeline_choices(include_blank=False),
-        widget=BulmaDropdownWidget,
         distinct=True,
     )
     status = django_filters.ChoiceFilter(
@@ -234,7 +270,6 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ("succeed", "Success"),
             ("failed", "Failure"),
         ],
-        widget=BulmaDropdownWidget,
         distinct=True,
     )
 
@@ -300,21 +335,25 @@ class InPackageFilter(django_filters.ChoiceFilter):
         return qs
 
 
+MAP_TYPE_CHOICES = (
+    ("about_file", "about file"),
+    ("java_to_class", "java to class"),
+    ("jar_to_source", "jar to source"),
+    ("js_compiled", "js compiled"),
+    ("js_colocation", "js colocation"),
+    ("js_path", "js path"),
+    ("path", "path"),
+    ("sha1", "sha1"),
+)
+
+
 class RelationMapTypeFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs["choices"] = (
             ("none", "No map"),
             ("any", "Any map"),
             ("many", "Many map"),
-            ("about_file", "about file"),
-            ("dwarf_compiled_paths", "dwarf compiled paths"),
-            ("dwarf_included_paths", "dwarf included paths"),
-            ("java_to_class", "java to class"),
-            ("jar_to_source", "jar to source"),
-            ("js_compiled", "js compiled"),
-            ("js_path", "js path"),
-            ("path", "path"),
-            ("sha1", "sha1"),
+            *MAP_TYPE_CHOICES,
         )
         super().__init__(*args, **kwargs)
 
@@ -334,9 +373,22 @@ class StatusFilter(django_filters.ChoiceFilter):
             return qs.status()
         return super().filter(qs, value)
 
+    @staticmethod
+    def get_status_choices(qs, include_any=False):
+        """Return the list of unique status for resources in ``project``."""
+        default_choices = [(EMPTY_VAR, "No status")]
+        if include_any:
+            default_choices.append(("any", "Any status"))
+
+        status_values = (
+            qs.order_by("status").values_list("status", flat=True).distinct()
+        )
+        value_choices = [(status, status) for status in status_values if status]
+        return default_choices + value_choices
+
 
 class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    dropdown_widget = [
+    dropdown_widget_fields = [
         "status",
         "type",
         "compliance_alert",
@@ -375,7 +427,6 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     relation_map_type = RelationMapTypeFilter(
         label="Relation map type",
         field_name="related_from__map_type",
-        distinct=True,
     )
 
     class Meta:
@@ -410,30 +461,26 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "urls",
             "in_package",
             "relation_map_type",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_key_file",
+            "is_media",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if status_filter := self.filters.get("status"):
-            status_filter.extra.update({"choices": self.get_status_choices()})
-
-        # Set the `BulmaDropdownWidget`` widget for defined ``dropdown_widget``.
-        for field_name in self.dropdown_widget:
-            self.filters[field_name].extra["widget"] = BulmaDropdownWidget()
+            status_filter.extra.update(
+                {
+                    "choices": status_filter.get_status_choices(
+                        self.queryset, include_any=True
+                    )
+                }
+            )
 
         license_expression_filer = self.filters["detected_license_expression"]
         license_expression_filer.extra["widget"] = HasValueDropdownWidget()
-
-    def get_status_choices(self):
-        default_choices = [
-            (EMPTY_VAR, "No status"),
-            ("any", "Any status"),
-        ]
-        status_values = (
-            self.queryset.order_by("status").values_list("status", flat=True).distinct()
-        )
-        value_choices = [(status, status) for status in status_values if status]
-        return default_choices + value_choices
 
     @classmethod
     def filter_for_lookup(cls, field, lookup_type):
@@ -460,10 +507,29 @@ class IsVulnerable(django_filters.ChoiceFilter):
         return qs
 
 
+class DiscoveredPackageSearchFilter(django_filters.CharFilter):
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        if value.startswith("pkg:"):
+            return qs.for_package_url(value)
+
+        search_fields = ["type", "namespace", "name", "version"]
+        lookups = Q()
+        for field_names in search_fields:
+            lookups |= Q(**{f"{field_names}__{self.lookup_expr}": value})
+
+        return qs.filter(lookups)
+
+
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(
-        label="Search", field_name="name", lookup_expr="icontains"
-    )
+    dropdown_widget_fields = [
+        "is_vulnerable",
+        "compliance_alert",
+    ]
+
+    search = DiscoveredPackageSearchFilter(label="Search", lookup_expr="icontains")
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
@@ -475,13 +541,13 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
     )
     purl = PackageURLFilter(label="Package URL")
-    is_vulnerable = IsVulnerable(
-        field_name="affected_by_vulnerabilities",
-        widget=BulmaDropdownWidget,
-    )
+    is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
     compliance_alert = django_filters.ChoiceFilter(
         choices=[(EMPTY_VAR, "None")] + CodebaseResource.Compliance.choices,
-        widget=BulmaDropdownWidget,
+    )
+    copyright = django_filters.filters.CharFilter(widget=HasValueDropdownWidget)
+    declared_license_expression = django_filters.filters.CharFilter(
+        widget=HasValueDropdownWidget
     )
 
     class Meta:
@@ -517,18 +583,43 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "compliance_alert",
         ]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        license_expression_filer = self.filters["declared_license_expression"]
-        license_expression_filer.extra["widget"] = HasValueDropdownWidget()
-        self.filters["copyright"].extra["widget"] = HasValueDropdownWidget()
-
 
 class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "type",
+        "scope",
+        "is_runtime",
+        "is_optional",
+        "is_resolved",
+        "datasource_id",
+        "is_vulnerable",
+    ]
+
     search = django_filters.CharFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "type",
+            "extracted_requirement",
+            "scope",
+            "is_runtime",
+            "is_optional",
+            "is_resolved",
+            "for_package",
+            "datafile_resource",
+            "datasource_id",
+        ],
+    )
     purl = PackageURLFilter(label="Package URL")
+    type = ParentAllValuesFilter()
+    scope = ParentAllValuesFilter()
+    datasource_id = ParentAllValuesFilter()
+    is_runtime = StrictBooleanFilter()
+    is_optional = StrictBooleanFilter()
+    is_resolved = StrictBooleanFilter()
+    is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
 
     class Meta:
         model = DiscoveredDependency
@@ -547,6 +638,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "is_optional",
             "is_resolved",
             "datasource_id",
+            "is_vulnerable",
         ]
 
 
@@ -568,3 +660,44 @@ class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "model",
             "message",
         ]
+
+
+class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    dropdown_widget_fields = [
+        "status",
+        "map_type",
+    ]
+
+    search = django_filters.CharFilter(
+        label="Search",
+        field_name="to_resource__path",
+        lookup_expr="icontains",
+    )
+    sort = django_filters.OrderingFilter(
+        label="Sort",
+        fields=[
+            "from_resource",
+            "to_resource",
+            "map_type",
+        ],
+    )
+    map_type = django_filters.ChoiceFilter(choices=MAP_TYPE_CHOICES)
+    status = StatusFilter(field_name="to_resource__status")
+
+    class Meta:
+        model = CodebaseRelation
+        fields = [
+            "search",
+            "map_type",
+            "status",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        project = kwargs.pop("project")
+        super().__init__(*args, **kwargs)
+        if project:
+            status_filter = self.filters.get("status")
+            qs = CodebaseResource.objects.filter(project=project)
+            status_filter.extra.update(
+                {"choices": status_filter.get_status_choices(qs)}
+            )

@@ -215,7 +215,8 @@ def _create_system_package(project, purl, package):
     codebase_resources = project.codebaseresources.all()
 
     for install_file in installed_files:
-        rootfs_path = pipes.normalize_path(install_file.path)
+        install_file_path = install_file.get_path(strip_root=True)
+        rootfs_path = pipes.normalize_path(install_file_path)
         logger.info(f"   installed file rootfs_path: {rootfs_path}")
 
         try:
@@ -322,7 +323,7 @@ def flag_uninteresting_codebase_resources(project):
     - Log file of sorts (such as var) using few heuristics
     """
     uninteresting_and_transient = (
-        "/tmp/",
+        "/tmp/",  # nosec
         "/etc/",
         "/proc/",
         "/dev/",
@@ -381,3 +382,11 @@ def flag_media_files_as_uninteresting(project):
     """Flag CodebaseResources that are media files to be uninteresting."""
     qs = project.codebaseresources.no_status()
     qs.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
+
+def get_rootfs_data(root_fs):
+    """Return a mapping of rootfs-related data given a ``root_fs``."""
+    return {
+        "name": os.path.basename(root_fs.location),
+        "distro": root_fs.distro.to_dict() if root_fs.distro else {},
+    }

@@ -24,6 +24,8 @@ import cgi
 import json
 import logging
 import os
+import re
+import subprocess  # nosec
 import tempfile
 from collections import namedtuple
 from pathlib import Path
@@ -35,11 +37,36 @@ from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
 from plugincode.location_provider import get_location
 
-from scanpipe import pipes
-
 logger = logging.getLogger("scanpipe.pipes")
 
 Download = namedtuple("Download", "uri directory filename path size sha1 md5")
+
+
+def run_command_safely(command_args):
+    """
+    Execute the external commands following security best practices.
+
+    This function is using the subprocess.run function which simplifies running external
+    commands. It provides a safer and more straightforward API compared to older methods
+    like subprocess.Popen.
+
+    - This does not use the Shell (shell=False) to prevent injection vulnerabilities.
+    - The command should be provided as a list of ``command_args`` arguments.
+    - Only full paths to executable commands should be provided to avoid any ambiguity.
+
+    WARNING: If you're incorporating user input into the command, make
+    sure to sanitize and validate the input to prevent any malicious commands from
+    being executed.
+
+    As ``check`` is True, if the exit code is non-zero, it raises a CalledProcessError.
+    """
+    result = subprocess.run(  # nosec
+        command_args,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout
 
 
 def fetch_http(uri, to=None):
@@ -47,7 +74,7 @@ def fetch_http(uri, to=None):
     Download a given `uri` in a temporary directory and return the directory's
     path.
     """
-    response = requests.get(uri)
+    response = requests.get(uri, timeout=5)
 
     if response.status_code != 200:
         raise requests.RequestException
@@ -136,16 +163,17 @@ def get_docker_image_platform(docker_reference):
     If there are more than one, return the first one by default.
     """
     skopeo_executable = _get_skopeo_location()
-    cmd = (
-        f"{skopeo_executable} inspect --insecure-policy --raw --no-creds "
-        f"{docker_reference}"
+    cmd_args = (
+        str(skopeo_executable),
+        "inspect",
+        "--insecure-policy",
+        "--raw",
+        "--no-creds",
+        docker_reference,
     )
-
-    logger.info(f"Fetching image os/arch data: {cmd}")
-    exitcode, output = pipes.run_command(cmd)
+    logger.info(f"Fetching image os/arch data: {cmd_args}")
+    output = run_command_safely(cmd_args)
     logger.info(output)
-    if exitcode != 0:
-        raise FetchDockerImageError(output)
 
     # Data has this shape:
     #
@@ -190,16 +218,19 @@ def fetch_docker_image(docker_reference, to=None):
     Docker references are documented here:
     https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
     """
+    whitelist = r"^docker://[a-zA-Z0-9_.:/@-]+$"
+    if not re.match(whitelist, docker_reference):
+        raise ValueError("Invalid Docker reference.")
+
     name = python_safe_name(docker_reference.replace("docker://", ""))
     filename = f"{name}.tar"
     download_directory = to or tempfile.mkdtemp()
     output_file = Path(download_directory, filename)
     target = f"docker-archive:{output_file}"
-
     skopeo_executable = _get_skopeo_location()
+
     platform_args = []
-    platform = get_docker_image_platform(docker_reference)
-    if platform:
+    if platform := get_docker_image_platform(docker_reference):
         os, arch, variant = platform
         if os:
             platform_args.append(f"--override-os={os}")
@@ -207,17 +238,18 @@ def fetch_docker_image(docker_reference, to=None):
             platform_args.append(f"--override-arch={arch}")
         if variant:
             platform_args.append(f"--override-variant={variant}")
-    platform_args = " ".join(platform_args)
 
-    cmd = (
-        f"{skopeo_executable} copy --insecure-policy "
-        f"{platform_args} {docker_reference} {target}"
+    cmd_args = (
+        str(skopeo_executable),
+        "copy",
+        "--insecure-policy",
+        *platform_args,
+        docker_reference,
+        target,
     )
-    logger.info(f"Fetching image with: {cmd}")
-    exitcode, output = pipes.run_command(cmd)
+    logger.info(f"Fetching image with: {cmd_args}")
+    output = run_command_safely(cmd_args)
     logger.info(output)
-    if exitcode != 0:
-        raise FetchDockerImageError(output)
 
     checksums = multi_checksums(output_file, ("md5", "sha1"))
 
@@ -252,6 +284,8 @@ def fetch_urls(urls):
         urls = [url.strip() for url in urls.split()]
 
     for url in urls:
+        if not url:
+            continue
         fetcher = _get_fetcher(url)
         logger.info(f'Fetching "{url}" using {fetcher.__name__}')
         try:

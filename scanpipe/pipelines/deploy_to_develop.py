@@ -25,7 +25,6 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
-from scanpipe.pipes.scancode import extract_archives
 
 
 class DeployToDevelop(Pipeline):
@@ -56,8 +55,9 @@ class DeployToDevelop(Pipeline):
             cls.match_purldb,
             cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
+            cls.map_javascript_colocation,
             cls.map_path,
-            cls.flag_mapped_resources_and_ignored_directories,
+            cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.scan_mapped_from_for_files,
         )
 
@@ -78,24 +78,27 @@ class DeployToDevelop(Pipeline):
     ]
 
     def get_inputs(self):
-        """Locate the ``from`` and ``to`` archives."""
-        self.from_file, self.to_file = d2d.get_inputs(self.project)
-
-        self.from_path = self.project.codebase_path / d2d.FROM
-        self.to_path = self.project.codebase_path / d2d.TO
+        """Locate the ``from`` and ``to`` input files."""
+        self.from_files, self.to_files = d2d.get_inputs(self.project)
 
     def extract_inputs_to_codebase_directory(self):
         """Extract input files to the project's codebase/ directory."""
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project.codebase_path / d2d.FROM),
+            (self.to_files, self.project.codebase_path / d2d.TO),
+        ]
+
         errors = []
-        errors += scancode.extract_archive(self.from_file, self.from_path)
-        errors += scancode.extract_archive(self.to_file, self.to_path)
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                errors += scancode.extract_archive(input_file_path, codebase_path)
 
         if errors:
             self.add_error("\n".join(errors))
 
     def extract_archives_in_place(self):
         """Extract recursively from* and to* archives in place with extractcode."""
-        extract_errors = extract_archives(
+        extract_errors = scancode.extract_archives(
             self.project.codebase_path,
             recurse=self.env.get("extract_recursively", True),
         )
@@ -162,17 +165,21 @@ class DeployToDevelop(Pipeline):
         """Map javascript file based on path."""
         d2d.map_javascript_path(project=self.project, logger=self.log)
 
+    def map_javascript_colocation(self):
+        """Map JavaScript files based on neighborhood file mapping."""
+        d2d.map_javascript_colocation(project=self.project, logger=self.log)
+
     def map_path(self):
         """Map using path similarities."""
         d2d.map_path(project=self.project, logger=self.log)
 
-    def flag_mapped_resources_and_ignored_directories(self):
+    def flag_mapped_resources_archives_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
+        d2d.flag_processed_archives(self.project)
 
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
-        resource_qs = self.project.codebaseresources
-        mapped_from_files = resource_qs.from_codebase().files().has_relation()
-        scancode.scan_for_files(self.project, mapped_from_files)
+        scan_files = d2d.get_from_files_for_scanning(self.project.codebaseresources)
+        scancode.scan_for_files(self.project, scan_files)

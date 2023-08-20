@@ -22,9 +22,10 @@
         {% for package in object_list %}
           <tr class="break-word">
             <td style="min-width: 500px;" title="{{ package.package_uid }}">
-              <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
+              {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+              <a href="{% url 'package_detail' project.slug package.uuid %}">{{ package.package_url }}</a>
               {% if package.is_vulnerable %}
-                <a href="{{ package.get_absolute_url }}#vulnerabilities">
+                <a href="{% url 'package_detail' project.slug package.uuid %}#vulnerabilities">
                   <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
                 </a>
               {% endif %}
@@ -52,7 +53,8 @@
                 <ul>
                   {% for resource in package.resources %}
                     <li>
-                      <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
+                      {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                      <a href="{% url 'resource_detail' project.slug resource.path %}" title="{{ resource.path }}">{{ resource.name }}</a>
                     </li>
                   {% endfor %}
                 </ul>

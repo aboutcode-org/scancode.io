@@ -337,7 +337,9 @@ class AbstractTaskFieldsModel(models.Model):
         Set the task as "queued" by updating the ``task_id`` from ``None`` to this
         instance ``pk``.
         """
-        assert not self.task_id, "task_id is already set"
+        if self.task_id:
+            raise ValueError("task_id is already set")
+
         self.task_id = self.pk
         self.save(update_fields=["task_id"])
 
@@ -406,7 +408,7 @@ class ExtraDataFieldMixin(models.Model):
 
     def update_extra_data(self, data):
         """Update the `extra_data` field with the provided `data` dict."""
-        if type(data) != dict:
+        if not isinstance(data, dict):
             raise ValueError("Argument `data` value must be a dict()")
 
         self.extra_data.update(data)
@@ -852,9 +854,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.codebase_path.rglob("*")
 
     @cached_property
-    def can_add_input(self):
-        """Return True until one pipeline run has started to execute on the project."""
-        return not self.runs.has_start_date().exists()
+    def can_change_inputs(self):
+        """
+        Return True until one pipeline run has started its execution on the project.
+        Always False when the project is archived.
+        """
+        return not self.is_archived and not self.runs.has_start_date().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
@@ -879,9 +884,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Copy the file at `input_location` to the current project's input/
         directory.
         """
-        from scanpipe.pipes.input import copy_inputs
+        from scanpipe.pipes.input import copy_input
 
-        copy_inputs([input_location], self.input_path)
+        copy_input(input_location, self.input_path)
 
     def move_input_from(self, input_location):
         """
@@ -891,6 +896,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
+
+    def delete_input(self, name):
+        """Delete the provided ``name`` input from disk and from ``input_sources``."""
+        file_path = self.input_path / name
+        file_path.unlink(missing_ok=True)
+
+        if self.input_sources.pop(name, None):
+            self.save(update_fields=["input_sources"])
+            return True
 
     def add_downloads(self, downloads):
         """
@@ -1012,6 +1026,11 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def vulnerable_package_count(self):
         """Return the number of vulnerable packages related to this project."""
         return self.discoveredpackages.vulnerable().count()
+
+    @cached_property
+    def vulnerable_dependency_count(self):
+        """Return the number of vulnerable dependencies related to this project."""
+        return self.discovereddependencies.vulnerable().count()
 
     @cached_property
     def dependency_count(self):
@@ -1932,6 +1951,13 @@ class CodebaseResource(
         return self.project.codebase_path / path
 
     @property
+    def name_without_extension(self):
+        """Return the name of the resource without it's extension."""
+        if self.extension:
+            return self.name.rpartition(self.extension)[0]
+        return self.name
+
+    @property
     def location(self):
         """Return the location of the resource as a string."""
         return str(self.location_path)
@@ -2225,10 +2251,41 @@ class CodebaseRelation(
     def __str__(self):
         return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
 
+    @property
+    def status(self):
+        return self.to_resource.status
 
-class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+    @property
+    def score(self):
+        score = self.extra_data.get("path_score", "")
+        if diff_ratio := self.extra_data.get("diff_ratio", ""):
+            score += f" diff_ratio: {diff_ratio}"
+        return score
+
+
+class VulnerabilityMixin(models.Model):
+    """Add the vulnerability related fields and methods."""
+
+    affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
+
+    @property
+    def is_vulnerable(self):
+        """Returns True if this instance is affected by vulnerabilities."""
+        return bool(self.affected_by_vulnerabilities)
+
+    class Meta:
+        abstract = True
+
+
+class VulnerabilityQuerySetMixin:
     def vulnerable(self):
         return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+
+
+class DiscoveredPackageQuerySet(
+    VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
+):
+    pass
 
 
 class AbstractPackage(models.Model):
@@ -2427,20 +2484,6 @@ class AbstractPackage(models.Model):
         abstract = True
 
 
-class VulnerabilityMixin(models.Model):
-    """Add the vulnerability related fields and methods."""
-
-    affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
-
-    @property
-    def is_vulnerable(self):
-        """Returns True if this instance is affected by vulnerabilities."""
-        return bool(self.affected_by_vulnerabilities)
-
-    class Meta:
-        abstract = True
-
-
 class DiscoveredPackage(
     ProjectRelatedModel,
     ExtraDataFieldMixin,
@@ -2634,6 +2677,10 @@ class DiscoveredPackage(
             if (checksum_value := getattr(self, algorithm))
         ]
 
+        attribution_texts = []
+        if self.notice_text:
+            attribution_texts.append(self.notice_text)
+
         external_refs = []
 
         if package_url := self.package_url:
@@ -2657,6 +2704,7 @@ class DiscoveredPackage(
             filename=self.filename,
             description=self.description,
             release_date=str(self.release_date) if self.release_date else "",
+            attribution_texts=attribution_texts,
             checksums=checksums,
             external_refs=external_refs,
         )
@@ -2722,7 +2770,9 @@ class DiscoveredPackage(
         )
 
 
-class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+class DiscoveredDependencyQuerySet(
+    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+):
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -2743,6 +2793,7 @@ class DiscoveredDependency(
     ProjectRelatedModel,
     SaveProjectErrorMixin,
     UpdateFromDataMixin,
+    VulnerabilityMixin,
     PackageURLMixin,
 ):
     """
@@ -2928,7 +2979,7 @@ class DiscoveredDependency(
         return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
 
     def as_spdx(self):
-        """Return this Package as an SPDX Package entry."""
+        """Return this Dependency as an SPDX Package entry."""
         from scanpipe.pipes import spdx
 
         external_refs = []

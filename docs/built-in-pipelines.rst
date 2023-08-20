@@ -3,9 +3,12 @@
 Built-in Pipelines
 ==================
 
-As you may already know that pipelines are Python scripts that perform code
-analysis by executing a sequence of steps. ScanCode.io offers the following
-built-in—available—pipelines:
+Pipelines in ScanCode.io are Python scripts that facilitate code analysis by
+executing a sequence of steps. The platform provides the following built-in pipelines:
+
+.. tip::
+    If you are unsure which pipeline suits your requirements best, check out the
+    :ref:`faq_which_pipeline` section for guidance.
 
 .. _pipeline_base_class:
 
@@ -15,7 +18,7 @@ Pipeline Base Class
     :members:
     :member-order: bysource
 
-.. _pipeline_d2d:
+.. _pipeline_deploy_to_develop:
 
 Deploy To Develop
 -----------------
@@ -63,6 +66,14 @@ Load Inventory From Scan
     :members:
     :member-order: bysource
 
+.. _pipeline_populate_purldb:
+
+Populate PurlDB
+---------------
+.. autoclass:: scanpipe.pipelines.populate_purldb.PopulatePurlDB()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_root_filesystems:
 
 Root Filesystem Analysis
@@ -76,6 +87,14 @@ Root Filesystem Analysis
 Scan Codebase
 -------------
 .. autoclass:: scanpipe.pipelines.scan_codebase.ScanCodebase()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_scan_codebase_package:
+
+Scan Codebase Package
+---------------------
+.. autoclass:: scanpipe.pipelines.scan_codebase_package.ScanCodebasePackage()
     :members:
     :member-order: bysource
 

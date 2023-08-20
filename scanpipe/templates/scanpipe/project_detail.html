@@ -53,10 +53,14 @@
         <article class="message is-warning">
           <div class="message-body">
             <p class="block">
-              <i class="fa-solid fa-info-circle mr-1"></i>
-              Add
-              {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
-              and execute a <strong>pipeline</strong> to generate some results.
+              <span class="icon width-1 height-1 mr-1">
+                <i class="fa-solid fa-info-circle"></i>
+              </span>
+              <span>
+                Add
+                {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
+                and execute a <strong>pipeline</strong> to generate some results.
+              </span>
             </p>
           </div>
         </article>
