@@ -35,7 +35,7 @@ class DWARF(DeployToDevelop):
             cls.build_inventory_from_scans,
             cls.flag_ignored_resources,
             cls.map_dwarf_paths,
-            cls.flag_mapped_resources_and_ignored_directories,
+            cls.flag_mapped_resources_archives_and_ignored_directories,
         )
 
     def build_inventory_from_scans(self):
