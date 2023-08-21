@@ -7,11 +7,7 @@
     <hr class="mx-5 mt-0">
 
     <section class="mx-5 mt-3 pb-1">
-      <div id="form-errors" class="notification is-danger {% if not form.errors %}is-hidden{% endif %}">
-        {% for field_name, errors in form.errors.items %}
-          {{ errors }}
-        {% endfor %}
-      </div>
+      {% include 'scanpipe/includes/form_errors.html' %}
 
       <div class="columns">
         <div class="column is-one-quarter">
