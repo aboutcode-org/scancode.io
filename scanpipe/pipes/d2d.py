@@ -995,7 +995,7 @@ def _map_dwarf_path_resource(
     to_resource, from_resources, from_resources_index, logger=None,
 ):
     """
-    Map DWARF dwarf_paths found in the ``to_resource`` extrac data to
+    Map DWARF dwarf_paths found in the ``to_resource`` extra_data to
     dwarf_paths of the ``from_resources`` CodebaseResource queryset using the
     precomputed ``from_resources_index`` path index.
     """
