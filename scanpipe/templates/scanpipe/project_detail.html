@@ -134,11 +134,21 @@
     </section>
 
     {% if project.resource_count or project.package_count %}
-      <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load">
-        <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
-        Loading the charts...
-      </section>
-    {% endif %}
+      <section id="charts" class="mx-5 pt-5">
+        {% if project.resource_count < 5000 and project.package_count < 5000 %}
+          <span hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load" hx-target="#charts"></span>
+          <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
+          Loading the charts...
+        {% else %}
+          <button class="button is-info is-outlined is-fullwidth mt-5 mb-6" hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="click" hx-swap="outerHTML">
+            <span class="icon">
+              <i class="fa-solid fa-chart-pie"></i>
+            </span>
+            <span>Load the charts</span>
+          </button>
+        {% endif %}
+      {% endif %}
+    </section>
   </div>
 
   {% include 'scanpipe/includes/run_modal.html' %}
