@@ -968,7 +968,7 @@ def flag_processed_archives(project):
     resources inside the archive has a status, should also be considered as
     processed.
     """
-    to_resources = project.codebaseresources.files().to_codebase()
+    to_resources = project.codebaseresources.all().to_codebase()
     to_resources_archives = to_resources.no_status().filter(is_archive=True)
 
     for to_archive in to_resources_archives:

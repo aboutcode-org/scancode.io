@@ -1568,7 +1568,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(size__gt=0)
 
     def in_package(self):
-        return self.filter(discovered_packages__isnull=False)
+        return self.filter(discovered_packages__isnull=False).distinct()
 
     def not_in_package(self):
         return self.filter(discovered_packages__isnull=True)

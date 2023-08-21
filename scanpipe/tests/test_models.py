@@ -1241,6 +1241,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
         file.create_and_add_package(package_data1)
+        file.create_and_add_package(package_data2)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
