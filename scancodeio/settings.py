@@ -311,7 +311,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATIC_ROOT = "/var/scancodeio/static/"
+STATIC_ROOT = env.str("STATIC_ROOT", default="/var/scancodeio/static/")
 
 STATICFILES_DIRS = [
     PROJECT_DIR("static"),
