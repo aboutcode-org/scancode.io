@@ -35,6 +35,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 
@@ -216,7 +217,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_archive = make_resource_file(
             self.project1, path="to/archive.lpkg", is_archive=True
         )
-        make_resource_file(
+        make_resource_directory(
             self.project1, path="to/archive.lpkg-extract", status=flag.IGNORED_DIRECTORY
         )
         make_resource_file(
