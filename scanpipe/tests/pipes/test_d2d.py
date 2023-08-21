@@ -404,17 +404,28 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         make_resource_file(
             self.project1,
+            path="from/core/src/main/org/apache2/bar/file.ext",
+        )
+        make_resource_file(
+            self.project1,
             path="from/core/src/main/org/apache/bar/file2.ext",
         )
         to1 = make_resource_file(
             self.project1,
             path="to/apache/bar/file.ext",
         )
+        make_resource_file(
+            self.project1,
+            path="to/apache/foo/file.ext",
+        )
 
         buffer = io.StringIO()
         d2d.map_path(self.project1, logger=buffer.write)
-        expected = "Mapping 1 to/ resources using path map against from/ codebase"
+        expected = "Mapping 2 to/ resources using path map against from/ codebase"
         self.assertIn(expected, buffer.getvalue())
+        file_name_too_many = self.project1.codebaseresources.get(
+            path="to/apache/foo/file.ext"
+        )
 
         self.assertEqual(1, self.project1.codebaserelations.count())
         relation = self.project1.codebaserelations.get()
@@ -422,6 +433,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(to1, relation.to_resource)
         self.assertEqual("path", relation.map_type)
         self.assertEqual({"path_score": "3/3"}, relation.extra_data)
+        self.assertNotEqual("too-many-maps", file_name_too_many.status)
 
     def test_scanpipe_pipes_d2d_find_java_packages(self):
         input_locations = [

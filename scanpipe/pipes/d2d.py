@@ -421,7 +421,10 @@ def _map_path_resource(
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
     if len(match.resource_ids) > match.matched_path_length:
-        to_resource.update(status=flag.TOO_MANY_MAPS)
+        # Single matched path segment/file name don't
+        # qualify for too-many-maps status.
+        if match.matched_path_length > 1:
+            to_resource.update(status=flag.TOO_MANY_MAPS)
         return
 
     for resource_id in match.resource_ids:
