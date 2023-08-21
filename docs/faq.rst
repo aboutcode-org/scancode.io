@@ -120,10 +120,10 @@ The pipeline documentation is available at :ref:`pipeline_docker` and its source
 at `docker.py <https://github.com/nexB/scancode.io/blob/main/scanpipe/pipelines/docker.py>`_.
 It is hopefully designed to be simple and readable code.
 
-I am able to run ScanCode.io on Windows?
+Am I able to run ScanCode.io on Windows?
 ----------------------------------------
 
-Yes, you can use the :ref:run_with_docker installation. However, please be sure to
+Yes, you can use the :ref:`run_with_docker` installation. However, please be sure to
 carefully read the warnings, as running on Windows may have certain limitations or
 challenges.
 
