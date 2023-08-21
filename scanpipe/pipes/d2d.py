@@ -30,6 +30,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 from commoncode.paths import common_prefix
+from packagedcode.npm import NpmPackageJsonHandler
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -989,3 +990,67 @@ def flag_processed_archives(project):
             continue
 
         to_archive.update(status=flag.ARCHIVE_PROCESSED)
+
+
+def map_thirdparty_npm_packages(project, logger=None):
+    """Map thirdparty package using package.json metadata."""
+    project_files = project.codebaseresources.files()
+
+    to_package_json = (
+        project_files.to_codebase()
+        .filter(path__regex=r"^.*\/node_modules\/.*\/package\.json$")
+        .exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
+    )
+
+    to_resources = project_files.to_codebase()
+    resource_count = to_package_json.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources against from/ codebase"
+            " based on package.json metadata."
+        )
+
+    resource_iterator = to_package_json.iterator(chunk_size=2000)
+    last_percent = 0
+    map_count = 0
+    start_time = timer()
+
+    for resource_index, package_json in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        map_count += _map_thirdparty_npm_packages(package_json, to_resources, project)
+
+    logger(f"{map_count:,d} resource(s) mapped")
+
+
+def _map_thirdparty_npm_packages(package_json, to_resources, project):
+    """Map thirdparty package using package.json metadata."""
+    path = Path(package_json.path.lstrip("/"))
+    path_parent = str(path.parent)
+
+    package = next(NpmPackageJsonHandler.parse(package_json.location))
+
+    package_resources = to_resources.filter(path__startswith=path_parent)
+
+    if not all(
+        [package, package.type, package.name, package.version, package_resources]
+    ):
+        return 0
+
+    package_data = package.to_dict()
+    package_data.pop("dependencies")
+    pipes.update_or_create_package(
+        project=project,
+        package_data=package_data,
+        codebase_resources=package_resources,
+    )
+
+    package_resources.no_status().update(status=flag.NPM_PACKAGE_LOOKUP)
+    return package_resources.count()
