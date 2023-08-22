@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import feed_purldb
+from scanpipe.pipes import purldb
 
 
 class PopulatePurlDB(Pipeline):
@@ -36,12 +36,12 @@ class PopulatePurlDB(Pipeline):
 
     def populate_purldb_with_discovered_packages(self):
         """Add DiscoveredPackage to PurlDB."""
-        feed_purldb.populate_purldb_with_discovered_packages(
+        purldb.populate_purldb_with_discovered_packages(
             project=self.project, logger=self.log
         )
 
     def populate_purldb_with_discovered_dependencies(self):
         """Add DiscoveredDependency to PurlDB."""
-        feed_purldb.populate_purldb_with_discovered_dependencies(
+        purldb.populate_purldb_with_discovered_dependencies(
             project=self.project, logger=self.log
         )

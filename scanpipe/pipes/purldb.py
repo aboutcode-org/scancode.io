@@ -137,7 +137,7 @@ def submit_purls(packages, timeout=None, api_url=PURLDB_API_URL):
 
 def feed_purldb(packages, package_type, logger):
     """Feed PurlDB with list of PURLs for indexing."""
-    if not purldb.is_available():
+    if not is_available():
         raise Exception("PurlDB is not available.")
 
     logger(f"Populating PurlDB with {len(packages):,d} {package_type}")
