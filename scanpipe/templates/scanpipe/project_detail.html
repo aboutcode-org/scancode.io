@@ -4,7 +4,7 @@
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous">
 {% endblock %}
 
 {% block content %}
@@ -39,7 +39,7 @@
           </span>
           <span>Settings</span>
         </a>
-        <button href="{% url 'project_add' %}" class="button is-smaller is-link is-outlined modal-button" data-target="clone-modal" aria-haspopup="true">
+        <button class="button is-smaller is-link is-outlined modal-button" data-target="clone-modal" aria-haspopup="true">
           <span class="icon width-1">
             <i class="fa-regular fa-clone"></i>
           </span>
@@ -136,7 +136,7 @@
     {% if project.resource_count or project.package_count %}
       <section id="charts" class="mx-5 pt-5">
         {% if project.resource_count < 5000 and project.package_count < 5000 %}
-          <span hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load" hx-target="#charts"></span>
+          <div hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load" hx-target="#charts"></div>
           <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
           Loading the charts...
         {% else %}
@@ -147,8 +147,8 @@
             <span>Load the charts</span>
           </button>
         {% endif %}
-      {% endif %}
-    </section>
+      </section>
+    {% endif %}
   </div>
 
   {% include 'scanpipe/includes/run_modal.html' %}
