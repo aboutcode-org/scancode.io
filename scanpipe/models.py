@@ -1694,7 +1694,16 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q(extra_data__directory_content=""))
 
     def paginated(self, per_page=5000):
-        """Iterate over a (large) QuerySet by chunks of ``per_page`` items."""
+        """
+        Iterate over a (large) QuerySet by chunks of ``per_page`` items.
+
+        This is done to prevent high memory usage when using a regular QuerySet
+        or QuerySet.iterator to iterate over a large number of
+        CodebaseResources:
+
+        https://nextlinklabs.com/resources/insights/django-big-data-iteration
+        https://stackoverflow.com/questions/4222176/why-is-iterating-through-a-large-django-queryset-consuming-massive-amounts-of-me/
+        """
         for page in Paginator(self, per_page=per_page):
             yield page.object_list
 

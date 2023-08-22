@@ -555,14 +555,19 @@ def match_purldb_package(
 
 
 def match_purldb_resource(
-    project, resources_by_sha1, package_data_by_purldb_urls={}, **kwargs
+    project, resources_by_sha1, package_data_by_purldb_urls=None, **kwargs
 ):
     """
     Given a mapping of lists of CodebaseResources by their sha1 values,
     `resources_by_sha1`, send those sha1 values to purldb resources API
     endpoint, process the matched Package data, then return the number of
     CodebaseResources that were matched to a Package.
+
+    `package_data_by_purldb_urls` is a mapping of package data by their purldb
+    package instance URLs. This is intended to be used as a cache, to avoid
+    retrieving package data we retrieved before.
     """
+    package_data_by_purldb_urls = package_data_by_purldb_urls or {}
     match_count = 0
     sha1_list = list(resources_by_sha1.keys())
     if results := purldb.match_resources(sha1_list=sha1_list):
@@ -656,6 +661,12 @@ def match_purldb_resources(
 
 def match_purldb_directories(project, logger=None):
     """Match against PurlDB selecting codebase directories."""
+    # If we are able to get match results for a directory fingerprint, then that
+    # means every resource and directory under that directory is part of a
+    # Package. By starting from the root to/ directory, we are attempting to
+    # match as many files as we can before attempting to match further down. The
+    # more "higher-up" directories we can match to means that we reduce the
+    # number of queries made to purldb.
     to_directories = (
         project.codebaseresources.directories().to_codebase().order_by("path")
     )
