@@ -24,6 +24,11 @@ v32.5.3 (unreleased)
 - Add the ability to clone a project.
   https://github.com/nexB/scancode.io/issues/874
 
+- Improve perceived display performance of projects charts and stats on home page.
+  The charts are displayed when the number of resources or packages are less than
+  5000 records. Else, a button to load the charts is displayed.
+  https://github.com/nexB/scancode.io/issues/844
+
 v32.5.2 (2023-08-14)
 --------------------
 
