@@ -629,13 +629,18 @@ def _map_javascript_resource(
 def _map_about_file_resource(project, about_file_resource, to_resources):
     about_file_location = str(about_file_resource.location_path)
     package_data = resolve.resolve_about_package(about_file_location)
+
+    about_error_msg = "ERROR: at map_about_files: "
+    errors = []
     if not package_data:
-        return
+        errors.append(about_error_msg + "Cannot create package from ABOUT file")
+        return errors
 
     filename = package_data.get("filename")
     if not filename:
         # Cannot map anything without the about_resource value.
-        return
+        errors.append(about_error_msg + "ABOUT file does not have about_resource")
+        return errors
 
     ignored_resources = []
     if extra_data := package_data.get("extra_data"):
@@ -645,7 +650,11 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
     codebase_resources = to_resources.filter(path__contains=f"/{filename.lstrip('/')}")
     if not codebase_resources:
         # If there's nothing to map on the ``to/`` do not create the package.
-        return
+        errors.append(
+            about_error_msg
+            + "Resource paths listed at about_resource is not found in the to/ codebase"
+        )
+        return errors
 
     # Ignore resources for paths in `ignored_resources` attribute
     if ignored_resources:
@@ -667,6 +676,7 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
 
     codebase_resources.update(status=flag.ABOUT_MAPPED)
     about_file_resource.update(status=flag.ABOUT_MAPPED)
+    return errors
 
 
 def map_about_files(project, logger=None):
@@ -682,8 +692,16 @@ def map_about_files(project, logger=None):
             f"codebase."
         )
 
+    errors = []
+    error_msg = "Error(s) processing ABOUT file at {}: {}"
     for about_file_resource in from_about_files:
-        _map_about_file_resource(project, about_file_resource, to_resources)
+        about_errors = _map_about_file_resource(
+            project, about_file_resource, to_resources
+        )
+        if about_errors:
+            errors.append(
+                error_msg.format(about_file_resource.path, "\n".join(about_errors))
+            )
 
         about_file_companions = (
             about_file_resource.siblings()
@@ -691,6 +709,8 @@ def map_about_files(project, logger=None):
             .filter(extension__in=[".LICENSE", ".NOTICE"])
         )
         about_file_companions.update(status=flag.ABOUT_MAPPED)
+
+    return errors
 
 
 def map_javascript_post_purldb_match(project, logger=None):
