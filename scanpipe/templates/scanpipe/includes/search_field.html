@@ -1,4 +1,4 @@
-<div{% if export_xlsx_url_query %} class="is-flex"{% endif %}>
+<div{% if export_xlsx_url_query %} class="is-flex is-align-items-center"{% endif %}>
   {% if export_xlsx_url_query %}
     {% include "scanpipe/includes/list_actions_dropdown.html" %}
   {% endif %}
@@ -13,4 +13,9 @@
       <input type="hidden" name="{{ field_name }}" value="{{ value }}">
     {% endfor %}
   </form>
+  <a href="#" class="modal-button is-grey-link" data-target="search-syntax-modal" aria-haspopup="true">
+    <span class="icon">
+      <i class="fa-solid fa-circle-question"></i>
+    </span>
+  </a>
 </div>
