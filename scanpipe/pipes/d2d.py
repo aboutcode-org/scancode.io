@@ -484,25 +484,49 @@ def map_path(project, logger=None):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def create_package_from_purldb_data(project, resource, package_data):
-    """Create a DiscoveredPackage instance from PurlDB ``package_data``."""
+def create_package_from_purldb_data(project, resources, package_data):
+    """
+    Create a DiscoveredPackage instance from PurlDB ``package_data``.
+
+    Return a tuple, containing the created DiscoveredPackage and the number of
+    CodebaseResources matched to PurlDB that are part of that DiscoveredPackage.
+    """
     package_data = package_data.copy()
     # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
     # PurlDB match can be found in different projects.
     package_data.pop("uuid", None)
     package_data.pop("dependencies", None)
-    extracted_resources = project.codebaseresources.to_codebase().filter(
-        path__startswith=resource.path
-    )
+
+    q = Q()
+    for resource in resources:
+        if resource.is_archive:
+            # This is done to capture the extracted contents of the archive we
+            # matched to. Generally, the archive contents are in a directory
+            # that is the archive path with `-extract` at the end.
+            q |= Q(path__startswith=resource.path)
+        elif resource.is_dir:
+            # We add a trailing slash to avoid matching on directories we do not
+            # intend to. For example, if we have matched on the directory with
+            # the path `foo/bar/1`, using the __startswith filter without
+            # including a trailing slash on the path would have us get all
+            # diretories under `foo/bar/` that start with 1, such as
+            # `foo/bar/10001`, `foo/bar/123`, etc. when we just want `foo/bar/1`
+            # and its decendents.
+            path = f"{resource.path}/"
+            q |= Q(path__startswith=path)
+        else:
+            q |= Q(path=resource.path)
+
+    resources_qs = project.codebaseresources.to_codebase().filter(q)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
-        codebase_resources=extracted_resources,
+        codebase_resources=resources_qs,
     )
     # Override the status as "purldb match" as we can rely on the codebase relation
     # for the mapping information.
-    extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
-    return package
+    matched_resources_count = resources_qs.update(status=flag.MATCHED_TO_PURLDB)
+    return package, matched_resources_count
 
 
 def process_purldb_package_data(project, package_data, resources):
@@ -512,19 +536,10 @@ def process_purldb_package_data(project, package_data, resources):
 
     Return the number of Resources matched to a Package.
     """
-    match_resources_count = 0
-    for resource in resources:
-        matched_to_purldb_before = resource.status == flag.MATCHED_TO_PURLDB
-        matched_package = create_package_from_purldb_data(
-            project=project, resource=resource, package_data=package_data
-        )
-        resource.refresh_from_db()
-        matched_to_purldb_after = resource.status == flag.MATCHED_TO_PURLDB
-        if matched_package and matched_to_purldb_before != matched_to_purldb_after:
-            # Increment matched_resources_count if we have `matched_package` and
-            # when we are able to match on a Resource for the first time.
-            match_resources_count += 1
-    return match_resources_count
+    matched_package, matched_resources_count = create_package_from_purldb_data(
+        project=project, resources=resources, package_data=package_data
+    )
+    return matched_resources_count
 
 
 def match_purldb_package(
@@ -599,7 +614,8 @@ def match_purldb_directory(project, resource):
     if results := purldb.match_directory(fingerprint=fingerprint):
         package_url = results[0]["package"]
         if package_data := purldb.request_get(url=package_url):
-            return create_package_from_purldb_data(project, resource, package_data)
+            resources = [resource]
+            return create_package_from_purldb_data(project, resources, package_data)
 
 
 def match_purldb_resources(
@@ -621,9 +637,17 @@ def match_purldb_resources(
     )
     resource_count = to_resources.count()
 
-    if logger:
-        extensions_str = ", ".join(extensions)
-        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
+    extensions_str = ", ".join(extensions)
+    if resource_count > 0:
+        if logger:
+            logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
+    else:
+        if logger:
+            logger(
+                f"Skipping matching for {extensions_str} resources, "
+                f"as there are {resource_count:,d}"
+            )
+        return
 
     resource_iterator = to_resources.paginated(per_page=chunk_size)
     last_percent = 0
@@ -655,6 +679,10 @@ def match_purldb_resources(
             increment_percent=10,
             start_time=start_time,
         )
+
+        # Clear out resources_by_sha1 when we are done with the current batch of
+        # CodebaseResources
+        resources_by_sha1 = defaultdict(list)
 
     logger(f"{matched_count:,d} resource(s) matched in PurlDB")
 
