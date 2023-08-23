@@ -567,13 +567,16 @@ class IsVulnerable(django_filters.ChoiceFilter):
         return qs
 
 
-class DiscoveredPackageSearchFilter(django_filters.CharFilter):
+class DiscoveredPackageSearchFilter(QuerySearchFilter):
     def filter(self, qs, value):
         if not value:
             return qs
 
         if value.startswith("pkg:"):
             return qs.for_package_url(value)
+
+        if ":" in value:
+            return super().filter(qs, value)
 
         search_fields = ["type", "namespace", "name", "version"]
         lookups = Q()
@@ -589,7 +592,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "compliance_alert",
     ]
 
-    search = DiscoveredPackageSearchFilter(label="Search", lookup_expr="icontains")
+    search = DiscoveredPackageSearchFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
