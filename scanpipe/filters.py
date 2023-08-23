@@ -20,7 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import shlex
+
 from django.apps import apps
+from django.core.exceptions import FieldError
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db.models import Q
@@ -219,6 +222,63 @@ class FilterSetUtilsMixin:
         return queryset
 
 
+def parse_query_string_to_lookups(query_string, default_lookup_expr, default_field):
+    """Parse a query string and convert it into queryset lookups using Q objects."""
+    lookups = Q()
+    terms = shlex.split(query_string)
+
+    lookup_types = {
+        "=": "iexact",
+        "^": "istartswith",
+        "$": "iendswith",
+        "~": "icontains",
+        ">": "gt",
+        "<": "lt",
+    }
+
+    for term in terms:
+        lookup_expr = default_lookup_expr
+        negated = False
+
+        if ":" in term:
+            field_name, search_value = term.split(":", maxsplit=1)
+            if field_name.endswith(tuple(lookup_types.keys())):
+                lookup_symbol = field_name[-1]
+                lookup_expr = lookup_types.get(lookup_symbol)
+                field_name = field_name[:-1]
+
+            if field_name.startswith("-"):
+                field_name = field_name[1:]
+                negated = True
+
+        else:
+            search_value = term
+            field_name = default_field
+
+        lookups &= Q(**{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
+
+    return lookups
+
+
+class QuerySearchFilter(django_filters.CharFilter):
+    """Add support for complex query syntax in search filter."""
+
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        lookups = parse_query_string_to_lookups(
+            query_string=value,
+            default_lookup_expr=self.lookup_expr,
+            default_field=self.field_name,
+        )
+
+        try:
+            return qs.filter(lookups)
+        except FieldError:
+            return qs.none()
+
+
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "sort",
@@ -226,7 +286,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "status",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
@@ -396,7 +456,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "relation_map_type",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search",
         field_name="path",
         lookup_expr="icontains",
@@ -507,13 +567,16 @@ class IsVulnerable(django_filters.ChoiceFilter):
         return qs
 
 
-class DiscoveredPackageSearchFilter(django_filters.CharFilter):
+class DiscoveredPackageSearchFilter(QuerySearchFilter):
     def filter(self, qs, value):
         if not value:
             return qs
 
         if value.startswith("pkg:"):
             return qs.for_package_url(value)
+
+        if ":" in value:
+            return super().filter(qs, value)
 
         search_fields = ["type", "namespace", "name", "version"]
         lookups = Q()
@@ -529,7 +592,9 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "compliance_alert",
     ]
 
-    search = DiscoveredPackageSearchFilter(label="Search", lookup_expr="icontains")
+    search = DiscoveredPackageSearchFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
@@ -595,7 +660,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "is_vulnerable",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
@@ -643,7 +708,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 
 class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search", field_name="message", lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
@@ -668,7 +733,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "map_type",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search",
         field_name="to_resource__path",
         lookup_expr="icontains",

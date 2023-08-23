@@ -30,6 +30,7 @@ from scanpipe.filters import FilterSetUtilsMixin
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
+from scanpipe.filters import parse_query_string_to_lookups
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -37,6 +38,7 @@ from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 from scanpipe.tests import package_data2
 
@@ -222,3 +224,76 @@ class ScanPipeFilterTest(TestCase):
         self.assertEqual([d1], list(filterset.qs))
         filterset = DependencyFilterSet(data={"datasource_id": "gemfile_lock"})
         self.assertEqual([d2], list(filterset.qs))
+
+    def test_scanpipe_filters_parse_query_string_to_lookups(self):
+        inputs = {
+            "LICENSE": "(AND: ('name__icontains', 'LICENSE'))",
+            "two words": (
+                "(AND: ('name__icontains', 'two'), ('name__icontains', 'words'))"
+            ),
+            "'two words'": "(AND: ('name__icontains', 'two words'))",
+            "na me:LICENSE": (
+                "(AND: ('name__icontains', 'na'), ('me__icontains', 'LICENSE'))"
+            ),
+            "name:LICENSE": "(AND: ('name__icontains', 'LICENSE'))",
+            "default_value name:LICENSE": (
+                "(AND: ('name__icontains', 'default_value'), "
+                "('name__icontains', 'LICENSE'))"
+            ),
+            'name:"name with spaces"': "(AND: ('name__icontains', 'name with spaces'))",
+            "name:'name with spaces'": "(AND: ('name__icontains', 'name with spaces'))",
+            "-name:LICENSE -name:NOTICE": (
+                "(AND: (NOT (AND: ('name__icontains', 'LICENSE'))), "
+                "(NOT (AND: ('name__icontains', 'NOTICE'))))"
+            ),
+            "name:LICENSE status:scanned": (
+                "(AND: ('name__icontains', 'LICENSE'), "
+                "('status__icontains', 'scanned'))"
+            ),
+            'name^:"file"': "(AND: ('name__istartswith', 'file'))",
+            'name$:".zip"': "(AND: ('name__iendswith', '.zip'))",
+            'name=:"LICENSE"': "(AND: ('name__iexact', 'LICENSE'))",
+            'name~:"LIC"': "(AND: ('name__icontains', 'LIC'))",
+            'count<:"100"': "(AND: ('count__lt', '100'))",
+            'count>:"10"': "(AND: ('count__gt', '10'))",
+        }
+
+        for query_string, expected in inputs.items():
+            lookups = parse_query_string_to_lookups(query_string, "icontains", "name")
+            self.assertEqual(expected, str(lookups))
+
+    def test_scanpipe_filters_filter_advanced_search_query_string(self):
+        resource1 = make_resource_file(self.project1, path="dir/readme.html")
+        resource2 = make_resource_file(self.project1, path="dir/archive.zip")
+
+        data = {"search": "README"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "name:readme.html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "extension:.html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "-name:readme.html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource2], list(filterset.qs))
+
+        data = {"search": "not_a_field:value"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([], list(filterset.qs))
+
+        data = {"search": "discovered_packages:m2m"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([], list(filterset.qs))
+
+        data = {"search": "name^:read name$:html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "path^:dir"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual(2, len(filterset.qs))
