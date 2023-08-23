@@ -29,6 +29,10 @@ v32.5.3 (unreleased)
   5000 records. Else, a button to load the charts is displayed.
   https://github.com/nexB/scancode.io/issues/844
 
+- Add advanced search query system to all list views.
+  Refer to the documentation for details about the search syntax.
+  https://github.com/nexB/scancode.io/issues/871
+
 v32.5.2 (2023-08-14)
 --------------------
 
