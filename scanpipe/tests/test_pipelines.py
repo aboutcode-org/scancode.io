@@ -898,7 +898,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(43, project1.codebaseresources.count())
+        self.assertEqual(44, project1.codebaseresources.count())
         self.assertEqual(31, project1.codebaserelations.count())
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
@@ -906,6 +906,14 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
+
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.get()
+        self.assertEqual("map_about_files", message.model)
+        expected = (
+            "Resource paths listed at about_resource is not found in the to/ codebase"
+        )
+        self.assertIn(expected, message.description)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
