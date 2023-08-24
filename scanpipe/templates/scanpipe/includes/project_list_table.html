@@ -6,6 +6,11 @@
     <tr>
       <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
+        <div>
+          {% for label in project.labels.all %}
+            <a class="tag is-primary is-light" href="?label={{ label.slug }}">{{ label.name }}</a>
+          {% endfor %}
+        </div>
         <span class="has-text-grey is-size-7 is-block" title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
       </th>
       <td>

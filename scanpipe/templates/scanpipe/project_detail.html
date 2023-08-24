@@ -30,6 +30,10 @@
               Created {{ project.created_date|naturaltime }}
             </span>
           </span>
+          {% for label in project.labels.all %}
+            <a class="tag is-primary is-light has-text-weight-bold" href="{% url 'project_list' %}?label={{ label.slug }}">{{ label.name }}</a>
+          {% endfor %}
+          <a href="" class="is-size-7 has-text-grey">+ Add labels</a>
         </div>
       </div>
       <div>
