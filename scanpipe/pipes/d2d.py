@@ -499,6 +499,7 @@ def create_package_from_purldb_data(project, resources, package_data):
 
     q = Q()
     for resource in resources:
+        q |= Q(path=resource.path)
         if resource.is_archive:
             # This is done to capture the extracted contents of the archive we
             # matched to. Generally, the archive contents are in a directory
@@ -514,8 +515,6 @@ def create_package_from_purldb_data(project, resources, package_data):
             # and its decendents.
             path = f"{resource.path}/"
             q |= Q(path__startswith=path)
-        else:
-            q |= Q(path=resource.path)
 
     resources_qs = project.codebaseresources.to_codebase().filter(q)
     package = pipes.update_or_create_package(

@@ -131,6 +131,8 @@ class ScanPipeD2DPipesTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.match_packages")
     def test_scanpipe_pipes_d2d_match_purldb_resources(self, mock_match_package):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
+        to_1.is_archive = True
+        to_1.save()
         # The initial status will be updated to flag.MATCHED_TO_PURLDB
         to_2 = make_resource_file(
             self.project1, "to/package.jar-extract/a.class", status=flag.MAPPED
@@ -150,7 +152,7 @@ class ScanPipeD2DPipesTest(TestCase):
             logger=buffer.write,
         )
         expected = (
-            "Matching 1 .jar resources in PurlDB" "1 resource(s) matched in PurlDB"
+            "Matching 1 .jar resources in PurlDB" "3 resource(s) matched in PurlDB"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -167,7 +169,7 @@ class ScanPipeD2DPipesTest(TestCase):
     def test_scanpipe_pipes_d2d_match_purldb_directories(self, mock_request_get):
         to_1 = make_resource_directory(
             self.project1,
-            "to/package.jar-extract/",
+            "to/package.jar-extract",
             extra_data={"directory_content": "abcdef"},
         )
         to_2 = make_resource_file(self.project1, "to/package.jar-extract/a.class")
@@ -680,7 +682,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         d2d.collect_and_create_codebase_resources(self.project1)
 
-        to_map_resource = self.project1.codebaseresources.get(
+        to_map_resources = self.project1.codebaseresources.filter(
             path=(
                 "to/project.tar.zst/modules/apps/adaptive-media/"
                 "adaptive-media-web/src/main/resources/META-INF/resources/"
@@ -691,8 +693,8 @@ class ScanPipeD2DPipesTest(TestCase):
         package_data = package_data1.copy()
         package_data["uuid"] = uuid.uuid4()
 
-        package = d2d.create_package_from_purldb_data(
-            self.project1, to_map_resource, package_data
+        package, matched_resources_count = d2d.create_package_from_purldb_data(
+            self.project1, to_map_resources, package_data
         )
 
         buffer = io.StringIO()
