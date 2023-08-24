@@ -112,9 +112,7 @@ class DeployToDevelop(Pipeline):
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
-        errors = d2d.map_about_files(project=self.project, logger=self.log)
-        if errors:
-            self.add_error("\n".join(errors))
+        d2d.map_about_files(project=self.project, logger=self.log)
 
     def map_checksum(self):
         """Map using SHA1 checksum."""

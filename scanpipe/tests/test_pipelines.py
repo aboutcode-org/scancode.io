@@ -907,13 +907,13 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-        self.assertEqual(1, project1.projecterrors.count())
-        error = project1.projecterrors.get()
-        self.assertEqual("deploy_to_develop", error.model)
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.get()
+        self.assertEqual("map_about_files", message.model)
         expected = (
             "Resource paths listed at about_resource is not found in the to/ codebase"
         )
-        self.assertIn(expected, error.message)
+        self.assertIn(expected, message.description)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
