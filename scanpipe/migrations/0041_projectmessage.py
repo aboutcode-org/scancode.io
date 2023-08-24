@@ -9,7 +9,7 @@ import uuid
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("scanpipe", "0039_discoveredpackage_compliance_alert_and_more"),
+        ("scanpipe", "0040_discovereddependency_affected_by_vulnerabilities"),
     ]
 
     operations = [

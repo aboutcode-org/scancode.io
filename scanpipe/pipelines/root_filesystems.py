@@ -20,8 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
-
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
@@ -68,13 +66,11 @@ class RootFS(Pipeline):
         self.root_filesystems = list(rootfs.RootFs.from_project_codebase(self.project))
 
     def collect_rootfs_information(self):
-        """Collect and stores rootfs information in the project."""
-        rootfs_data = {}
-        for rfs in self.root_filesystems:
-            rootfs_data["name"] = os.path.basename(rfs.location)
-            rootfs_data["distro"] = rfs.distro.to_dict() if rfs.distro else {}
-
-        self.project.update_extra_data({"images": rootfs_data})
+        """Collect and stores rootfs information on the project."""
+        rootfs_data = [
+            rootfs.get_rootfs_data(root_fs) for root_fs in self.root_filesystems
+        ]
+        self.project.update_extra_data({"root_filesystems": rootfs_data})
 
     def collect_and_create_codebase_resources(self):
         """Collect and label all image files as CodebaseResource."""

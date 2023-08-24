@@ -53,6 +53,18 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
 )
 
+SECURE_CONTENT_TYPE_NOSNIFF = env.bool("SECURE_CONTENT_TYPE_NOSNIFF", default=True)
+
+X_FRAME_OPTIONS = env.str("X_FRAME_OPTIONS", default="DENY")
+
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
+
+# ``security.W004`` SECURE_HSTS_SECONDS and ``security.W008`` SECURE_SSL_REDIRECT
+# are handled by the web server.
+SILENCED_SYSTEM_CHECKS = ["security.W004", "security.W008"]
+
 # ScanCode.io
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
@@ -63,7 +75,7 @@ SCANCODEIO_CONFIG_FILE = env.str(
     "SCANCODEIO_CONFIG_FILE", default="scancode-config.yml"
 )
 
-SCANCODE_TOOLKIT_CLI_OPTIONS = env.list("SCANCODE_TOOLKIT_CLI_OPTIONS", default=[])
+SCANCODE_TOOLKIT_RUN_SCAN_ARGS = env.dict("SCANCODE_TOOLKIT_RUN_SCAN_ARGS", default={})
 
 SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
 
@@ -128,6 +140,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -225,24 +238,6 @@ if DEBUG and DEBUG_TOOLBAR:
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
     INTERNAL_IPS = ["127.0.0.1"]
 
-# Cache
-
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "default",
-    },
-    "scan_results": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "scan",
-        "TIMEOUT": 86_400,  # 1 day
-        "OPTIONS": {
-            # Maximum entries allowed in the cache before old values are deleted
-            "MAX_ENTRIES": 1_000_000,
-        },
-    },
-}
-
 # Logging
 
 LOGGING = {
@@ -298,7 +293,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATIC_ROOT = "/var/scancodeio/static/"
+STATIC_ROOT = env.str("STATIC_ROOT", default="/var/scancodeio/static/")
 
 STATICFILES_DIRS = [
     PROJECT_DIR("static"),

@@ -210,6 +210,44 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.codebase_path.exists())
         self.assertTrue(self.project1.tmp_path.exists())
 
+    def test_scanpipe_project_model_clone(self):
+        self.project1.add_input_source(filename="file1", source="uploaded")
+        self.project1.add_input_source(filename="file2", source="https://download.url")
+        self.project1.update(settings={"extract_recursively": True})
+        new_file_path1 = self.project1.input_path / "file.zip"
+        new_file_path1.touch()
+        run1 = self.project1.add_pipeline("docker")
+        run2 = self.project1.add_pipeline("find_vulnerabilities")
+
+        cloned_project = self.project1.clone("cloned project")
+        self.assertIsInstance(cloned_project, Project)
+        self.assertNotEqual(self.project1.pk, cloned_project.pk)
+        self.assertNotEqual(self.project1.slug, cloned_project.slug)
+        self.assertNotEqual(self.project1.work_directory, cloned_project.work_directory)
+
+        self.assertEqual("cloned project", cloned_project.name)
+        self.assertEqual({}, cloned_project.settings)
+        self.assertEqual({}, cloned_project.input_sources)
+        self.assertEqual([], list(cloned_project.inputs()))
+        self.assertEqual([], list(cloned_project.runs.all()))
+
+        cloned_project2 = self.project1.clone(
+            "cloned project full",
+            copy_inputs=True,
+            copy_pipelines=True,
+            copy_settings=True,
+            execute_now=False,
+        )
+        self.assertEqual(self.project1.settings, cloned_project2.settings)
+        self.assertEqual(self.project1.input_sources, cloned_project2.input_sources)
+        self.assertEqual(1, len(list(cloned_project2.inputs())))
+        runs = cloned_project2.runs.all()
+        self.assertEqual(
+            ["docker", "find_vulnerabilities"], [run.pipeline_name for run in runs]
+        )
+        self.assertNotEqual(run1.pk, runs[0].pk)
+        self.assertNotEqual(run2.pk, runs[1].pk)
+
     def test_scanpipe_project_model_input_sources_list_property(self):
         self.project1.add_input_source(filename="file1", source="uploaded")
         self.project1.add_input_source(filename="file2", source="https://download.url")
@@ -1203,6 +1241,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
         file.create_and_add_package(package_data1)
+        file.create_and_add_package(package_data2)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 

@@ -92,6 +92,11 @@ urlpatterns = [
         name="project_reset",
     ),
     path(
+        "project/<slug:slug>/clone/",
+        views.ProjectCloneView.as_view(),
+        name="project_clone",
+    ),
+    path(
         "project/<slug:slug>/settings/",
         views.ProjectSettingsView.as_view(),
         name="project_settings",
@@ -160,6 +165,16 @@ urlpatterns = [
         "project/",
         views.ProjectListView.as_view(),
         name="project_list",
+    ),
+    path(
+        "license/<str:key>/",
+        views.LicenseDetailsView.as_view(),
+        name="license_detail",
+    ),
+    path(
+        "license/",
+        views.LicenseListView.as_view(),
+        name="license_list",
     ),
     path("monitor/", include("django_rq.urls")),
 ]

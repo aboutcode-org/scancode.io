@@ -251,7 +251,8 @@
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest",
@@ -264,7 +265,8 @@
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -277,7 +279,8 @@
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -290,7 +293,8 @@
       "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     }
   ],
   "files": [

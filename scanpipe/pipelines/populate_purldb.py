@@ -53,7 +53,7 @@ class PopulatePurlDB(Pipeline):
         if not purldb.is_available():
             raise Exception("PurlDB is not available.")
 
-        package_urls = [pacakage.purl for pacakage in packages]
+        package_urls = [package.purl for package in packages]
         self.log(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
 
         response = purldb.submit_purls(purls=package_urls)

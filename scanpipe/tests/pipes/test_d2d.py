@@ -28,11 +28,14 @@ from unittest import mock
 
 from django.test import TestCase
 
+from scanpipe import pipes
 from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
+from scanpipe.pipes import flag
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 
@@ -128,9 +131,9 @@ class ScanPipeD2DPipesTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.match_package")
     def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_package):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
-        # The initial status will be updated to "matched-to-purldb"
+        # The initial status will be updated to flag.MATCHED_TO_PURLDB
         to_2 = make_resource_file(
-            self.project1, "to/package.jar-extract/a.class", status="mapped"
+            self.project1, "to/package.jar-extract/a.class", status=flag.MAPPED
         )
         to_3 = make_resource_file(self.project1, "to/package.jar-extract/b.class")
 
@@ -156,7 +159,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()
-            self.assertEqual("matched-to-purldb", resource.status)
+            self.assertEqual(flag.MATCHED_TO_PURLDB, resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_pipes_d2d_get_best_path_matches_same_name(self):
@@ -210,6 +213,28 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("sha1", relation.map_type)
         self.assertEqual(from_2, relation.from_resource)
 
+    def test_scanpipe_pipes_d2d_flag_processed_archives(self):
+        to_archive = make_resource_file(
+            self.project1, path="to/archive.lpkg", is_archive=True
+        )
+        make_resource_directory(
+            self.project1, path="to/archive.lpkg-extract", status=flag.IGNORED_DIRECTORY
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file1.txt",
+            status=flag.MATCHED_TO_PURLDB,
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file2.txt",
+            status=flag.MATCHED_TO_PURLDB,
+        )
+
+        d2d.flag_processed_archives(self.project1)
+        to_archive.refresh_from_db()
+        self.assertEqual(to_archive.status, flag.ARCHIVE_PROCESSED)
+
     def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(
             self.project1,
@@ -262,6 +287,13 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertIn(to3, no_relations)
         to3.refresh_from_db()
         self.assertEqual("no-java-source", to3.status)
+
+    def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
+        make_resource_file(self.project1, path="to/Abstract.class")
+        buffer = io.StringIO()
+        d2d.map_java_to_class(self.project1, logger=buffer.write)
+        expected = "Mapping 1 .class resources to .java" "No .java resources to map."
+        self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
         from1 = make_resource_file(
@@ -467,7 +499,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.map_javascript(self.project1, logger=buffer.write)
         expected = (
-            "Mapping 1 .map resources using javascript map against from/ codebase"
+            "Mapping 1 .map resources using javascript map against from/ codebase."
         )
         self.assertIn(expected, buffer.getvalue())
 
@@ -515,7 +547,7 @@ class ScanPipeD2DPipesTest(TestCase):
         buffer = io.StringIO()
         d2d.map_javascript(self.project1, logger=buffer.write)
         expected = (
-            "Mapping 1 .map resources using javascript map against from/ codebase"
+            "Mapping 1 .map resources using javascript map against from/ codebase."
         )
         self.assertIn(expected, buffer.getvalue())
 
@@ -612,7 +644,7 @@ class ScanPipeD2DPipesTest(TestCase):
             logger=buffer.write,
         )
         expected = (
-            "Mapping 1 minified .js and .css resources based on existing PurlDB match"
+            "Mapping 1 minified .js and .css resources based on existing PurlDB match."
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -662,3 +694,127 @@ class ScanPipeD2DPipesTest(TestCase):
         relation = self.project1.codebaserelations.all()
         self.assertEqual(from_resource, relation[0].from_resource)
         self.assertEqual(from_resource, relation[1].from_resource)
+
+    def test_scanpipe_pipes_d2d_map_javascript_colocation(self):
+        to_dir1 = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "intelligent robotics platform.lpkg-extract/"
+            "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+            "resources/adaptive_media/js"
+        )
+        to_dir1.mkdir(parents=True)
+        to_resource_files1 = [
+            self.data_location / "d2d-javascript" / "to" / "main.js.map",
+            self.data_location / "d2d-javascript" / "to" / "main.js",
+        ]
+        copy_inputs(to_resource_files1, to_dir1)
+
+        to_resource_file3 = self.data_location / "d2d-javascript" / "to" / "unmain.js"
+        to_dir3 = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "intelligent robotics platform.lpkg-extract/"
+            "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+            "resources/adaptive_media/jsx"
+        )
+        to_dir3.mkdir(parents=True)
+        copy_input(to_resource_file3, to_dir3)
+
+        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_dir1 = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        from_dir1.mkdir(parents=True)
+        copy_input(from_input_location, from_dir1)
+
+        from_dir2 = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "ambiguous-machine-cloud/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        from_dir2.mkdir(parents=True)
+        copy_input(from_input_location, from_dir2)
+
+        from_dir3 = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "adaptive_media/jsx"
+        )
+        from_dir3.mkdir(parents=True)
+        copy_input(from_input_location, from_dir3)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        from_resource1 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+        to_resource1 = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/main.js"
+            )
+        )
+
+        from_resource3 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "adaptive_media/jsx/main.js"
+            )
+        )
+        to_resource3 = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/jsx/unmain.js"
+            )
+        )
+
+        pipes.make_relation(
+            from_resource=from_resource1,
+            to_resource=to_resource1,
+            map_type="js_compiled",
+        )
+
+        pipes.make_relation(
+            from_resource=from_resource3,
+            to_resource=to_resource3,
+            map_type="js_compiled",
+        )
+
+        buffer = io.StringIO()
+        d2d.map_javascript_colocation(self.project1, logger=buffer.write)
+        expected = (
+            "Mapping 1 to/ resources against from/ codebase "
+            "based on neighborhood file mapping."
+        )
+
+        relation = self.project1.codebaserelations.filter(
+            to_resource__path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "intelligent robotics platform.lpkg-extract/"
+                "com.example.adaptive.media.web-0.0.5.jar-extract/META-INF/"
+                "resources/adaptive_media/js/main.js.map"
+            ),
+        )
+        from_expected = to_resource3 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(from_expected, relation[0].from_resource)

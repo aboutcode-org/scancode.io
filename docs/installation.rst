@@ -78,6 +78,13 @@ An overview of the web application usage is available at :ref:`user_interface`.
     For example, if Docker is configured for 8 CPUs, a minimum of 8 GB of memory is
     required.
 
+.. tip::
+    By default, ScanCode.io starts only 1 worker, which means only 1 pipeline will be
+    executed at a time. If you wish to start more workers, use the following command,
+    replacing the number 2 with the desired number of workers::
+
+        docker compose up --scale worker=2
+
 .. warning::
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
     and ``CSRF_TRUSTED_ORIGINS`` settings need to be provided in your ``.env`` file,

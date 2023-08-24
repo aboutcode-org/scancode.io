@@ -23,11 +23,17 @@
   <div class="level-item has-text-centered">
     <div>
       <p class="heading">Dependencies</p>
-      <p class="{{ title_class }}">
+      <p class="{{ title_class }} is-flex is-align-items-center is-justify-content-center">
         {% if project.dependency_count %}
           <a href="{% url 'project_dependencies' project.slug %}">
             {{ project.dependency_count|intcomma }}
           </a>
+          {% if project.vulnerable_dependency_count %}
+            <a href="{% url 'project_dependencies' project.slug %}?is_vulnerable=yes" class="has-text-danger is-size-5 ml-2">
+              {{ project.vulnerable_dependency_count|intcomma }}
+              <i class="fa-solid fa-bug is-size-6"></i>
+            </a>
+          {% endif %}
         {% else %}
           <span>0</span>
         {% endif %}

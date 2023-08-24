@@ -1,0 +1,49 @@
+<div class="modal" id="search-syntax-modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Search syntax</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body px-2">
+      <div class="content">
+        <ul class="mt-0">
+          <li>
+            <strong>Single Term:</strong> Enter a single word to search for exact matches.<br>
+            Example: <code>file.txt</code>
+          </li>
+          <li>
+            <strong>Quoted Phrases:</strong> Use double quotes to search for exact phrases.<br>
+            Example: <code>"name version"</code>
+          </li>
+          <li>
+            <strong>Field Searches:</strong> Specify fields to narrow down your search.<br>
+            Use <code>field_name:</code> followed by your search term.<br>
+            Example: <code>name:file.txt</code></li>
+          <li>
+            <strong>Negation:</strong> Use a hyphen (-) before a field name to exclude results.<br>
+            Example: <code>-name:file.txt</code></li>
+          <li>
+            <strong>Lookup Types:</strong> Use lookup types to perform specific searches.
+            <ul>
+              <li><code>=</code>: Exact match</li>
+              <li><code>^</code>: Starts with</li>
+              <li><code>$</code>: Ends with</li>
+              <li><code>~</code>: Contains</li>
+              <li><code>&gt;</code>: Greater than</li>
+              <li><code>&lt;</code>: Less than</li>
+            </ul>
+            Example: <code>path^:dir1</code>
+          </li>
+          <li>
+            <strong>Multiple queries</strong> are combined with the <code>AND</code> operator.<br>
+            Example: <code>name:file.txt status:scanned</code>
+          </li>
+        </ul>
+      </div>
+    </section>
+    <footer class="modal-card-foot is-flex is-justify-content-space-between">
+      <button class="button">Close</button>
+    </footer>
+  </div>
+</div>

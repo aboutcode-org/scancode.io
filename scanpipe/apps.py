@@ -31,9 +31,11 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.color import color_style
 from django.db.models import BLANK_CHOICE_DASH
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 import saneyaml
+from licensedcode.models import load_licenses
 
 try:
     from importlib import metadata as importlib_metadata
@@ -155,6 +157,15 @@ class ScanPipeConfig(AppConfig):
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
         choices.extend([(name, name) for name in self.pipelines.keys()])
         return choices
+
+    def get_scancode_licenses(self):
+        """
+        Load licenses-related information from the ScanCode-toolkit ``licensedcode``
+        data and return a mapping of ``key`` to ``license`` objects.
+        """
+        return load_licenses()
+
+    scancode_licenses = cached_property(get_scancode_licenses)
 
     def set_policies(self):
         """

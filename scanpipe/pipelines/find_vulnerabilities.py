@@ -26,16 +26,17 @@ from scanpipe.pipes import vulnerablecode
 
 class FindVulnerabilities(Pipeline):
     """
-    Find vulnerabilities for discovered packages in the VulnerableCode database.
+    Find vulnerabilities for packages and dependencies in the VulnerableCode database.
 
-    Vulnerability data is stored on each package instance.
+    Vulnerability data is stored on each package and dependency instance.
     """
 
     @classmethod
     def steps(cls):
         return (
             cls.check_vulnerablecode_service_availability,
-            cls.lookup_vulnerabilities,
+            cls.lookup_packages_vulnerabilities,
+            cls.lookup_dependencies_vulnerabilities,
         )
 
     def check_vulnerablecode_service_availability(self):
@@ -46,7 +47,12 @@ class FindVulnerabilities(Pipeline):
         if not vulnerablecode.is_available():
             raise Exception("VulnerableCode is not available.")
 
-    def lookup_vulnerabilities(self):
+    def lookup_packages_vulnerabilities(self):
         """Check for vulnerabilities for each of the project's discovered package."""
         packages = self.project.discoveredpackages.all()
-        vulnerablecode.fetch_vulnerabilities(packages)
+        vulnerablecode.fetch_vulnerabilities(packages, logger=self.log)
+
+    def lookup_dependencies_vulnerabilities(self):
+        """Check for vulnerabilities for each of the project's discovered dependency."""
+        dependencies = self.project.discovereddependencies.filter(is_resolved=True)
+        vulnerablecode.fetch_vulnerabilities(dependencies, logger=self.log)

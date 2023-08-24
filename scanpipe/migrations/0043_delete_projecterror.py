@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("scanpipe", "0041_projecterror_to_projectmessage_data"),
+        ("scanpipe", "0042_projecterror_to_projectmessage_data"),
     ]
 
     operations = [

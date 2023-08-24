@@ -35,7 +35,7 @@ def reverse_migrate_message_to_error_data(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("scanpipe", "0040_projectmessage"),
+        ("scanpipe", "0041_projectmessage"),
     ]
 
     operations = [

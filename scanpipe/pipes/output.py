@@ -482,6 +482,8 @@ def _get_spdx_extracted_licenses(license_expressions):
     licensing = Licensing()
     license_index = get_licenses_by_spdx_key()
     urls_fields = [
+        "licensedb_url",
+        "scancode_url",
         "faq_url",
         "homepage_url",
         "osi_url",
@@ -530,28 +532,28 @@ def to_spdx(project, include_files=False):
     """
     output_file = project.get_output_file_path("results", "spdx.json")
 
-    discovereddependencies_qs = get_queryset(project, "discovereddependency")
-    spdx_packages = [
-        *get_queryset(project, "discoveredpackage"),
-        *discovereddependencies_qs,
-    ]
+    discoveredpackage_qs = get_queryset(project, "discoveredpackage")
+    discovereddependency_qs = get_queryset(project, "discovereddependency")
 
     packages_as_spdx = []
     license_expressions = []
-    for spdx_package in spdx_packages:
-        packages_as_spdx.append(spdx_package.as_spdx())
-        if license_expression := getattr(spdx_package, "license_expression", None):
+    relationships = []
+
+    for package in discoveredpackage_qs:
+        packages_as_spdx.append(package.as_spdx())
+        if license_expression := package.declared_license_expression:
             license_expressions.append(license_expression)
 
-    relationships = [
-        spdx.Relationship(
-            spdx_id=dep.spdx_id,
-            related_spdx_id=dep.for_package.spdx_id,
-            relationship="DEPENDENCY_OF",
-        )
-        for dep in discovereddependencies_qs
-        if dep.for_package
-    ]
+    for dependency in discovereddependency_qs:
+        packages_as_spdx.append(dependency.as_spdx())
+        if dependency.for_package:
+            relationships.append(
+                spdx.Relationship(
+                    spdx_id=dependency.spdx_id,
+                    related_spdx_id=dependency.for_package.spdx_id,
+                    relationship="DEPENDENCY_OF",
+                )
+            )
 
     files_as_spdx = []
     if include_files:

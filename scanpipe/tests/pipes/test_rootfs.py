@@ -51,7 +51,7 @@ class ScanPipeRootfsPipesTest(TestCase):
     def test_scanpipe_pipes_rootfs_flag_uninteresting_codebase_resources(self):
         p1 = Project.objects.create(name="Analysis")
         resource1 = CodebaseResource.objects.create(project=p1, path="filename.ext")
-        resource2 = CodebaseResource.objects.create(project=p1, rootfs_path="/tmp/file")
+        resource2 = CodebaseResource.objects.create(project=p1, rootfs_path="/etc/file")
 
         rootfs.flag_uninteresting_codebase_resources(p1)
         resource1.refresh_from_db()

@@ -234,7 +234,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/dask",
@@ -247,7 +248,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/graphviz",
@@ -260,7 +262,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/graphviz",
@@ -273,7 +276,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/ipycytoscape",
@@ -286,7 +290,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/ipycytoscape",
@@ -299,7 +304,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/networkx",
@@ -312,7 +318,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/networkx",
@@ -325,7 +332,8 @@
       "for_package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
       "datafile_path": "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     }
   ],
   "files": [
