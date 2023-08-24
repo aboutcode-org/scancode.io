@@ -33,6 +33,10 @@ v32.5.3 (unreleased)
   Refer to the documentation for details about the search syntax.
   https://github.com/nexB/scancode.io/issues/871
 
+- Migrate the ProjectError model to a global ProjectMessage.
+  3 level of severity available: INFO, WARNING, and ERROR.
+  https://github.com/nexB/scancode.io/issues/338
+
 v32.5.2 (2023-08-14)
 --------------------
 

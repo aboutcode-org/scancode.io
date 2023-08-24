@@ -205,13 +205,13 @@ class ScanPipeScancodePipesTest(TestCase):
             project=project1, path="not available"
         )
 
-        self.assertEqual(0, project1.projecterrors.count())
+        self.assertEqual(0, project1.projectmessages.count())
         scan_results, scan_errors = scancode.scan_file(codebase_resource1.location)
         scancode.save_scan_file_results(codebase_resource1, scan_results, scan_errors)
 
         codebase_resource1.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource1.status)
-        self.assertEqual(4, project1.projecterrors.count())
+        self.assertEqual(4, project1.projectmessages.count())
 
         copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
@@ -238,15 +238,15 @@ class ScanPipeScancodePipesTest(TestCase):
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)
-        self.assertEqual(1, project1.projecterrors.count())
-        error = project1.projecterrors.latest("created_date")
-        self.assertEqual("CodebaseResource", error.model)
-        self.assertEqual("", error.traceback)
-        expected_message = (
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("CodebaseResource", message.model)
+        self.assertEqual("", message.traceback)
+        expected_description = (
             "ERROR: for scanner: copyrights:\n"
             "ERROR: Processing interrupted: timeout after 120 seconds."
         )
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_description, message.description)
 
     @mock.patch("scanpipe.pipes.scancode._scan_resource")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
@@ -330,15 +330,15 @@ class ScanPipeScancodePipesTest(TestCase):
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)
-        self.assertEqual(1, project1.projecterrors.count())
-        error = project1.projecterrors.latest("created_date")
-        self.assertEqual("CodebaseResource", error.model)
-        self.assertEqual("", error.traceback)
-        expected_message = (
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("CodebaseResource", message.model)
+        self.assertEqual("", message.traceback)
+        expected_description = (
             "ERROR: for scanner: package_data:\n"
             "ERROR: Processing interrupted: timeout after 120 seconds."
         )
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_description, message.description)
 
     def test_scanpipe_pipes_scancode_scan_and_save_multiprocessing_with_threading(self):
         def noop(*args, **kwargs):

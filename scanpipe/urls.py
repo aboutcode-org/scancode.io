@@ -72,9 +72,9 @@ urlpatterns = [
         name="project_relations",
     ),
     path(
-        "project/<slug:slug>/errors/",
-        views.ProjectErrorListView.as_view(),
-        name="project_errors",
+        "project/<slug:slug>/messages/",
+        views.ProjectMessageListView.as_view(),
+        name="project_messages",
     ),
     path(
         "project/<slug:slug>/archive/",

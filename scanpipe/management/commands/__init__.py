@@ -32,7 +32,7 @@ from django.template.defaultfilters import pluralize
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import fetch_urls
 
@@ -93,7 +93,7 @@ class RunStatusCommandMixin:
     def get_queryset_objects_messages(self, project):
         messages = []
 
-        for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
+        for model_class in [CodebaseResource, DiscoveredPackage, ProjectMessage]:
             queryset = model_class.objects.project(project)
             messages.append(f" - {model_class.__name__}: {queryset.count()}")
 

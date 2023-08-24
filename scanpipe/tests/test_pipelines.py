@@ -141,11 +141,11 @@ class ScanPipePipelinesTest(TestCase):
         with pipeline.save_errors(Exception):
             raise Exception("Error message")
 
-        error = project1.projecterrors.get()
-        self.assertEqual("do_nothing", error.model)
-        self.assertEqual({}, error.details)
-        self.assertEqual("Error message", error.message)
-        self.assertIn('raise Exception("Error message")', error.traceback)
+        message = project1.projectmessages.get()
+        self.assertEqual("do_nothing", message.model)
+        self.assertEqual({}, message.details)
+        self.assertEqual("Error message", message.description)
+        self.assertIn('raise Exception("Error message")', message.traceback)
 
     def test_scanpipe_pipelines_is_pipeline(self):
         self.assertFalse(is_pipeline(None))
@@ -246,8 +246,8 @@ class RootFSPipelineTest(TestCase):
             extract_archive.return_value = ["Error"]
             pipeline_instance.extract_input_files_to_codebase_directory()
 
-        error = project1.projecterrors.get()
-        self.assertEqual("Error\nError", error.message)
+        error = project1.projectmessages.get()
+        self.assertEqual("Error\nError", error.description)
 
 
 def sort_scanned_files_by_path(scan_data):
@@ -509,9 +509,9 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        project_errors = [pe.message for pe in project1.projecterrors.all()]
-        self.assertEqual(1, len(project_errors))
-        self.assertEqual("Distro not found.", project_errors[0])
+        project_messages = project1.projectmessages.all()
+        self.assertEqual(1, len(project_messages))
+        self.assertEqual("Distro not found.", project_messages[0].description)
 
         result_file = output.to_json(project1)
         expected_file = (

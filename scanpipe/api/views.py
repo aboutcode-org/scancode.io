@@ -41,7 +41,7 @@ from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import PipelineSerializer
-from scanpipe.api.serializers import ProjectErrorSerializer
+from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
@@ -202,12 +202,12 @@ class ProjectViewSet(
         return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
-    def errors(self, request, *args, **kwargs):
+    def messages(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = project.projecterrors.all()
+        queryset = project.projectmessages.all()
 
         paginated_qs = self.paginate_queryset(queryset)
-        serializer = ProjectErrorSerializer(paginated_qs, many=True)
+        serializer = ProjectMessageSerializer(paginated_qs, many=True)
 
         return self.get_paginated_response(serializer.data)
 
