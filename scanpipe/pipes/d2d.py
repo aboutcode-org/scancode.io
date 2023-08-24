@@ -528,19 +528,6 @@ def create_package_from_purldb_data(project, resources, package_data):
     return package, matched_resources_count
 
 
-def process_purldb_package_data(project, package_data, resources):
-    """
-    Given a mapping of `package_data`, create a Package from `package_data`, and
-    associate the Package to Resources in `resources`.
-
-    Return the number of Resources matched to a Package.
-    """
-    matched_package, matched_resources_count = create_package_from_purldb_data(
-        project=project, resources=resources, package_data=package_data
-    )
-    return matched_resources_count
-
-
 def match_purldb_package(
     project, resources_by_sha1, enhance_package_data=True, **kwargs
 ):
@@ -560,11 +547,12 @@ def match_purldb_package(
         for package_data in results:
             sha1 = package_data["sha1"]
             resources = resources_by_sha1.get(sha1, [])
-            match_count += process_purldb_package_data(
+            _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
-                package_data=package_data,
                 resources=resources,
+                package_data=package_data,
             )
+            match_count += matched_resources_count
     return match_count
 
 
@@ -598,11 +586,12 @@ def match_purldb_resource(
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
             resources = resources_by_sha1.get(sha1, [])
-            match_count += process_purldb_package_data(
+            _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
-                package_data=package_data,
                 resources=resources,
+                package_data=package_data,
             )
+            match_count += matched_resources_count
     return match_count
 
 
