@@ -366,7 +366,7 @@ def add_resource_to_package(package_uid, resource, project):
     """
     Relate a DiscoveredPackage to `resource` from `project` using `package_uid`.
 
-    Add a ProjectError when the DiscoveredPackage could not be fetched using the
+    Add a ProjectMessage when the DiscoveredPackage could not be fetched using the
     provided `package_uid`.
     """
     if not package_uid:
