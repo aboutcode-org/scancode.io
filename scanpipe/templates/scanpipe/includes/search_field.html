@@ -13,9 +13,11 @@
       <input type="hidden" name="{{ field_name }}" value="{{ value }}">
     {% endfor %}
   </form>
-  <a href="#" class="modal-button is-grey-link" data-target="search-syntax-modal" aria-haspopup="true">
-    <span class="icon">
-      <i class="fa-solid fa-circle-question"></i>
-    </span>
-  </a>
+  {% if not hide_help %}
+    <a href="#" class="modal-button is-grey-link" data-target="search-syntax-modal" aria-haspopup="true">
+      <span class="icon">
+        <i class="fa-solid fa-circle-question"></i>
+      </span>
+    </a>
+  {% endif %}
 </div>

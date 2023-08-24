@@ -34,7 +34,7 @@
 
       <div class="is-flex mb-3">
         <div class="is-flex-grow-1 mr-2">
-          {% include 'scanpipe/includes/search_field.html' %}
+          {% include 'scanpipe/includes/search_field.html' with hide_help=True %}
         </div>
         <div>
           {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
