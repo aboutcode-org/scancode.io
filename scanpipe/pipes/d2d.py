@@ -522,9 +522,18 @@ def create_package_from_purldb_data(project, resources, package_data):
         package_data=package_data,
         codebase_resources=resources_qs,
     )
-    # Override the status as "purldb match" as we can rely on the codebase relation
-    # for the mapping information.
-    matched_resources_count = resources_qs.update(status=flag.MATCHED_TO_PURLDB)
+    # Get the number of already matched CodebaseResources from `resources_qs`
+    # before we update the status of all CodebaseResources from `resources_qs`,
+    # then subtract the number of already matched CodebaseResources from the
+    # total number of CodebaseResources updated. This is to prevent
+    # double-counting of CodebaseResources that were matched to purldb
+    previously_matched_resources_count = resources_qs.filter(
+        status=flag.MATCHED_TO_PURLDB
+    ).count()
+    updated_resources_count = resources_qs.update(status=flag.MATCHED_TO_PURLDB)
+    matched_resources_count = (
+        updated_resources_count - previously_matched_resources_count
+    )
     return package, matched_resources_count
 
 
