@@ -418,6 +418,10 @@ def _map_path_resource(
     if not match:
         return
 
+    # Don't path map resource solely based on the file name.
+    if match.matched_path_length < 2:
+        return
+
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
     if len(match.resource_ids) > match.matched_path_length:
