@@ -262,6 +262,15 @@ Clone and Configure
     When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is
     used.
 
+ .. tip::
+    When running M1 based MacOS, you can also install SCIO in x86 mode using rosetta::
+
+        softwareupdate --install-rosetta
+        arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.11
+        make dev PYTHON_EXE=/usr/local/bin/python3.11
+        (. bin/activate; pip install psycopg[binary])
+
  * Create an environment file::
 
     make envfile
