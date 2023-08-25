@@ -1017,6 +1017,14 @@ def download_input_view(request, slug, input_name):
     return FileResponse(file_path.open("rb"), as_attachment=True)
 
 
+@require_POST
+@conditional_login_required
+def delete_label_view(request, slug, label_name):
+    project = get_object_or_404(Project, slug=slug)
+    project.labels.remove(label_name)
+    return JsonResponse({})
+
+
 def project_results_json_response(project, as_attachment=False):
     """
     Return the results as JSON compatible with ScanCode data format.

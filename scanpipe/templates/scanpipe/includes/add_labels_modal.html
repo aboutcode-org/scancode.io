@@ -16,7 +16,12 @@
                   <span class="tag is-primary">
                     <span class="has-text-weight-bold ml-1">{{ label.name }}</span>
                   </span>
-                  <a class="tag is-delete" href="?"></a>
+                  <a class="tag is-delete"
+                     hx-post="{% url 'project_delete_label' project.slug label.name %}"
+                     hx-target="closest div.control"
+                     hx-swap="delete"
+                  >
+                  </a>
                 </div>
               </div>
             {% endfor %}
