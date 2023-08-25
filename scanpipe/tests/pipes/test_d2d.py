@@ -830,3 +830,33 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(from_expected, relation[0].from_resource)
+
+    def test_map_thirdparty_npm_packages(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_input_location = self.data_location / "d2d-javascript/to/package.json"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.map_thirdparty_npm_packages(self.project1, logger=buffer.write)
+
+        package_json = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/package.json"
+            )
+        )
+
+        expected = (
+            "Mapping 1 to/ resources against from/ codebase "
+            "based on package.json metadata."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.discoveredpackages.count())
+        self.assertEqual("npm-package-lookup", package_json.status)
