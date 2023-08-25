@@ -637,7 +637,10 @@ def match_purldb_resources(
     extensions_str = ", ".join(extensions)
     if resource_count > 0:
         if logger:
-            logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
+            logger(
+                f"Matching {resource_count:,d} {extensions_str} resources in PurlDB, "
+                "using SHA1"
+            )
     else:
         if logger:
             logger(
@@ -650,6 +653,7 @@ def match_purldb_resources(
     last_percent = 0
     start_time = timer()
     matched_count = 0
+    sha1_count = 0
     resources_by_sha1 = defaultdict(list)
     package_data_by_purldb_urls = {}
     resource_index = -1
@@ -677,11 +681,16 @@ def match_purldb_resources(
             start_time=start_time,
         )
 
+        # Keep track of the total number of sha1s we send
+        sha1_count += len(resources_by_sha1)
         # Clear out resources_by_sha1 when we are done with the current batch of
         # CodebaseResources
         resources_by_sha1 = defaultdict(list)
 
-    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
+    logger(
+        f"{matched_count:,d} resource(s) matched in PurlDB "
+        f"using {sha1_count:,d} SHA1(s)"
+    )
 
 
 def match_purldb_directories(project, logger=None):
