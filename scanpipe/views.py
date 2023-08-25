@@ -498,7 +498,7 @@ class ProjectListView(
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
-    prefetch_related = ["runs"]
+    prefetch_related = ["runs", "labels"]
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
@@ -653,6 +653,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         context.update(
             {
                 "inputs_with_source": inputs,
+                "labels": list(project.labels.all()),
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),

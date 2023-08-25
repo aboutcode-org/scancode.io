@@ -7,10 +7,10 @@
         <button class="delete" type="button" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
-        {% if project.labels.all %}
+        {% if labels %}
           <span class="has-text-weight-semibold">Assigned labels:</span>
           <div class="field is-grouped is-grouped-multiline mt-3">
-            {% for label in project.labels.all %}
+            {% for label in labels %}
               <div class="control">
                 <div class="tags has-addons">
                   <span class="tag is-primary">
