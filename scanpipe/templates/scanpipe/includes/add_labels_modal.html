@@ -1,0 +1,22 @@
+<div id="add-labels-modal" class="modal">
+  <div class="modal-background"></div>
+  <form method="post">{% csrf_token %}
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Add label</p>
+        <button class="delete" type="button" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="field">
+          <div class="control">
+            {{ add_labels_form.labels }}
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button id="add-labels-button" name="add-labels-submit" class="button is-link is-no-close" type="submit">Add label</button>
+        <button class="button" type="button">Close</button>
+      </footer>
+    </div>
+  </form>
+</div>

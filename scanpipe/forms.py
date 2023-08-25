@@ -160,6 +160,14 @@ class AddPipelineForm(PipelineBaseForm):
         return project
 
 
+class AddLabelsForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = [
+            "labels",
+        ]
+
+
 class ArchiveProjectForm(forms.Form):
     remove_input = forms.BooleanField(
         label="Remove inputs",

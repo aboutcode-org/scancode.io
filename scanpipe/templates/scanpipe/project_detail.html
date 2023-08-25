@@ -33,7 +33,9 @@
           {% for label in project.labels.all %}
             <a class="tag is-primary is-light has-text-weight-bold" href="{% url 'project_list' %}?label={{ label.slug }}">{{ label.name }}</a>
           {% endfor %}
-          {% include "scanpipe/includes/project_add_label_dropdown.html" %}
+          <a class="modal-button is-size-7" data-target="add-labels-modal" aria-haspopup="true">
+            + Add labels
+          </a>
         </div>
       </div>
       <div>
@@ -157,6 +159,7 @@
 
   {% include 'scanpipe/includes/run_modal.html' %}
   {% include 'scanpipe/includes/clone_modal.html' %}
+  {% include "scanpipe/includes/add_labels_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -175,5 +178,7 @@
 
     onSubmitOverlay("#add-pipeline-modal form");
     onSubmitOverlay("#add-inputs-modal form");
+    onSubmitOverlay("#add-labels-modal form");
+    onSubmitOverlay("#clone-modal form");
   </script>
 {% endblock %}

@@ -67,6 +67,7 @@ from scanpipe.filters import ProjectMessageFilterSet
 from scanpipe.filters import RelationFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
+from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectCloneForm
@@ -654,6 +655,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "inputs_with_source": inputs,
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
+                "add_labels_form": AddLabelsForm(),
                 "archive_form": ArchiveProjectForm(),
                 "resource_status_summary": resource_status_summary,
                 "license_clarity": license_clarity,
@@ -676,10 +678,16 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             form_class = AddInputsForm
             success_message = "Input file(s) added."
             error_message = "Input file addition error."
-        else:
+        elif "add-pipeline-submit" in request.POST:
             form_class = AddPipelineForm
             success_message = "Pipeline added."
             error_message = "Pipeline addition error."
+        elif "add-labels-submit" in request.POST:
+            form_class = AddLabelsForm
+            success_message = "Label added."
+            error_message = "Label addition error."
+        else:
+            raise Http404
 
         form_kwargs = {"data": request.POST, "files": request.FILES}
         form = form_class(**form_kwargs)
