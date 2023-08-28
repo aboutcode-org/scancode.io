@@ -605,6 +605,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
+            self.labels,
         ]
 
         for qs in relationships:
@@ -666,6 +667,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             input_sources=self.input_sources if copy_inputs else {},
             settings=self.settings if copy_settings else {},
         )
+
+        if labels := self.labels.values_list("name", flat=True):
+            cloned_project.labels.add(*labels)
 
         if copy_inputs:
             for input_location in self.inputs():
