@@ -24,6 +24,9 @@ from django import forms
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
+from taggit.forms import TagField
+from taggit.forms import TagWidget
+
 from scanpipe.models import Project
 from scanpipe.pipes.fetch import fetch_urls
 
@@ -157,6 +160,19 @@ class AddPipelineForm(PipelineBaseForm):
 
     def save(self, project):
         self.handle_pipeline(project)
+        return project
+
+
+class AddLabelsForm(forms.Form):
+    labels = TagField(
+        label="Add labels to this project:",
+        widget=TagWidget(
+            attrs={"class": "input", "placeholder": "Comma-separated list of labels"}
+        ),
+    )
+
+    def save(self, project):
+        project.labels.add(*self.cleaned_data["labels"])
         return project
 
 

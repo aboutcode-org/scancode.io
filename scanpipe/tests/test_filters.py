@@ -82,6 +82,19 @@ class ScanPipeFilterTest(TestCase):
         filterset = ProjectFilterSet(data={"status": "failed"})
         self.assertEqual([failed], list(filterset.qs))
 
+    def test_scanpipe_filters_project_filterset_labels(self):
+        Project.objects.create(name="project2")
+        self.project1.labels.add("label1")
+
+        filterset = ProjectFilterSet(data={"label": ""})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"label": "label1"})
+        self.assertEqual([self.project1], list(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"label": "label2"})
+        self.assertEqual(0, len(filterset.qs))
+
     def test_scanpipe_filters_filter_queryset_empty_values(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1,

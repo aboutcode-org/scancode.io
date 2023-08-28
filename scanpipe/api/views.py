@@ -121,6 +121,16 @@ class ProjectViewSet(
     serializer_class = ProjectSerializer
     filterset_class = ProjectFilterSet
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                "labels",
+                "runs",
+            )
+        )
+
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):
         """

@@ -4,19 +4,19 @@
       <span title="{{ object.path }}">{{ object.name }}</span>
       | {{ object.size|filesizeformat }} |
       {% if object.is_binary %}
-        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
       {% endif %}
       {% if object.is_text %}
-        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Text</span>' content="Plain text file." only %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Text</span>' content="Plain text file." only %}
       {% endif %}
       {% if object.is_archive %}
-        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
       {% endif %}
       {% if object.is_key_file %}
-        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
       {% endif %}
       {% if object.is_media %}
-        {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
       {% endif %}
     </div>
     <div class="nav-button">

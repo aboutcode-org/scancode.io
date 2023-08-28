@@ -79,6 +79,9 @@ from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
+from taggit.managers import TaggableManager
+from taggit.models import GenericUUIDTaggedItemBase
+from taggit.models import TaggedItemBase
 
 from scancodeio import __version__ as scancodeio_version
 from scanpipe import humanize_time
@@ -481,6 +484,12 @@ class ProjectQuerySet(models.QuerySet):
         return self.annotate(**annotations)
 
 
+class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
+    class Meta:
+        verbose_name = _("Label")
+        verbose_name_plural = _("Labels")
+
+
 class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     """
     The Project encapsulates all analysis processing.
@@ -518,6 +527,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     )
     notes = models.TextField(blank=True)
     settings = models.JSONField(default=dict, blank=True)
+    labels = TaggableManager(through=UUIDTaggedItem)
 
     objects = ProjectQuerySet.as_manager()
 
@@ -589,6 +599,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         # run the `_raw_delete()` on its QuerySet.
         _, deleted_counter = self.discoveredpackages.all().delete()
 
+        # Removes all tags from this project by deleting the UUIDTaggedItem instances.
+        self.labels.clear()
+
         relationships = [
             self.projectmessages,
             self.codebaserelations,
@@ -656,6 +669,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             input_sources=self.input_sources if copy_inputs else {},
             settings=self.settings if copy_settings else {},
         )
+
+        if labels := self.labels.names():
+            cloned_project.labels.add(*labels)
 
         if copy_inputs:
             for input_location in self.inputs():

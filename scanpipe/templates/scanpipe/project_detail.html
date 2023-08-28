@@ -30,9 +30,13 @@
               Created {{ project.created_date|naturaltime }}
             </span>
           </span>
+          {% include 'scanpipe/includes/project_labels.html' with labels=labels only %}
+          <a class="modal-button is-size-7" data-target="add-labels-modal" aria-haspopup="true">
+            Edit labels
+          </a>
         </div>
       </div>
-      <div>
+      <div style="min-width:fit-content;">
         <a href="{% url 'project_settings' project.slug %}" class="button is-smaller is-info is-outlined">
           <span class="icon width-1">
             <i class="fa-solid fa-sliders-h"></i>
@@ -151,8 +155,9 @@
     {% endif %}
   </div>
 
-  {% include 'scanpipe/includes/run_modal.html' %}
-  {% include 'scanpipe/includes/clone_modal.html' %}
+  {% include 'scanpipe/modals/run_modal.html' %}
+  {% include 'scanpipe/modals/clone_modal.html' %}
+  {% include "scanpipe/modals/add_labels_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -171,5 +176,7 @@
 
     onSubmitOverlay("#add-pipeline-modal form");
     onSubmitOverlay("#add-inputs-modal form");
+    onSubmitOverlay("#add-labels-modal form");
+    onSubmitOverlay("#clone-modal form");
   </script>
 {% endblock %}
