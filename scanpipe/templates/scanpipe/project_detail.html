@@ -30,9 +30,7 @@
               Created {{ project.created_date|naturaltime }}
             </span>
           </span>
-          {% for label in labels %}
-            <a class="tag is-primary is-light has-text-weight-bold" href="{% url 'project_list' %}?label={{ label.slug }}">{{ label.name }}</a>
-          {% endfor %}
+          {% include 'scanpipe/includes/project_labels.html' with labels=labels only %}
           <a class="modal-button is-size-7" data-target="add-labels-modal" aria-haspopup="true">
             Edit labels
           </a>
