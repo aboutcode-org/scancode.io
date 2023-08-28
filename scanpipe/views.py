@@ -685,7 +685,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             error_message = "Pipeline addition error."
         elif "add-labels-submit" in request.POST:
             form_class = AddLabelsForm
-            success_message = "Label added."
+            success_message = "Label(s) added."
             error_message = "Label addition error."
         else:
             raise Http404

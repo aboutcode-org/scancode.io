@@ -622,6 +622,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
         self.assertEqual({}, self.project1.get_env())
 
+    def test_scanpipe_project_model_labels(self):
+        self.project1.labels.add("label1", "label2")
+        self.assertEqual(2, UUIDTaggedItem.objects.count())
+        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+
+        self.project1.labels.remove("label1")
+        self.assertEqual(1, UUIDTaggedItem.objects.count())
+        self.assertEqual(["label2"], sorted(self.project1.labels.names()))
+
+        self.project1.labels.clear()
+        self.assertEqual(0, UUIDTaggedItem.objects.count())
+
     def test_scanpipe_model_update_mixin(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
         self.assertEqual("", resource.status)

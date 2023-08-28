@@ -263,12 +263,36 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.post(url, data, follow=True)
         self.assertEqual(404, response.status_code)
 
-        data["add-pipeline-submit"] = True
+        data["add-pipeline-submit"] = ""
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Pipeline added.")
         run = self.project1.runs.get()
         self.assertEqual("docker", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
+
+    def test_scanpipe_views_project_details_add_labels(self):
+        url = self.project1.get_absolute_url()
+        data = {
+            "labels": "label1, label2",
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(404, response.status_code)
+
+        data["add-labels-submit"] = ""
+        response = self.client.post(url, data, follow=True)
+        self.assertContains(response, "Label(s) added.")
+        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+
+    def test_scanpipe_views_project_delete_label(self):
+        self.project1.labels.add("label1")
+        url = reverse("project_delete_label", args=[self.project1.slug, "label1"])
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({}, response.json())
+        self.assertEqual([], list(self.project1.labels.names()))
 
     def test_scanpipe_views_project_details_charts_view(self):
         url = reverse("project_charts", args=[self.project1.slug])
