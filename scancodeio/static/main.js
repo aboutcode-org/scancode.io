@@ -164,12 +164,18 @@ function getAll(selector) {
 }
 
 function displayOverlay() {
-  let background = document.createElement("div");
+  const background = document.createElement("div");
+  background.setAttribute("id", "background-overlay");
   background.className = "modal-background";
   background.style.cssText = "z-index:100;color:white;text-align:center;padding-top:150px;position:fixed;";
   background.innerHTML = '<div class="fa-5x"><i class="fas fa-circle-notch fa-spin"></i></div>';
   document.body.appendChild(background);
   return background;
+}
+
+function removeOverlay() {
+  const background = document.getElementById("background-overlay");
+  if (background) background.remove();
 }
 
 // Display and update the `$progress` object on `$form` submitted using XHR

@@ -657,6 +657,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),
+                "project_clone_form": ProjectCloneForm(project),
                 "archive_form": ArchiveProjectForm(),
                 "resource_status_summary": resource_status_summary,
                 "license_clarity": license_clarity,
