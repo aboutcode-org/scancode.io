@@ -261,6 +261,10 @@ class ScanPipeViewsTest(TestCase):
             "pipeline": "docker",
         }
         response = self.client.post(url, data, follow=True)
+        self.assertEqual(404, response.status_code)
+
+        data["add-pipeline-submit"] = True
+        response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Pipeline added.")
         run = self.project1.runs.get()
         self.assertEqual("docker", run.pipeline_name)

@@ -151,7 +151,7 @@ class ProjectSerializer(
     discovered_packages_summary = serializers.SerializerMethodField()
     discovered_dependencies_summary = serializers.SerializerMethodField()
     codebase_relations_summary = serializers.SerializerMethodField()
-    labels = TagListSerializerField()
+    labels = TagListSerializerField(required=False)
 
     class Meta:
         model = Project

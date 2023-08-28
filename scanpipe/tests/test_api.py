@@ -379,6 +379,17 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data)
 
+    def test_scanpipe_api_project_create_labels(self):
+        data = {
+            "name": "Project1",
+            "labels": ["label1", "label2"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(data["labels"], sorted(response.data["labels"]))
+        project = Project.objects.get(name=data["name"])
+        self.assertEqual(data["labels"], sorted(project.labels.names()))
+
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))

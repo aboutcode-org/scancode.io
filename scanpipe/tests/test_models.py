@@ -58,6 +58,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipes.fetch import Download
@@ -150,21 +151,25 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(work_path.exists())
 
         self.project1.add_pipeline("docker")
+        self.project1.labels.add("label1", "label2")
+        self.assertEqual(2, UUIDTaggedItem.objects.count())
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
 
         delete_log = self.project1.delete_related_objects()
         expected = {
-            "scanpipe.DiscoveredPackage_codebase_resources": 1,
-            "scanpipe.DiscoveredPackage": 1,
-            "scanpipe.ProjectMessage": 0,
             "scanpipe.CodebaseRelation": 0,
-            "scanpipe.DiscoveredDependency": 0,
             "scanpipe.CodebaseResource": 1,
+            "scanpipe.DiscoveredDependency": 0,
+            "scanpipe.DiscoveredPackage": 1,
+            "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
         }
         self.assertEqual(expected, delete_log)
+        # Make sure the labels were deleted too.
+        self.assertEqual(0, UUIDTaggedItem.objects.count())
 
     def test_scanpipe_project_model_delete(self):
         work_path = self.project1.work_path

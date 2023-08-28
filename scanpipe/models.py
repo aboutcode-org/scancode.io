@@ -599,13 +599,15 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         # run the `_raw_delete()` on its QuerySet.
         _, deleted_counter = self.discoveredpackages.all().delete()
 
+        # Removes all tags from this project by deleting the UUIDTaggedItem instances.
+        self.labels.clear()
+
         relationships = [
             self.projectmessages,
             self.codebaserelations,
             self.discovereddependencies,
             self.codebaseresources,
             self.runs,
-            self.labels,
         ]
 
         for qs in relationships:
@@ -668,7 +670,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             settings=self.settings if copy_settings else {},
         )
 
-        if labels := self.labels.values_list("name", flat=True):
+        if labels := self.labels.names():
             cloned_project.labels.add(*labels)
 
         if copy_inputs:
