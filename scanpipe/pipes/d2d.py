@@ -497,26 +497,26 @@ def create_package_from_purldb_data(project, resources, package_data):
     package_data.pop("uuid", None)
     package_data.pop("dependencies", None)
 
-    q = Q()
+    lookups = Q()
     for resource in resources:
-        q |= Q(path=resource.path)
+        lookups |= Q(path=resource.path)
         if resource.is_archive:
             # This is done to capture the extracted contents of the archive we
             # matched to. Generally, the archive contents are in a directory
             # that is the archive path with `-extract` at the end.
-            q |= Q(path__startswith=resource.path)
+            lookups |= Q(path__startswith=resource.path)
         elif resource.is_dir:
             # We add a trailing slash to avoid matching on directories we do not
             # intend to. For example, if we have matched on the directory with
             # the path `foo/bar/1`, using the __startswith filter without
             # including a trailing slash on the path would have us get all
             # diretories under `foo/bar/` that start with 1, such as
-            # `foo/bar/10001`, `foo/bar/123`, etc. when we just want `foo/bar/1`
-            # and its decendents.
+            # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
+            # and its descendants.
             path = f"{resource.path}/"
-            q |= Q(path__startswith=path)
+            lookups |= Q(path__startswith=path)
 
-    resources_qs = project.codebaseresources.to_codebase().filter(q)
+    resources_qs = project.codebaseresources.to_codebase().filter(lookups)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
@@ -635,19 +635,17 @@ def match_purldb_resources(
     resource_count = to_resources.count()
 
     extensions_str = ", ".join(extensions)
-    if resource_count > 0:
-        if logger:
+    if logger:
+        if resource_count > 0:
             logger(
                 f"Matching {resource_count:,d} {extensions_str} resources in PurlDB, "
                 "using SHA1"
             )
-    else:
-        if logger:
+        else:
             logger(
                 f"Skipping matching for {extensions_str} resources, "
                 f"as there are {resource_count:,d}"
             )
-        return
 
     resource_iterator = to_resources.paginated(per_page=chunk_size)
     last_percent = 0

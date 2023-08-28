@@ -49,6 +49,8 @@ PURLDB_API_KEY = settings.PURLDB_API_KEY
 if PURLDB_API_KEY:
     session.headers.update({"Authorization": f"Token {PURLDB_API_KEY}"})
 
+DEFAULT_TIMEOUT = 30
+
 
 def is_configured():
     """Return True if the required PurlDB settings have been set."""
@@ -72,7 +74,7 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
-def request_get(url, payload=None, timeout=None):
+def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
     """Wrap the HTTP request calls on the API."""
     if not url:
         return
@@ -92,7 +94,7 @@ def request_get(url, payload=None, timeout=None):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def request_post(url, data, timeout=None):
+def request_post(url, data, timeout=DEFAULT_TIMEOUT):
     try:
         response = session.post(url, data=data, timeout=timeout)
         response.raise_for_status()
@@ -101,7 +103,7 @@ def request_post(url, data, timeout=None):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def collect_response_results(response, data, timeout=None):
+def collect_response_results(response, data, timeout=DEFAULT_TIMEOUT):
     """Return all results from a purldb API response."""
     results = []
     if response and response.get("count"):
@@ -116,7 +118,10 @@ def collect_response_results(response, data, timeout=None):
 
 
 def match_packages(
-    sha1_list, enhance_package_data=False, timeout=None, api_url=PURLDB_API_URL
+    sha1_list,
+    enhance_package_data=False,
+    timeout=DEFAULT_TIMEOUT,
+    api_url=PURLDB_API_URL,
 ):
     """
     Match a list of SHA1 in the PurlDB for package-type files.
@@ -136,7 +141,7 @@ def match_packages(
     return packages
 
 
-def match_resources(sha1_list, timeout=None, api_url=PURLDB_API_URL):
+def match_resources(sha1_list, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """Match a list of SHA1 in the PurlDB for resource files."""
     data = {"sha1": sha1_list}
     response = request_post(
@@ -147,7 +152,7 @@ def match_resources(sha1_list, timeout=None, api_url=PURLDB_API_URL):
     return resources
 
 
-def match_directory(fingerprint, timeout=None, api_url=PURLDB_API_URL):
+def match_directory(fingerprint, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """
     Match directory content fingerprint in the PurlDB for a single directory
     resource.
@@ -163,7 +168,7 @@ def match_directory(fingerprint, timeout=None, api_url=PURLDB_API_URL):
         return response
 
 
-def submit_purls(purls, timeout=None, api_url=PURLDB_API_URL):
+def submit_purls(purls, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """Submit list PURLs to PurlDB for indexing."""
     payload = {"package_urls": purls}
     response = request_post(
