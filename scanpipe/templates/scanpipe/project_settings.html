@@ -125,10 +125,10 @@
   </div>
 
   {% if not project.is_archived %}
-    {% include "scanpipe/includes/project_archive_modal.html" %}
+    {% include "scanpipe/modals/project_archive_modal.html" %}
   {% endif %}
-  {% include "scanpipe/includes/project_reset_modal.html" %}
-  {% include "scanpipe/includes/project_delete_modal.html" %}
+  {% include "scanpipe/modals/project_reset_modal.html" %}
+  {% include "scanpipe/modals/project_delete_modal.html" %}
 {% endblock %}
 
 {% block scripts %}

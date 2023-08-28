@@ -1256,7 +1256,7 @@ class ProjectMessageListView(
 ):
     model = ProjectMessage
     filterset_class = ProjectMessageFilterSet
-    template_name = "scanpipe/project_message_list.html"
+    template_name = "scanpipe/message_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("error", 50)
     table_columns = [
         {
@@ -1655,7 +1655,7 @@ class DiscoveredDependencyDetailsView(
 
 @conditional_login_required
 def run_detail_view(request, uuid):
-    template = "scanpipe/includes/run_modal_content.html"
+    template = "scanpipe/modals/run_modal_content.html"
     run_qs = Run.objects.select_related("project").prefetch_related(
         "project__webhooksubscriptions",
     )

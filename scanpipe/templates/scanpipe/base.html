@@ -62,6 +62,7 @@
       .breadcrumb a {padding: 0 0.25em;}
       .breadcrumb li a:hover {color: #363636 !important;}
       #resource-list th#column-status {min-width: 90px;}
+      #message-list th#column-severity {min-width: 110px;}
       .menu.is-info .is-active {background-color: #3e8ed0;}
       .menu-list a {border-radius: 4px;}
       .is-sticky {position: sticky;}
@@ -80,7 +81,7 @@
   </head>
   <body>
     {% block content %}{% endblock %}
-    {% include 'scanpipe/includes/search_syntax_modal.html' %}
+    {% include 'scanpipe/modals/search_syntax_modal.html' %}
     <script src="{% static 'main.js' %}" crossorigin="anonymous"></script>
     <script src="{% static 'fontawesomefree/js/all.min.js' %}" crossorigin="anonymous" defer></script>
     <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>

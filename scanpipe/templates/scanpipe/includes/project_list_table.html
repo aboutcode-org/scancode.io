@@ -59,7 +59,7 @@
       </td>
       <td>
         {% if project.codebaseresources_count or project.discoveredpackages_count %}
-          {% include "scanpipe/includes/project_download_dropdown.html" with project=project only %}
+          {% include "scanpipe/dropdowns/project_download_dropdown.html" with project=project only %}
         {% endif %}
       </td>
     </tr>

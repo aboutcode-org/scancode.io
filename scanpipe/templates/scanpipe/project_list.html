@@ -37,9 +37,9 @@
           {% include 'scanpipe/includes/search_field.html' with hide_help=True %}
         </div>
         <div>
-          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
-          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.status only %}
-          {% include 'scanpipe/includes/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.status only %}
+          {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
         </div>
       </div>
 
@@ -65,5 +65,5 @@
     </section>
   </div>
 
-  {% include 'scanpipe/includes/run_modal.html' %}
+  {% include 'scanpipe/modals/run_modal.html' %}
 {% endblock %}
