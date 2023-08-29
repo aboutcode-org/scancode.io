@@ -327,7 +327,9 @@ def scan_for_files(project, resource_qs=None):
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
     """
-    resource_qs = resource_qs or project.codebaseresources.no_status()
+    # Checking for None to make the distinction with an empty resource_qs queryset
+    if resource_qs is None:
+        resource_qs = project.codebaseresources.no_status()
 
     scan_func_kwargs = {}
     if license_score := project.get_env("scancode_license_score"):
@@ -364,7 +366,7 @@ def add_resource_to_package(package_uid, resource, project):
     """
     Relate a DiscoveredPackage to `resource` from `project` using `package_uid`.
 
-    Add a ProjectError when the DiscoveredPackage could not be fetched using the
+    Add a ProjectMessage when the DiscoveredPackage could not be fetched using the
     provided `package_uid`.
     """
     if not package_uid:

@@ -131,14 +131,15 @@ class BasePipeline:
 
         return 0, ""
 
-    def add_error(self, error):
-        """Create a `ProjectError` record on the current `project`."""
-        self.project.add_error(error, model=self.pipeline_name)
+    def add_error(self, exception):
+        """Create a ``ProjectMessage`` ERROR record on the current `project`."""
+        self.project.add_error(model=self.pipeline_name, exception=exception)
 
     @contextmanager
     def save_errors(self, *exceptions):
         """
-        Context manager to save specified exceptions as `ProjectError` in the database.
+        Context manager to save specified exceptions as ``ProjectMessage`` in the
+        database.
 
         Example in a Pipeline step:
 
@@ -148,7 +149,7 @@ class BasePipeline:
         try:
             yield
         except exceptions as error:
-            self.add_error(error)
+            self.add_error(exception=error)
 
 
 class Pipeline(BasePipeline):

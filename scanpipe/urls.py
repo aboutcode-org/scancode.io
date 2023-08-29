@@ -72,9 +72,9 @@ urlpatterns = [
         name="project_relations",
     ),
     path(
-        "project/<slug:slug>/errors/",
-        views.ProjectErrorListView.as_view(),
-        name="project_errors",
+        "project/<slug:slug>/messages/",
+        views.ProjectMessageListView.as_view(),
+        name="project_messages",
     ),
     path(
         "project/<slug:slug>/archive/",
@@ -90,6 +90,11 @@ urlpatterns = [
         "project/<slug:slug>/reset/",
         views.ProjectResetView.as_view(),
         name="project_reset",
+    ),
+    path(
+        "project/<slug:slug>/clone/",
+        views.ProjectCloneView.as_view(),
+        name="project_clone",
     ),
     path(
         "project/<slug:slug>/settings/",

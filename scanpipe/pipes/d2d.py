@@ -30,6 +30,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 from commoncode.paths import common_prefix
+from packagedcode.npm import NpmPackageJsonHandler
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -220,6 +221,9 @@ def map_java_to_class(project, logger=None):
         logger(f"Mapping {resource_count:,d} .class resources to .java")
 
     from_resources_dot_java = from_resources.filter(extension=".java")
+    if not from_resources_dot_java.exists():
+        logger("No .java resources to map.")
+        return
 
     # build an index using from-side Java fully qualified class file names
     # built from the "java_package" and file name
@@ -415,6 +419,10 @@ def _map_path_resource(
     if not match:
         return
 
+    # Don't path map resource solely based on the file name.
+    if match.matched_path_length < 2:
+        return
+
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
     if len(match.resource_ids) > match.matched_path_length:
@@ -455,6 +463,10 @@ def map_path(project, logger=None):
             f"Mapping {resource_count:,d} to/ resources using path map "
             f"against from/ codebase"
         )
+
+    if not from_resources.exists():
+        logger("No from/ resources to map.")
+        return
 
     from_resources_index = pathmap.build_index(
         from_resources.values_list("id", "path"), with_subpaths=True
@@ -622,12 +634,27 @@ def _map_javascript_resource(
 def _map_about_file_resource(project, about_file_resource, to_resources):
     about_file_location = str(about_file_resource.location_path)
     package_data = resolve.resolve_about_package(about_file_location)
+
+    error_message_details = {
+        "path": about_file_resource.path,
+        "package_data": package_data,
+    }
     if not package_data:
+        project.add_error(
+            description="Cannot create package from ABOUT file",
+            model="map_about_files",
+            details=error_message_details,
+        )
         return
 
     filename = package_data.get("filename")
     if not filename:
         # Cannot map anything without the about_resource value.
+        project.add_error(
+            description="ABOUT file does not have about_resource",
+            model="map_about_files",
+            details=error_message_details,
+        )
         return
 
     ignored_resources = []
@@ -638,6 +665,14 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
     codebase_resources = to_resources.filter(path__contains=f"/{filename.lstrip('/')}")
     if not codebase_resources:
         # If there's nothing to map on the ``to/`` do not create the package.
+        project.add_warning(
+            description=(
+                "Resource paths listed at about_resource is not found"
+                " in the to/ codebase"
+            ),
+            model="map_about_files",
+            details=error_message_details,
+        )
         return
 
     # Ignore resources for paths in `ignored_resources` attribute
@@ -953,3 +988,96 @@ def _map_javascript_colocation_resource(
         from_neighboring_resources,
         map_type="js_colocation",
     )
+
+
+def flag_processed_archives(project):
+    """
+    Resources without an assigned status which are package archives, and all
+    resources inside the archive has a status, should also be considered as
+    processed.
+    """
+    to_resources = project.codebaseresources.all().to_codebase()
+    to_resources_archives = to_resources.no_status().filter(is_archive=True)
+
+    for to_archive in to_resources_archives:
+        archive_extract_path = to_archive.path + "-extract"
+        archive_extract_resource = to_resources.filter(path=archive_extract_path)
+
+        # There are archives which are not extracted by default, so
+        # we check if the extracted archive exists
+        if not archive_extract_resource.exists():
+            continue
+
+        archive_resources_unmapped = to_resources.no_status().filter(
+            path__startswith=archive_extract_path
+        )
+        # If there are resources in the archives which are unmapped,
+        # they are not considered as processed
+        if archive_resources_unmapped.exists():
+            continue
+
+        to_archive.update(status=flag.ARCHIVE_PROCESSED)
+
+
+def map_thirdparty_npm_packages(project, logger=None):
+    """Map thirdparty package using package.json metadata."""
+    project_files = project.codebaseresources.files()
+
+    to_package_json = (
+        project_files.to_codebase()
+        .filter(path__regex=r"^.*\/node_modules\/.*\/package\.json$")
+        .exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
+    )
+
+    to_resources = project_files.to_codebase()
+    resource_count = to_package_json.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources against from/ codebase"
+            " based on package.json metadata."
+        )
+
+    resource_iterator = to_package_json.iterator(chunk_size=2000)
+    last_percent = 0
+    map_count = 0
+    start_time = timer()
+
+    for resource_index, package_json in enumerate(resource_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            resource_index,
+            resource_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        map_count += _map_thirdparty_npm_packages(package_json, to_resources, project)
+
+    logger(f"{map_count:,d} resource(s) mapped")
+
+
+def _map_thirdparty_npm_packages(package_json, to_resources, project):
+    """Map thirdparty package using package.json metadata."""
+    path = Path(package_json.path.lstrip("/"))
+    path_parent = str(path.parent)
+
+    package = next(NpmPackageJsonHandler.parse(package_json.location))
+
+    package_resources = to_resources.filter(path__startswith=path_parent)
+
+    if not all(
+        [package, package.type, package.name, package.version, package_resources]
+    ):
+        return 0
+
+    package_data = package.to_dict()
+    package_data.pop("dependencies")
+    pipes.update_or_create_package(
+        project=project,
+        package_data=package_data,
+        codebase_resources=package_resources,
+    )
+
+    package_resources.no_status().update(status=flag.NPM_PACKAGE_LOOKUP)
+    return package_resources.count()

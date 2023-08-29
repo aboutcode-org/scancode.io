@@ -130,8 +130,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         name_field.help_text = "The unique name of your project."
 
     def clean_name(self):
-        name = self.cleaned_data["name"]
-        return " ".join(name.split())
+        return " ".join(self.cleaned_data["name"].split())
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
@@ -282,3 +281,45 @@ class ProjectSettingsForm(forms.ModelForm):
         }
         project.settings.update(config)
         project.save(update_fields=["settings"])
+
+
+class ProjectCloneForm(forms.Form):
+    clone_name = forms.CharField(widget=forms.TextInput(attrs={"class": "input"}))
+    copy_inputs = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="Input files located in the input/ work directory will be copied.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    copy_pipelines = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="All pipelines assigned to the original project will be copied over.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    copy_settings = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="All project settings will be copied.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    execute_now = forms.BooleanField(
+        label="Execute copied pipeline(s) now",
+        initial=False,
+        required=False,
+        help_text="Copied pipelines will be directly executed.",
+    )
+
+    def __init__(self, instance, *args, **kwargs):
+        self.project = instance
+        super().__init__(*args, **kwargs)
+        self.fields["clone_name"].initial = f"{self.project.name} clone"
+
+    def clean_clone_name(self):
+        clone_name = self.cleaned_data.get("clone_name")
+        if Project.objects.filter(name=clone_name).exists():
+            raise ValidationError("Project with this name already exists.")
+        return clone_name
+
+    def save(self, *args, **kwargs):
+        return self.project.clone(**self.cleaned_data)

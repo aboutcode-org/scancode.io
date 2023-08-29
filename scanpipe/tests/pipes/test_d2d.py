@@ -35,6 +35,7 @@ from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 
@@ -212,6 +213,28 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("sha1", relation.map_type)
         self.assertEqual(from_2, relation.from_resource)
 
+    def test_scanpipe_pipes_d2d_flag_processed_archives(self):
+        to_archive = make_resource_file(
+            self.project1, path="to/archive.lpkg", is_archive=True
+        )
+        make_resource_directory(
+            self.project1, path="to/archive.lpkg-extract", status=flag.IGNORED_DIRECTORY
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file1.txt",
+            status=flag.MATCHED_TO_PURLDB,
+        )
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file2.txt",
+            status=flag.MATCHED_TO_PURLDB,
+        )
+
+        d2d.flag_processed_archives(self.project1)
+        to_archive.refresh_from_db()
+        self.assertEqual(to_archive.status, flag.ARCHIVE_PROCESSED)
+
     def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(
             self.project1,
@@ -264,6 +287,13 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertIn(to3, no_relations)
         to3.refresh_from_db()
         self.assertEqual("no-java-source", to3.status)
+
+    def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
+        make_resource_file(self.project1, path="to/Abstract.class")
+        buffer = io.StringIO()
+        d2d.map_java_to_class(self.project1, logger=buffer.write)
+        expected = "Mapping 1 .class resources to .java" "No .java resources to map."
+        self.assertIn(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_d2d_map_jar_to_source(self):
         from1 = make_resource_file(
@@ -374,17 +404,28 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         make_resource_file(
             self.project1,
+            path="from/core/src/main/org/apache2/bar/file.ext",
+        )
+        make_resource_file(
+            self.project1,
             path="from/core/src/main/org/apache/bar/file2.ext",
         )
         to1 = make_resource_file(
             self.project1,
             path="to/apache/bar/file.ext",
         )
+        make_resource_file(
+            self.project1,
+            path="to/apache/foo/file.ext",
+        )
 
         buffer = io.StringIO()
         d2d.map_path(self.project1, logger=buffer.write)
-        expected = "Mapping 1 to/ resources using path map against from/ codebase"
+        expected = "Mapping 2 to/ resources using path map against from/ codebase"
         self.assertIn(expected, buffer.getvalue())
+        file_name_too_many = self.project1.codebaseresources.get(
+            path="to/apache/foo/file.ext"
+        )
 
         self.assertEqual(1, self.project1.codebaserelations.count())
         relation = self.project1.codebaserelations.get()
@@ -392,6 +433,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(to1, relation.to_resource)
         self.assertEqual("path", relation.map_type)
         self.assertEqual({"path_score": "3/3"}, relation.extra_data)
+        self.assertNotEqual("too-many-maps", file_name_too_many.status)
 
     def test_scanpipe_pipes_d2d_find_java_packages(self):
         input_locations = [
@@ -788,3 +830,33 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertIn(expected, buffer.getvalue())
         self.assertEqual(from_expected, relation[0].from_resource)
+
+    def test_map_thirdparty_npm_packages(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_input_location = self.data_location / "d2d-javascript/to/package.json"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        d2d.collect_and_create_codebase_resources(self.project1)
+
+        buffer = io.StringIO()
+        d2d.map_thirdparty_npm_packages(self.project1, logger=buffer.write)
+
+        package_json = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/package.json"
+            )
+        )
+
+        expected = (
+            "Mapping 1 to/ resources against from/ codebase "
+            "based on package.json metadata."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        self.assertEqual(1, self.project1.discoveredpackages.count())
+        self.assertEqual("npm-package-lookup", package_json.status)

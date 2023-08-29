@@ -25,7 +25,6 @@ import io
 import json
 import operator
 from collections import Counter
-from collections import namedtuple
 from contextlib import suppress
 from pathlib import Path
 
@@ -35,10 +34,12 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage.filesystem import FileSystemStorage
+from django.db.models import Prefetch
 from django.db.models.manager import Manager
 from django.http import FileResponse
 from django.http import Http404
 from django.http import HttpResponse
+from django.http import HttpResponseRedirect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -60,26 +61,33 @@ from scancodeio.auth import conditional_login_required
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.filters import PAGE_VAR
 from scanpipe.filters import DependencyFilterSet
-from scanpipe.filters import ErrorFilterSet
 from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
+from scanpipe.filters import ProjectMessageFilterSet
+from scanpipe.filters import RelationFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
+from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
 scanpipe_app = apps.get_app_config("scanpipe")
+
+
+# Cancel the default ordering for better performances
+unordered_resources = CodebaseResource.objects.order_by()
 
 
 LICENSE_CLARITY_FIELDS = [
@@ -436,6 +444,30 @@ class ExportXLSXMixin:
         return response
 
 
+class FormAjaxMixin:
+    def is_xhr(self):
+        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        if self.is_xhr():
+            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
+
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+
+        if self.is_xhr():
+            return JsonResponse({"errors": str(form.errors)}, status=400)
+
+        return response
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
 class PaginatedFilterView(FilterView):
     """
     Add a `url_params_without_page` value in the template context to include the
@@ -485,9 +517,9 @@ class ProjectListView(
             "sort_name": "codebaseresources_count",
         },
         {
-            "field_name": "projecterrors",
-            "label": "Errors",
-            "sort_name": "projecterrors_count",
+            "field_name": "projectmessages",
+            "label": "Messages",
+            "sort_name": "projectmessages_count",
         },
         {
             "field_name": "runs",
@@ -507,12 +539,12 @@ class ProjectListView(
                 "codebaseresources",
                 "discoveredpackages",
                 "discovereddependencies",
-                "projecterrors",
+                "projectmessages",
             )
         )
 
 
-class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
+class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "scanpipe/project_form.html"
@@ -524,28 +556,6 @@ class ProjectCreateView(ConditionalLoginRequired, generic.CreateView):
             for key, pipeline_class in scanpipe_app.pipelines.items()
         }
         return context
-
-    def is_xhr(self):
-        return self.request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-
-        if self.is_xhr():
-            return JsonResponse({"redirect_url": self.get_success_url()}, status=201)
-
-        return response
-
-    def form_invalid(self, form):
-        response = super().form_invalid(form)
-
-        if self.is_xhr():
-            return JsonResponse({"errors": str(form.errors)}, status=400)
-
-        return response
-
-    def get_success_url(self):
-        return self.object.get_absolute_url()
 
 
 class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
@@ -915,6 +925,24 @@ class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
         return redirect(project)
 
 
+class HTTPResponseHXRedirect(HttpResponseRedirect):
+    status_code = 200
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self["HX-Redirect"] = self["Location"]
+
+
+class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateView):
+    model = Project
+    form_class = ProjectCloneForm
+    template_name = "scanpipe/includes/project_clone_form.html"
+
+    def form_valid(self, form):
+        super().form_valid(form)
+        return HTTPResponseHXRedirect(self.get_success_url())
+
+
 @conditional_login_required
 def execute_pipeline_view(request, slug, run_uuid):
     project = get_object_or_404(Project, slug=slug)
@@ -1115,7 +1143,12 @@ class DiscoveredPackageListView(
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
-    prefetch_related = ["codebase_resources"]
+    prefetch_related = [
+        Prefetch(
+            "codebase_resources",
+            queryset=unordered_resources.only("path", "name"),
+        ),
+    ]
     table_columns = [
         {
             "field_name": "package_url",
@@ -1193,111 +1226,73 @@ class DiscoveredDependencyListView(
         },
     ]
 
+    def get_queryset(self):
+        return super().get_queryset().order_by("dependency_uid")
 
-class ProjectErrorListView(
+
+class ProjectMessageListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
     FilterView,
 ):
-    model = ProjectError
-    filterset_class = ErrorFilterSet
-    template_name = "scanpipe/error_list.html"
+    model = ProjectMessage
+    filterset_class = ProjectMessageFilterSet
+    template_name = "scanpipe/project_message_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("error", 50)
     table_columns = [
+        {
+            "field_name": "severity",
+            "filter_fieldname": "severity",
+        },
         "model",
-        "message",
+        "description",
         "details",
         "traceback",
     ]
 
 
-RelationRow = namedtuple(
-    "RelationRow",
-    field_names=["to_resource", "status", "map_type", "score", "from_resource"],
-)
-
-
 class CodebaseRelationListView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
+    PrefetchRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
     PaginatedFilterView,
 ):
-    model = CodebaseResource
-    filterset_class = ResourceFilterSet
+    model = CodebaseRelation
+    filterset_class = RelationFilterSet
     template_name = "scanpipe/relation_list.html"
+    prefetch_related = [
+        Prefetch(
+            "to_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+        Prefetch(
+            "from_resource",
+            queryset=unordered_resources.only("path", "is_text", "status"),
+        ),
+    ]
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("relation", 100)
     table_columns = [
-        {
-            "field_name": "path",
-            "label": "To resource",
-        },
+        "to_resource",
         {
             "field_name": "status",
             "filter_fieldname": "status",
         },
         {
-            "field_name": "related_from__map_type",
-            "label": "Map type",
-            "filter_fieldname": "relation_map_type",
+            "field_name": "map_type",
+            "filter_fieldname": "map_type",
         },
-        {
-            "field_name": "related_from__from_resource__path",
-            "label": "From resource",
-        },
+        "from_resource",
     ]
 
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .files()
-            .to_codebase()
-            .prefetch_related("related_from__from_resource__project")
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["relation_count"] = context["filter"].qs.has_relation().count()
-        return context
-
-    @staticmethod
-    def get_rows(qs):
-        for resource in qs:
-            relations = resource.related_from.all()
-            if not relations:
-                yield RelationRow(resource.path, resource.status, "", "", "")
-            else:
-                for relation in resource.related_from.all():
-                    score = relation.extra_data.get("path_score", "")
-                    if diff_ratio := relation.extra_data.get("diff_ratio", ""):
-                        score += f" diff_ratio: {diff_ratio}"
-                    yield RelationRow(
-                        resource.path,
-                        resource.status,
-                        relation.map_type,
-                        score,
-                        relation.from_resource.path,
-                    )
-
-    def export_xlsx_file_response(self):
-        filtered_qs = self.filterset.qs
-        output_file = io.BytesIO()
-
-        with xlsxwriter.Workbook(output_file) as workbook:
-            output._add_xlsx_worksheet(
-                workbook=workbook,
-                worksheet_name="RELATIONS",
-                rows=self.get_rows(qs=filtered_qs),
-                fields=RelationRow._fields,
-            )
-
-        filename = f"{self.project.name}_{self.model._meta.model_name}.xlsx"
-        output_file.seek(0)
-        return FileResponse(output_file, as_attachment=True, filename=filename)
+    def get_filterset_kwargs(self, filterset_class):
+        """Add the project in the filterset kwargs for computing status choices."""
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        kwargs.update({"project": self.project})
+        return kwargs
 
 
 class CodebaseResourceDetailsView(

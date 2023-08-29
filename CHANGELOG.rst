@@ -1,6 +1,42 @@
 Changelog
 =========
 
+v32.5.3 (unreleased)
+--------------------
+
+- Improve the performance of the codebase relations list view to support large number
+  of entries.
+  https://github.com/nexB/scancode.io/issues/858
+
+- Improve DiscoveredPackageListView query performances refining the prefetch_related.
+  https://github.com/nexB/scancode.io/issues/856
+
+- Fix the ``map_java_to_class`` d2d pipe to skip if no ``.java`` file is found.
+  https://github.com/nexB/scancode.io/issues/853
+
+- Enhance Package search to handle full ``pkg:`` purls and segment of purls.
+  https://github.com/nexB/scancode.io/issues/859
+
+- Add a new step in the ``deploy_to_develop`` pipeline where we tag archives as
+  processed, if all the resources in their extracted directory is mapped/processed.
+  https://github.com/nexB/scancode.io/issues/827
+
+- Add the ability to clone a project.
+  https://github.com/nexB/scancode.io/issues/874
+
+- Improve perceived display performance of projects charts and stats on home page.
+  The charts are displayed when the number of resources or packages are less than
+  5000 records. Else, a button to load the charts is displayed.
+  https://github.com/nexB/scancode.io/issues/844
+
+- Add advanced search query system to all list views.
+  Refer to the documentation for details about the search syntax.
+  https://github.com/nexB/scancode.io/issues/871
+
+- Migrate the ProjectError model to a global ProjectMessage.
+  3 level of severity available: INFO, WARNING, and ERROR.
+  https://github.com/nexB/scancode.io/issues/338
+
 v32.5.2 (2023-08-14)
 --------------------
 

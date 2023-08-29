@@ -42,9 +42,9 @@ CodebaseRelation
     :undoc-members:
     :member-order: groupwise
 
-ProjectError
-------------
-.. autoclass:: scanpipe.models.ProjectError()
+ProjectMessage
+--------------
+.. autoclass:: scanpipe.models.ProjectMessage()
     :members:
     :undoc-members:
     :member-order: groupwise

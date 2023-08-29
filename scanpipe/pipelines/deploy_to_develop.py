@@ -56,8 +56,9 @@ class DeployToDevelop(Pipeline):
             cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
             cls.map_javascript_colocation,
+            cls.map_thirdparty_npm_packages,
             cls.map_path,
-            cls.flag_mapped_resources_and_ignored_directories,
+            cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.scan_mapped_from_for_files,
         )
 
@@ -169,14 +170,19 @@ class DeployToDevelop(Pipeline):
         """Map JavaScript files based on neighborhood file mapping."""
         d2d.map_javascript_colocation(project=self.project, logger=self.log)
 
+    def map_thirdparty_npm_packages(self):
+        """Map thirdparty package using package.json metadata."""
+        d2d.map_thirdparty_npm_packages(project=self.project, logger=self.log)
+
     def map_path(self):
         """Map using path similarities."""
         d2d.map_path(project=self.project, logger=self.log)
 
-    def flag_mapped_resources_and_ignored_directories(self):
+    def flag_mapped_resources_archives_and_ignored_directories(self):
         """Flag all codebase resources that were mapped during the pipeline."""
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
+        d2d.flag_processed_archives(self.project)
 
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""

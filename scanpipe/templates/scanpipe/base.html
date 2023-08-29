@@ -51,7 +51,7 @@
       .break-word {word-break: break-word;}
       .break-normal {word-break: normal;}
       .nowrap {white-space: nowrap;}
-      #content-header input[name="search"] {width: 205px;}
+      #content-header input[name="search"] {width: 225px;}
       button.as-link {height: auto; line-height: initial; font-size: inherit;}
       .button.is-smaller {font-size: .90rem;}
       .file.is-boxed.has-name .file-cta {border-width: medium; border-style: dashed;}
@@ -74,12 +74,13 @@
       #project-extra-data pre {background-color: initial; color: initial; padding: initial; white-space: pre-wrap; word-break: break-all;}
       #codebase-relation-list table {table-layout: fixed;}
       #codebase-relation-list th#column-status {width: 110px;}
-      #codebase-relation-list th#column-related_from__map_type {width: 145px;}
+      #codebase-relation-list th#column-map_type {width: 145px;}
     </style>
     {% block extrahead %}{% endblock %}
   </head>
   <body>
     {% block content %}{% endblock %}
+    {% include 'scanpipe/includes/search_syntax_modal.html' %}
     <script src="{% static 'main.js' %}" crossorigin="anonymous"></script>
     <script src="{% static 'fontawesomefree/js/all.min.js' %}" crossorigin="anonymous" defer></script>
     <script src="{% static 'highlight-10.6.0.min.js' %}" crossorigin="anonymous"></script>

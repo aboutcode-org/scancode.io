@@ -40,7 +40,7 @@ from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
-from scanpipe.api.serializers import ProjectErrorSerializer
+from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
 from scanpipe.models import CodebaseRelation
@@ -48,7 +48,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
@@ -102,7 +102,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["count"])
         self.assertNotContains(response, "input_root")
         self.assertNotContains(response, "extra_data")
-        self.assertNotContains(response, "error_count")
+        self.assertNotContains(response, "message_count")
         self.assertNotContains(response, "resource_count")
         self.assertNotContains(response, "package_count")
         self.assertNotContains(response, "dependency_count")
@@ -174,7 +174,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual([], response.data["input_sources"])
         self.assertIn("input_root", response.data)
         self.assertIn("extra_data", response.data)
-        self.assertEqual(0, response.data["error_count"])
+        self.assertEqual(0, response.data["message_count"])
         self.assertEqual(1, response.data["resource_count"])
         self.assertEqual(1, response.data["package_count"])
         self.assertEqual(1, response.data["dependency_count"])
@@ -493,16 +493,22 @@ class ScanPipeAPITest(TransactionTestCase):
 
         relation = response.data["results"][0]
         expected = {
-            "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
             "to_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            "status": "",
             "map_type": "java_to_class",
+            "score": "",
+            "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
         }
         self.assertEqual(expected, relation)
 
-    def test_scanpipe_api_project_action_errors(self):
-        url = reverse("project-errors", args=[self.project1.uuid])
-        ProjectError.objects.create(
-            project=self.project1, model="ModelName", details={}, message="Error"
+    def test_scanpipe_api_project_action_messages(self):
+        url = reverse("project-messages", args=[self.project1.uuid])
+        ProjectMessage.objects.create(
+            project=self.project1,
+            severity=ProjectMessage.Severity.ERROR,
+            description="Error",
+            model="ModelName",
+            details={},
         )
 
         response = self.csrf_client.get(url)
@@ -511,10 +517,11 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertIsNone(response.data["previous"])
         self.assertEqual(1, len(response.data["results"]))
 
-        error = response.data["results"][0]
-        self.assertEqual("ModelName", error["model"])
-        self.assertEqual({}, error["details"])
-        self.assertEqual("Error", error["message"])
+        message = response.data["results"][0]
+        self.assertEqual("error", message["severity"])
+        self.assertEqual("Error", message["description"])
+        self.assertEqual("ModelName", message["model"])
+        self.assertEqual({}, message["details"])
 
     def test_scanpipe_api_project_action_file_content(self):
         url = reverse("project-file-content", args=[self.project1.uuid])
@@ -821,7 +828,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(
             CodebaseRelationSerializer, get_model_serializer(CodebaseRelation)
         )
-        self.assertEqual(ProjectErrorSerializer, get_model_serializer(ProjectError))
+        self.assertEqual(ProjectMessageSerializer, get_model_serializer(ProjectMessage))
 
         with self.assertRaises(LookupError):
             get_model_serializer(None)
@@ -830,8 +837,8 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(44, len(get_serializer_fields(DiscoveredPackage)))
         self.assertEqual(12, len(get_serializer_fields(DiscoveredDependency)))
         self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
-        self.assertEqual(3, len(get_serializer_fields(CodebaseRelation)))
-        self.assertEqual(6, len(get_serializer_fields(ProjectError)))
+        self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
+        self.assertEqual(7, len(get_serializer_fields(ProjectMessage)))
 
         with self.assertRaises(LookupError):
             get_serializer_fields(None)
