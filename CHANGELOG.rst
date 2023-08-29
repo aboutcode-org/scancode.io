@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v32.5.3 (unreleased)
+v32.6.0 (2023-08-29)
 --------------------
 
 - Improve the performance of the codebase relations list view to support large number
