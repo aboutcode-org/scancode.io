@@ -23,6 +23,7 @@
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
 
@@ -44,6 +45,7 @@ class DeployToDevelop(Pipeline):
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
+            cls.fingerprint_codebase_directories,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
             cls.map_about_files,
@@ -76,6 +78,7 @@ class DeployToDevelop(Pipeline):
         ".less",
         ".sass",
         ".soy",
+        ".class",
     ]
 
     def get_inputs(self):
@@ -111,6 +114,10 @@ class DeployToDevelop(Pipeline):
         """Collect and create codebase resources."""
         d2d.collect_and_create_codebase_resources(self.project)
 
+    def fingerprint_codebase_directories(self):
+        """Compute directory fingerprints for matching"""
+        matchcode.fingerprint_codebase_directories(self.project, to_codebase_only=True)
+
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
         d2d.map_about_files(project=self.project, logger=self.log)
@@ -139,19 +146,24 @@ class DeployToDevelop(Pipeline):
         d2d.map_javascript(project=self.project, logger=self.log)
 
     def match_purldb(self):
-        """Match selected files by extension in PurlDB."""
+        """Match selected files by extension and directories in PurlDB."""
         if not purldb.is_available():
             self.log("PurlDB is not available. Skipping.")
             return
 
-        d2d.match_purldb(
+        d2d.match_purldb_resources(
             project=self.project,
             extensions=self.purldb_package_extensions,
             matcher_func=d2d.match_purldb_package,
             logger=self.log,
         )
 
-        d2d.match_purldb(
+        d2d.match_purldb_directories(
+            project=self.project,
+            logger=self.log,
+        )
+
+        d2d.match_purldb_resources(
             project=self.project,
             extensions=self.purldb_resource_extensions,
             matcher_func=d2d.match_purldb_resource,

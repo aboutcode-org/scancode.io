@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from collections import defaultdict
 from contextlib import suppress
 from itertools import islice
 from pathlib import Path
@@ -246,10 +247,6 @@ def map_java_to_class(project, logger=None):
                 start_time=start_time,
             )
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
-
-    # Flag not mapped .class in to/ codebase
-    to_resources_dot_class = to_resources.filter(extension=".class")
-    to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
 
 
 def get_indexable_qualified_java_paths_from_values(resource_values):
@@ -487,51 +484,146 @@ def map_path(project, logger=None):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def create_package_from_purldb_data(project, resource, package_data):
-    """Create a DiscoveredPackage instance from PurlDB ``package_data``."""
+def create_package_from_purldb_data(project, resources, package_data):
+    """
+    Create a DiscoveredPackage instance from PurlDB ``package_data``.
+
+    Return a tuple, containing the created DiscoveredPackage and the number of
+    CodebaseResources matched to PurlDB that are part of that DiscoveredPackage.
+    """
     package_data = package_data.copy()
     # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
     # PurlDB match can be found in different projects.
     package_data.pop("uuid", None)
     package_data.pop("dependencies", None)
-    extracted_resources = project.codebaseresources.to_codebase().filter(
-        path__startswith=resource.path
-    )
+
+    lookups = Q()
+    for resource in resources:
+        lookups |= Q(path=resource.path)
+        if resource.is_archive:
+            # This is done to capture the extracted contents of the archive we
+            # matched to. Generally, the archive contents are in a directory
+            # that is the archive path with `-extract` at the end.
+            lookups |= Q(path__startswith=resource.path)
+        elif resource.is_dir:
+            # We add a trailing slash to avoid matching on directories we do not
+            # intend to. For example, if we have matched on the directory with
+            # the path `foo/bar/1`, using the __startswith filter without
+            # including a trailing slash on the path would have us get all
+            # diretories under `foo/bar/` that start with 1, such as
+            # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
+            # and its descendants.
+            path = f"{resource.path}/"
+            lookups |= Q(path__startswith=path)
+
+    resources_qs = project.codebaseresources.to_codebase().filter(lookups)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
-        codebase_resources=extracted_resources,
+        codebase_resources=resources_qs,
     )
-    # Override the status as "purldb match" as we can rely on the codebase relation
-    # for the mapping information.
-    extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
-    return package
+    # Get the number of already matched CodebaseResources from `resources_qs`
+    # before we update the status of all CodebaseResources from `resources_qs`,
+    # then subtract the number of already matched CodebaseResources from the
+    # total number of CodebaseResources updated. This is to prevent
+    # double-counting of CodebaseResources that were matched to purldb
+    previously_matched_resources_count = resources_qs.filter(
+        status=flag.MATCHED_TO_PURLDB
+    ).count()
+    updated_resources_count = resources_qs.update(status=flag.MATCHED_TO_PURLDB)
+    matched_resources_count = (
+        updated_resources_count - previously_matched_resources_count
+    )
+    return package, matched_resources_count
 
 
-def match_purldb_package(project, resource):
-    """Match an archive type resource in the PurlDB."""
-    if results := purldb.match_package(sha1=resource.sha1):
-        package_data = results[0]
-        return create_package_from_purldb_data(project, resource, package_data)
+def match_purldb_package(
+    project, resources_by_sha1, enhance_package_data=True, **kwargs
+):
+    """
+    Given a mapping of lists of CodebaseResources by their sha1 values,
+    `resources_by_sha1`, send those sha1 values to purldb packages API endpoint,
+    process the matched Package data, then return the number of
+    CodebaseResources that were matched to a Package.
+    """
+    match_count = 0
+    sha1_list = list(resources_by_sha1.keys())
+    if results := purldb.match_packages(
+        sha1_list=sha1_list,
+        enhance_package_data=enhance_package_data,
+    ):
+        # Process matched Package data
+        for package_data in results:
+            sha1 = package_data["sha1"]
+            resources = resources_by_sha1.get(sha1, [])
+            _, matched_resources_count = create_package_from_purldb_data(
+                project=project,
+                resources=resources,
+                package_data=package_data,
+            )
+            match_count += matched_resources_count
+    return match_count
 
 
-def match_purldb_resource(project, resource):
-    """Match a single file resource in the PurlDB."""
-    sha1_list = [resource.sha1]
-    if resource.path.endswith(".map"):
-        sha1_list.extend(js.source_content_sha1_list(resource))
+def match_purldb_resource(
+    project, resources_by_sha1, package_data_by_purldb_urls=None, **kwargs
+):
+    """
+    Given a mapping of lists of CodebaseResources by their sha1 values,
+    `resources_by_sha1`, send those sha1 values to purldb resources API
+    endpoint, process the matched Package data, then return the number of
+    CodebaseResources that were matched to a Package.
 
-    if results := purldb.match_resource(sha1_list=sha1_list):
+    `package_data_by_purldb_urls` is a mapping of package data by their purldb
+    package instance URLs. This is intended to be used as a cache, to avoid
+    retrieving package data we retrieved before.
+    """
+    package_data_by_purldb_urls = package_data_by_purldb_urls or {}
+    match_count = 0
+    sha1_list = list(resources_by_sha1.keys())
+    if results := purldb.match_resources(sha1_list=sha1_list):
+        # Process match results
+        for result in results:
+            # Get package data
+            package_instance_url = result["package"]
+            if package_instance_url not in package_data_by_purldb_urls:
+                # Get and cache package data if we do not have it
+                if package_data := purldb.request_get(url=package_instance_url):
+                    package_data_by_purldb_urls[package_instance_url] = package_data
+            else:
+                # Use cached package data
+                package_data = package_data_by_purldb_urls[package_instance_url]
+            sha1 = result["sha1"]
+            resources = resources_by_sha1.get(sha1, [])
+            _, matched_resources_count = create_package_from_purldb_data(
+                project=project,
+                resources=resources,
+                package_data=package_data,
+            )
+            match_count += matched_resources_count
+    return match_count
+
+
+def match_purldb_directory(project, resource):
+    """Match a single directory resource in the PurlDB."""
+    fingerprint = resource.extra_data.get("directory_content", "")
+
+    if results := purldb.match_directory(fingerprint=fingerprint):
         package_url = results[0]["package"]
         if package_data := purldb.request_get(url=package_url):
-            return create_package_from_purldb_data(project, resource, package_data)
+            resources = [resource]
+            return create_package_from_purldb_data(project, resources, package_data)
 
 
-def match_purldb(project, extensions, matcher_func, logger=None):
+def match_purldb_resources(
+    project, extensions, matcher_func, chunk_size=1000, logger=None
+):
     """
     Match against PurlDB selecting codebase resources using provided
-    ``package_extensions`` for archive type files, and ``resource_extensions`` for
-    single resource files.
+    ``package_extensions`` for archive type files, and ``resource_extensions``.
+
+    Match requests are sent off in batches of 1000 SHA1s. This number is set
+    using `chunk_size`.
     """
     to_resources = (
         project.codebaseresources.files()
@@ -542,16 +634,42 @@ def match_purldb(project, extensions, matcher_func, logger=None):
     )
     resource_count = to_resources.count()
 
+    extensions_str = ", ".join(extensions)
     if logger:
-        extensions_str = ", ".join(extensions)
-        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
+        if resource_count > 0:
+            logger(
+                f"Matching {resource_count:,d} {extensions_str} resources in PurlDB, "
+                "using SHA1"
+            )
+        else:
+            logger(
+                f"Skipping matching for {extensions_str} resources, "
+                f"as there are {resource_count:,d}"
+            )
 
-    resource_iterator = to_resources.iterator(chunk_size=2000)
+    resource_iterator = to_resources.paginated(per_page=chunk_size)
     last_percent = 0
     start_time = timer()
     matched_count = 0
+    sha1_count = 0
+    resources_by_sha1 = defaultdict(list)
+    package_data_by_purldb_urls = {}
+    resource_index = -1
 
-    for resource_index, to_resource in enumerate(resource_iterator):
+    for resources_batch in resource_iterator:
+        for to_resource in resources_batch:
+            resources_by_sha1[to_resource.sha1].append(to_resource)
+            if to_resource.path.endswith(".map"):
+                for js_sha1 in js.source_content_sha1_list(to_resource):
+                    resources_by_sha1[js_sha1].append(to_resource)
+            resource_index += 1
+
+        matched_count += matcher_func(
+            project=project,
+            resources_by_sha1=resources_by_sha1,
+            package_data_by_purldb_urls=package_data_by_purldb_urls,
+        )
+
         last_percent = pipes.log_progress(
             logger,
             resource_index,
@@ -560,11 +678,64 @@ def match_purldb(project, extensions, matcher_func, logger=None):
             increment_percent=10,
             start_time=start_time,
         )
-        matched_package = matcher_func(project, to_resource)
-        if matched_package:
-            matched_count += 1
 
-    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
+        # Keep track of the total number of sha1s we send
+        sha1_count += len(resources_by_sha1)
+        # Clear out resources_by_sha1 when we are done with the current batch of
+        # CodebaseResources
+        resources_by_sha1 = defaultdict(list)
+
+    logger(
+        f"{matched_count:,d} resource(s) matched in PurlDB "
+        f"using {sha1_count:,d} SHA1(s)"
+    )
+
+
+def match_purldb_directories(project, logger=None):
+    """Match against PurlDB selecting codebase directories."""
+    # If we are able to get match results for a directory fingerprint, then that
+    # means every resource and directory under that directory is part of a
+    # Package. By starting from the root to/ directory, we are attempting to
+    # match as many files as we can before attempting to match further down. The
+    # more "higher-up" directories we can match to means that we reduce the
+    # number of queries made to purldb.
+    to_directories = (
+        project.codebaseresources.directories().to_codebase().order_by("path")
+    )
+    directory_count = to_directories.count()
+
+    if logger:
+        logger(f"Matching {directory_count:,d} director(y/ies) from to/ in PurlDB")
+
+    directory_iterator = to_directories.iterator(chunk_size=2000)
+    last_percent = 0
+    start_time = timer()
+
+    for directory_index, directory in enumerate(directory_iterator):
+        last_percent = pipes.log_progress(
+            logger,
+            directory_index,
+            directory_count,
+            last_percent,
+            increment_percent=10,
+            start_time=start_time,
+        )
+        # We refresh the directory to ensure that the status has been updated if
+        # the directory was included in a match to an ancestor directory
+        directory.refresh_from_db()
+
+        if directory.status == flag.MATCHED_TO_PURLDB:
+            continue
+        match_purldb_directory(project, directory)
+
+    matched_count = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .filter(status=flag.MATCHED_TO_PURLDB)
+        .count()
+    )
+
+    logger(f"{matched_count:,d} director(y/ies) matched in PurlDB")
 
 
 def map_javascript(project, logger=None):

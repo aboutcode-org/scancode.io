@@ -332,6 +332,11 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ],
         distinct=True,
     )
+    label = django_filters.CharFilter(
+        label="Label",
+        field_name="labels__slug",
+        distinct=True,
+    )
 
     class Meta:
         model = Project

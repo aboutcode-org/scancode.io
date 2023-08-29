@@ -23,6 +23,8 @@
 from django.apps import apps
 
 from rest_framework import serializers
+from taggit.serializers import TaggitSerializer
+from taggit.serializers import TagListSerializerField
 
 from scanpipe.api import ExcludeFromListViewMixin
 from scanpipe.models import CodebaseRelation
@@ -121,7 +123,10 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
 
 
 class ProjectSerializer(
-    ExcludeFromListViewMixin, PipelineChoicesMixin, serializers.ModelSerializer
+    ExcludeFromListViewMixin,
+    PipelineChoicesMixin,
+    TaggitSerializer,
+    serializers.ModelSerializer,
 ):
     pipeline = OrderedMultipleChoiceField(
         choices=(),
@@ -146,6 +151,7 @@ class ProjectSerializer(
     discovered_packages_summary = serializers.SerializerMethodField()
     discovered_dependencies_summary = serializers.SerializerMethodField()
     codebase_relations_summary = serializers.SerializerMethodField()
+    labels = TagListSerializerField(required=False)
 
     class Meta:
         model = Project
@@ -159,6 +165,7 @@ class ProjectSerializer(
             "created_date",
             "is_archived",
             "notes",
+            "labels",
             "settings",
             "pipeline",
             "execute_now",

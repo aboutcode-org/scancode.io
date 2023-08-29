@@ -67,6 +67,7 @@ from scanpipe.filters import ProjectMessageFilterSet
 from scanpipe.filters import RelationFilterSet
 from scanpipe.filters import ResourceFilterSet
 from scanpipe.forms import AddInputsForm
+from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectCloneForm
@@ -497,7 +498,7 @@ class ProjectListView(
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
-    prefetch_related = ["runs"]
+    prefetch_related = ["runs", "labels"]
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
@@ -652,8 +653,11 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         context.update(
             {
                 "inputs_with_source": inputs,
+                "labels": list(project.labels.all()),
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
+                "add_labels_form": AddLabelsForm(),
+                "project_clone_form": ProjectCloneForm(project),
                 "archive_form": ArchiveProjectForm(),
                 "resource_status_summary": resource_status_summary,
                 "license_clarity": license_clarity,
@@ -676,10 +680,16 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             form_class = AddInputsForm
             success_message = "Input file(s) added."
             error_message = "Input file addition error."
-        else:
+        elif "add-pipeline-submit" in request.POST:
             form_class = AddPipelineForm
             success_message = "Pipeline added."
             error_message = "Pipeline addition error."
+        elif "add-labels-submit" in request.POST:
+            form_class = AddLabelsForm
+            success_message = "Label(s) added."
+            error_message = "Label addition error."
+        else:
+            raise Http404
 
         form_kwargs = {"data": request.POST, "files": request.FILES}
         form = form_class(**form_kwargs)
@@ -1009,6 +1019,14 @@ def download_input_view(request, slug, input_name):
     return FileResponse(file_path.open("rb"), as_attachment=True)
 
 
+@require_POST
+@conditional_login_required
+def delete_label_view(request, slug, label_name):
+    project = get_object_or_404(Project, slug=slug)
+    project.labels.remove(label_name)
+    return JsonResponse({})
+
+
 def project_results_json_response(project, as_attachment=False):
     """
     Return the results as JSON compatible with ScanCode data format.
@@ -1239,7 +1257,7 @@ class ProjectMessageListView(
 ):
     model = ProjectMessage
     filterset_class = ProjectMessageFilterSet
-    template_name = "scanpipe/project_message_list.html"
+    template_name = "scanpipe/message_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("error", 50)
     table_columns = [
         {
@@ -1638,7 +1656,7 @@ class DiscoveredDependencyDetailsView(
 
 @conditional_login_required
 def run_detail_view(request, uuid):
-    template = "scanpipe/includes/run_modal_content.html"
+    template = "scanpipe/modals/run_modal_content.html"
     run_qs = Run.objects.select_related("project").prefetch_related(
         "project__webhooksubscriptions",
     )

@@ -59,9 +59,7 @@ def make_resource_directory(project, path, **extra):
         project=project,
         path=path,
         name=path.split("/")[-1],
-        extension="." + path.split(".")[-1],
         type=CodebaseResource.Type.DIRECTORY,
-        is_text=True,
         tag=path.split("/")[0],
         **extra
     )

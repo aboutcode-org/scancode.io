@@ -1,0 +1,45 @@
+<div id="add-labels-modal" class="modal">
+  <div class="modal-background"></div>
+  <form method="post">{% csrf_token %}
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Edit labels</p>
+        <button class="delete" type="button" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        {% if labels %}
+          <span class="has-text-weight-semibold">Assigned labels:</span>
+          <div class="field is-grouped is-grouped-multiline mt-3">
+            {% for label in labels %}
+              <div class="control">
+                <div class="tags has-addons">
+                  <span class="tag is-info">
+                    <span class="has-text-weight-bold ml-1">{{ label.name }}</span>
+                  </span>
+                  <a class="tag is-delete"
+                     hx-post="{% url 'project_delete_label' project.slug label.name %}"
+                     hx-target="#label-{{ label.slug }}"
+                     hx-swap="delete"
+                     hx-on::after-request="this.parentElement.parentElement.remove()"
+                  >
+                  </a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <hr class="my-4">
+        {% endif %}
+        <div class="field">
+          <label class="label has-text-weight-semibold" for="{{ add_labels_form.labels.id_for_label }}">{{ add_labels_form.labels.label }}</label>
+          <div class="control">
+            {{ add_labels_form.labels }}
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button id="add-labels-button" name="add-labels-submit" class="button is-link is-no-close" type="submit">Add labels</button>
+        <button class="button" type="button">Close</button>
+      </footer>
+    </div>
+  </form>
+</div>

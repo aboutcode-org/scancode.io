@@ -6,6 +6,9 @@
     <tr>
       <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
+        <div>
+          {% include 'scanpipe/includes/project_labels.html' with labels=project.labels.all only %}
+        </div>
         <span class="has-text-grey is-size-7 is-block" title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
       </th>
       <td>
@@ -56,7 +59,7 @@
       </td>
       <td>
         {% if project.codebaseresources_count or project.discoveredpackages_count %}
-          {% include "scanpipe/includes/project_download_dropdown.html" with project=project only %}
+          {% include "scanpipe/dropdowns/project_download_dropdown.html" with project=project only %}
         {% endif %}
       </td>
     </tr>

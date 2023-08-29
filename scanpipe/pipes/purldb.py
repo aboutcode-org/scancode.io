@@ -52,6 +52,8 @@ PURLDB_API_KEY = settings.PURLDB_API_KEY
 if PURLDB_API_KEY:
     session.headers.update({"Authorization": f"Token {PURLDB_API_KEY}"})
 
+DEFAULT_TIMEOUT = 30
+
 
 def is_configured():
     """Return True if the required PurlDB settings have been set."""
@@ -75,12 +77,14 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
-def request_get(url, payload=None, timeout=None):
+def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
     """Wrap the HTTP request calls on the API."""
     if not url:
         return
 
-    params = {"format": "json"}
+    params = {}
+    if "format=json" not in url:
+        params.update({"format": "json"})
     if payload:
         params.update(payload)
 
@@ -93,7 +97,7 @@ def request_get(url, payload=None, timeout=None):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def request_post(url, data, timeout=None):
+def request_post(url, data, timeout=DEFAULT_TIMEOUT):
     try:
         response = session.post(url, json=data, timeout=timeout)
         response.raise_for_status()
@@ -102,32 +106,78 @@ def request_post(url, data, timeout=None):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def match_package(sha1, timeout=None, api_url=PURLDB_API_URL):
-    """Match a SHA1 in the PurlDB for package-type file."""
-    payload = {"sha1": sha1}
-    response = request_get(url=f"{api_url}packages/", payload=payload, timeout=timeout)
-
+def collect_response_results(response, data, timeout=DEFAULT_TIMEOUT):
+    """Return all results from a purldb API response."""
+    results = []
     if response and response.get("count"):
-        results = response["results"]
-        return results
+        results.extend(response["results"])
+        next_page = response.get("next")
+        while next_page:
+            response = request_post(url=next_page, data=data, timeout=timeout)
+            if response and response.get("count"):
+                results.extend(response["results"])
+            next_page = response.get("next")
+    return results
 
 
-def match_resource(sha1_list, timeout=None, api_url=PURLDB_API_URL):
-    """Match list SHA1 in the PurlDB for a single resource file."""
-    payload = {"sha1": sha1_list}
-    response = request_get(url=f"{api_url}resources/", payload=payload, timeout=timeout)
+def match_packages(
+    sha1_list,
+    enhance_package_data=False,
+    timeout=DEFAULT_TIMEOUT,
+    api_url=PURLDB_API_URL,
+):
+    """
+    Match a list of SHA1 in the PurlDB for package-type files.
 
-    if response and response.get("count"):
-        packages = response["results"]
-        return packages
+    If `enhance_package_data` is True, then purldb will enhance Package data for
+    matched Packages, if possible.
+    """
+    data = {
+        "sha1": sha1_list,
+        "enhance_package_data": enhance_package_data,
+    }
+    response = request_post(
+        url=f"{api_url}packages/filter_by_checksums/", data=data, timeout=timeout
+    )
+
+    packages = collect_response_results(response, data=data, timeout=timeout)
+    return packages
 
 
-def submit_purls(packages, timeout=None, api_url=PURLDB_API_URL):
+def match_resources(sha1_list, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+    """Match a list of SHA1 in the PurlDB for resource files."""
+    data = {"sha1": sha1_list}
+    response = request_post(
+        url=f"{api_url}resources/filter_by_checksums/", data=data, timeout=timeout
+    )
+
+    resources = collect_response_results(response, data=data, timeout=timeout)
+    return resources
+
+
+def match_directory(fingerprint, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+    """
+    Match directory content fingerprint in the PurlDB for a single directory
+    resource.
+    """
+    payload = {"fingerprint": fingerprint}
+    response = request_get(
+        url=f"{api_url}approximate_directory_content_index/match/",
+        payload=payload,
+        timeout=timeout,
+    )
+
+    if response and len(response) > 0:
+        return response
+
+
+def submit_purls(packages, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """
     Submit list of dict where each dict has either resolved PURL i.e. PURL with
     version or version-less PURL along with vers range to PurlDB for indexing.
     """
     payload = {"packages": packages}
+
     response = request_post(
         url=f"{api_url}packages/index_packages/", data=payload, timeout=timeout
     )

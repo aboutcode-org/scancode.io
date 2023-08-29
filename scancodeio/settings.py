@@ -137,6 +137,7 @@ INSTALLED_APPS = [
     "django_rq",
     "django_probes",
     "fontawesomefree",
+    "taggit",
 ]
 
 MIDDLEWARE = [

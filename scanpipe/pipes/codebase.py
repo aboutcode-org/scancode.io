@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from commoncode.resource import VirtualCodebase
+
 from scanpipe.models import Project
 
 
@@ -94,6 +96,21 @@ def get_codebase_tree(codebase, fields):
                 resource_dict["children"] = sorted(children, key=sort_by_lower_name)
         codebase_dict["children"].append(resource_dict)
     return codebase_dict
+
+
+def get_basic_virtual_codebase(resources_qs):
+    """
+    Return a VirtualCodebase created from CodebaseResources in `resources_qs`.
+
+    The only Resource fields that are populated are path, sha1, size, and
+    is_file. This is intended for use with
+    scanpipe.pipes.matchcode.fingerprint_codebase_directories
+    """
+    resources = [
+        {"path": r.path, "sha1": r.sha1, "size": r.size, "is_file": r.is_file}
+        for r in resources_qs
+    ]
+    return VirtualCodebase(location={"files": resources})
 
 
 class ProjectCodebase:
