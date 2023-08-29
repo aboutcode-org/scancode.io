@@ -22,7 +22,6 @@
 
 from collections import defaultdict
 from contextlib import suppress
-from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
 
@@ -35,7 +34,6 @@ from packagedcode.npm import NpmPackageJsonHandler
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
-from scanpipe.models import CodebaseResource
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -61,47 +59,6 @@ def get_inputs(project):
         raise FileNotFoundError("to* input files not found.")
 
     return from_files, to_files
-
-
-def get_resource_codebase_root(project, resource_path):
-    """Return "to" or "from" depending on the resource location in the codebase."""
-    relative_path = Path(resource_path).relative_to(project.codebase_path)
-    first_part = relative_path.parts[0]
-    if first_part in ["to", "from"]:
-        return first_part
-    return ""
-
-
-def yield_resources_from_codebase(project):
-    """
-    Yield CodebaseResource instances, including their ``info`` data, ready to be
-    inserted in the database using ``save()`` or ``bulk_create()``.
-    """
-    for resource_path in project.walk_codebase_path():
-        yield pipes.make_codebase_resource(
-            project=project,
-            location=resource_path,
-            save=False,
-            tag=get_resource_codebase_root(project, resource_path),
-        )
-
-
-def collect_and_create_codebase_resources(project, batch_size=5000):
-    """
-    Collect and create codebase resources including the "to/" and "from/" context using
-    the resource tag field.
-
-    The default ``batch_size`` can be overriden, although the benefits of a value
-    greater than 5000 objects are usually not significant.
-    """
-    model_class = CodebaseResource
-    objs = yield_resources_from_codebase(project)
-
-    while True:
-        batch = list(islice(objs, batch_size))
-        if not batch:
-            break
-        model_class.objects.bulk_create(batch, batch_size)
 
 
 def get_extracted_path(resource):

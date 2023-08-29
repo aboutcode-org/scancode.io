@@ -327,3 +327,39 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         with self.assertRaises(ValueError) as error:
             get_text_str_diff_ratio(1, 2)
         self.assertEqual("Values must be str", str(error.exception))
+
+    def test_scanpipe_pipes_get_resource_codebase_root(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "codebase" / "a.txt"
+        file_location = copy_input(input_location, p1.codebase_path)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("", codebase_root)
+
+        to_dir = p1.codebase_path / "to"
+        to_dir.mkdir()
+        file_location = copy_input(input_location, to_dir)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("to", codebase_root)
+
+        from_dir = p1.codebase_path / "from"
+        from_dir.mkdir()
+        file_location = copy_input(input_location, from_dir)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("from", codebase_root)
+
+    def test_scanpipe_pipes_collect_and_create_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "codebase" / "a.txt"
+        to_dir = p1.codebase_path / "to"
+        to_dir.mkdir()
+        from_dir = p1.codebase_path / "from"
+        from_dir.mkdir()
+        copy_input(input_location, to_dir)
+        copy_input(input_location, from_dir)
+        pipes.collect_and_create_codebase_resources(p1)
+
+        self.assertEqual(4, p1.codebaseresources.count())
+        from_resource = p1.codebaseresources.get(path="from/a.txt")
+        self.assertEqual("from", from_resource.tag)
+        to_resource = p1.codebaseresources.get(path="to/a.txt")
+        self.assertEqual("to", to_resource.tag)
