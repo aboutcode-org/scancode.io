@@ -73,40 +73,6 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(2, len(from_files))
         self.assertEqual(2, len(to_files))
 
-    def test_scanpipe_pipes_d2d_get_resource_codebase_root(self):
-        input_location = self.data_location / "codebase" / "a.txt"
-        file_location = copy_input(input_location, self.project1.codebase_path)
-        codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
-        self.assertEqual("", codebase_root)
-
-        to_dir = self.project1.codebase_path / "to"
-        to_dir.mkdir()
-        file_location = copy_input(input_location, to_dir)
-        codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
-        self.assertEqual("to", codebase_root)
-
-        from_dir = self.project1.codebase_path / "from"
-        from_dir.mkdir()
-        file_location = copy_input(input_location, from_dir)
-        codebase_root = d2d.get_resource_codebase_root(self.project1, file_location)
-        self.assertEqual("from", codebase_root)
-
-    def test_scanpipe_pipes_d2d_collect_and_create_codebase_resources(self):
-        input_location = self.data_location / "codebase" / "a.txt"
-        to_dir = self.project1.codebase_path / "to"
-        to_dir.mkdir()
-        from_dir = self.project1.codebase_path / "from"
-        from_dir.mkdir()
-        copy_input(input_location, to_dir)
-        copy_input(input_location, from_dir)
-        d2d.collect_and_create_codebase_resources(self.project1)
-
-        self.assertEqual(4, self.project1.codebaseresources.count())
-        from_resource = self.project1.codebaseresources.get(path="from/a.txt")
-        self.assertEqual("from", from_resource.tag)
-        to_resource = self.project1.codebaseresources.get(path="to/a.txt")
-        self.assertEqual("to", to_resource.tag)
-
     def test_scanpipe_pipes_d2d_get_extracted_path(self):
         path = "not/an/extracted/path/"
         r1 = make_resource_file(self.project1, path)
@@ -493,7 +459,7 @@ class ScanPipeD2DPipesTest(TestCase):
         from_dir = self.project1.codebase_path / "from"
         from_dir.mkdir()
         copy_inputs(input_locations, from_dir)
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         buffer = io.StringIO()
         d2d.find_java_packages(self.project1, logger=buffer.write)
@@ -546,7 +512,7 @@ class ScanPipeD2DPipesTest(TestCase):
         from_dir.mkdir(parents=True)
         copy_input(from_input_location, from_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         from_resource = self.project1.codebaseresources.get(
             path=(
@@ -594,7 +560,7 @@ class ScanPipeD2DPipesTest(TestCase):
         from_dir.mkdir(parents=True)
         copy_input(from_input_location, from_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         from_resource = self.project1.codebaseresources.get(
             path=(
@@ -629,7 +595,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_dir.mkdir(parents=True)
         copy_input(to_location, to_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         mock_get.return_value = [
             {
@@ -682,7 +648,7 @@ class ScanPipeD2DPipesTest(TestCase):
         copy_input(to_mini, to_dir)
         copy_input(to_map, to_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         to_map_resources = self.project1.codebaseresources.filter(
             path=(
@@ -736,7 +702,7 @@ class ScanPipeD2DPipesTest(TestCase):
         from_dir.mkdir(parents=True)
         copy_input(from_input_location, from_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         from_resource = self.project1.codebaseresources.get(
             path=(
@@ -808,7 +774,7 @@ class ScanPipeD2DPipesTest(TestCase):
         from_dir3.mkdir(parents=True)
         copy_input(from_input_location, from_dir3)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         from_resource1 = self.project1.codebaseresources.get(
             path=(
@@ -889,7 +855,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         buffer = io.StringIO()
         d2d.map_thirdparty_npm_packages(self.project1, logger=buffer.write)
