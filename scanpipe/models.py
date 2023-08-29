@@ -38,6 +38,7 @@ from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
@@ -1684,6 +1685,27 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def path_pattern(self, pattern):
         """Resources with a path that match the provided ``pattern``."""
         return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
+
+    def has_directory_content_fingerprint(self):
+        """
+        Resources that have the key `directory_content` set in the `extra_data`
+        field.
+        """
+        return self.filter(~Q(extra_data__directory_content=""))
+
+    def paginated(self, per_page=5000):
+        """
+        Iterate over a (large) QuerySet by chunks of ``per_page`` items.
+
+        This is done to prevent high memory usage when using a regular QuerySet
+        or QuerySet.iterator to iterate over a large number of
+        CodebaseResources:
+
+        https://nextlinklabs.com/resources/insights/django-big-data-iteration
+        https://stackoverflow.com/questions/4222176/why-is-iterating-through-a-large-django-queryset-consuming-massive-amounts-of-me/
+        """
+        for page in Paginator(self, per_page=per_page):
+            yield page.object_list
 
 
 class ScanFieldsModelMixin(models.Model):

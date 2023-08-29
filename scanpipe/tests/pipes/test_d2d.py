@@ -128,9 +128,11 @@ class ScanPipeD2DPipesTest(TestCase):
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
 
-    @mock.patch("scanpipe.pipes.purldb.match_package")
-    def test_scanpipe_pipes_d2d_match_purldb(self, mock_match_package):
+    @mock.patch("scanpipe.pipes.purldb.match_packages")
+    def test_scanpipe_pipes_d2d_match_purldb_resources(self, mock_match_package):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
+        to_1.is_archive = True
+        to_1.save()
         # The initial status will be updated to flag.MATCHED_TO_PURLDB
         to_2 = make_resource_file(
             self.project1, "to/package.jar-extract/a.class", status=flag.MAPPED
@@ -139,17 +141,19 @@ class ScanPipeD2DPipesTest(TestCase):
 
         package_data = package_data1.copy()
         package_data["uuid"] = uuid.uuid4()
+        package_data["sha1"] = "abcdef"
         mock_match_package.return_value = [package_data]
 
         buffer = io.StringIO()
-        d2d.match_purldb(
+        d2d.match_purldb_resources(
             self.project1,
             extensions=[".jar"],
             matcher_func=d2d.match_purldb_package,
             logger=buffer.write,
         )
         expected = (
-            "Matching 1 .jar resources in PurlDB" "1 resource(s) matched in PurlDB"
+            "Matching 1 .jar resources in PurlDB, using SHA1"
+            "3 resource(s) matched in PurlDB using 1 SHA1(s)"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -160,6 +164,50 @@ class ScanPipeD2DPipesTest(TestCase):
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()
             self.assertEqual(flag.MATCHED_TO_PURLDB, resource.status)
+            self.assertEqual(package, resource.discovered_packages.get())
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    def test_scanpipe_pipes_d2d_match_purldb_directories(self, mock_request_get):
+        to_1 = make_resource_directory(
+            self.project1,
+            "to/package.jar-extract",
+            extra_data={"directory_content": "abcdef"},
+        )
+        to_2 = make_resource_file(self.project1, "to/package.jar-extract/a.class")
+        to_3 = make_resource_file(self.project1, "to/package.jar-extract/b.class")
+        package_data = package_data1.copy()
+        package_data["uuid"] = uuid.uuid4()
+        mock_request_get.side_effect = [
+            [
+                {
+                    "fingerprint": "abcdef",
+                    "matched_fingerprint": "abcdef",
+                    "package": "http://private.purldb.io/api/packages/package-id-123",
+                }
+            ],
+            package_data,
+            [],
+        ]
+
+        buffer = io.StringIO()
+        d2d.match_purldb_directories(
+            self.project1,
+            logger=buffer.write,
+        )
+
+        expected = (
+            "Matching 1 director(y/ies) from to/ in PurlDB"
+            "1 director(y/ies) matched in PurlDB"
+        )
+        self.assertEqual(expected, buffer.getvalue())
+
+        package = self.project1.discoveredpackages.get()
+        self.assertEqual(package_data["name"], package.name)
+        self.assertNotEqual(package_data["uuid"], package.uuid)
+
+        for resource in [to_1, to_2, to_3]:
+            resource.refresh_from_db()
+            self.assertEqual("matched-to-purldb", resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_pipes_d2d_get_best_path_matches_same_name(self):
@@ -286,7 +334,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertIn(from2, no_relations)
         self.assertIn(to3, no_relations)
         to3.refresh_from_db()
-        self.assertEqual("no-java-source", to3.status)
+        self.assertEqual("", to3.status)
 
     def test_scanpipe_pipes_d2d_map_java_to_class_no_java(self):
         make_resource_file(self.project1, path="to/Abstract.class")
@@ -568,7 +616,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(from_resource, relation[0].from_resource)
         self.assertEqual(from_resource, relation[1].from_resource)
 
-    @mock.patch("scanpipe.pipes.purldb.match_resource")
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
     @mock.patch("scanpipe.pipes.purldb.request_get")
     def test_scanpipe_pipes_d2d_match_js_purldb(self, mock_match_resource, mock_get):
         to_location = self.data_location / "d2d-javascript" / "to" / "unmain.js.map"
@@ -589,14 +637,14 @@ class ScanPipeD2DPipesTest(TestCase):
                 "purl": "pkg:deb/debian/adduser@3.118",
                 "path": "package/dist/SassWarning.js",
                 "type": "file",
-                "sha1": "abcdeac9ce76668a27069d88f30e033e72057dcb",
+                "sha1": "4bbc6d18a574e11fbdcbb74a24f1956bcedcc170",
             },
             {
                 "package": "http://example.com/api/packages/zyx/",
                 "purl": "pkg:deb/debian/adduser@3.118",
                 "path": "package/dist/SassWarning.js",
                 "type": "file",
-                "sha1": "abcdeac9ce76668a27069d88f30e033e72057dcb",
+                "sha1": "d6bfcf7d1f8a00cc639b3a186a52453d37c52f61",
             },
         ]
 
@@ -605,14 +653,15 @@ class ScanPipeD2DPipesTest(TestCase):
         mock_match_resource.return_value = package_data
 
         buffer = io.StringIO()
-        d2d.match_purldb(
+        d2d.match_purldb_resources(
             self.project1,
             extensions=[".map", ".js"],
             matcher_func=d2d.match_purldb_resource,
             logger=buffer.write,
         )
         expected = (
-            "Matching 1 .map, .js resources in PurlDB" "1 resource(s) matched in PurlDB"
+            "Matching 1 .map, .js resources in PurlDB, using SHA1"
+            "1 resource(s) matched in PurlDB using 2 SHA1(s)"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -635,7 +684,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         d2d.collect_and_create_codebase_resources(self.project1)
 
-        to_map_resource = self.project1.codebaseresources.get(
+        to_map_resources = self.project1.codebaseresources.filter(
             path=(
                 "to/project.tar.zst/modules/apps/adaptive-media/"
                 "adaptive-media-web/src/main/resources/META-INF/resources/"
@@ -646,8 +695,8 @@ class ScanPipeD2DPipesTest(TestCase):
         package_data = package_data1.copy()
         package_data["uuid"] = uuid.uuid4()
 
-        package = d2d.create_package_from_purldb_data(
-            self.project1, to_map_resource, package_data
+        package, matched_resources_count = d2d.create_package_from_purldb_data(
+            self.project1, to_map_resources, package_data
         )
 
         buffer = io.StringIO()
