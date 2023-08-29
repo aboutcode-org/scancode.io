@@ -22,6 +22,7 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import resolve
+from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes import update_or_create_package
 
 
@@ -69,15 +70,34 @@ class InspectManifest(Pipeline):
                 raise Exception(f"No packages could be resolved for {input_location}")
             self.resolved_packages.extend(packages)
 
+    #     def get_dependencies_from_manifest(self):
+    #         """Get dependency data from manifest files."""
+    #         self.resolved_packages = []
+    #
+    #         for input_location in self.input_locations:
+    #             dependencies = resolve.resolve_packages(input_location)
+    #             if not packages:
+    #                 raise Exception(f"No packages could be resolved for {input_location}")
+    #             self.resolved_packages.extend(packages)
+    #
     def create_resolved_packages(self):
         """Create the resolved packages and their dependencies in the database."""
+        created_packages = []
+
         for package_data in self.resolved_packages:
             package_data = resolve.set_license_expression(package_data)
             dependencies = package_data.pop("dependencies", [])
-            update_or_create_package(self.project, package_data)
+            package = update_or_create_package(
+                project=self.project, package_data=package_data
+            )
+            created_packages.append({"package": package, "dependencies": dependencies})
 
+        for created_package in created_packages:
+            package = created_package["package"]
+            dependencies = created_package["dependencies"]
             for dependency_data in dependencies:
-                resolved_package = dependency_data.get("resolved_package")
-                if resolved_package:
-                    resolved_package.pop("dependencies", [])
-                    update_or_create_package(self.project, resolved_package)
+                update_or_create_dependency(
+                    project=self.project,
+                    dependency_data=dependency_data,
+                    for_package=package,
+                )

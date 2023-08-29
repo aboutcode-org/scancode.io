@@ -1394,7 +1394,7 @@ class DiscoveredDependencyListView(
         {
             "field_name": "type",
             "label": "Package type",
-            "filter_fieldname": "type",
+            "filter_fieldname": "package__type",
         },
         "extracted_requirement",
         {
@@ -1832,7 +1832,10 @@ class DiscoveredDependencyDetailsView(
     tabset = {
         "essentials": {
             "fields": [
-                "package_url",
+                {
+                    "field_name": "package",
+                    "template": "scanpipe/tabset/field_package.html",
+                },
                 {
                     "field_name": "for_package",
                     "template": "scanpipe/tabset/field_for_package.html",

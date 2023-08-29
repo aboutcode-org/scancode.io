@@ -693,7 +693,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
 class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
-        "type",
+        "package__type",
         "scope",
         "is_runtime",
         "is_optional",
@@ -708,11 +708,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     sort = GroupOrderingFilter(
         label="Sort",
         fields=[
-            "package_url",
-            "type",
-            "namespace",
-            "name",
-            "version",
+            "package__type",
             "extracted_requirement",
             "scope",
             "is_runtime",
@@ -725,7 +721,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
-    type = ParentAllValuesFilter()
+    package__type = ParentAllValuesFilter()
     scope = ParentAllValuesFilter()
     datasource_id = ParentAllValuesFilter()
     is_runtime = StrictBooleanFilter()
@@ -739,12 +735,12 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "search",
             "purl",
             "dependency_uid",
-            "type",
-            "namespace",
-            "name",
-            "version",
-            "qualifiers",
-            "subpath",
+            "package__type",
+            "package__namespace",
+            "package__name",
+            "package__version",
+            "package__qualifiers",
+            "package__subpath",
             "scope",
             "is_runtime",
             "is_optional",

@@ -3004,7 +3004,6 @@ class DiscoveredDependency(
     SaveProjectMessageMixin,
     UpdateFromDataMixin,
     VulnerabilityMixin,
-    PackageURLMixin,
 ):
     """
     A project's Discovered Dependencies are records of the dependencies used by
@@ -3026,6 +3025,14 @@ class DiscoveredDependency(
     for_package = models.ForeignKey(
         DiscoveredPackage,
         related_name="dependencies",
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=True,
+        null=True,
+    )
+    package = models.ForeignKey(
+        DiscoveredPackage,
+        related_name="dependents",
         on_delete=models.CASCADE,
         editable=False,
         blank=True,
@@ -3098,11 +3105,11 @@ class DiscoveredDependency(
 
     @property
     def purl(self):
-        return self.package_url
+        return self.package.package_url
 
     @property
     def package_type(self):
-        return self.type
+        return self.package.type
 
     @cached_property
     def for_package_uid(self):
@@ -3119,6 +3126,7 @@ class DiscoveredDependency(
         cls,
         project,
         dependency_data,
+        package=None,
         for_package=None,
         datafile_resource=None,
         strip_datafile_path_root=False,
@@ -3135,7 +3143,7 @@ class DiscoveredDependency(
         not stripped for `datafile_path`.
         """
         dependency_data = dependency_data.copy()
-        required_fields = ["purl", "dependency_uid"]
+        required_fields = ["dependency_uid"]
         missing_values = [
             field_name
             for field_name in required_fields
@@ -3158,6 +3166,15 @@ class DiscoveredDependency(
                     package_uid=for_package_uid
                 )
 
+        if not package:
+            purl = dependency_data.get("purl")
+            if purl:
+                package = project.discoveredpackages.for_package_url(purl).get()
+            else:
+                package_uid = dependency_data.get("package_uid")
+                if package_uid:
+                    package = project.discoveredpackages.get(package_uid=package_uid)
+
         if not datafile_resource:
             datafile_path = dependency_data.get("datafile_path")
             if datafile_path:
@@ -3165,11 +3182,6 @@ class DiscoveredDependency(
                     segments = datafile_path.split("/")
                     datafile_path = "/".join(segments[1:])
                 datafile_resource = project.codebaseresources.get(path=datafile_path)
-
-        # Set purl fields from `purl`
-        purl = dependency_data.get("purl")
-        purl_mapping = PackageURL.from_string(purl).to_dict()
-        dependency_data.update(**purl_mapping)
 
         cleaned_data = {
             field_name: value
@@ -3179,6 +3191,7 @@ class DiscoveredDependency(
 
         return cls.objects.create(
             project=project,
+            package=package,
             for_package=for_package,
             datafile_resource=datafile_resource,
             **cleaned_data,

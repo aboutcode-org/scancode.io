@@ -54,6 +54,21 @@ def get_bom(cyclonedx_document):
     return Bom_1_4(**cyclonedx_document)
 
 
+def get_dependencies_indexed_by_parent_bom_ref(bom):
+    """Return mapping of bom-ref to its dependencies"""
+    dependencies = {}
+    for bom_dependency in bom.dependencies:
+        dependencies[bom_dependency.ref] = bom_dependency.dependsOn
+    return dependencies
+
+
+def get_components_indexed_by_bom_ref(bom):
+    components = {}
+    for component in bom.components:
+        components[component.bom_ref] = component
+    return components
+
+
 def get_components(bom):
     """Return list of components from CycloneDX BOM."""
     return recursive_component_collector(bom.components, [])

@@ -23,6 +23,7 @@
 import json
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 from django.core.validators import EMPTY_VALUES
 
@@ -179,38 +180,67 @@ def resolve_spdx_packages(input_location):
     ]
 
 
-def cyclonedx_component_to_package_data(component_data):
-    """Return package_data from CycloneDX component."""
-    extra_data = {}
-    component = component_data["cdx_package"]
+def cyclonedx_bom_to_package_datas(cyclonedx_bom):
+    """Return list of package_data from CycloneDX BOM."""
+    package_datas = []
 
-    package_url_dict = {}
-    if component.purl:
-        package_url_dict = PackageURL.from_string(component.purl).to_dict(encode=True)
+    dependencies_by_parent_bom_ref = (
+        cyclonedx.get_dependencies_indexed_by_parent_bom_ref(cyclonedx_bom)
+    ).get
+    components_by_bom_ref = cyclonedx.get_components_indexed_by_bom_ref(
+        cyclonedx_bom
+    ).get
+    components = cyclonedx.get_components(cyclonedx_bom)
+    for component_data in components:
+        extra_data = {}
+        component = component_data["cdx_package"]
 
-    declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
+        package_url_dict = {}
+        if component.purl:
+            package_url_dict = PackageURL.from_string(component.purl).to_dict(
+                encode=True
+            )
 
-    if external_references := cyclonedx.get_external_references(component):
-        extra_data["externalReferences"] = external_references
+        declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
 
-    if nested_components := component_data.get("nested_components"):
-        extra_data["nestedComponents"] = nested_components
+        if external_references := cyclonedx.get_external_references(component):
+            extra_data["externalReferences"] = external_references
 
-    package_data = {
-        "name": component.name,
-        "extracted_license_statement": declared_license,
-        "copyright": component.copyright,
-        "version": component.version,
-        "description": component.description,
-        "extra_data": extra_data,
-        **package_url_dict,
-        **cyclonedx.get_checksums(component),
-        **cyclonedx.get_properties_data(component),
-    }
+        if nested_components := component_data.get("nested_components"):
+            extra_data["nestedComponents"] = nested_components
 
-    return {
-        key: value for key, value in package_data.items() if value not in EMPTY_VALUES
-    }
+        dependencies = dependencies_by_parent_bom_ref(component.bom_ref, [])
+        dependency_datas = []
+        for dependency in dependencies:
+            child_component = components_by_bom_ref(dependency)
+            dependency_datas.append(
+                {
+                    "dependency_uid": f"{component.purl}-{dependency}",
+                    "purl": child_component.purl,
+                }
+            )
+
+        package_data = {
+            "name": component.name,
+            "extracted_license_statement": declared_license,
+            "copyright": component.copyright,
+            "version": component.version,
+            "description": component.description,
+            "extra_data": extra_data,
+            "dependencies": dependency_datas,
+            **package_url_dict,
+            **cyclonedx.get_checksums(component),
+            **cyclonedx.get_properties_data(component),
+        }
+
+        package_datas.append(
+            {
+                key: value
+                for key, value in package_data.items()
+                if value not in EMPTY_VALUES
+            }
+        )
+    return package_datas
 
 
 def resolve_cyclonedx_packages(input_location):
@@ -224,9 +254,7 @@ def resolve_cyclonedx_packages(input_location):
         raise Exception(f'CycloneDX document "{input_path.name}" is not valid: {e}')
 
     cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)
-    components = cyclonedx.get_components(cyclonedx_bom)
-
-    return [cyclonedx_component_to_package_data(component) for component in components]
+    return cyclonedx_bom_to_package_datas(cyclonedx_bom)
 
 
 def get_default_package_type(input_location):
