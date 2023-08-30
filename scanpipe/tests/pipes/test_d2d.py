@@ -119,7 +119,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         expected = (
             "Matching 1 .jar resources in PurlDB, using SHA1"
-            "3 resource(s) matched in PurlDB using 1 SHA1(s)"
+            "3 resources matched in PurlDB using 1 SHA1s"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -162,8 +162,8 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = (
-            "Matching 1 director(y/ies) from to/ in PurlDB"
-            "1 director(y/ies) matched in PurlDB"
+            "Matching 1 directories from to/ in PurlDB"
+            "1 directories matched in PurlDB"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -627,7 +627,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         expected = (
             "Matching 1 .map, .js resources in PurlDB, using SHA1"
-            "1 resource(s) matched in PurlDB using 2 SHA1(s)"
+            "1 resources matched in PurlDB using 2 SHA1s"
         )
         self.assertEqual(expected, buffer.getvalue())
 

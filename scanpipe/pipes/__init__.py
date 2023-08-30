@@ -345,6 +345,52 @@ def log_progress(
     return last_percent
 
 
+class LoopProgress:
+    """
+    A context manager for logging progress in loops.
+
+    Usage:
+        total_iterations = 100
+        logger = print  # Replace with your actual logger function
+
+        with LoopProgress(total_iterations, logger, progress_step=10) as progress:
+            for index, item in enumerate(iterator):
+                # Your processing logic here
+                progress.log_progress(index)
+    """
+
+    def __init__(self, total_iterations, logger, progress_step=10):
+        self.total_iterations = total_iterations
+        self.logger = logger
+        self.progress_step = progress_step
+        self.start_time = timer()
+        self.last_logged_progress = 0
+
+    def get_eta(self, current_progress):
+        run_time = timer() - self.start_time
+        return round(run_time / current_progress * (100 - current_progress))
+
+    def log_progress(self, current_iteration):
+        """Log progress and estimated time remaining."""
+        current_progress = int((current_iteration / self.total_iterations) * 100)
+        if current_progress >= self.last_logged_progress + self.progress_step:
+            msg = (
+                f"Progress: {current_progress}% "
+                f"({current_iteration}/{self.total_iterations})"
+            )
+            if eta := self.get_eta(current_progress):
+                msg += f" ETA: {eta} seconds"
+
+            self.logger(msg)
+            self.last_logged_progress = current_progress
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+
 def get_text_str_diff_ratio(str_a, str_b):
     """
     Return a similarity ratio as a float between 0 and 1 by comparing the
