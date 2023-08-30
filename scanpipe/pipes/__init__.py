@@ -304,47 +304,6 @@ def remove_prefix(text, prefix):
     return text
 
 
-def get_progress_percentage(current_index, total_count):
-    """
-    Return the percentage of progress given the current index and total count of
-    objects.
-    """
-    if current_index < 0 or current_index >= total_count:
-        raise ValueError("current_index must be between 0 and total_count - 1")
-
-    progress = current_index / total_count * 100
-    return progress
-
-
-def log_progress(
-    log_func,
-    current_index,
-    total_count,
-    last_percent,
-    increment_percent,
-    start_time=None,
-):
-    """
-    Log progress updates every `increment_percent` percentage points, given the
-    current index and total count of objects.
-    Return the latest percent logged.
-    """
-    progress_percentage = int(get_progress_percentage(current_index, total_count))
-    if progress_percentage >= last_percent + increment_percent:
-        last_percent = progress_percentage
-        msg = f"Progress: {progress_percentage}% ({current_index:,d}/{total_count:,d})"
-
-        if start_time:
-            run_time = timer() - start_time
-            eta = round(run_time / progress_percentage * (100 - progress_percentage))
-            if eta:
-                msg += f" ETA: {humanize_time(eta)}"
-
-        log_func(msg)
-
-    return last_percent
-
-
 class LoopProgress:
     """
     A context manager for logging progress in loops.
@@ -387,7 +346,7 @@ class LoopProgress:
                 f"({current_iteration}/{self.total_iterations})"
             )
             if eta := self.get_eta(current_progress):
-                msg += f" ETA: {eta} seconds"
+                msg += f" ETA: {humanize_time(eta)}"
 
             self.logger(msg)
             self.last_logged_progress = current_progress

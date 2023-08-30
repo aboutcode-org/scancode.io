@@ -264,37 +264,29 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
 
-    def test_scanpipe_get_progress_percentage(self):
-        self.assertEqual(0.0, pipes.get_progress_percentage(0, 10))
-        self.assertEqual(50.0, pipes.get_progress_percentage(5, 10))
-        self.assertEqual(90.0, pipes.get_progress_percentage(9, 10))
-        self.assertEqual(60.0, pipes.get_progress_percentage(3, 5))
-
-        with self.assertRaises(ValueError):
-            pipes.get_progress_percentage(10, 1)
-
-    def test_scanpipe_log_progress(self):
+    def test_scanpipe_log_progress_context_manager(self):
         buffer = io.StringIO()
-        last_percent = pipes.log_progress(
-            log_func=buffer.write,
-            current_index=1,
-            total_count=10,
-            last_percent=0,
-            increment_percent=5,
-        )
-        self.assertEqual(10, last_percent)
-        self.assertEqual("Progress: 10% (1/10)", buffer.getvalue())
 
-        buffer = io.StringIO()
-        last_percent = pipes.log_progress(
-            log_func=buffer.write,
-            current_index=20,
-            total_count=100,
-            last_percent=15,
-            increment_percent=5,
+        total_iterations = 100
+        progress_step = 10
+        logger = buffer.write
+
+        with pipes.LoopProgress(total_iterations, logger, progress_step) as progress:
+            for index, item in enumerate(range(total_iterations)):
+                progress.log_progress(index)
+
+        expected = (
+            "Progress: 10% (10/100)"
+            "Progress: 20% (20/100)"
+            "Progress: 30% (30/100)"
+            "Progress: 40% (40/100)"
+            "Progress: 50% (50/100)"
+            "Progress: 60% (60/100)"
+            "Progress: 70% (70/100)"
+            "Progress: 80% (80/100)"
+            "Progress: 90% (90/100)"
         )
-        self.assertEqual(20, last_percent)
-        self.assertEqual("Progress: 20% (20/100)", buffer.getvalue())
+        self.assertEqual(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_get_resource_diff_ratio(self):
         project1 = Project.objects.create(name="Analysis")
