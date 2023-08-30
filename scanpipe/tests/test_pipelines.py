@@ -861,7 +861,9 @@ class PipelinesIntegrationTest(TestCase):
             )
             self.assertEqual(expected["filename"], package.filename)
 
-    def test_scanpipe_deploy_to_develop_pipeline_integration_test(self):
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_deploy_to_develop_pipeline_integration_test(self, mock_request):
+        mock_request.return_value = None
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
@@ -884,7 +886,9 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self):
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self, mock_request):
+        mock_request.return_value = None
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 

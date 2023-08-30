@@ -162,8 +162,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
 
         expected = (
-            "Matching 1 directories from to/ in PurlDB"
-            "1 directories matched in PurlDB"
+            "Matching 1 directory from to/ in PurlDB" "1 directory matched in PurlDB"
         )
         self.assertEqual(expected, buffer.getvalue())
 
@@ -835,7 +834,7 @@ class ScanPipeD2DPipesTest(TestCase):
                 "resources/adaptive_media/js/main.js.map"
             ),
         )
-        from_expected = to_resource3 = self.project1.codebaseresources.get(
+        from_expected = self.project1.codebaseresources.get(
             path=(
                 "from/project.tar.zst/modules/apps/adaptive-media/"
                 "adaptive-media-web/src/main/resources/META-INF/resources/"

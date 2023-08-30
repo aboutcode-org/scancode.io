@@ -27,6 +27,7 @@ from pathlib import Path
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
 from packagedcode.npm import NpmPackageJsonHandler
@@ -578,7 +579,7 @@ def match_purldb_resources(
     sha1_count = 0
     resources_by_sha1 = defaultdict(list)
     package_data_by_purldb_urls = {}
-    resource_index = -1
+    loop_index = 0
 
     with LoopProgress(resource_count, logger) as progress:
         for resources_batch in resource_iterator:
@@ -587,7 +588,7 @@ def match_purldb_resources(
                 if to_resource.path.endswith(".map"):
                     for js_sha1 in js.source_content_sha1_list(to_resource):
                         resources_by_sha1[js_sha1].append(to_resource)
-                resource_index += 1
+                loop_index += 1
 
             matched_count += matcher_func(
                 project=project,
@@ -595,7 +596,7 @@ def match_purldb_resources(
                 package_data_by_purldb_urls=package_data_by_purldb_urls,
             )
 
-            progress.log_progress(resource_index)
+            progress.log_progress(loop_index)
 
             # Keep track of the total number of sha1s we send
             sha1_count += len(resources_by_sha1)
@@ -623,7 +624,10 @@ def match_purldb_directories(project, logger=None):
     directory_count = to_directories.count()
 
     if logger:
-        logger(f"Matching {directory_count:,d} directories from to/ in PurlDB")
+        logger(
+            f"Matching {directory_count:,d} "
+            f"director{pluralize(directory_count, 'y,ies')} from to/ in PurlDB"
+        )
 
     directory_iterator = to_directories.iterator(chunk_size=2000)
 
@@ -644,7 +648,10 @@ def match_purldb_directories(project, logger=None):
         .filter(status=flag.MATCHED_TO_PURLDB)
         .count()
     )
-    logger(f"{matched_count:,d} directories matched in PurlDB")
+    logger(
+        f"{matched_count:,d} director{pluralize(matched_count, 'y,ies')} "
+        f"matched in PurlDB"
+    )
 
 
 def map_javascript(project, logger=None):

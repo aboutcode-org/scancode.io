@@ -372,6 +372,14 @@ class LoopProgress:
 
     def log_progress(self, current_iteration):
         """Log progress and estimated time remaining."""
+        reasons_to_skip = [
+            not self.logger,
+            not current_iteration > 0,
+            self.total_iterations <= self.progress_step,
+        ]
+        if any(reasons_to_skip):
+            return
+
         current_progress = int((current_iteration / self.total_iterations) * 100)
         if current_progress >= self.last_logged_progress + self.progress_step:
             msg = (
