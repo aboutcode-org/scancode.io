@@ -264,17 +264,9 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
 
-    def test_scanpipe_log_progress_context_manager(self):
-        buffer = io.StringIO()
-
+    def test_scanpipe_loop_progress_as_context_manager(self):
         total_iterations = 100
         progress_step = 10
-        logger = buffer.write
-
-        with pipes.LoopProgress(total_iterations, logger, progress_step) as progress:
-            for index, item in enumerate(range(total_iterations)):
-                progress.log_progress(index)
-
         expected = (
             "Progress: 10% (10/100)"
             "Progress: 20% (20/100)"
@@ -285,7 +277,21 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
             "Progress: 70% (70/100)"
             "Progress: 80% (80/100)"
             "Progress: 90% (90/100)"
+            "Progress: 100% (100/100)"
         )
+
+        buffer = io.StringIO()
+        logger = buffer.write
+        progress = pipes.LoopProgress(total_iterations, logger, progress_step=10)
+        for _ in progress.iter(range(total_iterations)):
+            pass
+        self.assertEqual(expected, buffer.getvalue())
+
+        buffer = io.StringIO()
+        logger = buffer.write
+        with pipes.LoopProgress(total_iterations, logger, progress_step) as progress:
+            for _ in progress.iter(range(total_iterations)):
+                pass
         self.assertEqual(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_get_resource_diff_ratio(self):

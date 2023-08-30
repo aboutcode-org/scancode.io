@@ -125,11 +125,10 @@ def map_checksum(project, checksum_field, logger=None):
         )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
 
-    with LoopProgress(resource_count, logger) as progress:
-        for loop_index, to_resource in enumerate(resource_iterator):
-            _map_checksum_resource(to_resource, from_resources, checksum_field)
-            progress.log_progress(loop_index)
+    for to_resource in progress.iter(resource_iterator):
+        _map_checksum_resource(to_resource, from_resources, checksum_field)
 
 
 def _map_java_to_class_resource(to_resource, from_resources, from_classes_index):
@@ -185,11 +184,10 @@ def map_java_to_class(project, logger=None):
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
 
-    with LoopProgress(resource_count, logger) as progress:
-        for loop_index, to_resource in enumerate(resource_iterator):
-            _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
-            progress.log_progress(loop_index)
+    for to_resource in progress.iter(resource_iterator):
+        _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
 
 def get_indexable_qualified_java_paths_from_values(resource_values):
@@ -338,11 +336,10 @@ def map_jar_to_source(project, logger=None):
         )
 
     resource_iterator = to_jars.iterator(chunk_size=2000)
+    progress = LoopProgress(to_jars_count, logger)
 
-    with LoopProgress(to_jars_count, logger) as progress:
-        for loop_index, jar_resource in enumerate(resource_iterator):
-            _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
-            progress.log_progress(loop_index)
+    for jar_resource in progress.iter(resource_iterator):
+        _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
 
 
 def _map_path_resource(
@@ -406,10 +403,10 @@ def map_path(project, logger=None):
     )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
-    with LoopProgress(resource_count, logger) as progress:
-        for loop_index, to_resource in enumerate(resource_iterator):
-            _map_path_resource(to_resource, from_resources, from_resources_index)
-            progress.log_progress(loop_index)
+    progress = LoopProgress(resource_count, logger)
+
+    for to_resource in progress.iter(resource_iterator):
+        _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
 def create_package_from_purldb_data(project, resources, package_data):
@@ -575,34 +572,30 @@ def match_purldb_resources(
             )
 
     resource_iterator = to_resources.paginated(per_page=chunk_size)
+    progress = LoopProgress(resource_count, logger)
     matched_count = 0
     sha1_count = 0
     resources_by_sha1 = defaultdict(list)
     package_data_by_purldb_urls = {}
-    loop_index = 0
 
-    with LoopProgress(resource_count, logger) as progress:
-        for resources_batch in resource_iterator:
-            for to_resource in resources_batch:
-                resources_by_sha1[to_resource.sha1].append(to_resource)
-                if to_resource.path.endswith(".map"):
-                    for js_sha1 in js.source_content_sha1_list(to_resource):
-                        resources_by_sha1[js_sha1].append(to_resource)
-                loop_index += 1
+    for resources_batch in resource_iterator:
+        for to_resource in progress.iter(resources_batch):
+            resources_by_sha1[to_resource.sha1].append(to_resource)
+            if to_resource.path.endswith(".map"):
+                for js_sha1 in js.source_content_sha1_list(to_resource):
+                    resources_by_sha1[js_sha1].append(to_resource)
 
-            matched_count += matcher_func(
-                project=project,
-                resources_by_sha1=resources_by_sha1,
-                package_data_by_purldb_urls=package_data_by_purldb_urls,
-            )
+        matched_count += matcher_func(
+            project=project,
+            resources_by_sha1=resources_by_sha1,
+            package_data_by_purldb_urls=package_data_by_purldb_urls,
+        )
 
-            progress.log_progress(loop_index)
-
-            # Keep track of the total number of sha1s we send
-            sha1_count += len(resources_by_sha1)
-            # Clear out resources_by_sha1 when we are done with the current batch of
-            # CodebaseResources
-            resources_by_sha1 = defaultdict(list)
+        # Keep track of the total number of SHA1s we send
+        sha1_count += len(resources_by_sha1)
+        # Clear out resources_by_sha1 when we are done with the current batch of
+        # CodebaseResources
+        resources_by_sha1 = defaultdict(list)
 
     logger(
         f"{matched_count:,d} resources matched in PurlDB "
@@ -630,17 +623,12 @@ def match_purldb_directories(project, logger=None):
         )
 
     directory_iterator = to_directories.iterator(chunk_size=2000)
+    progress = LoopProgress(directory_count, logger)
 
-    with LoopProgress(directory_count, logger) as progress:
-        for loop_index, directory in enumerate(directory_iterator):
-            # We refresh the directory to ensure that the status has been updated if
-            # the directory was included in a match to an ancestor directory
-            directory.refresh_from_db()
-            if directory.status == flag.MATCHED_TO_PURLDB:
-                continue
-
+    for directory in progress.iter(directory_iterator):
+        directory.refresh_from_db()
+        if directory.status != flag.MATCHED_TO_PURLDB:
             match_purldb_directory(project, directory)
-            progress.log_progress(loop_index)
 
     matched_count = (
         project.codebaseresources.directories()
@@ -675,12 +663,12 @@ def map_javascript(project, logger=None):
     )
 
     resource_iterator = to_resources_dot_map.iterator(chunk_size=2000)
-    with LoopProgress(to_resources_dot_map_count, logger) as progress:
-        for loop_index, to_dot_map in enumerate(resource_iterator):
-            _map_javascript_resource(
-                to_dot_map, to_resources_minified, from_resources_index, from_resources
-            )
-            progress.log_progress(loop_index)
+    progress = LoopProgress(to_resources_dot_map_count, logger)
+
+    for to_dot_map in progress.iter(resource_iterator):
+        _map_javascript_resource(
+            to_dot_map, to_resources_minified, from_resources_index, from_resources
+        )
 
 
 def _map_javascript_resource(
@@ -831,12 +819,12 @@ def map_javascript_post_purldb_match(project, logger=None):
     )
 
     resource_iterator = to_resources_minified.iterator(chunk_size=2000)
-    with LoopProgress(to_resources_minified_count, logger) as progress:
-        for loop_index, to_minified in enumerate(resource_iterator):
-            _map_javascript_post_purldb_match_resource(
-                to_minified, to_resources_dot_map, to_resources_dot_map_index
-            )
-            progress.log_progress(loop_index)
+    progress = LoopProgress(to_resources_minified_count, logger)
+
+    for to_minified in progress.iter(resource_iterator):
+        _map_javascript_post_purldb_match_resource(
+            to_minified, to_resources_dot_map, to_resources_dot_map_index
+        )
 
 
 def _map_javascript_post_purldb_match_resource(
@@ -894,14 +882,13 @@ def map_javascript_path(project, logger=None):
     )
 
     resource_iterator = to_resources_key.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
 
-    with LoopProgress(resource_count, logger) as progress:
-        for loop_index, to_resource in enumerate(resource_iterator):
-            map_count += _map_javascript_path_resource(
-                to_resource, to_resources, from_resources_index, from_resources
-            )
-            progress.log_progress(loop_index)
+    for to_resource in progress.iter(resource_iterator):
+        map_count += _map_javascript_path_resource(
+            to_resource, to_resources, from_resources_index, from_resources
+        )
 
     logger(f"{map_count:,d} resources mapped")
 
@@ -979,14 +966,13 @@ def map_javascript_colocation(project, logger=None):
         )
 
     resource_iterator = to_resources_key.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
 
-    with LoopProgress(resource_count, logger) as progress:
-        for loop_index, to_resource in enumerate(resource_iterator):
-            map_count += _map_javascript_colocation_resource(
-                to_resource, to_resources, from_resources, project
-            )
-            progress.log_progress(loop_index)
+    for to_resource in progress.iter(resource_iterator):
+        map_count += _map_javascript_colocation_resource(
+            to_resource, to_resources, from_resources, project
+        )
 
 
 def _map_javascript_colocation_resource(
@@ -1092,14 +1078,11 @@ def map_thirdparty_npm_packages(project, logger=None):
         )
 
     resource_iterator = to_package_json.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
 
-    with LoopProgress(resource_count, logger) as progress:
-        for loop_index, package_json in enumerate(resource_iterator):
-            map_count += _map_thirdparty_npm_packages(
-                package_json, to_resources, project
-            )
-            progress.log_progress(loop_index)
+    for package_json in progress.iter(resource_iterator):
+        map_count += _map_thirdparty_npm_packages(package_json, to_resources, project)
 
     logger(f"{map_count:,d} resources mapped")
 
