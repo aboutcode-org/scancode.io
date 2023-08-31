@@ -991,8 +991,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             pipeline_name=pipeline_name,
             description=pipeline_class.get_summary(),
         )
-        if execute_now:
+
+        # Do not start the pipeline execution, even if explicitly requested,
+        # when the Run is not allowed to start yet.
+        if execute_now and run.can_start:
             transaction.on_commit(run.start)
+
         return run
 
     def add_webhook_subscription(self, target_url):
@@ -1459,8 +1463,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         return True
 
     def start(self):
+        """Start the pipeline execution when allowed or raised an exception."""
         if self.can_start:
-            self.execute_task_async()
+            return self.execute_task_async()
 
         raise RunNotAllowedToStart(
             "Cannot execute this action until all previous pipeline runs are completed."

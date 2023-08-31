@@ -58,6 +58,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import posix_regex_to_django_regex_lookup
@@ -1934,6 +1935,36 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         mock_execute_task.assert_not_called()
 
         project1.add_pipeline(pipeline_name, execute_now=True)
+        mock_execute_task.assert_called_once()
+
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_project_model_add_pipeline_run_can_start(self, mock_execute_task):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "inspect_manifest"
+        run1 = project1.add_pipeline(pipeline_name, execute_now=False)
+        run2 = project1.add_pipeline(pipeline_name, execute_now=True)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertTrue(run1.can_start)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertFalse(run2.can_start)
+        mock_execute_task.assert_not_called()
+
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_project_model_add_pipeline_start_method(self, mock_execute_task):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "inspect_manifest"
+        run1 = project1.add_pipeline(pipeline_name, execute_now=False)
+        run2 = project1.add_pipeline(pipeline_name, execute_now=False)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+
+        self.assertFalse(run2.can_start)
+        with self.assertRaises(RunNotAllowedToStart):
+            run2.start()
+        mock_execute_task.assert_not_called()
+
+        self.assertTrue(run1.can_start)
+        run1.start()
         mock_execute_task.assert_called_once()
 
     def test_scanpipe_project_model_add_info(self):
