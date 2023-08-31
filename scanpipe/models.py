@@ -96,6 +96,10 @@ class RunInProgressError(Exception):
     """Run are in progress or queued on this project."""
 
 
+class RunNotAllowedToStart(Exception):
+    """Previous Runs have not completed yet."""
+
+
 # PackageURL._fields
 PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
 
@@ -253,6 +257,11 @@ class AbstractTaskFieldsModel(models.Model):
     def task_staled(self):
         """Return True if the task staled."""
         return self.task_exitcode == 88
+
+    @property
+    def task_completed(self):
+        """Return True if the task has completed regardless of its success."""
+        return self.task_end_date is not None or self.task_exitcode is not None
 
     class Status(models.TextChoices):
         """List of Run status."""
@@ -988,7 +997,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             description=pipeline_class.get_summary(),
         )
         if execute_now:
-            transaction.on_commit(run.execute_task_async)
+            transaction.on_commit(run.start)
         return run
 
     def add_webhook_subscription(self, target_url):
@@ -1429,6 +1438,38 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def __str__(self):
         return f"{self.pipeline_name}"
 
+    def get_previous_run(self):
+        """Return the direct previous Run instance regardless of its status."""
+        with suppress(ObjectDoesNotExist):
+            return self.project.runs.filter(created_date__lt=self.created_date).latest(
+                "created_date"
+            )
+
+    @property
+    def can_start(self):
+        """
+        Return True if this Run is allowed to start its execution.
+
+        Run are not allowed to start when their previous Run in the pipeline order has
+        not completed (not started, queued, or running).
+        This is enforced to ensure the pipelines are run in a sequential order.
+        """
+        if self.status != self.Status.NOT_STARTED:
+            return False
+
+        elif previous_run := self.get_previous_run():
+            return previous_run.task_completed
+
+        return True
+
+    def start(self):
+        if self.can_start:
+            self.execute_task_async()
+
+        raise RunNotAllowedToStart(
+            "Cannot execute this action until all previous pipeline runs are completed."
+        )
+
     def execute_task_async(self):
         """Enqueues the pipeline execution task for an asynchronous execution."""
         run_pk = str(self.pk)
@@ -1480,7 +1521,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                     f"No Job found for QUEUED Run={self.task_id}. "
                     f"Enqueueing a new Job in the worker registery."
                 )
-                self.execute_task_async()
+                self.start()
 
             elif self.status == RunStatus.RUNNING:
                 logger.info(

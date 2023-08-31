@@ -961,7 +961,7 @@ def execute_pipeline_view(request, slug, run_uuid):
     if run.status != run.Status.NOT_STARTED:
         raise Http404("Pipeline already queued, started or completed.")
 
-    run.execute_task_async()
+    run.start()
     messages.success(request, f"Pipeline {run.pipeline_name} run started.")
     return redirect(project)
 
