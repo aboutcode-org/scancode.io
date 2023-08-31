@@ -258,11 +258,6 @@ class AbstractTaskFieldsModel(models.Model):
         """Return True if the task staled."""
         return self.task_exitcode == 88
 
-    @property
-    def task_completed(self):
-        """Return True if the task has completed regardless of its success."""
-        return self.task_end_date is not None or self.task_exitcode is not None
-
     class Status(models.TextChoices):
         """List of Run status."""
 
@@ -1393,6 +1388,10 @@ class RunQuerySet(ProjectRelatedQuerySet):
         """Pipeline execution completed, includes both succeed and failed runs."""
         return self.filter(task_end_date__isnull=False)
 
+    def not_executed(self):
+        """No `task_end_date` set. Its execution has not completed or started yet."""
+        return self.filter(task_end_date__isnull=True)
+
     def succeed(self):
         """Pipeline execution completed with success."""
         return self.filter(task_exitcode=0)
@@ -1438,27 +1437,24 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def __str__(self):
         return f"{self.pipeline_name}"
 
-    def get_previous_run(self):
-        """Return the direct previous Run instance regardless of its status."""
-        with suppress(ObjectDoesNotExist):
-            return self.project.runs.filter(created_date__lt=self.created_date).latest(
-                "created_date"
-            )
+    def get_previous_runs(self):
+        """Return all the previous Run instances regardless of their status."""
+        return self.project.runs.filter(created_date__lt=self.created_date)
 
     @property
     def can_start(self):
         """
         Return True if this Run is allowed to start its execution.
 
-        Run are not allowed to start when their previous Run in the pipeline order has
-        not completed (not started, queued, or running).
+        Run are not allowed to start when any of their previous Run instances within
+        the pipeline has not completed (not started, queued, or running).
         This is enforced to ensure the pipelines are run in a sequential order.
         """
         if self.status != self.Status.NOT_STARTED:
             return False
 
-        elif previous_run := self.get_previous_run():
-            return previous_run.task_completed
+        if self.get_previous_runs().not_executed().exists():
+            return False
 
         return True
 

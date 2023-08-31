@@ -827,39 +827,32 @@ class ScanPipeModelsTest(TestCase):
         run1 = self.create_run()
         self.assertIsNone(run1.task_id)
         self.assertEqual(Run.Status.NOT_STARTED, run1.status)
-        self.assertFalse(run1.task_completed)
 
         run1.set_task_queued()
         run1.refresh_from_db()
         self.assertEqual(run1.pk, run1.task_id)
         self.assertEqual(Run.Status.QUEUED, run1.status)
-        self.assertFalse(run1.task_completed)
 
         run1.set_task_started(run1.pk)
         self.assertTrue(run1.task_start_date)
         self.assertEqual(Run.Status.RUNNING, run1.status)
-        self.assertFalse(run1.task_completed)
 
         run1.set_task_ended(exitcode=0)
         self.assertTrue(run1.task_end_date)
         self.assertEqual(Run.Status.SUCCESS, run1.status)
         self.assertTrue(run1.task_succeeded)
-        self.assertTrue(run1.task_completed)
 
         run1.set_task_ended(exitcode=1)
         self.assertEqual(Run.Status.FAILURE, run1.status)
         self.assertTrue(run1.task_failed)
-        self.assertTrue(run1.task_completed)
 
         run1.set_task_staled()
         self.assertEqual(Run.Status.STALE, run1.status)
         self.assertTrue(run1.task_staled)
-        self.assertTrue(run1.task_completed)
 
         run1.set_task_stopped()
         self.assertEqual(Run.Status.STOPPED, run1.status)
         self.assertTrue(run1.task_stopped)
-        self.assertTrue(run1.task_completed)
 
     @override_settings(SCANCODEIO_ASYNC=False)
     def test_scanpipe_run_model_stop_task_method(self):
@@ -909,6 +902,9 @@ class ScanPipeModelsTest(TestCase):
         qs = self.project1.runs.executed()
         self.assertQuerySetEqual(qs, [executed, succeed, failed])
 
+        qs = self.project1.runs.not_executed()
+        self.assertQuerySetEqual(qs, [running, not_started, queued])
+
         qs = self.project1.runs.succeed()
         self.assertQuerySetEqual(qs, [succeed])
 
@@ -937,50 +933,43 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.SUCCESS, succeed.status)
         self.assertEqual(Run.Status.FAILURE, failed.status)
 
-    def test_scanpipe_run_model_get_previous_run(self):
+    def test_scanpipe_run_model_get_previous_runs(self):
         run1 = self.create_run()
         run2 = self.create_run()
         run3 = self.create_run()
-        self.assertIsNone(run1.get_previous_run())
-        self.assertEqual(run1, run2.get_previous_run())
-        self.assertEqual(run2, run3.get_previous_run())
+        self.assertQuerySetEqual([], run1.get_previous_runs())
+        self.assertQuerySetEqual([run1], run2.get_previous_runs())
+        self.assertQuerySetEqual([run1, run2], run3.get_previous_runs())
 
     def test_scanpipe_run_model_can_start(self):
         run1 = self.create_run()
         run2 = self.create_run()
         run3 = self.create_run()
-        run4 = self.create_run()
 
         self.assertTrue(run1.can_start)
         self.assertFalse(run2.can_start)
         self.assertFalse(run3.can_start)
-        self.assertFalse(run4.can_start)
 
         run1.set_task_started(run1.pk)
         self.assertFalse(run1.can_start)
         self.assertFalse(run2.can_start)
         self.assertFalse(run3.can_start)
-        self.assertFalse(run4.can_start)
 
         run1.set_task_ended(exitcode=0)
         self.assertFalse(run1.can_start)
         self.assertTrue(run2.can_start)
         self.assertFalse(run3.can_start)
-        self.assertFalse(run4.can_start)
 
         run2.set_task_stopped()
         self.assertFalse(run1.can_start)
         self.assertFalse(run2.can_start)
         self.assertTrue(run3.can_start)
-        self.assertFalse(run4.can_start)
 
-        run3.set_task_staled()
         run1.reset_task_values()
         run1.set_task_started(run1.pk)
         self.assertFalse(run1.can_start)
         self.assertFalse(run2.can_start)
         self.assertFalse(run3.can_start)
-        self.assertTrue(run4.can_start)
 
     @override_settings(SCANCODEIO_ASYNC=True)
     @mock.patch("scanpipe.models.Run.execute_task_async")
