@@ -503,33 +503,6 @@ class ScanPipeModelsTest(TestCase):
         run2.save()
         self.assertEqual(None, self.project1.get_next_run())
 
-    def test_scanpipe_project_model_get_latest_failed_run(self):
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1 = self.create_run()
-        run2 = self.create_run()
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = 0
-        run1.save()
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = 1
-        run1.save()
-        self.assertEqual(run1, self.project1.get_latest_failed_run())
-
-        run2.task_exitcode = 0
-        run2.save()
-        self.assertEqual(run1, self.project1.get_latest_failed_run())
-
-        run2.task_exitcode = 1
-        run2.save()
-        self.assertEqual(run2, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = None
-        run1.save()
-        self.assertEqual(run2, self.project1.get_latest_failed_run())
-
     def test_scanpipe_project_model_raise_if_run_in_progress(self):
         run1 = self.create_run()
         self.assertIsNone(self.project1._raise_if_run_in_progress())

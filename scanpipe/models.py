@@ -1011,11 +1011,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         with suppress(ObjectDoesNotExist):
             return self.runs.not_started().earliest("created_date")
 
-    def get_latest_failed_run(self):
-        """Return the latest failed Run instance of the current project."""
-        with suppress(ObjectDoesNotExist):
-            return self.runs.failed().latest("created_date")
-
     def add_message(
         self, severity, description="", model="", details=None, exception=None
     ):
