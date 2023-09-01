@@ -55,7 +55,7 @@ PURLDB_API_KEY = settings.PURLDB_API_KEY
 if PURLDB_API_KEY:
     session.headers.update({"Authorization": f"Token {PURLDB_API_KEY}"})
 
-DEFAULT_TIMEOUT = 30
+DEFAULT_TIMEOUT = 120
 
 
 def is_configured():
@@ -119,7 +119,7 @@ def collect_response_results(response, data, timeout=DEFAULT_TIMEOUT):
             response = request_post(url=next_page, data=data, timeout=timeout)
             if response and response.get("count"):
                 results.extend(response["results"])
-            next_page = response.get("next")
+                next_page = response.get("next")
     return results
 
 

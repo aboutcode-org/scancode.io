@@ -38,6 +38,7 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
+from scanpipe.pipes import is_empty_queryset
 from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
@@ -424,26 +425,28 @@ def create_package_from_purldb_data(project, resources, package_data):
     package_data.pop("uuid", None)
     package_data.pop("dependencies", None)
 
-    lookups = Q()
-    for resource in resources:
-        lookups |= Q(path=resource.path)
-        if resource.is_archive:
-            # This is done to capture the extracted contents of the archive we
-            # matched to. Generally, the archive contents are in a directory
-            # that is the archive path with `-extract` at the end.
-            lookups |= Q(path__startswith=resource.path)
-        elif resource.is_dir:
-            # We add a trailing slash to avoid matching on directories we do not
-            # intend to. For example, if we have matched on the directory with
-            # the path `foo/bar/1`, using the __startswith filter without
-            # including a trailing slash on the path would have us get all
-            # diretories under `foo/bar/` that start with 1, such as
-            # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
-            # and its descendants.
-            path = f"{resource.path}/"
-            lookups |= Q(path__startswith=path)
+    resources_qs = None
+    if not is_empty_queryset(resources):
+        lookups = Q()
+        for resource in resources:
+            lookups |= Q(path=resource.path)
+            if resource.is_archive:
+                # This is done to capture the extracted contents of the archive we
+                # matched to. Generally, the archive contents are in a directory
+                # that is the archive path with `-extract` at the end.
+                lookups |= Q(path__startswith=resource.path)
+            elif resource.is_dir:
+                # We add a trailing slash to avoid matching on directories we do not
+                # intend to. For example, if we have matched on the directory with
+                # the path `foo/bar/1`, using the __startswith filter without
+                # including a trailing slash on the path would have us get all
+                # diretories under `foo/bar/` that start with 1, such as
+                # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
+                # and its descendants.
+                path = f"{resource.path}/"
+                lookups |= Q(path__startswith=path)
+        resources_qs = project.codebaseresources.to_codebase().filter(lookups)
 
-    resources_qs = project.codebaseresources.to_codebase().filter(lookups)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
@@ -482,7 +485,9 @@ def match_purldb_package(
         # Process matched Package data
         for package_data in results:
             sha1 = package_data["sha1"]
-            resources = resources_by_sha1.get(sha1, [])
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
                 resources=resources,
@@ -521,7 +526,9 @@ def match_purldb_resource(
                 # Use cached package data
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
-            resources = resources_by_sha1.get(sha1, [])
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
                 resources=resources,

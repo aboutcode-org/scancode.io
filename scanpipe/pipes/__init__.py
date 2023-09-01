@@ -31,6 +31,7 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from django.db.models import Count
+from django.db.models import QuerySet
 
 from scanpipe import humanize_time
 from scanpipe.models import CodebaseRelation
@@ -158,6 +159,15 @@ def _clean_package_data(package_data):
     return package_data
 
 
+def is_empty_queryset(objects):
+    """
+    Return True if `objects` is an empty QuerySet or list, otherwise return
+    False.
+    """
+    is_queryset = isinstance(objects, QuerySet)
+    return (is_queryset and not objects.exists()) or not objects
+
+
 def update_or_create_package(project, package_data, codebase_resources=None):
     """
     Get, update or create a DiscoveredPackage then return it.
@@ -182,7 +192,7 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     else:
         package = DiscoveredPackage.create_from_data(project, package_data)
 
-    if codebase_resources:
+    if not is_empty_queryset(codebase_resources):
         package.add_resources(codebase_resources)
 
     return package
