@@ -40,4 +40,7 @@ class ScanCodebasePackages(ScanCodebase):
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
+        # `assemble` is set to False because here in this pipeline we
+        # only detect package_data in resources without creating
+        # Package/Dependency instances, to get all the purls from a codebase.
         scancode.scan_for_application_packages(self.project, assemble=False)

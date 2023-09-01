@@ -396,6 +396,23 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(1, DiscoveredPackage.objects.count())
         self.assertEqual(1, DiscoveredDependency.objects.count())
 
+    def test_scanpipe_pipes_scancode_get_packages_with_purl_from_resources(self):
+        project = Project.objects.create(name="Analysis")
+        filename = "package_assembly_codebase.json"
+        project_scan_location = self.data_location / "scancode" / filename
+        input.load_inventory_from_toolkit_scan(project, project_scan_location)
+
+        project.discoveredpackages.all().delete()
+        self.assertEqual(0, project.discoveredpackages.count())
+
+        packages = list(scancode.get_packages_with_purl_from_resources(project))
+
+        package_purl_exists = [True for package in packages if package.purl]
+        package_purls = [package.purl for package in packages]
+        self.assertTrue(package_purl_exists)
+        self.assertEqual(len(package_purl_exists), 1)
+        self.assertTrue("pkg:npm/test@0.1.0" in package_purls)
+
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")
         output = scancode.run_scan(

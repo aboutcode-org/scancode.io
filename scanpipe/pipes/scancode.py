@@ -340,9 +340,14 @@ def scan_for_files(project, resource_qs=None):
 
 def scan_for_application_packages(project, assemble=True):
     """
-    Run a package scan on files without a status for a `project`,
-    then create DiscoveredPackage and DiscoveredDependency instances
-    from the detected package data
+    Run a package scan on resources without a status for a `project`,
+    and add them in their respective `package_data` attribute.
+    Then create DiscoveredPackage and DiscoveredDependency instances
+    from the detected package data optionally. If the `assemble` argument
+    is set to `True`, DiscoveredPackage and DiscoveredDependency instances
+    are created and added to the project by assembling resource level
+    package_data, and resources which belong in the DiscoveredPackage
+    instance, are assigned to that package.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
@@ -432,6 +437,11 @@ def assemble_packages(project):
 
 
 def get_packages_with_purl_from_resources(project):
+    """
+    Yield Dependency or PackageData objects created from detected package_data
+    in all the project resources. Both Dependency and PackageData objects have
+    the `purl` attribute with a valid purl.
+    """
     for resource in project.codebaseresources.has_package_data():
         for package_mapping in resource.package_data:
             for dep in package_mapping.get("dependencies"):
