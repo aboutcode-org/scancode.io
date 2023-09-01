@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
+from scanpipe.pipes import scancode
 
 
 class ScanCodebasePackages(ScanCodebase):
@@ -36,3 +37,7 @@ class ScanCodebasePackages(ScanCodebase):
             cls.flag_ignored_resources,
             cls.scan_for_application_packages,
         )
+
+    def scan_for_application_packages(self):
+        """Scan unknown resources for packages information."""
+        scancode.scan_for_application_packages(self.project, assemble=False)

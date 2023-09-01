@@ -22,6 +22,7 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
+from scanpipe.pipes import scancode
 
 
 class PopulatePurlDB(Pipeline):
@@ -32,6 +33,7 @@ class PopulatePurlDB(Pipeline):
         return (
             cls.populate_purldb_with_discovered_packages,
             cls.populate_purldb_with_discovered_dependencies,
+            cls.populate_purldb_with_detected_purls,
         )
 
     def populate_purldb_with_discovered_packages(self):
@@ -46,6 +48,14 @@ class PopulatePurlDB(Pipeline):
         self.feed_purldb(
             packages=self.project.discovereddependencies.all(),
             package_type="DiscoveredDependency",
+        )
+
+    def populate_purldb_with_detected_purls(self):
+        """Add DiscoveredPackage to PurlDB."""
+        packages = scancode.get_packages_with_purl_from_resources(self.project)
+        self.feed_purldb(
+            packages=list(packages),
+            package_type="DiscoveredPackage",
         )
 
     def feed_purldb(self, packages, package_type):

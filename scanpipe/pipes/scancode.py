@@ -338,7 +338,7 @@ def scan_for_files(project, resource_qs=None):
     _scan_and_save(resource_qs, scan_file, save_scan_file_results, scan_func_kwargs)
 
 
-def scan_for_application_packages(project):
+def scan_for_application_packages(project, assemble=True):
     """
     Run a package scan on files without a status for a `project`,
     then create DiscoveredPackage and DiscoveredDependency instances
@@ -359,7 +359,8 @@ def scan_for_application_packages(project):
 
     # Iterate through CodebaseResources with Package data and handle them using
     # the proper Package handler from packagedcode.
-    assemble_packages(project=project)
+    if assemble:
+        assemble_packages(project=project)
 
 
 def add_resource_to_package(package_uid, resource, project):
@@ -428,6 +429,20 @@ def assemble_packages(project):
                     seen_resource_paths.add(item.path)
                 else:
                     logger.info(f"Unknown Package assembly item type: {item!r}")
+
+
+def get_packages_with_purl_from_resources(project):
+    for resource in project.codebaseresources.has_package_data():
+        for package_mapping in resource.package_data:
+            for dep in package_mapping.get("dependencies"):
+                yield packagedcode_models.Dependency.from_dependent_package(
+                    dependent_package=dep,
+                    datafile_path=resource.path,
+                    datasource_id=package_mapping.get("datasource_id"),
+                    package_uid=None,
+                )
+            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+            yield pd
 
 
 def get_pretty_params(args):
