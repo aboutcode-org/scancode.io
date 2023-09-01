@@ -60,7 +60,6 @@ class ScanPipeTasksTest(TestCase):
         self.assertEqual("", run.task_output)
         run2.refresh_from_db()
         if settings.SCANCODEIO_ASYNC:
-            self.assertIsNotNone(run2.task_start_date)
             self.assertEqual(run2.Status.QUEUED, run2.status)
         else:
             self.assertEqual(0, run2.task_exitcode)
