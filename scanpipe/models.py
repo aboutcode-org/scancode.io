@@ -1515,8 +1515,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             if self.status == RunStatus.QUEUED:
                 logger.info(
                     f"No Job found for QUEUED Run={self.task_id}. "
-                    f"Enqueueing a new Job in the worker registery."
+                    f"Enqueueing a new Job in the worker registry."
                 )
+                # Reset the status to NOT_STARTED to allow the execution in `can_start`
+                self.reset_task_values()
                 self.start()
 
             elif self.status == RunStatus.RUNNING:

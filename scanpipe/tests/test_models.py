@@ -1907,7 +1907,8 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(pipeline_class.get_summary(), run.description)
         mock_execute_task.assert_not_called()
 
-        project1.add_pipeline(pipeline_name, execute_now=True)
+        project2 = Project.objects.create(name="Analysis 2")
+        project2.add_pipeline(pipeline_name, execute_now=True)
         mock_execute_task.assert_called_once()
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
