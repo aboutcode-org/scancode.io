@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v32.6.1 (unreleased)
+--------------------
+
+- Control the execution order of Pipelines within a Project. Pipelines are not allowed
+  to start anymore unless all the previous ones within a Project have completed.
+  https://github.com/nexB/scancode.io/issues/901
+
 v32.6.0 (2023-08-29)
 --------------------
 

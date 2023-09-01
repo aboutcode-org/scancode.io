@@ -58,6 +58,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import posix_regex_to_django_regex_lookup
@@ -502,33 +503,6 @@ class ScanPipeModelsTest(TestCase):
         run2.save()
         self.assertEqual(None, self.project1.get_next_run())
 
-    def test_scanpipe_project_model_get_latest_failed_run(self):
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1 = self.create_run()
-        run2 = self.create_run()
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = 0
-        run1.save()
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = 1
-        run1.save()
-        self.assertEqual(run1, self.project1.get_latest_failed_run())
-
-        run2.task_exitcode = 0
-        run2.save()
-        self.assertEqual(run1, self.project1.get_latest_failed_run())
-
-        run2.task_exitcode = 1
-        run2.save()
-        self.assertEqual(run2, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = None
-        run1.save()
-        self.assertEqual(run2, self.project1.get_latest_failed_run())
-
     def test_scanpipe_project_model_raise_if_run_in_progress(self):
         run1 = self.create_run()
         self.assertIsNone(self.project1._raise_if_run_in_progress())
@@ -902,6 +876,9 @@ class ScanPipeModelsTest(TestCase):
         qs = self.project1.runs.executed()
         self.assertQuerySetEqual(qs, [executed, succeed, failed])
 
+        qs = self.project1.runs.not_executed()
+        self.assertQuerySetEqual(qs, [running, not_started, queued])
+
         qs = self.project1.runs.succeed()
         self.assertQuerySetEqual(qs, [succeed])
 
@@ -929,6 +906,44 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.QUEUED, queued.status)
         self.assertEqual(Run.Status.SUCCESS, succeed.status)
         self.assertEqual(Run.Status.FAILURE, failed.status)
+
+    def test_scanpipe_run_model_get_previous_runs(self):
+        run1 = self.create_run()
+        run2 = self.create_run()
+        run3 = self.create_run()
+        self.assertQuerySetEqual([], run1.get_previous_runs())
+        self.assertQuerySetEqual([run1], run2.get_previous_runs())
+        self.assertQuerySetEqual([run1, run2], run3.get_previous_runs())
+
+    def test_scanpipe_run_model_can_start(self):
+        run1 = self.create_run()
+        run2 = self.create_run()
+        run3 = self.create_run()
+
+        self.assertTrue(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertFalse(run3.can_start)
+
+        run1.set_task_started(run1.pk)
+        self.assertFalse(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertFalse(run3.can_start)
+
+        run1.set_task_ended(exitcode=0)
+        self.assertFalse(run1.can_start)
+        self.assertTrue(run2.can_start)
+        self.assertFalse(run3.can_start)
+
+        run2.set_task_stopped()
+        self.assertFalse(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertTrue(run3.can_start)
+
+        run1.reset_task_values()
+        run1.set_task_started(run1.pk)
+        self.assertFalse(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertFalse(run3.can_start)
 
     @override_settings(SCANCODEIO_ASYNC=True)
     @mock.patch("scanpipe.models.Run.execute_task_async")
@@ -1892,7 +1907,38 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(pipeline_class.get_summary(), run.description)
         mock_execute_task.assert_not_called()
 
-        project1.add_pipeline(pipeline_name, execute_now=True)
+        project2 = Project.objects.create(name="Analysis 2")
+        project2.add_pipeline(pipeline_name, execute_now=True)
+        mock_execute_task.assert_called_once()
+
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_project_model_add_pipeline_run_can_start(self, mock_execute_task):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "inspect_manifest"
+        run1 = project1.add_pipeline(pipeline_name, execute_now=False)
+        run2 = project1.add_pipeline(pipeline_name, execute_now=True)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertTrue(run1.can_start)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertFalse(run2.can_start)
+        mock_execute_task.assert_not_called()
+
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_project_model_add_pipeline_start_method(self, mock_execute_task):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "inspect_manifest"
+        run1 = project1.add_pipeline(pipeline_name, execute_now=False)
+        run2 = project1.add_pipeline(pipeline_name, execute_now=False)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+
+        self.assertFalse(run2.can_start)
+        with self.assertRaises(RunNotAllowedToStart):
+            run2.start()
+        mock_execute_task.assert_not_called()
+
+        self.assertTrue(run1.can_start)
+        run1.start()
         mock_execute_task.assert_called_once()
 
     def test_scanpipe_project_model_add_info(self):

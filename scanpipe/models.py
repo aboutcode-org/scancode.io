@@ -96,6 +96,10 @@ class RunInProgressError(Exception):
     """Run are in progress or queued on this project."""
 
 
+class RunNotAllowedToStart(Exception):
+    """Previous Runs have not completed yet."""
+
+
 # PackageURL._fields
 PURL_FIELDS = ("type", "namespace", "name", "version", "qualifiers", "subpath")
 
@@ -987,8 +991,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             pipeline_name=pipeline_name,
             description=pipeline_class.get_summary(),
         )
-        if execute_now:
-            transaction.on_commit(run.execute_task_async)
+
+        # Do not start the pipeline execution, even if explicitly requested,
+        # when the Run is not allowed to start yet.
+        if execute_now and run.can_start:
+            transaction.on_commit(run.start)
+
         return run
 
     def add_webhook_subscription(self, target_url):
@@ -1002,11 +1010,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Return the next non-executed Run instance assigned to current project."""
         with suppress(ObjectDoesNotExist):
             return self.runs.not_started().earliest("created_date")
-
-    def get_latest_failed_run(self):
-        """Return the latest failed Run instance of the current project."""
-        with suppress(ObjectDoesNotExist):
-            return self.runs.failed().latest("created_date")
 
     def add_message(
         self, severity, description="", model="", details=None, exception=None
@@ -1384,6 +1387,10 @@ class RunQuerySet(ProjectRelatedQuerySet):
         """Pipeline execution completed, includes both succeed and failed runs."""
         return self.filter(task_end_date__isnull=False)
 
+    def not_executed(self):
+        """No `task_end_date` set. Its execution has not completed or started yet."""
+        return self.filter(task_end_date__isnull=True)
+
     def succeed(self):
         """Pipeline execution completed with success."""
         return self.filter(task_exitcode=0)
@@ -1428,6 +1435,36 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
     def __str__(self):
         return f"{self.pipeline_name}"
+
+    def get_previous_runs(self):
+        """Return all the previous Run instances regardless of their status."""
+        return self.project.runs.filter(created_date__lt=self.created_date)
+
+    @property
+    def can_start(self):
+        """
+        Return True if this Run is allowed to start its execution.
+
+        Run are not allowed to start when any of their previous Run instances within
+        the pipeline has not completed (not started, queued, or running).
+        This is enforced to ensure the pipelines are run in a sequential order.
+        """
+        if self.status != self.Status.NOT_STARTED:
+            return False
+
+        if self.get_previous_runs().not_executed().exists():
+            return False
+
+        return True
+
+    def start(self):
+        """Start the pipeline execution when allowed or raised an exception."""
+        if self.can_start:
+            return self.execute_task_async()
+
+        raise RunNotAllowedToStart(
+            "Cannot execute this action until all previous pipeline runs are completed."
+        )
 
     def execute_task_async(self):
         """Enqueues the pipeline execution task for an asynchronous execution."""
@@ -1478,9 +1515,11 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             if self.status == RunStatus.QUEUED:
                 logger.info(
                     f"No Job found for QUEUED Run={self.task_id}. "
-                    f"Enqueueing a new Job in the worker registery."
+                    f"Enqueueing a new Job in the worker registry."
                 )
-                self.execute_task_async()
+                # Reset the status to NOT_STARTED to allow the execution in `can_start`
+                self.reset_task_values()
+                self.start()
 
             elif self.status == RunStatus.RUNNING:
                 logger.info(
