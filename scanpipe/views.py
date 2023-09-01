@@ -81,6 +81,7 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import RunNotAllowedToStart
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
@@ -961,7 +962,11 @@ def execute_pipeline_view(request, slug, run_uuid):
     if run.status != run.Status.NOT_STARTED:
         raise Http404("Pipeline already queued, started or completed.")
 
-    run.start()
+    try:
+        run.start()
+    except RunNotAllowedToStart as error:
+        raise Http404(error)
+
     messages.success(request, f"Pipeline {run.pipeline_name} run started.")
     return redirect(project)
 
