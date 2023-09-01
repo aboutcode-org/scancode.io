@@ -22,6 +22,7 @@
 
 from unittest import mock
 
+from django.conf import settings
 from django.test import TestCase
 
 from scanpipe import tasks
@@ -53,14 +54,17 @@ class ScanPipeTasksTest(TestCase):
         mock_execute.return_value = 0, ""
         tasks.execute_pipeline_task(run.pk)
         mock_execute.assert_called()
-        self.assertEqual(2, mock_execute.call_count)
 
         run.refresh_from_db()
         self.assertEqual(0, run.task_exitcode)
         self.assertEqual("", run.task_output)
         run2.refresh_from_db()
-        self.assertEqual(0, run2.task_exitcode)
-        self.assertEqual("", run2.task_output)
+        if settings.SCANCODEIO_ASYNC:
+            self.assertIsNotNone(run2.task_start_date)
+            self.assertEqual(run2.Status.QUEUED, run2.status)
+        else:
+            self.assertEqual(0, run2.task_exitcode)
+            self.assertEqual("", run2.task_output)
 
     @mock.patch("scanpipe.pipelines.Pipeline.execute")
     def test_scanpipe_tasks_execute_pipeline_no_run_next_on_failure(self, mock_execute):
