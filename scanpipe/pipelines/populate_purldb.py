@@ -52,11 +52,15 @@ class PopulatePurlDB(Pipeline):
 
     def populate_purldb_with_detected_purls(self):
         """Add DiscoveredPackage to PurlDB."""
-        packages = scancode.get_packages_with_purl_from_resources(self.project)
-        self.feed_purldb(
-            packages=list(packages),
-            package_type="DiscoveredPackage",
-        )
+        if (
+            not self.project.discoveredpackages.exists()
+            and not self.project.discovereddependencies.exists()
+        ):
+            packages = scancode.get_packages_with_purl_from_resources(self.project)
+            self.feed_purldb(
+                packages=list(packages),
+                package_type="DiscoveredPackage",
+            )
 
     def feed_purldb(self, packages, package_type):
         """Feed PurlDB with list of PURLs for indexing."""
