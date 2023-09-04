@@ -246,10 +246,11 @@ def find_java_packages(project, logger=None):
             ".java resources."
         )
 
-    scancode._scan_and_save(
+    scancode.scan_resources(
         resource_qs=from_java_resources,
         scan_func=scan_for_java_package,
         save_func=save_java_package_scan_results,
+        progress_logger=logger,
     )
 
 

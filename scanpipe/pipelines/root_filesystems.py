@@ -119,7 +119,7 @@ class RootFS(Pipeline):
 
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
-        scancode.scan_for_files(self.project)
+        scancode.scan_for_files(self.project, progress_logger=self.log)
 
     def analyze_scanned_files(self):
         """Analyze single file scan results for completeness."""

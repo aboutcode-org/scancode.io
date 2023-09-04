@@ -78,4 +78,4 @@ class ScanCodebase(Pipeline):
 
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
-        scancode.scan_for_files(self.project)
+        scancode.scan_for_files(self.project, progress_logger=self.log)
