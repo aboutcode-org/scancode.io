@@ -246,7 +246,16 @@ class ScanPipeD2DPipesTest(TestCase):
 
         d2d.flag_processed_archives(self.project1)
         to_archive.refresh_from_db()
-        self.assertEqual(to_archive.status, flag.ARCHIVE_PROCESSED)
+        self.assertEqual(flag.ARCHIVE_PROCESSED, to_archive.status)
+
+        to_archive.update(status="")
+        make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/file3.txt",
+        )
+        d2d.flag_processed_archives(self.project1)
+        to_archive.refresh_from_db()
+        self.assertEqual("", to_archive.status)
 
     def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(

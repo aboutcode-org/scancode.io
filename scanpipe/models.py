@@ -1680,6 +1680,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def symlinks(self):
         return self.filter(type=self.model.Type.SYMLINK)
 
+    def archives(self):
+        return self.filter(is_archive=True)
+
     def without_symlinks(self):
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
