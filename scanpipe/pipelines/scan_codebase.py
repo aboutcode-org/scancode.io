@@ -74,7 +74,7 @@ class ScanCodebase(Pipeline):
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
-        scancode.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
 
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""

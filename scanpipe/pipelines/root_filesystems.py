@@ -92,7 +92,7 @@ class RootFS(Pipeline):
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
-        scancode.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
 
     def match_not_analyzed_to_system_packages(self):
         """

@@ -343,7 +343,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     )
 
 
-def scan_for_application_packages(project, logger=None):
+def scan_for_application_packages(project, progress_logger=None):
     """
     Run a package scan on files without a status for a `project`,
     then create DiscoveredPackage and DiscoveredDependency instances
@@ -360,7 +360,7 @@ def scan_for_application_packages(project, logger=None):
         resource_qs=resource_qs,
         scan_func=scan_for_package_data,
         save_func=save_scan_package_results,
-        progress_logger=logger,
+        progress_logger=progress_logger,
     )
 
     # Iterate through CodebaseResources with Package data and handle them using
