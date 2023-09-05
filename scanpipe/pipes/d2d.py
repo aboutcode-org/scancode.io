@@ -540,9 +540,7 @@ def match_purldb_directory(project, resource):
             return create_package_from_purldb_data(project, [resource], package_data)
 
 
-def match_purldb_resources(
-    project, extensions, matcher_func, chunk_size=1000, logger=None
-):
+def match_purldb_resources(project, extensions, matcher_func, logger=None):
     """
     Match against PurlDB selecting codebase resources using provided
     ``package_extensions`` for archive type files, and ``resource_extensions``.
@@ -572,6 +570,18 @@ def match_purldb_resources(
                 f"as there are {resource_count:,d}"
             )
 
+    _match_purldb_resources(
+        project=project,
+        to_resources=to_resources,
+        matcher_func=matcher_func,
+        logger=logger,
+    )
+
+
+def _match_purldb_resources(
+    project, to_resources, matcher_func, chunk_size=1000, logger=None
+):
+    resource_count = to_resources.count()
     resource_iterator = to_resources.paginated(per_page=chunk_size)
     progress = LoopProgress(resource_count, logger)
     matched_count = 0
@@ -1108,3 +1118,69 @@ def _map_thirdparty_npm_packages(package_json, to_resources, project):
 
     package_resources.no_status().update(status=flag.NPM_PACKAGE_LOOKUP)
     return package_resources.count()
+
+
+def perform_janitorial_tasks(
+    project, matched_extensions=[], uninteresting_extensions=[], logger=None
+):
+    """
+    On deployed side
+        - PurlDB match files with ``no-java-source``, ``too-many-maps`` and empty
+            status, if no match is found update status to ``requires-review``.
+        - Update status for uninteresting files.
+
+    On devel side
+        - Update status for not deployed files.
+    """
+    project_files = project.codebaseresources.files()
+
+    to_no_java_source = project_files.to_codebase().filter(status=flag.NO_JAVA_SOURCE)
+
+    if to_no_java_source:
+        resource_count = to_no_java_source.count()
+        if logger:
+            logger(
+                f"Mapping {resource_count:,d} to/ resources with {flag.NO_JAVA_SOURCE} "
+                "status in PurlDB using SHA1"
+            )
+
+        _match_purldb_resources(
+            project=project,
+            to_resources=to_no_java_source,
+            matcher_func=match_purldb_resource,
+            logger=logger,
+        )
+        to_no_java_source.no_status().update(status=flag.REQUIRES_REVIEW)
+
+    to_unmapped = (
+        project_files.to_codebase()
+        .filter(status__in=["", flag.TOO_MANY_MAPS])
+        .exclude(extension__in=matched_extensions)
+        .exclude(extension__in=uninteresting_extensions)
+    )
+
+    if to_unmapped:
+        resource_count = to_unmapped.count()
+        if logger:
+            logger(
+                f"Mapping {resource_count:,d} to/ resources with {flag.TOO_MANY_MAPS} "
+                "or empty status in PurlDB using SHA1"
+            )
+
+        _match_purldb_resources(
+            project=project,
+            to_resources=to_unmapped,
+            matcher_func=match_purldb_resource,
+            logger=logger,
+        )
+        to_unmapped.no_status().update(status=flag.REQUIRES_REVIEW)
+
+    to_without_status = project_files.to_codebase().no_status()
+
+    to_without_status.filter(extension__in=uninteresting_extensions).update(
+        status=flag.IGNORED_NOT_INTERESTING
+    )
+    to_without_status.no_status().update(status=flag.REQUIRES_REVIEW)
+
+    from_unmapped = project_files.from_codebase().no_status()
+    from_unmapped.update(status=flag.NOT_DEPLOYED)

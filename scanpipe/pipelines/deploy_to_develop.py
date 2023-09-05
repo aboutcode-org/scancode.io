@@ -62,6 +62,7 @@ class DeployToDevelop(Pipeline):
             cls.map_thirdparty_npm_packages,
             cls.map_path,
             cls.flag_mapped_resources_archives_and_ignored_directories,
+            cls.perform_janitorial_tasks,
             cls.scan_mapped_from_for_files,
         )
 
@@ -80,6 +81,11 @@ class DeployToDevelop(Pipeline):
         ".sass",
         ".soy",
         ".class",
+    ]
+    uninteresting_extensions = [
+        ".png",
+        ".gif",
+        ".svg",
     ]
 
     def get_inputs(self):
@@ -196,6 +202,23 @@ class DeployToDevelop(Pipeline):
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
         d2d.flag_processed_archives(self.project)
+
+    def perform_janitorial_tasks(self):
+        """
+        On deployed side
+            - PurlDB match files with ``no-java-source``, ``too-many-maps`` and empty
+                status, if no match is found update status to ``requires-review``.
+            - Update status for uninteresting files.
+
+        On devel side
+            - Update status for not deployed files.
+        """
+        d2d.perform_janitorial_tasks(
+            project=self.project,
+            matched_extensions=self.purldb_resource_extensions,
+            uninteresting_extensions=self.uninteresting_extensions,
+            logger=self.log,
+        )
 
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
