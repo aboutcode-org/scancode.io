@@ -1032,31 +1032,27 @@ def _map_javascript_colocation_resource(
 
 def flag_processed_archives(project):
     """
-    Resources without an assigned status which are package archives, and all
-    resources inside the archive has a status, should also be considered as
-    processed.
+    Flag package archives as processed if they meet the following criteria:
+
+    1. They have no assigned status.
+    2. They are identified as package archives.
+    3. All resources inside the corresponding archive '-extract' directory
+       have an assigned status.
+
+    This function iterates through the package archives in the project and
+    checks whether all resources within their associated '-extract' directory
+    have statuses. If so, it updates the status of the package archive to
+    "archive-processed".
     """
-    to_resources = project.codebaseresources.all().to_codebase()
-    to_resources_archives = to_resources.no_status().filter(is_archive=True)
+    to_resources = project.codebaseresources.all().to_codebase().no_status()
 
-    for to_archive in to_resources_archives:
-        archive_extract_path = to_archive.path + "-extract"
-        archive_extract_resource = to_resources.filter(path=archive_extract_path)
-
-        # There are archives which are not extracted by default, so
-        # we check if the extracted archive exists
-        if not archive_extract_resource.exists():
-            continue
-
-        archive_resources_unmapped = to_resources.no_status().filter(
-            path__startswith=archive_extract_path
-        )
-        # If there are resources in the archives which are unmapped,
-        # they are not considered as processed
-        if archive_resources_unmapped.exists():
-            continue
-
-        to_archive.update(status=flag.ARCHIVE_PROCESSED)
+    for archive_resource in to_resources.archives():
+        extract_path = archive_resource.path + "-extract"
+        archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
+        # Check if all resources in the archive "-extract" directory have been mapped.
+        # Flag the archive resource as processed only when all resources are mapped.
+        if not archive_unmapped_resources.exists():
+            archive_resource.update(status=flag.ARCHIVE_PROCESSED)
 
 
 def map_thirdparty_npm_packages(project, logger=None):
