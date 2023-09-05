@@ -666,6 +666,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         copy_inputs=False,
         copy_pipelines=False,
         copy_settings=False,
+        copy_subscriptions=False,
         execute_now=False,
     ):
         """Clone this project using the provided ``clone_name`` as new project name."""
@@ -685,6 +686,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if copy_pipelines:
             for run in self.runs.all():
                 cloned_project.add_pipeline(run.pipeline_name, execute_now)
+
+        if copy_subscriptions:
+            for subscription in self.webhooksubscriptions.all():
+                cloned_project.add_webhook_subscription(subscription.target_url)
 
         return cloned_project
 

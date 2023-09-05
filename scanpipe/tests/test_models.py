@@ -224,6 +224,7 @@ class ScanPipeModelsTest(TestCase):
         new_file_path1.touch()
         run1 = self.project1.add_pipeline("docker")
         run2 = self.project1.add_pipeline("find_vulnerabilities")
+        subscription1 = self.project1.add_webhook_subscription("http://domain.url")
 
         cloned_project = self.project1.clone("cloned project")
         self.assertIsInstance(cloned_project, Project)
@@ -236,12 +237,14 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual({}, cloned_project.input_sources)
         self.assertEqual([], list(cloned_project.inputs()))
         self.assertEqual([], list(cloned_project.runs.all()))
+        self.assertEqual([], list(cloned_project.webhooksubscriptions.all()))
 
         cloned_project2 = self.project1.clone(
             "cloned project full",
             copy_inputs=True,
             copy_pipelines=True,
             copy_settings=True,
+            copy_subscriptions=True,
             execute_now=False,
         )
         self.assertEqual(self.project1.settings, cloned_project2.settings)
@@ -253,6 +256,9 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertNotEqual(run1.pk, runs[0].pk)
         self.assertNotEqual(run2.pk, runs[1].pk)
+        self.assertEqual(1, len(cloned_project2.webhooksubscriptions.all()))
+        cloned_subscription = cloned_project2.webhooksubscriptions.get()
+        self.assertNotEqual(subscription1.uuid, cloned_subscription.uuid)
 
     def test_scanpipe_project_model_input_sources_list_property(self):
         self.project1.add_input_source(filename="file1", source="uploaded")
