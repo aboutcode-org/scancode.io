@@ -8,6 +8,9 @@ v32.6.1 (unreleased)
   to start anymore unless all the previous ones within a Project have completed.
   https://github.com/nexB/scancode.io/issues/901
 
+- Add support for webhook subscriptions in project clone.
+  https://github.com/nexB/scancode.io/pull/910
+
 v32.6.0 (2023-08-29)
 --------------------
 
