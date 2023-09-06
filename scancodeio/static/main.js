@@ -144,17 +144,73 @@ function setupTextarea() {
 // Highlights
 
 function setupHighlightControls() {
-    const $highlightShows = getAll(".is-more-show");
+  const $highlightShows = getAll(".is-more-show");
 
-    $highlightShows.forEach(function ($el) {
-      $el.addEventListener("click", function () {
-        let text = $el.querySelector("strong").textContent;
-        let newText = text === "Show all" ? "Hide" : "Show all";
-        $el.querySelector("strong").textContent = newText;
-        $el.parentNode.classList.toggle("is-more-clipped");
-      });
+  $highlightShows.forEach(function ($el) {
+    $el.addEventListener("click", function () {
+      let text = $el.querySelector("strong").textContent;
+      let newText = text === "Show all" ? "Hide" : "Show all";
+      $el.querySelector("strong").textContent = newText;
+      $el.parentNode.classList.toggle("is-more-clipped");
     });
+  });
+}
+
+function setupSelectCheckbox() {
+  // Get references to the header checkbox and all row checkboxes
+  const selectAllCheckbox = document.getElementById("select-all");
+  const rowCheckboxes = document.querySelectorAll(".select-row");
+  let lastChecked; // Variable to store the last checked checkbox
+  const actionDropdown = document.getElementById("list-actions-dropdown");
+
+  // Check if selectAllCheckbox or actionDropdown does not exist before proceeding
+  if (!selectAllCheckbox || !actionDropdown) return;
+
+  // Add a click event listener to the "Select All" checkbox
+  selectAllCheckbox.addEventListener("click", function () {
+    // Toggle the selection of all row checkboxes
+    rowCheckboxes.forEach((checkbox) => {
+      checkbox.checked = selectAllCheckbox.checked;
+    });
+  });
+
+  // Add a click event listener to each row checkbox to handle individual selections
+  rowCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener("click", function (event) {
+      if (event.shiftKey && lastChecked) {
+        // Determine the index of the clicked checkbox
+        const currentCheckboxIndex = Array.from(rowCheckboxes).indexOf(checkbox);
+        const lastCheckedIndex = Array.from(rowCheckboxes).indexOf(lastChecked);
+
+        // Determine the range of checkboxes to check/uncheck
+        const startIndex = Math.min(currentCheckboxIndex, lastCheckedIndex);
+        const endIndex = Math.max(currentCheckboxIndex, lastCheckedIndex);
+
+        // Toggle the checkboxes within the range
+        for (let i = startIndex; i <= endIndex; i++) {
+          rowCheckboxes[i].checked = checkbox.checked;
+        }
+      }
+
+      // Update the last checked checkbox
+      lastChecked = checkbox;
+
+      // Check if all row checkboxes are checked and update the "Select All" checkbox accordingly
+      selectAllCheckbox.checked = Array.from(rowCheckboxes).every((cb) => cb.checked);
+    });
+  });
+
+  // Function to return currently selected checkboxes
+  function getSelectedCheckboxes() {
+    const selectedCheckboxes = [];
+    rowCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedCheckboxes.push(checkbox);
+      }
+    });
+    return selectedCheckboxes;
   }
+}
 
 // Utils, available globally
 
@@ -231,6 +287,7 @@ document.addEventListener('DOMContentLoaded', function () {
   setupMenu();
   setupTextarea();
   setupHighlightControls();
+  setupSelectCheckbox();
 
   // Close modals and dropdowns on pressing "escape" key
   document.addEventListener('keydown', function (event) {

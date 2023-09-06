@@ -4,6 +4,9 @@
   <tbody>
   {% for project in projects %}
     <tr>
+      <th class="p-2">
+        <input type="checkbox" class="select-row" value="{{ project.uuid }}">
+      </th>
       <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
         <div>
