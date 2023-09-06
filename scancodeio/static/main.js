@@ -162,6 +162,7 @@ function setupSelectCheckbox() {
   const rowCheckboxes = document.querySelectorAll(".select-row");
   let lastChecked; // Variable to store the last checked checkbox
   const actionDropdown = document.getElementById("list-actions-dropdown");
+  const dropdownButton = document.querySelector("#list-actions-dropdown button");
 
   // Check if selectAllCheckbox or actionDropdown does not exist before proceeding
   if (!selectAllCheckbox || !actionDropdown) return;
@@ -195,21 +196,35 @@ function setupSelectCheckbox() {
       // Update the last checked checkbox
       lastChecked = checkbox;
 
+      // Check if at least one row checkbox is checked
+      const atLeastOneChecked = Array.from(rowCheckboxes).some((cb) => cb.checked);
+
+      // Toggle the 'is-disabled' class and 'disabled' attribute of the button
+      if (atLeastOneChecked) {
+        actionDropdown.classList.remove("is-disabled");
+        dropdownButton.removeAttribute("disabled");
+      } else {
+        actionDropdown.classList.add("is-disabled");
+        dropdownButton.setAttribute("disabled", "disabled");
+      }
+
       // Check if all row checkboxes are checked and update the "Select All" checkbox accordingly
       selectAllCheckbox.checked = Array.from(rowCheckboxes).every((cb) => cb.checked);
     });
   });
 
-  // Function to return currently selected checkboxes
-  function getSelectedCheckboxes() {
-    const selectedCheckboxes = [];
-    rowCheckboxes.forEach((checkbox) => {
-      if (checkbox.checked) {
-        selectedCheckboxes.push(checkbox);
-      }
-    });
-    return selectedCheckboxes;
-  }
+}
+
+// Function to return currently selected checkboxes
+function getSelectedCheckboxes() {
+  const rowCheckboxes = document.querySelectorAll(".select-row");
+  const selectedCheckboxes = [];
+  rowCheckboxes.forEach((checkbox) => {
+    if (checkbox.checked) {
+      selectedCheckboxes.push(checkbox);
+    }
+  });
+  return selectedCheckboxes;
 }
 
 // Utils, available globally
