@@ -937,10 +937,11 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        def mock_request_post_return(url, data, timeout):
+        def mock_request_post_return(url, data, headers, timeout):
+            payload = json.loads(data)
             return {
-                "queued_packages_count": len(data["packages"]),
-                "queued_packages": data["packages"],
+                "queued_packages_count": len(payload["packages"]),
+                "queued_packages": payload["packages"],
                 "unqueued_packages_count": 1,
                 "unqueued_packages": [],
                 "unsupported_packages_count": 1,
@@ -956,7 +957,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
+        self.assertIn("Populating PurlDB with 2 PURLs from DiscoveredPackage", run.log)
         self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)

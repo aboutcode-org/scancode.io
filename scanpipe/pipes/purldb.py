@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
 import logging
 
 from django.conf import settings
@@ -28,6 +29,8 @@ import requests
 from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
+
+from scanpipe.pipes import LoopProgress
 
 label = "PurlDB"
 logger = logging.getLogger(__name__)
@@ -97,9 +100,9 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def request_post(url, data, timeout=DEFAULT_TIMEOUT):
+def request_post(url, data, headers=None, timeout=DEFAULT_TIMEOUT):
     try:
-        response = session.post(url, json=data, timeout=timeout)
+        response = session.post(url, data=data, timeout=timeout, headers=headers)
         response.raise_for_status()
         return response.json()
     except (requests.RequestException, ValueError, TypeError) as exception:
@@ -177,26 +180,45 @@ def submit_purls(packages, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     version or version-less PURL along with vers range to PurlDB for indexing.
     """
     payload = {"packages": packages}
+    headers = {"Content-Type": "application/json"}
+    data = json.dumps(payload)
 
     response = request_post(
-        url=f"{api_url}packages/index_packages/", data=payload, timeout=timeout
+        url=f"{api_url}packages/index_packages/",
+        data=data,
+        timeout=timeout,
+        headers=headers,
     )
 
     return response
 
 
-def feed_purldb(packages, package_type, logger):
+def feed_purldb(packages, chunk_size, msg, logger=None):
     """Feed PurlDB with list of PURLs for indexing."""
     if not is_available():
         raise Exception("PurlDB is not available.")
 
-    logger(f"Populating PurlDB with {len(packages):,d} {package_type}")
+    package_batches = [
+        packages[i : i + chunk_size] for i in range(0, len(packages), chunk_size)
+    ]
 
-    response = submit_purls(packages=packages)
-    queued_packages_count = response.get("queued_packages_count", 0)
-    unqueued_packages_count = response.get("unqueued_packages_count", 0)
-    unsupported_packages_count = response.get("unsupported_packages_count", 0)
-    unsupported_vers_count = response.get("unsupported_vers_count", 0)
+    if logger:
+        logger(msg)
+
+    batches_count = len(package_batches)
+    queued_packages_count = 0
+    unqueued_packages_count = 0
+    unsupported_packages_count = 0
+    unsupported_vers_count = 0
+
+    progress = LoopProgress(batches_count, logger)
+
+    for batch in progress.iter(package_batches):
+        if response := submit_purls(packages=batch):
+            queued_packages_count += response.get("queued_packages_count", 0)
+            unqueued_packages_count += response.get("unqueued_packages_count", 0)
+            unsupported_packages_count += response.get("unsupported_packages_count", 0)
+            unsupported_vers_count += response.get("unsupported_vers_count", 0)
 
     if queued_packages_count > 0:
         logger(
@@ -217,7 +239,7 @@ def feed_purldb(packages, package_type, logger):
         logger(f"Couldn't index {unsupported_vers_count:,d} unsupported vers")
 
 
-def get_unique_reolved_purls(project):
+def get_unique_resolved_purls(project):
     packages_resolved = project.discovereddependencies.filter(is_resolved=True)
 
     distinct_results = packages_resolved.values("type", "namespace", "name", "version")
@@ -239,17 +261,17 @@ def get_unresolved_pacakages(project):
 
     packages = set()
     for item in distinct_unresolved:
-        if range_class := RANGE_CLASS_BY_SCHEMES.get(item[0]):
+        pkg_type, namespace, name, extracted_requirement = item
+        if range_class := RANGE_CLASS_BY_SCHEMES.get(pkg_type):
             try:
-                vers = range_class.from_native(item[3])
+                vers = range_class.from_native(extracted_requirement)
             except InvalidVersionRange:
                 continue
 
-            constraints = vers.constraints
-            if not constraints:
+            if not vers.constraints:
                 continue
 
-            purl = PackageURL(*item[:3])
+            purl = PackageURL(type=pkg_type, namespace=namespace, name=name)
             packages.add((str(purl), str(vers)))
 
     return packages
@@ -262,22 +284,37 @@ def populate_purldb_with_discovered_packages(project, logger=None):
 
     feed_purldb(
         packages=packages,
-        package_type="DiscoveredPackage",
+        msg=f"Populating PurlDB with {len(packages):,d} PURLs from DiscoveredPackage",
+        chunk_size=100,
         logger=logger,
     )
 
 
 def populate_purldb_with_discovered_dependencies(project, logger=None):
     """Add DiscoveredDependency to PurlDB."""
-    packages = [{"purl": purl} for purl in get_unique_reolved_purls(project)]
-
-    unresolved_packages = get_unresolved_pacakages(project)
-    packages.extend(
-        [{"purl": purl, "vers": vers} for purl, vers in unresolved_packages]
-    )
+    packages = [{"purl": purl} for purl in get_unique_resolved_purls(project)]
 
     feed_purldb(
         packages=packages,
-        package_type="DiscoveredDependency",
+        chunk_size=100,
+        msg=(
+            f"Populating PurlDB with {len(packages):,d} "
+            "PURLs from DiscoveredDependency"
+        ),
+        logger=logger,
+    )
+
+    unresolved_packages = get_unresolved_pacakages(project)
+    unresolved_packages = [
+        {"purl": purl, "vers": vers} for purl, vers in unresolved_packages
+    ]
+
+    feed_purldb(
+        packages=unresolved_packages,
+        chunk_size=10,
+        msg=(
+            f"Populating PurlDB with {len(unresolved_packages):,d}"
+            " unresolved PURLs from DiscoveredDependency"
+        ),
         logger=logger,
     )
