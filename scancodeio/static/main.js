@@ -167,12 +167,28 @@ function setupSelectCheckbox() {
   // Check if selectAllCheckbox or actionDropdown does not exist before proceeding
   if (!selectAllCheckbox || !actionDropdown) return;
 
+  // Check if at least one row is checked and update the elements state accordingly
+  function updateButtonAndDropdownState() {
+    const atLeastOneChecked = Array.from(rowCheckboxes).some((cb) => cb.checked);
+
+    // Toggle the 'is-disabled' class and 'disabled' attribute of the button
+    if (atLeastOneChecked) {
+      actionDropdown.classList.remove("is-disabled");
+      dropdownButton.removeAttribute("disabled");
+    } else {
+      actionDropdown.classList.add("is-disabled");
+      dropdownButton.setAttribute("disabled", "disabled");
+    }
+  }
+
   // Add a click event listener to the "Select All" checkbox
   selectAllCheckbox.addEventListener("click", function () {
     // Toggle the selection of all row checkboxes
     rowCheckboxes.forEach((checkbox) => {
       checkbox.checked = selectAllCheckbox.checked;
     });
+
+    updateButtonAndDropdownState();
   });
 
   // Add a click event listener to each row checkbox to handle individual selections
@@ -196,17 +212,7 @@ function setupSelectCheckbox() {
       // Update the last checked checkbox
       lastChecked = checkbox;
 
-      // Check if at least one row checkbox is checked
-      const atLeastOneChecked = Array.from(rowCheckboxes).some((cb) => cb.checked);
-
-      // Toggle the 'is-disabled' class and 'disabled' attribute of the button
-      if (atLeastOneChecked) {
-        actionDropdown.classList.remove("is-disabled");
-        dropdownButton.removeAttribute("disabled");
-      } else {
-        actionDropdown.classList.add("is-disabled");
-        dropdownButton.setAttribute("disabled", "disabled");
-      }
+      updateButtonAndDropdownState();
 
       // Check if all row checkboxes are checked and update the "Select All" checkbox accordingly
       selectAllCheckbox.checked = Array.from(rowCheckboxes).every((cb) => cb.checked);
