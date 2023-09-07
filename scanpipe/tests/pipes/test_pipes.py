@@ -199,6 +199,30 @@ class ScanPipePipesTest(TestCase):
         self.assertEqual("java_to_class", relation.map_type)
         self.assertEqual({"extra": "data"}, relation.extra_data)
 
+    def test_scanpipe_is_empty_queryset(self):
+        # Test with empty queryset
+        p1 = Project.objects.create(name="Analysis")
+        codebase_resources = p1.codebaseresources.all()
+        self.assertEqual(0, codebase_resources.count())
+        self.assertTrue(pipes.is_empty_queryset(codebase_resources))
+
+        # Test with empty iterables and None
+        self.assertTrue(pipes.is_empty_queryset([]))
+        self.assertTrue(pipes.is_empty_queryset(tuple()))
+        self.assertTrue(pipes.is_empty_queryset(set()))
+        self.assertTrue(pipes.is_empty_queryset(None))
+
+        # Test with queryset with results
+        to1 = make_resource_file(p1, "to/a.txt")
+        codebase_resources = p1.codebaseresources.all()
+        self.assertEqual(1, codebase_resources.count())
+        self.assertFalse(pipes.is_empty_queryset(codebase_resources))
+
+        # Test with iterables containing CodebaseResource
+        self.assertFalse(pipes.is_empty_queryset([to1]))
+        self.assertFalse(pipes.is_empty_queryset((to1,)))
+        self.assertFalse(pipes.is_empty_queryset(set([to1])))
+
 
 class ScanPipePipesTransactionTest(TransactionTestCase):
     """
