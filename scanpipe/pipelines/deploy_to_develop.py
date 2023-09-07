@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
@@ -112,7 +113,7 @@ class DeployToDevelop(Pipeline):
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
-        d2d.collect_and_create_codebase_resources(self.project)
+        pipes.collect_and_create_codebase_resources(self.project)
 
     def fingerprint_codebase_directories(self):
         """Compute directory fingerprints for matching"""
@@ -199,4 +200,4 @@ class DeployToDevelop(Pipeline):
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
         scan_files = d2d.get_from_files_for_scanning(self.project.codebaseresources)
-        scancode.scan_for_files(self.project, scan_files)
+        scancode.scan_for_files(self.project, scan_files, progress_logger=self.log)

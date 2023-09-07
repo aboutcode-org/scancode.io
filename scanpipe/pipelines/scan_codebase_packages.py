@@ -23,7 +23,7 @@
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 
 
-class ScanCodebasePackage(ScanCodebase):
+class ScanCodebasePackages(ScanCodebase):
     """Scan a codebase for packages only."""
 
     @classmethod

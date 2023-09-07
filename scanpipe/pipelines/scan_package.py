@@ -25,6 +25,7 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 
 from commoncode.hash import multi_checksums
+from scancode import ScancodeError
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import input
@@ -105,7 +106,7 @@ class ScanPackage(Pipeline):
         )
 
         if errors:
-            raise scancode.ScancodeError(errors)
+            raise ScancodeError(errors)
 
         if not scan_output_path.exists():
             raise FileNotFoundError("ScanCode output not available.")

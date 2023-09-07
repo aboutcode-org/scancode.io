@@ -22,20 +22,19 @@
 
 from collections import defaultdict
 from contextlib import suppress
-from itertools import islice
 from pathlib import Path
-from timeit import default_timer as timer
 
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
 from packagedcode.npm import NpmPackageJsonHandler
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
-from scanpipe.models import CodebaseResource
+from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -61,47 +60,6 @@ def get_inputs(project):
         raise FileNotFoundError("to* input files not found.")
 
     return from_files, to_files
-
-
-def get_resource_codebase_root(project, resource_path):
-    """Return "to" or "from" depending on the resource location in the codebase."""
-    relative_path = Path(resource_path).relative_to(project.codebase_path)
-    first_part = relative_path.parts[0]
-    if first_part in ["to", "from"]:
-        return first_part
-    return ""
-
-
-def yield_resources_from_codebase(project):
-    """
-    Yield CodebaseResource instances, including their ``info`` data, ready to be
-    inserted in the database using ``save()`` or ``bulk_create()``.
-    """
-    for resource_path in project.walk_codebase_path():
-        yield pipes.make_codebase_resource(
-            project=project,
-            location=resource_path,
-            save=False,
-            tag=get_resource_codebase_root(project, resource_path),
-        )
-
-
-def collect_and_create_codebase_resources(project, batch_size=5000):
-    """
-    Collect and create codebase resources including the "to/" and "from/" context using
-    the resource tag field.
-
-    The default ``batch_size`` can be overriden, although the benefits of a value
-    greater than 5000 objects are usually not significant.
-    """
-    model_class = CodebaseResource
-    objs = yield_resources_from_codebase(project)
-
-    while True:
-        batch = list(islice(objs, batch_size))
-        if not batch:
-            break
-        model_class.objects.bulk_create(batch, batch_size)
 
 
 def get_extracted_path(resource):
@@ -167,17 +125,9 @@ def map_checksum(project, checksum_field, logger=None):
         )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(resource_count, logger)
+
+    for to_resource in progress.iter(resource_iterator):
         _map_checksum_resource(to_resource, from_resources, checksum_field)
 
 
@@ -234,18 +184,9 @@ def map_java_to_class(project, logger=None):
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
-        if logger:
-            last_percent = pipes.log_progress(
-                logger,
-                resource_index,
-                resource_count,
-                last_percent,
-                increment_percent=10,
-                start_time=start_time,
-            )
+    progress = LoopProgress(resource_count, logger)
+
+    for to_resource in progress.iter(resource_iterator):
         _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
 
@@ -305,10 +246,11 @@ def find_java_packages(project, logger=None):
             ".java resources."
         )
 
-    scancode._scan_and_save(
+    scancode.scan_resources(
         resource_qs=from_java_resources,
         scan_func=scan_for_java_package,
         save_func=save_java_package_scan_results,
+        progress_logger=logger,
     )
 
 
@@ -395,17 +337,9 @@ def map_jar_to_source(project, logger=None):
         )
 
     resource_iterator = to_jars.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, jar_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            to_jars_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(to_jars_count, logger)
+
+    for jar_resource in progress.iter(resource_iterator):
         _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
 
 
@@ -470,17 +404,9 @@ def map_path(project, logger=None):
     )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(resource_count, logger)
+
+    for to_resource in progress.iter(resource_iterator):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
@@ -611,8 +537,7 @@ def match_purldb_directory(project, resource):
     if results := purldb.match_directory(fingerprint=fingerprint):
         package_url = results[0]["package"]
         if package_data := purldb.request_get(url=package_url):
-            resources = [resource]
-            return create_package_from_purldb_data(project, resources, package_data)
+            return create_package_from_purldb_data(project, [resource], package_data)
 
 
 def match_purldb_resources(
@@ -648,21 +573,18 @@ def match_purldb_resources(
             )
 
     resource_iterator = to_resources.paginated(per_page=chunk_size)
-    last_percent = 0
-    start_time = timer()
+    progress = LoopProgress(resource_count, logger)
     matched_count = 0
     sha1_count = 0
     resources_by_sha1 = defaultdict(list)
     package_data_by_purldb_urls = {}
-    resource_index = -1
 
     for resources_batch in resource_iterator:
-        for to_resource in resources_batch:
+        for to_resource in progress.iter(resources_batch):
             resources_by_sha1[to_resource.sha1].append(to_resource)
             if to_resource.path.endswith(".map"):
                 for js_sha1 in js.source_content_sha1_list(to_resource):
                     resources_by_sha1[js_sha1].append(to_resource)
-            resource_index += 1
 
         matched_count += matcher_func(
             project=project,
@@ -670,24 +592,15 @@ def match_purldb_resources(
             package_data_by_purldb_urls=package_data_by_purldb_urls,
         )
 
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
-
-        # Keep track of the total number of sha1s we send
+        # Keep track of the total number of SHA1s we send
         sha1_count += len(resources_by_sha1)
         # Clear out resources_by_sha1 when we are done with the current batch of
         # CodebaseResources
         resources_by_sha1 = defaultdict(list)
 
     logger(
-        f"{matched_count:,d} resource(s) matched in PurlDB "
-        f"using {sha1_count:,d} SHA1(s)"
+        f"{matched_count:,d} resources matched in PurlDB "
+        f"using {sha1_count:,d} SHA1s"
     )
 
 
@@ -705,28 +618,18 @@ def match_purldb_directories(project, logger=None):
     directory_count = to_directories.count()
 
     if logger:
-        logger(f"Matching {directory_count:,d} director(y/ies) from to/ in PurlDB")
+        logger(
+            f"Matching {directory_count:,d} "
+            f"director{pluralize(directory_count, 'y,ies')} from to/ in PurlDB"
+        )
 
     directory_iterator = to_directories.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
+    progress = LoopProgress(directory_count, logger)
 
-    for directory_index, directory in enumerate(directory_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            directory_index,
-            directory_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
-        # We refresh the directory to ensure that the status has been updated if
-        # the directory was included in a match to an ancestor directory
+    for directory in progress.iter(directory_iterator):
         directory.refresh_from_db()
-
-        if directory.status == flag.MATCHED_TO_PURLDB:
-            continue
-        match_purldb_directory(project, directory)
+        if directory.status != flag.MATCHED_TO_PURLDB:
+            match_purldb_directory(project, directory)
 
     matched_count = (
         project.codebaseresources.directories()
@@ -734,8 +637,10 @@ def match_purldb_directories(project, logger=None):
         .filter(status=flag.MATCHED_TO_PURLDB)
         .count()
     )
-
-    logger(f"{matched_count:,d} director(y/ies) matched in PurlDB")
+    logger(
+        f"{matched_count:,d} director{pluralize(matched_count, 'y,ies')} "
+        f"matched in PurlDB"
+    )
 
 
 def map_javascript(project, logger=None):
@@ -759,17 +664,9 @@ def map_javascript(project, logger=None):
     )
 
     resource_iterator = to_resources_dot_map.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_dot_map in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            to_resources_dot_map_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(to_resources_dot_map_count, logger)
+
+    for to_dot_map in progress.iter(resource_iterator):
         _map_javascript_resource(
             to_dot_map, to_resources_minified, from_resources_index, from_resources
         )
@@ -923,17 +820,9 @@ def map_javascript_post_purldb_match(project, logger=None):
     )
 
     resource_iterator = to_resources_minified.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_minified in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            to_resources_minified_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(to_resources_minified_count, logger)
+
+    for to_minified in progress.iter(resource_iterator):
         _map_javascript_post_purldb_match_resource(
             to_minified, to_resources_dot_map, to_resources_dot_map_index
         )
@@ -994,24 +883,15 @@ def map_javascript_path(project, logger=None):
     )
 
     resource_iterator = to_resources_key.iterator(chunk_size=2000)
-    last_percent = 0
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
-    start_time = timer()
 
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    for to_resource in progress.iter(resource_iterator):
         map_count += _map_javascript_path_resource(
             to_resource, to_resources, from_resources_index, from_resources
         )
 
-    logger(f"{map_count:,d} resource(s) mapped")
+    logger(f"{map_count:,d} resources mapped")
 
 
 def _map_javascript_path_resource(
@@ -1087,24 +967,13 @@ def map_javascript_colocation(project, logger=None):
         )
 
     resource_iterator = to_resources_key.iterator(chunk_size=2000)
-    last_percent = 0
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
-    start_time = timer()
 
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    for to_resource in progress.iter(resource_iterator):
         map_count += _map_javascript_colocation_resource(
             to_resource, to_resources, from_resources, project
         )
-
-    logger(f"{map_count:,d} resource(s) mapped")
 
 
 def _map_javascript_colocation_resource(
@@ -1163,31 +1032,27 @@ def _map_javascript_colocation_resource(
 
 def flag_processed_archives(project):
     """
-    Resources without an assigned status which are package archives, and all
-    resources inside the archive has a status, should also be considered as
-    processed.
+    Flag package archives as processed if they meet the following criteria:
+
+    1. They have no assigned status.
+    2. They are identified as package archives.
+    3. All resources inside the corresponding archive '-extract' directory
+       have an assigned status.
+
+    This function iterates through the package archives in the project and
+    checks whether all resources within their associated '-extract' directory
+    have statuses. If so, it updates the status of the package archive to
+    "archive-processed".
     """
-    to_resources = project.codebaseresources.all().to_codebase()
-    to_resources_archives = to_resources.no_status().filter(is_archive=True)
+    to_resources = project.codebaseresources.all().to_codebase().no_status()
 
-    for to_archive in to_resources_archives:
-        archive_extract_path = to_archive.path + "-extract"
-        archive_extract_resource = to_resources.filter(path=archive_extract_path)
-
-        # There are archives which are not extracted by default, so
-        # we check if the extracted archive exists
-        if not archive_extract_resource.exists():
-            continue
-
-        archive_resources_unmapped = to_resources.no_status().filter(
-            path__startswith=archive_extract_path
-        )
-        # If there are resources in the archives which are unmapped,
-        # they are not considered as processed
-        if archive_resources_unmapped.exists():
-            continue
-
-        to_archive.update(status=flag.ARCHIVE_PROCESSED)
+    for archive_resource in to_resources.archives():
+        extract_path = archive_resource.path + "-extract"
+        archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
+        # Check if all resources in the archive "-extract" directory have been mapped.
+        # Flag the archive resource as processed only when all resources are mapped.
+        if not archive_unmapped_resources.exists():
+            archive_resource.update(status=flag.ARCHIVE_PROCESSED)
 
 
 def map_thirdparty_npm_packages(project, logger=None):
@@ -1210,22 +1075,13 @@ def map_thirdparty_npm_packages(project, logger=None):
         )
 
     resource_iterator = to_package_json.iterator(chunk_size=2000)
-    last_percent = 0
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
-    start_time = timer()
 
-    for resource_index, package_json in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    for package_json in progress.iter(resource_iterator):
         map_count += _map_thirdparty_npm_packages(package_json, to_resources, project)
 
-    logger(f"{map_count:,d} resource(s) mapped")
+    logger(f"{map_count:,d} resources mapped")
 
 
 def _map_thirdparty_npm_packages(package_json, to_resources, project):

@@ -68,3 +68,5 @@ def execute_pipeline_task(run_pk):
     if run.task_succeeded:
         # We keep the temporary files available for debugging in case of error
         project.clear_tmp_directory()
+        if next_run := project.get_next_run():
+            next_run.start()

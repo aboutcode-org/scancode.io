@@ -26,6 +26,7 @@ import sys
 import uuid
 from contextlib import suppress
 from datetime import datetime
+from itertools import islice
 from pathlib import Path
 from timeit import default_timer as timer
 
@@ -82,6 +83,47 @@ def make_codebase_resource(project, location, save=True, **extra_fields):
     if save:
         codebase_resource.save(save_error=False)
     return codebase_resource
+
+
+def get_resource_codebase_root(project, resource_path):
+    """Return "to" or "from" depending on the resource location in the codebase."""
+    relative_path = Path(resource_path).relative_to(project.codebase_path)
+    first_part = relative_path.parts[0]
+    if first_part in ["to", "from"]:
+        return first_part
+    return ""
+
+
+def yield_resources_from_codebase(project):
+    """
+    Yield CodebaseResource instances, including their ``info`` data, ready to be
+    inserted in the database using ``save()`` or ``bulk_create()``.
+    """
+    for resource_path in project.walk_codebase_path():
+        yield make_codebase_resource(
+            project=project,
+            location=resource_path,
+            save=False,
+            tag=get_resource_codebase_root(project, resource_path),
+        )
+
+
+def collect_and_create_codebase_resources(project, batch_size=5000):
+    """
+    Collect and create codebase resources including the "to/" and "from/" context using
+    the resource tag field.
+
+    The default ``batch_size`` can be overriden, although the benefits of a value
+    greater than 5000 objects are usually not significant.
+    """
+    model_class = CodebaseResource
+    objs = yield_resources_from_codebase(project)
+
+    while True:
+        batch = list(islice(objs, batch_size))
+        if not batch:
+            break
+        model_class.objects.bulk_create(batch, batch_size)
 
 
 def update_or_create_resource(project, resource_data):
@@ -262,45 +304,75 @@ def remove_prefix(text, prefix):
     return text
 
 
-def get_progress_percentage(current_index, total_count):
+class LoopProgress:
     """
-    Return the percentage of progress given the current index and total count of
-    objects.
+    A context manager for logging progress in loops.
+
+    Usage:
+        total_iterations = 100
+        logger = print  # Replace with your actual logger function
+
+        progress = LoopProgress(total_iterations, logger, progress_step=10)
+        for item in progress.iter(iterator):
+            # Your processing logic here
+
+        with LoopProgress(total_iterations, logger, progress_step=10) as progress:
+            for item in progress.iter(iterator):
+                # Your processing logic here
     """
-    if current_index < 0 or current_index >= total_count:
-        raise ValueError("current_index must be between 0 and total_count - 1")
 
-    progress = current_index / total_count * 100
-    return progress
+    def __init__(self, total_iterations, logger, progress_step=10):
+        self.total_iterations = total_iterations
+        self.logger = logger
+        self.progress_step = progress_step
+        self.start_time = timer()
+        self.last_logged_progress = 0
+        self.current_iteration = 0
 
+    def get_eta(self, current_progress):
+        run_time = timer() - self.start_time
+        return round(run_time / current_progress * (100 - current_progress))
 
-def log_progress(
-    log_func,
-    current_index,
-    total_count,
-    last_percent,
-    increment_percent,
-    start_time=None,
-):
-    """
-    Log progress updates every `increment_percent` percentage points, given the
-    current index and total count of objects.
-    Return the latest percent logged.
-    """
-    progress_percentage = int(get_progress_percentage(current_index, total_count))
-    if progress_percentage >= last_percent + increment_percent:
-        last_percent = progress_percentage
-        msg = f"Progress: {progress_percentage}% ({current_index:,d}/{total_count:,d})"
+    @property
+    def current_progress(self):
+        return int((self.current_iteration / self.total_iterations) * 100)
 
-        if start_time:
-            run_time = timer() - start_time
-            eta = round(run_time / progress_percentage * (100 - progress_percentage))
-            if eta:
+    @property
+    def eta(self):
+        run_time = timer() - self.start_time
+        return round(run_time / self.current_progress * (100 - self.current_progress))
+
+    def log_progress(self):
+        reasons_to_skip = [
+            not self.logger,
+            not self.current_iteration > 0,
+            self.total_iterations <= self.progress_step,
+        ]
+        if any(reasons_to_skip):
+            return
+
+        if self.current_progress >= self.last_logged_progress + self.progress_step:
+            msg = (
+                f"Progress: {self.current_progress}% "
+                f"({self.current_iteration}/{self.total_iterations})"
+            )
+            if eta := self.eta:
                 msg += f" ETA: {humanize_time(eta)}"
 
-        log_func(msg)
+            self.logger(msg)
+            self.last_logged_progress = self.current_progress
 
-    return last_percent
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+    def iter(self, iterator):
+        for item in iterator:
+            self.current_iteration += 1
+            self.log_progress()
+            yield item
 
 
 def get_text_str_diff_ratio(str_a, str_b):

@@ -264,37 +264,35 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
 
-    def test_scanpipe_get_progress_percentage(self):
-        self.assertEqual(0.0, pipes.get_progress_percentage(0, 10))
-        self.assertEqual(50.0, pipes.get_progress_percentage(5, 10))
-        self.assertEqual(90.0, pipes.get_progress_percentage(9, 10))
-        self.assertEqual(60.0, pipes.get_progress_percentage(3, 5))
-
-        with self.assertRaises(ValueError):
-            pipes.get_progress_percentage(10, 1)
-
-    def test_scanpipe_log_progress(self):
-        buffer = io.StringIO()
-        last_percent = pipes.log_progress(
-            log_func=buffer.write,
-            current_index=1,
-            total_count=10,
-            last_percent=0,
-            increment_percent=5,
+    def test_scanpipe_loop_progress_as_context_manager(self):
+        total_iterations = 100
+        progress_step = 10
+        expected = (
+            "Progress: 10% (10/100)"
+            "Progress: 20% (20/100)"
+            "Progress: 30% (30/100)"
+            "Progress: 40% (40/100)"
+            "Progress: 50% (50/100)"
+            "Progress: 60% (60/100)"
+            "Progress: 70% (70/100)"
+            "Progress: 80% (80/100)"
+            "Progress: 90% (90/100)"
+            "Progress: 100% (100/100)"
         )
-        self.assertEqual(10, last_percent)
-        self.assertEqual("Progress: 10% (1/10)", buffer.getvalue())
 
         buffer = io.StringIO()
-        last_percent = pipes.log_progress(
-            log_func=buffer.write,
-            current_index=20,
-            total_count=100,
-            last_percent=15,
-            increment_percent=5,
-        )
-        self.assertEqual(20, last_percent)
-        self.assertEqual("Progress: 20% (20/100)", buffer.getvalue())
+        logger = buffer.write
+        progress = pipes.LoopProgress(total_iterations, logger, progress_step=10)
+        for _ in progress.iter(range(total_iterations)):
+            pass
+        self.assertEqual(expected, buffer.getvalue())
+
+        buffer = io.StringIO()
+        logger = buffer.write
+        with pipes.LoopProgress(total_iterations, logger, progress_step) as progress:
+            for _ in progress.iter(range(total_iterations)):
+                pass
+        self.assertEqual(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_get_resource_diff_ratio(self):
         project1 = Project.objects.create(name="Analysis")
@@ -327,3 +325,39 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         with self.assertRaises(ValueError) as error:
             get_text_str_diff_ratio(1, 2)
         self.assertEqual("Values must be str", str(error.exception))
+
+    def test_scanpipe_pipes_get_resource_codebase_root(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "codebase" / "a.txt"
+        file_location = copy_input(input_location, p1.codebase_path)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("", codebase_root)
+
+        to_dir = p1.codebase_path / "to"
+        to_dir.mkdir()
+        file_location = copy_input(input_location, to_dir)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("to", codebase_root)
+
+        from_dir = p1.codebase_path / "from"
+        from_dir.mkdir()
+        file_location = copy_input(input_location, from_dir)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("from", codebase_root)
+
+    def test_scanpipe_pipes_collect_and_create_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "codebase" / "a.txt"
+        to_dir = p1.codebase_path / "to"
+        to_dir.mkdir()
+        from_dir = p1.codebase_path / "from"
+        from_dir.mkdir()
+        copy_input(input_location, to_dir)
+        copy_input(input_location, from_dir)
+        pipes.collect_and_create_codebase_resources(p1)
+
+        self.assertEqual(4, p1.codebaseresources.count())
+        from_resource = p1.codebaseresources.get(path="from/a.txt")
+        self.assertEqual("from", from_resource.tag)
+        to_resource = p1.codebaseresources.get(path="to/a.txt")
+        self.assertEqual("to", to_resource.tag)

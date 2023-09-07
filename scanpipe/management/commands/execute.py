@@ -57,7 +57,7 @@ class Command(ProjectCommand):
                 msg = "SCANCODEIO_ASYNC=False is not compatible with --async option."
                 raise CommandError(msg)
 
-            run.execute_task_async()
+            run.start()
             msg = f"{run.pipeline_name} added to the tasks queue for execution."
             self.stdout.write(msg, self.style.SUCCESS)
             sys.exit(0)
