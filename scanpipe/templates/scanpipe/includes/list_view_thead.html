@@ -1,8 +1,10 @@
 <thead>
   <tr>
-    <th class="p-2">
-      <input type="checkbox" id="select-all">
-    </th>
+    {% if select_all %}
+      <th class="p-2">
+        <input type="checkbox" id="select-all">
+      </th>
+    {% endif %}
     {% for column in columns_data %}
       <th id="column-{{ column.field_name }}" {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
         <div class="is-flex is-justify-content-space-between">

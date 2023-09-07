@@ -157,6 +157,11 @@ urlpatterns = [
         name="project_add",
     ),
     path(
+        "project/action/",
+        views.ProjectActionView.as_view(),
+        name="project_action",
+    ),
+    path(
         "project/<slug:slug>/charts/",
         views.ProjectChartsView.as_view(),
         name="project_charts",

@@ -1,6 +1,6 @@
 {% load humanize %}
 <table class="table is-bordered is-striped is-hoverable is-fullwidth">
-  {% include 'scanpipe/includes/list_view_thead.html' %}
+  {% include 'scanpipe/includes/list_view_thead.html' with select_all=True %}
   <tbody>
   {% for project in projects %}
     <tr>
