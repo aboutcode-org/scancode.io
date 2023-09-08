@@ -925,42 +925,40 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
     """Call a method for each instance of the selection."""
 
     model = Project
+    allowed_actions = ["archive", "delete", "reset"]
     success_url = reverse_lazy("project_list")
 
     def post(self, request, *args, **kwargs):
-        self.action = request.POST.get("action")
-        if not self.action:
+        action = request.POST.get("action")
+        if action not in self.allowed_actions:
             raise Http404
 
         selected_ids = request.POST.get("selected_ids", "").split(",")
         count = 0
 
         for project_uuid in selected_ids:
-            if self.perform_project_action(project_uuid):
+            if self.perform_action(action, project_uuid):
                 count += 1
 
         if count:
-            messages.success(self.request, self.get_success_message(count))
+            messages.success(self.request, self.get_success_message(action, count))
 
         return HttpResponseRedirect(self.success_url)
 
-    def perform_project_action(self, project_uuid):
+    def perform_action(self, action, project_uuid):
         try:
             project = Project.objects.get(pk=project_uuid)
-            if self.action == "archive":
-                project.archive()  # TODO: Add support for options
-            elif self.action == "delete":
-                project.delete()
-            elif self.action == "reset":
-                project.reset()  # TODO: Add support for keep_input
+            getattr(project, action)()  # TODO: Add support for options
             return True
         except Project.DoesNotExist:
             messages.error(self.request, f"Project {project_uuid} does not exist.")
         except RunInProgressError as error:
             messages.error(self.request, str(error))
+        except AttributeError:
+            raise Http404
 
-    def get_success_message(self, count):
-        return f"{count} projects have been {self.action}d."
+    def get_success_message(self, action, count):
+        return f"{count} projects have been {action}d."
 
 
 class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
