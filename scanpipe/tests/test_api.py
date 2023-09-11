@@ -652,6 +652,8 @@ class ScanPipeAPITest(TransactionTestCase):
         run = self.project1.runs.get()
         self.assertEqual(data["pipeline"], run.pipeline_name)
 
+        project2 = Project.objects.create(name="Analysis 2")
+        url = reverse("project-add-pipeline", args=[project2.uuid])
         data["execute_now"] = True
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)

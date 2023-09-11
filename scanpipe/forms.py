@@ -319,6 +319,12 @@ class ProjectCloneForm(forms.Form):
         help_text="All project settings will be copied.",
         widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
     )
+    copy_subscriptions = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="All project webhook subscription will be copied.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
     execute_now = forms.BooleanField(
         label="Execute copied pipeline(s) now",
         initial=False,

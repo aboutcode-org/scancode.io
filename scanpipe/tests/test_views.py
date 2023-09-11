@@ -598,6 +598,12 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
+        run.reset_task_values()
+        run2 = self.project1.add_pipeline("docker")
+        url = reverse("project_execute_pipeline", args=[self.project1.slug, run2.uuid])
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
     @mock.patch("scanpipe.models.Run.stop_task")
     def test_scanpipe_views_stop_pipeline_view(self, mock_stop_task):
         run = self.project1.add_pipeline("docker")

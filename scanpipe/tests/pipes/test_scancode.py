@@ -290,9 +290,9 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual("", resource3.detected_license_expression)
         self.assertEqual(["copy"], resource3.copyrights)
 
-    @mock.patch("scanpipe.pipes.scancode._scan_and_save")
+    @mock.patch("scanpipe.pipes.scancode.scan_resources")
     def test_scanpipe_pipes_scancode_scan_for_files_scancode_license_score(
-        self, mock_scan_and_save
+        self, mock_scan_resources
     ):
         project1 = Project.objects.create(
             name="Analysis",
@@ -301,7 +301,8 @@ class ScanPipeScancodePipesTest(TestCase):
 
         scancode.scan_for_files(project1)
         expected = {"min_license_score": 99}
-        self.assertEqual(expected, mock_scan_and_save.call_args_list[-1].args[-1])
+        call = mock_scan_resources.call_args_list[-1]
+        self.assertEqual(expected, call.kwargs["scan_func_kwargs"])
 
     def test_scanpipe_pipes_scancode_scan_for_package_data_timeout(self):
         input_location = str(self.data_location / "notice.NOTICE")
@@ -340,7 +341,7 @@ class ScanPipeScancodePipesTest(TestCase):
         )
         self.assertEqual(expected_description, message.description)
 
-    def test_scanpipe_pipes_scancode_scan_and_save_multiprocessing_with_threading(self):
+    def test_scanpipe_pipes_scancode_scan_resources_multiprocessing_threading(self):
         def noop(*args, **kwargs):
             pass
 
@@ -352,12 +353,12 @@ class ScanPipeScancodePipesTest(TestCase):
         scan_func.__name__ = ""
 
         with override_settings(SCANCODEIO_PROCESSES=-1):
-            scancode._scan_and_save(resource_qs, scan_func, noop)
+            scancode.scan_resources(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertFalse(with_threading)
 
         with override_settings(SCANCODEIO_PROCESSES=0):
-            scancode._scan_and_save(resource_qs, scan_func, noop)
+            scancode.scan_resources(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
 

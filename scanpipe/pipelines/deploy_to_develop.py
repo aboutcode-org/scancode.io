@@ -200,4 +200,4 @@ class DeployToDevelop(Pipeline):
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
         scan_files = d2d.get_from_files_for_scanning(self.project.codebaseresources)
-        scancode.scan_for_files(self.project, scan_files)
+        scancode.scan_for_files(self.project, scan_files, progress_logger=self.log)
