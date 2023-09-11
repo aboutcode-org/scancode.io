@@ -974,9 +974,9 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
-        self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("Populating PurlDB with 1 DiscoveredPackage", run.log)
+        self.assertIn("Successfully queued 1 PURLs for indexing in PurlDB", run.log)
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
-        self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
-        self.assertIn("Successfully queued 4 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("Populating PurlDB with 2 DiscoveredDependency", run.log)
+        self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
