@@ -22,6 +22,7 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
+from scanpipe.pipes import scancode
 
 
 class PopulatePurlDB(Pipeline):
@@ -32,6 +33,7 @@ class PopulatePurlDB(Pipeline):
         return (
             cls.populate_purldb_with_discovered_packages,
             cls.populate_purldb_with_discovered_dependencies,
+            cls.populate_purldb_with_detected_purls,
         )
 
     def populate_purldb_with_discovered_packages(self):
@@ -45,3 +47,52 @@ class PopulatePurlDB(Pipeline):
         purldb.populate_purldb_with_discovered_dependencies(
             project=self.project, logger=self.log
         )
+
+    def populate_purldb_with_detected_purls(self):
+        """Add DiscoveredPackage to PurlDB."""
+        no_packages_and_no_dependencies = all(
+            [
+                not self.project.discoveredpackages.exists(),
+                not self.project.discovereddependencies.exists(),
+            ]
+        )
+        # Even when there are no packages/dependencies, resource level
+        # package data could be detected (i.e. when we detect packages,
+        # but skip the assembly step that creates
+        # package/dependency instances)
+        if no_packages_and_no_dependencies:
+            packages = scancode.get_packages_with_purl_from_resources(self.project)
+            self.feed_purldb(
+                packages=list(packages),
+                package_type="DiscoveredPackage",
+            )
+
+    def feed_purldb(self, packages, package_type):
+        """Feed PurlDB with list of PURLs for indexing."""
+        if not purldb.is_available():
+            raise Exception("PurlDB is not available.")
+
+        package_urls = list(set([package.purl for package in packages]))
+        self.log(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
+
+        response = purldb.submit_purls(purls=package_urls)
+        queued_packages_count = response.get("queued_packages_count", 0)
+        unqueued_packages_count = response.get("unqueued_packages_count", 0)
+        unsupported_packages_count = response.get("unsupported_packages_count", 0)
+
+        if queued_packages_count > 0:
+            self.log(
+                f"Successfully queued {queued_packages_count:,d} "
+                f"PURLs for indexing in PurlDB"
+            )
+
+        if unqueued_packages_count > 0:
+            self.log(
+                f"{unqueued_packages_count:,d} PURLs were already "
+                f"present in PurlDB index queue"
+            )
+
+        if unsupported_packages_count > 0:
+            self.log(
+                f"Couldn't index {unsupported_packages_count:,d} unsupported PURLs"
+            )
