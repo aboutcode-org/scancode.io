@@ -85,18 +85,26 @@
         </div>
       </div>
 
-      {% if codebase_root or resource_status_summary %}
+      {% if codebase_root %}
         <div class="columns">
-          {% if codebase_root %}
-            <div class="column">
-              <div hx-get="{% url 'project_codebase' project.slug %}" hx-trigger="load">
-                <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
-              </div>
+          <div class="column">
+            <div hx-get="{% url 'project_codebase' project.slug %}" hx-trigger="load">
+              <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
             </div>
-          {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if resource_status_summary or resource_licenses_summary %}
+        <div class="columns">
           {% if resource_status_summary %}
             <div class="column is-half">
               {% include "scanpipe/includes/resource_status_summary.html"  %}
+            </div>
+          {% endif %}
+          {% if resource_licenses_summary %}
+            <div class="column is-half">
+              {% include "scanpipe/includes/resource_licenses_summary.html"  %}
             </div>
           {% endif %}
         </div>
