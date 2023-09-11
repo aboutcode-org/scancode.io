@@ -45,6 +45,7 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
+from django.urls import reverse
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.decorators.http import require_POST
@@ -616,6 +617,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
+        project_resources_url = reverse("project_resources", args=[project.slug])
 
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
@@ -647,6 +649,14 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         codebase_root.sort(key=operator.methodcaller("is_file"))
 
         resource_status_summary = count_group_by(project.codebaseresources, "status")
+        if list(resource_status_summary.keys()) == [""]:
+            resource_status_summary = None
+
+        resource_licenses_summary = count_group_by(
+            project.codebaseresources.files(), "detected_license_expression"
+        )
+        if list(resource_licenses_summary.keys()) == [""]:
+            resource_licenses_summary = None
 
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
@@ -660,7 +670,9 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "add_labels_form": AddLabelsForm(),
                 "project_clone_form": ProjectCloneForm(project),
                 "archive_form": ArchiveProjectForm(),
+                "project_resources_url": project_resources_url,
                 "resource_status_summary": resource_status_summary,
+                "resource_licenses_summary": resource_licenses_summary,
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
                 "pipeline_runs": pipeline_runs,

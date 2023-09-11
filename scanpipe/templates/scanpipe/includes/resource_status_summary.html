@@ -4,13 +4,9 @@
     Resources status
   </p>
   {% for status, count in resource_status_summary.items %}
-    <a class="panel-block" href="{% url 'project_resources' project.slug %}?status={{ status|default:'_EMPTY_' }}" target="_blank">
-      {% if status %}
-        {{ status }}
-      {% else %}
-        <i>(no status)</i>
-      {% endif %}
-      : {{ count|intcomma }}
+    <a class="panel-block is-align-items-flex-start break-word" href="{{ project_resources_url }}?status={{ status|default:'_EMPTY_' }}" target="_blank">
+      {{ status|default:'<i>no status</i>' }}
+      <span class="tag is-rounded ml-1">{{ count|intcomma }}</span>
     </a>
   {% endfor %}
 </nav>

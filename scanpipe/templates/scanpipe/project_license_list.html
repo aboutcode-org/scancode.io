@@ -1,0 +1,34 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Project Licenses{% endblock %}
+
+{% block content %}
+  <table>
+    <tr>
+      <td>License</td>
+      <td>Resources count</td>
+    </tr>
+    {% for entry in object_list %}
+      <tr>
+        <td>{{ entry.detected_license_expression }}</td>
+        <td>
+          <a href="{% url 'project_resources' project.slug %}?type=file&detected_license_expression={% if entry.detected_license_expression %}{{ entry.detected_license_expression }}{% else %}_EMPTY_{% endif %}">
+            {{ entry.count }}
+          </a>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  {% for entry in object_list %}
+    <p>License: {{ entry.detected_license_expression }}</p>
+    <ul>
+      {% for path in entry.paths %}
+        <li>{{ path }}</li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+
+
+{#  {{ object_list }}#}
+{% endblock %}
