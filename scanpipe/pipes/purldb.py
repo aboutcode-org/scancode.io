@@ -203,6 +203,9 @@ def feed_purldb(packages, chunk_size, msg, logger=None):
     ]
 
     if logger:
+        if not packages:
+            logger("No PURLs found. Skipping.")
+            return
         logger(msg)
 
     batches_count = len(package_batches)
@@ -240,6 +243,7 @@ def feed_purldb(packages, chunk_size, msg, logger=None):
 
 
 def get_unique_resolved_purls(project):
+    """Return PURLs from project's resolved DiscoveredDependencies."""
     packages_resolved = project.discovereddependencies.filter(is_resolved=True)
 
     distinct_results = packages_resolved.values("type", "namespace", "name", "version")
@@ -248,7 +252,8 @@ def get_unique_resolved_purls(project):
     return {str(PackageURL(*values)) for values in distinct_combinations}
 
 
-def get_unresolved_pacakages(project):
+def get_unique_unresolved_purls(project):
+    """Return PURLs from project's unresolved DiscoveredDependencies."""
     packages_unresolved = project.discovereddependencies.filter(
         is_resolved=False
     ).exclude(extracted_requirement="*")
@@ -304,7 +309,7 @@ def populate_purldb_with_discovered_dependencies(project, logger=None):
         logger=logger,
     )
 
-    unresolved_packages = get_unresolved_pacakages(project)
+    unresolved_packages = get_unique_unresolved_purls(project)
     unresolved_packages = [
         {"purl": purl, "vers": vers} for purl, vers in unresolved_packages
     ]
