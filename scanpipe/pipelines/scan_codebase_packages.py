@@ -25,7 +25,11 @@ from scanpipe.pipes import scancode
 
 
 class ScanCodebasePackages(ScanCodebase):
-    """Scan a codebase for packages only."""
+    """
+    Scan a codebase for package data only for the purpose of getting
+    all purls (without creating package/dependency instances by
+    package assembly).
+    """
 
     @classmethod
     def steps(cls):

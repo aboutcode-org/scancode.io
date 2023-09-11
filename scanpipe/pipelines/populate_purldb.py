@@ -58,6 +58,10 @@ class PopulatePurlDB(Pipeline):
                 not self.project.discovereddependencies.exists(),
             ]
         )
+        # Even when there are no packages/dependencies, resource level
+        # package data could be detected (i.e. when we detect packages,
+        # but skip the assembly step that creates
+        # package/dependency instances)
         if no_packages_and_no_dependencies:
             packages = scancode.get_packages_with_purl_from_resources(self.project)
             self.feed_purldb(
