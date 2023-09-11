@@ -450,15 +450,14 @@ def get_packages_with_purl_from_resources(project):
     """
     for resource in project.codebaseresources.has_package_data():
         for package_mapping in resource.package_data:
-            for dep in package_mapping.get("dependencies"):
+            for dependency in package_mapping.get("dependencies"):
                 yield packagedcode_models.Dependency.from_dependent_package(
-                    dependent_package=dep,
+                    dependent_package=dependency,
                     datafile_path=resource.path,
                     datasource_id=package_mapping.get("datasource_id"),
                     package_uid=None,
                 )
-            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
-            yield pd
+            yield packagedcode_models.PackageData.from_dict(mapping=package_mapping)
 
 
 def get_pretty_params(args):
