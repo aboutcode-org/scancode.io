@@ -27,6 +27,7 @@ from pathlib import Path
 
 from container_inspector.image import Image
 from container_inspector.utils import extract_tar
+from extractcode import EXTRACT_SUFFIX
 
 from scanpipe import pipes
 from scanpipe.pipes import flag
@@ -60,7 +61,7 @@ def extract_images_from_inputs(project):
     errors = []
 
     for tarball in get_tarballs_from_inputs(project):
-        extract_target = target_path / f"{tarball.name}-extract"
+        extract_target = target_path / f"{tarball.name}{EXTRACT_SUFFIX}"
         imgs, errs = extract_image_from_tarball(tarball, extract_target)
         images.extend(imgs)
         errors.extend(errs)
