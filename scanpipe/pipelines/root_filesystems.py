@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from extractcode import EXTRACT_SUFFIX
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
@@ -54,7 +56,7 @@ class RootFS(Pipeline):
         errors = []
 
         for input_file in input_files:
-            extract_target = target_path / f"{input_file.name}-extract"
+            extract_target = target_path / f"{input_file.name}{EXTRACT_SUFFIX}"
             extract_errors = scancode.extract_archive(input_file, extract_target)
             errors.extend(extract_errors)
 

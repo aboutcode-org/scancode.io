@@ -30,6 +30,7 @@ from django.db.models import Q
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
+from extractcode import EXTRACT_SUFFIX
 from packagedcode.npm import NpmPackageJsonHandler
 
 from scanpipe import pipes
@@ -1047,7 +1048,7 @@ def flag_processed_archives(project):
     to_resources = project.codebaseresources.all().to_codebase().no_status()
 
     for archive_resource in to_resources.archives():
-        extract_path = archive_resource.path + "-extract"
+        extract_path = archive_resource.path + EXTRACT_SUFFIX
         archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
         # Check if all resources in the archive "-extract" directory have been mapped.
         # Flag the archive resource as processed only when all resources are mapped.

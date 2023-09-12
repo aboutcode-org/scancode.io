@@ -1498,11 +1498,13 @@ class ScanPipeModelsTest(TestCase):
         resource = make_resource_file(self.project1, path="")
         self.assertEqual([], resource.get_path_segments_with_subpath())
 
-        resource = make_resource_file(self.project1, path="root/subpath/file.txt")
+        path = "root/subpath/archive.zip-extract/file.txt"
+        resource = make_resource_file(self.project1, path=path)
         expected = [
-            ("root", "root"),
-            ("subpath", "root/subpath"),
-            ("file.txt", "root/subpath/file.txt"),
+            ("root", "root", False),
+            ("subpath", "root/subpath", False),
+            ("archive.zip", "root/subpath/archive.zip", True),
+            ("file.txt", "root/subpath/archive.zip-extract/file.txt", False),
         ]
         self.assertEqual(expected, resource.get_path_segments_with_subpath())
 
