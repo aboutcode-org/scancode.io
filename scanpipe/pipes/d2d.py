@@ -1120,17 +1120,10 @@ def _map_thirdparty_npm_packages(package_json, to_resources, project):
     return package_resources.count()
 
 
-def perform_janitorial_tasks(
-    project, matched_extensions=[], uninteresting_extensions=[], logger=None
-):
+def match_resources_with_no_java_source(project, logger=None):
     """
-    On deployed side
-        - PurlDB match files with ``no-java-source``, ``too-many-maps`` and empty
-            status, if no match is found update status to ``requires-review``.
-        - Update status for uninteresting files.
-
-    On devel side
-        - Update status for not deployed files.
+    Match resources with ``no-java-source`` to PurlDB, if no match
+    is found update status to ``requires-review``.
     """
     project_files = project.codebaseresources.files()
 
@@ -1152,12 +1145,25 @@ def perform_janitorial_tasks(
         )
         to_no_java_source.no_status().update(status=flag.REQUIRES_REVIEW)
 
-    to_unmapped = (
-        project_files.to_codebase()
-        .filter(status__in=["", flag.TOO_MANY_MAPS])
-        .exclude(extension__in=matched_extensions)
-        .exclude(extension__in=uninteresting_extensions)
+
+def match_unmapped_resources(
+    project, matched_extensions=None, uninteresting_extensions=None, logger=None
+):
+    """
+    Match resources with ``too-many-maps`` and empty status to PurlDB,
+    flag resources with empty status as ``requires-review``.
+    """
+    project_files = project.codebaseresources.files()
+
+    to_unmapped = project_files.to_codebase().filter(
+        status__in=["", flag.TOO_MANY_MAPS]
     )
+
+    if matched_extensions:
+        to_unmapped.exclude(extension__in=matched_extensions)
+
+    if uninteresting_extensions:
+        to_unmapped.exclude(extension__in=uninteresting_extensions)
 
     if to_unmapped:
         resource_count = to_unmapped.count()
@@ -1177,10 +1183,15 @@ def perform_janitorial_tasks(
 
     to_without_status = project_files.to_codebase().no_status()
 
-    to_without_status.filter(extension__in=uninteresting_extensions).update(
-        status=flag.IGNORED_NOT_INTERESTING
-    )
+    if uninteresting_extensions:
+        to_without_status.filter(extension__in=uninteresting_extensions).update(
+            status=flag.IGNORED_NOT_INTERESTING
+        )
     to_without_status.no_status().update(status=flag.REQUIRES_REVIEW)
 
+
+def flag_undeployed_resources(project):
+    """Update status for undeployed files."""
+    project_files = project.codebaseresources.files()
     from_unmapped = project_files.from_codebase().no_status()
     from_unmapped.update(status=flag.NOT_DEPLOYED)

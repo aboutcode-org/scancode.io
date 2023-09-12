@@ -213,12 +213,14 @@ class DeployToDevelop(Pipeline):
         On devel side
             - Update status for not deployed files.
         """
-        d2d.perform_janitorial_tasks(
+        d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
+        d2d.match_unmapped_resources(
             project=self.project,
             matched_extensions=self.purldb_resource_extensions,
             uninteresting_extensions=self.uninteresting_extensions,
             logger=self.log,
         )
+        d2d.flag_undeployed_resources(project=self.project, logger=self.log)
 
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
