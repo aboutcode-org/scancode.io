@@ -220,7 +220,7 @@ class DeployToDevelop(Pipeline):
             uninteresting_extensions=self.uninteresting_extensions,
             logger=self.log,
         )
-        d2d.flag_undeployed_resources(project=self.project, logger=self.log)
+        d2d.flag_undeployed_resources(project=self.project)
 
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
