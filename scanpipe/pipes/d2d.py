@@ -1146,24 +1146,21 @@ def match_resources_with_no_java_source(project, logger=None):
         to_no_java_source.no_status().update(status=flag.REQUIRES_REVIEW)
 
 
-def match_unmapped_resources(
-    project, matched_extensions=None, uninteresting_extensions=None, logger=None
-):
+def match_unmapped_resources(project, matched_extensions=None, logger=None):
     """
     Match resources with ``too-many-maps`` and empty status to PurlDB,
     flag resources with empty status as ``requires-review``.
     """
     project_files = project.codebaseresources.files()
 
-    to_unmapped = project_files.to_codebase().filter(
-        status__in=["", flag.TOO_MANY_MAPS]
+    to_unmapped = (
+        project_files.to_codebase()
+        .filter(status__in=["", flag.TOO_MANY_MAPS])
+        .exclude(is_media=True)
     )
 
     if matched_extensions:
         to_unmapped.exclude(extension__in=matched_extensions)
-
-    if uninteresting_extensions:
-        to_unmapped.exclude(extension__in=uninteresting_extensions)
 
     if to_unmapped:
         resource_count = to_unmapped.count()
@@ -1183,10 +1180,8 @@ def match_unmapped_resources(
 
     to_without_status = project_files.to_codebase().no_status()
 
-    if uninteresting_extensions:
-        to_without_status.filter(extension__in=uninteresting_extensions).update(
-            status=flag.IGNORED_NOT_INTERESTING
-        )
+    to_without_status.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
     to_without_status.no_status().update(status=flag.REQUIRES_REVIEW)
 
 

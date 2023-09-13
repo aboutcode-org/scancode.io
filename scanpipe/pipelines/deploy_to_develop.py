@@ -82,11 +82,6 @@ class DeployToDevelop(Pipeline):
         ".soy",
         ".class",
     ]
-    uninteresting_extensions = [
-        ".png",
-        ".gif",
-        ".svg",
-    ]
 
     def get_inputs(self):
         """Locate the ``from`` and ``to`` input files."""
@@ -217,7 +212,6 @@ class DeployToDevelop(Pipeline):
         d2d.match_unmapped_resources(
             project=self.project,
             matched_extensions=self.purldb_resource_extensions,
-            uninteresting_extensions=self.uninteresting_extensions,
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
