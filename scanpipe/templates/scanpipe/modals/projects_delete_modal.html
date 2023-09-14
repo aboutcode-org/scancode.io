@@ -24,26 +24,8 @@
       <input type="hidden" name="action" value="delete">
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
-        <button class="button is-danger" type="button" id="delete-projects-button">Yes, Delete Projects</button>
+        <button class="button is-danger" type="button" data-action-trigger="delete-projects">Yes, Delete Projects</button>
       </footer>
     </form>
   </div>
 </div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const actionProjectsButton = document.getElementById("delete-projects-button");
-    actionProjectsButton.addEventListener("click", function() {
-      const selectedCheckboxes = getSelectedCheckboxes();
-      if (selectedCheckboxes.length > 0) {
-        const form = document.getElementById("delete-projects-form");
-        const selectedProjectsInput = document.createElement("input");
-        selectedProjectsInput.type = "hidden";
-        selectedProjectsInput.name = "selected_ids";
-        selectedProjectsInput.value = selectedCheckboxes.map(checkbox => checkbox.value).join(",");
-        form.appendChild(selectedProjectsInput);
-        form.submit();
-      }
-    });
-  });
-</script>
