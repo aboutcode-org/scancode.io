@@ -1547,6 +1547,7 @@ class DiscoveredPackageDetailsView(
                 "source_packages",
                 "keywords",
                 "description",
+                "tag",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },

@@ -16,6 +16,10 @@ v32.6.1 (unreleased)
   to the resources list.
   https://github.com/nexB/scancode.io/pull/355
 
+- Add the ``tag`` field on the DiscoveredPackage model. This new field is used to store
+  the layer id where the package was found in the Docker context.
+  https://github.com/nexB/scancode.io/issues/919
+
 v32.6.0 (2023-08-29)
 --------------------
 

@@ -2681,6 +2681,7 @@ class DiscoveredPackage(
     )
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
+    tag = models.CharField(blank=True, max_length=50)
 
     objects = DiscoveredPackageQuerySet.as_manager()
 
@@ -2701,6 +2702,7 @@ class DiscoveredPackage(
             models.Index(fields=["sha256"]),
             models.Index(fields=["sha512"]),
             models.Index(fields=["compliance_alert"]),
+            models.Index(fields=["tag"]),
         ]
         constraints = [
             models.UniqueConstraint(

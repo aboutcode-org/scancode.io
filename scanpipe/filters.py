@@ -608,6 +608,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "compliance_alert",
             "copyright",
             "primary_language",
+            "tag",
         ],
     )
     purl = PackageURLFilter(label="Package URL")
@@ -651,6 +652,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyright",
             "is_vulnerable",
             "compliance_alert",
+            "tag",
         ]
 
 
