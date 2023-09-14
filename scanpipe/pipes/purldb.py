@@ -280,7 +280,7 @@ def get_unique_unresolved_purls(project):
     return packages
 
 
-def populate_purldb_with_discovered_packages(project, logger=logging.info):
+def populate_purldb_with_discovered_packages(project, logger=logger.info):
     """Add DiscoveredPackage to PurlDB."""
     discoveredpackages = project.discoveredpackages.all()
     packages = [{"purl": pkg.purl} for pkg in discoveredpackages]
@@ -293,7 +293,7 @@ def populate_purldb_with_discovered_packages(project, logger=logging.info):
     )
 
 
-def populate_purldb_with_discovered_dependencies(project, logger=logging.info):
+def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
     """Add DiscoveredDependency to PurlDB."""
     packages = [{"purl": purl} for purl in get_unique_resolved_purls(project)]
 

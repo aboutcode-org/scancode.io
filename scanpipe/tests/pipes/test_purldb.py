@@ -92,7 +92,6 @@ class ScanPipePurlDBTest(TestCase):
         purldb.feed_purldb(
             packages=packages,
             chunk_size=10,
-            msg="Feed purldb test",
             logger=buffer.write,
         )
 
