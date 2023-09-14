@@ -38,7 +38,6 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
-from scanpipe.pipes import is_empty_queryset
 from scanpipe.pipes import js
 from scanpipe.pipes import jvm
 from scanpipe.pipes import pathmap
@@ -412,6 +411,37 @@ def map_path(project, logger=None):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
+def get_project_resources_qs(project, resources):
+    """
+    Return a queryset of CodebaseResources from `project` containing the
+    CodebaseResources from `resources` . If a CodebaseResource in `resources` is
+    an archive or directory, then their descendants are also included in the
+    queryset.
+
+    Return None if `resources` is empty or None.
+    """
+    lookups = Q()
+    for resource in resources or []:
+        lookups |= Q(path=resource.path)
+        if resource.is_archive:
+            # This is done to capture the extracted contents of the archive we
+            # matched to. Generally, the archive contents are in a directory
+            # that is the archive path with `-extract` at the end.
+            lookups |= Q(path__startswith=resource.path)
+        elif resource.is_dir:
+            # We add a trailing slash to avoid matching on directories we do not
+            # intend to. For example, if we have matched on the directory with
+            # the path `foo/bar/1`, using the __startswith filter without
+            # including a trailing slash on the path would have us get all
+            # diretories under `foo/bar/` that start with 1, such as
+            # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
+            # and its descendants.
+            path = f"{resource.path}/"
+            lookups |= Q(path__startswith=path)
+    if lookups != Q():
+        return project.codebaseresources.filter(lookups)
+
+
 def create_package_from_purldb_data(project, resources, package_data):
     """
     Create a DiscoveredPackage instance from PurlDB ``package_data``.
@@ -425,28 +455,7 @@ def create_package_from_purldb_data(project, resources, package_data):
     package_data.pop("uuid", None)
     package_data.pop("dependencies", None)
 
-    resources_qs = None
-    if not is_empty_queryset(resources):
-        lookups = Q()
-        for resource in resources:
-            lookups |= Q(path=resource.path)
-            if resource.is_archive:
-                # This is done to capture the extracted contents of the archive we
-                # matched to. Generally, the archive contents are in a directory
-                # that is the archive path with `-extract` at the end.
-                lookups |= Q(path__startswith=resource.path)
-            elif resource.is_dir:
-                # We add a trailing slash to avoid matching on directories we do not
-                # intend to. For example, if we have matched on the directory with
-                # the path `foo/bar/1`, using the __startswith filter without
-                # including a trailing slash on the path would have us get all
-                # diretories under `foo/bar/` that start with 1, such as
-                # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
-                # and its descendants.
-                path = f"{resource.path}/"
-                lookups |= Q(path__startswith=path)
-        resources_qs = project.codebaseresources.to_codebase().filter(lookups)
-
+    resources_qs = get_project_resources_qs(project, resources)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,

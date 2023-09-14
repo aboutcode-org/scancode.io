@@ -67,6 +67,7 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -1886,6 +1887,32 @@ class ScanPipeModelsTest(TestCase):
 
         for scanpipe_field in discovered_package_fields:
             self.assertIn(scanpipe_field, toolkit_package_fields)
+
+    def test_scanpipe_codebase_resource_queryset_has_directory_content_fingerprint(
+        self,
+    ):
+        # This should be returned
+        directory1 = make_resource_directory(self.project1, path="directory1")
+        directory1.extra_data = {
+            "directory_content": "00000003238f6ed2c218090d4da80b3b42160e69"
+        }
+        directory1.save()
+
+        # This should not be returned because the fingerprint should be ignored
+        directory2 = make_resource_directory(self.project1, path="directory2")
+        directory2.extra_data = {
+            "directory_content": "0000000000000000000000000000000000000000"
+        }
+        directory2.save()
+
+        # This should not be returned because it does not contain a directory
+        # fingerprint
+        make_resource_directory(self.project1, path="directory3")
+
+        self.assertEqual(3, self.project1.codebaseresources.count())
+        expected = self.project1.codebaseresources.filter(path="directory1")
+        results = self.project1.codebaseresources.has_directory_content_fingerprint()
+        self.assertQuerySetEqual(expected, results, ordered=False)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

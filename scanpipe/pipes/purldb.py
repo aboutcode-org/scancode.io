@@ -55,7 +55,7 @@ PURLDB_API_KEY = settings.PURLDB_API_KEY
 if PURLDB_API_KEY:
     session.headers.update({"Authorization": f"Token {PURLDB_API_KEY}"})
 
-DEFAULT_TIMEOUT = 120
+DEFAULT_TIMEOUT = 60
 
 
 def is_configured():
