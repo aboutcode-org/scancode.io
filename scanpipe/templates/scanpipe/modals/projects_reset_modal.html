@@ -1,8 +1,8 @@
-<div class="modal" id="modal-projects-delete">
+<div class="modal" id="modal-projects-reset">
   <div class="modal-background"></div>
   <div class="modal-card">
     <header class="modal-card-head">
-      <p class="modal-card-title">Delete selected projects, are you sure?</p>
+      <p class="modal-card-title">Reset selected projects, are you sure?</p>
       <button class="delete" aria-label="close"></button>
     </header>
     <section class="modal-card-body">
@@ -10,21 +10,17 @@
         This action cannot be undone.
       </div>
       <p class="mb-2">
-        This will <strong>IRREVERSIBLY DESTROY</strong> all data related to the selected projects.
+        This action will <strong>delete all related database entries and all data on disks</strong> except for the input/ directory.
       </p>
       <p class="mb-5">
         Are you sure you want to do this?
       </p>
-      <p>
-        Alternatively, you can <strong>"reset"</strong> the projects data. This will delete all
-        related database entries and all data on disk except for the input/ directories.
-      </p>
     </section>
-    <form action="{% url 'project_action' %}" method="post" id="delete-projects-form">{% csrf_token %}
-      <input type="hidden" name="action" value="delete">
+    <form action="{% url 'project_action' %}" method="post" id="reset-projects-form">{% csrf_token %}
+      <input type="hidden" name="action" value="reset">
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
-        <button class="button is-danger" type="button" id="delete-projects-button">Yes, Delete Projects</button>
+        <button class="button is-danger" type="button" id="reset-projects-button">Yes, Reset Projects</button>
       </footer>
     </form>
   </div>
@@ -32,11 +28,11 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function() {
-    const actionProjectsButton = document.getElementById("delete-projects-button");
+    const actionProjectsButton = document.getElementById("reset-projects-button");
     actionProjectsButton.addEventListener("click", function() {
       const selectedCheckboxes = getSelectedCheckboxes();
       if (selectedCheckboxes.length > 0) {
-        const form = document.getElementById("delete-projects-form");
+        const form = document.getElementById("reset-projects-form");
         const selectedProjectsInput = document.createElement("input");
         selectedProjectsInput.type = "hidden";
         selectedProjectsInput.name = "selected_ids";

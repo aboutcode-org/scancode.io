@@ -970,7 +970,7 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
             raise Http404
 
     def get_success_message(self, action, count):
-        return f"{count} projects have been {action}d."
+        return f"{count} projects have been {action}."
 
 
 class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
