@@ -40,6 +40,7 @@
           {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.pipeline only %}
           {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.status only %}
           {% include 'scanpipe/dropdowns/filter_dropdown.html' with filter_form_field=filter.form.sort only %}
+          {% include 'scanpipe/dropdowns/project_actions_dropdown.html' %}
         </div>
       </div>
 
@@ -66,4 +67,30 @@
   </div>
 
   {% include 'scanpipe/modals/run_modal.html' %}
+  {% include "scanpipe/modals/projects_archive_modal.html" %}
+  {% include "scanpipe/modals/projects_delete_modal.html" %}
+  {% include "scanpipe/modals/projects_reset_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const actionButtons = document.querySelectorAll("[data-action-trigger]");
+      actionButtons.forEach(function(button) {
+        button.addEventListener("click", function() {
+          const actionTrigger = button.getAttribute("data-action-trigger");
+          const selectedCheckboxes = getSelectedCheckboxes();
+          if (selectedCheckboxes.length > 0) {
+            const form = document.getElementById(`${actionTrigger}-form`);
+            const selectedProjectsInput = document.createElement("input");
+            selectedProjectsInput.type = "hidden";
+            selectedProjectsInput.name = "selected_ids";
+            selectedProjectsInput.value = selectedCheckboxes.map(checkbox => checkbox.value).join(",");
+            form.appendChild(selectedProjectsInput);
+            form.submit();
+          }
+        });
+      });
+    });
+  </script>
 {% endblock %}

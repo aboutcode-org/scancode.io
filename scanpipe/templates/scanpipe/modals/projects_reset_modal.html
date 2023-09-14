@@ -1,8 +1,8 @@
-<div class="modal" id="modal-reset">
+<div class="modal" id="modal-projects-reset">
   <div class="modal-background"></div>
   <div class="modal-card">
     <header class="modal-card-head">
-      <p class="modal-card-title">Reset this project, are you sure?</p>
+      <p class="modal-card-title">Reset selected projects, are you sure?</p>
       <button class="delete" aria-label="close"></button>
     </header>
     <section class="modal-card-body">
@@ -16,10 +16,11 @@
         Are you sure you want to do this?
       </p>
     </section>
-    <form action="{% url 'project_reset' project.slug %}" method="post">{% csrf_token %}
+    <form action="{% url 'project_action' %}" method="post" id="reset-projects-form">{% csrf_token %}
+      <input type="hidden" name="action" value="reset">
       <footer class="modal-card-foot is-flex is-justify-content-space-between">
         <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
-        <button class="button is-danger is-no-close" type="submit">Yes, Reset Project</button>
+        <button class="button is-danger" type="button" data-action-trigger="reset-projects">Yes, Reset Projects</button>
       </footer>
     </form>
   </div>

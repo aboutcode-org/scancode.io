@@ -22,6 +22,7 @@
 
 import json
 import shutil
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -152,6 +153,36 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, expected)
         expected = '<a href="?sort=" class="dropdown-item is-active">Newest</a>'
         self.assertContains(response, expected)
+
+    def test_scanpipe_views_project_actions_view(self):
+        url = reverse("project_action")
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(url)
+        self.assertEqual(404, response.status_code)
+
+        data = {"action": "does_not_exists"}
+        response = self.client.post(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        data = {"action": "delete"}
+        response = self.client.post(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        random_uuid = uuid.uuid4()
+        data = {
+            "action": "delete",
+            "selected_ids": f"{self.project1.uuid},{random_uuid}",
+        }
+        response = self.client.post(url, data=data, follow=True)
+        self.assertRedirects(response, reverse("project_list"))
+        expected = '<div class="message-body">1 projects have been delete.</div>'
+        self.assertContains(response, expected, html=True)
+        expected = (
+            f'<div class="message-body">Project {random_uuid} does not exist.</div>'
+        )
+        self.assertContains(response, expected, html=True)
 
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()

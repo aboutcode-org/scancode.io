@@ -20,6 +20,10 @@ v32.6.1 (unreleased)
   the layer id where the package was found in the Docker context.
   https://github.com/nexB/scancode.io/issues/919
 
+- Add to apply actions, such as archive, delete, and reset to a selection of project
+  from the main list.
+  https://github.com/nexB/scancode.io/issues/488
+
 v32.6.0 (2023-08-29)
 --------------------
 
