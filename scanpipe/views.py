@@ -535,6 +535,11 @@ class ProjectListView(
         },
     ]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["archive_form"] = ArchiveProjectForm()
+        return context
+
     def get_queryset(self):
         return (
             super()
@@ -670,7 +675,6 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),
                 "project_clone_form": ProjectCloneForm(project),
-                "archive_form": ArchiveProjectForm(),
                 "project_resources_url": project_resources_url,
                 "resource_status_summary": resource_status_summary,
                 "resource_licenses_summary": resource_licenses_summary,
@@ -733,6 +737,11 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         if request.GET.get("download"):
             return self.download_config_file(project=self.get_object())
         return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["archive_form"] = ArchiveProjectForm()
+        return context
 
     @staticmethod
     def download_config_file(project):
@@ -902,11 +911,7 @@ class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
 
         project = self.get_object()
         try:
-            project.archive(
-                remove_input=form.cleaned_data["remove_input"],
-                remove_codebase=form.cleaned_data["remove_codebase"],
-                remove_output=form.cleaned_data["remove_output"],
-            )
+            project.archive(**form.cleaned_data)
         except RunInProgressError as error:
             messages.error(self.request, error)
             return redirect(project)
@@ -948,8 +953,15 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
         selected_ids = request.POST.get("selected_ids", "").split(",")
         count = 0
 
+        action_kwargs = {}
+        if action == "archive":
+            archive_form = ArchiveProjectForm(request.POST)
+            if not archive_form.is_valid():
+                raise Http404
+            action_kwargs = archive_form.cleaned_data
+
         for project_uuid in selected_ids:
-            if self.perform_action(action, project_uuid):
+            if self.perform_action(action, project_uuid, action_kwargs):
                 count += 1
 
         if count:
@@ -957,10 +969,13 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
         return HttpResponseRedirect(self.success_url)
 
-    def perform_action(self, action, project_uuid):
+    def perform_action(self, action, project_uuid, action_kwargs=None):
+        if not action_kwargs:
+            action_kwargs = {}
+
         try:
             project = Project.objects.get(pk=project_uuid)
-            getattr(project, action)()  # TODO: Add support for options
+            getattr(project, action)(**action_kwargs)
             return True
         except Project.DoesNotExist:
             messages.error(self.request, f"Project {project_uuid} does not exist.")
