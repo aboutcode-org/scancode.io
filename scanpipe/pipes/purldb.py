@@ -193,20 +193,18 @@ def submit_purls(packages, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     return response
 
 
-def feed_purldb(packages, chunk_size, msg, logger=None):
+def feed_purldb(packages, chunk_size, logger=logger.info):
     """Feed PurlDB with list of PURLs for indexing."""
     if not is_available():
         raise Exception("PurlDB is not available.")
 
+    if not packages:
+        logger("No PURLs found. Skipping.")
+        return
+
     package_batches = [
         packages[i : i + chunk_size] for i in range(0, len(packages), chunk_size)
     ]
-
-    if logger:
-        if not packages:
-            logger("No PURLs found. Skipping.")
-            return
-        logger(msg)
 
     batches_count = len(package_batches)
     queued_packages_count = 0
@@ -282,30 +280,29 @@ def get_unique_unresolved_purls(project):
     return packages
 
 
-def populate_purldb_with_discovered_packages(project, logger=None):
+def populate_purldb_with_discovered_packages(project, logger=logging.info):
     """Add DiscoveredPackage to PurlDB."""
     discoveredpackages = project.discoveredpackages.all()
     packages = [{"purl": pkg.purl} for pkg in discoveredpackages]
 
+    logger(f"Populating PurlDB with {len(packages):,d} PURLs from DiscoveredPackage")
     feed_purldb(
         packages=packages,
-        msg=f"Populating PurlDB with {len(packages):,d} PURLs from DiscoveredPackage",
         chunk_size=100,
         logger=logger,
     )
 
 
-def populate_purldb_with_discovered_dependencies(project, logger=None):
+def populate_purldb_with_discovered_dependencies(project, logger=logging.info):
     """Add DiscoveredDependency to PurlDB."""
     packages = [{"purl": purl} for purl in get_unique_resolved_purls(project)]
 
+    logger(
+        f"Populating PurlDB with {len(packages):,d} " "PURLs from DiscoveredDependency"
+    )
     feed_purldb(
         packages=packages,
         chunk_size=100,
-        msg=(
-            f"Populating PurlDB with {len(packages):,d} "
-            "PURLs from DiscoveredDependency"
-        ),
         logger=logger,
     )
 
@@ -314,12 +311,12 @@ def populate_purldb_with_discovered_dependencies(project, logger=None):
         {"purl": purl, "vers": vers} for purl, vers in unresolved_packages
     ]
 
+    logger(
+        f"Populating PurlDB with {len(unresolved_packages):,d}"
+        " unresolved PURLs from DiscoveredDependency"
+    )
     feed_purldb(
         packages=unresolved_packages,
         chunk_size=10,
-        msg=(
-            f"Populating PurlDB with {len(unresolved_packages):,d}"
-            " unresolved PURLs from DiscoveredDependency"
-        ),
         logger=logger,
     )
