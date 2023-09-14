@@ -343,11 +343,16 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     )
 
 
-def scan_for_application_packages(project, progress_logger=None):
+def scan_for_application_packages(project, assemble=True, progress_logger=None):
     """
-    Run a package scan on files without a status for a `project`,
-    then create DiscoveredPackage and DiscoveredDependency instances
-    from the detected package data
+    Run a package scan on resources without a status for a `project`,
+    and add them in their respective `package_data` attribute.
+    Then create DiscoveredPackage and DiscoveredDependency instances
+    from the detected package data optionally. If the `assemble` argument
+    is set to `True`, DiscoveredPackage and DiscoveredDependency instances
+    are created and added to the project by assembling resource level
+    package_data, and resources which belong in the DiscoveredPackage
+    instance, are assigned to that package.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
@@ -365,7 +370,8 @@ def scan_for_application_packages(project, progress_logger=None):
 
     # Iterate through CodebaseResources with Package data and handle them using
     # the proper Package handler from packagedcode.
-    assemble_packages(project=project)
+    if assemble:
+        assemble_packages(project=project)
 
 
 def add_resource_to_package(package_uid, resource, project):
@@ -434,6 +440,24 @@ def assemble_packages(project):
                     seen_resource_paths.add(item.path)
                 else:
                     logger.info(f"Unknown Package assembly item type: {item!r}")
+
+
+def get_packages_with_purl_from_resources(project):
+    """
+    Yield Dependency or PackageData objects created from detected package_data
+    in all the project resources. Both Dependency and PackageData objects have
+    the `purl` attribute with a valid purl.
+    """
+    for resource in project.codebaseresources.has_package_data():
+        for package_mapping in resource.package_data:
+            for dependency in package_mapping.get("dependencies"):
+                yield packagedcode_models.Dependency.from_dependent_package(
+                    dependent_package=dependency,
+                    datafile_path=resource.path,
+                    datasource_id=package_mapping.get("datasource_id"),
+                    package_uid=None,
+                )
+            yield packagedcode_models.PackageData.from_dict(mapping=package_mapping)
 
 
 def get_pretty_params(args):

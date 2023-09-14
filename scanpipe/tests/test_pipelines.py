@@ -445,6 +445,24 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    def test_scanpipe_scan_codebase_packages_does_not_create_packages(self):
+        pipeline_name = "scan_codebase_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "is-npm-1.0.0.tgz"
+        input_location = self.data_location / filename
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(0, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
+
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="Analysis")
@@ -956,9 +974,9 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
-        self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("Populating PurlDB with 1 DiscoveredPackage", run.log)
+        self.assertIn("Successfully queued 1 PURLs for indexing in PurlDB", run.log)
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
-        self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
-        self.assertIn("Successfully queued 4 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("Populating PurlDB with 2 DiscoveredDependency", run.log)
+        self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)

@@ -68,6 +68,7 @@ from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from extractcode import EXTRACT_SUFFIX
 from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
@@ -2146,10 +2147,17 @@ class CodebaseResource(
 
         for segment in Path(self.path).parts:
             if part_and_subpath:
-                current_path += f"/{segment}"
+                current_path += "/"
+            current_path += segment
+
+            if EXTRACT_SUFFIX in segment:
+                is_extract = True
+                base_segment = segment[: -len(EXTRACT_SUFFIX)]
+                base_current_path = current_path[: -len(EXTRACT_SUFFIX)]
+                part_and_subpath.append((base_segment, base_current_path, is_extract))
             else:
-                current_path += f"{segment}"
-            part_and_subpath.append((segment, current_path))
+                is_extract = False
+                part_and_subpath.append((segment, current_path, is_extract))
 
         return part_and_subpath
 
@@ -2673,6 +2681,7 @@ class DiscoveredPackage(
     )
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
+    tag = models.CharField(blank=True, max_length=50)
 
     objects = DiscoveredPackageQuerySet.as_manager()
 
@@ -2693,6 +2702,7 @@ class DiscoveredPackage(
             models.Index(fields=["sha256"]),
             models.Index(fields=["sha512"]),
             models.Index(fields=["compliance_alert"]),
+            models.Index(fields=["tag"]),
         ]
         constraints = [
             models.UniqueConstraint(
