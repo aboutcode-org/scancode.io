@@ -63,10 +63,10 @@ class PopulatePurlDB(Pipeline):
         if no_packages_and_no_dependencies:
             packages = scancode.get_packages_with_purl_from_resources(self.project)
             purls = [{"purl": package.purl} for package in packages]
-
+            print(purls)
+            self.log(f"Populating PurlDB with {len(purls):,d} " "detected PURLs"),
             purldb.feed_purldb(
                 packages=purls,
                 chunk_size=100,
-                msg=(f"Populating PurlDB with {len(purls):,d} " "detected PURLs"),
                 logger=self.log,
             )
