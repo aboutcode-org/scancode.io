@@ -841,7 +841,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
 
 class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/includes/project_codebase.html"
+    template_name = "scanpipe/panels/project_codebase.html"
 
     @staticmethod
     def get_tree(project, current_dir):
