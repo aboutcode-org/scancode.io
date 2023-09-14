@@ -33,6 +33,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
+from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
 from django.db.models import Prefetch
 from django.db.models.manager import Manager
@@ -981,7 +982,7 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
             messages.error(self.request, f"Project {project_uuid} does not exist.")
         except RunInProgressError as error:
             messages.error(self.request, str(error))
-        except AttributeError:
+        except (AttributeError, ValidationError):
             raise Http404
 
     def get_success_message(self, action, count):
