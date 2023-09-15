@@ -240,6 +240,23 @@ class ScanPipeViewsTest(TestCase):
             response.headers["Content-Disposition"],
         )
 
+    def test_scanpipe_views_project_details_download_output_view(self):
+        url = reverse("project_download_output", args=[self.project1.slug, "file.zip"])
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.output_path)
+        filename = file_location.name
+        url = reverse("project_download_output", args=[self.project1.slug, filename])
+        response = self.client.get(url)
+        self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
+        self.assertEqual("application/octet-stream", response.headers["Content-Type"])
+        self.assertEqual(
+            'attachment; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
     def test_scanpipe_views_project_details_delete_input_view(self):
         url = reverse("project_delete_input", args=[self.project1.slug, "file.zip"])
         response = self.client.get(url)

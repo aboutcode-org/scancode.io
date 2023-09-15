@@ -333,6 +333,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(scan3, self.project1.get_latest_output("scancode"))
         self.assertEqual(summary2, self.project1.get_latest_output("summary"))
 
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_project_model_get_output_files_info(self):
+        self.assertEqual([], self.project1.get_output_files_info())
+        self.project1.get_output_file_path("file", "ext").write_text("Some content")
+        expected = [{"name": "file-2010-10-10-10-10-10.ext", "size": 12}]
+        self.assertEqual(expected, self.project1.get_output_files_info())
+
     def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)
 

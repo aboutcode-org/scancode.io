@@ -78,20 +78,27 @@
 
       <div class="columns">
         <div class="column">
-          {% include "scanpipe/includes/project_inputs.html" %}
+          {% include "scanpipe/panels/project_inputs.html" %}
         </div>
         <div class="column">
-          {% include "scanpipe/includes/project_pipelines.html" %}
+          {% include "scanpipe/panels/project_pipelines.html" %}
         </div>
       </div>
 
-      {% if codebase_root %}
+      {% if codebase_root or project.output_root %}
         <div class="columns">
-          <div class="column">
-            <div hx-get="{% url 'project_codebase' project.slug %}" hx-trigger="load">
-              <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
+          {% if codebase_root %}
+            <div class="column">
+              <div hx-get="{% url 'project_codebase' project.slug %}" hx-trigger="load">
+                <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
+              </div>
             </div>
-          </div>
+          {% endif %}
+          {% if project.output_root %}
+              <div class="column is-half">
+                {% include "scanpipe/panels/project_outputs.html" %}
+              </div>
+          {% endif %}
         </div>
       {% endif %}
 
@@ -99,12 +106,12 @@
         <div class="columns">
           {% if resource_status_summary %}
             <div class="column is-half">
-              {% include "scanpipe/includes/resource_status_summary.html"  %}
+              {% include "scanpipe/panels/resource_status_summary.html"  %}
             </div>
           {% endif %}
           {% if resource_licenses_summary %}
             <div class="column is-half">
-              {% include "scanpipe/includes/resource_licenses_summary.html"  %}
+              {% include "scanpipe/panels/resource_licenses_summary.html"  %}
             </div>
           {% endif %}
         </div>
@@ -133,12 +140,12 @@
         <div class="columns">
           {% if license_clarity %}
             <div class="column is-two-fifths">
-              {% include "scanpipe/includes/license_clarity_panel.html" %}
+              {% include "scanpipe/panels/license_clarity_panel.html" %}
             </div>
           {% endif %}
           {% if scan_summary %}
             <div class="column">
-              {% include "scanpipe/includes/scan_summary_panel.html" %}
+              {% include "scanpipe/panels/scan_summary_panel.html" %}
             </div>
           {% endif %}
         </div>

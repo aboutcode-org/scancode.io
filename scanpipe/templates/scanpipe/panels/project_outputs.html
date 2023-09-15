@@ -1,0 +1,21 @@
+<article id="outputs-panel" class="panel is-info">
+  <p class="panel-heading py-2 is-size-6">
+    Outputs
+  </p>
+  {% for output in project.get_output_files_info %}
+    <div class="panel-block is-justify-content-space-between">
+      <div class="break-all pr-2 dropdown is-hoverable">
+        <div class="panel-icon pt-1">
+          <i class="is-size-6 fa-regular fa-file"></i>
+        </div>
+        {{ output.name }}
+      </div>
+      <div class="is-flex is-size-7">
+        <span class="mr-1">{{ output.size|filesizeformat }}</span>
+        <a class="is-grey-link is-clickable" href="{% url 'project_download_output' project.slug output.name %}">
+          <span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span>
+        </a>
+      </div>
+    </div>
+  {% endfor %}
+</article>

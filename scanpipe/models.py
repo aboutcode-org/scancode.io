@@ -876,6 +876,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.get_root_content(self.output_path)
 
+    def get_output_files_info(self):
+        """Return files form the output work directory including the name and size."""
+        return [
+            {
+                "name": path.name,
+                "size": path.stat().st_size,
+            }
+            for path in self.output_path.glob("*")
+            if path.is_file()
+        ]
+
     def get_output_file_path(self, name, extension):
         """
         Return a crafted file path in the project output/ directory using
