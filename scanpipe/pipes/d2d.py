@@ -438,7 +438,7 @@ def get_project_resources_qs(project, resources):
             # and its descendants.
             path = f"{resource.path}/"
             lookups |= Q(path__startswith=path)
-    if lookups != Q():
+    if lookups:
         return project.codebaseresources.filter(lookups)
 
 
