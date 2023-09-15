@@ -1193,7 +1193,10 @@ def flag_undeployed_resources(project):
 
 
 def scan_unmapped_to_files(project, logger=None):
-    """Scan unmapped/matched ``to/`` files for copyrights, licenses, emails, and urls."""
+    """
+    Scan unmapped/matched ``to/`` files for copyrights, licenses,
+    emails, and urls.
+    """
     scan_files = (
         project.codebaseresources.files()
         .to_codebase()
