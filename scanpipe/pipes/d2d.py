@@ -1190,3 +1190,17 @@ def flag_undeployed_resources(project):
     project_files = project.codebaseresources.files()
     from_unmapped = project_files.from_codebase().no_status()
     from_unmapped.update(status=flag.NOT_DEPLOYED)
+
+
+def scan_unmapped_to_files(project, logger=None):
+    """Scan unmapped/matched ``to/`` files for copyrights, licenses, emails, and urls."""
+    scan_files = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .filter(status=flag.REQUIRES_REVIEW)
+    )
+    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+
+    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
+        status=flag.REQUIRES_REVIEW
+    )
