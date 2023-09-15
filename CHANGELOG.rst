@@ -24,6 +24,10 @@ v32.6.1 (unreleased)
   from the main list.
   https://github.com/nexB/scancode.io/issues/488
 
+- Add new "Outputs" panel in the Project details view.
+  Output files are listed and can be downloaded from the panel.
+  https://github.com/nexB/scancode.io/issues/678
+
 v32.6.0 (2023-08-29)
 --------------------
 

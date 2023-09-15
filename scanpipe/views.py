@@ -841,7 +841,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
 
 class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/includes/project_codebase.html"
+    template_name = "scanpipe/panels/project_codebase.html"
 
     @staticmethod
     def get_tree(project, current_dir):
@@ -1083,15 +1083,30 @@ def delete_input_view(request, slug, input_name):
     return redirect(project)
 
 
-@conditional_login_required
-def download_input_view(request, slug, input_name):
+def download_project_file(request, slug, filename, path_type):
     project = get_object_or_404(Project, slug=slug)
 
-    file_path = project.input_path / input_name
+    if path_type == "input":
+        file_path = project.input_path / filename
+    elif path_type == "output":
+        file_path = project.output_path / filename
+    else:
+        raise Http404("Invalid path_type")
+
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
     return FileResponse(file_path.open("rb"), as_attachment=True)
+
+
+@conditional_login_required
+def download_input_view(request, slug, filename):
+    return download_project_file(request, slug, filename, "input")
+
+
+@conditional_login_required
+def download_output_view(request, slug, filename):
+    return download_project_file(request, slug, filename, "output")
 
 
 @require_POST
