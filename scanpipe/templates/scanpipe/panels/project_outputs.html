@@ -12,7 +12,7 @@
       </div>
       <div class="is-flex is-size-7">
         <span class="mr-1">{{ output.size|filesizeformat }}</span>
-        <a class="is-grey-link is-clickable" href="#">
+        <a class="is-grey-link is-clickable" href="{% url 'project_download_output' project.slug output.name %}">
           <span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span>
         </a>
       </div>

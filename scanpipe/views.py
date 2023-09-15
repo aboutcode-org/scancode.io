@@ -1084,10 +1084,21 @@ def delete_input_view(request, slug, input_name):
 
 
 @conditional_login_required
-def download_input_view(request, slug, input_name):
+def download_input_view(request, slug, filename):
     project = get_object_or_404(Project, slug=slug)
 
-    file_path = project.input_path / input_name
+    file_path = project.input_path / filename
+    if not file_path.exists():
+        raise Http404(f"{file_path} not found")
+
+    return FileResponse(file_path.open("rb"), as_attachment=True)
+
+
+@conditional_login_required
+def download_output_view(request, slug, filename):
+    project = get_object_or_404(Project, slug=slug)
+
+    file_path = project.output_path / filename
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
