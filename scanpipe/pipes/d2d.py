@@ -24,6 +24,7 @@ from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
 
+from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
@@ -1109,3 +1110,35 @@ def _map_thirdparty_npm_packages(package_json, to_resources, project):
 
     package_resources.no_status().update(status=flag.NPM_PACKAGE_LOOKUP)
     return package_resources.count()
+
+
+def create_local_files_packages(project):
+    """
+    Create local-files packages for codebase resources not part of a package.
+
+    Resources are grouped by license_expression within a local-files packages.
+    """
+    files_qs = project.codebaseresources.files().has_license_expression()
+    qs = files_qs.values("detected_license_expression", "copyrights", "id").order_by(
+        "detected_license_expression"
+    )
+
+    grouped_by_license = qs.annotate(
+        grouped_resource_ids=ArrayAgg("id", distinct=True),
+        grouped_copyrights=ArrayAgg("copyrights", distinct=True),
+    )
+
+    for group in grouped_by_license:
+        codebase_resource_ids = set(group["grouped_resource_ids"])
+        copyrights = set(
+            [
+                entry["copyright"]
+                for copyrights in group["grouped_copyrights"]
+                for entry in copyrights
+            ]
+        )
+        defaults = {
+            "declared_license_expression": group.get("detected_license_expression"),
+            "copyright": "\n\n".join(copyrights),
+        }
+        pipes.create_local_files_package(project, defaults, codebase_resource_ids)

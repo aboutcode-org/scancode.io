@@ -1260,9 +1260,14 @@ class ScanPipeModelsTest(TestCase):
 
         qs = CodebaseResource.objects.unknown_license()
         self.assertEqual(0, len(qs))
+        qs = CodebaseResource.objects.has_license_expression()
+        self.assertEqual(0, len(qs))
 
         file.update(detected_license_expression="gpl-3.0 AND unknown")
         qs = CodebaseResource.objects.unknown_license()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+        qs = CodebaseResource.objects.has_license_expression()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
 

@@ -1701,6 +1701,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
 
+    def has_license_expression(self):
+        return self.filter(~Q(detected_license_expression=""))
+
     def unknown_license(self):
         return self.filter(detected_license_expression__icontains="unknown")
 
