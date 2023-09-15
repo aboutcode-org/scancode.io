@@ -885,7 +885,9 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("npm-package-lookup", package_json.status)
 
     def test_scanpipe_pipes_d2d_get_project_resources_qs(self):
-        package_resource = make_resource_file(self.project1, "package.jar", is_archive=True)
+        package_resource = make_resource_file(
+            self.project1, "package.jar", is_archive=True
+        )
         make_resource_directory(self.project1, "package.jar-extract/")
         make_resource_file(self.project1, "package.jar-extract/foo.class")
 

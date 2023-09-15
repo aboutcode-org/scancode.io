@@ -31,7 +31,6 @@ from pathlib import Path
 from timeit import default_timer as timer
 
 from django.db.models import Count
-from django.db.models import QuerySet
 
 from scanpipe import humanize_time
 from scanpipe.models import CodebaseRelation
