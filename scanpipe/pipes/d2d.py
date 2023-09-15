@@ -28,6 +28,7 @@ from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.db.models.expressions import Subquery
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
@@ -1118,12 +1119,22 @@ def create_local_files_packages(project):
 
     Resources are grouped by license_expression within a local-files packages.
     """
-    files_qs = project.codebaseresources.files().has_license_expression()
-    qs = files_qs.values("detected_license_expression", "copyrights", "id").order_by(
+    files_qs = project.codebaseresources.files()
+    to_files_without_package = files_qs.to_codebase().not_in_package()
+    from_files = (
+        files_qs.from_codebase()
+        .has_license_expression()
+        .filter(
+            related_to__to_resource__in=Subquery(to_files_without_package.values("pk"))
+        )
+    )
+
+    # Do not include any other fields in the ``values()``
+    grouped_by_license = from_files.values("detected_license_expression").order_by(
         "detected_license_expression"
     )
 
-    grouped_by_license = qs.annotate(
+    grouped_by_license = grouped_by_license.annotate(
         grouped_resource_ids=ArrayAgg("id", distinct=True),
         grouped_copyrights=ArrayAgg("copyrights", distinct=True),
     )
