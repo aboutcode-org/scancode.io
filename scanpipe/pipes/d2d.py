@@ -37,6 +37,7 @@ from packagedcode.npm import NpmPackageJsonHandler
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
@@ -1113,26 +1114,35 @@ def _map_thirdparty_npm_packages(package_json, to_resources, project):
     return package_resources.count()
 
 
-def create_local_files_packages(project):
+def get_from_files_related_with_not_in_package_to_files(project):
     """
-    Create local-files packages for codebase resources not part of a package.
-
-    Resources are grouped by license_expression within a local-files packages.
+    Return from-side resource files that have one or more relations
+    with to-side resources that are not part of a package.
+    Only resources with a ``detected_license_expression`` value are returned.
     """
     files_qs = project.codebaseresources.files()
     to_files_without_package = files_qs.to_codebase().not_in_package()
-    from_files = (
+    from_files_qs = (
         files_qs.from_codebase()
         .has_license_expression()
         .filter(
             related_to__to_resource__in=Subquery(to_files_without_package.values("pk"))
         )
     )
+    return from_files_qs
+
+
+def create_local_files_packages(project):
+    """
+    Create local-files packages for codebase resources not part of a package.
+
+    Resources are grouped by license_expression within a local-files packages.
+    """
+    from_files_qs = get_from_files_related_with_not_in_package_to_files(project)
 
     # Do not include any other fields in the ``values()``
-    grouped_by_license = from_files.values("detected_license_expression").order_by(
-        "detected_license_expression"
-    )
+    license_field = CodebaseResource.license_expression_field
+    grouped_by_license = from_files_qs.values(license_field).order_by(license_field)
 
     grouped_by_license = grouped_by_license.annotate(
         grouped_resource_ids=ArrayAgg("id", distinct=True),
