@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
@@ -1150,14 +1151,15 @@ def create_local_files_packages(project):
     )
 
     for group in grouped_by_license:
-        codebase_resource_ids = set(group["grouped_resource_ids"])
-        copyrights = set(
-            [
-                entry["copyright"]
-                for copyrights in group["grouped_copyrights"]
-                for entry in copyrights
-            ]
-        )
+        codebase_resource_ids = sorted(set(group["grouped_resource_ids"]))
+        copyrights = [
+            entry["copyright"]
+            for copyrights in group["grouped_copyrights"]
+            for entry in copyrights
+        ]
+        # The Counter is used to sort by most frequent values.
+        copyrights = Counter(copyrights).values()
+
         defaults = {
             "declared_license_expression": group.get("detected_license_expression"),
             "copyright": "\n\n".join(copyrights),
