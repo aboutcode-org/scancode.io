@@ -28,6 +28,12 @@ v32.6.1 (unreleased)
   Output files are listed and can be downloaded from the panel.
   https://github.com/nexB/scancode.io/issues/678
 
+- Add a step in the ``deploy_to_develop`` pipelines to create "local-files" packages
+  with from-side resource files that have one or more relations with to-side resources
+  that are not part of a package.
+  This allows to include those files in the SBOMs and attribution outputs.
+  https://github.com/nexB/scancode.io/issues/914
+
 v32.6.0 (2023-08-29)
 --------------------
 

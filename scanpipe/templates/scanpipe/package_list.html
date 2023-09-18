@@ -1,4 +1,5 @@
 {% extends "scanpipe/base.html" %}
+{% load humanize %}
 
 {% block title %}ScanCode.io: {{ project.name }} - Packages{% endblock %}
 
@@ -48,10 +49,10 @@
             <td>
               <a href="?primary_language={{ package.primary_language }}" class="is-black-link">{{ package.primary_language }}</a>
             </td>
-            <td class="is-clipped-list">
+            <td>
               {% if package.resources %}
                 <ul>
-                  {% for resource in package.resources %}
+                  {% for resource in package.resources|slice:":5" %}
                     <li>
                       {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
                       <a href="{% url 'resource_detail' project.slug resource.path %}" title="{{ resource.path }}">{{ resource.name }}</a>
@@ -59,7 +60,9 @@
                   {% endfor %}
                 </ul>
                 {% if package.resources|length > 5 %}
-                  <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
+                  <a href="{% url 'package_detail' project.slug package.uuid %}#resources" class="button is-small is-fullwidth">
+                    View {{ package.resources|length|intcomma }} resources
+                  </a>
                 {% endif %}
               {% endif %}
             </td>

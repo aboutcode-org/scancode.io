@@ -201,3 +201,7 @@ class DeployToDevelop(Pipeline):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
         scan_files = d2d.get_from_files_for_scanning(self.project.codebaseresources)
         scancode.scan_for_files(self.project, scan_files, progress_logger=self.log)
+
+    def create_local_files_packages(self):
+        """Create local-files packages for codebase resources not part of a package."""
+        d2d.create_local_files_packages(self.project)

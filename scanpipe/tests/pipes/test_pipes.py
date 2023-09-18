@@ -135,6 +135,27 @@ class ScanPipePipesTest(TestCase):
         self.assertIn(resource1, package.codebase_resources.all())
         self.assertIn(resource2, package.codebase_resources.all())
 
+    @mock.patch("uuid.uuid4")
+    def test_scanpipe_pipes_create_local_files_package(self, mock_uuid4):
+        forced_uuid = "b74fe5df-e965-415e-ba65-f38421a0695d"
+        mock_uuid4.return_value = forced_uuid
+
+        p1 = Project.objects.create(name="P1")
+        resource1 = make_resource_file(project=p1, path="filename.ext")
+
+        defaults = {
+            "declared_license_expression": "mit",
+            "copyright": "Copyright",
+        }
+        local_package = pipes.create_local_files_package(
+            p1, defaults, codebase_resources=[resource1.pk]
+        )
+        expected_purl = f"pkg:local-files/{p1.slug}/{forced_uuid}"
+        self.assertEqual(expected_purl, local_package.purl)
+        self.assertEqual("mit", local_package.declared_license_expression)
+        self.assertEqual("Copyright", local_package.copyright)
+        self.assertEqual([expected_purl], resource1.for_packages)
+
     def test_scanpipe_pipes_update_or_create_package_package_uid(self):
         p1 = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
