@@ -1173,11 +1173,10 @@ def create_local_files_packages(project):
             for copyrights in group["grouped_copyrights"]
             for entry in copyrights
         ]
-        # The Counter is used to sort by most frequent values.
-        copyrights = Counter(copyrights).values()
 
         defaults = {
             "declared_license_expression": group.get("detected_license_expression"),
-            "copyright": "\n\n".join(copyrights),
+            # The Counter is used to sort by most frequent values.
+            "copyright": "\n\n".join(Counter(copyrights).keys()),
         }
         pipes.create_local_files_package(project, defaults, codebase_resource_ids)
