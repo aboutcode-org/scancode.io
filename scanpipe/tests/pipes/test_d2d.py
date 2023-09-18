@@ -38,6 +38,7 @@ from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
+from scanpipe.tests import resource_data1
 
 
 class ScanPipeD2DPipesTest(TestCase):
@@ -93,6 +94,40 @@ class ScanPipeD2DPipesTest(TestCase):
 
         path = "a.jar-extract/subpath/b.jar-extract/subpath/file.ext"
         self.assertEqual("subpath/file.ext", d2d.get_extracted_subpath(path))
+
+    @mock.patch("scanpipe.pipes.purldb.match_resources")
+    def test_scanpipe_pipes_d2d_match_sha1s_to_purldb(self, mock_match_resource):
+        to_1 = make_resource_file(
+            self.project1,
+            "to/notice.NOTICE",
+            sha1="4bd631df28995c332bf69d9d4f0f74d7ee089598",
+        )
+        resources_by_sha1 = {to_1.sha1: [to_1]}
+        package_data = package_data1.copy()
+        package_data_by_purldb_urls = {"example.com/package-instance": package_data}
+
+        resource_data = resource_data1.copy()
+        resource_data["package"] = "example.com/package-instance"
+        mock_match_resource.return_value = [resource_data]
+
+        resources_by_sha1, matched_count, sha1_count = d2d.match_sha1s_to_purldb(
+            self.project1,
+            resources_by_sha1,
+            d2d.match_purldb_resource,
+            package_data_by_purldb_urls,
+        )
+        self.assertFalse(resources_by_sha1)
+        self.assertEqual(1, matched_count)
+        self.assertEqual(1, sha1_count)
+
+        # Ensure match_purldb_resource was run
+        package = self.project1.discoveredpackages.get()
+        self.assertEqual(package_data["purl"], package.purl)
+        to_1.refresh_from_db()
+        self.assertEqual(flag.MATCHED_TO_PURLDB, to_1.status)
+        self.assertEqual(1, to_1.discovered_packages.count())
+        to_1_package = to_1.discovered_packages.get()
+        self.assertEqual(package, to_1_package)
 
     @mock.patch("scanpipe.pipes.purldb.match_packages")
     def test_scanpipe_pipes_d2d_match_purldb_resources(self, mock_match_package):

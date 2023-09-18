@@ -561,7 +561,9 @@ def match_purldb_directory(project, resource):
             return create_package_from_purldb_data(project, [resource], package_data)
 
 
-def match_sha1s_to_purldb(project, resources_by_sha1, matcher_func, package_data_by_purldb_urls):
+def match_sha1s_to_purldb(
+    project, resources_by_sha1, matcher_func, package_data_by_purldb_urls
+):
     """
     Process `resources_by_sha1` with `matcher_func` and return a 3-tuple
     contaning an empty defaultdict(list), the number of matches and the number
