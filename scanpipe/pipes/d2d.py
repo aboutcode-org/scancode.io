@@ -411,21 +411,17 @@ def map_path(project, logger=None):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def create_package_from_purldb_data(project, resources, package_data):
+def get_project_resources_qs(project, resources):
     """
-    Create a DiscoveredPackage instance from PurlDB ``package_data``.
+    Return a queryset of CodebaseResources from `project` containing the
+    CodebaseResources from `resources` . If a CodebaseResource in `resources` is
+    an archive or directory, then their descendants are also included in the
+    queryset.
 
-    Return a tuple, containing the created DiscoveredPackage and the number of
-    CodebaseResources matched to PurlDB that are part of that DiscoveredPackage.
+    Return None if `resources` is empty or None.
     """
-    package_data = package_data.copy()
-    # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
-    # PurlDB match can be found in different projects.
-    package_data.pop("uuid", None)
-    package_data.pop("dependencies", None)
-
     lookups = Q()
-    for resource in resources:
+    for resource in resources or []:
         lookups |= Q(path=resource.path)
         if resource.is_archive:
             # This is done to capture the extracted contents of the archive we
@@ -442,8 +438,24 @@ def create_package_from_purldb_data(project, resources, package_data):
             # and its descendants.
             path = f"{resource.path}/"
             lookups |= Q(path__startswith=path)
+    if lookups:
+        return project.codebaseresources.filter(lookups)
 
-    resources_qs = project.codebaseresources.to_codebase().filter(lookups)
+
+def create_package_from_purldb_data(project, resources, package_data):
+    """
+    Create a DiscoveredPackage instance from PurlDB ``package_data``.
+
+    Return a tuple, containing the created DiscoveredPackage and the number of
+    CodebaseResources matched to PurlDB that are part of that DiscoveredPackage.
+    """
+    package_data = package_data.copy()
+    # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
+    # PurlDB match can be found in different projects.
+    package_data.pop("uuid", None)
+    package_data.pop("dependencies", None)
+
+    resources_qs = get_project_resources_qs(project, resources)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
@@ -482,7 +494,9 @@ def match_purldb_package(
         # Process matched Package data
         for package_data in results:
             sha1 = package_data["sha1"]
-            resources = resources_by_sha1.get(sha1, [])
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
                 resources=resources,
@@ -521,7 +535,9 @@ def match_purldb_resource(
                 # Use cached package data
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
-            resources = resources_by_sha1.get(sha1, [])
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
                 resources=resources,

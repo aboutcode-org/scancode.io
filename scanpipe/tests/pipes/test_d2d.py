@@ -883,3 +883,29 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(1, self.project1.discoveredpackages.count())
         self.assertEqual("npm-package-lookup", package_json.status)
+
+    def test_scanpipe_pipes_d2d_get_project_resources_qs(self):
+        package_resource = make_resource_file(
+            self.project1, "package.jar", is_archive=True
+        )
+        make_resource_directory(self.project1, "package.jar-extract/")
+        make_resource_file(self.project1, "package.jar-extract/foo.class")
+
+        directory_resource = make_resource_directory(self.project1, "directory1")
+        make_resource_file(self.project1, "directory1/foo.txt")
+
+        # This directory and its contents should not be returned
+        make_resource_directory(self.project1, "directory100")
+        make_resource_file(self.project1, "directory100/bar.txt")
+
+        resources = [package_resource, directory_resource]
+        resources_qs = d2d.get_project_resources_qs(self.project1, resources=resources)
+        expected_paths = [
+            "package.jar",
+            "package.jar-extract/",
+            "package.jar-extract/foo.class",
+            "directory1",
+            "directory1/foo.txt",
+        ]
+        expected_qs = self.project1.codebaseresources.filter(path__in=expected_paths)
+        self.assertQuerysetEqual(expected_qs, resources_qs)
