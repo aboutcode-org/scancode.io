@@ -31,7 +31,7 @@ from scanpipe.pipes import scancode
 
 class DeployToDevelop(Pipeline):
     """
-    Relate deploy and develop code trees.
+    Establish relationships between two code trees: deployment and development.
 
     This pipeline is expecting 2 archive files with "from-" and "to-" filename
     prefixes as inputs:

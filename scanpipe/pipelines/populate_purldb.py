@@ -26,7 +26,7 @@ from scanpipe.pipes import scancode
 
 
 class PopulatePurlDB(Pipeline):
-    """Populate PurlDB with project discovered packages and dependencies."""
+    """Populate PurlDB with discovered project packages and their dependencies."""
 
     @classmethod
     def steps(cls):

@@ -296,6 +296,7 @@ class PipelinesIntegrationTest(TestCase):
         "mime_type",
         "notes",
         "settings",
+        "description",
     ]
 
     def _without_keys(self, data, exclude_keys):

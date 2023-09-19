@@ -26,9 +26,10 @@ from scanpipe.pipes import scancode
 
 class ScanCodebasePackages(ScanCodebase):
     """
-    Scan a codebase for package data only for the purpose of getting
-    all purls (without creating package/dependency instances by
-    package assembly).
+    Scan a codebase for PURLs without assembling full packages/dependencies.
+
+    This Pipeline is intended for gathering PURL information from a
+    codebase without the overhead of full package assembly.
     """
 
     @classmethod

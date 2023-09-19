@@ -29,7 +29,7 @@ from scanpipe.pipes import scancode
 
 
 class RootFS(Pipeline):
-    """Analyze a Linux root filesystem, aka rootfs."""
+    """Analyze a Linux root filesystem, also known as rootfs."""
 
     @classmethod
     def steps(cls):

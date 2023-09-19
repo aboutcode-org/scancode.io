@@ -8,7 +8,7 @@
         {
           "pipeline_name": "root_filesystems",
           "status": "not_started",
-          "description": "Analyze a Linux root filesystem, aka rootfs.",
+          "description": "Analyze a Linux root filesystem, also known as rootfs.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
