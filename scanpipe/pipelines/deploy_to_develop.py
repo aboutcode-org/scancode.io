@@ -63,6 +63,7 @@ class DeployToDevelop(Pipeline):
             cls.map_path,
             cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.perform_house_keeping_tasks,
+            cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
         )
 
@@ -215,6 +216,12 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
+
+    def scan_unmapped_to_files(self):
+        """
+        Scan unmapped/matched ``to/`` files for copyrights, licenses,
+        emails, and urls and update the status to `requires-review`.
+        """
         d2d.scan_unmapped_to_files(project=self.project, logger=self.log)
 
     def scan_mapped_from_for_files(self):
