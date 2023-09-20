@@ -33,6 +33,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import SuspiciousFileOperation
+from django.core.exceptions import ValidationError
 from django.core.files.storage.filesystem import FileSystemStorage
 from django.db.models import Prefetch
 from django.db.models.manager import Manager
@@ -45,7 +46,9 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.defaultfilters import filesizeformat
+from django.urls import reverse
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
 from django.views import generic
 from django.views.decorators.http import require_POST
 from django.views.generic.detail import SingleObjectMixin
@@ -533,6 +536,11 @@ class ProjectListView(
         },
     ]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["archive_form"] = ArchiveProjectForm()
+        return context
+
     def get_queryset(self):
         return (
             super()
@@ -616,6 +624,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
+        project_resources_url = reverse("project_resources", args=[project.slug])
 
         inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
@@ -647,6 +656,14 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         codebase_root.sort(key=operator.methodcaller("is_file"))
 
         resource_status_summary = count_group_by(project.codebaseresources, "status")
+        if list(resource_status_summary.keys()) == [""]:
+            resource_status_summary = None
+
+        resource_licenses_summary = count_group_by(
+            project.codebaseresources.files(), "detected_license_expression"
+        )
+        if list(resource_licenses_summary.keys()) == [""]:
+            resource_licenses_summary = None
 
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
@@ -659,8 +676,9 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),
                 "project_clone_form": ProjectCloneForm(project),
-                "archive_form": ArchiveProjectForm(),
+                "project_resources_url": project_resources_url,
                 "resource_status_summary": resource_status_summary,
+                "resource_licenses_summary": resource_licenses_summary,
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
                 "pipeline_runs": pipeline_runs,
@@ -720,6 +738,11 @@ class ProjectSettingsView(ConditionalLoginRequired, UpdateView):
         if request.GET.get("download"):
             return self.download_config_file(project=self.get_object())
         return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["archive_form"] = ArchiveProjectForm()
+        return context
 
     @staticmethod
     def download_config_file(project):
@@ -818,7 +841,7 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
 
 class ProjectCodebaseView(ConditionalLoginRequired, generic.DetailView):
     model = Project
-    template_name = "scanpipe/includes/project_codebase.html"
+    template_name = "scanpipe/panels/project_codebase.html"
 
     @staticmethod
     def get_tree(project, current_dir):
@@ -889,11 +912,7 @@ class ProjectArchiveView(ConditionalLoginRequired, SingleObjectMixin, FormView):
 
         project = self.get_object()
         try:
-            project.archive(
-                remove_input=form.cleaned_data["remove_input"],
-                remove_codebase=form.cleaned_data["remove_codebase"],
-                remove_output=form.cleaned_data["remove_output"],
-            )
+            project.archive(**form.cleaned_data)
         except RunInProgressError as error:
             messages.error(self.request, error)
             return redirect(project)
@@ -917,6 +936,57 @@ class ProjectDeleteView(ConditionalLoginRequired, generic.DeleteView):
 
         messages.success(self.request, self.success_message.format(project.name))
         return response_redirect
+
+
+@method_decorator(require_POST, name="dispatch")
+class ProjectActionView(ConditionalLoginRequired, generic.ListView):
+    """Call a method for each instance of the selection."""
+
+    model = Project
+    allowed_actions = ["archive", "delete", "reset"]
+    success_url = reverse_lazy("project_list")
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get("action")
+        if action not in self.allowed_actions:
+            raise Http404
+
+        selected_ids = request.POST.get("selected_ids", "").split(",")
+        count = 0
+
+        action_kwargs = {}
+        if action == "archive":
+            archive_form = ArchiveProjectForm(request.POST)
+            if not archive_form.is_valid():
+                raise Http404
+            action_kwargs = archive_form.cleaned_data
+
+        for project_uuid in selected_ids:
+            if self.perform_action(action, project_uuid, action_kwargs):
+                count += 1
+
+        if count:
+            messages.success(self.request, self.get_success_message(action, count))
+
+        return HttpResponseRedirect(self.success_url)
+
+    def perform_action(self, action, project_uuid, action_kwargs=None):
+        if not action_kwargs:
+            action_kwargs = {}
+
+        try:
+            project = Project.objects.get(pk=project_uuid)
+            getattr(project, action)(**action_kwargs)
+            return True
+        except Project.DoesNotExist:
+            messages.error(self.request, f"Project {project_uuid} does not exist.")
+        except RunInProgressError as error:
+            messages.error(self.request, str(error))
+        except (AttributeError, ValidationError):
+            raise Http404
+
+    def get_success_message(self, action, count):
+        return f"{count} projects have been {action}."
 
 
 class ProjectResetView(ConditionalLoginRequired, generic.DeleteView):
@@ -1013,15 +1083,30 @@ def delete_input_view(request, slug, input_name):
     return redirect(project)
 
 
-@conditional_login_required
-def download_input_view(request, slug, input_name):
+def download_project_file(request, slug, filename, path_type):
     project = get_object_or_404(Project, slug=slug)
 
-    file_path = project.input_path / input_name
+    if path_type == "input":
+        file_path = project.input_path / filename
+    elif path_type == "output":
+        file_path = project.output_path / filename
+    else:
+        raise Http404("Invalid path_type")
+
     if not file_path.exists():
         raise Http404(f"{file_path} not found")
 
     return FileResponse(file_path.open("rb"), as_attachment=True)
+
+
+@conditional_login_required
+def download_input_view(request, slug, filename):
+    return download_project_file(request, slug, filename, "input")
+
+
+@conditional_login_required
+def download_output_view(request, slug, filename):
+    return download_project_file(request, slug, filename, "output")
 
 
 @require_POST
@@ -1535,6 +1620,7 @@ class DiscoveredPackageDetailsView(
                 "source_packages",
                 "keywords",
                 "description",
+                "tag",
             ],
             "icon_class": "fa-solid fa-info-circle",
         },

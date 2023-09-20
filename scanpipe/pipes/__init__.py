@@ -188,6 +188,17 @@ def update_or_create_package(project, package_data, codebase_resources=None):
     return package
 
 
+def create_local_files_package(project, defaults, codebase_resources=None):
+    """Create a local-files package using provided ``defaults`` data."""
+    package_data = {
+        "type": "local-files",
+        "namespace": project.slug,
+        "name": str(uuid.uuid4()),
+    }
+    package_data.update(defaults)
+    return update_or_create_package(project, package_data, codebase_resources)
+
+
 def update_or_create_dependency(
     project, dependency_data, for_package=None, strip_datafile_path_root=False
 ):

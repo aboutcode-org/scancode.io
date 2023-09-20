@@ -321,6 +321,7 @@ class DiscoveredPackageSerializer(serializers.ModelSerializer):
             "version",
             "qualifiers",
             "subpath",
+            "tag",
             "primary_language",
             "description",
             "release_date",

@@ -22,6 +22,7 @@
 
 import json
 import shutil
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -153,6 +154,36 @@ class ScanPipeViewsTest(TestCase):
         expected = '<a href="?sort=" class="dropdown-item is-active">Newest</a>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_project_actions_view(self):
+        url = reverse("project_action")
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(url)
+        self.assertEqual(404, response.status_code)
+
+        data = {"action": "does_not_exists"}
+        response = self.client.post(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        data = {"action": "delete"}
+        response = self.client.post(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        random_uuid = uuid.uuid4()
+        data = {
+            "action": "delete",
+            "selected_ids": f"{self.project1.uuid},{random_uuid}",
+        }
+        response = self.client.post(url, data=data, follow=True)
+        self.assertRedirects(response, reverse("project_list"))
+        expected = '<div class="message-body">1 projects have been delete.</div>'
+        self.assertContains(response, expected, html=True)
+        expected = (
+            f'<div class="message-body">Project {random_uuid} does not exist.</div>'
+        )
+        self.assertContains(response, expected, html=True)
+
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
@@ -201,6 +232,23 @@ class ScanPipeViewsTest(TestCase):
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         url = reverse("project_download_input", args=[self.project1.slug, filename])
+        response = self.client.get(url)
+        self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
+        self.assertEqual("application/octet-stream", response.headers["Content-Type"])
+        self.assertEqual(
+            'attachment; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
+    def test_scanpipe_views_project_details_download_output_view(self):
+        url = reverse("project_download_output", args=[self.project1.slug, "file.zip"])
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.output_path)
+        filename = file_location.name
+        url = reverse("project_download_output", args=[self.project1.slug, filename])
         response = self.client.get(url)
         self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
         self.assertEqual("application/octet-stream", response.headers["Content-Type"])

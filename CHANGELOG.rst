@@ -11,6 +11,29 @@ v32.6.1 (unreleased)
 - Add support for webhook subscriptions in project clone.
   https://github.com/nexB/scancode.io/pull/910
 
+- Add resources license expression summary panel in the project details view.
+  This panel displays the list of licenses detected in the project and include links
+  to the resources list.
+  https://github.com/nexB/scancode.io/pull/355
+
+- Add the ``tag`` field on the DiscoveredPackage model. This new field is used to store
+  the layer id where the package was found in the Docker context.
+  https://github.com/nexB/scancode.io/issues/919
+
+- Add to apply actions, such as archive, delete, and reset to a selection of project
+  from the main list.
+  https://github.com/nexB/scancode.io/issues/488
+
+- Add new "Outputs" panel in the Project details view.
+  Output files are listed and can be downloaded from the panel.
+  https://github.com/nexB/scancode.io/issues/678
+
+- Add a step in the ``deploy_to_develop`` pipelines to create "local-files" packages
+  with from-side resource files that have one or more relations with to-side resources
+  that are not part of a package.
+  This allows to include those files in the SBOMs and attribution outputs.
+  https://github.com/nexB/scancode.io/issues/914
+
 v32.6.0 (2023-08-29)
 --------------------
 

@@ -1,9 +1,12 @@
 {% load humanize %}
 <table class="table is-bordered is-striped is-hoverable is-fullwidth">
-  {% include 'scanpipe/includes/list_view_thead.html' %}
+  {% include 'scanpipe/includes/list_view_thead.html' with select_all=True %}
   <tbody>
   {% for project in projects %}
     <tr>
+      <th class="p-2">
+        <input type="checkbox" class="select-row" value="{{ project.uuid }}">
+      </th>
       <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
         <div>

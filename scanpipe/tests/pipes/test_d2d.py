@@ -884,6 +884,75 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(1, self.project1.discoveredpackages.count())
         self.assertEqual("npm-package-lookup", package_json.status)
 
+    def test_scanpipe_pipes_d2d_get_project_resources_qs(self):
+        package_resource = make_resource_file(
+            self.project1, "package.jar", is_archive=True
+        )
+        make_resource_directory(self.project1, "package.jar-extract/")
+        make_resource_file(self.project1, "package.jar-extract/foo.class")
+
+        directory_resource = make_resource_directory(self.project1, "directory1")
+        make_resource_file(self.project1, "directory1/foo.txt")
+
+        # This directory and its contents should not be returned
+        make_resource_directory(self.project1, "directory100")
+        make_resource_file(self.project1, "directory100/bar.txt")
+
+        resources = [package_resource, directory_resource]
+        resources_qs = d2d.get_project_resources_qs(self.project1, resources=resources)
+        expected_paths = [
+            "package.jar",
+            "package.jar-extract/",
+            "package.jar-extract/foo.class",
+            "directory1",
+            "directory1/foo.txt",
+        ]
+        expected_qs = self.project1.codebaseresources.filter(path__in=expected_paths)
+        self.assertQuerysetEqual(expected_qs, resources_qs)
+
+    def test_scanpipe_pipes_d2d_get_from_files_related_with_not_in_package_to_files(
+        self,
+    ):
+        from_resource1 = make_resource_file(self.project1, "from/foo.java")
+        to_resource1 = make_resource_file(self.project1, "to/foo.class")
+        qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
+        self.assertQuerysetEqual([], qs)
+
+        pipes.make_relation(from_resource1, to_resource1, "java_to_class")
+        qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
+        self.assertQuerysetEqual([], qs)
+
+        from_resource1.update(detected_license_expression="mit")
+        qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
+        self.assertQuerysetEqual([from_resource1], qs)
+
+    def test_scanpipe_pipes_d2d_create_local_files_packages(self):
+        from_resource1 = make_resource_file(
+            self.project1,
+            "from/foo.java",
+            detected_license_expression="mit",
+            copyrights=[
+                {"copyright": "Copyright 1984"},
+                {"copyright": "Copyright 2023"},
+            ],
+        )
+        from_resource2 = make_resource_file(
+            self.project1,
+            "from/foo2.java",
+            detected_license_expression="mit",
+            copyrights=[{"copyright": "Copyright 2023"}],
+        )
+        to_resource1 = make_resource_file(self.project1, "to/foo.class")
+        pipes.make_relation(from_resource1, to_resource1, "java_to_class")
+        pipes.make_relation(from_resource2, to_resource1, "java_to_class")
+
+        d2d.create_local_files_packages(self.project1)
+        package = self.project1.discoveredpackages.get()
+        self.assertEqual("local-files", package.type)
+        self.assertEqual(self.project1.slug, package.namespace)
+        self.assertEqual("mit", package.declared_license_expression)
+        self.assertEqual("Copyright 2023\n\nCopyright 1984", package.copyright)
+
     @mock.patch("scanpipe.pipes.d2d._match_purldb_resources")
     def test_match_resources_with_no_java_source(self, mock_match_purldb_resources):
         mock_match_purldb_resources.return_value = True

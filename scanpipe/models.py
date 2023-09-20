@@ -68,9 +68,11 @@ from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from extractcode import EXTRACT_SUFFIX
 from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
+from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -874,6 +876,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Only first level children will be listed.
         """
         return self.get_root_content(self.output_path)
+
+    def get_output_files_info(self):
+        """Return files form the output work directory including the name and size."""
+        return [
+            {
+                "name": path.name,
+                "size": path.stat().st_size,
+            }
+            for path in self.output_path.glob("*")
+            if path.is_file()
+        ]
 
     def get_output_file_path(self, name, extension):
         """
@@ -1700,6 +1713,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
 
+    def has_license_expression(self):
+        return self.filter(~Q(detected_license_expression=""))
+
     def unknown_license(self):
         return self.filter(detected_license_expression__icontains="unknown")
 
@@ -1736,9 +1752,12 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def has_directory_content_fingerprint(self):
         """
         Resources that have the key `directory_content` set in the `extra_data`
-        field.
+        field and `directory_content` is not part of `IGNORED_DIRECTORY_FINGERPRINTS`.
         """
-        return self.filter(~Q(extra_data__directory_content=""))
+        return self.filter(
+            ~Q(extra_data__directory_content="")
+            and ~Q(extra_data__directory_content__in=IGNORED_DIRECTORY_FINGERPRINTS)
+        )
 
     def paginated(self, per_page=5000):
         """
@@ -2146,10 +2165,17 @@ class CodebaseResource(
 
         for segment in Path(self.path).parts:
             if part_and_subpath:
-                current_path += f"/{segment}"
+                current_path += "/"
+            current_path += segment
+
+            if EXTRACT_SUFFIX in segment:
+                is_extract = True
+                base_segment = segment[: -len(EXTRACT_SUFFIX)]
+                base_current_path = current_path[: -len(EXTRACT_SUFFIX)]
+                part_and_subpath.append((base_segment, base_current_path, is_extract))
             else:
-                current_path += f"{segment}"
-            part_and_subpath.append((segment, current_path))
+                is_extract = False
+                part_and_subpath.append((segment, current_path, is_extract))
 
         return part_and_subpath
 
@@ -2673,6 +2699,7 @@ class DiscoveredPackage(
     )
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
+    tag = models.CharField(blank=True, max_length=50)
 
     objects = DiscoveredPackageQuerySet.as_manager()
 
@@ -2693,6 +2720,7 @@ class DiscoveredPackage(
             models.Index(fields=["sha256"]),
             models.Index(fields=["sha512"]),
             models.Index(fields=["compliance_alert"]),
+            models.Index(fields=["tag"]),
         ]
         constraints = [
             models.UniqueConstraint(

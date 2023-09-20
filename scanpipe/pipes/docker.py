@@ -27,6 +27,7 @@ from pathlib import Path
 
 from container_inspector.image import Image
 from container_inspector.utils import extract_tar
+from extractcode import EXTRACT_SUFFIX
 
 from scanpipe import pipes
 from scanpipe.pipes import flag
@@ -60,7 +61,7 @@ def extract_images_from_inputs(project):
     errors = []
 
     for tarball in get_tarballs_from_inputs(project):
-        extract_target = target_path / f"{tarball.name}-extract"
+        extract_target = target_path / f"{tarball.name}{EXTRACT_SUFFIX}"
         imgs, errs = extract_image_from_tarball(tarball, extract_target)
         images.extend(imgs)
         errors.extend(errs)
@@ -182,9 +183,11 @@ def create_codebase_resources(project, image):
             )
 
 
-def _create_system_package(project, purl, package, layer):
+def create_system_package(project, purl, package, layer, layer_tag):
     """Create system package and related resources."""
-    created_package = pipes.update_or_create_package(project, package.to_dict())
+    package_data = package.to_dict()
+    package_data["tag"] = layer_tag
+    created_package = pipes.update_or_create_package(project, package_data)
 
     installed_files = []
     if hasattr(package, "resources"):
@@ -251,10 +254,16 @@ def scan_image_for_system_packages(project, image):
     if distro_id not in rootfs.SUPPORTED_DISTROS:
         raise rootfs.DistroNotSupported(f'Distro "{distro_id}" is not supported.')
 
+    layer_index_mapping = {
+        layer.layer_id: index for index, layer in enumerate(image.layers, start=1)
+    }
+
     installed_packages = image.get_installed_packages(rootfs.package_getter)
-    for index, (purl, package, layer) in enumerate(installed_packages):
-        logger.info(f"Creating package #{index}: {purl}")
-        _create_system_package(project, purl, package, layer)
+    for package_index, (purl, package, layer) in enumerate(installed_packages):
+        logger.info(f"Creating package #{package_index}: {purl}")
+        layer_index = layer_index_mapping.get(layer.layer_id)
+        layer_tag = get_layer_tag(image.image_id, layer.layer_id, layer_index)
+        create_system_package(project, purl, package, layer, layer_tag)
 
 
 def flag_whiteout_codebase_resources(project):

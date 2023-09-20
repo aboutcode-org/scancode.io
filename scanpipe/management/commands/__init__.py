@@ -112,7 +112,7 @@ class RunStatusCommandMixin:
         return messages
 
     def display_status(self, project, verbosity):
-        project_label = f"Project: {project.name}"
+        project_label = project.name
         if project.is_archived:
             project_label += " [archived]"
 

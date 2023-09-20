@@ -67,6 +67,7 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -332,6 +333,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertIsNone(self.project1.get_latest_output("none"))
         self.assertEqual(scan3, self.project1.get_latest_output("scancode"))
         self.assertEqual(summary2, self.project1.get_latest_output("summary"))
+
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_project_model_get_output_files_info(self):
+        self.assertEqual([], self.project1.get_output_files_info())
+        self.project1.get_output_file_path("file", "ext").write_text("Some content")
+        expected = [{"name": "file-2010-10-10-10-10-10.ext", "size": 12}]
+        self.assertEqual(expected, self.project1.get_output_files_info())
 
     def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)
@@ -1260,9 +1268,14 @@ class ScanPipeModelsTest(TestCase):
 
         qs = CodebaseResource.objects.unknown_license()
         self.assertEqual(0, len(qs))
+        qs = CodebaseResource.objects.has_license_expression()
+        self.assertEqual(0, len(qs))
 
         file.update(detected_license_expression="gpl-3.0 AND unknown")
         qs = CodebaseResource.objects.unknown_license()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+        qs = CodebaseResource.objects.has_license_expression()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
 
@@ -1498,11 +1511,13 @@ class ScanPipeModelsTest(TestCase):
         resource = make_resource_file(self.project1, path="")
         self.assertEqual([], resource.get_path_segments_with_subpath())
 
-        resource = make_resource_file(self.project1, path="root/subpath/file.txt")
+        path = "root/subpath/archive.zip-extract/file.txt"
+        resource = make_resource_file(self.project1, path=path)
         expected = [
-            ("root", "root"),
-            ("subpath", "root/subpath"),
-            ("file.txt", "root/subpath/file.txt"),
+            ("root", "root", False),
+            ("subpath", "root/subpath", False),
+            ("archive.zip", "root/subpath/archive.zip", True),
+            ("file.txt", "root/subpath/archive.zip-extract/file.txt", False),
         ]
         self.assertEqual(expected, resource.get_path_segments_with_subpath())
 
@@ -1869,6 +1884,7 @@ class ScanPipeModelsTest(TestCase):
             "filename",
             "affected_by_vulnerabilities",
             "compliance_alert",
+            "tag",
         ]
 
         discovered_package_fields = [
@@ -1883,6 +1899,32 @@ class ScanPipeModelsTest(TestCase):
 
         for scanpipe_field in discovered_package_fields:
             self.assertIn(scanpipe_field, toolkit_package_fields)
+
+    def test_scanpipe_codebase_resource_queryset_has_directory_content_fingerprint(
+        self,
+    ):
+        # This should be returned
+        directory1 = make_resource_directory(self.project1, path="directory1")
+        directory1.extra_data = {
+            "directory_content": "00000003238f6ed2c218090d4da80b3b42160e69"
+        }
+        directory1.save()
+
+        # This should not be returned because the fingerprint should be ignored
+        directory2 = make_resource_directory(self.project1, path="directory2")
+        directory2.extra_data = {
+            "directory_content": "0000000000000000000000000000000000000000"
+        }
+        directory2.save()
+
+        # This should not be returned because it does not contain a directory
+        # fingerprint
+        make_resource_directory(self.project1, path="directory3")
+
+        self.assertEqual(3, self.project1.codebaseresources.count())
+        expected = self.project1.codebaseresources.filter(path="directory1")
+        results = self.project1.codebaseresources.has_directory_content_fingerprint()
+        self.assertQuerySetEqual(expected, results, ordered=False)
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):

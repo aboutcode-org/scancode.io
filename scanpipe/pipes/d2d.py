@@ -20,20 +20,25 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
 
+from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.db.models.expressions import Subquery
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
+from extractcode import EXTRACT_SUFFIX
 from packagedcode.npm import NpmPackageJsonHandler
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
+from scanpipe.models import CodebaseResource
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
@@ -410,21 +415,17 @@ def map_path(project, logger=None):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def create_package_from_purldb_data(project, resources, package_data):
+def get_project_resources_qs(project, resources):
     """
-    Create a DiscoveredPackage instance from PurlDB ``package_data``.
+    Return a queryset of CodebaseResources from `project` containing the
+    CodebaseResources from `resources` . If a CodebaseResource in `resources` is
+    an archive or directory, then their descendants are also included in the
+    queryset.
 
-    Return a tuple, containing the created DiscoveredPackage and the number of
-    CodebaseResources matched to PurlDB that are part of that DiscoveredPackage.
+    Return None if `resources` is empty or None.
     """
-    package_data = package_data.copy()
-    # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
-    # PurlDB match can be found in different projects.
-    package_data.pop("uuid", None)
-    package_data.pop("dependencies", None)
-
     lookups = Q()
-    for resource in resources:
+    for resource in resources or []:
         lookups |= Q(path=resource.path)
         if resource.is_archive:
             # This is done to capture the extracted contents of the archive we
@@ -441,8 +442,24 @@ def create_package_from_purldb_data(project, resources, package_data):
             # and its descendants.
             path = f"{resource.path}/"
             lookups |= Q(path__startswith=path)
+    if lookups:
+        return project.codebaseresources.filter(lookups)
 
-    resources_qs = project.codebaseresources.to_codebase().filter(lookups)
+
+def create_package_from_purldb_data(project, resources, package_data):
+    """
+    Create a DiscoveredPackage instance from PurlDB ``package_data``.
+
+    Return a tuple, containing the created DiscoveredPackage and the number of
+    CodebaseResources matched to PurlDB that are part of that DiscoveredPackage.
+    """
+    package_data = package_data.copy()
+    # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
+    # PurlDB match can be found in different projects.
+    package_data.pop("uuid", None)
+    package_data.pop("dependencies", None)
+
+    resources_qs = get_project_resources_qs(project, resources)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
@@ -481,7 +498,9 @@ def match_purldb_package(
         # Process matched Package data
         for package_data in results:
             sha1 = package_data["sha1"]
-            resources = resources_by_sha1.get(sha1, [])
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
                 resources=resources,
@@ -520,7 +539,9 @@ def match_purldb_resource(
                 # Use cached package data
                 package_data = package_data_by_purldb_urls[package_instance_url]
             sha1 = result["sha1"]
-            resources = resources_by_sha1.get(sha1, [])
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
             _, matched_resources_count = create_package_from_purldb_data(
                 project=project,
                 resources=resources,
@@ -1057,7 +1078,7 @@ def flag_processed_archives(project):
     to_resources = project.codebaseresources.all().to_codebase().no_status()
 
     for archive_resource in to_resources.archives():
-        extract_path = archive_resource.path + "-extract"
+        extract_path = archive_resource.path + EXTRACT_SUFFIX
         archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
         # Check if all resources in the archive "-extract" directory have been mapped.
         # Flag the archive resource as processed only when all resources are mapped.
@@ -1118,6 +1139,57 @@ def _map_thirdparty_npm_packages(package_json, to_resources, project):
 
     package_resources.no_status().update(status=flag.NPM_PACKAGE_LOOKUP)
     return package_resources.count()
+
+
+def get_from_files_related_with_not_in_package_to_files(project):
+    """
+    Return from-side resource files that have one or more relations
+    with to-side resources that are not part of a package.
+    Only resources with a ``detected_license_expression`` value are returned.
+    """
+    files_qs = project.codebaseresources.files()
+    to_files_without_package = files_qs.to_codebase().not_in_package()
+    from_files_qs = (
+        files_qs.from_codebase()
+        .has_license_expression()
+        .filter(
+            related_to__to_resource__in=Subquery(to_files_without_package.values("pk"))
+        )
+    )
+    return from_files_qs
+
+
+def create_local_files_packages(project):
+    """
+    Create local-files packages for codebase resources not part of a package.
+
+    Resources are grouped by license_expression within a local-files packages.
+    """
+    from_files_qs = get_from_files_related_with_not_in_package_to_files(project)
+
+    # Do not include any other fields in the ``values()``
+    license_field = CodebaseResource.license_expression_field
+    grouped_by_license = from_files_qs.values(license_field).order_by(license_field)
+
+    grouped_by_license = grouped_by_license.annotate(
+        grouped_resource_ids=ArrayAgg("id", distinct=True),
+        grouped_copyrights=ArrayAgg("copyrights", distinct=True),
+    )
+
+    for group in grouped_by_license:
+        codebase_resource_ids = sorted(set(group["grouped_resource_ids"]))
+        copyrights = [
+            entry["copyright"]
+            for copyrights in group["grouped_copyrights"]
+            for entry in copyrights
+        ]
+
+        defaults = {
+            "declared_license_expression": group.get("detected_license_expression"),
+            # The Counter is used to sort by most frequent values.
+            "copyright": "\n\n".join(Counter(copyrights).keys()),
+        }
+        pipes.create_local_files_package(project, defaults, codebase_resource_ids)
 
 
 def match_resources_with_no_java_source(project, logger=None):

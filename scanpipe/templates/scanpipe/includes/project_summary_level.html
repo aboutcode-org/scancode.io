@@ -45,7 +45,7 @@
       <p class="heading">Resources</p>
       <p class="{{ title_class }}">
         {% if project.resource_count %}
-          <a href="{% url 'project_resources' project.slug %}">
+          <a href="{{ project_resources_url }}">
             {{ project.resource_count|intcomma }}
           </a>
         {% else %}
