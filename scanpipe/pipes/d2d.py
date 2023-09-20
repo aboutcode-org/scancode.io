@@ -1143,7 +1143,9 @@ def match_resources_with_no_java_source(project, logger=None):
             matcher_func=match_purldb_resource,
             logger=logger,
         )
-        to_no_java_source.no_status().update(status=flag.REQUIRES_REVIEW)
+        to_no_java_source.exclude(status=flag.MATCHED_TO_PURLDB).update(
+            status=flag.REQUIRES_REVIEW
+        )
 
 
 def match_unmapped_resources(project, matched_extensions=None, logger=None):
@@ -1176,13 +1178,15 @@ def match_unmapped_resources(project, matched_extensions=None, logger=None):
             matcher_func=match_purldb_resource,
             logger=logger,
         )
-        to_unmapped.no_status().update(status=flag.REQUIRES_REVIEW)
+        to_unmapped.exclude(status=flag.MATCHED_TO_PURLDB).update(
+            status=flag.REQUIRES_REVIEW
+        )
 
     to_without_status = project_files.to_codebase().no_status()
 
     to_without_status.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
 
-    to_without_status.no_status().update(status=flag.REQUIRES_REVIEW)
+    to_without_status.update(status=flag.REQUIRES_REVIEW)
 
 
 def flag_undeployed_resources(project):
@@ -1195,7 +1199,7 @@ def flag_undeployed_resources(project):
 def scan_unmapped_to_files(project, logger=None):
     """
     Scan unmapped/matched ``to/`` files for copyrights, licenses,
-    emails, and urls.
+    emails, and urls and update the status to `requires-review`.
     """
     scan_files = (
         project.codebaseresources.files()
