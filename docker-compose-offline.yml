@@ -1,0 +1,64 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:13
+    env_file:
+      - docker.env
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+
+  redis:
+    image: redis
+    # Enable redis data persistence using the "Append Only File" with the
+    # default policy of fsync every second. See https://redis.io/topics/persistence
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  web:
+    image: scancodeio_web
+    command: sh -c "
+        ./manage.py migrate &&
+        ./manage.py collectstatic --no-input --verbosity 0 --clear &&
+        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8"
+    env_file:
+      - docker.env
+    expose:
+      - 8000
+    volumes:
+      - /etc/scancodeio/:/etc/scancodeio/
+      - workspace:/var/scancodeio/workspace/
+      - static:/var/scancodeio/static/
+    depends_on:
+      - db
+
+  worker:
+    image: scancodeio_worker
+    command: wait-for-it web:8000 -- ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
+    env_file:
+      - docker.env
+    volumes:
+      - /etc/scancodeio/:/etc/scancodeio/
+      - workspace:/var/scancodeio/workspace/
+    depends_on:
+      - redis
+      - db
+      - web # Ensure that potential db migrations run first
+
+  nginx:
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./etc/nginx/conf.d/:/etc/nginx/conf.d/
+      - static:/var/scancodeio/static/
+    depends_on:
+      - web
+
+volumes:
+  db_data:
+  redis_data:
+  static:
+  workspace:

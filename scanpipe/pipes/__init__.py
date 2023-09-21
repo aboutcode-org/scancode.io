@@ -319,17 +319,18 @@ class LoopProgress:
     """
     A context manager for logging progress in loops.
 
-    Usage:
+    Usage::
+
         total_iterations = 100
         logger = print  # Replace with your actual logger function
 
         progress = LoopProgress(total_iterations, logger, progress_step=10)
         for item in progress.iter(iterator):
-            # Your processing logic here
+            "Your processing logic here"
 
         with LoopProgress(total_iterations, logger, progress_step=10) as progress:
             for item in progress.iter(iterator):
-                # Your processing logic here
+                "Your processing logic here"
     """
 
     def __init__(self, total_iterations, logger, progress_step=10):

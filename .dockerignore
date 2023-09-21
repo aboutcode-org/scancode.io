@@ -11,6 +11,7 @@
 **/venv
 **/env
 **/bin
+**/build
 **/docs
 **/dist
 **/etc
