@@ -561,9 +561,7 @@ def match_purldb_directory(project, resource):
             return create_package_from_purldb_data(project, [resource], package_data)
 
 
-def match_purldb_resources(
-    project, extensions, matcher_func, chunk_size=1000, logger=None
-):
+def match_purldb_resources(project, extensions, matcher_func, logger=None):
     """
     Match against PurlDB selecting codebase resources using provided
     ``package_extensions`` for archive type files, and ``resource_extensions``.
@@ -593,6 +591,18 @@ def match_purldb_resources(
                 f"as there are {resource_count:,d}"
             )
 
+    _match_purldb_resources(
+        project=project,
+        to_resources=to_resources,
+        matcher_func=matcher_func,
+        logger=logger,
+    )
+
+
+def _match_purldb_resources(
+    project, to_resources, matcher_func, chunk_size=1000, logger=None
+):
+    resource_count = to_resources.count()
     resource_iterator = to_resources.paginated(per_page=chunk_size)
     progress = LoopProgress(resource_count, logger)
     matched_count = 0
@@ -1180,3 +1190,96 @@ def create_local_files_packages(project):
             "copyright": "\n\n".join(Counter(copyrights).keys()),
         }
         pipes.create_local_files_package(project, defaults, codebase_resource_ids)
+
+
+def match_resources_with_no_java_source(project, logger=None):
+    """
+    Match resources with ``no-java-source`` to PurlDB, if no match
+    is found update status to ``requires-review``.
+    """
+    project_files = project.codebaseresources.files()
+
+    to_no_java_source = project_files.to_codebase().filter(status=flag.NO_JAVA_SOURCE)
+
+    if to_no_java_source:
+        resource_count = to_no_java_source.count()
+        if logger:
+            logger(
+                f"Mapping {resource_count:,d} to/ resources with {flag.NO_JAVA_SOURCE} "
+                "status in PurlDB using SHA1"
+            )
+
+        _match_purldb_resources(
+            project=project,
+            to_resources=to_no_java_source,
+            matcher_func=match_purldb_resource,
+            logger=logger,
+        )
+        to_no_java_source.exclude(status=flag.MATCHED_TO_PURLDB).update(
+            status=flag.REQUIRES_REVIEW
+        )
+
+
+def match_unmapped_resources(project, matched_extensions=None, logger=None):
+    """
+    Match resources with ``too-many-maps`` and empty status to PurlDB,
+    flag resources with empty status as ``requires-review``.
+    """
+    project_files = project.codebaseresources.files()
+
+    to_unmapped = (
+        project_files.to_codebase()
+        .filter(status__in=["", flag.TOO_MANY_MAPS])
+        .exclude(is_media=True)
+    )
+
+    if matched_extensions:
+        to_unmapped.exclude(extension__in=matched_extensions)
+
+    if to_unmapped:
+        resource_count = to_unmapped.count()
+        if logger:
+            logger(
+                f"Mapping {resource_count:,d} to/ resources with {flag.TOO_MANY_MAPS} "
+                "or empty status in PurlDB using SHA1"
+            )
+
+        _match_purldb_resources(
+            project=project,
+            to_resources=to_unmapped,
+            matcher_func=match_purldb_resource,
+            logger=logger,
+        )
+        to_unmapped.exclude(status=flag.MATCHED_TO_PURLDB).update(
+            status=flag.REQUIRES_REVIEW
+        )
+
+    to_without_status = project_files.to_codebase().no_status()
+
+    to_without_status.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
+    to_without_status.update(status=flag.REQUIRES_REVIEW)
+
+
+def flag_undeployed_resources(project):
+    """Update status for undeployed files."""
+    project_files = project.codebaseresources.files()
+    from_unmapped = project_files.from_codebase().no_status()
+    from_unmapped.update(status=flag.NOT_DEPLOYED)
+
+
+def scan_unmapped_to_files(project, logger=None):
+    """
+    Scan unmapped/matched ``to/`` files for copyrights, licenses,
+    emails, and urls and update the status to `requires-review`.
+    """
+    scan_files = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .filter(status=flag.REQUIRES_REVIEW)
+    )
+    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+
+    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
+        status=flag.REQUIRES_REVIEW
+    )

@@ -952,3 +952,143 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(self.project1.slug, package.namespace)
         self.assertEqual("mit", package.declared_license_expression)
         self.assertEqual("Copyright 2023\n\nCopyright 1984", package.copyright)
+
+    @mock.patch("scanpipe.pipes.d2d._match_purldb_resources")
+    def test_match_resources_with_no_java_source(self, mock_match_purldb_resources):
+        mock_match_purldb_resources.return_value = True
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_input_location = self.data_location / "d2d/find_java_packages/Foo.java"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        foo_java = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/Foo.java"
+            )
+        )
+
+        foo_java.update(status=flag.NO_JAVA_SOURCE)
+
+        buffer = io.StringIO()
+        d2d.match_resources_with_no_java_source(self.project1, logger=buffer.write)
+        foo_java.refresh_from_db()
+
+        expected = (
+            f"Mapping 1 to/ resources with {flag.NO_JAVA_SOURCE} "
+            "status in PurlDB using SHA1"
+        )
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(flag.REQUIRES_REVIEW, foo_java.status)
+
+    @mock.patch("scanpipe.pipes.d2d._match_purldb_resources")
+    def test_match_unmapped_resources(self, mock_match_purldb_resources):
+        mock_match_purldb_resources.return_value = True
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_dir.mkdir(parents=True)
+        to_resource_files = [
+            self.data_location / "d2d/find_java_packages/Foo.java",
+            self.data_location / "d2d/find_java_packages/Baz.java",
+            self.data_location / "d2d/about_files/expected.json",
+        ]
+        copy_inputs(to_resource_files, to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        foo_java = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/Foo.java"
+            )
+        )
+
+        baz_java = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/Baz.java"
+            )
+        )
+
+        media_file = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/expected.json"
+            )
+        )
+
+        foo_java.update(status=flag.TOO_MANY_MAPS)
+        media_file.update(is_media=True)
+
+        buffer = io.StringIO()
+        d2d.match_unmapped_resources(self.project1, logger=buffer.write)
+        foo_java.refresh_from_db()
+        baz_java.refresh_from_db()
+        media_file.refresh_from_db()
+
+        expected = (
+            f"Mapping 2 to/ resources with {flag.TOO_MANY_MAPS} "
+            "or empty status in PurlDB using SHA1"
+        )
+        expected_requires_review_count = self.project1.codebaseresources.filter(
+            status=flag.REQUIRES_REVIEW
+        ).count()
+
+        self.assertIn(expected, buffer.getvalue())
+        self.assertEqual(2, expected_requires_review_count)
+        self.assertEqual(flag.IGNORED_MEDIA_FILE, media_file.status)
+
+    def test_flag_undeployed_resources(self):
+        from_input_location = self.data_location / "d2d-javascript" / "from" / "main.js"
+        from_dir = (
+            self.project1.codebase_path
+            / "from/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        from_dir.mkdir(parents=True)
+        copy_input(from_input_location, from_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        d2d.flag_undeployed_resources(self.project1)
+        expected = self.project1.codebaseresources.filter(
+            status=flag.NOT_DEPLOYED
+        ).count()
+
+        self.assertEqual(1, expected)
+
+    def test_scan_unmapped_to_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_input_location = self.data_location / "d2d/find_java_packages/Foo.java"
+        to_dir.mkdir(parents=True)
+        copy_input(to_input_location, to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        foo_java = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/Foo.java"
+            )
+        )
+        foo_java.update(status=flag.REQUIRES_REVIEW)
+
+        d2d.scan_unmapped_to_files(self.project1)
+        foo_java.refresh_from_db()
+
+        expected = self.project1.codebaseresources.filter(
+            status=flag.REQUIRES_REVIEW
+        ).count()
+
+        self.assertEqual(1, expected)

@@ -62,6 +62,8 @@ class DeployToDevelop(Pipeline):
             cls.map_thirdparty_npm_packages,
             cls.map_path,
             cls.flag_mapped_resources_archives_and_ignored_directories,
+            cls.perform_house_keeping_tasks,
+            cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
         )
 
@@ -196,6 +198,31 @@ class DeployToDevelop(Pipeline):
         flag.flag_mapped_resources(self.project)
         flag.flag_ignored_directories(self.project)
         d2d.flag_processed_archives(self.project)
+
+    def perform_house_keeping_tasks(self):
+        """
+        On deployed side
+            - PurlDB match files with ``no-java-source``, ``too-many-maps`` and empty
+                status, if no match is found update status to ``requires-review``.
+            - Update status for uninteresting files.
+
+        On devel side
+            - Update status for not deployed files.
+        """
+        d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
+        d2d.match_unmapped_resources(
+            project=self.project,
+            matched_extensions=self.purldb_resource_extensions,
+            logger=self.log,
+        )
+        d2d.flag_undeployed_resources(project=self.project)
+
+    def scan_unmapped_to_files(self):
+        """
+        Scan unmapped/matched ``to/`` files for copyrights, licenses,
+        emails, and urls and update the status to `requires-review`.
+        """
+        d2d.scan_unmapped_to_files(project=self.project, logger=self.log)
 
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
