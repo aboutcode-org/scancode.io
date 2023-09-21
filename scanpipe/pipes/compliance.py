@@ -20,6 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe.pipes import flag
 from scanpipe.pipes import scancode
 
 """
@@ -31,18 +32,16 @@ an image (VM or container image).
 Usage example within a Pipeline:
 
 def analyze_licenses_and_sources(self):
-    util.tag_compliance_files(self.project)
+    util.flag_compliance_files(self.project)
     util.analyze_compliance_licenses(self.project)
 """
 
 
-def tag_compliance_files(project):
-    """
-    Tags compliance files status for the provided `project`.
-    """
+def flag_compliance_files(project):
+    """Flag compliance files status for the provided `project`."""
     compliance_dirs = {
-        "/licenses": "compliance-licenses",
-        "/sourcemirror": "compliance-sourcemirror",
+        "/licenses": flag.COMPLIANCE_LICENSES,
+        "/sourcemirror": flag.COMPLIANCE_SOURCEMIRROR,
     }
 
     qs = project.codebaseresources.no_status()
@@ -52,11 +51,9 @@ def tag_compliance_files(project):
 
 
 def analyze_compliance_licenses(project):
-    """
-    Scans compliance licenses status for the provided `project`.
-    """
-    qs = project.codebaseresources.status("compliance-licenses")
+    """Scan compliance licenses status for the provided `project`."""
+    qs = project.codebaseresources.status(flag.COMPLIANCE_LICENSES)
 
     for codebase_resource in qs:
         scan_results, scan_errors = scancode.scan_file(codebase_resource.location)
-        codebase_resource.set_scan_results(scan_results, save=True)
+        codebase_resource.set_scan_results(scan_results)

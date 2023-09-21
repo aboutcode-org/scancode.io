@@ -25,14 +25,25 @@ import uuid
 from django.test import TestCase
 from django.utils import timezone
 
+from scanpipe.filters import DependencyFilterSet
+from scanpipe.filters import FilterSetUtilsMixin
+from scanpipe.filters import PackageFilterSet
 from scanpipe.filters import ProjectFilterSet
 from scanpipe.filters import ResourceFilterSet
+from scanpipe.filters import parse_query_string_to_lookups
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
+from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.models import Run
+from scanpipe.tests import dependency_data1
+from scanpipe.tests import dependency_data2
+from scanpipe.tests import make_resource_file
+from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 
 
-class ScanPipeFiltersTest(TestCase):
+class ScanPipeFilterTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
@@ -71,6 +82,19 @@ class ScanPipeFiltersTest(TestCase):
         filterset = ProjectFilterSet(data={"status": "failed"})
         self.assertEqual([failed], list(filterset.qs))
 
+    def test_scanpipe_filters_project_filterset_labels(self):
+        Project.objects.create(name="project2")
+        self.project1.labels.add("label1")
+
+        filterset = ProjectFilterSet(data={"label": ""})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"label": "label1"})
+        self.assertEqual([self.project1], list(filterset.qs))
+
+        filterset = ProjectFilterSet(data={"label": "label2"})
+        self.assertEqual(0, len(filterset.qs))
+
     def test_scanpipe_filters_filter_queryset_empty_values(self):
         resource1 = CodebaseResource.objects.create(
             project=self.project1,
@@ -93,7 +117,7 @@ class ScanPipeFiltersTest(TestCase):
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource1], list(filterset.qs))
 
-        data = {"programming_language": "EMPTY"}
+        data = {"programming_language": FilterSetUtilsMixin.empty_value}
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
 
@@ -105,6 +129,184 @@ class ScanPipeFiltersTest(TestCase):
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource1], list(filterset.qs))
 
-        data = {"copyrights": "EMPTY"}
+        data = {"copyrights": FilterSetUtilsMixin.empty_value}
         filterset = ResourceFilterSet(data=data)
         self.assertEqual([resource2], list(filterset.qs))
+
+    def test_scanpipe_filters_params_for_search(self):
+        data = {
+            "status": "succeed",
+            "search": "query",
+            "page": 2,
+        }
+        filterset = ProjectFilterSet(data)
+
+        self.assertEqual(
+            {"page": 2, "search": "query", "status": "succeed"},
+            filterset.params,
+        )
+        self.assertEqual(
+            {"status": "succeed"},
+            filterset.params_for_search,
+        )
+
+        data = {
+            "search": FilterSetUtilsMixin.empty_value,
+        }
+        filterset = ProjectFilterSet(data)
+        self.assertEqual([], list(filterset.qs))
+
+        data = {
+            "search": FilterSetUtilsMixin.other_value,
+        }
+        filterset = ProjectFilterSet(data)
+        self.assertEqual([], list(filterset.qs))
+
+    def test_scanpipe_filters_package_filterset_is_vulnerable(self):
+        p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        p2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
+        p2.update(
+            affected_by_vulnerabilities=[{"vulnerability_id": "VCID-cah8-awtr-aaad"}]
+        )
+
+        filterset = PackageFilterSet(data={"is_vulnerable": ""})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = PackageFilterSet(data={"is_vulnerable": "no"})
+        self.assertEqual([p1], list(filterset.qs))
+
+        filterset = PackageFilterSet(data={"is_vulnerable": "yes"})
+        self.assertEqual([p2], list(filterset.qs))
+
+    def test_scanpipe_filters_package_filterset_search(self):
+        p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        DiscoveredPackage.create_from_data(self.project1, package_data2)
+
+        filterset = PackageFilterSet(data={})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.package_url})
+        self.assertEqual([p1], list(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.version})
+        self.assertEqual([p1], list(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.name})
+        self.assertEqual(2, len(filterset.qs))
+
+        filterset = PackageFilterSet(data={"search": p1.type})
+        self.assertEqual(2, len(filterset.qs))
+
+    def test_scanpipe_filters_dependency_filterset(self):
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
+        CodebaseResource.objects.create(
+            project=self.project1,
+            path="daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+        )
+        CodebaseResource.objects.create(
+            project=self.project1,
+            path="data.tar.gz-extract/Gemfile.lock",
+        )
+        d1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
+        d2 = DiscoveredDependency.create_from_data(self.project1, dependency_data2)
+
+        filterset = DependencyFilterSet(data={"is_resolved": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"is_resolved": True})
+        self.assertEqual([d2], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"is_resolved": False})
+        self.assertEqual([d1], list(filterset.qs))
+
+        filterset = DependencyFilterSet(data={"type": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"type": "pypi"})
+        self.assertEqual([d1], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"type": "gem"})
+        self.assertEqual([d2], list(filterset.qs))
+
+        filterset = DependencyFilterSet(data={"scope": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"scope": "install"})
+        self.assertEqual([d1], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"scope": "dependencies"})
+        self.assertEqual([d2], list(filterset.qs))
+
+        filterset = DependencyFilterSet(data={"datasource_id": ""})
+        self.assertEqual(2, len(filterset.qs))
+        filterset = DependencyFilterSet(data={"datasource_id": "pypi_sdist_pkginfo"})
+        self.assertEqual([d1], list(filterset.qs))
+        filterset = DependencyFilterSet(data={"datasource_id": "gemfile_lock"})
+        self.assertEqual([d2], list(filterset.qs))
+
+    def test_scanpipe_filters_parse_query_string_to_lookups(self):
+        inputs = {
+            "LICENSE": "(AND: ('name__icontains', 'LICENSE'))",
+            "two words": (
+                "(AND: ('name__icontains', 'two'), ('name__icontains', 'words'))"
+            ),
+            "'two words'": "(AND: ('name__icontains', 'two words'))",
+            "na me:LICENSE": (
+                "(AND: ('name__icontains', 'na'), ('me__icontains', 'LICENSE'))"
+            ),
+            "name:LICENSE": "(AND: ('name__icontains', 'LICENSE'))",
+            "default_value name:LICENSE": (
+                "(AND: ('name__icontains', 'default_value'), "
+                "('name__icontains', 'LICENSE'))"
+            ),
+            'name:"name with spaces"': "(AND: ('name__icontains', 'name with spaces'))",
+            "name:'name with spaces'": "(AND: ('name__icontains', 'name with spaces'))",
+            "-name:LICENSE -name:NOTICE": (
+                "(AND: (NOT (AND: ('name__icontains', 'LICENSE'))), "
+                "(NOT (AND: ('name__icontains', 'NOTICE'))))"
+            ),
+            "name:LICENSE status:scanned": (
+                "(AND: ('name__icontains', 'LICENSE'), "
+                "('status__icontains', 'scanned'))"
+            ),
+            'name^:"file"': "(AND: ('name__istartswith', 'file'))",
+            'name$:".zip"': "(AND: ('name__iendswith', '.zip'))",
+            'name=:"LICENSE"': "(AND: ('name__iexact', 'LICENSE'))",
+            'name~:"LIC"': "(AND: ('name__icontains', 'LIC'))",
+            'count<:"100"': "(AND: ('count__lt', '100'))",
+            'count>:"10"': "(AND: ('count__gt', '10'))",
+        }
+
+        for query_string, expected in inputs.items():
+            lookups = parse_query_string_to_lookups(query_string, "icontains", "name")
+            self.assertEqual(expected, str(lookups))
+
+    def test_scanpipe_filters_filter_advanced_search_query_string(self):
+        resource1 = make_resource_file(self.project1, path="dir/readme.html")
+        resource2 = make_resource_file(self.project1, path="dir/archive.zip")
+
+        data = {"search": "README"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "name:readme.html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "extension:.html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "-name:readme.html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource2], list(filterset.qs))
+
+        data = {"search": "not_a_field:value"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([], list(filterset.qs))
+
+        data = {"search": "discovered_packages:m2m"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([], list(filterset.qs))
+
+        data = {"search": "name^:read name$:html"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual([resource1], list(filterset.qs))
+
+        data = {"search": "path^:dir"}
+        filterset = ResourceFilterSet(data=data)
+        self.assertEqual(2, len(filterset.qs))

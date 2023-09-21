@@ -1,0 +1,34 @@
+{% load intcomma from humanize %}
+<article id="scan-summary-panel" class="panel is-info">
+  <div class="panel-heading py-2 is-size-6 is-flex is-justify-content-space-between">
+    Scan summary
+    {% include "scanpipe/dropdowns/help_dropdown_tooltip.html" with content="A top-level summary of the collected scanned data such as licenses, holders, and languages." only %}
+  </div>
+  <div class="panel-block p-0">
+    <table class="table is-fullwidth border-bottom-radius">
+      {% for field_label, values in scan_summary.items %}
+        <tr>
+          <th class="is-narrow">
+            {{ field_label }}
+          </th>
+          <td>
+            <ul>
+              {% for entry in values %}
+                {% if entry.value %}
+                  <li>
+                    {{ entry.value }}
+                    {% if entry.count %}
+                      <span class="tag is-rounded">
+                        {{ entry.count|intcomma }}
+                      </span>
+                    {% endif %}
+                  </li>
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+</article>

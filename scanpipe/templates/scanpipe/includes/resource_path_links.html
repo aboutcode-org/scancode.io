@@ -1,0 +1,17 @@
+{% spaceless %}
+<h1 class="is-size-5 break-word">
+  {% for segment, subpath, is_extract in object.get_path_segments_with_subpath %}
+    {% if not forloop.last %}
+      {% if is_extract %}
+        <a class="has-text-weight-semibold" href="{% url 'resource_detail' project.slug subpath %}">{{ segment }}</a>
+        <a href="{% url 'project_resources' project.slug %}?search={{ subpath }}-extract">-extract</a>
+      {% else %}
+        <a href="{% url 'project_resources' project.slug %}?search={{ subpath }}">{{ segment }}</a>
+      {% endif %}
+      <span class="mx-1">/</span>
+    {% else %}
+      <span class="has-text-weight-semibold">{{ segment }}{% if is_extract %}-extract{% endif %}</span>
+    {% endif %}
+  {% endfor %}
+</h1>
+{% endspaceless %}

@@ -1,0 +1,46 @@
+<div class="content">
+  <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+    <thead>
+      <tr>
+        <th style="width: 210px;">Affected by</th>
+        <th>Summary</th>
+        <th style="width: 210px;">Aliases</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for vulnerability in tab_data.fields.affected_by_vulnerabilities.value %}
+        <tr>
+          <td>
+            <a href="{{ VULNERABLECODE_URL }}vulnerabilities/{{ vulnerability.vulnerability_id }}" target="_blank">
+              {{ vulnerability.vulnerability_id }}
+              <i class="fa-solid fa-up-right-from-square is-small"></i>
+            </a>
+          </td>
+          <td>
+            {{ vulnerability.summary }}
+          </td>
+          <td>
+            {% for alias in vulnerability.aliases %}
+              {% if alias|slice:":3" == "CVE" %}
+                <a href="https://nvd.nist.gov/vuln/detail/{{ alias }}" target="_blank">{{ alias }}
+                  <i class="fa-solid fa-up-right-from-square is-small"></i>
+                </a>
+              {% elif alias|slice:":4" == "GHSA" %}
+                <a href="https://github.com/advisories/{{ alias }}" target="_blank">{{ alias }}
+                  <i class="fa-solid fa-up-right-from-square is-small"></i>
+                </a>
+              {% elif alias|slice:":3" == "NPM" %}
+                <a href="https://github.com/nodejs/security-wg/blob/main/vuln/npm/{{ alias|slice:"4:" }}.json" target="_blank">{{ alias }}
+                  <i class="fa-solid fa-up-right-from-square is-small"></i>
+                </a>
+              {% else %}
+                {{ alias }}
+              {% endif %}
+              <br>
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

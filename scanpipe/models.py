@@ -37,7 +37,10 @@ from django.apps import apps
 from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db import transaction
 from django.db.models import Count
@@ -60,8 +63,16 @@ from django.utils.translation import gettext_lazy as _
 import django_rq
 import redis
 import requests
+import saneyaml
 from commoncode.fileutils import parent_directory
 from commoncode.hash import multi_checksums
+from cyclonedx import model as cyclonedx_model
+from cyclonedx.model import component as cyclonedx_component
+from extractcode import EXTRACT_SUFFIX
+from formattedcode.output_cyclonedx import CycloneDxExternalRef
+from licensedcode.cache import build_spdx_license_expression
+from licensedcode.cache import get_licensing
+from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
 from packageurl import PackageURL
 from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
@@ -71,11 +82,13 @@ from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
+from taggit.managers import TaggableManager
+from taggit.models import GenericUUIDTaggedItemBase
+from taggit.models import TaggedItemBase
 
 from scancodeio import __version__ as scancodeio_version
+from scanpipe import humanize_time
 from scanpipe import tasks
-from scanpipe.packagedb_models import AbstractPackage
-from scanpipe.packagedb_models import AbstractResource
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -83,6 +96,10 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 class RunInProgressError(Exception):
     """Run are in progress or queued on this project."""
+
+
+class RunNotAllowedToStart(Exception):
+    """Previous Runs have not completed yet."""
 
 
 # PackageURL._fields
@@ -109,7 +126,57 @@ class UUIDPKModel(models.Model):
         return str(self.uuid)[0:8]
 
 
+class HashFieldsMixin(models.Model):
+    """
+    The hash fields are not indexed by default, use the `indexes` in Meta as needed:
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['md5']),
+            models.Index(fields=['sha1']),
+            models.Index(fields=['sha256']),
+            models.Index(fields=['sha512']),
+        ]
+    """
+
+    md5 = models.CharField(
+        _("MD5"),
+        max_length=32,
+        blank=True,
+        help_text=_("MD5 checksum hex-encoded, as in md5sum."),
+    )
+    sha1 = models.CharField(
+        _("SHA1"),
+        max_length=40,
+        blank=True,
+        help_text=_("SHA1 checksum hex-encoded, as in sha1sum."),
+    )
+    sha256 = models.CharField(
+        _("SHA256"),
+        max_length=64,
+        blank=True,
+        help_text=_("SHA256 checksum hex-encoded, as in sha256sum."),
+    )
+    sha512 = models.CharField(
+        _("SHA512"),
+        max_length=128,
+        blank=True,
+        help_text=_("SHA512 checksum hex-encoded, as in sha512sum."),
+    )
+
+    class Meta:
+        abstract = True
+
+
 class AbstractTaskFieldsModel(models.Model):
+    """
+    Base model including all the fields and methods to synchronize tasks in the
+    database with their related RQ Job.
+
+    Specify ``update_fields`` during each ``save()`` to force a SQL UPDATE in order to
+    avoid any data loss when the model fields are updated during the task execution.
+    """
+
     task_id = models.UUIDField(
         blank=True,
         null=True,
@@ -134,6 +201,7 @@ class AbstractTaskFieldsModel(models.Model):
         blank=True,
         editable=False,
     )
+    log = models.TextField(blank=True, editable=False)
 
     class Meta:
         abstract = True
@@ -163,9 +231,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     @property
     def job(self):
-        """
-        None if the job could not be found in the queues registries.
-        """
+        """None if the job could not be found in the queues registries."""
         return self.get_job(str(self.task_id))
 
     @property
@@ -176,36 +242,26 @@ class AbstractTaskFieldsModel(models.Model):
 
     @property
     def task_succeeded(self):
-        """
-        Returns True if the task was successfully executed.
-        """
+        """Return True if the task was successfully executed."""
         return self.task_exitcode == 0
 
     @property
     def task_failed(self):
-        """
-        Returns True if the task failed.
-        """
+        """Return True if the task failed."""
         return self.task_exitcode and self.task_exitcode > 0
 
     @property
     def task_stopped(self):
-        """
-        Returns True if the task was stopped.
-        """
+        """Return True if the task was stopped."""
         return self.task_exitcode == 99
 
     @property
     def task_staled(self):
-        """
-        Returns True if the task staled.
-        """
+        """Return True if the task staled."""
         return self.task_exitcode == 88
 
     class Status(models.TextChoices):
-        """
-        List of Run status.
-        """
+        """List of Run status."""
 
         NOT_STARTED = "not_started"
         QUEUED = "queued"
@@ -217,9 +273,7 @@ class AbstractTaskFieldsModel(models.Model):
 
     @property
     def status(self):
-        """
-        Returns the task current status.
-        """
+        """Return the task current status."""
         status = self.Status
 
         if self.task_succeeded:
@@ -253,76 +307,64 @@ class AbstractTaskFieldsModel(models.Model):
 
     @property
     def execution_time_for_display(self):
+        """Return the ``execution_time`` formatted for display."""
         execution_time = self.execution_time
         if execution_time:
-            message = f"{execution_time} seconds"
-            if execution_time > 3600:
-                message += f" ({execution_time / 3600:.1f} hours)"
-            elif execution_time > 60:
-                message += f" ({execution_time / 60:.1f} minutes)"
-            return message
+            return humanize_time(execution_time)
 
     def reset_task_values(self):
-        """
-        Resets all task-related fields to their initial null value.
-        """
+        """Reset all task-related fields to their initial null value."""
         self.task_id = None
         self.task_start_date = None
         self.task_end_date = None
         self.task_exitcode = None
         self.task_output = ""
+        self.save(
+            update_fields=[
+                "task_id",
+                "task_start_date",
+                "task_end_date",
+                "task_exitcode",
+                "task_output",
+            ]
+        )
 
     def set_task_started(self, task_id):
-        """
-        Sets the `task_id` and `task_start_date` fields before executing the task.
-        """
+        """Set the `task_id` and `task_start_date` fields before executing the task."""
         self.task_id = task_id
         self.task_start_date = timezone.now()
-        self.save()
+        self.save(update_fields=["task_id", "task_start_date"])
 
-    def set_task_ended(self, exitcode, output="", refresh_first=True):
-        """
-        Sets the task-related fields after the task execution.
-
-        An optional `refresh_first` —enabled by default— forces refreshing
-        the instance with the latest data from the database before saving.
-        This prevents losing values saved on the instance during the task
-        execution.
-        """
-        if refresh_first:
-            self.refresh_from_db()
-
+    def set_task_ended(self, exitcode, output=""):
+        """Set the task-related fields after the task execution."""
         self.task_exitcode = exitcode
         self.task_output = output
         self.task_end_date = timezone.now()
-        self.save()
+        self.save(update_fields=["task_exitcode", "task_output", "task_end_date"])
 
     def set_task_queued(self):
         """
-        Sets the task as "queued" by updating the `task_id` from None to this instance
-        `pk`.
-        Uses the QuerySet `update` method instead of `save` to prevent overriding
-        any fields that were set but not saved yet in the DB.
+        Set the task as "queued" by updating the ``task_id`` from ``None`` to this
+        instance ``pk``.
         """
-        manager = self.__class__.objects
-        return manager.filter(pk=self.pk, task_id__isnull=True).update(task_id=self.pk)
+        if self.task_id:
+            raise ValueError("task_id is already set")
+
+        self.task_id = self.pk
+        self.save(update_fields=["task_id"])
 
     def set_task_staled(self):
-        """
-        Sets the task as "stale" using a special 88 exitcode value.
-        """
+        """Set the task as "stale" using a special 88 exitcode value."""
         self.set_task_ended(exitcode=88)
 
     def set_task_stopped(self):
-        """
-        Sets the task as "stopped" using a special 99 exitcode value.
-        """
+        """Set the task as "stopped" using a special 99 exitcode value."""
         self.set_task_ended(exitcode=99)
 
     def stop_task(self):
-        """
-        Stops a "running" task.
-        """
+        """Stop a "running" task."""
+        self.append_to_log("Stop task requested")
+
         if not settings.SCANCODEIO_ASYNC:
             self.set_task_stopped()
             return
@@ -335,7 +377,8 @@ class AbstractTaskFieldsModel(models.Model):
 
         if self.job_status == JobStatus.FAILED:
             self.set_task_ended(
-                exitcode=1, output=f"Killed from outside, exc_info={self.job.exc_info}"
+                exitcode=1,
+                output=f"Killed from outside, latest_result={self.job.latest_result()}",
             )
             return
 
@@ -345,9 +388,7 @@ class AbstractTaskFieldsModel(models.Model):
         self.set_task_stopped()
 
     def delete_task(self, delete_self=True):
-        """
-        Deletes a "not started" or "queued" task.
-        """
+        """Delete a "not started" or "queued" task."""
         if settings.SCANCODEIO_ASYNC and self.task_id:
             job = self.job
             if job:
@@ -356,11 +397,18 @@ class AbstractTaskFieldsModel(models.Model):
         if delete_self:
             self.delete()
 
+    def append_to_log(self, message):
+        """Append the ``message`` string to the ``log`` field of this instance."""
+        message = message.strip()
+        if any(lf in message for lf in ("\n", "\r")):
+            raise ValueError("message cannot contain line returns (either CR or LF).")
+
+        self.log = self.log + message + "\n"
+        self.save(update_fields=["log"])
+
 
 class ExtraDataFieldMixin(models.Model):
-    """
-    Adds the `extra_data` field and helper methods.
-    """
+    """Add the `extra_data` field and helper methods."""
 
     extra_data = models.JSONField(
         default=dict,
@@ -369,28 +417,52 @@ class ExtraDataFieldMixin(models.Model):
     )
 
     def update_extra_data(self, data):
-        """
-        Updates the `extra_data` field with the provided `data` dict.
-        """
-        if type(data) != dict:
+        """Update the `extra_data` field with the provided `data` dict."""
+        if not isinstance(data, dict):
             raise ValueError("Argument `data` value must be a dict()")
 
         self.extra_data.update(data)
-        self.save()
+        self.save(update_fields=["extra_data"])
 
     class Meta:
         abstract = True
 
 
+class UpdateMixin:
+    """
+    Provide a ``update()`` method to trigger a save() on the object with the
+    ``update_fields`` automatically set to force a SQL UPDATE.
+    """
+
+    def update(self, **kwargs):
+        """
+        Update this resource with the provided ``kwargs`` values.
+        The full ``save()`` process will be triggered, including signals, and the
+        ``update_fields`` is automatically set.
+        """
+        for field_name, value in kwargs.items():
+            setattr(self, field_name, value)
+
+        self.save(update_fields=list(kwargs.keys()))
+
+
+def get_project_slug(project):
+    """
+    Return a "slug" value for the provided ``project`` based on the slugify name
+    attribute combined with the ``short_uuid`` to ensure its uniqueness.
+    """
+    return f"{slugify(project.name)}-{project.short_uuid}"
+
+
 def get_project_work_directory(project):
     """
-    Returns the work directory location for a given `project`.
+    Return the work directory location for a given `project`.
     The `project` name is "slugified" to generate a nicer directory path without
     any whitespace or special characters.
     A short version of the `project` uuid is added as a suffix to ensure
     uniqueness of the work directory location.
     """
-    project_workspace_id = f"{slugify(project.name)}-{project.short_uuid}"
+    project_workspace_id = get_project_slug(project)
     return f"{scanpipe_app.workspace_path}/projects/{project_workspace_id}"
 
 
@@ -419,7 +491,13 @@ class ProjectQuerySet(models.QuerySet):
         return self.annotate(**annotations)
 
 
-class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
+class UUIDTaggedItem(GenericUUIDTaggedItemBase, TaggedItemBase):
+    class Meta:
+        verbose_name = _("Label")
+        verbose_name_plural = _("Labels")
+
+
+class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     """
     The Project encapsulates all analysis processing.
     Multiple analysis pipelines can be run on the same project.
@@ -427,14 +505,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     created_date = models.DateTimeField(
         auto_now_add=True,
-        db_index=True,
         help_text=_("Creation date for this project."),
     )
     name = models.CharField(
         unique=True,
-        db_index=True,
         max_length=100,
         help_text=_("Name for this project."),
+    )
+    slug = models.SlugField(
+        unique=True,
+        max_length=110,  # enough for name.max_length + len(short_uuid)
     )
     WORK_DIRECTORIES = ["input", "output", "codebase", "tmp"]
     work_directory = models.CharField(
@@ -452,23 +532,35 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             "happened during the archive operation."
         ),
     )
+    notes = models.TextField(blank=True)
+    settings = models.JSONField(default=dict, blank=True)
+    labels = TaggableManager(through=UUIDTaggedItem)
 
     objects = ProjectQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_date"]
+        indexes = [
+            models.Index(fields=["-created_date"]),
+            models.Index(fields=["is_archived"]),
+            models.Index(fields=["name"]),
+        ]
 
     def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
         """
-        Saves this project instance.
+        Save this project instance.
         The workspace directories are set up during project creation.
         """
+        if not self.slug:
+            self.slug = get_project_slug(project=self)
+
         if not self.work_directory:
             self.work_directory = get_project_work_directory(project=self)
             self.setup_work_directory()
+
         super().save(*args, **kwargs)
 
     def archive(self, remove_input=False, remove_codebase=False, remove_output=False):
@@ -496,34 +588,61 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         self.setup_work_directory()
 
         self.is_archived = True
-        self.save()
+        self.save(update_fields=["is_archived"])
+
+    def delete_related_objects(self):
+        """
+        Delete all related object instances using the private `_raw_delete` model API.
+        This bypass the objects collection, cascade deletions, and signals.
+        It results in a much faster objects deletion, but it needs to be applied in the
+        correct models order as the cascading event will not be triggered.
+        Note that this approach is used in Django's `fast_deletes` but the scanpipe
+        models are cannot be fast-deleted as they have cascades and relations.
+        """
+        # Use default `delete()` on the DiscoveredPackage model, as the
+        # `codebase_resources (ManyToManyField)` records need to collected and
+        # properly deleted first.
+        # Since this `ManyToManyField` has an implicit model table, we cannot directly
+        # run the `_raw_delete()` on its QuerySet.
+        _, deleted_counter = self.discoveredpackages.all().delete()
+
+        # Removes all tags from this project by deleting the UUIDTaggedItem instances.
+        self.labels.clear()
+
+        relationships = [
+            self.projectmessages,
+            self.codebaserelations,
+            self.discovereddependencies,
+            self.codebaseresources,
+            self.runs,
+        ]
+
+        for qs in relationships:
+            count = qs.all()._raw_delete(qs.db)
+            deleted_counter[qs.model._meta.label] = count
+
+        return deleted_counter
 
     def delete(self, *args, **kwargs):
-        """
-        Deletes the `work_directory` along all project-related data in the database.
-        """
+        """Delete the `work_directory` along project-related data in the database."""
         self._raise_if_run_in_progress()
 
         shutil.rmtree(self.work_directory, ignore_errors=True)
+
+        # Start with the optimized deletion of the related objects before calling the
+        # full `delete()` process.
+        self.delete_related_objects()
+
         return super().delete(*args, **kwargs)
 
     def reset(self, keep_input=True):
         """
-        Resets the project by deleting all related database objects and all work
+        Reset the project by deleting all related database objects and all work
         directories except the input directory—when the `keep_input` option is True.
         """
         self._raise_if_run_in_progress()
 
-        relationships = [
-            self.projecterrors,
-            self.runs,
-            self.discoveredpackages,
-            self.discovereddependencies,
-            self.codebaseresources,
-        ]
-
-        for relation in relationships:
-            relation.all().delete()
+        self.delete_related_objects()
 
         work_directories = [
             self.codebase_path,
@@ -543,9 +662,42 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
         self.setup_work_directory()
 
+    def clone(
+        self,
+        clone_name,
+        copy_inputs=False,
+        copy_pipelines=False,
+        copy_settings=False,
+        copy_subscriptions=False,
+        execute_now=False,
+    ):
+        """Clone this project using the provided ``clone_name`` as new project name."""
+        cloned_project = Project.objects.create(
+            name=clone_name,
+            input_sources=self.input_sources if copy_inputs else {},
+            settings=self.settings if copy_settings else {},
+        )
+
+        if labels := self.labels.names():
+            cloned_project.labels.add(*labels)
+
+        if copy_inputs:
+            for input_location in self.inputs():
+                cloned_project.copy_input_from(input_location)
+
+        if copy_pipelines:
+            for run in self.runs.all():
+                cloned_project.add_pipeline(run.pipeline_name, execute_now)
+
+        if copy_subscriptions:
+            for subscription in self.webhooksubscriptions.all():
+                cloned_project.add_webhook_subscription(subscription.target_url)
+
+        return cloned_project
+
     def _raise_if_run_in_progress(self):
         """
-        Raises a `RunInProgressError` exception if one of the project related run is
+        Raise a `RunInProgressError` exception if one of the project related run is
         queued or running.
         """
         if self.runs.queued_or_running().exists():
@@ -555,56 +707,88 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             )
 
     def setup_work_directory(self):
-        """
-        Creates all of the work_directory structure and skips if already existing.
-        """
+        """Create all the work_directory structure and skips if already existing."""
         for subdirectory in self.WORK_DIRECTORIES:
             Path(self.work_directory, subdirectory).mkdir(parents=True, exist_ok=True)
 
     @property
     def work_path(self):
-        """
-        Returns the `work_directory` as a Path instance.
-        """
+        """Return the `work_directory` as a Path instance."""
         return Path(self.work_directory)
 
     @property
     def input_path(self):
-        """
-        Returns the `input` directory as a Path instance.
-        """
+        """Return the `input` directory as a Path instance."""
         return Path(self.work_path / "input")
 
     @property
     def output_path(self):
-        """
-        Returns the `output` directory as a Path instance.
-        """
+        """Return the `output` directory as a Path instance."""
         return Path(self.work_path / "output")
 
     @property
     def codebase_path(self):
-        """
-        Returns the `codebase` directory as a Path instance.
-        """
+        """Return the `codebase` directory as a Path instance."""
         return Path(self.work_path / "codebase")
 
     @property
     def tmp_path(self):
-        """
-        Returns the `tmp` directory as a Path instance.
-        """
+        """Return the `tmp` directory as a Path instance."""
         return Path(self.work_path / "tmp")
+
+    def get_codebase_config_directory(self):
+        """
+        Return the ``.scancode`` config directory if available in the `codebase`
+        directory.
+        """
+        config_directory = self.codebase_path / settings.SCANCODEIO_CONFIG_DIR
+        if config_directory.exists():
+            return config_directory
+
+    def get_input_config_file(self):
+        """
+        Return the ``scancode-config.yml`` file from the input/ directory if
+        available.
+        """
+        config_file = self.input_path / settings.SCANCODEIO_CONFIG_FILE
+        if config_file.exists():
+            return config_file
+
+    def get_settings_as_yml(self):
+        """Return the ``settings`` file content as yml, suitable for a config file."""
+        return saneyaml.dump(self.settings)
+
+    def get_env(self, field_name=None):
+        """
+        Return the project environment loaded from the ``.scancode/config.yml`` config
+        file, when available, and overriden by the ``settings`` model field.
+
+        ``field_name`` can be provided to get a single entry from the env.
+        """
+        env = {}
+
+        # 1. Load settings from config file when available.
+        if config_file := self.get_input_config_file():
+            with suppress(saneyaml.YAMLError):
+                env = saneyaml.load(config_file.read_text())
+
+        # 2. Update with values from the Project ``settings`` field.
+        env.update(self.settings)
+
+        if field_name:
+            return env.get(field_name)
+
+        return env
 
     def clear_tmp_directory(self):
         """
-        Deletes the whole content of the tmp/ directory.
+        Delete the whole content of the tmp/ directory.
         This is called at the end of each pipeline Run, and it doesn't store
         any content that might be needed for further processing in following
         pipeline Run.
         """
         shutil.rmtree(self.tmp_path, ignore_errors=True)
-        self.tmp_path.mkdir(exist_ok=True)
+        self.tmp_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def input_sources_list(self):
@@ -613,22 +797,30 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             for filename, source in self.input_sources.items()
         ]
 
-    def inputs(self, pattern="**/*"):
+    def inputs(self, pattern="**/*", extensions=None):
         """
-        Returns all files and directories path of the input/ directory matching
+        Return all files and directories path of the input/ directory matching
         a given `pattern`.
         The default `**/*` pattern means "this directory and all subdirectories,
         recursively".
         Use the `*` pattern to only list the root content.
+        The returned paths can be limited to the provided list of ``extensions``.
         """
-        return self.input_path.glob(pattern)
+        if not extensions:
+            return self.input_path.glob(pattern)
+
+        if not isinstance(extensions, (list, tuple)):
+            raise TypeError("extensions should be a list or tuple")
+
+        return (
+            path
+            for path in self.input_path.glob(pattern)
+            if str(path).endswith(tuple(extensions))
+        )
 
     @property
     def input_files(self):
-        """
-        Returns a list of files' relative paths in the input/ directory
-        recursively.
-        """
+        """Return list of files' relative paths in the input/ directory recursively."""
         return [
             str(path.relative_to(self.input_path))
             for path in self.inputs()
@@ -638,7 +830,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @staticmethod
     def get_root_content(directory):
         """
-        Returns a list of all files and directories of a given `directory`.
+        Return a list of all files and directories of a given `directory`.
         Only the first level children will be listed.
         """
         return [str(path.relative_to(directory)) for path in directory.glob("*")]
@@ -646,7 +838,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @property
     def input_root(self):
         """
-        Returns a list of all files and directories of the input/ directory.
+        Return a list of all files and directories of the input/ directory.
         Only the first level children will be listed.
         """
         return self.get_root_content(self.input_path)
@@ -654,8 +846,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @property
     def inputs_with_source(self):
         """
-        Returns a list of inputs including the source, type, sha256, and size data.
-        Returns the `missing_inputs` defined in the `input_sources` field but not
+        Return a list of inputs including the source, type, sha256, and size data.
+        Return the `missing_inputs` defined in the `input_sources` field but not
         available in the input/ directory.
         Only first level children will be listed.
         """
@@ -680,14 +872,25 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @property
     def output_root(self):
         """
-        Returns a list of all files and directories of the output/ directory.
+        Return a list of all files and directories of the output/ directory.
         Only first level children will be listed.
         """
         return self.get_root_content(self.output_path)
 
+    def get_output_files_info(self):
+        """Return files form the output work directory including the name and size."""
+        return [
+            {
+                "name": path.name,
+                "size": path.stat().st_size,
+            }
+            for path in self.output_path.glob("*")
+            if path.is_file()
+        ]
+
     def get_output_file_path(self, name, extension):
         """
-        Returns a crafted file path in the project output/ directory using
+        Return a crafted file path in the project output/ directory using
         given `name` and `extension`.
         The current date and time strings are added to the filename.
 
@@ -703,7 +906,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def get_latest_output(self, filename):
         """
-        Returns the latest output file with the "filename" prefix, for example
+        Return the latest output file with the "filename" prefix, for example
         "scancode-<timestamp>.json".
         """
         output_files = sorted(self.output_path.glob(f"*{filename}*.json"))
@@ -711,31 +914,28 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
             return output_files[-1]
 
     def walk_codebase_path(self):
-        """
-        Returns all files and directories path of the codebase/ directory recursively.
-        """
+        """Return files and directories path of the codebase/ directory recursively."""
         return self.codebase_path.rglob("*")
 
     @cached_property
-    def can_add_input(self):
+    def can_change_inputs(self):
         """
-        Returns True until one pipeline run has started to execute on the project.
+        Return True until one pipeline run has started its execution on the project.
+        Always False when the project is archived.
         """
-        return not self.runs.has_start_date().exists()
+        return not self.is_archived and not self.runs.has_start_date().exists()
 
     def add_input_source(self, filename, source, save=False):
         """
-        Adds given `filename` and `source` to the current project's `input_sources`
+        Add given `filename` and `source` to the current project's `input_sources`
         field.
         """
         self.input_sources[filename] = source
         if save:
-            self.save()
+            self.save(update_fields=["input_sources"])
 
     def write_input_file(self, file_object):
-        """
-        Writes the provided `file_object` to the project's input/ directory.
-        """
+        """Write the provided `file_object` to the project's input/ directory."""
         filename = file_object.name
         file_path = Path(self.input_path / filename)
 
@@ -745,44 +945,54 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
 
     def copy_input_from(self, input_location):
         """
-        Copies the file at `input_location` to the current project's input/ directory.
+        Copy the file at `input_location` to the current project's input/
+        directory.
         """
-        from scanpipe.pipes.input import copy_inputs
+        from scanpipe.pipes.input import copy_input
 
-        copy_inputs([input_location], self.input_path)
+        copy_input(input_location, self.input_path)
 
     def move_input_from(self, input_location):
         """
-        Moves the file at `input_location` to the current project's input/ directory.
+        Move the file at `input_location` to the current project's input/
+        directory.
         """
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
 
+    def delete_input(self, name):
+        """Delete the provided ``name`` input from disk and from ``input_sources``."""
+        file_path = self.input_path / name
+        file_path.unlink(missing_ok=True)
+
+        if self.input_sources.pop(name, None):
+            self.save(update_fields=["input_sources"])
+            return True
+
     def add_downloads(self, downloads):
         """
-        Moves the given `downloads` to the current project's input/ directory and
+        Move the given `downloads` to the current project's input/ directory and
         adds the `input_source` for each entry.
         """
         for downloaded in downloads:
             self.move_input_from(downloaded.path)
             self.add_input_source(downloaded.filename, downloaded.uri)
-        self.save()
+        self.save(update_fields=["input_sources"])
 
     def add_uploads(self, uploads):
         """
-        Writes the given `uploads` to the current project's input/ directory and
+        Write the given `uploads` to the current project's input/ directory and
         adds the `input_source` for each entry.
         """
         for uploaded in uploads:
             self.write_input_file(uploaded)
             self.add_input_source(filename=uploaded.name, source="uploaded")
-        self.save()
+        self.save(update_fields=["input_sources"])
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
-        Creates a new Run instance with the provided `pipeline` on the current
-        project.
+        Create a new Run instance with the provided `pipeline` on the current project.
 
         If `execute_now` is True, the pipeline task is created.
         on_commit() is used to postpone the task creation after the transaction is
@@ -791,81 +1001,94 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         immediately.
         """
         pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
+        if not pipeline_class:
+            raise ValueError(f"Unknown pipeline: {pipeline_name}")
+
         run = Run.objects.create(
             project=self,
             pipeline_name=pipeline_name,
-            description=pipeline_class.get_doc(),
+            description=pipeline_class.get_summary(),
         )
-        if execute_now:
-            transaction.on_commit(run.execute_task_async)
+
+        # Do not start the pipeline execution, even if explicitly requested,
+        # when the Run is not allowed to start yet.
+        if execute_now and run.can_start:
+            transaction.on_commit(run.start)
+
         return run
 
     def add_webhook_subscription(self, target_url):
         """
-        Creates a new WebhookSubscription instance with the provided `target_url` for
+        Create a new WebhookSubscription instance with the provided `target_url` for
         the current project.
         """
         return WebhookSubscription.objects.create(project=self, target_url=target_url)
 
     def get_next_run(self):
-        """
-        Returns the next non-executed Run instance assigned to current project.
-        """
+        """Return the next non-executed Run instance assigned to current project."""
         with suppress(ObjectDoesNotExist):
             return self.runs.not_started().earliest("created_date")
 
-    def get_latest_failed_run(self):
+    def add_message(
+        self, severity, description="", model="", details=None, exception=None
+    ):
         """
-        Returns the latest failed Run instance of the current project.
-        """
-        with suppress(ObjectDoesNotExist):
-            return self.runs.failed().latest("created_date")
+        Create a ProjectMessage record for this Project.
 
-    def add_error(self, error, model, details=None):
-        """
-        Creates a "ProjectError" record from the provided `error` Exception for this
-        project.
-        The `model` attribute can be provided as a string or as a Model class.
+        The ``model`` attribute can be provided as a string or as a Model class.
         """
         if inspect.isclass(model):
             model = model.__name__
 
         traceback = ""
-        if hasattr(error, "__traceback__"):
-            traceback = "".join(format_tb(error.__traceback__))
+        if hasattr(exception, "__traceback__"):
+            traceback = "".join(format_tb(exception.__traceback__))
 
-        return ProjectError.objects.create(
+        if exception and not description:
+            description = str(exception)
+
+        return ProjectMessage.objects.create(
             project=self,
+            severity=severity,
+            description=description,
             model=model,
             details=details or {},
-            message=str(error),
             traceback=traceback,
         )
 
+    def add_info(self, description="", model="", details=None, exception=None):
+        """Create an INFO ProjectMessage record for this project."""
+        severity = ProjectMessage.Severity.INFO
+        return self.add_message(severity, description, model, details, exception)
+
+    def add_warning(self, description="", model="", details=None, exception=None):
+        """Create a WARNING ProjectMessage record for this project."""
+        severity = ProjectMessage.Severity.WARNING
+        return self.add_message(severity, description, model, details, exception)
+
+    def add_error(self, description="", model="", details=None, exception=None):
+        """Create an ERROR ProjectMessage record using for this project."""
+        severity = ProjectMessage.Severity.ERROR
+        return self.add_message(severity, description, model, details, exception)
+
     def get_absolute_url(self):
-        """
-        Returns this project's details URL.
-        """
-        return reverse("project_detail", args=[self.uuid])
+        """Return this project's details URL."""
+        return reverse("project_detail", args=[self.slug])
 
     @cached_property
     def resource_count(self):
-        """
-        Returns the number of resources related to this project.
-        """
+        """Return the number of resources related to this project."""
         return self.codebaseresources.count()
 
     @cached_property
     def file_count(self):
-        """
-        Returns the number of **file** resources related to this project.
-        """
+        """Return the number of **file** resources related to this project."""
         return self.codebaseresources.files().count()
 
     @cached_property
     def file_in_package_count(self):
         """
-        Returns the number of **file** resources **in a package** related to this
+        Return the number of **file** resources **in a package** related to this
         project.
         """
         return self.codebaseresources.files().in_package().count()
@@ -873,31 +1096,40 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
     @cached_property
     def file_not_in_package_count(self):
         """
-        Returns the number of **file** resources **not in a package** related to this
+        Return the number of **file** resources **not in a package** related to this
         project.
         """
         return self.codebaseresources.files().not_in_package().count()
 
     @cached_property
     def package_count(self):
-        """
-        Returns the number of packages related to this project.
-        """
+        """Return the number of packages related to this project."""
         return self.discoveredpackages.count()
 
     @cached_property
+    def vulnerable_package_count(self):
+        """Return the number of vulnerable packages related to this project."""
+        return self.discoveredpackages.vulnerable().count()
+
+    @cached_property
+    def vulnerable_dependency_count(self):
+        """Return the number of vulnerable dependencies related to this project."""
+        return self.discovereddependencies.vulnerable().count()
+
+    @cached_property
     def dependency_count(self):
-        """
-        Returns the number of dependencies related to this project.
-        """
+        """Return the number of dependencies related to this project."""
         return self.discovereddependencies.count()
 
     @cached_property
-    def error_count(self):
-        """
-        Returns the number of errors related to this project.
-        """
-        return self.projecterrors.count()
+    def message_count(self):
+        """Return the number of messages related to this project."""
+        return self.projectmessages.count()
+
+    @cached_property
+    def relation_count(self):
+        """Return the number of relations related to this project."""
+        return self.codebaserelations.count()
 
     @cached_property
     def has_single_resource(self):
@@ -905,7 +1137,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, models.Model):
         Return True if we only have a single CodebaseResource associated to this
         project, False otherwise.
         """
-        return self.codebaseresources.count() == 1
+        return self.resource_count == 1
 
 
 class GroupingQuerySetMixin:
@@ -940,10 +1172,9 @@ class GroupingQuerySetMixin:
         `field_name` starting at the `limit`.
         """
         json_fields_mapping = {
-            "license_key": ("licenses", "key"),
-            "license_category": ("licenses", "category"),
             "copyrights": ("copyrights", "copyright"),
             "holders": ("holders", "holder"),
+            "authors": ("authors", "author"),
         }
 
         if field_name in json_fields_mapping:
@@ -960,7 +1191,7 @@ class GroupingQuerySetMixin:
 class JSONFieldQuerySetMixin:
     def json_field_contains(self, field_name, value):
         """
-        Filters the QuerySet looking for the `value` string in the `field_name` JSON
+        Filter the QuerySet looking for the `value` string in the `field_name` JSON
         field converted into text.
         Empty values are excluded as there's no need to cast those into text.
         """
@@ -972,7 +1203,7 @@ class JSONFieldQuerySetMixin:
 
     def json_list_contains(self, field_name, key, values):
         """
-        Filters on the JSONField `field_name` that stores a list of dictionaries.
+        Filter on the JSONField `field_name` that stores a list of dictionaries.
 
         json_list_contains("licenses", "name", ["MIT License", "Apache License 2.0"])
         """
@@ -1008,11 +1239,14 @@ class ProjectRelatedQuerySet(
     def project(self, project):
         return self.filter(project=project)
 
+    def get_or_none(self, *args, **kwargs):
+        """Get the object from provided lookups or get None"""
+        with suppress(self.model.DoesNotExist, ValidationError):
+            return self.get(*args, **kwargs)
 
-class ProjectRelatedModel(models.Model):
-    """
-    A base model for all models that are related to a Project.
-    """
+
+class ProjectRelatedModel(UpdateMixin, models.Model):
+    """A base model for all models that are related to a Project."""
 
     project = models.ForeignKey(
         Project, related_name="%(class)ss", on_delete=models.CASCADE, editable=False
@@ -1028,33 +1262,49 @@ class ProjectRelatedModel(models.Model):
         return [field.name for field in cls._meta.get_fields()]
 
 
-class ProjectError(UUIDPKModel, ProjectRelatedModel):
-    """
-    Stores errors and§ exceptions raised during a pipeline run.
-    """
+class ProjectMessage(UUIDPKModel, ProjectRelatedModel):
+    """Stores messages such as errors and exceptions raised during a pipeline run."""
 
-    created_date = models.DateTimeField(auto_now_add=True, editable=False)
+    class Severity(models.TextChoices):
+        INFO = "info"
+        WARNING = "warning"
+        ERROR = "error"
+
+    severity = models.CharField(
+        max_length=10,
+        choices=Severity.choices,
+        editable=False,
+        help_text=_("Severity level of the message."),
+    )
+    description = models.TextField(blank=True, help_text=_("Description."))
     model = models.CharField(max_length=100, help_text=_("Name of the model class."))
     details = models.JSONField(
-        default=dict, blank=True, help_text=_("Data that caused the error.")
+        default=dict,
+        blank=True,
+        encoder=DjangoJSONEncoder,
+        help_text=_("Data that caused the error."),
     )
-    message = models.TextField(blank=True, help_text=_("Error message."))
     traceback = models.TextField(blank=True, help_text=_("Exception traceback."))
+    created_date = models.DateTimeField(auto_now_add=True, editable=False)
 
     class Meta:
         ordering = ["created_date"]
+        indexes = [
+            models.Index(fields=["severity"]),
+            models.Index(fields=["model"]),
+        ]
 
     def __str__(self):
-        return f"[{self.pk}] {self.model}: {self.message}"
+        return f"[{self.pk}] {self.model}: {self.description}"
 
 
-class SaveProjectErrorMixin:
+class SaveProjectMessageMixin:
     """
-    Uses `SaveProjectErrorMixin` on a model to create a "ProjectError" entry
+    Uses `SaveProjectMessageMixin` on a model to create a "ProjectMessage" entry
     from a raised exception during `save()` instead of stopping the analysis process.
 
-    The creation of a "ProjectError" can be skipped providing False for the `save_error`
-    argument. In that case, the error is not captured, it is re-raised.
+    The creation of a "ProjectMessage" can be skipped providing False for the
+    `save_error` argument. In that case, the error is not captured, it is re-raised.
     """
 
     def save(self, *args, save_error=True, capture_exception=True, **kwargs):
@@ -1074,15 +1324,12 @@ class SaveProjectErrorMixin:
 
     @classmethod
     def _check_project_field(cls, **kwargs):
-        """
-        Checks if a `project` field is declared on the model.
-        """
-
+        """Check if a `project` field is declared on the model."""
         fields = [f.name for f in cls._meta.local_fields]
         if "project" not in fields:
             return [
                 checks.Error(
-                    "'project' field is required when using SaveProjectErrorMixin.",
+                    "'project' field is required when using SaveProjectMessageMixin.",
                     obj=cls,
                     id="scanpipe.models.E001",
                 )
@@ -1090,40 +1337,40 @@ class SaveProjectErrorMixin:
 
         return []
 
-    def add_error(self, error):
+    def add_error(self, exception):
         """
-        Creates a "ProjectError" record from a given `error` Exception instance.
+        Create a ProjectMessage record using the provided ``exception`` Exception
+        instance.
         """
         return self.project.add_error(
-            error=error,
             model=self.__class__,
             details=model_to_dict(self),
+            exception=exception,
         )
 
-    def add_errors(self, errors):
+    def add_errors(self, exceptions):
         """
-        Creates "ProjectError" records from a provided `errors` Exception list.
+        Create ProjectMessage records suing the provided ``exceptions`` Exception
+        list.
         """
-        for error in errors:
-            self.add_error(error)
+        for exception in exceptions:
+            self.add_error(exception)
 
 
 class UpdateFromDataMixin:
-    """
-    Adds a method to update an object instance from a `data` dict.
-    """
+    """Add a method to update an object instance from a `data` dict."""
 
     def update_from_data(self, data, override=False):
         """
         Update this object instance with the provided `data`.
         The `save()` is called only if at least one field was modified.
         """
-        model_fields = self.__class__.model_fields()
+        model_fields = self.model_fields()
         updated_fields = []
 
         for field_name, value in data.items():
             skip_reasons = [
-                not value,
+                value in EMPTY_VALUES,
                 field_name not in model_fields,
                 field_name in PURL_FIELDS,
             ]
@@ -1136,77 +1383,59 @@ class UpdateFromDataMixin:
                 updated_fields.append(field_name)
 
         if updated_fields:
-            self.save()
+            self.save(update_fields=updated_fields)
 
         return updated_fields
 
 
 class RunQuerySet(ProjectRelatedQuerySet):
     def not_started(self):
-        """
-        Not in the execution queue, no `task_id` assigned.
-        """
+        """Not in the execution queue, no `task_id` assigned."""
         return self.no_exitcode().no_start_date().filter(task_id__isnull=True)
 
     def queued(self):
-        """
-        In the execution queue with a `task_id` assigned but not running yet.
-        """
+        """In the execution queue with a `task_id` assigned but not running yet."""
         return self.no_exitcode().no_start_date().filter(task_id__isnull=False)
 
     def running(self):
-        """
-        Running the pipeline execution.
-        """
+        """Run the pipeline execution."""
         return self.no_exitcode().has_start_date().filter(task_end_date__isnull=True)
 
     def executed(self):
-        """
-        Pipeline execution completed, includes both succeed and failed runs.
-        """
+        """Pipeline execution completed, includes both succeed and failed runs."""
         return self.filter(task_end_date__isnull=False)
 
+    def not_executed(self):
+        """No `task_end_date` set. Its execution has not completed or started yet."""
+        return self.filter(task_end_date__isnull=True)
+
     def succeed(self):
-        """
-        Pipeline execution completed with success.
-        """
+        """Pipeline execution completed with success."""
         return self.filter(task_exitcode=0)
 
     def failed(self):
-        """
-        Pipeline execution completed with failure.
-        """
+        """Pipeline execution completed with failure."""
         return self.filter(task_exitcode__gt=0)
 
     def has_start_date(self):
-        """
-        Run has a `task_start_date` set. It can be running or executed.
-        """
+        """Run has a `task_start_date` set. It can be running or executed."""
         return self.filter(task_start_date__isnull=False)
 
     def no_start_date(self):
-        """
-        Run has no `task_start_date` set.
-        """
+        """Run has no `task_start_date` set."""
         return self.filter(task_start_date__isnull=True)
 
     def no_exitcode(self):
-        """
-        Run has no `task_exitcode` set.
-        """
+        """Run has no `task_exitcode` set."""
         return self.filter(task_exitcode__isnull=True)
 
     def queued_or_running(self):
-        """
-        Run is queued or currently running.
-        """
+        """Run is queued or currently running."""
         return self.filter(task_id__isnull=False, task_end_date__isnull=True)
 
 
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
-    """
-    The Database representation of a pipeline execution.
-    """
+    """The Database representation of a pipeline execution."""
 
     pipeline_name = models.CharField(
         max_length=256,
@@ -1215,7 +1444,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     created_date = models.DateTimeField(auto_now_add=True, db_index=True)
     scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
-    log = models.TextField(blank=True, editable=False)
+    current_step = models.CharField(max_length=256, blank=True)
 
     objects = RunQuerySet.as_manager()
 
@@ -1225,10 +1454,38 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def __str__(self):
         return f"{self.pipeline_name}"
 
+    def get_previous_runs(self):
+        """Return all the previous Run instances regardless of their status."""
+        return self.project.runs.filter(created_date__lt=self.created_date)
+
+    @property
+    def can_start(self):
+        """
+        Return True if this Run is allowed to start its execution.
+
+        Run are not allowed to start when any of their previous Run instances within
+        the pipeline has not completed (not started, queued, or running).
+        This is enforced to ensure the pipelines are run in a sequential order.
+        """
+        if self.status != self.Status.NOT_STARTED:
+            return False
+
+        if self.get_previous_runs().not_executed().exists():
+            return False
+
+        return True
+
+    def start(self):
+        """Start the pipeline execution when allowed or raised an exception."""
+        if self.can_start:
+            return self.execute_task_async()
+
+        raise RunNotAllowedToStart(
+            "Cannot execute this action until all previous pipeline runs are completed."
+        )
+
     def execute_task_async(self):
-        """
-        Enqueues the pipeline execution task for an asynchronous execution.
-        """
+        """Enqueues the pipeline execution task for an asynchronous execution."""
         run_pk = str(self.pk)
 
         # Bypass entirely the queue system and run the pipeline in the current thread.
@@ -1246,10 +1503,10 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
         # In async mode, we want to set the status as "queued" **after** the job was
         # properly "enqueued".
-        # In case the `django_rq.enqueue()` raise an exception (Redis server error),
+        # In case the ``django_rq.enqueue()`` raise an exception (Redis server error),
         # we want to keep the Run status as "not started" rather than "queued".
         # Note that the Run will then be set as "running" at the start of
-        # `execute_pipeline_task()` by calling the `set_task_started()`.
+        # ``execute_pipeline_task()`` by calling the ``set_task_started()``.
         # There's no need to call the following in synchronous single thread mode as
         # the run will be directly set as "running".
         self.set_task_queued()
@@ -1259,11 +1516,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     def sync_with_job(self):
         """
         Synchronise this Run instance with its related RQ Job.
-
         This is required when a Run gets out of sync with its Job, this can happen
         when the worker or one of its processes is killed, the Run status is not
         properly updated and may stay in a Queued or Running state forever.
-
         In case the Run is out of sync of its related Job, the Run status will be
         updated accordingly. When the run was in the queue, it will be enqueued again.
         """
@@ -1278,9 +1533,11 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             if self.status == RunStatus.QUEUED:
                 logger.info(
                     f"No Job found for QUEUED Run={self.task_id}. "
-                    f"Enqueueing a new Job in the worker registery."
+                    f"Enqueueing a new Job in the worker registry."
                 )
-                self.execute_task_async()
+                # Reset the status to NOT_STARTED to allow the execution in `can_start`
+                self.reset_task_values()
+                self.start()
 
             elif self.status == RunStatus.RUNNING:
                 logger.info(
@@ -1313,7 +1570,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 )
                 self.set_task_ended(
                     exitcode=1,
-                    output=f"Job was moved to the FailedJobRegistry during cleanup",
+                    output="Job was moved to the FailedJobRegistry during cleanup",
                 )
 
             else:
@@ -1324,49 +1581,37 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 self.set_task_staled()
 
     def set_scancodeio_version(self):
-        """
-        Sets the current ScanCode.io version on the `Run.scancodeio_version` field.
-        """
+        """Set the current ScanCode.io version on the ``scancodeio_version`` field."""
         if self.scancodeio_version:
             msg = f"Field scancodeio_version already set to {self.scancodeio_version}"
             raise ValueError(msg)
-        self.scancodeio_version = scancodeio_version
+
+        self.update(scancodeio_version=scancodeio_version)
+
+    def set_current_step(self, message):
+        """
+        Set the ``message`` value on the ``current_step`` field.
+        Truncate the value at 256 characters.
+        """
+        self.update(current_step=message[:256])
 
     @property
     def pipeline_class(self):
-        """
-        Returns this Run pipeline_class.
-        """
+        """Return this Run pipeline_class."""
         return scanpipe_app.pipelines.get(self.pipeline_name)
 
     def make_pipeline_instance(self):
-        """
-        Returns a pipelines instance using this Run pipeline_class.
-        """
+        """Return a pipelines instance using this Run pipeline_class."""
         return self.pipeline_class(self)
 
-    def append_to_log(self, message, save=False):
-        """
-        Appends the `message` string to the `log` field of this Run instance.
-        """
-        message = message.strip()
-        if any(lf in message for lf in ("\n", "\r")):
-            raise ValueError("message cannot contain line returns (either CR or LF).")
-
-        self.log = self.log + message + "\n"
-        if save:
-            self.save()
-
-    def send_project_subscriptions(self):
-        """
-        Triggers related project webhook subscriptions.
-        """
+    def deliver_project_subscriptions(self):
+        """Triggers related project webhook subscriptions."""
         for subscription in self.project.webhooksubscriptions.all():
-            subscription.send(pipeline_run=self)
+            subscription.deliver(pipeline_run=self)
 
     def profile(self, print_results=False):
         """
-        Returns computed execution times for each step in the current Run.
+        Return computed execution times for each step in the current Run.
 
         If `print_results` is provided, the results are printed to stdout.
         """
@@ -1376,7 +1621,7 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
         pattern = re.compile(r"Step \[(?P<step>.+)] completed in (?P<time>.+) seconds")
 
         profiler = {}
-        for line in self.log.split("\n"):
+        for line in self.log.splitlines():
             match = pattern.search(line)
             if match:
                 step, runtime = match.groups()
@@ -1394,6 +1639,18 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print("\033[41;37m" + output_str + "\033[m")
             else:
                 print(output_str)
+
+
+def posix_regex_to_django_regex_lookup(regex_pattern):
+    """
+    Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
+    Django regex lookup.
+    """
+    escaped_pattern = re.escape(regex_pattern)
+    escaped_pattern = escaped_pattern.replace(r"\*", ".*")  # Replace \* with .*
+    escaped_pattern = escaped_pattern.replace(r"\?", ".")  # Replace \? with .
+    escaped_pattern = f"^{escaped_pattern}$"  # Add start and end anchors
+    return escaped_pattern
 
 
 class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
@@ -1423,8 +1680,11 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def empty(self):
         return self.filter(Q(size__isnull=True) | Q(size=0))
 
+    def not_empty(self):
+        return self.filter(size__gt=0)
+
     def in_package(self):
-        return self.filter(discovered_packages__isnull=False)
+        return self.filter(discovered_packages__isnull=False).distinct()
 
     def not_in_package(self):
         return self.filter(discovered_packages__isnull=True)
@@ -1438,34 +1698,117 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
     def symlinks(self):
         return self.filter(type=self.model.Type.SYMLINK)
 
+    def archives(self):
+        return self.filter(is_archive=True)
+
     def without_symlinks(self):
         return self.filter(~Q(type=self.model.Type.SYMLINK))
 
-    def has_licenses(self):
-        return self.filter(~Q(licenses=[]))
+    def has_license_detections(self):
+        return self.filter(~Q(license_detections=[]))
 
-    def has_no_licenses(self):
-        return self.filter(licenses=[])
+    def has_no_license_detections(self):
+        return self.filter(license_detections=[])
 
     def has_package_data(self):
         return self.filter(~Q(package_data=[]))
 
-    def licenses_categories(self, categories):
-        return self.json_list_contains(
-            field_name="licenses",
-            key="category",
-            values=categories,
-        )
+    def has_license_expression(self):
+        return self.filter(~Q(detected_license_expression=""))
 
     def unknown_license(self):
-        return self.json_field_contains("license_expressions", "unknown")
+        return self.filter(detected_license_expression__icontains="unknown")
+
+    def from_codebase(self):
+        """Resources in from/ directory"""
+        return self.filter(tag="from")
+
+    def to_codebase(self):
+        """Resources in to/ directory"""
+        return self.filter(tag="to")
+
+    def has_relation(self):
+        """Resources assigned to at least one CodebaseRelation"""
+        return self.filter(Q(related_from__isnull=False) | Q(related_to__isnull=False))
+
+    def has_many_relation(self):
+        """Resources assigned to two or more CodebaseRelation"""
+        return self.annotate(
+            relation_count=Count("related_from") + Count("related_to")
+        ).filter(relation_count__gte=2)
+
+    def has_no_relation(self):
+        """Resources not part of any CodebaseRelation"""
+        return self.filter(related_from__isnull=True, related_to__isnull=True)
+
+    def has_value(self, field_name):
+        """Resources that have a value for provided `field_name`."""
+        return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
+
+    def path_pattern(self, pattern):
+        """Resources with a path that match the provided ``pattern``."""
+        return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
+
+    def has_directory_content_fingerprint(self):
+        """
+        Resources that have the key `directory_content` set in the `extra_data`
+        field and `directory_content` is not part of `IGNORED_DIRECTORY_FINGERPRINTS`.
+        """
+        return self.filter(
+            ~Q(extra_data__directory_content="")
+            and ~Q(extra_data__directory_content__in=IGNORED_DIRECTORY_FINGERPRINTS)
+        )
+
+    def paginated(self, per_page=5000):
+        """
+        Iterate over a (large) QuerySet by chunks of ``per_page`` items.
+
+        This is done to prevent high memory usage when using a regular QuerySet
+        or QuerySet.iterator to iterate over a large number of
+        CodebaseResources:
+
+        https://nextlinklabs.com/resources/insights/django-big-data-iteration
+        https://stackoverflow.com/questions/4222176/why-is-iterating-through-a-large-django-queryset-consuming-massive-amounts-of-me/
+        """
+        for page in Paginator(self, per_page=per_page):
+            yield page.object_list
 
 
 class ScanFieldsModelMixin(models.Model):
-    """
-    Fields returned by the ScanCode-toolkit scans.
-    """
+    """Fields returned by the ScanCode-toolkit scans."""
 
+    detected_license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license expression summarizing the license info for this resource, "
+            "combined from all the license detections"
+        ),
+    )
+    detected_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(
+            "The detected license expression for this file, with SPDX license keys"
+        ),
+    )
+    license_detections = models.JSONField(
+        blank=True,
+        default=list,
+        help_text=_("List of license detection details."),
+    )
+    license_clues = models.JSONField(
+        blank=True,
+        default=list,
+        help_text=_(
+            "List of license matches that are not proper detections and potentially "
+            "just clues to licenses or likely false positives. Those are not included "
+            "in computing the detected license expression for the resource."
+        ),
+    )
+    percentage_of_license_text = models.FloatField(
+        blank=True,
+        null=True,
+        help_text=_("Percentage of file words detected as license text or notice."),
+    )
     copyrights = models.JSONField(
         blank=True,
         default=list,
@@ -1485,16 +1828,6 @@ class ScanFieldsModelMixin(models.Model):
         default=list,
         help_text=_("List of detected authors (and related detection details)."),
     )
-    licenses = models.JSONField(
-        blank=True,
-        default=list,
-        help_text=_("List of license detection details."),
-    )
-    license_expressions = models.JSONField(
-        blank=True,
-        default=list,
-        help_text=_("List of detected license expressions."),
-    )
     emails = models.JSONField(
         blank=True,
         default=list,
@@ -1513,44 +1846,165 @@ class ScanFieldsModelMixin(models.Model):
     def scan_fields(cls):
         return [field.name for field in ScanFieldsModelMixin._meta.get_fields()]
 
-    def set_scan_results(self, scan_results, save=False):
+    def set_scan_results(self, scan_results, status=None):
         """
-        Sets the values of the current instance's scan-related fields using
-        `scan_results`.
+        Set the values of the current instance's scan-related fields using
+        ``scan_results``.
+
+        This instance status can be updated along the scan results by providing the
+        optional ``status`` argument.
         """
-        scan_fields = self.scan_fields()
+        updated_fields = []
         for field_name, value in scan_results.items():
-            if value and field_name in scan_fields:
+            if value and field_name in self.scan_fields():
                 setattr(self, field_name, value)
+                updated_fields.append(field_name)
 
-        if save:
-            self.save()
+        if status:
+            self.status = status
+            updated_fields.append("status")
 
-    def copy_scan_results(self, from_instance, save=False):
+        if updated_fields:
+            self.save(update_fields=updated_fields)
+
+    def copy_scan_results(self, from_instance):
         """
-        Copies the scan-related fields values from `from_instance`to the current
+        Copy the scan-related fields values from ``from_instance`` to the current
         instance.
         """
+        updated_fields = []
         for field_name in self.scan_fields():
             value_from_instance = getattr(from_instance, field_name)
             setattr(self, field_name, value_from_instance)
+            updated_fields.append(field_name)
 
-        if save:
-            self.save()
+        if updated_fields:
+            self.save(update_fields=updated_fields)
+
+
+class ComplianceAlertMixin(models.Model):
+    """
+    Include the ``compliance_alert`` field and related code to compute its value.
+    Add the db `indexes` in Meta of the concrete model:
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["compliance_alert"]),
+        ]
+    """
+
+    license_expression_field = None
+
+    class Compliance(models.TextChoices):
+        OK = "ok"
+        WARNING = "warning"
+        ERROR = "error"
+        MISSING = "missing"
+
+    compliance_alert = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=Compliance.choices,
+        editable=False,
+        help_text=_(
+            "Indicates how the license expression complies with provided policies."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        """
+        Store the ``license_expression_field`` on loading this instance from the
+        database value.
+        The cached value is then used to detect changes on `save()`.
+        """
+        new = super().from_db(db, field_names, values)
+
+        if cls.license_expression_field in field_names:
+            field_index = field_names.index(cls.license_expression_field)
+            new._loaded_license_expression = values[field_index]
+
+        return new
+
+    def save(self, codebase=None, *args, **kwargs):
+        """
+        Injects policies, if the feature is enabled, when the
+        ``license_expression_field`` field value has changed.
+
+        `codebase` is not used in this context but required for compatibility
+        with the commoncode.resource.Codebase class API.
+        """
+        if scanpipe_app.policies_enabled:
+            loaded_license_expression = getattr(self, "_loaded_license_expression", "")
+            license_expression = getattr(self, self.license_expression_field, "")
+            if license_expression != loaded_license_expression:
+                self.compliance_alert = self.compute_compliance_alert()
+                if "update_fields" in kwargs:
+                    kwargs["update_fields"].append("compliance_alert")
+
+        super().save(*args, **kwargs)
+
+    def compute_compliance_alert(self):
+        """Compute and return the compliance_alert value from the licenses policies."""
+        license_expression = getattr(self, self.license_expression_field, "")
+        if not license_expression:
+            return ""
+
+        alerts = []
+        policy_index = scanpipe_app.license_policies_index
+
+        licensing = get_licensing()
+        parsed = licensing.parse(license_expression, simple=True)
+        license_keys = licensing.license_keys(parsed)
+
+        for license_key in license_keys:
+            if policy := policy_index.get(license_key):
+                alerts.append(policy.get("compliance_alert") or self.Compliance.OK)
+            else:
+                alerts.append(self.Compliance.MISSING)
+
+        compliance_ordered_by_severity = [
+            self.Compliance.ERROR,
+            self.Compliance.WARNING,
+            self.Compliance.MISSING,
+        ]
+
+        for compliance_severity in compliance_ordered_by_severity:
+            if compliance_severity in alerts:
+                return compliance_severity
+
+        return self.Compliance.OK
 
 
 class CodebaseResource(
     ProjectRelatedModel,
     ScanFieldsModelMixin,
     ExtraDataFieldMixin,
-    SaveProjectErrorMixin,
-    AbstractResource,
+    SaveProjectMessageMixin,
+    UpdateFromDataMixin,
+    HashFieldsMixin,
+    ComplianceAlertMixin,
+    models.Model,
 ):
     """
     A project Codebase Resources are records of its code files and directories.
     Each record is identified by its path under the project workspace.
+
+    These model fields should be kept in line with `commoncode.resource.Resource`.
     """
 
+    license_expression_field = "detected_license_expression"
+
+    path = models.CharField(
+        max_length=2000,
+        help_text=_(
+            "The full path value of a resource (file or directory) in the "
+            "archive it is from."
+        ),
+    )
     rootfs_path = models.CharField(
         max_length=2000,
         blank=True,
@@ -1565,15 +2019,18 @@ class CodebaseResource(
         max_length=30,
         help_text=_("Analysis status for this resource."),
     )
+    size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Size in bytes."),
+    )
     tag = models.CharField(
         blank=True,
         max_length=50,
     )
 
     class Type(models.TextChoices):
-        """
-        List of CodebaseResource types.
-        """
+        """List of CodebaseResource types."""
 
         FILE = "file"
         DIRECTORY = "directory"
@@ -1621,28 +2078,6 @@ class CodebaseResource(
     is_archive = models.BooleanField(default=False)
     is_key_file = models.BooleanField(default=False)
     is_media = models.BooleanField(default=False)
-
-    class Compliance(models.TextChoices):
-        """
-        List of compliance alert values.
-        """
-
-        OK = "ok"
-        WARNING = "warning"
-        ERROR = "error"
-        MISSING = "missing"
-
-    compliance_alert = models.CharField(
-        max_length=10,
-        blank=True,
-        choices=Compliance.choices,
-        editable=False,
-        help_text=_(
-            "Indicates how the detected licenses in a codebase resource complies with "
-            "provided policies."
-        ),
-    )
-
     package_data = models.JSONField(
         default=list,
         blank=True,
@@ -1652,126 +2087,100 @@ class CodebaseResource(
     objects = CodebaseResourceQuerySet.as_manager()
 
     class Meta:
-        unique_together = (("project", "path"),)
+        indexes = [
+            models.Index(fields=["path"]),
+            models.Index(fields=["name"]),
+            models.Index(fields=["extension"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["type"]),
+            models.Index(fields=["size"]),
+            models.Index(fields=["programming_language"]),
+            models.Index(fields=["mime_type"]),
+            models.Index(fields=["tag"]),
+            models.Index(fields=["sha1"]),
+            models.Index(fields=["detected_license_expression"]),
+            models.Index(fields=["compliance_alert"]),
+            models.Index(fields=["is_binary"]),
+            models.Index(fields=["is_text"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "path"],
+                name="%(app_label)s_%(class)s_unique_path_within_project",
+            )
+        ]
         ordering = ("project", "path")
 
     def __str__(self):
         return self.path
 
-    @classmethod
-    def from_db(cls, db, field_names, values):
-        """
-        Stores the `licenses` field on creating this instance from the database value.
-        The cached value is then used to detect changes on `save()`.
-        """
-        new = super().from_db(db, field_names, values)
-
-        if "licenses" in field_names:
-            new._loaded_licenses = values[field_names.index("licenses")]
-
-        return new
-
-    def save(self, codebase=None, *args, **kwargs):
-        """
-        Saves the current resource instance.
-        Injects policies—if the feature is enabled—when the `licenses` field value is
-        changed.
-
-        `codebase` is not used in this context but required for compatibility
-        with the commoncode.resource.Codebase class API.
-        """
-        if scanpipe_app.policies_enabled:
-            loaded_licenses = getattr(self, "loaded_licenses", [])
-            if self.licenses != loaded_licenses:
-                self.inject_licenses_policy(scanpipe_app.license_policies_index)
-                self.compliance_alert = self.compute_compliance_alert()
-
-        super().save(*args, **kwargs)
-
-    def inject_licenses_policy(self, policies_index):
-        """
-        Injects license policies from the `policies_index` into the `licenses` field.
-        """
-        for license_data in self.licenses:
-            key = license_data.get("key")
-            license_data["policy"] = policies_index.get(key, None)
-
     @property
     def location_path(self):
-        """
-        Returns the location of the resource as a Path instance.
-        """
+        """Return the location of the resource as a Path instance."""
         # strip the leading / to allow joining this with the codebase_path
         path = Path(str(self.path).strip("/"))
         return self.project.codebase_path / path
 
     @property
+    def name_without_extension(self):
+        """Return the name of the resource without it's extension."""
+        if self.extension:
+            return self.name.rpartition(self.extension)[0]
+        return self.name
+
+    @property
     def location(self):
-        """
-        Returns the location of the resource as a string.
-        """
+        """Return the location of the resource as a string."""
         return str(self.location_path)
 
     @property
     def is_file(self):
-        """
-        Returns True, if the resource is a file.
-        """
+        """Return True, if the resource is a file."""
         return self.type == self.Type.FILE
 
     @property
     def is_dir(self):
-        """
-        Returns True, if the resource is a directory.
-        """
+        """Return True, if the resource is a directory."""
         return self.type == self.Type.DIRECTORY
 
     @property
     def is_symlink(self):
-        """
-        Returns True, if the resource is a symlink.
-        """
+        """Return True, if the resource is a symlink."""
         return self.type == self.Type.SYMLINK
 
-    def compute_compliance_alert(self):
+    def get_path_segments_with_subpath(self):
         """
-        Computes and returns the compliance_alert value from the `licenses` policies.
+        Return a list of path segment name along its subpath for this resource.
+
+        Such as::
+
+            [
+                ('root', 'root'),
+                ('subpath', 'root/subpath'),
+                ('file.txt', 'root/subpath/file.txt'),
+            ]
         """
-        if not self.licenses:
-            return ""
+        current_path = ""
+        part_and_subpath = []
 
-        ok = self.Compliance.OK
-        error = self.Compliance.ERROR
-        warning = self.Compliance.WARNING
-        missing = self.Compliance.MISSING
+        for segment in Path(self.path).parts:
+            if part_and_subpath:
+                current_path += "/"
+            current_path += segment
 
-        alerts = []
-        for license_data in self.licenses:
-            policy = license_data.get("policy")
-            if policy:
-                alerts.append(policy.get("compliance_alert") or ok)
+            if EXTRACT_SUFFIX in segment:
+                is_extract = True
+                base_segment = segment[: -len(EXTRACT_SUFFIX)]
+                base_current_path = current_path[: -len(EXTRACT_SUFFIX)]
+                part_and_subpath.append((base_segment, base_current_path, is_extract))
             else:
-                alerts.append(missing)
+                is_extract = False
+                part_and_subpath.append((segment, current_path, is_extract))
 
-        if error in alerts:
-            return error
-        elif warning in alerts:
-            return warning
-        elif missing in alerts:
-            return missing
-        return ok
-
-    @property
-    def unique_license_expressions(self):
-        """
-        Returns the sorted set of unique license_expressions.
-        """
-        return sorted(set(self.license_expressions))
+        return part_and_subpath
 
     def parent_path(self):
-        """
-        Return the parent path for this CodebaseResource or None.
-        """
+        """Return the parent path for this CodebaseResource or None."""
         return parent_directory(self.path, with_trail=False)
 
     def has_parent(self):
@@ -1811,7 +2220,7 @@ class CodebaseResource(
 
     def descendants(self):
         """
-        Returns a QuerySet of descendant CodebaseResource objects using a
+        Return a QuerySet of descendant CodebaseResource objects using a
         database query on the current CodebaseResource `path`.
         The current CodebaseResource is not included.
         """
@@ -1819,7 +2228,7 @@ class CodebaseResource(
 
     def children(self, codebase=None):
         """
-        Returns a QuerySet of direct children CodebaseResource objects using a
+        Return a QuerySet of direct children CodebaseResource objects using a
         database query on the current CodebaseResource `path`.
 
         Paths are returned in lower-cased sorted path order to reflect the
@@ -1840,7 +2249,7 @@ class CodebaseResource(
 
     def walk(self, topdown=True):
         """
-        Returns all descendant Resources of the current Resource; does not include self.
+        Return all descendant Resources of the current Resource; does not include self.
 
         Traverses the tree top-down, depth-first if `topdown` is True; otherwise
         traverses the tree bottom-up.
@@ -1854,18 +2263,16 @@ class CodebaseResource(
                 yield child
 
     def get_absolute_url(self):
-        return reverse("resource_detail", args=[self.project_id, self.pk])
+        return reverse("resource_detail", args=[self.project.slug, self.path])
 
     def get_raw_url(self):
-        """
-        Returns the URL to access the RAW content of the resource.
-        """
-        return reverse("resource_raw", args=[self.project_id, self.pk])
+        """Return the URL to access the RAW content of the resource."""
+        return reverse("resource_raw", args=[self.project.slug, self.path])
 
     @property
     def file_content(self):
         """
-        Returns the content of the current Resource file using TextCode utilities
+        Return the content of the current Resource file using TextCode utilities
         for optimal compatibility.
         """
         from textcode.analysis import numbered_text_lines
@@ -1884,7 +2291,7 @@ class CodebaseResource(
     @staticmethod
     def _regroup_numbered_lines(numbered_lines):
         """
-        Yields (line number, text) given an iterator of (line number, line) where
+        Yield (line number, text) given an iterator of (line number, line) where
         all text for the same line number is grouped and returned as a single text.
 
         This is a workaround ScanCode-toolkit breaking down long lines and creating an
@@ -1894,53 +2301,376 @@ class CodebaseResource(
         for line_number, lines_group in groupby(numbered_lines, key=itemgetter(0)):
             yield line_number, "".join(line for _, line in lines_group)
 
+    @classmethod
+    def create_from_data(cls, project, resource_data):
+        """
+        Create and returns a DiscoveredPackage for a `project` from the `package_data`.
+        If one of the values of the required fields is not available, a "ProjectMessage"
+        is created instead of a new DiscoveredPackage instance.
+        """
+        resource_data = resource_data.copy()
+
+        cleaned_data = {
+            field_name: value
+            for field_name, value in resource_data.items()
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
+        }
+
+        return cls.objects.create(project=project, **cleaned_data)
+
+    def add_package(self, discovered_package):
+        """Assign the `discovered_package` to this `codebase_resource` instance."""
+        self.discovered_packages.add(discovered_package)
+
     def create_and_add_package(self, package_data):
         """
-        Creates a DiscoveredPackage instance using the `package_data` and assigns
+        Create a DiscoveredPackage instance using the `package_data` and assigns
         it to the current CodebaseResource instance.
 
         Errors that may happen during the DiscoveredPackage creation are capture
         at this level, rather that in the DiscoveredPackage.create_from_data level,
-        so resource data can be injected in the ProjectError record.
+        so resource data can be injected in the ProjectMessage record.
         """
         try:
             package = DiscoveredPackage.create_from_data(self.project, package_data)
-        except Exception as error:
-            self.project.add_error(
-                error=error,
+        except Exception as exception:
+            self.project.add_warning(
                 model=DiscoveredPackage,
                 details={
                     "codebase_resource_path": self.path,
                     "codebase_resource_pk": self.pk,
                     **package_data,
                 },
+                exception=exception,
             )
-            return
-
-        if package:
-            self.discovered_packages.add(package)
+        else:
+            self.add_package(package)
             return package
 
     @property
     def for_packages(self):
-        """
-        Returns the list of all discovered packages associated to this resource.
-        """
+        """Return the list of all discovered packages associated to this resource."""
         return [
             package.package_uid or str(package)
             for package in self.discovered_packages.all()
         ]
 
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.id}"
 
-class DiscoveredPackageQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+    def get_spdx_types(self):
+        spdx_types = []
+
+        if self.is_binary:
+            spdx_types.append("BINARY")
+        if self.is_text:
+            spdx_types.append("TEXT")
+        if self.is_archive:
+            spdx_types.append("ARCHIVE")
+
+        return spdx_types
+
+    def as_spdx(self):
+        """Return this CodebaseResource as an SPDX Package entry."""
+        from scanpipe.pipes import spdx
+
+        copyrights = [copyright["copyright"] for copyright in self.copyrights]
+        holders = [holder["holder"] for holder in self.holders]
+        authors = [author["author"] for author in self.authors]
+
+        return spdx.File(
+            spdx_id=self.spdx_id,
+            name=f"./{self.path}",
+            checksums=[spdx.Checksum(algorithm="sha1", value=self.sha1)],
+            license_concluded=self.detected_license_expression_spdx,
+            copyright_text=", ".join(copyrights),
+            contributors=list(set(holders + authors)),
+            types=self.get_spdx_types(),
+        )
+
+
+class CodebaseRelation(
+    UUIDPKModel,
+    ProjectRelatedModel,
+    ExtraDataFieldMixin,
+    models.Model,
+):
+    """Relation between two CodebaseResource."""
+
+    from_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="related_to",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    to_resource = models.ForeignKey(
+        CodebaseResource,
+        related_name="related_from",
+        on_delete=models.CASCADE,
+        editable=False,
+    )
+    map_type = models.CharField(
+        max_length=30,
+    )
+
+    class Meta:
+        ordering = ["from_resource__path", "to_resource__path"]
+        indexes = [
+            models.Index(fields=["map_type"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["from_resource", "to_resource", "map_type"],
+                name="%(app_label)s_%(class)s_unique_relation",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.from_resource.pk} > {self.to_resource.pk} using {self.map_type}"
+
+    @property
+    def status(self):
+        return self.to_resource.status
+
+    @property
+    def score(self):
+        score = self.extra_data.get("path_score", "")
+        if diff_ratio := self.extra_data.get("diff_ratio", ""):
+            score += f" diff_ratio: {diff_ratio}"
+        return score
+
+
+class VulnerabilityMixin(models.Model):
+    """Add the vulnerability related fields and methods."""
+
+    affected_by_vulnerabilities = models.JSONField(blank=True, default=list)
+
+    @property
+    def is_vulnerable(self):
+        """Returns True if this instance is affected by vulnerabilities."""
+        return bool(self.affected_by_vulnerabilities)
+
+    class Meta:
+        abstract = True
+
+
+class VulnerabilityQuerySetMixin:
+    def vulnerable(self):
+        return self.filter(~Q(affected_by_vulnerabilities__in=EMPTY_VALUES))
+
+
+class DiscoveredPackageQuerySet(
+    VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
+):
     pass
+
+
+class AbstractPackage(models.Model):
+    """These fields should be kept in line with `packagedcode.models.PackageData`."""
+
+    filename = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "File name of a Resource sometimes part of the URI proper"
+            "and sometimes only available through an HTTP header."
+        ),
+    )
+    primary_language = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text=_("Primary programming language."),
+    )
+    description = models.TextField(
+        blank=True,
+        help_text=_(
+            "Description for this package. "
+            "By convention the first line should be a summary when available."
+        ),
+    )
+    release_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "The date that the package file was created, or when "
+            "it was posted to its original download source."
+        ),
+    )
+    homepage_url = models.CharField(
+        _("Homepage URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_("URL to the homepage for this package."),
+    )
+    download_url = models.CharField(
+        _("Download URL"),
+        max_length=2048,
+        blank=True,
+        help_text=_("A direct download URL."),
+    )
+    size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        help_text=_("Size in bytes."),
+    )
+    bug_tracking_url = models.CharField(
+        _("Bug tracking URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_("URL to the issue or bug tracker for this package."),
+    )
+    code_view_url = models.CharField(
+        _("Code view URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_("a URL where the code can be browsed online."),
+    )
+    vcs_url = models.CharField(
+        _("VCS URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "A URL to the VCS repository in the SPDX form of: "
+            '"git", "svn", "hg", "bzr", "cvs", '
+            "https://github.com/nexb/scancode-toolkit.git@405aaa4b3 "
+            'See SPDX specification "Package Download Location" '
+            "at https://spdx.org/spdx-specification-21-web-version#h.49x2ik5"
+        ),
+    )
+    repository_homepage_url = models.CharField(
+        _("Repository homepage URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "URL to the page for this package in its package repository. "
+            "This is typically different from the package homepage URL proper."
+        ),
+    )
+    repository_download_url = models.CharField(
+        _("Repository download URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "Download URL to download the actual archive of code of this "
+            "package in its package repository. "
+            "This may be different from the actual download URL."
+        ),
+    )
+    api_data_url = models.CharField(
+        _("API data URL"),
+        max_length=1024,
+        blank=True,
+        help_text=_(
+            "API URL to obtain structured data for this package such as the "
+            "URL to a JSON or XML api its package repository."
+        ),
+    )
+    copyright = models.TextField(
+        blank=True,
+        help_text=_("Copyright statements for this package. Typically one per line."),
+    )
+    holder = models.TextField(
+        blank=True,
+        help_text=_("Holders for this package. Typically one per line."),
+    )
+    declared_license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license expression for this package typically derived "
+            "from its extracted_license_statement or from some other type-specific "
+            "routine or convention."
+        ),
+    )
+    declared_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(
+            "The SPDX license expression for this package converted "
+            "from its declared_license_expression."
+        ),
+    )
+    license_detections = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of LicenseDetection mappings typically derived "
+            "from its extracted_license_statement or from some other type-specific "
+            "routine or convention."
+        ),
+    )
+    other_license_expression = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license expression for this package which is different from the "
+            "declared_license_expression, (i.e. not the primary license) "
+            "routine or convention."
+        ),
+    )
+    other_license_expression_spdx = models.TextField(
+        blank=True,
+        help_text=_(
+            "The other SPDX license expression for this package converted "
+            "from its other_license_expression."
+        ),
+    )
+    other_license_detections = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "A list of LicenseDetection mappings which is different from the "
+            "declared_license_expression, (i.e. not the primary license) "
+            "These are detections for the detection for the license expressions "
+            "in other_license_expression. "
+        ),
+    )
+    extracted_license_statement = models.TextField(
+        blank=True,
+        help_text=_(
+            "The license statement mention, tag or text as found in a "
+            "package manifest and extracted. This can be a string, a list or dict of "
+            "strings possibly nested, as found originally in the manifest."
+        ),
+    )
+    notice_text = models.TextField(
+        blank=True,
+        help_text=_("A notice text for this package."),
+    )
+    datasource_id = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text=_(
+            "The identifier for the datafile handler used to obtain this package."
+        ),
+    )
+    file_references = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "List of file paths and details for files referenced in a package "
+            "manifest. These may not actually exist on the filesystem. "
+            "The exact semantics and base of these paths is specific to a "
+            "package type or datafile format."
+        ),
+    )
+    parties = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("A list of parties such as a person, project or organization."),
+    )
+
+    class Meta:
+        abstract = True
 
 
 class DiscoveredPackage(
     ProjectRelatedModel,
     ExtraDataFieldMixin,
-    SaveProjectErrorMixin,
+    SaveProjectMessageMixin,
     UpdateFromDataMixin,
+    HashFieldsMixin,
+    PackageURLMixin,
+    VulnerabilityMixin,
+    ComplianceAlertMixin,
     AbstractPackage,
 ):
     """
@@ -1952,6 +2682,11 @@ class DiscoveredPackage(
     See https://github.com/package-url for more details.
     """
 
+    license_expression_field = "declared_license_expression"
+
+    uuid = models.UUIDField(
+        verbose_name=_("UUID"), default=uuid.uuid4, unique=True, editable=False
+    )
     codebase_resources = models.ManyToManyField(
         "CodebaseResource", related_name="discovered_packages"
     )
@@ -1960,18 +2695,33 @@ class DiscoveredPackage(
     package_uid = models.CharField(
         max_length=1024,
         blank=True,
-        db_index=True,
         help_text=_("Unique identifier for this package."),
     )
-
-    # `AbstractPackage` model overrides:
     keywords = models.JSONField(default=list, blank=True)
     source_packages = models.JSONField(default=list, blank=True)
+    tag = models.CharField(blank=True, max_length=50)
 
     objects = DiscoveredPackageQuerySet.as_manager()
 
     class Meta:
         ordering = ["uuid"]
+        indexes = [
+            models.Index(fields=["type"]),
+            models.Index(fields=["namespace"]),
+            models.Index(fields=["name"]),
+            models.Index(fields=["filename"]),
+            models.Index(fields=["package_uid"]),
+            models.Index(fields=["primary_language"]),
+            models.Index(fields=["declared_license_expression"]),
+            models.Index(fields=["other_license_expression"]),
+            models.Index(fields=["size"]),
+            models.Index(fields=["md5"]),
+            models.Index(fields=["sha1"]),
+            models.Index(fields=["sha256"]),
+            models.Index(fields=["sha512"]),
+            models.Index(fields=["compliance_alert"]),
+            models.Index(fields=["tag"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "package_uid"],
@@ -1984,20 +2734,16 @@ class DiscoveredPackage(
         return self.package_url or str(self.uuid)
 
     def get_absolute_url(self):
-        return reverse("package_detail", args=[self.project_id, self.pk])
+        return reverse("package_detail", args=[self.project.slug, self.uuid])
 
     @cached_property
     def resources(self):
-        """
-        Returns the assigned codebase_resources QuerySet as a list.
-        """
+        """Return the assigned codebase_resources QuerySet as a list."""
         return list(self.codebase_resources.all())
 
     @property
     def purl(self):
-        """
-        Returns the Package URL.
-        """
+        """Return the Package URL."""
         return self.package_url
 
     @classmethod
@@ -2015,10 +2761,11 @@ class DiscoveredPackage(
     @classmethod
     def create_from_data(cls, project, package_data):
         """
-        Creates and returns a DiscoveredPackage for a `project` from the `package_data`.
-        If one of the values of the required fields is not available, a "ProjectError"
+        Create and returns a DiscoveredPackage for a `project` from the `package_data`.
+        If one of the values of the required fields is not available, a "ProjectMessage"
         is created instead of a new DiscoveredPackage instance.
         """
+        package_data = package_data.copy()
         required_fields = ["type", "name"]
         missing_values = [
             field_name
@@ -2032,28 +2779,180 @@ class DiscoveredPackage(
                 f"{', '.join(missing_values)}"
             )
 
-            project.add_error(error=message, model=cls, details=package_data)
+            project.add_warning(description=message, model=cls, details=package_data)
             return
 
         qualifiers = package_data.get("qualifiers")
         if qualifiers:
             package_data["qualifiers"] = normalize_qualifiers(qualifiers, encode=True)
 
-        cleaned_package_data = {
+        cleaned_data = {
             field_name: value
             for field_name, value in package_data.items()
-            if field_name in DiscoveredPackage.model_fields() and value
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
 
-        discovered_package = cls(project=project, **cleaned_package_data)
+        discovered_package = cls(project=project, **cleaned_data)
         # Using save_error=False to not capture potential errors at this level but
         # rather in the CodebaseResource.create_and_add_package method so resource data
-        # can be injected in the ProjectError record.
+        # can be injected in the ProjectMessage record.
         discovered_package.save(save_error=False, capture_exception=False)
         return discovered_package
 
+    def add_resources(self, codebase_resources):
+        """Assign the `codebase_resources` to this `discovered_package` instance."""
+        self.codebase_resources.add(*codebase_resources)
 
-class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQuerySet):
+    @classmethod
+    def clean_data(cls, data):
+        """
+        Return the `data` dict keeping only entries for fields available in the
+        model.
+        """
+        return {
+            field_name: value
+            for field_name, value in data.items()
+            if field_name in cls.model_fields()
+        }
+
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.uuid}"
+
+    def get_declared_license_expression(self):
+        """
+        Return this package license expression.
+
+        Use `declared_license_expression` when available or compute the expression
+        from `declared_license_expression_spdx`.
+        """
+        from scanpipe.pipes.resolve import convert_spdx_expression
+
+        if self.declared_license_expression:
+            return self.declared_license_expression
+        elif self.declared_license_expression_spdx:
+            return convert_spdx_expression(self.declared_license_expression_spdx)
+        return ""
+
+    def get_declared_license_expression_spdx(self):
+        """
+        Return this package license expression using SPDX keys.
+
+        Use `declared_license_expression_spdx` when available or compute the expression
+        from `declared_license_expression`.
+        """
+        if self.declared_license_expression_spdx:
+            return self.declared_license_expression_spdx
+        elif self.declared_license_expression:
+            return build_spdx_license_expression(self.declared_license_expression)
+        return ""
+
+    def as_spdx(self):
+        """Return this DiscoveredPackage as an SPDX Package entry."""
+        from scanpipe.pipes import spdx
+
+        checksums = [
+            spdx.Checksum(algorithm=algorithm, value=checksum_value)
+            for algorithm in ["sha1", "md5"]
+            if (checksum_value := getattr(self, algorithm))
+        ]
+
+        attribution_texts = []
+        if self.notice_text:
+            attribution_texts.append(self.notice_text)
+
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        return spdx.Package(
+            name=self.name or self.filename,
+            spdx_id=self.spdx_id,
+            download_location=self.download_url,
+            license_declared=self.get_declared_license_expression_spdx(),
+            license_concluded=self.get_declared_license_expression_spdx(),
+            copyright_text=self.copyright,
+            version=self.version,
+            homepage=self.homepage_url,
+            filename=self.filename,
+            description=self.description,
+            release_date=str(self.release_date) if self.release_date else "",
+            attribution_texts=attribution_texts,
+            checksums=checksums,
+            external_refs=external_refs,
+        )
+
+    def as_cyclonedx(self):
+        """Return this DiscoveredPackage as an CycloneDX Component entry."""
+        licenses = []
+        if expression_spdx := self.get_declared_license_expression_spdx():
+            licenses = [
+                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
+            ]
+
+        hash_fields = {
+            "md5": cyclonedx_model.HashAlgorithm.MD5,
+            "sha1": cyclonedx_model.HashAlgorithm.SHA_1,
+            "sha256": cyclonedx_model.HashAlgorithm.SHA_256,
+            "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
+        }
+        hashes = [
+            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            for field_name, algorithm in hash_fields.items()
+            if (hash_value := getattr(self, field_name))
+        ]
+
+        # Those fields are not supported natively by CycloneDX but are required to
+        # load the BOM without major data loss.
+        # See https://github.com/nexB/aboutcode-cyclonedx-taxonomy
+        property_prefix = "aboutcode"
+        property_fields = [
+            "filename",
+            "primary_language",
+            "download_url",
+            "homepage_url",
+            "notice_text",
+        ]
+        properties = [
+            cyclonedx_model.Property(
+                name=f"{property_prefix}:{field_name}", value=value
+            )
+            for field_name in property_fields
+            if (value := getattr(self, field_name)) not in EMPTY_VALUES
+        ]
+
+        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        external_references = [
+            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
+            for field_name, reference_type in cyclonedx_url_to_type.items()
+            if (url := getattr(self, field_name)) and field_name not in property_fields
+        ]
+
+        purl = self.package_url
+        return cyclonedx_component.Component(
+            name=self.name,
+            version=self.version,
+            bom_ref=purl or str(self.uuid),
+            purl=purl,
+            licenses=licenses,
+            copyright_=self.copyright,
+            description=self.description,
+            hashes=hashes,
+            properties=properties,
+            external_references=external_references,
+        )
+
+
+class DiscoveredDependencyQuerySet(
+    PackageURLQuerySetMixin, VulnerabilityQuerySetMixin, ProjectRelatedQuerySet
+):
     def prefetch_for_serializer(self):
         """
         Optimized prefetching for a QuerySet to be consumed by the
@@ -2072,8 +2971,9 @@ class DiscoveredDependencyQuerySet(PackageURLQuerySetMixin, ProjectRelatedQueryS
 
 class DiscoveredDependency(
     ProjectRelatedModel,
-    SaveProjectErrorMixin,
+    SaveProjectMessageMixin,
     UpdateFromDataMixin,
+    VulnerabilityMixin,
     PackageURLMixin,
 ):
     """
@@ -2144,6 +3044,12 @@ class DiscoveredDependency(
             "datafile_resource",
             "datasource_id",
         ]
+        indexes = [
+            models.Index(fields=["scope"]),
+            models.Index(fields=["is_runtime"]),
+            models.Index(fields=["is_optional"]),
+            models.Index(fields=["is_resolved"]),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["project", "dependency_uid"],
@@ -2156,7 +3062,9 @@ class DiscoveredDependency(
         return self.dependency_uid
 
     def get_absolute_url(self):
-        return reverse("dependency_detail", args=[self.project_id, self.pk])
+        return reverse(
+            "dependency_detail", args=[self.project.slug, self.dependency_uid]
+        )
 
     @property
     def purl(self):
@@ -2186,7 +3094,7 @@ class DiscoveredDependency(
         strip_datafile_path_root=False,
     ):
         """
-        Creates and returns a DiscoveredDependency for a `project` from the
+        Create and returns a DiscoveredDependency for a `project` from the
         `dependency_data`.
 
         If `strip_datafile_path_root` is True, then `create_from_data()` will
@@ -2194,8 +3102,9 @@ class DiscoveredDependency(
         `dependency_data` before looking up the corresponding CodebaseResource
         for `datafile_path`. This is used in the case where Dependency data is
         imported from a scancode-toolkit scan, where the root path segments are
-        not stripped for `datafile_path`s.
+        not stripped for `datafile_path`.
         """
+        dependency_data = dependency_data.copy()
         required_fields = ["purl", "dependency_uid"]
         missing_values = [
             field_name
@@ -2209,7 +3118,7 @@ class DiscoveredDependency(
                 f"{', '.join(missing_values)}"
             )
 
-            project.add_error(error=message, model=cls, details=dependency_data)
+            project.add_warning(description=message, model=cls, details=dependency_data)
             return
 
         if not for_package:
@@ -2232,35 +3141,58 @@ class DiscoveredDependency(
         purl_mapping = PackageURL.from_string(purl).to_dict()
         dependency_data.update(**purl_mapping)
 
-        cleaned_dependency_data = {
+        cleaned_data = {
             field_name: value
             for field_name, value in dependency_data.items()
-            if field_name in DiscoveredDependency.model_fields() and value
+            if field_name in cls.model_fields() and value not in EMPTY_VALUES
         }
-        discovered_dependency = cls(
+
+        return cls.objects.create(
             project=project,
             for_package=for_package,
             datafile_resource=datafile_resource,
-            **cleaned_dependency_data,
+            **cleaned_data,
         )
-        discovered_dependency.save()
 
-        return discovered_dependency
+    @property
+    def spdx_id(self):
+        return f"SPDXRef-scancodeio-{self._meta.model_name}-{self.dependency_uid}"
+
+    def as_spdx(self):
+        """Return this Dependency as an SPDX Package entry."""
+        from scanpipe.pipes import spdx
+
+        external_refs = []
+
+        if package_url := self.package_url:
+            external_refs.append(
+                spdx.ExternalRef(
+                    category="PACKAGE-MANAGER",
+                    type="purl",
+                    locator=package_url,
+                )
+            )
+
+        return spdx.Package(
+            name=self.name,
+            spdx_id=self.spdx_id,
+            version=self.version,
+            external_refs=external_refs,
+        )
 
 
 class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
     target_url = models.URLField(_("Target URL"), max_length=1024)
-    sent = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True, editable=False)
+    response_status_code = models.PositiveIntegerField(null=True, blank=True)
+    response_text = models.TextField(blank=True)
+    delivery_error = models.TextField(blank=True)
 
     def __str__(self):
         return str(self.uuid)
 
-    def send(self, pipeline_run):
-        """
-        Sends this WebhookSubscription by POSTing an HTTP request on the `target_url`.
-        """
-        payload = {
+    def get_payload(self, pipeline_run):
+        return {
             "project": {
                 "uuid": self.project.uuid,
                 "name": self.project.name,
@@ -2274,6 +3206,13 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             },
         }
 
+    def deliver(self, pipeline_run):
+        """
+        Delivers this WebhookSubscription by POSTing a HTTP request on the
+        `target_url`.
+        """
+        payload = self.get_payload(pipeline_run)
+
         logger.info(f"Sending Webhook uuid={self.uuid}.")
         try:
             response = requests.post(
@@ -2284,20 +3223,32 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             )
         except requests.exceptions.RequestException as exception:
             logger.info(exception)
-            return
+            self.update(delivery_error=str(exception))
+            return False
 
-        if response.status_code in (200, 201, 202):
-            logger.info(f"Webhook uuid={self.uuid} sent and received.")
-            self.sent = True
-            self.save()
+        self.update(
+            response_status_code=response.status_code,
+            response_text=response.text,
+        )
+
+        if self.success:
+            logger.info(f"Webhook uuid={self.uuid} delivered and received.")
         else:
             logger.info(f"Webhook uuid={self.uuid} returned a {response.status_code}.")
+
+        return True
+
+    @property
+    def delivered(self):
+        return bool(self.response_status_code)
+
+    @property
+    def success(self):
+        return self.response_status_code in (200, 201, 202)
 
 
 @receiver(models.signals.post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
-    """
-    Creates an API key token on user creation, using the signal system.
-    """
+    """Create an API key token on user creation, using the signal system."""
     if created:
         Token.objects.create(user_id=instance.pk)

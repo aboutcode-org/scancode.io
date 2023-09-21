@@ -1,0 +1,20 @@
+{% extends "scanpipe/includes/pagination_header.html" %}
+{% load humanize %}
+
+{% block paginator_count %}
+  <span style="vertical-align: middle">
+    {{ paginator.count|intcomma }} relations
+  </span>
+  <a href="{% url 'project_resources' project.slug %}?tag=to&relation_map_type=none&status=_EMPTY_" target="_blank" class="button is-small is-info is-outlined">
+    <span>Un-mapped <strong>to/</strong> resources</span>
+    <span class="icon">
+      <i class="fa-solid fa-external-link-alt"></i>
+    </span>
+  </a>
+  <a href="{% url 'project_resources' project.slug %}?tag=from&relation_map_type=none&status=_EMPTY_" target="_blank" class="button is-small is-info is-outlined">
+    <span>Un-mapped <strong>from/</strong> resources</span>
+    <span class="icon">
+      <i class="fa-solid fa-external-link-alt"></i>
+    </span>
+  </a>
+{% endblock %}

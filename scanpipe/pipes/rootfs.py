@@ -33,6 +33,7 @@ from container_inspector.distro import Distro
 from packagedcode import plugin_package
 
 from scanpipe import pipes
+from scanpipe.pipes import flag
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ SUPPORTED_DISTROS = [
     "opensuse-tumbleweed",
     "photon",
     "windows",
+    "rocky",
 ]
 
 
@@ -73,9 +75,7 @@ class Resource:
 
 @attr.attributes
 class RootFs:
-    """
-    A root filesystem.
-    """
+    """A root filesystem."""
 
     location = attr.attrib(
         metadata=dict(doc="The root directory location where this rootfs lives.")
@@ -91,7 +91,7 @@ class RootFs:
     @classmethod
     def from_project_codebase(cls, project):
         """
-        Returns RootFs objects collected from the project's "codebase" directory.
+        Return RootFs objects collected from the project's "codebase" directory.
         Each directory in the input/ is considered as the root of a root filesystem.
         """
         subdirs = [path for path in project.codebase_path.glob("*/") if path.is_dir()]
@@ -100,14 +100,12 @@ class RootFs:
             yield RootFs(location=rootfs_location)
 
     def get_resources(self, with_dir=False):
-        """
-        Return a Resource for each file in this rootfs.
-        """
+        """Return a Resource for each file in this rootfs."""
         return get_resources(location=self.location, with_dir=with_dir)
 
     def get_installed_packages(self, packages_getter):
         """
-        Returns tuples of (package_url, package) for installed packages found in
+        Return tuples of (package_url, package) for installed packages found in
         this rootfs layer using the `packages_getter` function or callable.
 
         The `packages_getter()` function should:
@@ -129,9 +127,7 @@ class RootFs:
 
 
 def get_resources(location, with_dir=False):
-    """
-    Returns the Resource found in the `location` in root directory of a rootfs.
-    """
+    """Return the Resource found in the `location` in root directory of a rootfs."""
 
     def get_res(parent, fname):
         loc = os.path.join(parent, fname)
@@ -150,9 +146,7 @@ def get_resources(location, with_dir=False):
 
 
 def create_codebase_resources(project, rootfs):
-    """
-    Creates the CodebaseResource for a `rootfs` in `project`.
-    """
+    """Create the CodebaseResource for a `rootfs` in `project`."""
     for resource in rootfs.get_resources(with_dir=True):
         pipes.make_codebase_resource(
             project=project,
@@ -163,7 +157,7 @@ def create_codebase_resources(project, rootfs):
 
 def has_hash_diff(install_file, codebase_resource):
     """
-    Returns True if one of available hashes on both `install_file` and
+    Return True if one of available hashes on both `install_file` and
     `codebase_resource`, by hash type, is different.
     For example: Alpine uses SHA1 while Debian uses MD5, we prefer the strongest hash
     that's present.
@@ -196,15 +190,61 @@ def has_hash_diff(install_file, codebase_resource):
 
 
 def package_getter(root_dir, **kwargs):
-    """
-    Returns installed package objects.
-    """
+    """Return installed package objects."""
     packages = plugin_package.get_installed_packages(root_dir)
     for package in packages:
         yield package.purl, package
 
 
-def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
+def _create_system_package(project, purl, package):
+    """Create system package and related resources."""
+    created_package = pipes.update_or_create_package(project, package.to_dict())
+
+    installed_files = []
+    if hasattr(package, "resources"):
+        installed_files = package.resources
+
+    # We have no files for this installed package, we cannot go further.
+    if not installed_files:
+        logger.info(f"  No installed_files for: {purl}")
+        return
+
+    missing_resources = created_package.missing_resources[:]
+    modified_resources = created_package.modified_resources[:]
+
+    codebase_resources = project.codebaseresources.all()
+
+    for install_file in installed_files:
+        install_file_path = install_file.get_path(strip_root=True)
+        rootfs_path = pipes.normalize_path(install_file_path)
+        logger.info(f"   installed file rootfs_path: {rootfs_path}")
+
+        try:
+            codebase_resource = codebase_resources.get(
+                rootfs_path=rootfs_path,
+            )
+        except ObjectDoesNotExist:
+            if rootfs_path not in missing_resources:
+                missing_resources.append(rootfs_path)
+            logger.info(f"      installed file is missing: {rootfs_path}")
+            continue
+
+        if created_package not in codebase_resource.discovered_packages.all():
+            codebase_resource.discovered_packages.add(created_package)
+            codebase_resource.update(status=flag.SYSTEM_PACKAGE)
+            logger.info(f"      added as system-package to: {purl}")
+
+        if has_hash_diff(install_file, codebase_resource):
+            if install_file.path not in modified_resources:
+                modified_resources.append(install_file.path)
+
+    created_package.update(
+        missing_resources=missing_resources,
+        modified_resources=modified_resources,
+    )
+
+
+def scan_rootfs_for_system_packages(project, rootfs):
     """
     Given a `project` Project and a `rootfs` RootFs, scan the `rootfs` for
     installed system packages, and create a DiscoveredPackage for each.
@@ -214,7 +254,7 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     DiscoveredPackage; otherwise, keep that as a missing file.
     """
     if not rootfs.distro:
-        raise DistroNotFound(f"Distro not found.")
+        raise DistroNotFound("Distro not found.")
 
     distro_id = rootfs.distro.identifier
     if distro_id not in SUPPORTED_DISTROS:
@@ -223,53 +263,9 @@ def scan_rootfs_for_system_packages(project, rootfs, detect_licenses=True):
     logger.info(f"rootfs location: {rootfs.location}")
 
     installed_packages = rootfs.get_installed_packages(package_getter)
-
-    for i, (purl, package) in enumerate(installed_packages):
-        logger.info(f"Creating package #{i}: {purl}")
-        created_package = pipes.update_or_create_package(project, package.to_dict())
-
-        installed_files = []
-        if hasattr(package, "resources"):
-            installed_files = package.resources
-
-        # We have no files for this installed package, we cannot go further.
-        if not installed_files:
-            logger.info(f"  No installed_files for: {purl}")
-            continue
-
-        missing_resources = created_package.missing_resources[:]
-        modified_resources = created_package.modified_resources[:]
-
-        codebase_resources = project.codebaseresources.all()
-
-        for install_file in installed_files:
-            rootfs_path = pipes.normalize_path(install_file.path)
-            logger.info(f"   installed file rootfs_path: {rootfs_path}")
-
-            try:
-                codebase_resource = codebase_resources.get(
-                    rootfs_path=rootfs_path,
-                )
-            except ObjectDoesNotExist:
-                if rootfs_path not in missing_resources:
-                    missing_resources.append(rootfs_path)
-                logger.info(f"      installed file is missing: {rootfs_path}")
-                continue
-
-            # id list?
-            if created_package not in codebase_resource.discovered_packages.all():
-                codebase_resource.discovered_packages.add(created_package)
-                codebase_resource.status = "system-package"
-                logger.info(f"      added as system-package to: {purl}")
-                codebase_resource.save()
-
-            if has_hash_diff(install_file, codebase_resource):
-                if install_file.path not in modified_resources:
-                    modified_resources.append(install_file.path)
-
-        created_package.missing_resources = missing_resources
-        created_package.modified_resources = modified_resources
-        created_package.save()
+    for index, (purl, package) in enumerate(installed_packages):
+        logger.info(f"Creating package #{index}: {purl}")
+        _create_system_package(project, purl, package)
 
 
 def get_resource_with_md5(project, status):
@@ -286,8 +282,8 @@ def get_resource_with_md5(project, status):
 
 def match_not_analyzed(
     project,
-    reference_status="system-package",
-    not_analyzed_status="not-analyzed",
+    reference_status=flag.SYSTEM_PACKAGE,
+    not_analyzed_status=flag.NOT_ANALYZED,
 ):
     """
     Given a `project` Project :
@@ -309,37 +305,25 @@ def match_not_analyzed(
     count = 0
     matchables = get_resource_with_md5(project=project, status=not_analyzed_status)
     for matchable in matchables:
-        key = (
-            matchable.md5,
-            matchable.size,
-        )
+        key = (matchable.md5, matchable.size)
         matched = known_resources_by_md5_size.get(key)
         if matched is None:
             continue
         count += 1
         package = matched.discovered_packages.all()[0]
-        matchable.status = reference_status
         matchable.discovered_packages.add(package)
-        matchable.save()
+        matchable.update(status=reference_status)
 
 
-def tag_empty_codebase_resources(project):
+def flag_uninteresting_codebase_resources(project):
     """
-    Tags empty files as ignored.
-    """
-    qs = project.codebaseresources.files().empty()
-    qs.filter(status__in=("", "not-analyzed")).update(status="ignored-empty-file")
-
-
-def tag_uninteresting_codebase_resources(project):
-    """
-    Checks any file that doesn’t belong to any system package and determine if it's:
+    Flag any file that do not belong to any system package and determine if it's:
     - A temp file
     - Generated
     - Log file of sorts (such as var) using few heuristics
     """
     uninteresting_and_transient = (
-        "/tmp/",
+        "/tmp/",  # nosec
         "/etc/",
         "/proc/",
         "/dev/",
@@ -352,13 +336,13 @@ def tag_uninteresting_codebase_resources(project):
         lookups |= Q(rootfs_path__startswith=segment)
 
     qs = project.codebaseresources.no_status()
-    qs.filter(lookups).update(status="ignored-not-interesting")
+    qs.filter(lookups).update(status=flag.IGNORED_NOT_INTERESTING)
 
 
-def tag_ignorable_codebase_resources(project):
+def flag_ignorable_codebase_resources(project):
     """
-    Using the glob patterns from commoncode.ignore of ignorable files/directories,
-    tag codebase resources from `project` if their paths match an ignorable pattern.
+    Flag codebase resource using the glob patterns from commoncode.ignore of
+    ignorable files/directories, if their paths match an ignorable pattern.
     """
     lookups = Q()
     for pattern in default_ignores.keys():
@@ -371,12 +355,12 @@ def tag_ignorable_codebase_resources(project):
         lookups |= Q(rootfs_path__iregex=translated_pattern)
 
     qs = project.codebaseresources.no_status()
-    qs.filter(lookups).update(status="ignored-default-ignores")
+    qs.filter(lookups).update(status=flag.IGNORED_DEFAULT_IGNORES)
 
 
-def tag_data_files_with_no_clues(project):
+def flag_data_files_with_no_clues(project):
     """
-    Tags CodebaseResources that have a file type of `data` and no detected clues
+    Flag CodebaseResources that have a file type of `data` and no detected clues
     to be uninteresting.
     """
     lookup = Q(
@@ -384,19 +368,25 @@ def tag_data_files_with_no_clues(project):
         copyrights=[],
         holders=[],
         authors=[],
-        licenses=[],
-        license_expressions=[],
+        license_detections=[],
+        detected_license_expression="",
         emails=[],
         urls=[],
     )
 
     qs = project.codebaseresources
-    qs.filter(lookup).update(status="ignored-data-file-no-clues")
+    qs.filter(lookup).update(status=flag.IGNORED_DATA_FILE_NO_CLUES)
 
 
-def tag_media_files_as_uninteresting(project):
-    """
-    Tags CodebaseResources that are media files to be uninteresting.
-    """
+def flag_media_files_as_uninteresting(project):
+    """Flag CodebaseResources that are media files to be uninteresting."""
     qs = project.codebaseresources.no_status()
-    qs.filter(is_media=True).update(status="ignored-media-file")
+    qs.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
+
+def get_rootfs_data(root_fs):
+    """Return a mapping of rootfs-related data given a ``root_fs``."""
+    return {
+        "name": os.path.basename(root_fs.location),
+        "distro": root_fs.distro.to_dict() if root_fs.distro else {},
+    }

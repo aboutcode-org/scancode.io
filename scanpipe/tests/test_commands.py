@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import datetime
-import tempfile
 import uuid
 from io import StringIO
 from pathlib import Path
@@ -35,8 +34,6 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
-from scanpipe.management.commands.graph import is_graphviz_installed
-from scanpipe.management.commands.graph import pipeline_graph_dot
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -66,31 +63,6 @@ class ScanPipeManagementCommandTest(TestCase):
     pipeline_name = "docker"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
 
-    def test_scanpipe_management_command_graph(self):
-        out = StringIO()
-        temp_dir = tempfile.mkdtemp()
-
-        if not is_graphviz_installed():
-            expected = "Graphviz is not installed."
-            with self.assertRaisesMessage(CommandError, expected):
-                call_command("graph", self.pipeline_name)
-            return
-
-        call_command("graph", self.pipeline_name, "--output", temp_dir, stdout=out)
-        out_value = out.getvalue()
-        self.assertIn("Graph(s) generated:", out_value)
-        self.assertIn("docker.png", out_value)
-        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
-        self.assertTrue(Path(f"/{temp_dir}/docker.png").exists())
-
-    def test_scanpipe_pipelines_pipeline_graph_output_dot(self):
-        output_dot = pipeline_graph_dot(self.pipeline_name, self.pipeline_class)
-        self.assertIn("rankdir=TB;", output_dot)
-        self.assertIn('"extract_images"[label=<<b>extract_images</b>>', output_dot)
-        self.assertIn('"extract_layers"[label=<<b>extract_layers</b>>', output_dot)
-        self.assertIn("extract_images -> extract_layers;", output_dot)
-        self.assertIn("extract_layers -> find_images_os_and_distro;", output_dot)
-
     def test_scanpipe_management_command_create_project_base(self):
         out = StringIO()
 
@@ -105,6 +77,16 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = "Project with this Name already exists."
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-project", "my_project")
+
+    def test_scanpipe_management_command_create_project_notes(self):
+        out = StringIO()
+        notes = "Some notes about my project"
+        options = ["--notes", notes]
+
+        call_command("create-project", "my_project", *options, stdout=out)
+        self.assertIn("Project my_project created", out.getvalue())
+        project = Project.objects.get(name="my_project")
+        self.assertEqual(notes, project.notes)
 
     def test_scanpipe_management_command_create_project_pipelines(self):
         out = StringIO()
@@ -199,7 +181,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options.extend(["--project", project.name])
         call_command("add-input", *options, stdout=out)
-        self.assertIn("File(s) copied to the project inputs directory", out.getvalue())
+        self.assertIn("Files copied to the project inputs directory", out.getvalue())
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
 
@@ -232,6 +214,32 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- archive.zip", out.getvalue())
         self.assertEqual(["archive.zip"], project.input_root)
 
+    def test_scanpipe_management_command_add_input_copy_codebase(self):
+        out = StringIO()
+
+        project = Project.objects.create(name="my_project")
+
+        options = ["--copy-codebase", "non-existing", "--project", project.name]
+        expected = "non-existing not found"
+        with self.assertRaisesMessage(CommandError, expected):
+            call_command("add-input", *options)
+
+        parent_path = Path(__file__).parent
+        options = [
+            "--copy-codebase",
+            str(parent_path / "data" / "codebase"),
+            "--project",
+            project.name,
+        ]
+
+        call_command("add-input", *options, stdout=out)
+        self.assertIn("content copied in", out.getvalue())
+
+        expected = ["a.txt", "b.txt", "c.txt"]
+        self.assertEqual(
+            expected, sorted([path.name for path in project.codebase_path.iterdir()])
+        )
+
     def test_scanpipe_management_command_add_pipeline(self):
         out = StringIO()
 
@@ -249,7 +257,9 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
-        self.assertIn("Pipeline(s) added to the project", out.getvalue())
+        self.assertIn(
+            "Pipelines docker, root_filesystems added to the project", out.getvalue()
+        )
         self.assertEqual(pipelines, [run.pipeline_name for run in project.runs.all()])
 
         options = ["--project", project.name, "non-existing"]
@@ -334,10 +344,10 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("status", *options, stdout=out)
 
         output = out.getvalue()
-        self.assertIn("Project: my_project", output)
+        self.assertIn("my_project", output)
         self.assertIn("- CodebaseResource: 0", output)
         self.assertIn("- DiscoveredPackage: 0", output)
-        self.assertIn("- ProjectError: 0", output)
+        self.assertIn("- ProjectMessage: 0", output)
         self.assertIn("[NOT_STARTED] docker", output)
 
         run.task_id = uuid.uuid4()
@@ -358,7 +368,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         output = out.getvalue()
         self.assertIn("[RUNNING] docker", output)
-        for line in run.log.split("\n"):
+        for line in run.log.splitlines():
             self.assertIn(line, output)
 
         run.task_end_date = run.task_start_date + datetime.timedelta(0, 42)
@@ -411,21 +421,47 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn(filename, project.output_root)
 
         out = StringIO()
+        options = ["--project", project.name, "--no-color"]
         options.extend(["--format", "csv"])
         call_command("output", *options, stdout=out)
         out_value = out.getvalue().strip()
-        for output_file in out_value.split("\n"):
-            filename = out_value.split("/")[-1]
+        for output_file in out_value.splitlines():
+            filename = output_file.split("/")[-1]
             self.assertIn(filename, project.output_root)
 
         out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "spdx", "xlsx"])
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        for output_file in out_value.splitlines():
+            filename = output_file.split("/")[-1]
+            self.assertIn(filename, project.output_root)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
         options.extend(["--format", "WRONG"])
         message = (
             "Error: argument --format: invalid choice: 'WRONG' "
-            "(choose from 'json', 'csv', 'xlsx')"
+            "(choose from 'json', 'csv', 'xlsx', 'spdx', 'cyclonedx', 'attribution')"
         )
         with self.assertRaisesMessage(CommandError, message):
             call_command("output", *options, stdout=out)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "xlsx", "--print"])
+        message = "--print is not compatible with xlsx and csv formats."
+        with self.assertRaisesMessage(CommandError, message):
+            call_command("output", *options, stdout=out)
+
+        out = StringIO()
+        options = ["--project", project.name, "--no-color"]
+        options.extend(["--format", "json", "--print"])
+        call_command("output", *options, stdout=out)
+        out_value = out.getvalue().strip()
+        self.assertIn('"tool_name": "scanpipe"', out_value)
+        self.assertIn('"notice": "Generated with ScanCode.io', out_value)
 
     def test_scanpipe_management_command_delete_project(self):
         project = Project.objects.create(name="my_project")

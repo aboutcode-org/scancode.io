@@ -1,0 +1,5 @@
+<div id="form-errors" class="notification is-danger {% if not form.errors %}is-hidden{% endif %}">
+  {% for field_name, errors in form.errors.items %}
+    {{ errors }}
+  {% endfor %}
+</div>

@@ -1,16 +1,22 @@
 {% load humanize %}
 <table class="table is-bordered is-striped is-hoverable is-fullwidth">
-  {% include 'scanpipe/includes/list_view_thead.html' %}
+  {% include 'scanpipe/includes/list_view_thead.html' with select_all=True %}
   <tbody>
   {% for project in projects %}
     <tr>
+      <th class="p-2">
+        <input type="checkbox" class="select-row" value="{{ project.uuid }}">
+      </th>
       <th class="break-all">
         <a href="{{ project.get_absolute_url }}">{{ project }}</a>
+        <div>
+          {% include 'scanpipe/includes/project_labels.html' with labels=project.labels.all only %}
+        </div>
         <span class="has-text-grey is-size-7 is-block" title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
       </th>
       <td>
         {% if project.discoveredpackages_count %}
-          <a href="{% url 'project_packages' project.uuid %}">
+          <a href="{% url 'project_packages' project.slug %}">
             {{ project.discoveredpackages_count|intcomma }}
           </a>
         {% else %}
@@ -19,7 +25,7 @@
       </td>
       <td>
         {% if project.discovereddependencies_count %}
-          <a href="{% url 'project_dependencies' project.uuid %}">
+          <a href="{% url 'project_dependencies' project.slug %}">
             {{ project.discovereddependencies_count|intcomma }}
           </a>
         {% else %}
@@ -28,7 +34,7 @@
       </td>
       <td>
         {% if project.codebaseresources_count %}
-          <a href="{% url 'project_resources' project.uuid %}">
+          <a href="{% url 'project_resources' project.slug %}">
             {{ project.codebaseresources_count|intcomma }}
           </a>
         {% else %}
@@ -36,9 +42,9 @@
         {% endif %}
       </td>
       <td>
-        {% if project.projecterrors_count %}
-          <a href="{% url 'project_errors' project.uuid %}">
-            {{ project.projecterrors_count|intcomma }}
+        {% if project.projectmessages_count %}
+          <a href="{% url 'project_messages' project.slug %}">
+            {{ project.projectmessages_count|intcomma }}
           </a>
         {% else %}
           <span>0</span>
@@ -56,7 +62,7 @@
       </td>
       <td>
         {% if project.codebaseresources_count or project.discoveredpackages_count %}
-          {% include "scanpipe/includes/project_download_dropdown.html" with project=project only %}
+          {% include "scanpipe/dropdowns/project_download_dropdown.html" with project=project only %}
         {% endif %}
       </td>
     </tr>

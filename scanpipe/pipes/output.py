@@ -22,26 +22,44 @@
 
 import csv
 import json
+import re
+from operator import attrgetter
+from pathlib import Path
 
 from django.apps import apps
 from django.core.serializers.json import DjangoJSONEncoder
+from django.forms.models import model_to_dict
+from django.template import Context
+from django.template import Template
 
 import saneyaml
 import xlsxwriter
+from cyclonedx import output as cyclonedx_output
+from cyclonedx.model import bom as cyclonedx_bom
+from cyclonedx.model import component as cyclonedx_component
+from license_expression import Licensing
 from license_expression import ordered_unique
-from packagedcode.utils import combine_expressions
+from licensedcode.cache import build_spdx_license_expression
+from licensedcode.cache import get_licenses_by_spdx_key
+from licensedcode.cache import get_licensing
+from licensedcode.models import License
+from scancode_config import __version__ as scancode_toolkit_version
 
 from scancodeio import SCAN_NOTICE
 from scancodeio import __version__ as scancodeio_version
+from scanpipe.pipes import docker
+from scanpipe.pipes import spdx
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+def safe_filename(filename):
+    """Convert the provided `filename` to a safe filename."""
+    return re.sub("[^A-Za-z0-9.-]+", "_", filename).lower()
+
+
 def get_queryset(project, model_name):
-    """
-    Common source for getting consistent QuerySets across all supported outputs
-    (json, xlsx, csv, ...)
-    """
+    """Return a consistent QuerySet for all supported outputs (json, xlsx, csv, ...)"""
     querysets = {
         "discoveredpackage": (
             project.discoveredpackages.all().order_by(
@@ -65,14 +83,17 @@ def get_queryset(project, model_name):
         "codebaseresource": (
             project.codebaseresources.without_symlinks().prefetch_for_serializer()
         ),
-        "projecterror": project.projecterrors.all(),
+        "codebaserelation": (
+            project.codebaserelations.select_related("from_resource", "to_resource")
+        ),
+        "projectmessage": project.projectmessages.all(),
     }
     return querysets.get(model_name)
 
 
 def queryset_to_csv_file(queryset, fieldnames, output_file):
     """
-    Outputs csv content generated from the provided `queryset` objects to the
+    Output csv content generated from the provided `queryset` objects to the
     `output_file`.
     The fields to be included as columns and their order are controlled by the
     `fieldnames` list.
@@ -87,7 +108,7 @@ def queryset_to_csv_file(queryset, fieldnames, output_file):
 
 def queryset_to_csv_stream(queryset, fieldnames, output_stream):
     """
-    Outputs csv content generated from the provided `queryset` objects to the
+    Output csv content generated from the provided `queryset` objects to the
     `output_stream`.
     The fields to be included as columns and their order are controlled by the
     `fieldnames` list.
@@ -105,11 +126,11 @@ def queryset_to_csv_stream(queryset, fieldnames, output_stream):
 
 def to_csv(project):
     """
-    Generates output for the provided `project` in csv format.
+    Generate output for the provided `project` in csv format.
     Since the csv format does not support multiple tabs, one file is created
     per object type.
     The output files are created in the `project` output/ directory.
-    Returns a list of paths of the generated output files.
+    Return a list of paths of the generated output files.
     """
     from scanpipe.api.serializers import get_serializer_fields
 
@@ -117,7 +138,7 @@ def to_csv(project):
         "discoveredpackage",
         "discovereddependency",
         "codebaseresource",
-        "projecterror",
+        "projectmessage",
     ]
 
     output_files = []
@@ -138,7 +159,7 @@ def to_csv(project):
 
 class JSONResultsGenerator:
     """
-    Returns the `project` JSON results as a Python generator.
+    Return the `project` JSON results as a Python generator.
     Use this class to stream the results from the database to the client browser
     without having to load everything in memory first.
 
@@ -161,7 +182,10 @@ class JSONResultsGenerator:
         yield from self.serialize(label="headers", generator=self.get_headers)
         yield from self.serialize(label="packages", generator=self.get_packages)
         yield from self.serialize(label="dependencies", generator=self.get_dependencies)
-        yield from self.serialize(label="files", generator=self.get_files, latest=True)
+        yield from self.serialize(label="files", generator=self.get_files)
+        yield from self.serialize(
+            label="relations", generator=self.get_relations, latest=True
+        )
         yield "}"
 
     def serialize(self, label, generator, latest=False):
@@ -189,12 +213,17 @@ class JSONResultsGenerator:
         runs = project.runs.all()
         runs = RunSerializer(runs, many=True, exclude_fields=("url", "project"))
 
+        other_tools = [f"pkg:pypi/scancode-toolkit@{scancode_toolkit_version}"]
+
         headers = {
             "tool_name": "scanpipe",
             "tool_version": scancodeio_version,
+            "other_tools": other_tools,
             "notice": SCAN_NOTICE,
             "uuid": project.uuid,
             "created_date": project.created_date,
+            "notes": project.notes,
+            "settings": project.settings,
             "input_sources": project.input_sources_list,
             "runs": runs.data,
             "extra_data": project.extra_data,
@@ -227,12 +256,19 @@ class JSONResultsGenerator:
             project, "codebaseresource", CodebaseResourceSerializer
         )
 
+    def get_relations(self, project):
+        from scanpipe.api.serializers import CodebaseRelationSerializer
+
+        yield from self.encode_queryset(
+            project, "codebaserelation", CodebaseRelationSerializer
+        )
+
 
 def to_json(project):
     """
-    Generates output for the provided `project` in JSON format.
+    Generate output for the provided `project` in JSON format.
     The output file is created in the `project` output/ directory.
-    Returns the path of the generated output file.
+    Return the path of the generated output file.
     """
     results_generator = JSONResultsGenerator(project)
     output_file = project.get_output_file_path("results", "json")
@@ -248,21 +284,21 @@ model_name_to_worksheet_name = {
     "discoveredpackage": "PACKAGES",
     "discovereddependency": "DEPENDENCIES",
     "codebaseresource": "RESOURCES",
-    "projecterror": "ERRORS",
+    "codebaserelation": "RELATIONS",
+    "projectmessage": "MESSAGES",
 }
 
 
 def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
     """
-    Adds a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
+    Add a new worksheet to the ``workbook`` ``xlsxwriter.Workbook`` using the
     ``queryset``. The ``queryset`` "model_name" is used as a name for the
     "worksheet".
     Exclude fields listed in the ``exclude_fields`` sequence of field names.
 
-    Adds an extra trailing "xlsx_errors" column with conversion error messages if
-    any. Returns a number of conversion errors.
+    Add an extra trailing "xlsx_errors" column with conversion error messages if
+    any. Return a number of conversion errors.
     """
-
     from scanpipe.api.serializers import get_serializer_fields
 
     model_class = queryset.model
@@ -283,11 +319,11 @@ def queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields=()):
 
 def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
     """
-    Adds a new ``worksheet_name`` worksheet to the ``workbook``
+    Add a new ``worksheet_name`` worksheet to the ``workbook``
     ``xlsxwriter.Workbook``. Write the iterable of ``rows`` objects using their
     attributes listed in the ``fields`` sequence of field names.
-    Adds an "xlsx_errors" column with conversion error messages if any.
-    Returns a number of conversion errors.
+    Add a "xlsx_errors" column with conversion error messages if any.
+    Return a number of conversion errors.
     """
     worksheet = workbook.add_worksheet(worksheet_name)
     worksheet.set_default_row(height=14)
@@ -324,16 +360,13 @@ def _add_xlsx_worksheet(workbook, worksheet_name, rows, fields):
 
 # Some scan attributes such as "copyrights" are list of dicts.
 #
-#  'authors': [{'end_line': 7, 'start_line': 7, 'value': 'John Doe'}],
-#  'copyrights': [{'end_line': 5, 'start_line': 5, 'value': 'Copyright (c) nexB Inc.'}],
+#  'authors': [{'end_line': 7, 'start_line': 7, 'author': 'John Doe'}],
+#  'copyrights': [{'end_line': 5, 'start_line': 5, 'copyright': 'Copyright (c) nexB'}],
 #  'emails': [{'email': 'joe@foobar.com', 'end_line': 1, 'start_line': 1}],
-#  'holders': [{'end_line': 5, 'start_line': 5, 'value': 'nexB Inc.'}],
+#  'holders': [{'end_line': 5, 'start_line': 5, 'holder': 'nexB Inc.'}],
 #  'urls': [{'end_line': 3, 'start_line': 3, 'url': 'https://foobar.com/'}]
 #
-# We therefore use a mapping to find which key to use in these mappings until
-# this is fixed updated in scancode-toolkit with these:
-# https://github.com/nexB/scancode-toolkit/pull/2381
-# https://github.com/nexB/scancode-toolkit/issues/2350
+# We therefore use a mapping to find which key to use:
 mappings_key_by_fieldname = {
     "copyrights": "copyright",
     "holders": "holder",
@@ -345,7 +378,7 @@ mappings_key_by_fieldname = {
 
 def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     """
-    Returns two tuples of:
+    Return two tuples of:
     (``value`` adapted for use in an XLSX cell, error message or None)
 
     Convert the value to a string and perform these adaptations:
@@ -369,9 +402,6 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
         max_description_lines = 5
         value = "\n".join(value.splitlines(False)[:max_description_lines])
 
-    if fieldname == "license_expressions":
-        value = combine_expressions(value)
-
     # we only get this key in each dict of a list for some fields
     mapping_key = mappings_key_by_fieldname.get(fieldname)
     if mapping_key:
@@ -379,8 +409,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
 
     # convert these to text lines, remove duplicates
     if isinstance(value, (list, tuple)):
-        value = (str(v) for v in value if v)
-        value = ordered_unique(value)
+        value = ordered_unique(str(v) for v in value if v)
         value = "\n".join(value)
 
     # convert these to YAML which is the most readable dump format
@@ -397,7 +426,7 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
     if len_val > maximum_length:
         error = (
             f"The value of: {fieldname} has been truncated from: {len_val} "
-            f"to {maximum_length} length to fit in an XLSL cell maximum length"
+            f"to {maximum_length} length to fit in an XLSX cell maximum length"
         )
         value = value[:maximum_length]
 
@@ -406,16 +435,22 @@ def _adapt_value_for_xlsx(fieldname, value, maximum_length=32767, _adapt=True):
 
 def to_xlsx(project):
     """
-    Generates output for the provided ``project`` in XLSX format.
+    Generate output for the provided ``project`` in XLSX format.
     The output file is created in the ``project`` "output/" directory.
     Return the path of the generated output file.
 
-    Note that the XLSX worksheets contain each an extra "xlxs_errors" column
+    Note that the XLSX worksheets contain each an extra "xlsx_errors" column
     with possible error messages for a row when converting the data to XLSX
     exceed the limits of what can be stored in a cell.
     """
     output_file = project.get_output_file_path("results", "xlsx")
-    exclude_fields = ["licenses", "extra_data", "declared_license"]
+    exclude_fields = [
+        "extra_data",
+        "package_data",
+        "license_detections",
+        "other_license_detections",
+        "license_clues",
+    ]
 
     if not scanpipe_app.policies_enabled:
         exclude_fields.append("compliance_alert")
@@ -424,7 +459,8 @@ def to_xlsx(project):
         "discoveredpackage",
         "discovereddependency",
         "codebaseresource",
-        "projecterror",
+        "codebaserelation",
+        "projectmessage",
     ]
 
     with xlsxwriter.Workbook(output_file) as workbook:
@@ -432,4 +468,318 @@ def to_xlsx(project):
             queryset = get_queryset(project, model_name)
             queryset_to_xlsx_worksheet(queryset, workbook, exclude_fields)
 
+        if layers_data := docker.get_layers_data(project):
+            _add_xlsx_worksheet(workbook, "LAYERS", layers_data, docker.layer_fields)
+
+    return output_file
+
+
+def _get_spdx_extracted_licenses(license_expressions):
+    """
+    Generate and return the SPDX `extracted_licenses` from provided
+    `license_expressions` list of expressions.
+    """
+    licensing = Licensing()
+    license_index = get_licenses_by_spdx_key()
+    urls_fields = [
+        "licensedb_url",
+        "scancode_url",
+        "faq_url",
+        "homepage_url",
+        "osi_url",
+        "ignorable_urls",
+        "other_urls",
+        "text_urls",
+    ]
+    spdx_license_refs = set()
+    extracted_licenses = []
+
+    for expression in license_expressions:
+        spdx_expression = build_spdx_license_expression(expression)
+        license_keys = licensing.license_keys(spdx_expression)
+        spdx_license_refs.update(
+            [key for key in license_keys if key.startswith("LicenseRef")]
+        )
+
+    for license_ref in spdx_license_refs:
+        license = license_index.get(license_ref.lower())
+
+        see_alsos = []
+        for field_name in urls_fields:
+            value = getattr(license, field_name)
+            if isinstance(value, list):
+                see_alsos.extend(value)
+            elif value:
+                see_alsos.append(value)
+
+        extracted_licenses.append(
+            spdx.ExtractedLicensingInfo(
+                license_id=license.spdx_license_key,
+                extracted_text=license.text or " ",
+                name=license.name,
+                see_alsos=see_alsos,
+            )
+        )
+
+    return extracted_licenses
+
+
+def to_spdx(project, include_files=False):
+    """
+    Generate output for the provided ``project`` in SPDX document format.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "spdx.json")
+
+    discoveredpackage_qs = get_queryset(project, "discoveredpackage")
+    discovereddependency_qs = get_queryset(project, "discovereddependency")
+
+    packages_as_spdx = []
+    license_expressions = []
+    relationships = []
+
+    for package in discoveredpackage_qs:
+        packages_as_spdx.append(package.as_spdx())
+        if license_expression := package.declared_license_expression:
+            license_expressions.append(license_expression)
+
+    for dependency in discovereddependency_qs:
+        packages_as_spdx.append(dependency.as_spdx())
+        if dependency.for_package:
+            relationships.append(
+                spdx.Relationship(
+                    spdx_id=dependency.spdx_id,
+                    related_spdx_id=dependency.for_package.spdx_id,
+                    relationship="DEPENDENCY_OF",
+                )
+            )
+
+    files_as_spdx = []
+    if include_files:
+        files_as_spdx = [
+            resource.as_spdx()
+            for resource in get_queryset(project, "codebaseresource").files()
+        ]
+
+    document = spdx.Document(
+        name=f"scancodeio_{project.name}",
+        namespace=f"https://scancode.io/spdxdocs/{project.uuid}",
+        creation_info=spdx.CreationInfo(tool=f"ScanCode.io-{scancodeio_version}"),
+        packages=packages_as_spdx,
+        files=files_as_spdx,
+        extracted_licenses=_get_spdx_extracted_licenses(license_expressions),
+        relationships=relationships,
+        comment=SCAN_NOTICE,
+    )
+
+    with output_file.open("w") as file:
+        file.write(document.as_json())
+
+    return output_file
+
+
+def get_cyclonedx_bom(project):
+    """
+    Return a CycloneDX `Bom` object filled with provided `project` data.
+    See https://cyclonedx.org/use-cases/#dependency-graph
+    """
+    components = [
+        *get_queryset(project, "discoveredpackage"),
+    ]
+
+    cyclonedx_components = [component.as_cyclonedx() for component in components]
+
+    bom = cyclonedx_bom.Bom(components=cyclonedx_components)
+
+    project_as_cyclonedx = cyclonedx_component.Component(
+        name=project.name,
+        bom_ref=str(project.uuid),
+    )
+
+    project_as_cyclonedx.dependencies.update(
+        [component.bom_ref for component in cyclonedx_components]
+    )
+
+    bom.metadata = cyclonedx_bom.BomMetaData(
+        component=project_as_cyclonedx,
+        tools=[
+            cyclonedx_bom.Tool(
+                name="ScanCode.io",
+                version=scancodeio_version,
+            )
+        ],
+        properties=[
+            cyclonedx_bom.Property(
+                name="notice",
+                value=SCAN_NOTICE,
+            )
+        ],
+    )
+
+    return bom
+
+
+def to_cyclonedx(project):
+    """
+    Generate output for the provided ``project`` in CycloneDX BOM format.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+    """
+    output_file = project.get_output_file_path("results", "cdx.json")
+
+    cyclonedx_bom = get_cyclonedx_bom(project)
+
+    outputter = cyclonedx_output.get_instance(
+        bom=cyclonedx_bom,
+        output_format=cyclonedx_output.OutputFormat.JSON,
+    )
+
+    bom_json = outputter.output_as_string()
+    with output_file.open("w") as file:
+        file.write(bom_json)
+
+    return output_file
+
+
+def get_expression_as_attribution_links(parsed_expression):
+    template = '<a href="#license_{symbol.key}">{symbol.wrapped.spdx_license_key}</a>'
+    return parsed_expression.simplify().render(template=template)
+
+
+def render_template(template_string, context):
+    """Render a Django ``template_string`` using the ``context`` dict."""
+    return Template(template_string).render(Context(context))
+
+
+def render_template_file(template_location, context):
+    """Render a Django template at ``template_location`` using the ``context`` dict."""
+    template_string = Path(template_location).read_text()
+    return render_template(template_string, context)
+
+
+def get_attribution_template(project):
+    """Return a custom attribution template if provided or the default one."""
+    if config_directory := project.get_codebase_config_directory():
+        custom_template = config_directory / "templates" / "attribution.html"
+        if custom_template.exists():
+            return custom_template
+
+    scanpipe_templates = Path(scanpipe_app.path) / "templates"
+    default_template = scanpipe_templates / "scanpipe" / "attribution.html"
+    return default_template
+
+
+def make_unknown_license_object(license_symbol):
+    """
+    Return a ``License`` object suitable for the provided ``license_symbol``,
+    that is representing a license key unknown by the current toolkit licensed index.
+    """
+    mocked_spdx_license_key = f"LicenseRef-unknown-{license_symbol.key}"
+    return License(
+        key=license_symbol.key,
+        spdx_license_key=mocked_spdx_license_key,
+        text="ERROR: Unknown license key, no text available.",
+        is_builtin=False,
+    )
+
+
+def get_package_expression_symbols(parsed_expression):
+    """
+    Return the list of ``license_symbols`` contained in the ``parsed_expression``.
+    Since unknown license keys are missing a ``License`` set in the ``wrapped``
+    attribute, a special "unknown" ``License`` object is injected.
+    """
+    license_symbols = []
+
+    for parsed_symbol in parsed_expression.symbols:
+        # .decompose() is required for LicenseWithExceptionSymbol support
+        for license_symbol in parsed_symbol.decompose():
+            if not hasattr(license_symbol, "wrapped"):
+                license_symbol.wrapped = make_unknown_license_object(license_symbol)
+            license_symbols.append(license_symbol)
+
+    return license_symbols
+
+
+def get_package_data_for_attribution(package, licensing):
+    """
+    Convert the ``package`` instance into a dictionary of values usable during
+    attribution generation.
+    """
+    package_data = model_to_dict(package, exclude=["codebase_resources"])
+    package_data["package_url"] = package.package_url
+
+    if license_expression := package.declared_license_expression:
+        parsed = licensing.parse(license_expression)
+        license_symbols = get_package_expression_symbols(parsed)
+
+        package_licenses = [symbol.wrapped for symbol in set(license_symbols)]
+        package_data["licenses"] = package_licenses
+
+        expression_links = get_expression_as_attribution_links(parsed)
+        package_data["expression_links"] = expression_links
+
+    return package_data
+
+
+def get_unique_licenses(packages):
+    """
+    Return a list of unique License symbol objects preserving ordering.
+    Return an empty list if the packages do not have licenses.
+
+    Replace by the following one-liner once this toolkit issues is fixed:
+    https://github.com/nexB/scancode-toolkit/issues/3425
+    licenses = set(license for package in packages for license in package["licenses"])
+    """
+    seen_license_keys = set()
+    licenses = []
+
+    for package in packages:
+        for license in package.get("licenses") or []:
+            if license.key not in seen_license_keys:
+                seen_license_keys.add(license.key)
+                licenses.append(license)
+
+    return licenses
+
+
+def to_attribution(project):
+    """
+    Generate attribution for the provided ``project``.
+    The output file is created in the ``project`` "output/" directory.
+    Return the path of the generated output file.
+
+    Custom template can be provided in the
+    `codebase/.scancode/templates/attribution.html` location.
+
+    The model instances are converted into data dict to prevent any data leak as the
+    attribution template is customizable.
+    """
+    output_file = project.get_output_file_path("results", "attribution.html")
+
+    project_data = model_to_dict(project, fields=["name", "notes", "created_date"])
+
+    licensing = get_licensing()
+    packages = [
+        get_package_data_for_attribution(package, licensing)
+        for package in get_queryset(project, "discoveredpackage")
+    ]
+
+    licenses = get_unique_licenses(packages)
+    licenses = sorted(licenses, key=attrgetter("spdx_license_key"))
+
+    context = {
+        "project": project_data,
+        "packages": packages,
+        "licenses": licenses,
+    }
+
+    if template_string := project.get_env("attribution_template"):
+        rendered_template = render_template(template_string, context)
+    else:
+        template_location = get_attribution_template(project)
+        rendered_template = render_template_file(template_location, context)
+
+    output_file.write_text(rendered_template)
     return output_file

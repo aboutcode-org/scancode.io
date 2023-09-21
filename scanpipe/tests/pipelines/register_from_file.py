@@ -24,9 +24,7 @@ from scanpipe.tests.pipelines.do_nothing import DoNothing
 
 
 class RegisterFromFile(DoNothing):
-    """
-    A pipeline to be registered from its file path.
-    """
+    """Register from its file path."""
 
     @classmethod
     def steps(cls):

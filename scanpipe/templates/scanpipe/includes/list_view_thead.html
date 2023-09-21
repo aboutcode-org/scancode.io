@@ -1,15 +1,26 @@
 <thead>
   <tr>
+    {% if select_all %}
+      <th class="p-2">
+        <input type="checkbox" id="select-all">
+      </th>
+    {% endif %}
     {% for column in columns_data %}
-      <th {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
-        {% if column.sort_query %}
-          <a class="is-black-link" href="?{{ column.sort_query }}">{{ column.label }}</a>
-          {% if column.field_name in filter.data.sort %}
-            <i class="fa fa-sort-{% if "-" in filter.data.sort %}down{% else %}up{% endif %}"></i>
+      <th id="column-{{ column.field_name }}" {% if column.css_class %}class="{{ column.css_class }}"{% elif column.field_name in filter.data.sort %}class="nowrap"{% endif %}>
+        <div class="is-flex is-justify-content-space-between">
+          <div>
+            {% if column.sort_query %}
+              {% include 'scanpipe/includes/filter_sort.html' with column=column only %}
+            {% else %}
+              {{ column.label }}
+            {% endif %}
+          </div>
+          {% if column.filter %}
+            <div class="ml-1">
+              {% include 'scanpipe/dropdowns/filter_dropdown_choices_field.html' with filter=column.filter is_right=column.filter_is_right only %}
+            </div>
           {% endif %}
-        {% else %}
-          {{ column.label }}
-        {% endif %}
+        </div>
       </th>
     {% endfor %}
   </tr>

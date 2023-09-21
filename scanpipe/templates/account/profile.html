@@ -1,7 +1,7 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-<div class="container is-max-desktop">
+<div class="container is-max-widescreen">
   {% include 'scanpipe/includes/navbar_header.html' %}
   <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
@@ -25,7 +25,7 @@
       <div class="control has-icons-left">
         <input class="input" type="text" value="{{ request.user.auth_token.key|default:'Not available' }}" readonly>
         <span class="icon is-small is-left">
-          <i class="fas fa-key"></i>
+          <i class="fa-solid fa-key"></i>
         </span>
       </div>
     </div>

@@ -1,0 +1,18 @@
+<div class="modal" id="clone-modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Clone this project</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <form hx-post="{% url 'project_clone' project.slug %}" hx-target="#clone-modal-form-body" hx-on::after-settle="removeOverlay()">{% csrf_token %}
+      <section id="clone-modal-form-body" class="modal-card-body">
+        {% include 'scanpipe/includes/project_clone_form.html' with form=project_clone_form %}
+      </section>
+      <footer class="modal-card-foot is-flex is-justify-content-space-between">
+        <button class="button" type="reset">Cancel</button>
+        <button class="button is-no-close is-link" type="submit">Clone Project</button>
+      </footer>
+    </form>
+  </div>
+</div>

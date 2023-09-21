@@ -33,7 +33,7 @@ from scancodeio.auth import is_authenticated_when_required
 
 User = get_user_model()
 
-TEST_PASSWORD = "secret"
+TEST_PASSWORD = str(uuid.uuid4())
 
 login_url = reverse("login")
 project_list_url = reverse("project_list")
@@ -111,13 +111,12 @@ class ScanCodeIOAuthTest(TestCase):
         response = self.client.get(profile_url)
         expected = '<label class="label">API Key</label>'
         self.assertContains(response, expected, html=True)
-        expected = '<label class="label">API Key</label>'
         self.assertContains(response, self.basic_user.auth_token.key)
 
     def test_scancodeio_auth_views_are_protected(self):
         a_uuid = uuid.uuid4()
         a_int = 1
-        a_path = "path"
+        a_string = "string"
 
         views = [
             ("account_profile", None),
@@ -125,13 +124,12 @@ class ScanCodeIOAuthTest(TestCase):
             ("project_list", None),
             ("project_resources", [a_uuid]),
             ("project_packages", [a_uuid]),
-            ("project_errors", [a_uuid]),
-            ("project_tree", [a_uuid]),
+            ("project_messages", [a_uuid]),
             ("project_archive", [a_uuid]),
             ("project_delete", [a_uuid]),
             ("project_reset", [a_uuid]),
             ("project_detail", [a_uuid]),
-            ("project_results", [a_uuid, a_path]),
+            ("project_results", [a_uuid, a_string]),
             ("resource_raw", [a_uuid, a_int]),
             ("resource_detail", [a_uuid, a_int]),
             ("project_execute_pipeline", [a_uuid, a_uuid]),
@@ -139,10 +137,8 @@ class ScanCodeIOAuthTest(TestCase):
             ("project_delete_pipeline", [a_uuid, a_uuid]),
             ("run_detail", [a_uuid]),
             ("run_status", [a_uuid]),
-            ("admin:index", None),
-            ("rq_home", None),
             ("license_list", None),
-            ("license_details", [a_path]),
+            ("license_detail", [a_string]),
         ]
 
         for viewname, args in views:

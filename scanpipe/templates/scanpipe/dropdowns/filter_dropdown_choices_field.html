@@ -1,0 +1,12 @@
+<div class="dropdown is-hoverable {% if is_right %}is-right{% endif %}">
+  <div class="dropdown-trigger">
+    <a class="{% if filter.data %}has-text-link{% else %}is-grey-link{% endif %}" aria-haspopup="true" aria-controls="{{ filter.id_for_label }}">
+      <span class="icon width-1 height-1"><i class="fa-solid fa-filter"></i></span>
+    </a>
+  </div>
+  <div class="dropdown-menu" id="{{ filter.id_for_label }}" role="menu">
+    <div class="dropdown-content">
+      {{ filter }}
+    </div>
+  </div>
+</div>

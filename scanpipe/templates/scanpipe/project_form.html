@@ -1,22 +1,18 @@
 {% extends "scanpipe/base.html" %}
 
 {% block content %}
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
 
-    <section class="section pt-0">
-      <h2 class="subtitle mb-0 pt-2 mb-5">
+    <section class="mx-5 pt-0 pb-1">
+      <h2 class="subtitle mb-0 mb-4">
         Create a <strong>Project</strong>
       </h2>
 
-      <div id="form-errors" class="notification is-danger {% if not form.errors %}is-hidden{% endif %}">
-        {% for field_name, errors in form.errors.items %}
-          {{ errors }}
-        {% endfor %}
-      </div>
+      {% include 'scanpipe/includes/form_errors.html' %}
 
       <div class="columns">
-        <div class="column is-three-fifths pr-5">
+        <div class="column is-7 pr-5 pb-0">
 
           <form method="post" action="{% url 'project_add' %}" enctype="multipart/form-data">{% csrf_token %}
             <div class="field">
@@ -35,7 +31,7 @@
                   {{ form.input_files }}
                   <span class="file-cta">
                     <span class="file-icon">
-                      <i class="fas fa-upload"></i>
+                      <i class="fa-solid fa-upload"></i>
                     </span>
                     <span class="file-label has-text-centered">
                       Drop files over here (or click)
@@ -72,7 +68,7 @@
               </label>
             </div>
 
-            <div class="columns mt-6 is-variable is-1">
+            <div class="columns mt-4 is-variable is-1">
               <div class="column is-one-third">
                 <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
               </div>
@@ -102,7 +98,10 @@
                       <button class="delete" aria-label="close"></button>
                     </header>
                     <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
-                      {{ pipeline_info.description }}
+                      <p>{{ pipeline_info.summary }}</p>
+                      {% if pipeline_info.description %}
+                        <p class="mt-3">{{ pipeline_info.description|linebreaks }}</p>
+                      {% endif %}
                     </div>
                     <section class="modal-card-body has-text-centered border-bottom-radius">
                       {% for step in pipeline_info.steps %}
@@ -114,7 +113,7 @@
                   </div>
                 </div>
               </div>
-              {{ pipeline_info.description }}
+              {{ pipeline_info.summary }}
             </div>
           {% endfor %}
         </div>
@@ -146,7 +145,7 @@
       background.appendChild(progress_container);
 
       let form_errors = document.getElementById('form-errors');
-      displayFormUploadProgress(form, progress_bar, form_errors);
+      displayFormUploadProgress(form, progress_bar, form_errors, true);
     });
   </script>
 {% endblock %}

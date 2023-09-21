@@ -53,11 +53,29 @@ SCANCODEIO_REQUIRE_AUTHENTICATION = env.bool(
     "SCANCODEIO_REQUIRE_AUTHENTICATION", default=False
 )
 
+SECURE_CONTENT_TYPE_NOSNIFF = env.bool("SECURE_CONTENT_TYPE_NOSNIFF", default=True)
+
+X_FRAME_OPTIONS = env.str("X_FRAME_OPTIONS", default="DENY")
+
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
+
+# ``security.W004`` SECURE_HSTS_SECONDS and ``security.W008`` SECURE_SSL_REDIRECT
+# are handled by the web server.
+SILENCED_SYSTEM_CHECKS = ["security.W004", "security.W008"]
+
 # ScanCode.io
 
 SCANCODEIO_WORKSPACE_LOCATION = env.str("SCANCODEIO_WORKSPACE_LOCATION", default="var")
 
-SCANCODE_TOOLKIT_CLI_OPTIONS = env.list("SCANCODE_TOOLKIT_CLI_OPTIONS", default=[])
+SCANCODEIO_CONFIG_DIR = env.str("SCANCODEIO_CONFIG_DIR", default=".scancode")
+
+SCANCODEIO_CONFIG_FILE = env.str(
+    "SCANCODEIO_CONFIG_FILE", default="scancode-config.yml"
+)
+
+SCANCODE_TOOLKIT_RUN_SCAN_ARGS = env.dict("SCANCODE_TOOLKIT_RUN_SCAN_ARGS", default={})
 
 SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
 
@@ -73,15 +91,32 @@ SCANCODEIO_POLICIES_FILE = env.str("SCANCODEIO_POLICIES_FILE", default="policies
 # pipelines directories.
 SCANCODEIO_PIPELINES_DIRS = env.list("SCANCODEIO_PIPELINES_DIRS", default=[])
 
-# Default to 24 hours.
-SCANCODEIO_TASK_TIMEOUT = env.int("SCANCODEIO_TASK_TIMEOUT", default=86400)
+# Maximum time allowed for a pipeline to complete.
+SCANCODEIO_TASK_TIMEOUT = env.str("SCANCODEIO_TASK_TIMEOUT", default="24h")
+
+# Default to 2 minutes.
+SCANCODEIO_SCAN_FILE_TIMEOUT = env.int("SCANCODEIO_SCAN_FILE_TIMEOUT", default=120)
+
+# List views pagination, controls the number of items displayed per page.
+# Syntax in .env: SCANCODEIO_PAGINATE_BY=project=10,project_error=10
+SCANCODEIO_PAGINATE_BY = env.dict(
+    "SCANCODEIO_PAGINATE_BY",
+    default={
+        "project": 20,
+        "error": 50,
+        "resource": 100,
+        "package": 100,
+        "dependency": 100,
+        "relation": 100,
+    },
+)
 
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     # Local apps
     # Must come before Third-party apps for proper templates override
     "scanpipe",
@@ -95,21 +130,25 @@ INSTALLED_APPS = (
     "django.contrib.humanize",
     # Third-party apps
     "crispy_forms",
+    "crispy_bootstrap3",  # required for the djangorestframework browsable API
     "django_filters",
     "rest_framework",
     "rest_framework.authtoken",
     "django_rq",
     "django_probes",
-)
+    "fontawesomefree",
+    "taggit",
+]
 
-MIDDLEWARE = (
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-)
+]
 
 ROOT_URLCONF = "scancodeio.urls"
 
@@ -134,6 +173,10 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+# Forms and filters
+
+FILTERS_EMPTY_CHOICE_LABEL = env.str("FILTERS_EMPTY_CHOICE_LABEL", default="All")
 
 # Templates
 
@@ -186,24 +229,15 @@ if IS_TESTS:
     # Do not pollute the workspace while running the tests
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
+    SCANCODEIO_SCAN_FILE_TIMEOUT = 120
 
-# Cache
+# Debug toolbar
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "default",
-    },
-    "scan_results": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "scan",
-        "TIMEOUT": 86_400,  # 1 day
-        "OPTIONS": {
-            # Maximum entries allowed in the cache before old values are deleted
-            "MAX_ENTRIES": 1_000_000,
-        },
-    },
-}
+DEBUG_TOOLBAR = env.bool("SCANCODEIO_DEBUG_TOOLBAR", default=False)
+if DEBUG and DEBUG_TOOLBAR:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+    INTERNAL_IPS = ["127.0.0.1"]
 
 # Logging
 
@@ -260,7 +294,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATIC_ROOT = "/var/scancodeio/static/"
+STATIC_ROOT = env.str("STATIC_ROOT", default="/var/scancodeio/static/")
 
 STATICFILES_DIRS = [
     PROJECT_DIR("static"),
@@ -311,3 +345,17 @@ if not SCANCODEIO_REQUIRE_AUTHENTICATION:
     REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = (
         "rest_framework.permissions.AllowAny",
     )
+
+# VulnerableCode integration
+
+VULNERABLECODE_URL = env.str("VULNERABLECODE_URL", default="")
+VULNERABLECODE_USER = env.str("VULNERABLECODE_USER", default="")
+VULNERABLECODE_PASSWORD = env.str("VULNERABLECODE_PASSWORD", default="")
+VULNERABLECODE_API_KEY = env.str("VULNERABLECODE_API_KEY", default="")
+
+# PurlDB integration
+
+PURLDB_URL = env.str("PURLDB_URL", default="")
+PURLDB_USER = env.str("PURLDB_USER", default="")
+PURLDB_PASSWORD = env.str("PURLDB_PASSWORD", default="")
+PURLDB_API_KEY = env.str("PURLDB_API_KEY", default="")

@@ -1,0 +1,31 @@
+<div class="content">
+  <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+    <thead>
+      <tr>
+        <th>Package URL</th>
+        <th>License</th>
+        <th>Primary language</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for package in tab_data.fields.discovered_packages.value %}
+        <tr class="break-word">
+          <td title="{{ package.package_uid }}">
+            <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
+            {% if package.is_vulnerable %}
+              <a href="{{ package.get_absolute_url }}#vulnerabilities">
+                <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
+              </a>
+            {% endif %}
+          </td>
+          <td>
+            {{ package.declared_license_expression }}
+          </td>
+          <td>
+            {{ package.primary_language }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

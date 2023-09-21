@@ -1,0 +1,6 @@
+<a href="?{{ column.sort_query }}" class="is-black-link">
+  {{ column.label }}
+</a>
+{% if column.is_sorted %}
+  <i class="fa-solid fa-sort-{% if column.sort_direction == "-" %}down{% else %}up{% endif %}"></i>
+{% endif %}

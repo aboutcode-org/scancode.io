@@ -1,0 +1,63 @@
+<aside class="menu is-info is-sticky top-0">
+  <ul class="menu-list">
+    <li>
+      <a class="is-active" href="#general">
+        <i class="fa-solid fa-gear mr-2"></i>General
+      </a>
+    </li>
+    <li>
+      <a href="#extraction">
+        <i class="fa-solid fa-file-zipper mr-2"></i>Extraction
+      </a>
+    </li>
+    <li>
+      <a href="#ignored">
+        <i class="fa-solid fa-forward mr-2"></i>Ignored
+      </a>
+    </li>
+    <li>
+      <a href="#scancode">
+        <i class="fa-solid fa-barcode mr-2"></i>ScanCode
+      </a>
+    </li>
+    <li>
+      <a href="#attribution">
+        <i class="fa-solid fa-file-lines mr-2"></i>Attribution
+      </a>
+    </li>
+  </ul>
+  <hr class="my-4">
+  <p class="menu-label">
+    Download
+  </p>
+  <ul class="menu-list">
+    <li>
+      <a href="?download=1" class="is-stateless">
+        <i class="fa-solid fa-download mr-2"></i>Config file
+      </a>
+    </li>
+  </ul>
+  <hr class="my-4">
+  <p class="menu-label">
+    Actions
+  </p>
+  <ul class="menu-list">
+    {% if not project.is_archived %}
+      <li>
+        <a href="#" class="modal-button is-stateless" data-target="modal-archive" aria-haspopup="true">
+          <i class="fa-solid fa-dice-d6 mr-2"></i>Archive
+        </a>
+      </li>
+    {% endif %}
+    <li>
+      <a href="#" class="modal-button is-stateless" data-target="modal-reset" aria-haspopup="true">
+        <i class="fa-solid fa-eraser mr-2"></i>Reset
+      </a>
+    </li>
+    <li>
+      <a href="#" class="modal-button is-stateless" data-target="modal-delete" aria-haspopup="true">
+        <i class="fa-solid fa-trash-can mr-2"></i>Delete
+      </a>
+    </li>
+  </ul>
+</aside>

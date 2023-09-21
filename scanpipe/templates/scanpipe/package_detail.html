@@ -4,21 +4,10 @@
 {% block title %}ScanCode.io: {{ project.name }} - {{ object.name }}{% endblock %}
 
 {% block content %}
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
-
-    <section class="mx-5 mb-3">
-      <nav class="breadcrumb is-medium mb-1" aria-label="breadcrumbs">
-        <ul>
-          <li><a href="{% url 'project_list' %}">Projects</a></li>
-          <li><a href="{{ project.get_absolute_url }}">{{ project.name }}</a></li>
-          <li><a href="{% url 'project_packages' project.uuid %}">Packages</a></li>
-          <li class="is-active"><a href="#" aria-current="page">{{ object.package_url }}</a></li>
-        </ul>
-      </nav>
-    </section>
-
+    {% include 'scanpipe/includes/breadcrumb_detail_view.html' with object_title=object.package_url url_name="project_packages" %}
     {% include 'scanpipe/tabset/tabset.html' %}
   </div>
 {% endblock %}

@@ -3,13 +3,22 @@
 Command Line Interface
 ======================
 
-The main entry point is the :guilabel:`scanpipe` command which is available
-directly when you are in the activated virtualenv or at this path:
-``<scancode.io_root_dir>/bin/scanpipe``
+A ``scanpipe`` command can be executed through the ``docker compose`` command line
+interface with::
+
+    docker compose exec -it web scanpipe COMMAND
+
+Alternatively, you can start a ``bash`` session in a new Docker container to execute
+multiple ``scanpipe`` commands::
+
+    docker compose run web bash
+    scanpipe COMMAND
+    scanpipe COMMAND
+    ...
 
 .. warning::
     In order to add local input files to a project using the Command Line Interface,
-    extra arguments need to be passed to the docker-compose command.
+    extra arguments need to be passed to the ``docker compose`` command.
 
     For instance ``--volume /path/on/host:/target/path/in/container:ro``
     will mount and make available the host path inside the container (``:ro`` stands
@@ -17,9 +26,13 @@ directly when you are in the activated virtualenv or at this path:
 
     .. code-block:: bash
 
-        docker-compose run --volume /home/sources:/sources:ro \
-            web ./manage.py create-project my-project --input-file="/sources/image.tar"
+        docker compose run --volume /home/sources:/sources:ro \
+            web scanpipe create-project my_project --input-file="/sources/image.tar"
 
+.. note::
+    In a local development installation, the ``scanpipe`` command is directly
+    available as an entry point in your virtualenv and is located at
+    ``<scancode.io_root_dir>/bin/scanpipe``.
 
 `$ scanpipe --help`
 -------------------
@@ -36,7 +49,6 @@ ScanPipe's own commands are listed under the ``[scanpipe]`` section::
         create-project
         delete-project
         execute
-        graph
         list-project
         output
         show-pipeline
@@ -52,7 +64,8 @@ For example::
 
     $ scanpipe create-project --help
     usage: scanpipe create-project [--input-file INPUTS_FILES]
-        [--input-url INPUT_URLS] [--pipeline PIPELINES] [--execute] [--async]
+        [--input-url INPUT_URLS] [--copy-codebase SOURCE_DIRECTORY]
+        [--pipeline PIPELINES] [--execute] [--async]
         name
 
     Create a ScanPipe project.
@@ -77,11 +90,14 @@ Optional arguments:
 - ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
   directory.
 
+- ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
+  into the :guilabel:`codebase/` work directory.
+
 - ``--execute`` Execute the pipelines right after project creation.
 
 - ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
   of running in the current thread.
-  Applies only when --execute is provided.
+  Applies only when ``--execute`` is provided.
 
 .. warning::
     Pipelines are added and are executed in order.
@@ -114,6 +130,9 @@ Adds input files in the project's work directory.
 
 - ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
   directory.
+
+- ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
+  into the :guilabel:`codebase/` work directory.
 
 For example, assuming you have created beforehand a project named "foo", this will
 copy ``~/docker/alpine-base.tar`` to the foo project :guilabel:`input/` directory::
@@ -182,28 +201,21 @@ Displays status information about the ``PROJECT`` project.
     This can be disabled providing the ``--verbosity 0`` option.
 
 
-`$ scanpipe output --project PROJECT --format {json,csv,xlsx}`
---------------------------------------------------------------
+`$ scanpipe output --project PROJECT --format {json,csv,xlsx,spdx,cyclonedx,attribution}`
+-----------------------------------------------------------------------------------------
 
-Outputs the ``PROJECT`` results as JSON, CSV or XLSX.
+Outputs the ``PROJECT`` results as JSON, XLSX, CSV, SPDX, CycloneDX, and Attribution.
 The output files are created in the ``PROJECT`` :guilabel:`output/` directory.
 
+Multiple formats can be provided at once::
 
-`$ scanpipe graph [PIPELINE_NAME ...]`
---------------------------------------
-
-Generates one or more pipeline graph image as PNG using
-`Graphviz <https://graphviz.org/>`_.
-The output images are named using the pipeline name with a ``.png`` extension.
+    $ scanpipe output --project foo --format json xlsx spdx cyclonedx attribution
 
 Optional arguments:
 
-- ``--list`` Displays a list of all available pipelines.
-
-- ``--output OUTPUT`` Specifies the directory to which the output is written.
-
-.. note::
-    By default, output files are created in the current working directory.
+- ``--print`` Print the output to stdout instead of creating a file. This is not
+  compatible with the XLSX and CSV formats.
+  It cannot be used when multiple formats are provided.
 
 
 `$ scanpipe archive-project --project PROJECT`

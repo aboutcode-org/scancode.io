@@ -26,6 +26,7 @@ from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q
+from django.http import FileResponse
 
 import django_filters
 from rest_framework import mixins
@@ -35,11 +36,12 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import PipelineSerializer
-from scanpipe.api.serializers import ProjectErrorSerializer
+from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
@@ -119,10 +121,20 @@ class ProjectViewSet(
     serializer_class = ProjectSerializer
     filterset_class = ProjectFilterSet
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                "labels",
+                "runs",
+            )
+        )
+
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):
         """
-        Returns the results compatible with ScanCode data format.
+        Return the results compatible with ScanCode data format.
         The content is returned as a stream of JSON content using the
         JSONResultsGenerator class.
         """
@@ -132,15 +144,13 @@ class ProjectViewSet(
         detail=True, name="Results (download)", renderer_classes=[PassThroughRenderer]
     )
     def results_download(self, request, *args, **kwargs):
-        """
-        Returns the results as an attachment.
-        """
+        """Return the results as an attachment."""
         return project_results_json_response(self.get_object(), as_attachment=True)
 
     @action(detail=True)
     def summary(self, request, *args, **kwargs):
         """
-        Returns a summary of the results from the latest summary file found in the
+        Return a summary of the results from the latest summary file found in the
         project's `output` directory.
         """
         project = self.get_object()
@@ -169,7 +179,7 @@ class ProjectViewSet(
         paginated_qs = self.paginate_queryset(queryset)
         serializer = CodebaseResourceSerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
     def packages(self, request, *args, **kwargs):
@@ -179,7 +189,7 @@ class ProjectViewSet(
         paginated_qs = self.paginate_queryset(queryset)
         serializer = DiscoveredPackageSerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
     def dependencies(self, request, *args, **kwargs):
@@ -189,17 +199,27 @@ class ProjectViewSet(
         paginated_qs = self.paginate_queryset(queryset)
         serializer = DiscoveredDependencySerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
-    def errors(self, request, *args, **kwargs):
+    def relations(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = project.projecterrors.all()
+        queryset = project.codebaserelations.all()
 
         paginated_qs = self.paginate_queryset(queryset)
-        serializer = ProjectErrorSerializer(paginated_qs, many=True)
+        serializer = CodebaseRelationSerializer(paginated_qs, many=True)
 
-        return Response(serializer.data)
+        return self.get_paginated_response(serializer.data)
+
+    @action(detail=True)
+    def messages(self, request, *args, **kwargs):
+        project = self.get_object()
+        queryset = project.projectmessages.all()
+
+        paginated_qs = self.paginate_queryset(queryset)
+        serializer = ProjectMessageSerializer(paginated_qs, many=True)
+
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["get"])
     def file_content(self, request, *args, **kwargs):
@@ -245,7 +265,7 @@ class ProjectViewSet(
     def add_input(self, request, *args, **kwargs):
         project = self.get_object()
 
-        if not project.can_add_input:
+        if not project.can_change_inputs:
             message = {
                 "status": "Cannot add inputs once a pipeline has started to execute."
             }
@@ -319,11 +339,28 @@ class ProjectViewSet(
             )
             return Response({"status": message})
 
+    @action(detail=True, methods=["get"])
+    def outputs(self, request, *args, **kwargs):
+        project = self.get_object()
+
+        if filename := request.query_params.get("filename"):
+            file_path = project.output_path / filename
+            if file_path.exists():
+                return FileResponse(file_path.open("rb"))
+
+            message = {"status": f"Output file {filename} not found"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        action_url = self.reverse_action(self.outputs.url_name, args=[project.pk])
+        output_data = [
+            {"filename": output, "download_url": f"{action_url}?filename={output}"}
+            for output in project.output_root
+        ]
+        return Response(output_data)
+
 
 class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """
-    This viewset only provides the `detail` action.
-    """
+    """Add actions to the Run viewset."""
 
     queryset = Run.objects.all()
     serializer_class = RunSerializer
@@ -341,7 +378,7 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             message = {"status": "Pipeline already queued."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        transaction.on_commit(run.execute_task_async)
+        transaction.on_commit(run.start)
 
         return Response({"status": f"Pipeline {run.pipeline_name} started."})
 

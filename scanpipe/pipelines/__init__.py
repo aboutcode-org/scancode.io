@@ -22,32 +22,32 @@
 
 import inspect
 import logging
-import timeit
 import traceback
 import warnings
 from contextlib import contextmanager
 from functools import wraps
 from pydoc import getdoc
+from pydoc import splitdoc
+from timeit import default_timer as timer
 
 from django.utils import timezone
 
 from pyinstrument import Profiler
 
+from scanpipe import humanize_time
+
 logger = logging.getLogger(__name__)
 
 
-class Pipeline:
-    """
-    Base class for all pipelines.
-    """
+class BasePipeline:
+    """Base class for all pipelines."""
 
     def __init__(self, run):
-        """
-        Load the Run and Project instances.
-        """
+        """Load the Run and Project instances."""
         self.run = run
         self.project = run.project
         self.pipeline_name = run.pipeline_name
+        self.env = self.project.get_env()
 
     @classmethod
     def steps(cls):
@@ -56,7 +56,7 @@ class Pipeline:
     @classmethod
     def get_steps(cls):
         """
-        Raises a deprecation warning when the steps are defined as a tuple instead of
+        Raise a deprecation warning when the steps are defined as a tuple instead of
         a classmethod.
         """
         if callable(cls.steps):
@@ -70,68 +70,78 @@ class Pipeline:
 
     @classmethod
     def get_doc(cls):
-        """
-        Returns a docstring.
-        """
+        """Get the doc string of this pipeline."""
         return getdoc(cls)
 
     @classmethod
     def get_graph(cls):
-        """
-        Returns a graph of steps.
-        """
+        """Return a graph of steps."""
         return [
             {"name": step.__name__, "doc": getdoc(step)} for step in cls.get_steps()
         ]
 
     @classmethod
     def get_info(cls):
-        """
-        Returns a dictctionary of combined data about the current pipeline.
-        """
+        """Get a dictionary of combined information data about this pipeline."""
+        summary, description = splitdoc(cls.get_doc())
         return {
-            "description": cls.get_doc(),
+            "summary": summary,
+            "description": description,
             "steps": cls.get_graph(),
         }
 
+    @classmethod
+    def get_summary(cls):
+        """Get the doc string summary."""
+        return cls.get_info()["summary"]
+
     def log(self, message):
-        """
-        Logs the given `message` to the current module logger and Run instance.
-        """
+        """Log the given `message` to the current module logger and Run instance."""
         now_as_localtime = timezone.localtime(timezone.now())
         timestamp = now_as_localtime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-4]
         message = f"{timestamp} {message}"
         logger.info(message)
-        self.run.append_to_log(message, save=True)
+        self.run.append_to_log(message)
 
     def execute(self):
+        """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
+        steps = self.get_steps()
+        steps_count = len(steps)
+        pipeline_start_time = timer()
 
-        for step in self.get_steps():
-            self.log(f"Step [{step.__name__}] starting")
-            start_time = timeit.default_timer()
+        for current_index, step in enumerate(steps, start=1):
+            step_name = step.__name__
+
+            self.run.set_current_step(f"{current_index}/{steps_count} {step_name}")
+            self.log(f"Step [{step_name}] starting")
+            step_start_time = timer()
 
             try:
                 step(self)
             except Exception as e:
-                self.log(f"Pipeline failed")
+                self.log("Pipeline failed")
                 tb = "".join(traceback.format_tb(e.__traceback__))
                 return 1, f"{e}\n\nTraceback:\n{tb}"
 
-            run_time = timeit.default_timer() - start_time
-            self.log(f"Step [{step.__name__}] completed in {run_time:.2f} seconds")
+            step_run_time = timer() - step_start_time
+            self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
 
-        self.log(f"Pipeline completed")
+        self.run.set_current_step("")  # Reset the `current_step` field on completion
+        pipeline_run_time = timer() - pipeline_start_time
+        self.log(f"Pipeline completed in {humanize_time(pipeline_run_time)}")
 
         return 0, ""
 
-    def add_error(self, error):
-        self.project.add_error(error, model=self.pipeline_name)
+    def add_error(self, exception):
+        """Create a ``ProjectMessage`` ERROR record on the current `project`."""
+        self.project.add_error(model=self.pipeline_name, exception=exception)
 
     @contextmanager
     def save_errors(self, *exceptions):
         """
-        Context manager to save specified exceptions as `ProjectError` in the database.
+        Context manager to save specified exceptions as ``ProjectMessage`` in the
+        database.
 
         Example in a Pipeline step:
 
@@ -141,12 +151,29 @@ class Pipeline:
         try:
             yield
         except exceptions as error:
-            self.add_error(error)
+            self.add_error(exception=error)
+
+
+class Pipeline(BasePipeline):
+    """Main class for all pipelines including common step methods."""
+
+    def flag_empty_files(self):
+        """Flag empty files."""
+        from scanpipe.pipes import flag
+
+        flag.flag_empty_files(self.project)
+
+    def flag_ignored_resources(self):
+        """Flag ignored resources based on Project ``ignored_patterns`` setting."""
+        from scanpipe.pipes import flag
+
+        if ignored_patterns := self.env.get("ignored_patterns"):
+            flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
 
 def is_pipeline(obj):
     """
-    Returns True if the `obj` is a subclass of `Pipeline` except for the
+    Return True if the `obj` is a subclass of `Pipeline` except for the
     `Pipeline` class itself.
     """
     return inspect.isclass(obj) and issubclass(obj, Pipeline) and obj is not Pipeline
@@ -154,7 +181,7 @@ def is_pipeline(obj):
 
 def profile(step):
     """
-    Profiles a Pipeline step and save the results as HTML file in the project output
+    Profile a Pipeline step and save the results as HTML file in the project output
     directory.
 
     Usage:

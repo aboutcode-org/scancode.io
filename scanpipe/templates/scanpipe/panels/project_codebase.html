@@ -1,0 +1,18 @@
+<nav id="codebase-navigation" class="panel is-info">
+  <p class="panel-heading py-2 is-size-6">
+    Codebase
+  </p>
+  {% for node in codebase_tree %}
+    {% if node.is_dir %}
+       <a class="panel-block" href="#" hx-target="#codebase-navigation" hx-swap="outerHTML" hx-get="{{ project.get_absolute_url }}codebase/?current_dir={{ node.location }}">
+         <span class="panel-icon"><i class="fa-solid fa-folder"></i></span>
+         {{ node.name }}
+      </a>
+    {% else %}
+      <a class="panel-block" href="{% url "resource_detail" project.slug node.location %}" target="_blank">
+        <span class="panel-icon"><i class="fa-regular fa-file"></i></span>
+        {{ node.name }}
+      </a>
+    {% endif %}
+  {% endfor %}
+</nav>

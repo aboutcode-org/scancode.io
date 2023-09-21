@@ -1,0 +1,185 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.4.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "serialNumber": "urn:uuid:0daae489-f367-40a3-98ec-461ef43e8b11",
+  "version": 1,
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/toml@0.10.2?extension=tar.gz",
+      "name": "toml",
+      "version": "0.10.2",
+      "purl": "pkg:pypi/toml@0.10.2?extension=tar.gz",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+        }
+      ],
+      "properties": [
+        {
+          "name": "aboutcode:homepage_url",
+          "value": "https://cyclonedx.org/website"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "issue-tracker",
+          "url": "https://cyclonedx.org/issue-tracker",
+          "comment": "No comment",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "https://cyclonedx.org/website",
+          "comment": "No comment",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+            }
+          ]
+        },
+        {
+          "type": "vcs",
+          "url": "https://cyclonedx.org/vcs",
+          "comment": "No comment",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+            }
+          ]
+        },
+        {
+          "type": "advisories",
+          "url": "https://cyclonedx.org/advisories",
+          "comment": "No comment",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+            }
+          ]
+        },
+        {
+          "type": "bom",
+          "url": "https://cyclonedx.org/bom",
+          "comment": "No comment",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+            }
+          ]
+        },
+        {
+          "type": "mailing-list",
+          "url": "https://cyclonedx.org/mailing-list",
+          "comment": "No comment",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+            }
+          ]
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "OFL-1.1"
+          }
+        },
+        {
+          "license": {
+            "name": "Apache-2.0"
+          }
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "bom-ref": "pkg:pypi/billiard@3.6.3.0",
+          "name": "billiard",
+          "version": "3.6.3.0",
+          "description": "Multiprocessing Pool Extensions",
+          "hashes": [
+            {
+              "alg": "MD5",
+              "content": "ef0831df429e9ec89f3b40fea4e143d4"
+            },
+            {
+              "alg": "SHA-1",
+              "content": "c9100731b41e1bcb3bbaffd777f991057d3bd09b"
+            }
+          ],
+          "licenses": [
+            {
+              "expression": "BSD-3-Clause"
+            }
+          ],
+          "copyright": "Copyright (c) 2006-2008, R Oudkerk and Contributors",
+          "purl": "pkg:pypi/billiard@3.6.3.0",
+          "components": [
+            {
+              "type": "library",
+              "bom-ref": "pkg:pypi/fictional@9.10.2",
+              "name": "fictional",
+              "version": "0.10.2",
+              "purl": "pkg:pypi/fictional@9.10.2",
+              "hashes": [
+                {
+                  "alg": "SHA-256",
+                  "content": "960343ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+                }
+              ],
+              "properties": [
+                {
+                  "name": "aboutcode:download_url",
+                  "value": "https://download.url/package.zip"
+                },
+                {
+                  "name": "aboutcode:filename",
+                  "value": "package.zip"
+                },
+                {
+                  "name": "aboutcode:primary_language",
+                  "value": "Python"
+                },
+                {
+                  "name": "aboutcode:homepage_url",
+                  "value": "https://home.page"
+                }
+              ],
+              "externalReferences": [
+                {
+                  "type": "distribution",
+                  "url": "https://cyclonedx.org",
+                  "comment": "No comment",
+                  "hashes": [
+                    {
+                      "alg": "SHA-256",
+                      "content": "960343ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+                    }
+                  ]
+                }
+              ],
+              "licenses": [
+                {
+                  "expression": "LGPL-3.0-or-later AND LicenseRef-scancode-openssl-exception-lgpl3.0plus"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

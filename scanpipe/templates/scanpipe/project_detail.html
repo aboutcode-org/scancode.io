@@ -4,63 +4,73 @@
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous">
 {% endblock %}
 
 {% block content %}
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <div class="mx-5 mb-2">{% include 'scanpipe/includes/messages.html' %}</div>
 
-    <section class="mx-5 mb-3">
-      {% include 'scanpipe/includes/breadcrumb.html' %}
-      <div class="subtitle is-size-6">
-        <span title="{{ project.created_date|date:'N j, Y, P T' }}">Created {{ project.created_date|naturaltime }}</span>
-        {% include "scanpipe/includes/project_actions_dropdown.html" %}
+    <section class="is-flex is-justify-content-space-between mx-5 mb-2">
+      <div>
+        <nav class="breadcrumb has-succeeds-separator is-medium mb-1" aria-label="breadcrumbs">
+          <ul>
+            <li>
+              <a href="{% url 'project_list' %}" class="has-text-grey">Projects</a>
+            </li>
+            <li class="is-active">
+              <a href="#" aria-current="page">{{ project.name }}</a>
+            </li>
+          </ul>
+        </nav>
+        <div class="subtitle is-size-6">
+          <span class="has-text-grey">
+            <span title="{{ project.created_date|date:'N j, Y, P T' }}">
+              Created {{ project.created_date|naturaltime }}
+            </span>
+          </span>
+          {% include 'scanpipe/includes/project_labels.html' with labels=labels only %}
+          <a class="modal-button is-size-7" data-target="add-labels-modal" aria-haspopup="true">
+            Edit labels
+          </a>
+        </div>
+      </div>
+      <div style="min-width:fit-content;">
+        <a href="{% url 'project_settings' project.slug %}" class="button is-smaller is-info is-outlined">
+          <span class="icon width-1">
+            <i class="fa-solid fa-sliders-h"></i>
+          </span>
+          <span>Settings</span>
+        </a>
+        <button class="button is-smaller is-link is-outlined modal-button" data-target="clone-modal" aria-haspopup="true">
+          <span class="icon width-1">
+            <i class="fa-regular fa-clone"></i>
+          </span>
+          <span>Clone</span>
+        </button>
+        <a href="{% url 'project_add' %}" class="button is-smaller is-link">New Project</a>
       </div>
     </section>
 
-    <div class="container mx-5 mb-5">
-      <div class="field is-grouped is-grouped-multiline">
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">UUID</span>
-            <span class="tag is-info">{{ project.uuid }}</span>
-          </div>
-        </div>
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Work directory</span>
-            <span class="tag is-info">{{ project.work_directory }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <hr class="mx-5">
-    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" include_pipelines=1 only %}
+    <hr class="mx-5 mt-0">
+    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" %}
 
     <section class="pt-0 mx-5">
       {% if project.resource_count or project.package_count %}
-        <article class="message is-info">
-          <div class="message-body">
-            Download results as:
-            <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.uuid 'json' %}">
-              JSON <i class="fas fa-download ml-1"></i>
-            </a>
-            <a class="tag is-success is-medium" href="{% url 'project_results' project.uuid 'xlsx' %}">
-              XLSX <i class="fas fa-download ml-1"></i>
-            </a>
-          </div>
-        </article>
-      {% elif not project.runs.all %}
+        {% include "scanpipe/includes/project_downloads.html" with project=project only %}
+      {% elif not pipeline_runs %}
         <article class="message is-warning">
           <div class="message-body">
             <p class="block">
-              <i class="fas fa-info-circle mr-1"></i>
-              Add
-              {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
-              and execute a <strong>pipeline</strong> to generate some results.
+              <span class="icon width-1 height-1 mr-1">
+                <i class="fa-solid fa-info-circle"></i>
+              </span>
+              <span>
+                Add
+                {% if not inputs_with_source %}<strong>Inputs</strong>{% endif %}
+                and execute a <strong>pipeline</strong> to generate some results.
+              </span>
             </p>
           </div>
         </article>
@@ -68,21 +78,59 @@
 
       <div class="columns">
         <div class="column">
-          {% include "scanpipe/includes/project_inputs.html" %}
+          {% include "scanpipe/panels/project_inputs.html" %}
         </div>
         <div class="column">
-          {% include "scanpipe/includes/project_pipelines.html" %}
+          {% include "scanpipe/panels/project_pipelines.html" %}
         </div>
       </div>
+
+      {% if codebase_root or project.output_root %}
+        <div class="columns">
+          {% if codebase_root %}
+            <div class="column">
+              <div hx-get="{% url 'project_codebase' project.slug %}" hx-trigger="load">
+                <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
+              </div>
+            </div>
+          {% endif %}
+          {% if project.output_root %}
+              <div class="column is-half">
+                {% include "scanpipe/panels/project_outputs.html" %}
+              </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if resource_status_summary or resource_licenses_summary %}
+        <div class="columns">
+          {% if resource_status_summary %}
+            <div class="column is-half">
+              {% include "scanpipe/panels/resource_status_summary.html"  %}
+            </div>
+          {% endif %}
+          {% if resource_licenses_summary %}
+            <div class="column is-half">
+              {% include "scanpipe/panels/resource_licenses_summary.html"  %}
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
 
       {% if project.extra_data %}
         <article id="project-extra-data" class="panel is-info">
           <p class="panel-heading py-2 is-size-6">
             Project data
           </p>
-          <div class="panel-block p-0">
+          <div class="panel-block p-0 is-more is-more-clipped">
+            <button class="button is-small is-more-show">
+              <span class="icon">
+                <i class="fa-solid fa-expand"></i>
+              </span>
+              <strong>Show all</strong>
+            </button>
             <figure class="highlight border-bottom-radius">
-              <pre class="language-yaml"><code class="p-3">{{ extra_data_yaml }}</code></pre>
+              <pre class="language-yaml"><code class="p-3 pb-5">{{ extra_data_yaml }}</code></pre>
             </figure>
           </div>
         </article>
@@ -92,30 +140,39 @@
         <div class="columns">
           {% if license_clarity %}
             <div class="column is-two-fifths">
-              {% include "scanpipe/includes/license_clarity_panel.html" %}
+              {% include "scanpipe/panels/license_clarity_panel.html" %}
             </div>
           {% endif %}
           {% if scan_summary %}
             <div class="column">
-              {% include "scanpipe/includes/scan_summary_panel.html" %}
+              {% include "scanpipe/panels/scan_summary_panel.html" %}
             </div>
           {% endif %}
         </div>
       {% endif %}
     </section>
 
-    <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.uuid %}" hx-trigger="load">
-      <i class="fas fa-spinner fa-pulse" aria-hidden="true"></i>
-      Loading the charts...
-    </section>
+    {% if project.resource_count or project.package_count %}
+      <section id="charts" class="mx-5 pt-5">
+        {% if project.resource_count < 5000 and project.package_count < 5000 %}
+          <div hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load" hx-target="#charts"></div>
+          <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
+          Loading the charts...
+        {% else %}
+          <button class="button is-info is-outlined is-fullwidth mt-5 mb-6" hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="click" hx-swap="outerHTML">
+            <span class="icon">
+              <i class="fa-solid fa-chart-pie"></i>
+            </span>
+            <span>Load the charts</span>
+          </button>
+        {% endif %}
+      </section>
+    {% endif %}
   </div>
 
-  {% include 'scanpipe/includes/run_modal.html' %}
-  {% if not project.is_archived %}
-    {% include "scanpipe/includes/project_archive_modal.html" %}
-  {% endif %}
-  {% include "scanpipe/includes/project_reset_modal.html" %}
-  {% include "scanpipe/includes/project_delete_modal.html" %}
+  {% include 'scanpipe/modals/run_modal.html' %}
+  {% include 'scanpipe/modals/clone_modal.html' %}
+  {% include "scanpipe/modals/add_labels_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -134,5 +191,7 @@
 
     onSubmitOverlay("#add-pipeline-modal form");
     onSubmitOverlay("#add-inputs-modal form");
+    onSubmitOverlay("#add-labels-modal form");
+    onSubmitOverlay("#clone-modal form");
   </script>
 {% endblock %}

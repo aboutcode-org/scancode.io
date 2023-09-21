@@ -20,18 +20,16 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import os
+from extractcode import EXTRACT_SUFFIX
 
-from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
+from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
 from scanpipe.pipes import scancode
 
 
 class RootFS(Pipeline):
-    """
-    A pipeline to analyze a Linux root filesystem, aka rootfs.
-    """
+    """Analyze a Linux root filesystem, also known as rootfs."""
 
     @classmethod
     def steps(cls):
@@ -41,25 +39,24 @@ class RootFS(Pipeline):
             cls.collect_rootfs_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
-            cls.tag_uninteresting_codebase_resources,
-            cls.tag_empty_files,
+            cls.flag_uninteresting_codebase_resources,
+            cls.flag_empty_files,
+            cls.flag_ignored_resources,
             cls.scan_for_application_packages,
             cls.match_not_analyzed_to_system_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
-            cls.tag_not_analyzed_codebase_resources,
+            cls.flag_not_analyzed_codebase_resources,
         )
 
     def extract_input_files_to_codebase_directory(self):
-        """
-        Extracts root filesystem input archives with extractcode.
-        """
+        """Extract root filesystem input archives with extractcode."""
         input_files = self.project.inputs("*")
         target_path = self.project.codebase_path
         errors = []
 
         for input_file in input_files:
-            extract_target = target_path / f"{input_file.name}-extract"
+            extract_target = target_path / f"{input_file.name}{EXTRACT_SUFFIX}"
             extract_errors = scancode.extract_archive(input_file, extract_target)
             errors.extend(extract_errors)
 
@@ -67,91 +64,69 @@ class RootFS(Pipeline):
             self.add_error("\n".join(errors))
 
     def find_root_filesystems(self):
-        """
-        Finds root filesystems in the project's codebase/.
-        """
+        """Find root filesystems in the project's codebase/."""
         self.root_filesystems = list(rootfs.RootFs.from_project_codebase(self.project))
 
     def collect_rootfs_information(self):
-        """
-        Collects and stores rootfs information in the project.
-        """
-        rootfs_data = {}
-        for rfs in self.root_filesystems:
-            rootfs_data["name"] = os.path.basename(rfs.location)
-            rootfs_data["distro"] = rfs.distro.to_dict() if rfs.distro else {}
-
-        self.project.update_extra_data({"images": rootfs_data})
+        """Collect and stores rootfs information on the project."""
+        rootfs_data = [
+            rootfs.get_rootfs_data(root_fs) for root_fs in self.root_filesystems
+        ]
+        self.project.update_extra_data({"root_filesystems": rootfs_data})
 
     def collect_and_create_codebase_resources(self):
-        """
-        Collects and labels all image files as CodebaseResource.
-        """
+        """Collect and label all image files as CodebaseResource."""
         for rfs in self.root_filesystems:
             rootfs.create_codebase_resources(self.project, rfs)
 
     def collect_and_create_system_packages(self):
         """
-        Collects installed system packages for each rootfs based on the distro.
+        Collect installed system packages for each rootfs based on the distro.
         The collection of system packages is only available for known distros.
         """
         with self.save_errors(rootfs.DistroNotFound, rootfs.DistroNotSupported):
             for rfs in self.root_filesystems:
                 rootfs.scan_rootfs_for_system_packages(self.project, rfs)
 
-    def tag_uninteresting_codebase_resources(self):
-        """
-        Flags files—not worth tracking—that don’t belong to any system packages.
-        """
-        rootfs.tag_uninteresting_codebase_resources(self.project)
-
-    def tag_empty_files(self):
-        """
-        Flags empty files.
-        """
-        rootfs.tag_empty_codebase_resources(self.project)
+    def flag_uninteresting_codebase_resources(self):
+        """Flag files—not worth tracking—that don’t belong to any system packages."""
+        rootfs.flag_uninteresting_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
-        """
-        Scans unknown resources for packages information.
-        """
-        scancode.scan_for_application_packages(self.project)
+        """Scan unknown resources for packages information."""
+        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
 
     def match_not_analyzed_to_system_packages(self):
         """
-        Matches "not-yet-analyzed" files to files already belong to system packages.
+        Match files with "not-yet-analyzed" status to files already belonging to
+        system packages.
         """
         rootfs.match_not_analyzed(
             self.project,
-            reference_status="system-package",
-            not_analyzed_status="",
+            reference_status=flag.SYSTEM_PACKAGE,
+            not_analyzed_status=flag.NO_STATUS,
         )
 
     def match_not_analyzed_to_application_packages(self):
         """
-        Matches "not-yet-analyzed" files to files already belong to application packages.
+        Match files with "not-yet-analyzed" status to files already belonging to
+        application packages.
         """
         # TODO: do it one rootfs at a time e.g. for rfs in self.root_filesystems:
         rootfs.match_not_analyzed(
             self.project,
-            reference_status="application-package",
-            not_analyzed_status="",
+            reference_status=flag.APPLICATION_PACKAGE,
+            not_analyzed_status=flag.NO_STATUS,
         )
 
     def scan_for_files(self):
-        """
-        Scans unknown resources for copyrights, licenses, emails, and urls.
-        """
-        scancode.scan_for_files(self.project)
+        """Scan unknown resources for copyrights, licenses, emails, and urls."""
+        scancode.scan_for_files(self.project, progress_logger=self.log)
 
     def analyze_scanned_files(self):
-        """
-        Analyzes single file scan results for completeness.
-        """
-        pipes.analyze_scanned_files(self.project)
+        """Analyze single file scan results for completeness."""
+        flag.analyze_scanned_files(self.project)
 
-    def tag_not_analyzed_codebase_resources(self):
-        """
-        Checks for any leftover files for sanity; there should be none.
-        """
-        pipes.tag_not_analyzed_codebase_resources(self.project)
+    def flag_not_analyzed_codebase_resources(self):
+        """Check for any leftover files for sanity; there should be none."""
+        flag.flag_not_analyzed_codebase_resources(self.project)

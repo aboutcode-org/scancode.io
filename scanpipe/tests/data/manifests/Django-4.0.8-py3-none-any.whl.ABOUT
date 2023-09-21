@@ -1,0 +1,13 @@
+about_resource: Django-4.0.8-py3-none-any.whl
+name: django
+version: 4.0.8
+download_url: https://python.org/Django-4.0.8-py3-none-any.whl
+package_url: pkg:pypi/django@4.0.8
+license_expression: bsd-new
+attribute: yes
+checksum_md5: 386349753c386e574dceca5067e2788a
+checksum_sha1: 4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e
+licenses:
+  - key: bsd-new
+    name: BSD-3-Clause
+    file: bsd-new.LICENSE

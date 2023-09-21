@@ -1,8 +1,454 @@
 Changelog
 =========
 
-v31.1.0 (unreleased)
+v32.6.1 (unreleased)
 --------------------
+
+- Control the execution order of Pipelines within a Project. Pipelines are not allowed
+  to start anymore unless all the previous ones within a Project have completed.
+  https://github.com/nexB/scancode.io/issues/901
+
+- Add support for webhook subscriptions in project clone.
+  https://github.com/nexB/scancode.io/pull/910
+
+- Add resources license expression summary panel in the project details view.
+  This panel displays the list of licenses detected in the project and include links
+  to the resources list.
+  https://github.com/nexB/scancode.io/pull/355
+
+- Add the ``tag`` field on the DiscoveredPackage model. This new field is used to store
+  the layer id where the package was found in the Docker context.
+  https://github.com/nexB/scancode.io/issues/919
+
+- Add to apply actions, such as archive, delete, and reset to a selection of project
+  from the main list.
+  https://github.com/nexB/scancode.io/issues/488
+
+- Add new "Outputs" panel in the Project details view.
+  Output files are listed and can be downloaded from the panel.
+  https://github.com/nexB/scancode.io/issues/678
+
+- Add a step in the ``deploy_to_develop`` pipelines to create "local-files" packages
+  with from-side resource files that have one or more relations with to-side resources
+  that are not part of a package.
+  This allows to include those files in the SBOMs and attribution outputs.
+  https://github.com/nexB/scancode.io/issues/914
+
+v32.6.0 (2023-08-29)
+--------------------
+
+- Improve the performance of the codebase relations list view to support large number
+  of entries.
+  https://github.com/nexB/scancode.io/issues/858
+
+- Improve DiscoveredPackageListView query performances refining the prefetch_related.
+  https://github.com/nexB/scancode.io/issues/856
+
+- Fix the ``map_java_to_class`` d2d pipe to skip if no ``.java`` file is found.
+  https://github.com/nexB/scancode.io/issues/853
+
+- Enhance Package search to handle full ``pkg:`` purls and segment of purls.
+  https://github.com/nexB/scancode.io/issues/859
+
+- Add a new step in the ``deploy_to_develop`` pipeline where we tag archives as
+  processed, if all the resources in their extracted directory is mapped/processed.
+  https://github.com/nexB/scancode.io/issues/827
+
+- Add the ability to clone a project.
+  https://github.com/nexB/scancode.io/issues/874
+
+- Improve perceived display performance of projects charts and stats on home page.
+  The charts are displayed when the number of resources or packages are less than
+  5000 records. Else, a button to load the charts is displayed.
+  https://github.com/nexB/scancode.io/issues/844
+
+- Add advanced search query system to all list views.
+  Refer to the documentation for details about the search syntax.
+  https://github.com/nexB/scancode.io/issues/871
+
+- Migrate the ProjectError model to a global ProjectMessage.
+  3 level of severity available: INFO, WARNING, and ERROR.
+  https://github.com/nexB/scancode.io/issues/338
+
+- Add label/tag system that can be used to group and filters projects.
+  https://github.com/nexB/scancode.io/issues/769
+
+v32.5.2 (2023-08-14)
+--------------------
+
+Security release: This release addresses the security issue detailed below.
+We encourage all users of ScanCode.io to upgrade as soon as possible.
+
+- GHSA-6xcx-gx7r-rccj: Reflected Cross-Site Scripting (XSS) in license endpoint
+  The ``license_details_view`` function was subject to cross-site scripting (XSS)
+  attack due to inadequate validation and sanitization of the key parameter.
+  The license views were migrated class-based views are the inputs are now properly
+  sanitized.
+  Credit to @0xmpij for reporting the vulnerability.
+  https://github.com/nexB/scancode.io/security/advisories/GHSA-6xcx-gx7r-rccj
+  https://github.com/nexB/scancode.io/issues/847
+
+- Add bandit analyzer and Django "check --deploy"  to the check/validation stack.
+  This helps to ensure that we do not introduce know code vulnerabilities and
+  deployment issues to the codebase.
+  https://github.com/nexB/scancode.io/issues/850
+
+- Migrate the run_command function into a safer usage of the subprocess module.
+  Also fix various warnings returned by the bandit analyzer.
+  https://github.com/nexB/scancode.io/issues/850
+
+- Replace the ``scancode.run_scancode`` function by a new ``run_scan`` that interact
+  with scancode-toolkit scanners without using subprocess. This new function is used
+  in the ``scan_package`` pipeline.
+  The ``SCANCODE_TOOLKIT_CLI_OPTIONS`` settings was renamed
+  ``SCANCODE_TOOLKIT_RUN_SCAN_ARGS``. Refer to the documentation for the next "dict"
+  syntax.
+  https://github.com/nexB/scancode.io/issues/798
+
+v32.5.1 (2023-08-07)
+--------------------
+
+Security release: This release addresses the security issue detailed below.
+We encourage all users of ScanCode.io to upgrade as soon as possible.
+
+- GHSA-2ggp-cmvm-f62f: Command injection in docker image fetch process
+  The ``fetch_docker_image`` function was subject to potential injection attack.
+  The user inputs are now sanitized before calling the subprocess function.
+  Credit to @0xmpij for reporting the vulnerability.
+  https://github.com/nexB/scancode.io/security/advisories/GHSA-2ggp-cmvm-f62f
+
+---
+
+- Add support for multiple input URLs, and adding multiple pipelines in the project
+  creation REST API.
+  https://github.com/nexB/scancode.io/issues/828
+
+- Update the ``fetch_vulnerabilities`` pipe to make the API requests by batch of purls.
+  https://github.com/nexB/scancode.io/issues/835
+
+- Add vulnerability support for discovered dependencies.
+  The dependency data is loaded using the ``find_vulnerabilities`` pipeline backed by
+  a VulnerableCode database.
+  https://github.com/nexB/scancode.io/issues/835
+
+- Fix root filesystem scanning for installed packages and archived Linux distributions.
+  Allows the scan to discover system packages from `rpmdb.sqlite` and other sources.
+  https://github.com/nexB/scancode.io/pull/840
+
+v32.5.0 (2023-08-02)
+--------------------
+
+WARNING: After upgrading the ScanCode.io codebase to this version,
+and following the ``docker compose build``,
+the permissions of the ``/var/scancodeio/`` directory of the Docker volumes require
+to be updated for the new ``app`` user, using:
+``docker compose run -u 0:0 web chown -R app:app /var/scancodeio/``
+
+- Run Docker as non-root user using virtualenv.
+  WARNING: The permissions of the ``/var/scancodeio/`` directory in the Docker volumes
+  require to be updated for the new ``app`` user.
+  https://github.com/nexB/scancode.io/issues/399
+
+- Add column sort and filters in dependency list view.
+  https://github.com/nexB/scancode.io/issues/823
+
+- Add a new ``ScanCodebasePackage`` pipeline to scan a codebase for packages only.
+  https://github.com/nexB/scancode.io/issues/815
+
+- Add new ``outputs`` REST API action that list projects output files including an URL
+  to download the file.
+  https://github.com/nexB/scancode.io/issues/678
+
+- Add support for multiple to/from input files in the ``deploy_to_develop`` pipeline.
+  https://github.com/nexB/scancode.io/issues/813
+
+- Add the ability to delete and download project inputs.
+  Note that the inputs cannot be modified (added or deleted) once a pipeline run as
+  started on the project.
+  https://github.com/nexB/scancode.io/issues/813
+
+- Fix root_filesystem data structure stored on the Project ``extra_data`` field.
+  This was causing a conflict with the expected docker images data structure
+  when generating an XLSX output.
+  https://github.com/nexB/scancode.io/issues/824
+
+- Fix the SPDX output to include missing detailed license texts for LicenseRef.
+  Add ``licensedb_url`` and ``scancode_url`` to the SPDX ``ExtractedLicensingInfo``
+  ``seeAlsos``.
+  Include the ``Package.notice_text`` as the SPDX ``attribution_texts``.
+  https://github.com/nexB/scancode.io/issues/841
+
+v32.4.0 (2023-07-13)
+--------------------
+
+- Add support for license policies and complaince alert for Discovered Packages.
+  https://github.com/nexB/scancode.io/issues/151
+
+- Refine the details views and tabs:
+  - Add a "Relations" tab in the Resource details view
+  - Disable empty tabs by default
+  - Display the count of items in the tab label
+  - Improve query performances for details views
+  https://github.com/nexB/scancode.io/issues/799
+
+- Upgrade vulnerablecode integration:
+  - Add ``affected_by_vulnerabilities`` field on ``DiscoveredPackage`` model.
+  - Add UI for showing package vulnerabilities in details view.
+  - Add packages filtering by ``is_vulnerable``.
+  - Include vulnerability data in the JSON results.
+  https://github.com/nexB/scancode.io/issues/600
+
+- Add multiple new filtering option to list views table headers.
+  Refactored the way to define filters using the table_columns view attribute.
+  https://github.com/nexB/scancode.io/issues/216
+  https://github.com/nexB/scancode.io/issues/580
+  https://github.com/nexB/scancode.io/issues/506
+
+- Update the CycloneDX BOM download file extension from ``.bom.json`` to ``.cdx.json``.
+  https://github.com/nexB/scancode.io/issues/785
+
+- SPDX download BOM do not include codebase resource files by default anymore.
+  https://github.com/nexB/scancode.io/issues/785
+
+- Add archive_location to the LAYERS worksheet of XLSX output.
+  https://github.com/nexB/scancode.io/issues/773
+
+- Add "New Project" button to Project details view.
+  https://github.com/nexB/scancode.io/issues/763
+
+- Display image type files in the codebase resource details view in a new "Image" tab.
+
+- Add ``slug`` field on the Project model. That field is used in URLs instead of the
+  ``uuid``.
+  https://github.com/nexB/scancode.io/issues/745
+
+- Fix the ordering of the Codebase panel in the Project details view.
+  https://github.com/nexB/scancode.io/issues/795
+
+- Do not rely on the internal ``id`` PK for package and dependency details URLs.
+  Package details URL is now based on ``uuid`` and the dependency details URL is based
+  on ``dependency_uid``.
+  https://github.com/nexB/scancode.io/issues/331
+
+- Add a "License score" project setting that can be used to limit the returned license
+  matches with a score above the provided one.
+  This is leveraging the ScanCode-toolkit ``--license-score`` option, see:
+  https://scancode-toolkit.readthedocs.io/en/stable/cli-reference/basic-options.html#license-score-option
+  https://github.com/nexB/scancode.io/issues/335
+
+v32.3.0 (2023-06-12)
+--------------------
+
+- Upgrade ScanCode-toolkit to latest v32.0.x
+  Warning: This upgrade requires schema and data migrations (both included).
+  It is recommended to reset and re-run the pipelines to benefit from the latest
+  ScanCode detection improvements.
+  Refer to https://github.com/nexB/scancode-toolkit/blob/develop/CHANGELOG.rst#v3200-next-roadmap
+  for the full list of changes.
+  https://github.com/nexB/scancode.io/issues/569
+
+- Add a new ``deploy_to_develop`` pipeline specialized in creating relations between
+  the development source code and binaries or deployed code.
+  This pipeline is expecting 2 archive files with "from-" and "to-" filename prefixes
+  as inputs:
+  1. "from-[FILENAME]" archive containing the development source code
+  2. "to-[FILENAME]" archive containing the deployment compiled code
+  https://github.com/nexB/scancode.io/issues/659
+
+- Add ability to configure a Project through a new "Settings" form in the UI or by
+  providing a ".scancode-config.yml" configuration file as one of the Project inputs.
+  The "Settings" form allows to rename a Project, add and edit the notes, as well
+  as providing a list of patterns to be ignored during pipeline runs, the choice of
+  extracting archives recursively, and the ability to provide a custom template for
+  attribution.
+  https://github.com/nexB/scancode.io/issues/685
+  https://github.com/nexB/scancode.io/issues/764
+
+- Add ``notes`` field on the Project model. Notes can be updated from the Project
+  settings form. Also, notes can be provided while creating a project through the CLI
+  using the a new ``--notes`` option.
+  https://github.com/nexB/scancode.io/issues/709
+
+- Add a mapper function to relate .ABOUT files during the d2d pipeline.
+  https://github.com/nexB/scancode.io/issues/740
+
+- Enhance the file viewer UI of the resource details view.
+  A new search for the file content was added.
+  Also, it is now possible to expand the file viewer in full screen mode.
+  https://github.com/nexB/scancode.io/issues/724
+
+- Refine the breadcrumb UI for details view.
+  https://github.com/nexB/scancode.io/issues/717
+
+- Move the "Resources status" panel from the run modal to the project details view.
+  https://github.com/nexB/scancode.io/issues/370
+
+- Improve the speed of Project ``reset`` and ``delete`` using the _raw_delete model API.
+  https://github.com/nexB/scancode.io/issues/729
+
+- Specify ``update_fields`` during each ``save()`` related to Run tasks,
+  to force a SQL UPDATE in order to avoid any data loss when the model fields are
+  updated during the task execution.
+  https://github.com/nexB/scancode.io/issues/726
+
+- Add support for XLSX input in the ``load_inventory`` pipeline.
+  https://github.com/nexB/scancode.io/issues/735
+
+- Add support for unknown licenses in attribution output.
+  https://github.com/nexB/scancode.io/issues/749
+
+- Add ``License`` objects to each of the package for attribution generation.
+  https://github.com/nexB/scancode.io/issues/775
+
+- The "Codebase" panel can now be used to browse the Project's codebase/ directory
+  and open related resources details view.
+  https://github.com/nexB/scancode.io/issues/744
+
+v32.2.0 (2023-04-25)
+--------------------
+
+- Enhance the ``update_or_create_package`` pipe and add the ability to assign multiple
+  codebase resources at once.
+  https://github.com/nexB/scancode.io/issues/681
+
+- Add new command line option to create-project and add-input management commands to
+  copy the content of a local source directory to the project codebase work directory.
+  https://github.com/nexB/scancode.io/pull/672
+
+- Include the ScanCode-toolkit version in the output headers.
+  https://github.com/nexB/scancode.io/pull/670
+
+- Enhance the ``output`` management command to support providing multiple formats at
+  once.
+  https://github.com/nexB/scancode.io/issues/646
+
+- Improve the resolution of CycloneDX BOM and SPDX document when the file extension is
+  simply ``.json``.
+  https://github.com/nexB/scancode.io/pull/688
+
+- Add support for manifest types using ScanCode-toolkit handlers.
+  https://github.com/nexB/scancode.io/issues/658
+
+- Enhance the Resource details view to use the tabset system and display all
+  available data including the content viewer.
+  https://github.com/nexB/scancode.io/issues/215
+
+- Add a "layers" data sheet in the xlsx output for docker pipeline run.
+  https://github.com/nexB/scancode.io/issues/578
+
+- Move the ``cyclonedx`` and ``spdx`` root modules into the ``pipes`` module.
+  https://github.com/nexB/scancode.io/issues/657
+
+- Remove the admin app and views.
+  https://github.com/nexB/scancode.io/issues/645
+
+- Enhance the ``resolve_about_packages`` pipe to handle filename and checksum values.
+
+- Split the pipes unit tests into their own related submodule.
+
+- Upgrade ScanCode Toolkit to v31.2.6
+  https://github.com/nexB/scancode.io/issues/693
+
+v32.1.0 (2023-03-23)
+--------------------
+
+- Add support for ScanCode.io results in the "load_inventory" pipeline.
+  https://github.com/nexB/scancode.io/issues/609
+
+- Add support for CycloneDX 1.4 to the "inspect-manifest" pipeline to import SBOM into
+  a Project.
+  https://github.com/nexB/scancode.io/issues/583
+
+- Add fields in CycloneDX BOM output using the component properties.
+  See registered properties at https://github.com/nexB/aboutcode-cyclonedx-taxonomy
+  https://github.com/nexB/scancode.io/issues/637
+
+- Upgrade to Python 3.11 in the Dockerfile.
+  https://github.com/nexB/scancode.io/pull/611
+
+- Refine the "Command Line Interface" documentation about the ``scanpipe`` command
+  usages in the Docker context.
+  Add the /app workdir in the "PYTHONPATH" env of the Docker file to make the
+  ``scanpipe`` entry point available while running ``docker compose`` commands.
+  https://github.com/nexB/scancode.io/issues/616
+
+- Add new tutorial about the "find vulnerabilities" pipeline and the vulnerablecode
+  integration in the documentation.
+  https://github.com/nexB/scancode.io/issues/600
+
+- Rewrite the CLI tutorials for a Docker-based installation.
+  https://github.com/nexB/scancode.io/issues/440
+
+- Use CodebaseResource ``path`` instead of ``id`` as slug_field in URL navigation.
+  https://github.com/nexB/scancode.io/issues/242
+
+- Remove dead code related to the project_tree view
+  https://github.com/nexB/scancode.io/issues/623
+
+- Update ``scanpipe.pipes.ProjectCodebase`` and related code to work properly
+  with current Project/CodebaseResource path scheme.
+  https://github.com/nexB/scancode.io/pull/624
+
+- Add ``SCANCODEIO_PAGINATE_BY`` setting to customize the number of items displayed per
+  page for each object type.
+  https://github.com/nexB/scancode.io/issues/563
+
+- Add setting for per-file timeout. The maximum time allowed for a file to be
+  analyzed when scanning a codebase is configurable with SCANCODEIO_SCAN_FILE_TIMEOUT
+  while the maximum time allowed for a pipeline to complete can be defined using
+  SCANCODEIO_TASK_TIMEOUT.
+  https://github.com/nexB/scancode.io/issues/593
+
+v32.0.1 (2023-02-20)
+--------------------
+
+- Upgrade ScanCode-toolkit and related dependencies to solve installation issues.
+  https://github.com/nexB/scancode.io/pull/586
+
+- Add support for Python 3.11
+  https://github.com/nexB/scancode.io/pull/611
+
+- Populate ``documentDescribes`` field with Package and Dependency SPDX IDs in
+  SPDX BOM output.
+  https://github.com/nexB/scancode.io/issues/564
+
+v32.0.0 (2022-11-29)
+--------------------
+
+- Add a new "find vulnerabilities" pipeline to lookup vulnerabilities in the
+  VulnerableCode database for all project discovered packages.
+  Vulnerability data is stored in the extra_data field of each package.
+  More details about VulnerableCode at https://github.com/nexB/vulnerablecode/
+  https://github.com/nexB/scancode.io/issues/101
+
+- Add a new "inspect manifest" pipeline to resolve packages from manifest, lockfile,
+  and SBOM. The resolved packages are created as discovered packages.
+  Support PyPI "requirements.txt" files, SPDX document as JSON ".spdx.json",
+  and AboutCode ".ABOUT" files.
+  https://github.com/nexB/scancode.io/issues/284
+
+- Generate SBOM (Software Bill of Materials) compliant with the SPDX 2.3 specification
+  as a new downloadable output.
+  https://github.com/nexB/scancode.io/issues/389
+
+- Generate CycloneDX SBOM (Software Bill of Materials) as a new downloadable output.
+  https://github.com/nexB/scancode.io/issues/389
+
+- Display Webhook status in the Run modal.
+  The WebhookSubscription model was refined to capture delivery data.
+  https://github.com/nexB/scancode.io/issues/389
+
+- Display the current active step of a running pipeline in the "Pipeline" section of
+  the project details view, inside the run status tag.
+  https://github.com/nexB/scancode.io/issues/300
+
+- Add proper pagination for API actions: resources, packages, dependencies, and errors.
+
+- Refine the fields ordering in API Serializers based on the toolkit order.
+  https://github.com/nexB/scancode.io/issues/546
+
+- Keep the current filters state when submitting a search in list views.
+  https://github.com/nexB/scancode.io/issues/541
 
 - Improve the performances of the project details view to load faster by deferring the
   the charts rendering. This is especially noticeable on projects with a large amount

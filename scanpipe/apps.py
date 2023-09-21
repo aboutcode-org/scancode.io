@@ -31,9 +31,11 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.color import color_style
 from django.db.models import BLANK_CHOICE_DASH
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 import saneyaml
+from licensedcode.models import load_licenses
 
 try:
     from importlib import metadata as importlib_metadata
@@ -67,7 +69,7 @@ class ScanPipeConfig(AppConfig):
 
         # In SYNC mode, the Run instances cleanup is triggered on app.ready()
         # only when the app is started through "runserver".
-        # This cleanup is required if the a running pipeline process gets killed and
+        # This cleanup is required if a running pipeline process gets killed and
         # since KeyboardInterrupt cannot be captured to properly update the Run instance
         # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
@@ -76,7 +78,7 @@ class ScanPipeConfig(AppConfig):
 
     def load_pipelines(self):
         """
-        Loads pipelines from the "scancodeio_pipelines" entry point group and from the
+        Load pipelines from the "scancodeio_pipelines" entry point group and from the
         pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
@@ -106,9 +108,7 @@ class ScanPipeConfig(AppConfig):
                 self.register_pipeline_from_file(path)
 
     def register_pipeline(self, name, cls):
-        """
-        Registers the provided `name` and `cls` as a valid pipeline.
-        """
+        """Register the provided `name` and `cls` as a valid pipeline."""
         if not is_pipeline(cls):
             raise ImproperlyConfigured(
                 f'The entry point "{cls}" is not a `Pipeline` subclass.'
@@ -123,7 +123,7 @@ class ScanPipeConfig(AppConfig):
 
     def register_pipeline_from_file(self, path):
         """
-        Searches for a pipeline subclass in a given file `path` and registers it
+        Search for a pipeline subclass in a given file `path` and registers it
         after being found.
         """
         module_name = inspect.getmodulename(path)
@@ -153,20 +153,27 @@ class ScanPipeConfig(AppConfig):
         return dict(self._pipelines)
 
     def get_pipeline_choices(self, include_blank=True):
-        """
-        Returns a `choices` list of tuple suitable for a Django ChoiceField.
-        """
+        """Return a `choices` list of tuple suitable for a Django ChoiceField."""
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
         choices.extend([(name, name) for name in self.pipelines.keys()])
         return choices
 
+    def get_scancode_licenses(self):
+        """
+        Load licenses-related information from the ScanCode-toolkit ``licensedcode``
+        data and return a mapping of ``key`` to ``license`` objects.
+        """
+        return load_licenses()
+
+    scancode_licenses = cached_property(get_scancode_licenses)
+
     def set_policies(self):
         """
-        Computes and sets the `license_policies` on the app instance.
+        Compute and sets the `license_policies` on the app instance.
 
         If the policies file is available but formatted properly or doesn't
         include the proper content, we want to raise an exception while the app
-        is loading to warn sysadmins about the issue.
+        is loading to warn system admins about the issue.
         """
         policies_file_location = getattr(settings, "SCANCODEIO_POLICIES_FILE", None)
 
@@ -183,34 +190,28 @@ class ScanPipeConfig(AppConfig):
                 )
 
             else:
-                logger.debug(style.WARNING(f"Policies file not found."))
+                logger.debug(style.WARNING("Policies file not found."))
 
     @staticmethod
     def get_policies_index(policies_list, key):
-        """
-        Returns an inverted index by `key` of the `policies_list`.
-        """
+        """Return an inverted index by `key` of the `policies_list`."""
         return {policy.get(key): policy for policy in policies_list}
 
     @property
     def policies_enabled(self):
-        """
-        Returns True if the policies were provided and loaded properly.
-        """
+        """Return True if the policies were provided and loaded properly."""
         return bool(self.license_policies_index)
 
     def sync_runs_and_jobs(self):
-        """
-        Synchronizes QUEUED and RUNNING Runs with their related Jobs.
-        """
-        logger.info("Synchronizing QUEUED and RUNNING Runs with their related Jobs...")
+        """Synchronize ``QUEUED`` and ``RUNNING`` Run with their related Jobs."""
+        logger.info("Synchronizing QUEUED and RUNNING Run with their related Jobs...")
 
         run_model = self.get_model("Run")
         queued_or_running = run_model.objects.queued_or_running()
 
         if queued_or_running:
-            logger.info(f"{len(queued_or_running)} Runs to synchronize:")
+            logger.info(f"{len(queued_or_running)} Run to synchronize:")
             for run in queued_or_running:
                 run.sync_with_job()
         else:
-            logger.info("No Runs to synchronize.")
+            logger.info("No Run to synchronize.")

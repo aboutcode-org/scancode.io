@@ -1,0 +1,9 @@
+<div class="content">
+  {% if missing_file_content %}
+    <article class="box has-text-centered border-dashed mt-5">
+      This resource is not available on disk.
+    </article>
+  {% else %}
+    <img src="{{ object.get_raw_url }}" alt="Image rendering">
+  {% endif %}
+</div>

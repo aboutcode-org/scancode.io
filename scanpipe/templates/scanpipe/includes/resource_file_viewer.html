@@ -1,51 +1,40 @@
-<div class="tabs is-toggle is-fullwidth mx-5 mb-3 mt-4">
-  <ul>
-    <li class="has-text-weight-semibold is-radiusless">
-      Detected values:
-    </li>
-    {% for key, value in detected_values.items %}
-      <li>
-        <a data-type="{{ key }}" {% if forloop.first %}class="border-left-radius"{% endif %}>
-          {{ key|title }}
-          <span class="tag is-link is-light is-rounded ml-1">{{ value|length }}</span>
-        </a>
-      </li>
-    {% endfor %}
-  </ul>
-</div>
-
-<section id="resource-viewer" class="mx-5 message is-dark mb-2">
-  <div class="message-header is-flex">
+<section id="resource-viewer" class="message is-dark mb-2">
+  <div class="message-header is-flex is-align-items-flex-start">
     <div>
-      <div>
-        {{ object.name }}
-        | {{ object.size|filesizeformat }}
-        |
-        {% if object.is_binary %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
-        {% endif %}
-        {% if object.is_text %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Text</span>' content="Plain text file." only %}
-        {% endif %}
-        {% if object.is_archive %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
-        {% endif %}
-        {% if object.is_key_file %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
-        {% endif %}
-        {% if object.is_media %}
-          {% include "scanpipe/includes/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
-        {% endif %}
-       | <a class="has-text-white" href="{{ object.get_raw_url }}?as_attachment=1"><i class="fas fa-download"></i></a>
-      </div>
-      <div class="mt-2 is-size-7">
-        {{ object.path }}
-      </div>
+      <span title="{{ object.path }}">{{ object.name }}</span>
+      | {{ object.size|filesizeformat }} |
+      {% if object.is_binary %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Binary</span>' content="Binary executable or data file. Text content is extracted from binary." only %}
+      {% endif %}
+      {% if object.is_text %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Text</span>' content="Plain text file." only %}
+      {% endif %}
+      {% if object.is_archive %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Archive</span>' content="Archive or compressed file. Not scanned directly." only %}
+      {% endif %}
+      {% if object.is_key_file %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Key file</span>' content="Top-level file with key content and metadata and either a legal, readme or package manifest." only %}
+      {% endif %}
+      {% if object.is_media %}
+        {% include "scanpipe/dropdowns/dropdown_hoverable.html" with trigger='<span class="tag is-info">Media</span>' content="Image, sound, video or similar media file." only %}
+      {% endif %}
     </div>
     <div class="nav-button">
-      <button class="button previous-btn is-dark is-small" disabled><i class="fas fa-arrow-up mr-2"></i>Previous</button>
-      <button class="button next-btn is-dark is-small" disabled><i class="fas fa-arrow-down mr-2"></i>Next</button>
+      <button class="button previous-btn is-dark" disabled><i class="fa-solid fa-arrow-up"></i></button>
+      <button class="button next-btn is-dark" disabled><i class="fa-solid fa-arrow-down"></i></button>
+      <a class="button is-dark" href="{{ object.get_raw_url }}?as_attachment=1"><i class="fa-solid fa-download"></i></a>
+      <button id="toggle-fullscreen" class="button is-dark"><i class="fa-solid fa-expand"></i></button>
     </div>
+  </div>
+  <div id="detected-data-buttons" class="field has-addons mb-0" style="border-left: lightgrey 1px solid; border-right: lightgrey 1px solid;">
+    {% for key, value in detected_values.items %}
+      <p class="control mb-0" style="border-right: lightgrey 1px solid;">
+        <button class="button is-radiusless is-light" data-type="{{ key }}"{% if not value %} disabled{% endif %}>
+          {{ key|title }}
+          <span class="tag is-info is-rounded ml-1">{{ value|length }}</span>
+        </button>
+      </p>
+    {% endfor %}
   </div>
   <div id="editor">{{ file_content }}</div>
 </section>

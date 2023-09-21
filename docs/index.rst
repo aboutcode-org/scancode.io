@@ -31,6 +31,7 @@ you’ll find information on:
     tutorial_cli_analyze_codebase
     tutorial_api_analyze_package_archive
     tutorial_license_policies
+    tutorial_vulnerablecode_integration
 
 .. toctree::
     :maxdepth: 2
@@ -40,11 +41,13 @@ you’ll find information on:
     built-in-pipelines
     custom-pipelines
     scanpipe-pipes
+    project-configuration
     data-models
     output-files
     command-line-interface
     rest-api
-    scancodeio-settings
+    automation
+    application-settings
     distros-os-images
 
 Indices and tables

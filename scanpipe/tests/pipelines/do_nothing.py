@@ -25,7 +25,9 @@ from scanpipe.pipelines import Pipeline
 
 class DoNothing(Pipeline):
     """
-    A pipeline that does nothing, in 2 steps.
+    Do nothing, in 2 steps.
+
+    Description section of the doc string.
     """
 
     @classmethod
@@ -36,13 +38,9 @@ class DoNothing(Pipeline):
         )
 
     def step1(self):
-        """
-        Step1 doc.
-        """
+        """Step1 doc."""
         pass
 
     def step2(self):
-        """
-        Step2 doc.
-        """
+        """Step2 doc."""
         pass

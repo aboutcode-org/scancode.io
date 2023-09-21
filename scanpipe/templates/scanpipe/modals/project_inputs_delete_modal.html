@@ -1,0 +1,37 @@
+<div class="modal" id="modal-inputs-delete">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Delete input from project, are you sure?</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+      <div class="notification is-danger has-text-weight-semibold">
+        This action cannot be undone.
+      </div>
+      <p class="mb-2">
+        This will delete the <strong id="delete-input-filename"></strong> file from the project inputs.
+      </p>
+      <p class="mb-5">
+        Are you sure you want to do this?
+      </p>
+    </section>
+    <form method="post" id="form-inputs-delete">{% csrf_token %}
+      <footer class="modal-card-foot is-flex is-justify-content-space-between">
+        <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+        <button class="button is-danger is-no-close" type="submit">Yes, Delete Input</button>
+      </footer>
+    </form>
+  </div>
+</div>
+<script>
+  document.addEventListener("openModal", function(event) {
+    const modal_id = event.detail.modal;
+    if (modal_id !== "modal-inputs-delete") return;
+
+    const $block_input_filename = document.getElementById("delete-input-filename");
+    $block_input_filename.innerHTML = event.detail.$button.dataset.filename;
+    const $form = document.getElementById("form-inputs-delete");
+    $form.action = event.detail.$button.dataset.url;
+  });
+</script>

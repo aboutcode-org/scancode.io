@@ -20,17 +20,19 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import shutil
 from pathlib import Path
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
+from django.template.defaultfilters import pluralize
 
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import fetch_urls
 
@@ -70,8 +72,47 @@ class RunStatusCommandMixin:
 
         return status.upper()
 
+    def get_run_status_messages(self, project):
+        messages = []
+
+        if runs := project.runs.all():
+            messages.append("\nPipelines:")
+            for run in runs:
+                status_code = self.get_run_status_code(run)
+                msg = f" [{status_code}] {run.pipeline_name}"
+                execution_time = run.execution_time
+                if execution_time:
+                    msg += f" (executed in {execution_time} seconds)"
+                messages.append(msg)
+                if run.log:
+                    for line in run.log.rstrip("\n").splitlines():
+                        messages.append(3 * " " + line)
+
+        return messages
+
+    def get_queryset_objects_messages(self, project):
+        messages = []
+
+        for model_class in [CodebaseResource, DiscoveredPackage, ProjectMessage]:
+            queryset = model_class.objects.project(project)
+            messages.append(f" - {model_class.__name__}: {queryset.count()}")
+
+            if model_class == CodebaseResource:
+                status_summary = count_group_by(queryset, "status")
+                for status, count in status_summary.items():
+                    status = status or "(no status)"
+                    messages.append(f"   - {status}: {count}")
+
+        inputs, missing_inputs = project.inputs_with_source
+        if inputs:
+            messages.append("\nInputs:")
+            for input in inputs:
+                messages.append(f" - {input.get('name')} ({input.get('source')})")
+
+        return messages
+
     def display_status(self, project, verbosity):
-        project_label = f"Project: {project.name}"
+        project_label = project.name
         if project.is_archived:
             project_label += " [archived]"
 
@@ -89,36 +130,8 @@ class RunStatusCommandMixin:
 
         if verbosity >= 3:
             message.append("\nDatabase:")
-
-            for model_class in [CodebaseResource, DiscoveredPackage, ProjectError]:
-                queryset = model_class.objects.project(project)
-                message.append(f" - {model_class.__name__}: {queryset.count()}")
-
-                if model_class == CodebaseResource:
-                    status_summary = count_group_by(queryset, "status")
-                    for status, count in status_summary.items():
-                        status = status or "(no status)"
-                        message.append(f"   - {status}: {count}")
-
-            inputs, missing_inputs = project.inputs_with_source
-            if inputs:
-                message.append("\nInputs:")
-                for input in inputs:
-                    message.append(f" - {input.get('name')} ({input.get('source')})")
-
-            runs = project.runs.all()
-            if runs:
-                message.append("\nPipelines:")
-                for run in runs:
-                    status_code = self.get_run_status_code(run)
-                    msg = f" [{status_code}] {run.pipeline_name}"
-                    execution_time = run.execution_time
-                    if execution_time:
-                        msg += f" (executed in {execution_time} seconds)"
-                    message.append(msg)
-                    if run.log:
-                        for line in run.log.rstrip("\n").split("\n"):
-                            message.append(3 * " " + line)
+            message.extend(self.get_queryset_objects_messages(project))
+            message.extend(self.get_run_status_messages(project))
 
         for line in message:
             self.stdout.write(line)
@@ -141,11 +154,18 @@ class AddInputCommandMixin:
             default=list(),
             help="Input URLs to download in the input/ work directory.",
         )
+        parser.add_argument(
+            "--copy-codebase",
+            metavar="SOURCE_DIRECTORY",
+            dest="copy_codebase",
+            help=(
+                "Copy the content of the provided source directory into the codebase/ "
+                "work directory."
+            ),
+        )
 
     def handle_input_files(self, inputs_files):
-        """
-        Copies provided `inputs_files` to the project's `input` directory.
-        """
+        """Copy provided `inputs_files` to the project's `input` directory."""
         copied = []
 
         for file_location in inputs_files:
@@ -154,7 +174,7 @@ class AddInputCommandMixin:
             copied.append(filename)
             self.project.add_input_source(filename, source="uploaded", save=True)
 
-        msg = "File(s) copied to the project inputs directory:"
+        msg = f"File{pluralize(inputs_files)} copied to the project inputs directory:"
         self.stdout.write(msg, self.style.SUCCESS)
         msg = "\n".join(["- " + filename for filename in copied])
         self.stdout.write(msg)
@@ -162,7 +182,7 @@ class AddInputCommandMixin:
     @staticmethod
     def validate_input_files(inputs_files):
         """
-        Raises an error if one of the provided `inputs_files` is not an existing
+        Raise an error if one of the provided `inputs_files` is not an existing
         file.
         """
         for file_location in inputs_files:
@@ -172,7 +192,7 @@ class AddInputCommandMixin:
 
     def handle_input_urls(self, input_urls):
         """
-        Fetches provided `input_urls` and stores it in the project's `input`
+        Fetch provided `input_urls` and stores it in the project's `input`
         directory.
         """
         downloads, errors = fetch_urls(input_urls)
@@ -189,10 +209,18 @@ class AddInputCommandMixin:
             msg += "\n".join(["- " + url for url in errors])
             self.stderr.write(msg)
 
+    def handle_copy_codebase(self, copy_from):
+        """Copy `codebase_path` tree to the project's `codebase` directory."""
+        project_codebase = self.project.codebase_path
+        msg = f"{copy_from} content copied in {project_codebase}"
+        self.stdout.write(msg, self.style.SUCCESS)
+        shutil.copytree(src=copy_from, dst=project_codebase, dirs_exist_ok=True)
+
 
 def validate_input_files(file_locations):
     """
-    Raises an error if one of the provided `file_locations` is not an existing file.
+    Raise an error if one of the provided `file_locations` is not an existing
+    file.
     """
     for file_location in file_locations:
         file_path = Path(file_location)
@@ -200,10 +228,18 @@ def validate_input_files(file_locations):
             raise CommandError(f"{file_location} not found or not a file")
 
 
+def validate_copy_from(copy_from):
+    """Raise an error if `copy_from` is not an available directory"""
+    if copy_from:
+        copy_from_path = Path(copy_from)
+        if not copy_from_path.exists():
+            raise CommandError(f"{copy_from} not found")
+        if not copy_from_path.is_dir():
+            raise CommandError(f"{copy_from} is not a directory")
+
+
 def validate_pipelines(pipeline_names):
-    """
-    Raises an error if one of the `pipeline_names` is not available.
-    """
+    """Raise an error if one of the `pipeline_names` is not available."""
     for pipeline_name in pipeline_names:
         if pipeline_name not in scanpipe_app.pipelines:
             raise CommandError(

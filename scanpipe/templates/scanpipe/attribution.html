@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Attribution</title>
+    {% block style %}
+      <style>
+        body {font-family: Helvetica, Arial, sans-serif; max-width: 800px; margin-left: 20px;}
+        pre {white-space: pre-wrap;}
+      </style>
+    {% endblock %}
+  </head>
+  <body>
+    {% block title %}
+      <h1>Attribution for {{ project.name }}</h1>
+    {% endblock %}
+
+    {% block description %}
+      <p>
+        This document uses standard identifiers for software packages and licenses as
+        specified by the SPDX and Package URL groups that are co-founded by ScanCode
+        and AboutCode maintainers:
+      </p>
+      <ul>
+        <li>
+          The packages identifiers are Package URLs or PURL using the package-url
+          specification at <a href="https://github.com/package-url/purl-spec" target="_blank">
+          https://github.com/package-url/purl-spec</a>
+        </li>
+        <li>
+          The licenses identifiers are SPDX license expressions using the extended
+          ScanCode LicenseDB
+          <a href="https://scancode-licensedb.aboutcode.org/" target="_blank">https://scancode-licensedb.aboutcode.org/</a>
+          license list and the base
+          <a href="https://spdx.dev/licenses/" target="_blank">https://spdx.dev/licenses/</a>
+          list. The full SPDX specification is at
+          <a href="https://spdx.dev/specifications/" target="_blank">https://spdx.dev/specifications/</a>
+        </li>
+      </ul>
+    {% endblock %}
+
+    {% block package-toc %}
+      <h2>Licenses, acknowledgments and required copyright notices for open source packages:</h2>
+      <ul>
+        {% for package in packages %}
+          <li><a href="#package_{{ forloop.counter }}">{{ package.package_url }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endblock %}
+
+    {% block license-toc %}
+      <h2>The following licenses are used in {{ project.name }}:</h2>
+      <ul>
+        {% for license in licenses %}
+          <li><a href="#license_{{ license.key }}">{{ license.spdx_license_key }}</a></li>
+        {% endfor %}
+      </ul>
+      <p>
+        The <a href="#license_texts"> full text of these licenses</a>
+        is available at the end of this document.
+      </p>
+      <hr>
+    {% endblock %}
+
+    {% block package-list %}
+      <h2>List of package details:</h2>
+      {% for package in packages %}
+        <div id="package_{{ forloop.counter }}">
+          {# 1. Package PURL #}
+          <h3>{{ package.package_url }}</h3>
+          {# 2. Homepage URL #}
+          {% if package.homepage_url %}
+            <p>Homepage: {{ package.homepage_url|urlize }}</p>
+          {% endif %}
+          {# 3. Download URL #}
+          {% if package.download_url %}
+            <p>Download: {{ package.download_url|urlize }}</p>
+          {% endif %}
+          {# 4. Copyright #}
+          {% if package.copyright %}
+            <pre>{{ package.copyright }}</pre>
+          {% endif %}
+          {# 5. License expression #}
+          {% if package.declared_license_expression %}
+            <p>This package is licensed under {{ package.expression_links|safe }}</p>
+          {% endif %}
+          {# 6. Notice text #}
+          {% if package.notice_text %}
+            <pre>{{ package.notice_text }}</pre>
+          {% endif %}
+        </div>
+        <hr>
+      {% endfor %}
+
+    {% endblock %}
+
+    {% block license-list %}
+      <h2 id="license_texts">Licenses that apply to {{ project.name }}</h2>
+      {% for license in licenses %}
+        <h3 id="license_{{ license.key }}">
+          {{ license.spdx_license_key }}
+        </h3>
+        {% if license.licensedb_url %}
+          <a href="{{ license.licensedb_url}}" target="_blank">
+            {{ license.licensedb_url}}
+          </a>
+        {% endif %}
+        <pre>{{ license.text }}</pre>
+        <hr>
+      {% endfor %}
+    {% endblock %}
+
+    {% block end %}
+      <h2>End</h2>
+    {% endblock %}
+  </body>
+</html>

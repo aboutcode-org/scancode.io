@@ -27,7 +27,7 @@ from scanpipe.management.commands import ProjectCommand
 
 class Command(ProjectCommand):
     help = (
-        "Resets a project removing all database entrie and all data on disks "
+        "Reset a project removing all database entrie and all data on disks "
         "except for the input/ directory."
     )
 

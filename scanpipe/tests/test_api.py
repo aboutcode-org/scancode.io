@@ -33,20 +33,22 @@ from django.urls import reverse
 from django.utils import timezone
 
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APIClient
 
+from scanpipe.api.serializers import CodebaseRelationSerializer
 from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
+from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import get_model_serializer
 from scanpipe.api.serializers import get_serializer_fields
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
@@ -69,6 +71,12 @@ class ScanPipeAPITest(TransactionTestCase):
         self.discovered_dependency1 = DiscoveredDependency.create_from_data(
             self.project1, dependency_data1
         )
+        self.codebase_relation1 = CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=self.resource1,
+            to_resource=self.resource1,
+            map_type="java_to_class",
+        )
 
         self.project_list_url = reverse("project-list")
         self.project1_detail_url = reverse("project-detail", args=[self.project1.uuid])
@@ -79,6 +87,14 @@ class ScanPipeAPITest(TransactionTestCase):
         self.csrf_client = APIClient(enforce_csrf_checks=True)
         self.csrf_client.credentials(HTTP_AUTHORIZATION=self.auth)
 
+    def test_scanpipe_api_browsable_formats_available(self):
+        response = self.csrf_client.get(self.project_list_url + "?format=api")
+        self.assertContains(response, self.project1_detail_url)
+        response = self.csrf_client.get(self.project_list_url + "?format=admin")
+        self.assertContains(response, self.project1_detail_url)
+        response = self.csrf_client.get(self.project_list_url + "?format=json")
+        self.assertContains(response, self.project1_detail_url)
+
     def test_scanpipe_api_project_list(self):
         response = self.csrf_client.get(self.project_list_url)
 
@@ -86,7 +102,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, response.data["count"])
         self.assertNotContains(response, "input_root")
         self.assertNotContains(response, "extra_data")
-        self.assertNotContains(response, "error_count")
+        self.assertNotContains(response, "message_count")
         self.assertNotContains(response, "resource_count")
         self.assertNotContains(response, "package_count")
         self.assertNotContains(response, "dependency_count")
@@ -158,19 +174,22 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual([], response.data["input_sources"])
         self.assertIn("input_root", response.data)
         self.assertIn("extra_data", response.data)
-        self.assertEqual(0, response.data["error_count"])
+        self.assertEqual(0, response.data["message_count"])
         self.assertEqual(1, response.data["resource_count"])
         self.assertEqual(1, response.data["package_count"])
         self.assertEqual(1, response.data["dependency_count"])
+        self.assertEqual(1, response.data["relation_count"])
 
         expected = {"": 1}
         self.assertEqual(expected, response.data["codebase_resources_summary"])
+
         expected = {
             "total": 1,
             "with_missing_resources": 0,
             "with_modified_resources": 0,
         }
         self.assertEqual(expected, response.data["discovered_packages_summary"])
+
         expected = {
             "total": 1,
             "is_runtime": 1,
@@ -178,6 +197,9 @@ class ScanPipeAPITest(TransactionTestCase):
             "is_resolved": 0,
         }
         self.assertEqual(expected, response.data["discovered_dependencies_summary"])
+
+        expected = {"java_to_class": 1}
+        self.assertEqual(expected, response.data["codebase_relations_summary"])
 
         self.project1.add_input_source(filename="file1", source="uploaded")
         self.project1.add_input_source(filename="file2", source="https://download.url")
@@ -281,11 +303,98 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual([expected], response.data["input_sources"])
         self.assertEqual(["archive.zip"], response.data["input_root"])
 
+        mock_get.side_effect = [
+            mock.Mock(content=b"\x00", headers={}, status_code=200, url="archive.zip"),
+            mock.Mock(
+                content=b"\x00", headers={}, status_code=200, url="second.tar.gz"
+            ),
+        ]
+        data = {
+            "name": "Upload 2 archives",
+            "input_urls": [
+                "https://example.com/archive.zip",
+                "https://example.com/second.tar.gz",
+            ],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        created_project_detail_url = response.data["url"]
+        response = self.csrf_client.get(created_project_detail_url)
+        expected = [
+            {"filename": "archive.zip", "source": "https://example.com/archive.zip"},
+            {
+                "filename": "second.tar.gz",
+                "source": "https://example.com/second.tar.gz",
+            },
+        ]
+        self.assertEqual(expected, response.data["input_sources"])
+        expected = ["archive.zip", "second.tar.gz"]
+        self.assertEqual(expected, sorted(response.data["input_root"]))
+
+    def test_scanpipe_api_project_create_multiple_pipelines(self):
+        data = {
+            "name": "Single string",
+            "pipeline": "docker",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Single list",
+            "pipeline": ["docker"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Multi list",
+            "pipeline": ["docker", "scan_package"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["runs"]))
+        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual("scan_package", response.data["runs"][1]["pipeline_name"])
+        self.assertEqual("docker", response.data["next_run"])
+
+        data = {
+            "name": "Multi string",
+            "pipeline": "docker,scan_package",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
+            "pipeline": [
+                ErrorDetail(
+                    string='"docker,scan_package" is not a valid choice.',
+                    code="invalid_choice",
+                )
+            ]
+        }
+        self.assertEqual(expected, response.data)
+
+    def test_scanpipe_api_project_create_labels(self):
+        data = {
+            "name": "Project1",
+            "labels": ["label1", "label2"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(data["labels"], sorted(response.data["labels"]))
+        project = Project.objects.get(name=data["name"])
+        self.assertEqual(data["labels"], sorted(project.labels.names()))
+
     def test_scanpipe_api_project_results_generator(self):
         results_generator = JSONResultsGenerator(self.project1)
         results = json.loads("".join(results_generator))
 
-        expected = ["dependencies", "files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["dependencies"]))
@@ -299,7 +408,7 @@ class ScanPipeAPITest(TransactionTestCase):
         response_value = response.getvalue()
         results = json.loads(response_value)
 
-        expected = ["dependencies", "files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
         self.assertEqual(1, len(results["dependencies"]))
@@ -311,27 +420,31 @@ class ScanPipeAPITest(TransactionTestCase):
         url = reverse("project-results-download", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
 
-        expected = 'attachment; filename="Analysis.json"'
+        expected = 'attachment; filename="scancodeio_analysis.json"'
         self.assertEqual(expected, response["Content-Disposition"])
         self.assertEqual("application/json", response["Content-Type"])
 
         response_value = response.getvalue()
         results = json.loads(response_value)
-        expected = ["dependencies", "files", "headers", "packages"]
+        expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
 
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
         response = self.csrf_client.get(url)
-        expected = ["name", "description", "steps"]
+        expected = ["name", "summary", "description", "steps"]
         self.assertEqual(expected, list(response.data[0].keys()))
 
     def test_scanpipe_api_project_action_resources(self):
         url = reverse("project-resources", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
 
-        self.assertEqual(1, len(response.data))
-        resource = response.data[0]
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        resource = response.data["results"][0]
         self.assertEqual(
             ["pkg:deb/debian/adduser@3.118?uuid=610bed29-ce39-40e7-92d6-fd8b"],
             resource["for_packages"],
@@ -341,32 +454,85 @@ class ScanPipeAPITest(TransactionTestCase):
         )
 
         self.assertEqual("", resource["compliance_alert"])
-        self.resource1.compliance_alert = CodebaseResource.Compliance.ERROR
-        self.resource1.save()
+
+        # Using update() to bypass the `compute_compliance_alert` call triggered
+        # when using save().
+        # The purpose of this test is not to assert on the compliance_alert computation
+        # but rather to test the render in the REST API.
+        CodebaseResource.objects.filter(id=self.resource1.id).update(
+            compliance_alert=CodebaseResource.Compliance.ERROR
+        )
+
         response = self.csrf_client.get(url)
-        self.assertEqual("error", response.data[0]["compliance_alert"])
+        self.assertEqual("error", response.data["results"][0]["compliance_alert"])
 
     def test_scanpipe_api_project_action_packages(self):
         url = reverse("project-packages", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
 
-        self.assertEqual(1, len(response.data))
-        package = response.data[0]
+        package = response.data["results"][0]
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package["purl"])
         self.assertEqual("adduser", package["name"])
 
-    def test_scanpipe_api_project_action_errors(self):
-        url = reverse("project-errors", args=[self.project1.uuid])
-        ProjectError.objects.create(
-            project=self.project1, model="ModelName", details={}, message="Error"
+    def test_scanpipe_api_project_action_dependencies(self):
+        url = reverse("project-dependencies", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        dependency = response.data["results"][0]
+        self.assertEqual(dependency_data1["purl"], dependency["purl"])
+        self.assertEqual(dependency_data1["scope"], dependency["scope"])
+        self.assertEqual(dependency_data1["is_runtime"], dependency["is_runtime"])
+        self.assertEqual(
+            dependency_data1["dependency_uid"], dependency["dependency_uid"]
+        )
+
+    def test_scanpipe_api_project_action_relations(self):
+        url = reverse("project-relations", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        relation = response.data["results"][0]
+        expected = {
+            "to_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+            "status": "",
+            "map_type": "java_to_class",
+            "score": "",
+            "from_resource": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+        }
+        self.assertEqual(expected, relation)
+
+    def test_scanpipe_api_project_action_messages(self):
+        url = reverse("project-messages", args=[self.project1.uuid])
+        ProjectMessage.objects.create(
+            project=self.project1,
+            severity=ProjectMessage.Severity.ERROR,
+            description="Error",
+            model="ModelName",
+            details={},
         )
 
         response = self.csrf_client.get(url)
-        self.assertEqual(1, len(response.data))
-        error = response.data[0]
-        self.assertEqual("ModelName", error["model"])
-        self.assertEqual({}, error["details"])
-        self.assertEqual("Error", error["message"])
+        self.assertEqual(1, response.data["count"])
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
+        self.assertEqual(1, len(response.data["results"]))
+
+        message = response.data["results"][0]
+        self.assertEqual("error", message["severity"])
+        self.assertEqual("Error", message["description"])
+        self.assertEqual("ModelName", message["model"])
+        self.assertEqual({}, message["details"])
 
     def test_scanpipe_api_project_action_file_content(self):
         url = reverse("project-file-content", args=[self.project1.uuid])
@@ -486,6 +652,8 @@ class ScanPipeAPITest(TransactionTestCase):
         run = self.project1.runs.get()
         self.assertEqual(data["pipeline"], run.pipeline_name)
 
+        project2 = Project.objects.create(name="Analysis 2")
+        url = reverse("project-add-pipeline", args=[project2.uuid])
         data["execute_now"] = True
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
@@ -536,9 +704,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(str(run1.uuid), response.data["uuid"])
         self.assertIn(self.project1_detail_url, response.data["project"])
         self.assertEqual("docker", response.data["pipeline_name"])
-        self.assertEqual(
-            "A pipeline to analyze Docker images.", response.data["description"]
-        )
+        self.assertEqual("Analyze Docker images.", response.data["description"])
         self.assertEqual("", response.data["scancodeio_version"])
         self.assertIsNone(response.data["task_id"])
         self.assertIsNone(response.data["task_start_date"])
@@ -625,7 +791,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"status": "Only non started or queued pipelines can be deleted."}
         self.assertEqual(expected, response.data)
 
-        run3.set_task_ended(0)
+        run3.set_task_ended(exitcode=0)
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Only non started or queued pipelines can be deleted."}
@@ -635,6 +801,31 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {"status": "Only non started or queued pipelines can be deleted."}
+        self.assertEqual(expected, response.data)
+
+    def test_scanpipe_api_project_action_outputs(self):
+        url = reverse("project-outputs", args=[self.project1.uuid])
+        response = self.csrf_client.get(url)
+        self.assertEqual([], response.data)
+
+        output_file = self.project1.get_output_file_path("scan", "txt")
+        output_file.write_text("content")
+        response = self.csrf_client.get(url)
+        download_url = f"http://testserver{url}?filename={output_file.name}"
+        expected = [
+            {
+                "download_url": download_url,
+                "filename": output_file.name,
+            }
+        ]
+        self.assertEqual(expected, response.data)
+
+        response = self.csrf_client.get(download_url)
+        self.assertEqual(b"content", response.getvalue())
+
+        response = self.csrf_client.get(f"http://testserver{url}?filename=NOT_FOUND")
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {"status": "Output file NOT_FOUND not found"}
         self.assertEqual(expected, response.data)
 
     def test_scanpipe_api_serializer_get_model_serializer(self):
@@ -647,13 +838,20 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(
             CodebaseResourceSerializer, get_model_serializer(CodebaseResource)
         )
+        self.assertEqual(
+            CodebaseRelationSerializer, get_model_serializer(CodebaseRelation)
+        )
+        self.assertEqual(ProjectMessageSerializer, get_model_serializer(ProjectMessage))
+
         with self.assertRaises(LookupError):
             get_model_serializer(None)
 
     def test_scanpipe_api_serializer_get_serializer_fields(self):
-        self.assertEqual(30, len(get_serializer_fields(DiscoveredPackage)))
-        self.assertEqual(11, len(get_serializer_fields(DiscoveredDependency)))
-        self.assertEqual(28, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(45, len(get_serializer_fields(DiscoveredPackage)))
+        self.assertEqual(12, len(get_serializer_fields(DiscoveredDependency)))
+        self.assertEqual(33, len(get_serializer_fields(CodebaseResource)))
+        self.assertEqual(5, len(get_serializer_fields(CodebaseRelation)))
+        self.assertEqual(7, len(get_serializer_fields(ProjectMessage)))
 
         with self.assertRaises(LookupError):
             get_serializer_fields(None)

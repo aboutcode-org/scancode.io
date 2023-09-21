@@ -24,26 +24,42 @@ from django import forms
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
+from taggit.forms import TagField
+from taggit.forms import TagWidget
+
 from scanpipe.models import Project
 from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput(attrs={"class": "file-input"}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(entry, initial) for entry in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+
 class InputsBaseForm(forms.Form):
-    input_files = forms.FileField(
-        required=False,
-        widget=forms.ClearableFileInput(
-            attrs={"class": "file-input", "multiple": True},
-        ),
-    )
+    input_files = MultipleFileField(required=False)
     input_urls = forms.CharField(
         label="Download URLs",
         required=False,
         help_text="Provide one or more URLs to download, one per line.",
         widget=forms.Textarea(
             attrs={
-                "class": "textarea",
+                "class": "textarea is-dynamic",
                 "rows": 2,
                 "placeholder": (
                     "https://domain.com/archive.zip\n"
@@ -58,7 +74,7 @@ class InputsBaseForm(forms.Form):
 
     def clean_input_urls(self):
         """
-        Fetches the `input_urls` and sets the `downloads` objects in the cleaned_data.
+        Fetch the `input_urls` and sets the `downloads` objects in the cleaned_data.
         A validation error is raised, if at least one URL can't be fetched.
         """
         input_urls = self.cleaned_data.get("input_urls", [])
@@ -117,8 +133,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         name_field.help_text = "The unique name of your project."
 
     def clean_name(self):
-        name = self.cleaned_data["name"]
-        return " ".join(name.split())
+        return " ".join(self.cleaned_data["name"].split())
 
     def save(self, *args, **kwargs):
         project = super().save(*args, **kwargs)
@@ -134,15 +149,30 @@ class AddInputsForm(InputsBaseForm, forms.Form):
 
 
 class AddPipelineForm(PipelineBaseForm):
-    def __init__(self, *args, **kwargs):
-        """
-        The `pipeline` field is required—mandatory—for this form.
-        """
-        super().__init__(*args, **kwargs)
-        self.fields["pipeline"].required = True
+    pipeline = forms.ChoiceField(
+        choices=[
+            (name, pipeline_class.get_summary())
+            for name, pipeline_class in scanpipe_app.pipelines.items()
+        ],
+        widget=forms.RadioSelect(),
+        required=True,
+    )
 
     def save(self, project):
         self.handle_pipeline(project)
+        return project
+
+
+class AddLabelsForm(forms.Form):
+    labels = TagField(
+        label="Add labels to this project:",
+        widget=TagWidget(
+            attrs={"class": "input", "placeholder": "Comma-separated list of labels"}
+        ),
+    )
+
+    def save(self, project):
+        project.labels.add(*self.cleaned_data["labels"])
         return project
 
 
@@ -162,3 +192,156 @@ class ArchiveProjectForm(forms.Form):
         initial=False,
         required=False,
     )
+
+
+class ListTextarea(forms.CharField):
+    """
+    A Django form field that displays as a textarea and converts each line of input
+    into a list of items.
+
+    This field extends the `CharField` and uses the `Textarea` widget to display the
+    input as a textarea.
+    Each line of the textarea input is split into items, removing leading/trailing
+    whitespace and empty lines.
+    The resulting list of items is then stored as the field value.
+    """
+
+    widget = forms.Textarea
+
+    def to_python(self, value):
+        """Split the textarea input into lines and remove empty lines."""
+        if value:
+            return [line.strip() for line in value.splitlines() if line.strip()]
+
+    def prepare_value(self, value):
+        """Join the list items into a string with newlines."""
+        if value is not None:
+            value = "\n".join(value)
+        return value
+
+
+class ProjectSettingsForm(forms.ModelForm):
+    settings_fields = [
+        "extract_recursively",
+        "ignored_patterns",
+        "scancode_license_score",
+        "attribution_template",
+    ]
+    extract_recursively = forms.BooleanField(
+        label="Extract recursively",
+        required=False,
+        initial=True,
+        help_text="Extract nested archives-in-archives recursively",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    ignored_patterns = ListTextarea(
+        label="Ignored patterns",
+        required=False,
+        help_text="Provide one or more path patterns to be ignored, one per line.",
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea is-dynamic",
+                "rows": 3,
+                "placeholder": "*.xml\ntests/*\n*docs/*.rst",
+            },
+        ),
+    )
+    scancode_license_score = forms.IntegerField(
+        label="License score",
+        min_value=0,
+        max_value=100,
+        required=False,
+        help_text=(
+            "Do not return license matches with a score lower than this score. "
+            "A number between 0 and 100."
+        ),
+        widget=forms.NumberInput(attrs={"class": "input"}),
+    )
+    attribution_template = forms.CharField(
+        label="Attribution template",
+        required=False,
+        help_text="Custom attribution template.",
+        widget=forms.Textarea(attrs={"class": "textarea is-dynamic", "rows": 3}),
+    )
+
+    class Meta:
+        model = Project
+        fields = [
+            "name",
+            "notes",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "input"}),
+            "notes": forms.Textarea(attrs={"rows": 3, "class": "textarea is-dynamic"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        """Load initial values from Project ``settings`` field."""
+        super().__init__(*args, **kwargs)
+        for field_name in self.settings_fields:
+            field = self.fields[field_name]
+            # Do not override the field ``initial`` if the key is not in the settings
+            if field_name in self.instance.settings:
+                field.initial = self.instance.settings.get(field_name)
+
+    def save(self, *args, **kwargs):
+        project = super().save(*args, **kwargs)
+        self.update_project_settings(project)
+        return project
+
+    def update_project_settings(self, project):
+        """Update Project ``settings`` field values from form data."""
+        config = {
+            field_name: self.cleaned_data[field_name]
+            for field_name in self.settings_fields
+        }
+        project.settings.update(config)
+        project.save(update_fields=["settings"])
+
+
+class ProjectCloneForm(forms.Form):
+    clone_name = forms.CharField(widget=forms.TextInput(attrs={"class": "input"}))
+    copy_inputs = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="Input files located in the input/ work directory will be copied.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    copy_pipelines = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="All pipelines assigned to the original project will be copied over.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    copy_settings = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="All project settings will be copied.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    copy_subscriptions = forms.BooleanField(
+        initial=True,
+        required=False,
+        help_text="All project webhook subscription will be copied.",
+        widget=forms.CheckboxInput(attrs={"class": "checkbox mr-1"}),
+    )
+    execute_now = forms.BooleanField(
+        label="Execute copied pipeline(s) now",
+        initial=False,
+        required=False,
+        help_text="Copied pipelines will be directly executed.",
+    )
+
+    def __init__(self, instance, *args, **kwargs):
+        self.project = instance
+        super().__init__(*args, **kwargs)
+        self.fields["clone_name"].initial = f"{self.project.name} clone"
+
+    def clean_clone_name(self):
+        clone_name = self.cleaned_data.get("clone_name")
+        if Project.objects.filter(name=clone_name).exists():
+            raise ValidationError("Project with this name already exists.")
+        return clone_name
+
+    def save(self, *args, **kwargs):
+        return self.project.clone(**self.cleaned_data)

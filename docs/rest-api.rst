@@ -4,7 +4,7 @@ REST API
 ========
 
 To get started with the REST API, visit the **projects' API endpoint** at
-http://localhost/api/projects/ or http://127.0.0.1:8001/api/projects/ if you run on a
+http://localhost/api/projects/ or http://localhost:8001/api/projects/ if you run on a
 local development setup.
 
 .. _rest_api_authentication:
@@ -155,6 +155,16 @@ Using Python and the **"requests"** library:
         files = {"upload_file": open("/path/to/the/archive.zip", "rb")}
         response = requests.post(api_url, data=data, files=files)
         response.json()
+
+    You have the flexibility to explicitly set the filename, content_type, and
+    headers for your uploaded files using the following code:
+
+    .. code-block:: python
+
+        files = {"upload_file": ("inventory.json", file_contents, "application/json")}
+
+    For more information on this topic, refer to the following link:
+    https://docs.python-requests.org/en/latest/user/quickstart/#post-a-multipart-encoded-file
 
 When creating a project, the response will include the project's details URL
 value among the returned data.
@@ -316,7 +326,7 @@ the :guilabel:`input/` directory.
 Errors
 ^^^^^^
 
-This action lists all errors that were logged during any pipeline(s) execution
+This action lists all errors that were logged during any pipeline execution
 on a given ``project``.
 
 ``GET /api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/errors/``
@@ -423,11 +433,11 @@ The run details view returns all information available about a pipeline run.
 .. code-block:: json
 
     {
-        "url": "http://127.0.0.1:8001/api/runs/8d5c3962-5fca-47d7-b8c8-47a19247714e/",
+        "url": "http://localhost/api/runs/8d5c3962-5fca-47d7-b8c8-47a19247714e/",
         "pipeline_name": "scan_package",
         "status": "success",
         "description": "A pipeline to scan a single package archive with ScanCode-toolkit.",
-        "project": "http://127.0.0.1:8001/api/projects/cd5b0459-303f-4e92-99c4-ea6d0a70193e/",
+        "project": "http://localhost/api/projects/cd5b0459-303f-4e92-99c4-ea6d0a70193e/",
         "uuid": "8d5c3962-5fca-47d7-b8c8-47a19247714e",
         "created_date": "2021-10-01T08:44:05.174487+02:00",
         "task_exitcode": 0,

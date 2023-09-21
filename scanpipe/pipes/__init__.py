@@ -20,15 +20,20 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import difflib
 import logging
-import subprocess
 import sys
+import uuid
+from contextlib import suppress
 from datetime import datetime
+from itertools import islice
 from pathlib import Path
-from time import sleep
+from timeit import default_timer as timer
 
 from django.db.models import Count
 
+from scanpipe import humanize_time
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -37,34 +42,34 @@ from scanpipe.pipes import scancode
 logger = logging.getLogger("scanpipe.pipes")
 
 
-def make_codebase_resource(project, location, **extra_fields):
+def make_codebase_resource(project, location, save=True, **extra_fields):
     """
-    Creates a CodebaseResource instance in the database for the given `project`.
+    Create a CodebaseResource instance in the database for the given ``project``.
 
-    The provided `location` is the absolute path of this resource.
+    The provided ``location`` is the absolute path of this resource.
     It must be rooted in `project.codebase_path` as only the relative path within the
     project codebase/ directory is stored in the database.
 
-    Extra fields can be provided as keywords arguments to this function call:
+    Extra fields can be provided as keywords arguments to this function call::
 
-    >>> make_codebase_resource(
-    >>>     project=project,
-    >>>     location=resource.location,
-    >>>     rootfs_path=resource.path,
-    >>>     tag=layer_tag,
-    >>> )
+        make_codebase_resource(
+            project=project,
+            location=resource.location,
+            rootfs_path=resource.path,
+            tag=layer_tag,
+        )
 
-    In this example, `rootfs_path` is an optional path relative to a rootfs root
+    In this example, ``rootfs_path`` is an optional path relative to a rootfs root
     within an Image/VM filesystem context. e.g.: "/var/log/file.log"
 
     All paths use the POSIX separators.
 
-    If a CodebaseResource already exists in the `project` with the same path,
+    If a CodebaseResource already exists in the ``project`` with the same path,
     the error raised on save() is not stored in the database and the creation is
     skipped.
     """
     relative_path = Path(location).relative_to(project.codebase_path)
-    resource_data = scancode.get_resource_info(location=location)
+    resource_data = scancode.get_resource_info(location=str(location))
 
     if extra_fields:
         resource_data.update(**extra_fields)
@@ -74,43 +79,132 @@ def make_codebase_resource(project, location, **extra_fields):
         path=relative_path,
         **resource_data,
     )
-    codebase_resource.save(save_error=False)
+
+    if save:
+        codebase_resource.save(save_error=False)
+    return codebase_resource
 
 
-def update_or_create_package(project, package_data, codebase_resource=None):
+def get_resource_codebase_root(project, resource_path):
+    """Return "to" or "from" depending on the resource location in the codebase."""
+    relative_path = Path(resource_path).relative_to(project.codebase_path)
+    first_part = relative_path.parts[0]
+    if first_part in ["to", "from"]:
+        return first_part
+    return ""
+
+
+def yield_resources_from_codebase(project):
     """
-    Gets, updates or creates a DiscoveredPackage then returns it.
-    Uses the `project` and `package_data` mapping to lookup and creates the
+    Yield CodebaseResource instances, including their ``info`` data, ready to be
+    inserted in the database using ``save()`` or ``bulk_create()``.
+    """
+    for resource_path in project.walk_codebase_path():
+        yield make_codebase_resource(
+            project=project,
+            location=resource_path,
+            save=False,
+            tag=get_resource_codebase_root(project, resource_path),
+        )
+
+
+def collect_and_create_codebase_resources(project, batch_size=5000):
+    """
+    Collect and create codebase resources including the "to/" and "from/" context using
+    the resource tag field.
+
+    The default ``batch_size`` can be overriden, although the benefits of a value
+    greater than 5000 objects are usually not significant.
+    """
+    model_class = CodebaseResource
+    objs = yield_resources_from_codebase(project)
+
+    while True:
+        batch = list(islice(objs, batch_size))
+        if not batch:
+            break
+        model_class.objects.bulk_create(batch, batch_size)
+
+
+def update_or_create_resource(project, resource_data):
+    """Get, update or create a CodebaseResource then return it."""
+    for_packages = resource_data.pop("for_packages", None) or []
+
+    resource = CodebaseResource.objects.get_or_none(
+        project=project,
+        path=resource_data.get("path"),
+    )
+
+    if resource:
+        resource.update_from_data(resource_data)
+    else:
+        resource = CodebaseResource.create_from_data(project, resource_data)
+
+    for package_uid in for_packages:
+        package = project.discoveredpackages.get(package_uid=package_uid)
+        resource.add_package(package)
+
+    return resource
+
+
+def _clean_package_data(package_data):
+    """Clean provided `package_data` to make it compatible with the model."""
+    package_data = package_data.copy()
+    if release_date := package_data.get("release_date"):
+        if type(release_date) is str:
+            if release_date.endswith("Z"):
+                release_date = release_date[:-1]
+            package_data["release_date"] = datetime.fromisoformat(release_date).date()
+    return package_data
+
+
+def update_or_create_package(project, package_data, codebase_resources=None):
+    """
+    Get, update or create a DiscoveredPackage then return it.
+    Use the `project` and `package_data` mapping to lookup and creates the
     DiscoveredPackage using its Package URL and package_uid as a unique key.
+    The package can be associated to `codebase_resources` providing a list or queryset
+    of resources.
     """
     purl_data = DiscoveredPackage.extract_purl_data(package_data)
+    package_data = _clean_package_data(package_data)
+    # No values for package_uid requires to be empty string for proper queryset lookup
+    package_uid = package_data.get("package_uid") or ""
 
-    try:
-        package = DiscoveredPackage.objects.get(
-            project=project,
-            package_uid=package_data.get("package_uid"),
-            **purl_data,
-        )
-    except DiscoveredPackage.DoesNotExist:
-        package = None
+    package = DiscoveredPackage.objects.get_or_none(
+        project=project,
+        package_uid=package_uid,
+        **purl_data,
+    )
 
     if package:
         package.update_from_data(package_data)
     else:
-        if codebase_resource:
-            package = codebase_resource.create_and_add_package(package_data)
-        else:
-            package = DiscoveredPackage.create_from_data(project, package_data)
+        package = DiscoveredPackage.create_from_data(project, package_data)
+
+    if codebase_resources:
+        package.add_resources(codebase_resources)
 
     return package
 
 
-def update_or_create_dependencies(
-    project, dependency_data, strip_datafile_path_root=False
+def create_local_files_package(project, defaults, codebase_resources=None):
+    """Create a local-files package using provided ``defaults`` data."""
+    package_data = {
+        "type": "local-files",
+        "namespace": project.slug,
+        "name": str(uuid.uuid4()),
+    }
+    package_data.update(defaults)
+    return update_or_create_package(project, package_data, codebase_resources)
+
+
+def update_or_create_dependency(
+    project, dependency_data, for_package=None, strip_datafile_path_root=False
 ):
     """
-    Gets, updates or creates a DiscoveredDependency then returns it.
-    Uses the `project` and `dependency_data` mapping to lookup and creates the
+    Get, update or create a DiscoveredDependency then returns it.
+    Use the `project` and `dependency_data` mapping to lookup and creates the
     DiscoveredDependency using its dependency_uid and for_package_uid as a unique key.
 
     If `strip_datafile_path_root` is True, then
@@ -118,14 +212,17 @@ def update_or_create_dependencies(
     from the `datafile_path` of `dependency_data` before looking up the
     corresponding CodebaseResource for `datafile_path`. This is used in the case
     where Dependency data is imported from a scancode-toolkit scan, where the
-    root path segments are not stripped for `datafile_path`s.
+    root path segments are not stripped for `datafile_path`.
     """
-    try:
-        dependency = project.discovereddependencies.get(
-            dependency_uid=dependency_data.get("dependency_uid")
+    dependency = None
+    dependency_uid = dependency_data.get("dependency_uid")
+
+    if not dependency_uid:
+        dependency_data["dependency_uid"] = uuid.uuid4()
+    else:
+        dependency = project.discovereddependencies.get_or_none(
+            dependency_uid=dependency_uid,
         )
-    except DiscoveredDependency.DoesNotExist:
-        dependency = None
 
     if dependency:
         dependency.update_from_data(dependency_data)
@@ -133,54 +230,62 @@ def update_or_create_dependencies(
         dependency = DiscoveredDependency.create_from_data(
             project,
             dependency_data,
+            for_package=for_package,
             strip_datafile_path_root=strip_datafile_path_root,
         )
 
     return dependency
 
 
-def analyze_scanned_files(project):
+def get_or_create_relation(project, relation_data):
     """
-    Sets the status for CodebaseResource to unknown or no license.
+    Get  or create a CodebaseRelation then return it.
+    The support for update is not useful as there is no fields on the model that
+    could be updated.
     """
-    scanned_files = project.codebaseresources.files().status("scanned")
+    from_resource_path = relation_data.get("from_resource")
+    to_resource_path = relation_data.get("to_resource")
+    resource_qs = project.codebaseresources
 
-    scanned_files.has_no_licenses().update(status="no-licenses")
-    scanned_files.unknown_license().update(status="unknown-license")
+    codebase_relation, _ = CodebaseRelation.objects.get_or_create(
+        project=project,
+        from_resource=resource_qs.get(path=from_resource_path),
+        to_resource=resource_qs.get(path=to_resource_path),
+        map_type=relation_data.get("map_type"),
+    )
+
+    return codebase_relation
 
 
-def tag_not_analyzed_codebase_resources(project):
-    """
-    Flags any of the `project`'s '`CodebaseResource` without a status as "not-analyzed".
-    """
-    project.codebaseresources.no_status().update(status="not-analyzed")
+def make_relation(from_resource, to_resource, map_type, **extra_fields):
+    return CodebaseRelation.objects.create(
+        project=from_resource.project,
+        from_resource=from_resource,
+        to_resource=to_resource,
+        map_type=map_type,
+        **extra_fields,
+    )
 
 
 def normalize_path(path):
-    """
-    Returns a normalized path from a `path` string.
-    """
+    """Return a normalized path from a `path` string."""
     return "/" + path.strip("/")
 
 
 def strip_root(location):
-    """
-    Returns the provided `location` without the root directory.
-    """
+    """Return the provided `location` without the root directory."""
     return "/".join(str(location).strip("/").split("/")[1:])
 
 
 def filename_now(sep="-"):
-    """
-    Returns the current date and time in iso format suitable for filename.
-    """
+    """Return the current date and time in iso format suitable for filename."""
     now = datetime.now().isoformat(sep=sep, timespec="seconds")
     return now.replace(":", sep)
 
 
 def count_group_by(queryset, field_name):
     """
-    Returns a summary of all existing values for the provided `field_name` on the
+    Return a summary of all existing values for the provided `field_name` on the
     `queryset`, including the count of each entry, as a dictionary.
     """
     counts = (
@@ -193,57 +298,121 @@ def count_group_by(queryset, field_name):
 
 
 def get_bin_executable(filename):
-    """
-    Returns the location of the `filename` executable binary.
-    """
+    """Return the location of the `filename` executable binary."""
     return str(Path(sys.executable).parent / filename)
-
-
-def _stream_process(process, stream_to=logger.info):
-    exitcode = process.poll()
-
-    for line in process.stdout:
-        stream_to(line.rstrip("\n"))
-
-    has_terminated = exitcode is not None
-    return has_terminated
-
-
-def run_command(cmd, log_output=False):
-    """
-    Returns (exitcode, output) of executing the provided `cmd` in a shell.
-    `cmd` can be provided as a string or as a list of arguments.
-
-    If `log_output` is True, the stdout and stderr of the process will be captured
-    and streamed to the `logger`.
-    """
-    if isinstance(cmd, list):
-        cmd = " ".join(cmd)
-
-    if not log_output:
-        exitcode, output = subprocess.getstatusoutput(cmd)
-        return exitcode, output
-
-    process = subprocess.Popen(
-        cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        universal_newlines=True,
-    )
-
-    while _stream_process(process):
-        sleep(1)
-
-    exitcode = process.poll()
-    return exitcode, ""
 
 
 def remove_prefix(text, prefix):
     """
-    Removes the `prefix` from `text`.
+    Remove the `prefix` from `text`.
+    Note that build-in `removeprefix` was added in Python3.9 but we need to keep
+    this one for Python3.8 support.
+    https://docs.python.org/3.9/library/stdtypes.html#str.removeprefix
     """
     if text.startswith(prefix):
         prefix_len = len(prefix)
         return text[prefix_len:]
     return text
+
+
+class LoopProgress:
+    """
+    A context manager for logging progress in loops.
+
+    Usage::
+
+        total_iterations = 100
+        logger = print  # Replace with your actual logger function
+
+        progress = LoopProgress(total_iterations, logger, progress_step=10)
+        for item in progress.iter(iterator):
+            "Your processing logic here"
+
+        with LoopProgress(total_iterations, logger, progress_step=10) as progress:
+            for item in progress.iter(iterator):
+                "Your processing logic here"
+    """
+
+    def __init__(self, total_iterations, logger, progress_step=10):
+        self.total_iterations = total_iterations
+        self.logger = logger
+        self.progress_step = progress_step
+        self.start_time = timer()
+        self.last_logged_progress = 0
+        self.current_iteration = 0
+
+    def get_eta(self, current_progress):
+        run_time = timer() - self.start_time
+        return round(run_time / current_progress * (100 - current_progress))
+
+    @property
+    def current_progress(self):
+        return int((self.current_iteration / self.total_iterations) * 100)
+
+    @property
+    def eta(self):
+        run_time = timer() - self.start_time
+        return round(run_time / self.current_progress * (100 - self.current_progress))
+
+    def log_progress(self):
+        reasons_to_skip = [
+            not self.logger,
+            not self.current_iteration > 0,
+            self.total_iterations <= self.progress_step,
+        ]
+        if any(reasons_to_skip):
+            return
+
+        if self.current_progress >= self.last_logged_progress + self.progress_step:
+            msg = (
+                f"Progress: {self.current_progress}% "
+                f"({self.current_iteration}/{self.total_iterations})"
+            )
+            if eta := self.eta:
+                msg += f" ETA: {humanize_time(eta)}"
+
+            self.logger(msg)
+            self.last_logged_progress = self.current_progress
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+    def iter(self, iterator):
+        for item in iterator:
+            self.current_iteration += 1
+            self.log_progress()
+            yield item
+
+
+def get_text_str_diff_ratio(str_a, str_b):
+    """
+    Return a similarity ratio as a float between 0 and 1 by comparing the
+    text content of the ``str_a`` and ``str_b``.
+
+    Return None if any of the two resources str is empty.
+    """
+    if not (str_a and str_b):
+        return
+
+    if not isinstance(str_a, str) or not isinstance(str_b, str):
+        raise ValueError("Values must be str")
+
+    matcher = difflib.SequenceMatcher(a=str_a.splitlines(), b=str_b.splitlines())
+    return matcher.quick_ratio()
+
+
+def get_resource_diff_ratio(resource_a, resource_b):
+    """
+    Return a similarity ratio as a float between 0 and 1 by comparing the
+    text content of the CodebaseResource ``resource_a`` and ``resource_b``.
+
+    Return None if any of the two resources are not readable as text.
+    """
+    with suppress(IOError):
+        return get_text_str_diff_ratio(
+            str_a=resource_a.file_content,
+            str_b=resource_b.file_content,
+        )

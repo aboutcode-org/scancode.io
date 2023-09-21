@@ -1,0 +1,149 @@
+{% extends "scanpipe/base.html" %}
+
+{% block content %}
+  <div class="container is-max-widescreen">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    {% include 'scanpipe/includes/breadcrumb_detail_view.html' with object_title="Settings" %}
+    <hr class="mx-5 mt-0">
+
+    <section class="mx-5 mt-3 pb-1">
+      {% include 'scanpipe/includes/form_errors.html' %}
+
+      <div class="columns">
+        <div class="column is-one-quarter">
+          {% include 'scanpipe/includes/project_settings_menu.html' %}
+        </div>
+        <div class="column">
+          <form method="post" action="{% url 'project_settings' project.slug %}">{% csrf_token %}
+            <div class="panel">
+              <p id="general" class="panel-heading py-2 is-size-6">General</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="label" for="{{ form.name.id_for_label }}">
+                    Project name
+                  </label>
+                  <div class="control">
+                    {{ form.name }}
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label" for="{{ form.notes.id_for_label }}">
+                    {{ form.notes.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.notes }}
+                  </div>
+                  <p class="help">{{ form.notes.help_text }}</p>
+                </div>
+                <div class="field">
+                  <label class="label" for="id_uuid">UUID</label>
+                  <div class="control">
+                    <input type="text" id="id_uuid" class="input" value="{{ project.uuid }}" disabled="disabled">
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label" for="id_work_directory">Work directory</label>
+                  <div class="control">
+                    <input type="text" id="id_work_directory" class="input" value="{{ project.work_directory }}" disabled="disabled">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <p id="extraction" class="panel-heading py-2 is-size-6">Extraction</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="checkbox" for="{{ form.extract_recursively.id_for_label }}">
+                    {{ form.extract_recursively }}
+                    {{ form.extract_recursively.label }}
+                  </label>
+                  <p class="help">{{ form.extract_recursively.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <p id="ignored" class="panel-heading py-2 is-size-6">Ignored</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="label" for="{{ form.ignored_patterns.id_for_label }}">
+                    {{ form.ignored_patterns.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.ignored_patterns }}
+                  </div>
+                  <p class="help">{{ form.ignored_patterns.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <p id="scancode" class="panel-heading py-2 is-size-6">ScanCode</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="label" for="{{ form.scancode_license_score.id_for_label }}">
+                    {{ form.scancode_license_score.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.scancode_license_score }}
+                  </div>
+                  <p class="help">{{ form.scancode_license_score.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <p id="attribution" class="panel-heading py-2 is-size-6">Attribution</p>
+              <div class="panel-block is-block px-4">
+                <div class="field">
+                  <label class="label" for="{{ form.attribution_template.id_for_label }}">
+                    {{ form.attribution_template.label }}
+                  </label>
+                  <div class="control">
+                    {{ form.attribution_template }}
+                  </div>
+                  <p class="help">{{ form.attribution_template.help_text }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="columns mt-4 mb-5 is-variable is-1">
+              <div class="column is-one-third">
+                <a href="{% url 'project_detail' project.slug %}" class="button is-fullwidth">Cancel</a>
+              </div>
+              <div class="column">
+                <input type="submit" class="button is-fullwidth is-link" value="Update">
+              </div>
+            </div>
+            {{ form.media }}
+          </form>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  {% if not project.is_archived %}
+    {% include "scanpipe/modals/project_archive_modal.html" %}
+  {% endif %}
+  {% include "scanpipe/modals/project_reset_modal.html" %}
+  {% include "scanpipe/modals/project_delete_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    onSubmitOverlay = function (selector) {
+      let element = document.querySelector(selector);
+      if (element) {
+        element.addEventListener("submit", function() {
+          displayOverlay();
+        });
+      }
+    };
+
+    onSubmitOverlay("#modal-archive form");
+    onSubmitOverlay("#modal-reset form");
+    onSubmitOverlay("#modal-delete form");
+  </script>
+{% endblock %}

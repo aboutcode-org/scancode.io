@@ -1,0 +1,35 @@
+<article id="license-clarity-panel" class="panel is-info">
+  <div class="panel-heading py-2 is-size-6 is-flex is-justify-content-space-between">
+    License clarity
+    {% include "scanpipe/dropdowns/help_dropdown_tooltip.html" with content="License clarity is a set of metrics that indicate how clearly, comprehensively and accurately a software project has defined and communicated the licensing that applies to the software." only %}
+  </div>
+  <div class="panel-block p-0">
+    <table class="table is-fullwidth border-bottom-radius">
+      {% for entry in license_clarity %}
+        {% if entry.label != "Score" %}<tr>{% else %}<tr class="has-background-light">{% endif %}
+          <th>
+            <div class="dropdown is-hoverable is-wider is-tooltip">
+              <div class="dropdown-trigger">
+                <span class="is-help-text">{{ entry.label }}</span>
+              </div>
+              <div class="dropdown-menu ml-5" role="menu">
+                <div class="dropdown-content">
+                  <div class="dropdown-item">
+                    {{ entry.help_text }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </th>
+          <td class="has-text-centered">
+            {% if entry.label == "Score" %}
+              <span class="tag is-info has-text-weight-bold">{{ entry.value }}</span>
+            {% elif entry.value is True %}
+              <span class="tag {% if '+' in entry.weight %}is-success{% else %}is-danger{% endif %} has-text-weight-bold">{{ entry.weight }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+</article>

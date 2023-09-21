@@ -25,9 +25,7 @@ PYTHON_EXE?=python3
 MANAGE=bin/python manage.py
 ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
-BLACK_ARGS=--exclude="migrations|data|lib|bin|var"
-PYCODESTYLE_ARGS=--max-line-length=88 \
-  --exclude=lib,thirdparty,docs,bin,migrations,settings.py,data,pipelines,var
+BLACK_ARGS=--exclude=".cache|migrations|data|lib|bin|var"
 # Do not depend on Python to generate the SECRET_KEY
 GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
@@ -37,6 +35,7 @@ SCANCODEIO_DB_NAME=scancodeio
 SCANCODEIO_DB_USER=scancodeio
 SCANCODEIO_DB_PASSWORD=scancodeio
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
+DATE=$(shell date +"%Y-%m-%d_%H%M")
 
 # Use sudo for postgres, but only on Linux
 UNAME := $(shell uname)
@@ -66,7 +65,7 @@ envfile:
 
 isort:
 	@echo "-> Apply isort changes to ensure proper imports ordering"
-	@${ACTIVATE} isort .
+	@${ACTIVATE} isort --profile black .
 
 black:
 	@echo "-> Apply black code formatter"
@@ -78,17 +77,27 @@ doc8:
 
 valid: isort black doc8 check
 
-check: doc8
-	@echo "-> Run pycodestyle (PEP8) validation"
-	@${ACTIVATE} pycodestyle ${PYCODESTYLE_ARGS} .
+bandit:
+	@echo "-> Run source code security analyzer"
+	@${ACTIVATE} bandit -r scanpipe scancodeio --quiet --exclude test_spdx.py
+
+check: doc8 bandit
+	@echo "-> Run flake8 (pycodestyle, pyflakes, mccabe) validation"
+	@${ACTIVATE} flake8 .
 	@echo "-> Run isort imports ordering validation"
-	@${ACTIVATE} isort --check-only .
+	@${ACTIVATE} isort --profile black --check-only .
 	@echo "-> Run black validation"
 	@${ACTIVATE} black --check ${BLACK_ARGS} .
+	@echo "-> Run docstring validation"
+	@${ACTIVATE} pydocstyle scanpipe scancodeio
+
+check-deploy:
+	@echo "-> Check Django deployment settings"
+	${MANAGE} check --deploy
 
 clean:
 	@echo "-> Clean the Python env"
-	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ pip-selfcheck.json pyvenv.cfg
+	rm -rf bin/ lib/ lib64/ include/ build/ dist/ docs/_build/ .cache/ pip-selfcheck.json pyvenv.cfg
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete -type d -name '*.egg-info' -delete
 
 migrate:
@@ -106,6 +115,9 @@ postgresdb:
 	@${SUDO_POSTGRES} createdb --owner=${SCANCODEIO_DB_USER} ${POSTGRES_INITDB_ARGS} ${SCANCODEIO_DB_NAME}
 	@$(MAKE) migrate
 
+backupdb:
+	pg_dump -Fc ${SCANCODEIO_DB_NAME} > "${SCANCODEIO_DB_NAME}-db-${DATE}.dump"
+
 sqlitedb:
 	@echo "-> Configure SQLite database"
 	@echo SCANCODEIO_DB_ENGINE=\"django.db.backends.sqlite3\" >> ${ENV_FILE}
@@ -122,19 +134,27 @@ test:
 worker:
 	${MANAGE} rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
 
-bump:
-	@echo "-> Bump the version"
-	@${ACTIVATE} bumpver update --no-fetch --patch
-
 docs:
 	rm -rf docs/_build/
 	@${ACTIVATE} sphinx-build docs/ docs/_build/
 
+bump:
+	@echo "-> Bump the version"
+	@${ACTIVATE} bumpver update --no-fetch --patch
+
+publish:
+	@echo "-> Cleanup dist/ and build/ directories"
+	rm -rf dist/ build/
+	@echo "-> Build source and wheel distribution packages"
+	@${ACTIVATE} python setup.py sdist bdist_wheel
+	@echo "-> Upload packages on pypi"
+	@${ACTIVATE} twine upload dist/*
+
 docker-images:
 	@echo "-> Build Docker services"
-	docker-compose build
+	docker compose build
 	@echo "-> Pull service images"
-	docker-compose pull
+	docker compose pull
 	@echo "-> Save the service images to a tar archive in the build/ directory"
 	@rm -rf build/
 	@mkdir -p build/
@@ -146,4 +166,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install check valid isort clean migrate postgresdb sqlitedb run test bump docs docker-images offline-package
+.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images offline-package

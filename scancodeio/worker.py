@@ -21,7 +21,6 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from django.apps import apps
-from django.conf import settings
 
 from rq.queue import Queue
 from rq.worker import Worker
@@ -30,9 +29,7 @@ scanpipe_app = apps.get_app_config("scanpipe")
 
 
 class ScanCodeIOWorker(Worker):
-    """
-    Modified version of RQ Worker including ScanCode.io customizations.
-    """
+    """Modified version of RQ Worker including ScanCode.io customizations."""
 
     def run_maintenance_tasks(self):
         """
@@ -52,22 +49,21 @@ class ScanCodeIOWorker(Worker):
         super().run_maintenance_tasks()
 
         # The Runs and Jobs synchronization needs to be executed after the
-        # `self.clean_registries()` that takes place in the in the parent
+        # `self.clean_registries()` that takes place in the parent
         # `super().run_maintenance_tasks()`.
         scanpipe_app.sync_runs_and_jobs()
 
 
 class ScanCodeIOQueue(Queue):
-    """
-    Modified version of RQ Queue including ScanCode.io customizations.
-    """
+    """Modified version of RQ Queue including ScanCode.io customizations."""
 
     # Reduce the "cleaning lock" ttl from default hardcoded 899 seconds to 60 seconds.
     cleaning_lock_ttl = 60
 
     def acquire_cleaning_lock(self):
         """
-        Returns a boolean indicating whether a lock to clean this queue is acquired.
+        Return a boolean indicating whether a lock to clean this queue is
+        acquired.
         """
         return self.connection.set(
             self.registry_cleaning_key, 1, nx=1, ex=self.cleaning_lock_ttl

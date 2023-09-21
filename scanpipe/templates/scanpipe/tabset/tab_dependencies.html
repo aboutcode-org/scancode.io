@@ -1,10 +1,24 @@
 <div class="content">
-  <strong>{{ tab_data.fields.dependencies.label }}</strong>
-  <ul>
-    {% for dependency in tab_data.fields.dependencies.value.all %}
-      <li>
-        <a href="{{ dependency.get_absolute_url }}" title="{{ dependency.dependency_uid }}">{{ dependency.package_url }}</a>
-      </li>
-    {% endfor %}
-  </ul>
+  <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+    <thead>
+      <tr>
+        <th>Package URL</th>
+        <th>Type</th>
+        <th>Scope</th>
+        <th>Datasource ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dependency in tab_data.fields.dependencies.value %}
+        <tr>
+          <td title="{{ dependency.dependency_uid }}">
+            <a href="{{ dependency.get_absolute_url }}">{{ dependency.purl }}</a>
+          </td>
+          <td>{{ dependency.type }}</td>
+          <td class="break-normal">{{ dependency.scope }}</td>
+          <td>{{ dependency.datasource_id }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>

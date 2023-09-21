@@ -27,64 +27,84 @@ from scanpipe import views
 
 urlpatterns = [
     path(
-        "project/<uuid:uuid>/resources/<int:pk>/raw/",
+        "project/<slug:slug>/resources/<path:path>/raw/",
         views.CodebaseResourceRawView.as_view(),
         name="resource_raw",
     ),
     path(
-        "project/<uuid:uuid>/resources/<int:pk>/",
+        "project/<slug:slug>/resources/diff/",
+        views.codebase_resource_diff_view,
+        name="resource_diff",
+    ),
+    path(
+        "project/<slug:slug>/resources/<path:path>/",
         views.CodebaseResourceDetailsView.as_view(),
         name="resource_detail",
     ),
     path(
-        "project/<uuid:uuid>/packages/<int:pk>/",
-        views.DiscoveredPackageDetailsView.as_view(),
-        name="package_detail",
-    ),
-    path(
-        "project/<uuid:uuid>/dependencies/<int:pk>/",
-        views.DiscoveredDependencyDetailsView.as_view(),
-        name="dependency_detail",
-    ),
-    path(
-        "project/<uuid:uuid>/resources/",
+        "project/<slug:slug>/resources/",
         views.CodebaseResourceListView.as_view(),
         name="project_resources",
     ),
     path(
-        "project/<uuid:uuid>/packages/",
+        "project/<slug:slug>/packages/<uuid:uuid>/",
+        views.DiscoveredPackageDetailsView.as_view(),
+        name="package_detail",
+    ),
+    path(
+        "project/<slug:slug>/dependencies/<path:dependency_uid>/",
+        views.DiscoveredDependencyDetailsView.as_view(),
+        name="dependency_detail",
+    ),
+    path(
+        "project/<slug:slug>/packages/",
         views.DiscoveredPackageListView.as_view(),
         name="project_packages",
     ),
     path(
-        "project/<uuid:uuid>/dependencies/",
+        "project/<slug:slug>/dependencies/",
         views.DiscoveredDependencyListView.as_view(),
         name="project_dependencies",
     ),
     path(
-        "project/<uuid:uuid>/errors/",
-        views.ProjectErrorListView.as_view(),
-        name="project_errors",
+        "project/<slug:slug>/relations/",
+        views.CodebaseRelationListView.as_view(),
+        name="project_relations",
     ),
     path(
-        "project/<uuid:uuid>/tree/",
-        views.ProjectTreeView.as_view(),
-        name="project_tree",
+        "project/<slug:slug>/messages/",
+        views.ProjectMessageListView.as_view(),
+        name="project_messages",
     ),
     path(
-        "project/<uuid:uuid>/archive/",
+        "project/<slug:slug>/archive/",
         views.ProjectArchiveView.as_view(),
         name="project_archive",
     ),
     path(
-        "project/<uuid:uuid>/delete/",
+        "project/<slug:slug>/delete/",
         views.ProjectDeleteView.as_view(),
         name="project_delete",
     ),
     path(
-        "project/<uuid:uuid>/reset/",
+        "project/<slug:slug>/reset/",
         views.ProjectResetView.as_view(),
         name="project_reset",
+    ),
+    path(
+        "project/<slug:slug>/clone/",
+        views.ProjectCloneView.as_view(),
+        name="project_clone",
+    ),
+    path(
+        "project/<slug:slug>/settings/",
+        views.ProjectSettingsView.as_view(),
+        name="project_settings",
+    ),
+    path(
+        "project/<slug:slug>/codebase/",
+        views.ProjectCodebaseView.as_view(),
+        name="project_codebase",
     ),
     path(
         "run/<uuid:uuid>/",
@@ -97,24 +117,44 @@ urlpatterns = [
         name="run_status",
     ),
     path(
-        "project/<uuid:uuid>/results/<path:format>/",
+        "project/<slug:slug>/results/<str:format>/",
         views.ProjectResultsView.as_view(),
         name="project_results",
     ),
     path(
-        "project/<uuid:uuid>/execute_pipeline/<uuid:run_uuid>/",
+        "project/<slug:slug>/execute_pipeline/<uuid:run_uuid>/",
         views.execute_pipeline_view,
         name="project_execute_pipeline",
     ),
     path(
-        "project/<uuid:uuid>/stop_pipeline/<uuid:run_uuid>/",
+        "project/<slug:slug>/stop_pipeline/<uuid:run_uuid>/",
         views.stop_pipeline_view,
         name="project_stop_pipeline",
     ),
     path(
-        "project/<uuid:uuid>/delete_pipeline/<uuid:run_uuid>/",
+        "project/<slug:slug>/delete_pipeline/<uuid:run_uuid>/",
         views.delete_pipeline_view,
         name="project_delete_pipeline",
+    ),
+    path(
+        "project/<slug:slug>/delete_input/<str:input_name>/",
+        views.delete_input_view,
+        name="project_delete_input",
+    ),
+    path(
+        "project/<slug:slug>/download_input/<str:filename>/",
+        views.download_input_view,
+        name="project_download_input",
+    ),
+    path(
+        "project/<slug:slug>/download_output/<str:filename>/",
+        views.download_output_view,
+        name="project_download_output",
+    ),
+    path(
+        "project/<slug:slug>/delete_label/<str:label_name>/",
+        views.delete_label_view,
+        name="project_delete_label",
     ),
     path(
         "project/add/",
@@ -122,12 +162,17 @@ urlpatterns = [
         name="project_add",
     ),
     path(
-        "project/<uuid:uuid>/charts/",
+        "project/action/",
+        views.ProjectActionView.as_view(),
+        name="project_action",
+    ),
+    path(
+        "project/<slug:slug>/charts/",
         views.ProjectChartsView.as_view(),
         name="project_charts",
     ),
     path(
-        "project/<uuid:uuid>/",
+        "project/<slug:slug>/",
         views.ProjectDetailView.as_view(),
         name="project_detail",
     ),
@@ -135,6 +180,16 @@ urlpatterns = [
         "project/",
         views.ProjectListView.as_view(),
         name="project_list",
+    ),
+    path(
+        "license/<str:key>/",
+        views.LicenseDetailsView.as_view(),
+        name="license_detail",
+    ),
+    path(
+        "license/",
+        views.LicenseListView.as_view(),
+        name="license_list",
     ),
     path("monitor/", include("django_rq.urls")),
 ]

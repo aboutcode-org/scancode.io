@@ -26,6 +26,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
+from scanpipe.management.commands import validate_copy_from
 from scanpipe.management.commands import validate_input_files
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
@@ -61,23 +62,32 @@ class Command(AddInputCommandMixin, BaseCommand):
                 "Applies only when --execute is provided."
             ),
         )
+        parser.add_argument(
+            "--notes",
+            help="Optional notes about the project.",
+        )
 
     def handle(self, *args, **options):
         name = options["name"]
         pipeline_names = options["pipelines"]
         inputs_files = options["inputs_files"]
         input_urls = options["input_urls"]
+        copy_from = options["copy_codebase"]
         execute = options["execute"]
 
         project = Project(name=name)
+        if notes := options["notes"]:
+            project.notes = notes
+
         try:
-            project.full_clean()
+            project.full_clean(exclude=["slug"])
         except ValidationError as e:
             raise CommandError("\n".join(e.messages))
 
         # Run validation before creating the project in the database
         validate_pipelines(pipeline_names)
         validate_input_files(inputs_files)
+        validate_copy_from(copy_from)
 
         if execute and not pipeline_names:
             raise CommandError("The --execute option requires one or more pipelines.")
@@ -96,6 +106,9 @@ class Command(AddInputCommandMixin, BaseCommand):
 
         if input_urls:
             self.handle_input_urls(input_urls)
+
+        if copy_from:
+            self.handle_copy_codebase(copy_from)
 
         if execute:
             call_command(

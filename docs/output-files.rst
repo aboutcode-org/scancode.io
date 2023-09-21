@@ -5,10 +5,12 @@ Output Files
 
 Whether you use the command line or the web application to run your
 scans, the generated results are available for review or export in
-**JSON** and **Excel (XLSX)** file formats.
+**JSON**, **Excel (XLSX)**, **SPDX**, and **CycloneDX** file formats.
+You can also produce the **Attribution** as an HTML file.
 
 .. tip::
-    Check our :ref:`data_model` section for more details about all fields included in the output files.
+    Check our :ref:`data_model` section for more details about all fields included
+    in the output files.
 
 Creating Output Files
 ---------------------
@@ -20,11 +22,11 @@ the output file format with the ``–-format`` option:
 
 .. code-block:: console
 
-    $ scanpipe output --project PROJECT --format {json,xlsx}
+    $ scanpipe output --project PROJECT --format {json,xlsx,spdx,cyclonedx,attribution}
 
 .. note::
-    The previous command will output the scan results in a JSON or XLSX file
-    format – as specified – with the output files created in the
+    The previous command will output the scan results in a file format
+    – as specified – with the output files created in the
     ``PROJECT``'s :guilabel:`output/` directory. By default, JSON output
     files are created when no file format is given.
 
@@ -76,7 +78,7 @@ as shown below
         "task_end_date": "2021-06-13T01:20:56.486136Z",
         "task_exitcode": 0,
         "task_output": "",
-        "log": "2021-06-13 01:20:47.66 Pipeline [docker] starting\n2021-06-13 01:20:47.66 Step [extract_images] starting\n2021-06-13 01:20:47.72 Step [extract_images] completed in 0.05 seconds\n2021-06-13 01:20:47.72 Step [extract_layers] starting\n2021-06-13 01:20:47.84 Step [extract_layers] completed in 0.12 seconds\n2021-06-13 01:20:47.84 Step [find_images_linux_distro] starting\n2021-06-13 01:20:47.84 Step [find_images_linux_distro] completed in 0.00 seconds\n2021-06-13 01:20:47.85 Step [collect_images_information] starting\n2021-06-13 01:20:47.85 Step [collect_images_information] completed in 0.00 seconds\n2021-06-13 01:20:47.85 Step [collect_and_create_codebase_resources] starting\n2021-06-13 01:20:48.65 Step [collect_and_create_codebase_resources] completed in 0.79 seconds\n2021-06-13 01:20:48.65 Step [collect_and_create_system_packages] starting\n2021-06-13 01:20:50.89 Step [collect_and_create_system_packages] completed in 2.24 seconds\n2021-06-13 01:20:50.89 Step [tag_uninteresting_codebase_resources] starting\n2021-06-13 01:20:50.90 Step [tag_uninteresting_codebase_resources] completed in 0.00 seconds\n2021-06-13 01:20:50.90 Step [tag_empty_files] starting\n2021-06-13 01:20:50.91 Step [tag_empty_files] completed in 0.00 seconds\n2021-06-13 01:20:50.91 Step [scan_for_application_packages] starting\n2021-06-13 01:20:50.98 Step [scan_for_application_packages] completed in 0.07 seconds\n2021-06-13 01:20:50.98 Step [scan_for_files] starting\n2021-06-13 01:20:56.46 Step [scan_for_files] completed in 5.48 seconds\n2021-06-13 01:20:56.46 Step [analyze_scanned_files] starting\n2021-06-13 01:20:56.47 Step [analyze_scanned_files] completed in 0.00 seconds\n2021-06-13 01:20:56.47 Step [tag_not_analyzed_codebase_resources] starting\n2021-06-13 01:20:56.48 Step [tag_not_analyzed_codebase_resources] completed in 0.00 seconds\n2021-06-13 01:20:56.48 Pipeline completed\n",
+        "log": "2021-06-13 01:20:47.66 Pipeline [docker] starting\n2021-06-13 01:20:47.66 Step [extract_images] starting\n2021-06-13 01:20:47.72 Step [extract_images] completed in 0.05 seconds\n2021-06-13 01:20:47.72 Step [extract_layers] starting\n2021-06-13 01:20:47.84 Step [extract_layers] completed in 0.12 seconds\n2021-06-13 01:20:47.84 Step [find_images_linux_distro] starting\n2021-06-13 01:20:47.84 Step [find_images_linux_distro] completed in 0.00 seconds\n2021-06-13 01:20:47.85 Step [collect_images_information] starting\n2021-06-13 01:20:47.85 Step [collect_images_information] completed in 0.00 seconds\n2021-06-13 01:20:47.85 Step [collect_and_create_codebase_resources] starting\n2021-06-13 01:20:48.65 Step [collect_and_create_codebase_resources] completed in 0.79 seconds\n2021-06-13 01:20:48.65 Step [collect_and_create_system_packages] starting\n2021-06-13 01:20:50.89 Step [collect_and_create_system_packages] completed in 2.24 seconds\n2021-06-13 01:20:50.89 Step [flag_uninteresting_codebase_resources] starting\n2021-06-13 01:20:50.90 Step [tag_uninteresting_codebase_resources] completed in 0.00 seconds\n2021-06-13 01:20:50.90 Step [tag_empty_files] starting\n2021-06-13 01:20:50.91 Step [tag_empty_files] completed in 0.00 seconds\n2021-06-13 01:20:50.91 Step [scan_for_application_packages] starting\n2021-06-13 01:20:50.98 Step [scan_for_application_packages] completed in 0.07 seconds\n2021-06-13 01:20:50.98 Step [scan_for_files] starting\n2021-06-13 01:20:56.46 Step [scan_for_files] completed in 5.48 seconds\n2021-06-13 01:20:56.46 Step [analyze_scanned_files] starting\n2021-06-13 01:20:56.47 Step [analyze_scanned_files] completed in 0.00 seconds\n2021-06-13 01:20:56.47 Step [tag_not_analyzed_codebase_resources] starting\n2021-06-13 01:20:56.48 Step [tag_not_analyzed_codebase_resources] completed in 0.00 seconds\n2021-06-13 01:20:56.48 Pipeline completed\n",
         "execution_time": 8
       }
     ],
@@ -181,8 +183,6 @@ similar to the following:
         "license_expression": "mit",
         "declared_license": "MIT",
         "notice_text": "",
-        "manifest_path": "",
-        "contains_source_code": null,
         "missing_resources": [
           "/lib/libc.musl-x86_64.so.1"
         ],
@@ -247,3 +247,26 @@ while the **Codebase Resources** sheet includes information about each
 individual file:
 
 .. image:: images/output-files-xlsx-resources.png
+
+Attribution
+^^^^^^^^^^^
+ScanCode.io can generate attribution notices of the discovered packages of a project.
+The output format is a HTML page.
+
+The default template output can be customized providing your own template in the
+:guilabel:`.scancode` config directory :ref:`scancodeio_settings_config_dir`.
+
+You usually want to start with a copy of the default template available at
+``scanpipe/templates/scanpipe/attribution.html`` and add your modifications.
+
+You can then place your custom template file into the :guilabel:`.scancode` config
+directory in your input files, such as it will end up at
+``codebase/.scancode/templates/attribution.html`` on extraction.
+
+The following variable are available as the template context:
+
+- ``project``
+- ``packages``
+- ``licenses``
+
+Refer to :ref:`data_model` for the full details of available fields.

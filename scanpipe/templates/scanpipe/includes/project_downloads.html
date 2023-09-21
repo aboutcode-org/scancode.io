@@ -1,0 +1,20 @@
+<article class="message is-info">
+  <div class="message-body">
+    Download results as:
+    <a class="tag is-success is-medium ml-2" href="{% url 'project_results' project.slug 'json' %}">
+      JSON <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
+    </a>
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'xlsx' %}">
+      XLSX <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
+    </a>
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'spdx' %}">
+      SPDX <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
+    </a>
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'cyclonedx' %}">
+      CycloneDX <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
+    </a>
+    <a class="tag is-success is-medium" href="{% url 'project_results' project.slug 'attribution' %}">
+      Attribution <span class="icon ml-1"><i class="fa-solid fa-download"></i></span>
+    </a>
+  </div>
+</article>

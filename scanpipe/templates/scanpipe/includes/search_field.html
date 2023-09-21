@@ -1,8 +1,23 @@
-<form method="get">
-  <p class="control has-icons-left">
-    <input class="input {{ extra_class }}" type="text" placeholder="Search {{ filter.verbose_name_plural }}" name="{{ filter.form.search.name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
-    <span class="icon is-small is-left">
-      <i class="fas fa-search"></i>
-    </span>
-  </p>
-</form>
+<div{% if export_xlsx_url_query %} class="is-flex is-align-items-center"{% endif %}>
+  {% if export_xlsx_url_query %}
+    {% include "scanpipe/dropdowns/list_actions_dropdown.html" %}
+  {% endif %}
+  <form method="get">
+    <p class="control has-icons-left">
+      <input class="input {{ extra_class }}" type="text" placeholder="{% if placeholder %}{{ placeholder }}{% else %}Search {{ filter.verbose_name_plural }}{% endif %}" name="{{ filter.form.search.name }}" value="{{ filter.form.search.value|default_if_none:'' }}">
+      <span class="icon is-small is-left">
+        <i class="fa-solid fa-search"></i>
+      </span>
+    </p>
+    {% for field_name, value in filter.params_for_search.items %}
+      <input type="hidden" name="{{ field_name }}" value="{{ value }}">
+    {% endfor %}
+  </form>
+  {% if not hide_help %}
+    <a href="#" class="modal-button is-grey-link" data-target="search-syntax-modal" aria-haspopup="true">
+      <span class="icon">
+        <i class="fa-solid fa-circle-question"></i>
+      </span>
+    </a>
+  {% endif %}
+</div>

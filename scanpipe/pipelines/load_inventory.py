@@ -20,36 +20,51 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import json
+
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import scancode
+from scanpipe.pipes import input
 
 
 class LoadInventory(Pipeline):
     """
-    A pipeline to load one or more inventory of files and packages from a ScanCode JSON
-    scan results. (Presumably containing resource information and package scan data).
+    Load JSON/XLSX inventory files generated with ScanCode-toolkit or ScanCode.io.
+
+    Supported format are ScanCode-toolkit JSON scan results, ScanCode.io JSON output,
+    and ScanCode.io XLSX output.
+
+    An inventory is composed of packages, dependencies, resources, and relations.
     """
+
+    supported_extensions = [".json", ".xlsx"]
 
     @classmethod
     def steps(cls):
         return (
-            cls.get_scan_json_inputs,
+            cls.get_inputs,
             cls.build_inventory_from_scans,
         )
 
-    def get_scan_json_inputs(self):
-        """
-        Locates all the ScanCode JSON scan results from the project's input/ directory.
-        This includes all files with a .json extension.
-        """
-        self.input_locations = [
-            str(scan_input.absolute())
-            for scan_input in self.project.inputs(pattern="*.json")
-        ]
+    def get_inputs(self):
+        """Locate all the supported input files from the project's input/ directory."""
+        self.input_paths = self.project.inputs(extensions=self.supported_extensions)
 
     def build_inventory_from_scans(self):
         """
-        Processes JSON scan results files to populate codebase resources and packages.
+        Process JSON scan results files to populate packages, dependencies, and
+        resources.
         """
-        for input_location in self.input_locations:
-            scancode.create_inventory_from_scan(self.project, input_location)
+        for input_path in self.input_paths:
+            if input_path.suffix.endswith(".xlsx"):
+                input.load_inventory_from_xlsx(self.project, input_path)
+                continue
+
+            scan_data = json.loads(input_path.read_text())
+            tool_name = input.get_tool_name_from_scan_headers(scan_data)
+
+            if tool_name == "scancode-toolkit":
+                input.load_inventory_from_toolkit_scan(self.project, input_path)
+            elif tool_name == "scanpipe":
+                input.load_inventory_from_scanpipe(self.project, scan_data)
+            else:
+                raise Exception(f"Input not supported: {str(input_path)} ")

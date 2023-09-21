@@ -1,9 +1,10 @@
 {% extends "scanpipe/base.html" %}
+{% load humanize %}
 
 {% block title %}ScanCode.io: {{ project.name }} - Packages{% endblock %}
 
 {% block content %}
-  <div id="content-header" class="container is-max-desktop mb-3">
+  <div id="content-header" class="container is-max-widescreen mb-3">
     {% include 'scanpipe/includes/navbar_header.html' %}
     <section class="mx-5">
       <div class="is-flex is-justify-content-space-between">
@@ -16,41 +17,65 @@
   </div>
 
   <div class="container is-fluid mb-3">
-    <div class="table-container">
-      <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
-        {% include 'scanpipe/includes/list_view_thead.html' %}
-        <tbody>
-          {% for package in object_list %}
-            <tr class="break-word">
-              <td style="min-width: 500px;" title="{{ package.package_uid }}">
-                <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
-              </td>
-              <td style="min-width: 300px; max-width: 400px;">
-                {{ package.license_expression|linebreaksbr }}
-              </td>
-              <td title="{{ package.copyright }}">
-                {{ package.copyright|truncatechars:150|linebreaksbr }}
-              </td>
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+      {% include 'scanpipe/includes/list_view_thead.html' %}
+      <tbody>
+        {% for package in object_list %}
+          <tr class="break-word">
+            <td style="min-width: 500px;" title="{{ package.package_uid }}">
+              {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+              <a href="{% url 'package_detail' project.slug package.uuid %}">{{ package.package_url }}</a>
+              {% if package.is_vulnerable %}
+                <a href="{% url 'package_detail' project.slug package.uuid %}#vulnerabilities">
+                  <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
+                </a>
+              {% endif %}
+            </td>
+            <td style="min-width: 300px; max-width: 400px;">
+              <a href="?declared_license_expression={{ package.declared_license_expression }}" class="is-black-link">
+                {{ package.declared_license_expression }}
+              </a>
+            </td>
+            {% if display_compliance_alert %}
               <td>
-                {{ package.primary_language }}
+                <a href="?compliance_alert={{ package.compliance_alert }}" class="is-black-link">
+                  {{ package.compliance_alert }}
+                </a>
               </td>
-              <td class="is-clipped-list">
+            {% endif %}
+            <td title="{{ package.copyright }}">
+              {{ package.copyright|truncatechars:150|linebreaksbr }}
+            </td>
+            <td>
+              <a href="?primary_language={{ package.primary_language }}" class="is-black-link">{{ package.primary_language }}</a>
+            </td>
+            <td>
+              {% if package.resources %}
                 <ul>
-                  {% for resource in package.resources %}
+                  {% for resource in package.resources|slice:":5" %}
                     <li>
-                      <a href="{{ resource.get_absolute_url }}" title="{{ resource.path }}">{{ resource.name }}</a>
+                      {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+                      <a href="{% url 'resource_detail' project.slug resource.path %}" title="{{ resource.path }}">{{ resource.name }}</a>
                     </li>
                   {% endfor %}
                 </ul>
                 {% if package.resources|length > 5 %}
-                  <button class="button is-small is-fullwidth show-clipped">Show {{ package.resources|length }} resources</button>
+                  <a href="{% url 'package_detail' project.slug package.uuid %}#resources" class="button is-small is-fullwidth">
+                    View {{ package.resources|length|intcomma }} resources
+                  </a>
                 {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="42" class="has-text-centered p-3">
+              No Packages found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
     {% if is_paginated %}
       {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}

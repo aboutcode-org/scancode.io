@@ -153,7 +153,7 @@ class Migration(migrations.Migration):
                 ],
             },
             bases=(
-                scanpipe.models.SaveProjectErrorMixin,
+                scanpipe.models.SaveProjectMessageMixin,
                 scanpipe.models.UpdateFromDataMixin,
                 models.Model,
             ),

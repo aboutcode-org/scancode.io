@@ -27,9 +27,7 @@ from scanpipe.pipes import windows
 
 
 class DockerWindows(Docker):
-    """
-    A pipeline to analyze Windows Docker images.
-    """
+    """Analyze Windows Docker images."""
 
     @classmethod
     def steps(cls):
@@ -40,41 +38,36 @@ class DockerWindows(Docker):
             cls.collect_images_information,
             cls.collect_and_create_codebase_resources,
             cls.collect_and_create_system_packages,
-            cls.tag_known_software_packages,
-            cls.tag_uninteresting_codebase_resources,
-            cls.tag_program_files_dirs_as_packages,
-            cls.tag_empty_files,
+            cls.flag_known_software_packages,
+            cls.flag_uninteresting_codebase_resources,
+            cls.flag_program_files_dirs_as_packages,
+            cls.flag_empty_files,
+            cls.flag_ignored_resources,
             cls.scan_for_application_packages,
             cls.scan_for_files,
             cls.analyze_scanned_files,
-            cls.tag_data_files_with_no_clues,
-            cls.tag_not_analyzed_codebase_resources,
+            cls.flag_data_files_with_no_clues,
+            cls.flag_not_analyzed_codebase_resources,
         )
 
-    def tag_known_software_packages(self):
-        """
-        Flags files from known software packages by checking common install paths.
-        """
-        windows.tag_known_software(self.project)
+    def flag_known_software_packages(self):
+        """Flag files from known software packages by checking common install paths."""
+        windows.flag_known_software(self.project)
 
-    def tag_uninteresting_codebase_resources(self):
-        """
-        Flags files that are known/labelled as uninteresting.
-        """
-        docker.tag_whiteout_codebase_resources(self.project)
-        windows.tag_uninteresting_windows_codebase_resources(self.project)
-        rootfs.tag_ignorable_codebase_resources(self.project)
-        rootfs.tag_media_files_as_uninteresting(self.project)
+    def flag_uninteresting_codebase_resources(self):
+        """Flag files that are known/labelled as uninteresting."""
+        docker.flag_whiteout_codebase_resources(self.project)
+        windows.flag_uninteresting_windows_codebase_resources(self.project)
+        rootfs.flag_ignorable_codebase_resources(self.project)
+        rootfs.flag_media_files_as_uninteresting(self.project)
 
-    def tag_program_files_dirs_as_packages(self):
+    def flag_program_files_dirs_as_packages(self):
         """
-        Reports the immediate subdirectories of `Program Files` and `Program
-        Files (x86)` as packages.
+        Report the immediate subdirectories of ``Program Files`` and ``Program
+        Files (x86)`` as packages.
         """
-        windows.tag_program_files(self.project)
+        windows.flag_program_files(self.project)
 
-    def tag_data_files_with_no_clues(self):
-        """
-        Flags data files that have no clues on their origin as uninteresting.
-        """
-        rootfs.tag_data_files_with_no_clues(self.project)
+    def flag_data_files_with_no_clues(self):
+        """Flag data files that have no clues on their origin as uninteresting."""
+        rootfs.flag_data_files_with_no_clues(self.project)

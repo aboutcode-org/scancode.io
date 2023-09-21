@@ -35,23 +35,28 @@ Build the Image
 ScanCode.io is distributed with ``Dockerfile`` and ``docker-compose.yml`` files
 required for the creation of the Docker image.
 
+.. warning:: On **Windows**, ensure that git ``autocrlf`` configuration is set to
+   ``false`` before cloning the repository::
+
+    git config --global core.autocrlf false
+
 **Clone the git** `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
 create an **environment file**, and **build the Docker image**::
 
     git clone https://github.com/nexB/scancode.io.git && cd scancode.io
     make envfile
-    docker-compose build
+    docker compose build
 
-.. note::
-    You need to rebuild the image whenever ScanCode.io's source code has been
-    modified or updated.
+.. warning::
+    As the ``docker-compose`` v1 command is officially deprecated by Docker, you will
+    only find references to the ``docker compose`` v2 command in this documentation.
 
 Run the App
 ^^^^^^^^^^^
 
 **Run your image** as a container::
 
-    docker-compose up
+    docker compose up
 
 At this point, the ScanCode.io app should be running at port 80 on your Docker host.
 Go to http://localhost/ on a web browser to **access the web UI**.
@@ -73,12 +78,19 @@ An overview of the web application usage is available at :ref:`user_interface`.
     For example, if Docker is configured for 8 CPUs, a minimum of 8 GB of memory is
     required.
 
+.. tip::
+    By default, ScanCode.io starts only 1 worker, which means only 1 pipeline will be
+    executed at a time. If you wish to start more workers, use the following command,
+    replacing the number 2 with the desired number of workers::
+
+        docker compose up --scale worker=2
+
 .. warning::
     To access a dockerized ScanCode.io app from a remote location, the ``ALLOWED_HOSTS``
     and ``CSRF_TRUSTED_ORIGINS`` settings need to be provided in your ``.env`` file,
     for example::
 
-        ALLOWED_HOSTS=.your-domain.com,127.0.0.1
+        ALLOWED_HOSTS=.your-domain.com,localhost,127.0.0.1
         CSRF_TRUSTED_ORIGINS=https://*.your-domain.com,http://127.0.0.1:8001
 
     Refer to `ALLOWED_HOSTS settings <https://docs.djangoproject.com/
@@ -86,41 +98,65 @@ An overview of the web application usage is available at :ref:`user_interface`.
     <https://docs.djangoproject.com/en/dev/ref/settings/
     #std-setting-CSRF_TRUSTED_ORIGINS>`_ for more details.
 
+.. tip::
+    If you run ScanCode.io on desktop or laptop, it may come handy to pause/unpause
+    or suspend your local ScanCode.io system. For this, use these commands::
+
+        docker compose pause  # to pause/suspend
+        docker compose unpause  # to unpause/resume
+
+Upgrade the App
+^^^^^^^^^^^^^^^
+
+**Update your local** `ScanCode.io repo <https://github.com/nexB/scancode.io>`_,
+and **build the Docker image**::
+
+    cd scancode.io
+    git pull
+    docker compose build
+
+.. warning::
+    The Docker image has been updated to run as a non-root user.
+    If you encounter "permissions" issues while running the ScanCode.io Docker images
+    following the ``docker compose build``, you will need to update the the permissions
+    of the ``/var/scancodeio/`` directory of the Docker volumes using::
+
+        docker compose run -u 0:0 web chown -R app:app /var/scancodeio/
+
+    See also https://github.com/nexB/scancode.io/issues/399
+
+.. note::
+    You need to rebuild the image whenever ScanCode.io's source code has been
+    modified or updated.
+
 Execute a Command
 ^^^^^^^^^^^^^^^^^
-
-You can execute a one of ``scanpipe`` commands through the Docker command line
-interface, for example::
-
-    docker-compose run web ./manage.py create-project project_name
 
 .. note::
     Refer to the :ref:`command_line_interface` section for the full list of commands.
 
-Alternatively, you can connect to the Docker container ``bash`` and run commands
-from there::
+A ``scanpipe`` command can be executed through the ``docker compose`` command line
+interface with::
 
-    docker-compose run web bash
-    ./manage.py create-project project_name
-
+    docker compose exec -it web scanpipe COMMAND
 
 .. _offline_installation:
 
 Offline installation with Docker
 --------------------------------
 
-It is possible to install and run ScanCode.io on a server which is not connected to
-internet, e.g, an "airgapped" or isolated server.
+ScanCode.io can be installed and operated on a server that is not connected to the
+internet, such as an "airgapped" or isolated server.
 
-The Docker images are built on a machine with internet access and then copied to
-the "offline" server for isolated installation.
+To achieve this, Docker images are initially built on a machine with internet access
+and subsequently transferred to the "offline" server for isolated installation.
 
 .. note::
-    ``docker`` and ``docker-compose`` are required on both the local machine
+    ``docker`` and ``docker compose`` are required on both the local machine
     and the server.
 
 Build the offline installation package
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Build and save the offline installation package with docker images, configuration
 and scripts on your local machine::
@@ -131,9 +167,9 @@ A tarball ``scancodeio-offline-package-VERSION.tar`` will be
 created in the :guilabel:`dist/` directory.
 
 Install on an offline server
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Copy the tarball to the server then extract it replacing VERSION with
+Copy the tarball to the server then extract it replacing ``VERSION`` with
 the actual version value::
 
     tar -xf scancodeio-offline-package-VERSION.tar
@@ -146,16 +182,26 @@ Load the docker Images::
 
     docker load --input scancodeio-images.tar.gz
 
-
 Run on an offline server
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Run the App by starting the ScanCode.io services::
 
-    docker-compose --file docker-compose-offline.yml up
+    docker compose --file docker-compose-offline.yml up
 
 And visit the web UI at: http://localhost/project/
 
+.. note::
+    The nginx service (webserver) requires the port 80 to be available on the host.
+    In case the port 80 is already in used, you will encounter the following error::
+
+        ERROR: for build_nginx_1 Cannot start service nginx: driver failed programming ...
+
+    You can attempt to stop potential running services blocking the port 80 with the
+    following commands on the host before starting ScanCode.io services::
+
+         sudo systemctl stop nginx
+         sudo systemctl stop apache2
 
 .. _local_development_installation:
 
@@ -178,7 +224,7 @@ Pre-installation Checklist
 
 Before you install ScanCode.io, make sure you have the following prerequisites:
 
- * **Python: versions 3.8 to 3.10** found at https://www.python.org/downloads/
+ * **Python: versions 3.8 to 3.11** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
  * **PostgreSQL**: release 11 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
@@ -217,10 +263,19 @@ Clone and Configure
     You can specify the Python version during the ``make dev`` step using the following
     command::
 
-         make dev PYTHON_EXE=python3.9
+        make dev PYTHON_EXE=python3.11
 
     When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is
     used.
+
+ .. tip::
+    When running M1 based MacOS, you can also install SCIO in x86 mode using rosetta::
+
+        softwareupdate --install-rosetta
+        arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.11
+        make dev PYTHON_EXE=/usr/local/bin/python3.11
+        (. bin/activate; pip install psycopg[binary])
 
  * Create an environment file::
 
@@ -235,6 +290,19 @@ production servers.
 * Create the PostgreSQL user, database, and table with::
 
     make postgresdb
+
+.. warning::
+    The ``make postgres`` command is assuming that your PostgreSQL database template is
+    using the ``en_US.UTF-8`` collation.
+    If you encounter database creation errors while running this command, it is
+    generally related to an incompatible database template.
+
+    You can either `update your template <https://stackoverflow.com/a/60396581/8254946>`_
+    to fit the ScanCode.io default, or provide custom values collation using the
+    ``POSTGRES_INITDB_ARGS`` variable such as::
+
+        make postgresdb POSTGRES_INITDB_ARGS=\
+            --encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 
 .. note::
     You can also use a **SQLite** database for local development as a single user
@@ -262,7 +330,7 @@ you can start the local webserver and access the app with::
 
     make run
 
-Then open your web browser and visit: http://127.0.0.1:8001/ to access the web
+Then open your web browser and visit: http://localhost:8001/ to access the web
 application.
 
 .. warning::
@@ -296,7 +364,7 @@ Helm Chart [Beta]
 
 .. warning::
     The Helm Chart support for ScanCode.io is a community contribution effort.
-    It is only tested on a few configurations and still under developpement.
+    It is only tested on a few configurations and still under development.
     We welcome improvement suggestions and issue reports at
     `ScanCode.io GitHub repo <https://github.com/nexB/scancode.io/issues>`_.
 
@@ -370,3 +438,39 @@ Once Helm is properly set up, add the ``scancode-kube`` repo as follows::
 
     # expose nginx frontend
     minikube service --url=true -n scancode scancode-nginx
+
+
+Gitpod
+------
+
+.. warning::
+    The Gitpod support for ScanCode.io is a community contribution effort.
+    We welcome improvement suggestions and issue reports at
+    `ScanCode.io GitHub repo <https://github.com/nexB/scancode.io/issues>`_.
+
+Installation
+^^^^^^^^^^^^
+
+* Create a new Workspace and open it in VSCode Browser or your preferred IDE.
+  Provide the ScanCode.io GitHub repo URL: https://github.com/nexB/scancode.io
+
+* Open the "TERMINAL" window and create the ``.env`` file with::
+
+    make envfile
+
+* Open the generated ``.env`` file and add the following settings::
+
+    ALLOWED_HOSTS=.gitpod.io
+    CSRF_TRUSTED_ORIGINS=https://*.gitpod.io
+
+Run the App
+^^^^^^^^^^^
+
+* Build and run the app container::
+
+    docker compose build
+    docker compose up
+
+At this stage, the ScanCode.io app is up and running.
+To access the app, open the "PORTS" window and open the address for port 80 in your
+browser.

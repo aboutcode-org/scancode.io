@@ -1,0 +1,72 @@
+{% extends "scanpipe/base.html" %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Messages{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen mb-3">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <section class="mx-5">
+      <div class="is-flex is-justify-content-space-between">
+        {% include 'scanpipe/includes/breadcrumb.html' with linked_project=True current="Messages" %}
+        {% include 'scanpipe/includes/search_field.html' with extra_class="is-small" %}
+      </div>
+      {% include 'scanpipe/includes/pagination_header.html' %}
+      {% include 'scanpipe/includes/filters_breadcrumb.html' with filterset=filter only %}
+    </section>
+  </div>
+
+  <div id="message-list" class="container is-fluid mb-3">
+    <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth break-word">
+      {% include 'scanpipe/includes/list_view_thead.html' %}
+      <tbody>
+        {% for message in object_list %}
+          <tr>
+            <td style="max-width: 130px;">
+              <a href="?severity={{ message.severity }}" class="is-black-link">{{ message.severity }}</a>
+            </td>
+            <td style="max-width: 130px;">
+              <a href="?model={{ message.model }}" class="is-black-link">{{ message.model }}</a>
+            </td>
+            <td style="max-width: 250px;">
+              <div style="max-height: 200px; overflow-y: scroll;">
+                {% if message.description|length < 100 %}
+                  <a href="?message={{ message.description }}" class="is-black-link">{{ message.description }}</a>
+                {% else %}
+                  {{ message.description }}
+                {% endif %}
+              </div>
+            </td>
+            <td class="break-all" style="max-width: 450px;">
+              <div style="max-height: 200px; overflow-y: scroll;">
+                {% if message.details.codebase_resource_pk and message.details.codebase_resource_path %}
+                  <div>
+                    <strong>Codebase resource</strong>:
+                    <a href="{% url 'resource_detail' project.pk message.details.codebase_resource_pk %}" target="_blank">
+                      {{ message.details.codebase_resource_path }}
+                    </a>
+                  </div>
+                {% endif %}
+                {% for key, value in message.details.items %}
+                  <strong>{{ key }}</strong>: {{ value }}<br>
+                {% endfor %}
+              </div>
+            </td>
+            <td style="max-width: 550px;">
+              <pre class="log wrap p-0" style="max-height: 150px;"><code>{{ message.traceback }}</code></pre>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="42" class="has-text-centered p-3">
+              No messages found. <a href="?">Clear search and filters</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if is_paginated %}
+      {% include 'scanpipe/includes/pagination.html' with page_obj=page_obj %}
+    {% endif %}
+  </div>
+{% endblock %}

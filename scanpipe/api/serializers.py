@@ -23,13 +23,16 @@
 from django.apps import apps
 
 from rest_framework import serializers
+from taggit.serializers import TaggitSerializer
+from taggit.serializers import TagListSerializerField
 
 from scanpipe.api import ExcludeFromListViewMixin
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes.fetch import fetch_urls
@@ -57,11 +60,40 @@ class SerializerExcludeFieldsMixin:
 class PipelineChoicesMixin:
     def __init__(self, *args, **kwargs):
         """
-        Loads the pipeline field choices on the init class instead of the module
+        Load the pipeline field choices on the init class instead of the module
         import, which ensures all pipelines are first properly loaded.
         """
         super().__init__(*args, **kwargs)
         self.fields["pipeline"].choices = scanpipe_app.get_pipeline_choices()
+
+
+class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
+    """Forcing outputs as list() in place of set() to keep the ordering integrity."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            data = [data]
+        if not hasattr(data, "__iter__"):
+            self.fail("not_a_list", input_type=type(data).__name__)
+        if not self.allow_empty and len(data) == 0:
+            self.fail("empty")
+
+        return [
+            super(serializers.MultipleChoiceField, self).to_internal_value(item)
+            for item in data
+        ]
+
+    def to_representation(self, value):
+        return [self.choice_strings_to_values.get(str(item), item) for item in value]
+
+
+class StrListField(serializers.ListField):
+    """ListField that allows also a str as value."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            data = [data]
+        return super().to_internal_value(data)
 
 
 class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
@@ -91,19 +123,22 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
 
 
 class ProjectSerializer(
-    ExcludeFromListViewMixin, PipelineChoicesMixin, serializers.ModelSerializer
+    ExcludeFromListViewMixin,
+    PipelineChoicesMixin,
+    TaggitSerializer,
+    serializers.ModelSerializer,
 ):
-    pipeline = serializers.ChoiceField(
+    pipeline = OrderedMultipleChoiceField(
         choices=(),
         required=False,
         write_only=True,
     )
     execute_now = serializers.BooleanField(
         write_only=True,
-        help_text=("Execute pipeline now"),
+        help_text="Execute pipeline now",
     )
     upload_file = serializers.FileField(write_only=True, required=False)
-    input_urls = serializers.CharField(
+    input_urls = StrListField(
         write_only=True,
         required=False,
         style={"base_template": "textarea.html"},
@@ -115,6 +150,8 @@ class ProjectSerializer(
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_packages_summary = serializers.SerializerMethodField()
     discovered_dependencies_summary = serializers.SerializerMethodField()
+    codebase_relations_summary = serializers.SerializerMethodField()
+    labels = TagListSerializerField(required=False)
 
     class Meta:
         model = Project
@@ -127,6 +164,9 @@ class ProjectSerializer(
             "webhook_url",
             "created_date",
             "is_archived",
+            "notes",
+            "labels",
+            "settings",
             "pipeline",
             "execute_now",
             "input_sources",
@@ -135,26 +175,31 @@ class ProjectSerializer(
             "next_run",
             "runs",
             "extra_data",
-            "error_count",
+            "message_count",
             "resource_count",
             "package_count",
             "dependency_count",
+            "relation_count",
             "codebase_resources_summary",
             "discovered_packages_summary",
             "discovered_dependencies_summary",
+            "codebase_relations_summary",
         )
 
         exclude_from_list_view = [
+            "settings",
             "input_root",
             "output_root",
             "extra_data",
-            "error_count",
+            "message_count",
             "resource_count",
             "package_count",
             "dependency_count",
+            "relation_count",
             "codebase_resources_summary",
             "discovered_packages_summary",
             "discovered_dependencies_summary",
+            "codebase_relations_summary",
         ]
 
     def get_codebase_resources_summary(self, project):
@@ -178,14 +223,23 @@ class ProjectSerializer(
             "is_resolved": base_qs.filter(is_resolved=True).count(),
         }
 
+    def get_codebase_relations_summary(self, project):
+        queryset = project.codebaserelations.all()
+        return count_group_by(queryset, "map_type")
+
     def create(self, validated_data):
         """
-        Creates a new `project` with `upload_file` and `pipeline` as optional.
+        Create a new `project` with `upload_file` and `pipeline` as optional.
+
         The `execute_now` parameter can be set to execute the Pipeline on creation.
+        Note that even when `execute_now` is True, the pipeline execution is always
+        delayed after the actual database save and commit of the Project creation
+        process, using the `transaction.on_commit` callback system.
+        This ensures the Project data integrity before running any pipelines.
         """
         upload_file = validated_data.pop("upload_file", None)
         input_urls = validated_data.pop("input_urls", [])
-        pipeline = validated_data.pop("pipeline", None)
+        pipeline = validated_data.pop("pipeline", [])
         execute_now = validated_data.pop("execute_now", False)
         webhook_url = validated_data.pop("webhook_url", None)
 
@@ -201,11 +255,11 @@ class ProjectSerializer(
         if downloads:
             project.add_downloads(downloads)
 
-        if pipeline:
-            project.add_pipeline(pipeline, execute_now)
-
         if webhook_url:
             project.add_webhook_subscription(webhook_url)
+
+        for pipeline_name in pipeline:
+            project.add_pipeline(pipeline_name, execute_now)
 
         return project
 
@@ -216,21 +270,95 @@ class CodebaseResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CodebaseResource
-        exclude = ["id", "project", "rootfs_path", "sha256", "sha512"]
+        fields = [
+            "path",
+            "type",
+            "name",
+            "status",
+            "tag",
+            "extension",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "mime_type",
+            "file_type",
+            "programming_language",
+            "is_binary",
+            "is_text",
+            "is_archive",
+            "is_media",
+            "is_key_file",
+            "detected_license_expression",
+            "detected_license_expression_spdx",
+            "license_detections",
+            "license_clues",
+            "percentage_of_license_text",
+            "compliance_alert",
+            "copyrights",
+            "holders",
+            "authors",
+            "package_data",
+            "for_packages",
+            "emails",
+            "urls",
+            "extra_data",
+        ]
 
 
 class DiscoveredPackageSerializer(serializers.ModelSerializer):
     purl = serializers.CharField(source="package_url")
+    compliance_alert = serializers.CharField()
 
     class Meta:
         model = DiscoveredPackage
-        exclude = [
-            "id",
-            "uuid",
-            "project",
-            "filename",
-            "last_modified_date",
-            "codebase_resources",
+        fields = [
+            "purl",
+            "type",
+            "namespace",
+            "name",
+            "version",
+            "qualifiers",
+            "subpath",
+            "tag",
+            "primary_language",
+            "description",
+            "release_date",
+            "parties",
+            "keywords",
+            "homepage_url",
+            "download_url",
+            "bug_tracking_url",
+            "code_view_url",
+            "vcs_url",
+            "repository_homepage_url",
+            "repository_download_url",
+            "api_data_url",
+            "size",
+            "md5",
+            "sha1",
+            "sha256",
+            "sha512",
+            "copyright",
+            "holder",
+            "declared_license_expression",
+            "declared_license_expression_spdx",
+            "license_detections",
+            "other_license_expression",
+            "other_license_expression_spdx",
+            "other_license_detections",
+            "extracted_license_statement",
+            "compliance_alert",
+            "notice_text",
+            "source_packages",
+            "extra_data",
+            "package_uid",
+            "datasource_id",
+            "file_references",
+            "missing_resources",
+            "modified_resources",
+            "affected_by_vulnerabilities",
         ]
 
 
@@ -244,7 +372,6 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
         model = DiscoveredDependency
         fields = [
             "purl",
-            "package_type",
             "extracted_requirement",
             "scope",
             "is_runtime",
@@ -254,24 +381,47 @@ class DiscoveredDependencySerializer(serializers.ModelSerializer):
             "for_package_uid",
             "datafile_path",
             "datasource_id",
+            "package_type",
+            "affected_by_vulnerabilities",
         ]
 
 
-class ProjectErrorSerializer(serializers.ModelSerializer):
+class CodebaseRelationSerializer(serializers.ModelSerializer):
+    from_resource = serializers.ReadOnlyField(source="from_resource.path")
+    to_resource = serializers.ReadOnlyField(source="to_resource.path")
+
+    class Meta:
+        model = CodebaseRelation
+        fields = [
+            "to_resource",
+            "status",
+            "map_type",
+            "score",
+            "from_resource",
+        ]
+
+
+class ProjectMessageSerializer(serializers.ModelSerializer):
     traceback = serializers.SerializerMethodField()
 
     class Meta:
-        model = ProjectError
-        fields = ["uuid", "model", "message", "details", "traceback", "created_date"]
+        model = ProjectMessage
+        fields = [
+            "uuid",
+            "severity",
+            "description",
+            "model",
+            "details",
+            "traceback",
+            "created_date",
+        ]
 
     def get_traceback(self, project_error):
-        return project_error.traceback.split("\n")
+        return project_error.traceback.splitlines()
 
 
 class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
-    """
-    Serializer used in the `ProjectViewSet.add_pipeline` action.
-    """
+    """Serializer used in the `ProjectViewSet.add_pipeline` action."""
 
     pipeline = serializers.ChoiceField(
         choices=(),
@@ -289,14 +439,13 @@ class PipelineSerializer(PipelineChoicesMixin, serializers.ModelSerializer):
 
 
 def get_model_serializer(model_class):
-    """
-    Returns a Serializer class that ia related to a given `model_class`.
-    """
+    """Return a Serializer class that ia related to a given `model_class`."""
     serializer = {
         CodebaseResource: CodebaseResourceSerializer,
         DiscoveredPackage: DiscoveredPackageSerializer,
         DiscoveredDependency: DiscoveredDependencySerializer,
-        ProjectError: ProjectErrorSerializer,
+        CodebaseRelation: CodebaseRelationSerializer,
+        ProjectMessage: ProjectMessageSerializer,
     }.get(model_class, None)
 
     if not serializer:
@@ -307,8 +456,8 @@ def get_model_serializer(model_class):
 
 def get_serializer_fields(model_class):
     """
-    Returns a list of fields declared on the Serializer that are related to the
-    a given `model_class`.
+    Return a list of fields declared on the Serializer that are related to the
+    given `model_class`.
     """
     serializer = get_model_serializer(model_class)
     fields = list(serializer().get_fields().keys())
