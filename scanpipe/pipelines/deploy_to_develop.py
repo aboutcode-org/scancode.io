@@ -65,6 +65,7 @@ class DeployToDevelop(Pipeline):
             cls.perform_house_keeping_tasks,
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
+            cls.flag_deployed_resources_with_missing_license,
         )
 
     purldb_package_extensions = [".jar", ".war", ".zip"]
@@ -82,6 +83,16 @@ class DeployToDevelop(Pipeline):
         ".sass",
         ".soy",
         ".class",
+    ]
+    doc_extensions = [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".ppt",
+        ".pptx",
+        ".tex",
+        ".odt",
+        ".odp",
     ]
 
     def get_inputs(self):
@@ -232,3 +243,10 @@ class DeployToDevelop(Pipeline):
     def create_local_files_packages(self):
         """Create local-files packages for codebase resources not part of a package."""
         d2d.create_local_files_packages(self.project)
+
+    def flag_deployed_resources_with_missing_license(self):
+        """Update the status for deployed files with missing license."""
+        d2d.flag_deployed_resources_with_missing_license(
+            self.project,
+            doc_extensions=self.doc_extensions,
+        )
