@@ -1674,6 +1674,11 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             return self.filter(status=status)
         return self.filter(~Q(status=""))
 
+    def not_status(self, status=None):
+        if status:
+            return self.filter(~Q(status=status))
+        return self.filter(status="")
+
     def no_status(self):
         return self.filter(status="")
 
