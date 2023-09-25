@@ -617,6 +617,7 @@ def match_purldb_resources(
         project=project,
         to_resources=to_resources,
         matcher_func=matcher_func,
+        chunk_size=chunk_size,
         logger=logger,
     )
 

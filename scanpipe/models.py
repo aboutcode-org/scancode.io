@@ -38,7 +38,6 @@ from django.conf import settings
 from django.core import checks
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import EMPTY_VALUES
 from django.db import models
