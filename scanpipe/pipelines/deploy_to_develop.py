@@ -56,6 +56,7 @@ class DeployToDevelop(Pipeline):
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
+            cls.match_directories_to_purldb,
             cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
@@ -162,8 +163,8 @@ class DeployToDevelop(Pipeline):
         """
         d2d.map_javascript(project=self.project, logger=self.log)
 
-    def match_resources_to_purldb(self):
-        """Match selected files by extension and directories in PurlDB."""
+    def match_directories_to_purldb(self):
+        """Match selected directories in PurlDB."""
         if not purldb.is_available():
             self.log("PurlDB is not available. Skipping.")
             return
@@ -172,6 +173,12 @@ class DeployToDevelop(Pipeline):
             project=self.project,
             logger=self.log,
         )
+
+    def match_resources_to_purldb(self):
+        """Match selected files by extension in PurlDB."""
+        if not purldb.is_available():
+            self.log("PurlDB is not available. Skipping.")
+            return
 
         d2d.match_purldb_resources(
             project=self.project,
