@@ -1093,7 +1093,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         self.assertEqual(1, expected)
 
-    def test_flag_deployed_resources_with_missing_license(self):
+    def test_flag_deployed_from_resources_with_missing_license(self):
         from_dir = (
             self.project1.codebase_path
             / "from/project.tar.zst-extract/osgi/marketplace/"
@@ -1143,7 +1143,7 @@ class ScanPipeD2DPipesTest(TestCase):
         from3.update(detected_license_expression="free-unknown")
         from4.update(extension=".pdf")
 
-        d2d.flag_deployed_resources_with_missing_license(
+        d2d.flag_deployed_from_resources_with_missing_license(
             self.project1, doc_extensions=[".pdf"]
         )
 
