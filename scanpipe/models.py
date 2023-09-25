@@ -1674,12 +1674,15 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             return self.filter(status=status)
         return self.filter(~Q(status=""))
 
-    def not_status(self, status=None):
+    def no_status(self, status=None):
+        """
+        Filter for CodebaseResources without a status.
+
+        If `status` is provided, then we filter for CodebaseResources whose
+        status is not equal to `status`.
+        """
         if status:
             return self.filter(~Q(status=status))
-        return self.filter(status="")
-
-    def no_status(self):
         return self.filter(status="")
 
     def empty(self):
@@ -1763,20 +1766,6 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             ~Q(extra_data__directory_content="")
             and ~Q(extra_data__directory_content__in=IGNORED_DIRECTORY_FINGERPRINTS)
         )
-
-    def paginated(self, per_page=5000):
-        """
-        Iterate over a (large) QuerySet by chunks of ``per_page`` items.
-
-        This is done to prevent high memory usage when using a regular QuerySet
-        or QuerySet.iterator to iterate over a large number of
-        CodebaseResources:
-
-        https://nextlinklabs.com/resources/insights/django-big-data-iteration
-        https://stackoverflow.com/questions/4222176/why-is-iterating-through-a-large-django-queryset-consuming-massive-amounts-of-me/
-        """
-        for page in Paginator(self, per_page=per_page):
-            yield page.object_list
 
 
 class ScanFieldsModelMixin(models.Model):

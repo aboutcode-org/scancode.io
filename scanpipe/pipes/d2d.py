@@ -594,7 +594,7 @@ def match_purldb_resources(
     to_resources = (
         project.codebaseresources.files()
         .to_codebase()
-        .not_status(status=flag.ABOUT_MAPPED)
+        .no_status()
         .has_value("sha1")
         .filter(extension__in=extensions)
     )
@@ -625,7 +625,7 @@ def _match_purldb_resources(
     project, to_resources, matcher_func, chunk_size=1000, logger=None
 ):
     resource_count = to_resources.count()
-    resource_iterator = to_resources.iterator()
+    resource_iterator = to_resources.iterator(chunk_size=chunk_size)
     progress = LoopProgress(resource_count, logger)
     total_matched_count = 0
     total_sha1_count = 0
