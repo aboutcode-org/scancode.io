@@ -676,7 +676,11 @@ def match_purldb_directories(project, logger=None):
     # more "higher-up" directories we can match to means that we reduce the
     # number of queries made to purldb.
     to_directories = (
-        project.codebaseresources.directories().to_codebase().order_by("path")
+        project.codebaseresources.directories()
+        .to_codebase()
+        .no_status(status=flag.ABOUT_MAPPED)
+        .no_status(status=flag.MATCHED_TO_PURLDB)
+        .order_by("path")
     )
     directory_count = to_directories.count()
 
