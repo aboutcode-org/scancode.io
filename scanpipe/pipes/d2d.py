@@ -1315,3 +1315,29 @@ def scan_unmapped_to_files(project, logger=None):
     project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
         status=flag.REQUIRES_REVIEW
     )
+
+
+def flag_deployed_from_resources_with_missing_license(project, doc_extensions=None):
+    """Update the status for deployed from files with missing license."""
+    # Retrieve scanned from files with an empty ``detected_license_expression``
+    # or a ``unknown`` license expression.
+    scanned_from_files = (
+        project.codebaseresources.files()
+        .from_codebase()
+        .filter(status=flag.SCANNED)
+        .filter(
+            Q(detected_license_expression="")
+            | Q(detected_license_expression__icontains="unknown")
+        )
+    )
+
+    # Media files don't require any review.
+    scanned_from_files.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
+    # Document files don't require any review.
+    if doc_extensions:
+        scanned_from_files.filter(extension__in=doc_extensions).update(
+            status=flag.IGNORED_DOC_FILE
+        )
+
+    scanned_from_files.update(status=flag.REQUIRES_REVIEW)

@@ -1127,3 +1127,67 @@ class ScanPipeD2DPipesTest(TestCase):
         ).count()
 
         self.assertEqual(1, expected)
+
+    def test_flag_deployed_from_resources_with_missing_license(self):
+        from_dir = (
+            self.project1.codebase_path
+            / "from/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        from_dir.mkdir(parents=True)
+        from_resource_files = [
+            self.data_location / "d2d/find_java_packages/Foo.java",
+            self.data_location / "d2d/find_java_packages/Baz.java",
+            self.data_location / "d2d/about_files/expected.json",
+            self.data_location / "codebase/a.txt",
+        ]
+        copy_inputs(from_resource_files, from_dir)
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        from1 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/Foo.java"
+            )
+        )
+        from2 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/Baz.java"
+            )
+        )
+        from3 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/expected.json"
+            )
+        )
+        from4 = self.project1.codebaseresources.get(
+            path=(
+                "from/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/a.txt"
+            )
+        )
+
+        from1.update(status=flag.SCANNED)
+        from2.update(status=flag.SCANNED)
+        from3.update(status=flag.SCANNED)
+        from4.update(status=flag.SCANNED)
+
+        from1.update(is_media=True)
+        from3.update(detected_license_expression="free-unknown")
+        from4.update(extension=".pdf")
+
+        d2d.flag_deployed_from_resources_with_missing_license(
+            self.project1, doc_extensions=[".pdf"]
+        )
+
+        from1.refresh_from_db()
+        from2.refresh_from_db()
+        from3.refresh_from_db()
+        from4.refresh_from_db()
+
+        self.assertEqual(flag.IGNORED_MEDIA_FILE, from1.status)
+        self.assertEqual(flag.REQUIRES_REVIEW, from2.status)
+        self.assertEqual(flag.REQUIRES_REVIEW, from3.status)
+        self.assertEqual(flag.IGNORED_DOC_FILE, from4.status)

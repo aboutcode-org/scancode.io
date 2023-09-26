@@ -276,7 +276,7 @@
       "path": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.properties",
       "type": "file",
       "name": "pom.properties",
-      "status": "scanned",
+      "status": "requires-review",
       "tag": "from",
       "extension": ".properties",
       "md5": "9135eb35a776e56eada1b3720a4ef83a",
