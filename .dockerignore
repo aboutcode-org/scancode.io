@@ -21,6 +21,7 @@
 .dockerignore
 .readthedocs.yaml
 docker.env
+.env
 CHANGELOG.rst
 Dockerfile
 README.rst
