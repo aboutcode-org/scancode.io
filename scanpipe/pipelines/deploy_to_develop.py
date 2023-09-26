@@ -51,11 +51,13 @@ class DeployToDevelop(Pipeline):
             cls.flag_ignored_resources,
             cls.map_about_files,
             cls.map_checksum,
+            cls.match_archives_to_purldb,
             cls.find_java_packages,
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
-            cls.match_purldb,
+            cls.match_directories_to_purldb,
+            cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
             cls.map_javascript_colocation,
@@ -129,6 +131,19 @@ class DeployToDevelop(Pipeline):
         """Map using SHA1 checksum."""
         d2d.map_checksum(project=self.project, checksum_field="sha1", logger=self.log)
 
+    def match_archives_to_purldb(self):
+        """Match selected package archives by extension to PurlDB."""
+        if not purldb.is_available():
+            self.log("PurlDB is not available. Skipping.")
+            return
+
+        d2d.match_purldb_resources(
+            project=self.project,
+            extensions=self.purldb_package_extensions,
+            matcher_func=d2d.match_purldb_package,
+            logger=self.log,
+        )
+
     def find_java_packages(self):
         """Find the java package of the .java source files."""
         d2d.find_java_packages(self.project, logger=self.log)
@@ -148,23 +163,22 @@ class DeployToDevelop(Pipeline):
         """
         d2d.map_javascript(project=self.project, logger=self.log)
 
-    def match_purldb(self):
-        """Match selected files by extension and directories in PurlDB."""
+    def match_directories_to_purldb(self):
+        """Match selected directories in PurlDB."""
         if not purldb.is_available():
             self.log("PurlDB is not available. Skipping.")
             return
-
-        d2d.match_purldb_resources(
-            project=self.project,
-            extensions=self.purldb_package_extensions,
-            matcher_func=d2d.match_purldb_package,
-            logger=self.log,
-        )
 
         d2d.match_purldb_directories(
             project=self.project,
             logger=self.log,
         )
+
+    def match_resources_to_purldb(self):
+        """Match selected files by extension in PurlDB."""
+        if not purldb.is_available():
+            self.log("PurlDB is not available. Skipping.")
+            return
 
         d2d.match_purldb_resources(
             project=self.project,

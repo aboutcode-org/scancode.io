@@ -561,7 +561,29 @@ def match_purldb_directory(project, resource):
             return create_package_from_purldb_data(project, [resource], package_data)
 
 
-def match_purldb_resources(project, extensions, matcher_func, logger=None):
+def match_sha1s_to_purldb(
+    project, resources_by_sha1, matcher_func, package_data_by_purldb_urls
+):
+    """
+    Process `resources_by_sha1` with `matcher_func` and return a 3-tuple
+    contaning an empty defaultdict(list), the number of matches and the number
+    of sha1s sent to purldb.
+    """
+    matched_count = matcher_func(
+        project=project,
+        resources_by_sha1=resources_by_sha1,
+        package_data_by_purldb_urls=package_data_by_purldb_urls,
+    )
+    sha1_count = len(resources_by_sha1)
+    # Clear out resources_by_sha1 when we are done with the current batch of
+    # CodebaseResources
+    resources_by_sha1 = defaultdict(list)
+    return resources_by_sha1, matched_count, sha1_count
+
+
+def match_purldb_resources(
+    project, extensions, matcher_func, chunk_size=1000, logger=None
+):
     """
     Match against PurlDB selecting codebase resources using provided
     ``package_extensions`` for archive type files, and ``resource_extensions``.
@@ -595,6 +617,7 @@ def match_purldb_resources(project, extensions, matcher_func, logger=None):
         project=project,
         to_resources=to_resources,
         matcher_func=matcher_func,
+        chunk_size=chunk_size,
         logger=logger,
     )
 
@@ -603,35 +626,44 @@ def _match_purldb_resources(
     project, to_resources, matcher_func, chunk_size=1000, logger=None
 ):
     resource_count = to_resources.count()
-    resource_iterator = to_resources.paginated(per_page=chunk_size)
+    resource_iterator = to_resources.iterator(chunk_size=chunk_size)
     progress = LoopProgress(resource_count, logger)
-    matched_count = 0
-    sha1_count = 0
+    total_matched_count = 0
+    total_sha1_count = 0
+    processed_resources_count = 0
     resources_by_sha1 = defaultdict(list)
     package_data_by_purldb_urls = {}
 
-    for resources_batch in resource_iterator:
-        for to_resource in progress.iter(resources_batch):
-            resources_by_sha1[to_resource.sha1].append(to_resource)
-            if to_resource.path.endswith(".map"):
-                for js_sha1 in js.source_content_sha1_list(to_resource):
-                    resources_by_sha1[js_sha1].append(to_resource)
+    for to_resource in progress.iter(resource_iterator):
+        resources_by_sha1[to_resource.sha1].append(to_resource)
+        if to_resource.path.endswith(".map"):
+            for js_sha1 in js.source_content_sha1_list(to_resource):
+                resources_by_sha1[js_sha1].append(to_resource)
+        processed_resources_count += 1
 
-        matched_count += matcher_func(
+        if processed_resources_count % chunk_size == 0:
+            resources_by_sha1, matched_count, sha1_count = match_sha1s_to_purldb(
+                project=project,
+                resources_by_sha1=resources_by_sha1,
+                matcher_func=matcher_func,
+                package_data_by_purldb_urls=package_data_by_purldb_urls,
+            )
+            total_matched_count += matched_count
+            total_sha1_count += sha1_count
+
+    if resources_by_sha1:
+        resources_by_sha1, matched_count, sha1_count = match_sha1s_to_purldb(
             project=project,
             resources_by_sha1=resources_by_sha1,
+            matcher_func=matcher_func,
             package_data_by_purldb_urls=package_data_by_purldb_urls,
         )
-
-        # Keep track of the total number of SHA1s we send
-        sha1_count += len(resources_by_sha1)
-        # Clear out resources_by_sha1 when we are done with the current batch of
-        # CodebaseResources
-        resources_by_sha1 = defaultdict(list)
+        total_matched_count += matched_count
+        total_sha1_count += sha1_count
 
     logger(
-        f"{matched_count:,d} resources matched in PurlDB "
-        f"using {sha1_count:,d} SHA1s"
+        f"{total_matched_count:,d} resources matched in PurlDB "
+        f"using {total_sha1_count:,d} SHA1s"
     )
 
 
