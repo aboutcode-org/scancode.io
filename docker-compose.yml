@@ -55,6 +55,7 @@ services:
       - 443:443
     volumes:
       - ./etc/nginx/conf.d/:/etc/nginx/conf.d/
+      - /var/www/html:/var/www/html
       - static:/var/scancodeio/static/
     depends_on:
       - web
