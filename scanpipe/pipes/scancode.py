@@ -231,12 +231,13 @@ def scan_for_package_data(location, with_threading=True, **kwargs):
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def save_scan_file_results(codebase_resource, scan_results, scan_errors):
+def save_scan_file_results(codebase_resource, scan_results, scan_errors, status=None):
     """
     Save the resource scan file results in the database.
     Create project errors if any occurred during the scan.
     """
-    status = flag.SCANNED
+    if not status:
+        status = flag.SCANNED
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
@@ -245,15 +246,20 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     codebase_resource.set_scan_results(scan_results, status)
 
 
-def save_scan_package_results(codebase_resource, scan_results, scan_errors):
+def save_scan_package_results(
+    codebase_resource, scan_results, scan_errors, status=None
+):
     """
     Save the resource scan package results in the database.
     Create project errors if any occurred during the scan.
     """
+    if not status:
+        status = flag.APPLICATION_PACKAGE
+
     if package_data := scan_results.get("package_data", []):
         codebase_resource.update(
             package_data=package_data,
-            status=flag.APPLICATION_PACKAGE,
+            status=status,
         )
 
     if scan_errors:
@@ -262,7 +268,12 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
 
 
 def scan_resources(
-    resource_qs, scan_func, save_func, scan_func_kwargs=None, progress_logger=None
+    resource_qs,
+    scan_func,
+    save_func,
+    status=None,
+    scan_func_kwargs=None,
+    progress_logger=None,
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -282,9 +293,14 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
-    resource_count = resource_qs.count()
+    if isinstance(resource_qs, list):
+        resource_count = len(resource_qs)
+        resource_iterator = resource_qs
+    else:
+        resource_count = resource_qs.count()
+        resource_iterator = resource_qs.iterator(chunk_size=2000)
+
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
-    resource_iterator = resource_qs.iterator(chunk_size=2000)
     progress = pipes.LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 
@@ -296,7 +312,7 @@ def scan_resources(
             scan_results, scan_errors = scan_func(
                 resource.location, with_threading, **scan_func_kwargs
             )
-            save_func(resource, scan_results, scan_errors)
+            save_func(resource, scan_results, scan_errors, status)
         return
 
     logger.info(f"Starting ProcessPoolExecutor with {max_workers} max_workers")
@@ -315,10 +331,10 @@ def scan_resources(
             progress.log_progress()
             logger.debug(f"{scan_func.__name__} pk={resource.pk}")
             scan_results, scan_errors = future.result()
-            save_func(resource, scan_results, scan_errors)
+            save_func(resource, scan_results, scan_errors, status)
 
 
-def scan_for_files(project, resource_qs=None, progress_logger=None):
+def scan_for_files(project, resource_qs=None, progress_logger=None, status=None):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -327,6 +343,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     # Checking for None to make the distinction with an empty resource_qs queryset
+
     if resource_qs is None:
         resource_qs = project.codebaseresources.no_status()
 
@@ -338,6 +355,7 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
+        status=status,
         scan_func_kwargs=scan_func_kwargs,
         progress_logger=progress_logger,
     )
