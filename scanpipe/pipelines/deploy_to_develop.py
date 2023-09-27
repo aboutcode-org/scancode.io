@@ -230,11 +230,13 @@ class DeployToDevelop(Pipeline):
             - PurlDB match files with ``no-java-source``, ``too-many-maps`` and empty
                 status, if no match is found update status to ``requires-review``.
             - Update status for uninteresting files.
+            - Flag the dangling legal files for review.
 
         On devel side
             - Update status for not deployed files.
         """
         d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
+        d2d.handle_dangling_deployed_legal_files(project=self.project, logger=self.log)
         d2d.match_unmapped_resources(
             project=self.project,
             matched_extensions=self.purldb_resource_extensions,

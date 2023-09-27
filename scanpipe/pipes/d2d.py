@@ -269,7 +269,9 @@ def scan_for_java_package(location, with_threading=True):
     return scancode._scan_resource(location, scanners, with_threading=with_threading)
 
 
-def save_java_package_scan_results(codebase_resource, scan_results, scan_errors):
+def save_java_package_scan_results(
+    codebase_resource, scan_results, scan_errors, status
+):
     """
     Save the resource Java package scan results in the database as Resource.extra_data.
     Create project errors if any occurred during the scan.
@@ -1341,3 +1343,15 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
         )
 
     scanned_from_files.update(status=flag.REQUIRES_REVIEW)
+
+
+def handle_dangling_deployed_legal_files(project, logger):
+    to_resources = project.codebaseresources.files().to_codebase().no_status()
+    legal_files = [resource for resource in to_resources if resource.is_legal]
+
+    scancode.scan_for_files(
+        project,
+        legal_files,
+        status=flag.REVIEW_DANGLING_LEGAL_FILE,
+        progress_logger=logger,
+    )
