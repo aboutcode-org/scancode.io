@@ -1030,20 +1030,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/find_java_packages/Foo.java",
             self.data_location / "d2d/find_java_packages/Baz.java",
             self.data_location / "d2d/about_files/expected.json",
         ]
         copy_inputs(to_resource_files, to_dir)
 
         pipes.collect_and_create_codebase_resources(self.project1)
-
-        foo_java = self.project1.codebaseresources.get(
-            path=(
-                "to/project.tar.zst-extract/osgi/marketplace/"
-                "resources/node_modules/foo-bar/Foo.java"
-            )
-        )
 
         baz_java = self.project1.codebaseresources.get(
             path=(
@@ -1059,25 +1051,21 @@ class ScanPipeD2DPipesTest(TestCase):
             )
         )
 
-        foo_java.update(status=flag.TOO_MANY_MAPS)
         media_file.update(is_media=True)
 
         buffer = io.StringIO()
         d2d.match_unmapped_resources(self.project1, logger=buffer.write)
-        foo_java.refresh_from_db()
+
         baz_java.refresh_from_db()
         media_file.refresh_from_db()
 
-        expected = (
-            f"Mapping 2 to/ resources with {flag.TOO_MANY_MAPS} "
-            "or empty status in PurlDB using SHA1"
-        )
+        expected = "Mapping 1 to/ resources with empty status in PurlDB using SHA1"
         expected_requires_review_count = self.project1.codebaseresources.filter(
             status=flag.REQUIRES_REVIEW
         ).count()
 
         self.assertIn(expected, buffer.getvalue())
-        self.assertEqual(2, expected_requires_review_count)
+        self.assertEqual(1, expected_requires_review_count)
         self.assertEqual(flag.IGNORED_MEDIA_FILE, media_file.status)
 
     def test_flag_undeployed_resources(self):

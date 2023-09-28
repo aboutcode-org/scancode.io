@@ -362,7 +362,6 @@ def _map_path_resource(
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
     if len(match.resource_ids) > match.matched_path_length:
-        to_resource.update(status=flag.TOO_MANY_MAPS)
         return
 
     for resource_id in match.resource_ids:
@@ -1254,16 +1253,12 @@ def match_resources_with_no_java_source(project, logger=None):
 
 def match_unmapped_resources(project, matched_extensions=None, logger=None):
     """
-    Match resources with ``too-many-maps`` and empty status to PurlDB,
-    flag resources with empty status as ``requires-review``.
+    Match resources with empty status to PurlDB, if unmatched
+    update status as ``requires-review``.
     """
     project_files = project.codebaseresources.files()
 
-    to_unmapped = (
-        project_files.to_codebase()
-        .filter(status__in=["", flag.TOO_MANY_MAPS])
-        .exclude(is_media=True)
-    )
+    to_unmapped = project_files.to_codebase().no_status().exclude(is_media=True)
 
     if matched_extensions:
         to_unmapped.exclude(extension__in=matched_extensions)
@@ -1272,8 +1267,8 @@ def match_unmapped_resources(project, matched_extensions=None, logger=None):
         resource_count = to_unmapped.count()
         if logger:
             logger(
-                f"Mapping {resource_count:,d} to/ resources with {flag.TOO_MANY_MAPS} "
-                "or empty status in PurlDB using SHA1"
+                f"Mapping {resource_count:,d} to/ resources with "
+                "empty status in PurlDB using SHA1"
             )
 
         _match_purldb_resources(
