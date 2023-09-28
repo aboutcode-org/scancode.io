@@ -60,7 +60,7 @@ If you are working on a software composition analysis project, or you
 are planning to start a new one, consider the following questions:
 
 1. **Automation**: Is the project part of a larger compliance program
-   (as opposed to a one-of) and that you require automation?
+   (as opposed to a one-off) and that you require automation?
 2. **Complexity**: Does the project use many third-party components or technologies?
 3. **Reproducibility**: Is it important that the results are reproducible, traceable,
    and auditable?
