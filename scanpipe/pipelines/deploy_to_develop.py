@@ -227,8 +227,8 @@ class DeployToDevelop(Pipeline):
     def perform_house_keeping_tasks(self):
         """
         On deployed side
-            - PurlDB match files with ``no-java-source``, ``too-many-maps`` and empty
-                status, if no match is found update status to ``requires-review``.
+            - PurlDB match files with ``no-java-source`` and empty status,
+                if no match is found update status to ``requires-review``.
             - Update status for uninteresting files.
             - Flag the dangling legal files for review.
 

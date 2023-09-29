@@ -124,7 +124,7 @@ class ScanPipeD2DPipesTest(TestCase):
         package = self.project1.discoveredpackages.get()
         self.assertEqual(package_data["purl"], package.purl)
         to_1.refresh_from_db()
-        self.assertEqual(flag.MATCHED_TO_PURLDB, to_1.status)
+        self.assertEqual(flag.MATCHED_TO_PURLDB_RESOURCE, to_1.status)
         self.assertEqual(1, to_1.discovered_packages.count())
         to_1_package = to_1.discovered_packages.get()
         self.assertEqual(package, to_1_package)
@@ -134,7 +134,7 @@ class ScanPipeD2DPipesTest(TestCase):
         to_1 = make_resource_file(self.project1, "to/package.jar", sha1="abcdef")
         to_1.is_archive = True
         to_1.save()
-        # The initial status will be updated to flag.MATCHED_TO_PURLDB
+        # The initial status will be updated to flag.MATCHED_TO_PURLDB_PACKAGE
         to_2 = make_resource_file(
             self.project1, "to/package.jar-extract/a.class", status=flag.MAPPED
         )
@@ -164,7 +164,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()
-            self.assertEqual(flag.MATCHED_TO_PURLDB, resource.status)
+            self.assertEqual(flag.MATCHED_TO_PURLDB_PACKAGE, resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
     @mock.patch("scanpipe.pipes.purldb.request_get")
@@ -207,7 +207,7 @@ class ScanPipeD2DPipesTest(TestCase):
 
         for resource in [to_1, to_2, to_3]:
             resource.refresh_from_db()
-            self.assertEqual("matched-to-purldb", resource.status)
+            self.assertEqual("matched-to-purldb-directory", resource.status)
             self.assertEqual(package, resource.discovered_packages.get())
 
     def test_scanpipe_pipes_d2d_get_best_path_matches_same_name(self):
@@ -271,12 +271,12 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_file(
             self.project1,
             path="to/archive.lpkg-extract/file1.txt",
-            status=flag.MATCHED_TO_PURLDB,
+            status=flag.MATCHED_TO_PURLDB_RESOURCE,
         )
         make_resource_file(
             self.project1,
             path="to/archive.lpkg-extract/file2.txt",
-            status=flag.MATCHED_TO_PURLDB,
+            status=flag.MATCHED_TO_PURLDB_RESOURCE,
         )
 
         d2d.flag_processed_archives(self.project1)
@@ -705,7 +705,10 @@ class ScanPipeD2DPipesTest(TestCase):
         package_data["uuid"] = uuid.uuid4()
 
         package, matched_resources_count = d2d.create_package_from_purldb_data(
-            self.project1, to_map_resources, package_data
+            self.project1,
+            to_map_resources,
+            package_data,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
         )
 
         buffer = io.StringIO()
@@ -1030,20 +1033,12 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
-            self.data_location / "d2d/find_java_packages/Foo.java",
             self.data_location / "d2d/find_java_packages/Baz.java",
             self.data_location / "d2d/about_files/expected.json",
         ]
         copy_inputs(to_resource_files, to_dir)
 
         pipes.collect_and_create_codebase_resources(self.project1)
-
-        foo_java = self.project1.codebaseresources.get(
-            path=(
-                "to/project.tar.zst-extract/osgi/marketplace/"
-                "resources/node_modules/foo-bar/Foo.java"
-            )
-        )
 
         baz_java = self.project1.codebaseresources.get(
             path=(
@@ -1059,25 +1054,21 @@ class ScanPipeD2DPipesTest(TestCase):
             )
         )
 
-        foo_java.update(status=flag.TOO_MANY_MAPS)
         media_file.update(is_media=True)
 
         buffer = io.StringIO()
         d2d.match_unmapped_resources(self.project1, logger=buffer.write)
-        foo_java.refresh_from_db()
+
         baz_java.refresh_from_db()
         media_file.refresh_from_db()
 
-        expected = (
-            f"Mapping 2 to/ resources with {flag.TOO_MANY_MAPS} "
-            "or empty status in PurlDB using SHA1"
-        )
+        expected = "Mapping 1 to/ resources with empty status in PurlDB using SHA1"
         expected_requires_review_count = self.project1.codebaseresources.filter(
             status=flag.REQUIRES_REVIEW
         ).count()
 
         self.assertIn(expected, buffer.getvalue())
-        self.assertEqual(2, expected_requires_review_count)
+        self.assertEqual(1, expected_requires_review_count)
         self.assertEqual(flag.IGNORED_MEDIA_FILE, media_file.status)
 
     def test_flag_undeployed_resources(self):

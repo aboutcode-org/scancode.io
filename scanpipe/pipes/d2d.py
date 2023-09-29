@@ -364,7 +364,6 @@ def _map_path_resource(
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
     if len(match.resource_ids) > match.matched_path_length:
-        to_resource.update(status=flag.TOO_MANY_MAPS)
         return
 
     for resource_id in match.resource_ids:
@@ -448,7 +447,7 @@ def get_project_resources_qs(project, resources):
         return project.codebaseresources.filter(lookups)
 
 
-def create_package_from_purldb_data(project, resources, package_data):
+def create_package_from_purldb_data(project, resources, package_data, status):
     """
     Create a DiscoveredPackage instance from PurlDB ``package_data``.
 
@@ -472,12 +471,13 @@ def create_package_from_purldb_data(project, resources, package_data):
     # then subtract the number of already matched CodebaseResources from the
     # total number of CodebaseResources updated. This is to prevent
     # double-counting of CodebaseResources that were matched to purldb
-    previously_matched_resources_count = resources_qs.filter(
-        status=flag.MATCHED_TO_PURLDB
-    ).count()
-    updated_resources_count = resources_qs.update(status=flag.MATCHED_TO_PURLDB)
-    matched_resources_count = (
-        updated_resources_count - previously_matched_resources_count
+    purldb_statuses = [
+        flag.MATCHED_TO_PURLDB_PACKAGE,
+        flag.MATCHED_TO_PURLDB_RESOURCE,
+        flag.MATCHED_TO_PURLDB_DIRECTORY,
+    ]
+    matched_resources_count = resources_qs.exclude(status__in=purldb_statuses).update(
+        status=status
     )
     return package, matched_resources_count
 
@@ -507,6 +507,7 @@ def match_purldb_package(
                 project=project,
                 resources=resources,
                 package_data=package_data,
+                status=flag.MATCHED_TO_PURLDB_PACKAGE,
             )
             match_count += matched_resources_count
     return match_count
@@ -548,6 +549,7 @@ def match_purldb_resource(
                 project=project,
                 resources=resources,
                 package_data=package_data,
+                status=flag.MATCHED_TO_PURLDB_RESOURCE,
             )
             match_count += matched_resources_count
     return match_count
@@ -560,7 +562,9 @@ def match_purldb_directory(project, resource):
     if results := purldb.match_directory(fingerprint=fingerprint):
         package_url = results[0]["package"]
         if package_data := purldb.request_get(url=package_url):
-            return create_package_from_purldb_data(project, [resource], package_data)
+            return create_package_from_purldb_data(
+                project, [resource], package_data, flag.MATCHED_TO_PURLDB_DIRECTORY
+            )
 
 
 def match_sha1s_to_purldb(
@@ -678,7 +682,11 @@ def match_purldb_directories(project, logger=None):
     # more "higher-up" directories we can match to means that we reduce the
     # number of queries made to purldb.
     to_directories = (
-        project.codebaseresources.directories().to_codebase().order_by("path")
+        project.codebaseresources.directories()
+        .to_codebase()
+        .no_status(status=flag.ABOUT_MAPPED)
+        .no_status(status=flag.MATCHED_TO_PURLDB_DIRECTORY)
+        .order_by("path")
     )
     directory_count = to_directories.count()
 
@@ -693,13 +701,13 @@ def match_purldb_directories(project, logger=None):
 
     for directory in progress.iter(directory_iterator):
         directory.refresh_from_db()
-        if directory.status != flag.MATCHED_TO_PURLDB:
+        if directory.status != flag.MATCHED_TO_PURLDB_DIRECTORY:
             match_purldb_directory(project, directory)
 
     matched_count = (
         project.codebaseresources.directories()
         .to_codebase()
-        .filter(status=flag.MATCHED_TO_PURLDB)
+        .filter(status=flag.MATCHED_TO_PURLDB_DIRECTORY)
         .count()
     )
     logger(
@@ -860,9 +868,9 @@ def map_javascript_post_purldb_match(project, logger=None):
 
     to_resources = project_files.to_codebase()
 
-    to_resources_dot_map = to_resources.filter(status=flag.MATCHED_TO_PURLDB).filter(
-        extension=".map"
-    )
+    to_resources_dot_map = to_resources.filter(
+        status=flag.MATCHED_TO_PURLDB_RESOURCE
+    ).filter(extension=".map")
 
     to_resources_minified = to_resources.no_status().filter(
         extension__in=[".css", ".js"]
@@ -1249,23 +1257,19 @@ def match_resources_with_no_java_source(project, logger=None):
             matcher_func=match_purldb_resource,
             logger=logger,
         )
-        to_no_java_source.exclude(status=flag.MATCHED_TO_PURLDB).update(
+        to_no_java_source.exclude(status=flag.MATCHED_TO_PURLDB_RESOURCE).update(
             status=flag.REQUIRES_REVIEW
         )
 
 
 def match_unmapped_resources(project, matched_extensions=None, logger=None):
     """
-    Match resources with ``too-many-maps`` and empty status to PurlDB,
-    flag resources with empty status as ``requires-review``.
+    Match resources with empty status to PurlDB, if unmatched
+    update status as ``requires-review``.
     """
     project_files = project.codebaseresources.files()
 
-    to_unmapped = (
-        project_files.to_codebase()
-        .filter(status__in=["", flag.TOO_MANY_MAPS])
-        .exclude(is_media=True)
-    )
+    to_unmapped = project_files.to_codebase().no_status().exclude(is_media=True)
 
     if matched_extensions:
         to_unmapped.exclude(extension__in=matched_extensions)
@@ -1274,8 +1278,8 @@ def match_unmapped_resources(project, matched_extensions=None, logger=None):
         resource_count = to_unmapped.count()
         if logger:
             logger(
-                f"Mapping {resource_count:,d} to/ resources with {flag.TOO_MANY_MAPS} "
-                "or empty status in PurlDB using SHA1"
+                f"Mapping {resource_count:,d} to/ resources with "
+                "empty status in PurlDB using SHA1"
             )
 
         _match_purldb_resources(
@@ -1284,7 +1288,7 @@ def match_unmapped_resources(project, matched_extensions=None, logger=None):
             matcher_func=match_purldb_resource,
             logger=logger,
         )
-        to_unmapped.exclude(status=flag.MATCHED_TO_PURLDB).update(
+        to_unmapped.exclude(status=flag.MATCHED_TO_PURLDB_RESOURCE).update(
             status=flag.REQUIRES_REVIEW
         )
 
