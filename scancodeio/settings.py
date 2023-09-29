@@ -229,10 +229,15 @@ AUTH_PASSWORD_VALIDATORS = [
 IS_TESTS = "test" in sys.argv
 
 if IS_TESTS:
-    # Do not pollute the workspace while running the tests
+    # Do not pollute the workspace while running the tests.
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
     SCANCODEIO_SCAN_FILE_TIMEOUT = 120
+    # The default password hasher is rather slow by design.
+    # Using a faster hashing algorithm in the testing context to speed up the run.
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+    ]
 
 # Debug toolbar
 
