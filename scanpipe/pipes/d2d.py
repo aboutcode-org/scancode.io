@@ -1136,7 +1136,7 @@ def map_thirdparty_npm_packages(project, logger=None):
         .exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
     )
 
-    to_resources = project_files.to_codebase()
+    to_resources = project_files.to_codebase().no_status()
     resource_count = to_package_json.count()
 
     if logger:
@@ -1164,7 +1164,7 @@ def _map_thirdparty_npm_packages(package_json, to_resources, project):
 
     package_resources = to_resources.filter(path__startswith=path_parent)
 
-    if not all(
+    if not package_resources or not all(
         [package, package.type, package.name, package.version, package_resources]
     ):
         return 0
