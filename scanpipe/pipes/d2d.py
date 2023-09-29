@@ -1353,9 +1353,10 @@ def handle_dangling_deployed_legal_files(project, logger):
     to_resources = project.codebaseresources.files().to_codebase().no_status()
     legal_files = [resource for resource in to_resources if resource.is_legal]
 
-    scancode.scan_for_files(
-        project,
-        legal_files,
-        status=flag.REVIEW_DANGLING_LEGAL_FILE,
-        progress_logger=logger,
-    )
+    if legal_files:
+        scancode.scan_for_files(
+            project,
+            legal_files,
+            status=flag.REVIEW_DANGLING_LEGAL_FILE,
+            progress_logger=logger,
+        )
