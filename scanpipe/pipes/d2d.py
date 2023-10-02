@@ -1338,9 +1338,7 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
             status=flag.IGNORED_DOC_FILE
         )
 
-    no_license_files = scanned_from_files.filter(
-        Q(detected_license_expression="")
-    )
+    no_license_files = scanned_from_files.filter(Q(detected_license_expression=""))
     unknown_license_files = scanned_from_files.filter(
         Q(detected_license_expression__icontains="unknown")
     )
