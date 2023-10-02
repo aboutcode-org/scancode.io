@@ -1326,13 +1326,7 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
     # Retrieve scanned from files with an empty ``detected_license_expression``
     # or a ``unknown`` license expression.
     scanned_from_files = (
-        project.codebaseresources.files()
-        .from_codebase()
-        .filter(status=flag.SCANNED)
-        .filter(
-            Q(detected_license_expression="")
-            | Q(detected_license_expression__icontains="unknown")
-        )
+        project.codebaseresources.files().from_codebase().filter(status=flag.SCANNED)
     )
 
     # Media files don't require any review.
@@ -1344,4 +1338,12 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
             status=flag.IGNORED_DOC_FILE
         )
 
-    scanned_from_files.update(status=flag.REQUIRES_REVIEW)
+    no_license_files = scanned_from_files.filter(
+        Q(detected_license_expression="")
+    )
+    unknown_license_files = scanned_from_files.filter(
+        Q(detected_license_expression__icontains="unknown")
+    )
+
+    no_license_files.update(status=flag.NO_LICENSES)
+    unknown_license_files.update(status=flag.UNKNOWN_LICENSE)
