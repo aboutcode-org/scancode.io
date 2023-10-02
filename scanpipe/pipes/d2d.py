@@ -480,6 +480,27 @@ def create_package_from_purldb_data(project, resources, package_data, status):
     return package, matched_resources_count
 
 
+def oldest_packages(packages):
+    """
+    Given a list of `packages`, return the oldest instance of each matched Package.
+    """
+    from django.utils.dateparse import parse_datetime
+    earliest_packages_by_sha1 = {}
+    for package_data in packages:
+        sha1 = package_data["sha1"]
+        release_date = package_data["release_date"]
+        release_date = parse_datetime(release_date)
+        if sha1 in earliest_packages_by_sha1:
+            earliest_package = earliest_packages_by_sha1.get(sha1)
+            earliest_package_release_date = earliest_package["release_date"]
+            earliest_package_release_date = parse_datetime(earliest_package_release_date)
+            if release_date < earliest_package_release_date:
+                earliest_packages_by_sha1[sha1] = package_data
+        else:
+            earliest_packages_by_sha1[sha1] = package_data
+    return list(earliest_packages_by_sha1.values())
+
+
 def match_purldb_package(
     project, resources_by_sha1, enhance_package_data=True, **kwargs
 ):
@@ -495,6 +516,8 @@ def match_purldb_package(
         sha1_list=sha1_list,
         enhance_package_data=enhance_package_data,
     ):
+        # filter results:
+        results = oldest_packages(results)
         # Process matched Package data
         for package_data in results:
             sha1 = package_data["sha1"]
