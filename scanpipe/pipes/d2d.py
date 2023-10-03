@@ -1164,9 +1164,9 @@ def _map_thirdparty_npm_packages(package_json, to_resources, project):
 
     package_resources = to_resources.filter(path__startswith=path_parent)
 
-    if not package_resources or not all(
-        [package, package.type, package.name, package.version, package_resources]
-    ):
+    purl_in_package = all([package, package.type, package.name, package.version])
+
+    if not package_resources or not purl_in_package:
         return 0
 
     package_data = package.to_dict()
