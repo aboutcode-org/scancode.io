@@ -685,7 +685,7 @@ def match_purldb_directories(project, logger=None):
         project.codebaseresources.directories()
         .to_codebase()
         .no_status(status=flag.ABOUT_MAPPED)
-        .no_status(status=flag.MATCHED_TO_PURLDB_DIRECTORY)
+        .no_status(status=flag.MATCHED_TO_PURLDB_PACKAGE)
         .order_by("path")
     )
     directory_count = to_directories.count()
@@ -1328,13 +1328,7 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
     # Retrieve scanned from files with an empty ``detected_license_expression``
     # or a ``unknown`` license expression.
     scanned_from_files = (
-        project.codebaseresources.files()
-        .from_codebase()
-        .filter(status=flag.SCANNED)
-        .filter(
-            Q(detected_license_expression="")
-            | Q(detected_license_expression__icontains="unknown")
-        )
+        project.codebaseresources.files().from_codebase().filter(status=flag.SCANNED)
     )
 
     # Media files don't require any review.
@@ -1346,7 +1340,11 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
             status=flag.IGNORED_DOC_FILE
         )
 
-    scanned_from_files.update(status=flag.REQUIRES_REVIEW)
+    no_license_files = scanned_from_files.filter(detected_license_expression="")
+    unknown_license_files = scanned_from_files.unknown_license()
+
+    no_license_files.update(status=flag.NO_LICENSES)
+    unknown_license_files.update(status=flag.UNKNOWN_LICENSE)
 
 
 def handle_dangling_deployed_legal_files(project, logger):
