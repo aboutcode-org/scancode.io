@@ -72,9 +72,9 @@
                   </li>
                 {% endfor %}
               </ul>
-              {% if resource.discovered_packages.all.count > 5 %}
+              {% if resource.discovered_packages.all|length > 5 %}
                 <a href="{% url 'resource_detail' project.slug resource.path %}#packages" class="button is-small is-fullwidth">
-                    View {{ resource.discovered_packages.all.count|intcomma }} packages
+                    View {{ resource.discovered_packages.all|length|intcomma }} packages
                 </a>
               {% endif %}
             </td>
