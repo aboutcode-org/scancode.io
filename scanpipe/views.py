@@ -787,6 +787,13 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
         context = super().get_context_data(**kwargs)
         project = self.object
 
+        urls = {
+            "resources_url": reverse("project_resources", args=[project.slug]),
+            "packages_url": reverse("project_packages", args=[project.slug]),
+            "dependencies_url": reverse("project_dependencies", args=[project.slug]),
+        }
+        context.update(urls)
+
         file_filter = self.request.GET.get("file-filter", "all")
         context["file_filter"] = file_filter
 
