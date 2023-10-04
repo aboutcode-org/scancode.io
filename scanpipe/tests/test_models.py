@@ -1113,6 +1113,44 @@ class ScanPipeModelsTest(TestCase):
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
+    def test_scanpipe_codebase_resource_model_is_legal(self):
+        resource1 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="src/filename.ext",
+            name="filename.ext",
+            extension=".ext",
+        )
+        resource2 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="src/license_mit.md",
+            name="license_mit.md",
+            extension=".md",
+        )
+        resource3 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="src/project_license.md",
+            name="project_license.md",
+            extension=".md",
+        )
+        resource4 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="src/.license",
+            name=".license",
+            extension="",
+        )
+        resource5 = CodebaseResource.objects.create(
+            project=self.project1,
+            path="src/license",
+            name="license",
+            extension="",
+        )
+
+        self.assertEqual(False, resource1.is_legal)
+        self.assertEqual(True, resource2.is_legal)
+        self.assertEqual(True, resource3.is_legal)
+        self.assertEqual(True, resource4.is_legal)
+        self.assertEqual(True, resource5.is_legal)
+
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
