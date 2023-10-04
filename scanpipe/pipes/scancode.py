@@ -231,13 +231,12 @@ def scan_for_package_data(location, with_threading=True, **kwargs):
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def save_scan_file_results(codebase_resource, scan_results, scan_errors, status=None):
+def save_scan_file_results(codebase_resource, scan_results, scan_errors):
     """
     Save the resource scan file results in the database.
     Create project errors if any occurred during the scan.
     """
-    if not status:
-        status = flag.SCANNED
+    status = flag.SCANNED
 
     if scan_errors:
         codebase_resource.add_errors(scan_errors)
@@ -246,20 +245,15 @@ def save_scan_file_results(codebase_resource, scan_results, scan_errors, status=
     codebase_resource.set_scan_results(scan_results, status)
 
 
-def save_scan_package_results(
-    codebase_resource, scan_results, scan_errors, status=None
-):
+def save_scan_package_results(codebase_resource, scan_results, scan_errors):
     """
     Save the resource scan package results in the database.
     Create project errors if any occurred during the scan.
     """
-    if not status:
-        status = flag.APPLICATION_PACKAGE
-
     if package_data := scan_results.get("package_data", []):
         codebase_resource.update(
             package_data=package_data,
-            status=status,
+            status=flag.APPLICATION_PACKAGE,
         )
 
     if scan_errors:
@@ -268,12 +262,7 @@ def save_scan_package_results(
 
 
 def scan_resources(
-    resource_qs,
-    scan_func,
-    save_func,
-    status=None,
-    scan_func_kwargs=None,
-    progress_logger=None,
+    resource_qs, scan_func, save_func, scan_func_kwargs=None, progress_logger=None
 ):
     """
     Run the `scan_func` on the codebase resources of the provided `resource_qs`.
@@ -312,7 +301,7 @@ def scan_resources(
             scan_results, scan_errors = scan_func(
                 resource.location, with_threading, **scan_func_kwargs
             )
-            save_func(resource, scan_results, scan_errors, status)
+            save_func(resource, scan_results, scan_errors)
         return
 
     logger.info(f"Starting ProcessPoolExecutor with {max_workers} max_workers")
@@ -331,10 +320,10 @@ def scan_resources(
             progress.log_progress()
             logger.debug(f"{scan_func.__name__} pk={resource.pk}")
             scan_results, scan_errors = future.result()
-            save_func(resource, scan_results, scan_errors, status)
+            save_func(resource, scan_results, scan_errors)
 
 
-def scan_for_files(project, resource_qs=None, progress_logger=None, status=None):
+def scan_for_files(project, resource_qs=None, progress_logger=None):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -343,7 +332,6 @@ def scan_for_files(project, resource_qs=None, progress_logger=None, status=None)
     controlled through the SCANCODEIO_PROCESSES setting.
     """
     # Checking for None to make the distinction with an empty resource_qs queryset
-
     if resource_qs is None:
         resource_qs = project.codebaseresources.no_status()
 
@@ -355,7 +343,6 @@ def scan_for_files(project, resource_qs=None, progress_logger=None, status=None)
         resource_qs=resource_qs,
         scan_func=scan_file,
         save_func=save_scan_file_results,
-        status=status,
         scan_func_kwargs=scan_func_kwargs,
         progress_logger=progress_logger,
     )

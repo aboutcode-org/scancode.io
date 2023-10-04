@@ -269,9 +269,7 @@ def scan_for_java_package(location, with_threading=True):
     return scancode._scan_resource(location, scanners, with_threading=with_threading)
 
 
-def save_java_package_scan_results(
-    codebase_resource, scan_results, scan_errors, status
-):
+def save_java_package_scan_results(codebase_resource, scan_results, scan_errors):
     """
     Save the resource Java package scan results in the database as Resource.extra_data.
     Create project errors if any occurred during the scan.
@@ -1352,9 +1350,23 @@ def handle_dangling_deployed_legal_files(project, logger):
     legal_files = [resource for resource in to_resources if resource.is_legal]
 
     if legal_files:
-        scancode.scan_for_files(
-            project,
-            legal_files,
-            status=flag.REVIEW_DANGLING_LEGAL_FILE,
+        scancode.scan_resources(
+            resource_qs=legal_files,
+            scan_func=scancode.scan_file,
+            save_func=save_scan_legal_file_results,
             progress_logger=logger,
         )
+
+
+def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
+    """
+    Save the resource scan file results in the database.
+    Create project errors if any occurred during the scan.
+    """
+    status = flag.REVIEW_DANGLING_LEGAL_FILE
+
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        status = flag.SCANNED_WITH_ERROR
+
+    codebase_resource.set_scan_results(scan_results, status)
