@@ -81,7 +81,6 @@ from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.job import JobStatus
-from summarycode.classify import LEGAL_STARTS_ENDS
 from taggit.managers import TaggableManager
 from taggit.models import GenericUUIDTaggedItemBase
 from taggit.models import TaggedItemBase
@@ -2141,18 +2140,6 @@ class CodebaseResource(
     def is_symlink(self):
         """Return True, if the resource is a symlink."""
         return self.type == self.Type.SYMLINK
-
-    @property
-    def is_legal(self):
-        """Return True, if the resource is a legal file."""
-        name = self.name.lower()
-        base_name = self.name_without_extension.lower()
-
-        return (
-            name.startswith(LEGAL_STARTS_ENDS)
-            or name.endswith(LEGAL_STARTS_ENDS)
-            or base_name.endswith(LEGAL_STARTS_ENDS)
-        )
 
     def get_path_segments_with_subpath(self):
         """

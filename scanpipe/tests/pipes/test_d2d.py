@@ -1184,16 +1184,17 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(flag.IGNORED_DOC_FILE, from4.status)
 
     def test_scanpipe_pipes_d2d_handle_dangling_deployed_legal_files(self):
-        from_dir = (
+        to_dir = (
             self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
             "resources/node_modules/foo-bar"
         )
-        from_dir.mkdir(parents=True)
-        from_resource_files = [
-            self.data_location / "notice.NOTICE",
+        to_dir.mkdir(parents=True)
+        to_resource_files = [
+            self.data_location / "d2d/legal/license_mit.md",
+            self.data_location / "d2d/legal/project_notice.txt",
             self.data_location / "codebase/a.txt",
         ]
-        copy_inputs(from_resource_files, from_dir)
+        copy_inputs(to_resource_files, to_dir)
         pipes.collect_and_create_codebase_resources(self.project1)
 
         d2d.handle_dangling_deployed_legal_files(project=self.project1, logger=None)
@@ -1202,4 +1203,4 @@ class ScanPipeD2DPipesTest(TestCase):
             status=flag.REVIEW_DANGLING_LEGAL_FILE
         ).count()
 
-        self.assertEqual(1, expected)
+        self.assertEqual(2, expected)

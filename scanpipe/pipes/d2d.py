@@ -28,13 +28,17 @@ from pathlib import Path
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 from django.db.models import Q
+from django.db.models import Value
 from django.db.models.expressions import Subquery
+from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
 from extractcode import EXTRACT_SUFFIX
 from packagedcode.npm import NpmPackageJsonHandler
+from summarycode.classify import LEGAL_STARTS_ENDS
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -1346,8 +1350,20 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
 
 
 def handle_dangling_deployed_legal_files(project, logger):
+    """
+    Scan the legal files with empty status and update status
+    to `REVIEW_DANGLING_LEGAL_FILE`.
+    """
     to_resources = project.codebaseresources.files().to_codebase().no_status()
-    legal_files = [resource for resource in to_resources if resource.is_legal]
+
+    legal_file_filter = Q()
+
+    for token in LEGAL_STARTS_ENDS:
+        legal_file_filter |= Q(name__istartswith=token)
+        legal_file_filter |= Q(name__iendswith=token)
+        legal_file_filter |= Q(name__iendswith=Concat(Value(token), F("extension")))
+
+    legal_files = to_resources.filter(legal_file_filter)
 
     if legal_files:
         scancode.scan_resources(

@@ -282,14 +282,9 @@ def scan_resources(
     if not scan_func_kwargs:
         scan_func_kwargs = {}
 
-    if isinstance(resource_qs, list):
-        resource_count = len(resource_qs)
-        resource_iterator = resource_qs
-    else:
-        resource_count = resource_qs.count()
-        resource_iterator = resource_qs.iterator(chunk_size=2000)
-
+    resource_count = resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
+    resource_iterator = resource_qs.iterator(chunk_size=2000)
     progress = pipes.LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 
