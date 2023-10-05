@@ -1182,3 +1182,24 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual(flag.NO_LICENSES, from2.status)
         self.assertEqual(flag.UNKNOWN_LICENSE, from3.status)
         self.assertEqual(flag.IGNORED_DOC_FILE, from4.status)
+
+    def test_scanpipe_pipes_d2d_handle_dangling_deployed_legal_files(self):
+        from_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        from_dir.mkdir(parents=True)
+        from_resource_files = [
+            self.data_location / "notice.NOTICE",
+            self.data_location / "codebase/a.txt",
+        ]
+        copy_inputs(from_resource_files, from_dir)
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        d2d.handle_dangling_deployed_legal_files(project=self.project1, logger=None)
+
+        expected = self.project1.codebaseresources.filter(
+            status=flag.REVIEW_DANGLING_LEGAL_FILE
+        ).count()
+
+        self.assertEqual(1, expected)

@@ -2151,7 +2151,6 @@ class CodebaseResource(
         return (
             name.startswith(LEGAL_STARTS_ENDS)
             or name.endswith(LEGAL_STARTS_ENDS)
-            or base_name.startswith(LEGAL_STARTS_ENDS)
             or base_name.endswith(LEGAL_STARTS_ENDS)
         )
 

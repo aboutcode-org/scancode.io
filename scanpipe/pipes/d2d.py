@@ -1360,8 +1360,9 @@ def handle_dangling_deployed_legal_files(project, logger):
 
 def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
     """
-    Save the resource scan file results in the database.
-    Create project errors if any occurred during the scan.
+    Save the legal resource scan results with `REVIEW_DANGLING_LEGAL_FILE`
+    status in the database. Create project errors if any occurred
+    during the scan.
     """
     status = flag.REVIEW_DANGLING_LEGAL_FILE
 
