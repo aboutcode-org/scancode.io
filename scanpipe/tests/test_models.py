@@ -581,6 +581,22 @@ class ScanPipeModelsTest(TestCase):
         config_file.write_text(self.project1.get_settings_as_yml())
         self.assertEqual(env_from_test_config, self.project1.get_env())
 
+    def test_get_enabled_settings(self):
+        self.assertEqual({}, self.project1.settings)
+        self.assertEqual({}, self.project1.get_enabled_settings())
+
+        self.project1.update(
+            settings={"ignored_patterns": None, "attribution_template": ""}
+        )
+        self.assertEqual({}, self.project1.get_enabled_settings())
+
+        self.project1.update(
+            settings={"ignored_patterns": "ignore_me", "attribution_template": ""}
+        )
+        self.assertEqual(
+            {"ignored_patterns": "ignore_me"}, self.project1.get_enabled_settings()
+        )
+
     def test_scanpipe_project_get_env(self):
         self.assertEqual({}, self.project1.get_env())
 
@@ -593,7 +609,7 @@ class ScanPipeModelsTest(TestCase):
         }
         self.assertEqual(expected, self.project1.get_env())
 
-        config = {"extract_recursively": True}
+        config = {"extract_recursively": True, "ignored_patterns": None}
         self.project1.settings = config
         self.project1.save()
         expected = {

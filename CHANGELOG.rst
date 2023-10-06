@@ -4,6 +4,10 @@ Changelog
 v32.6.1 (unreleased)
 --------------------
 
+- Fixed an issue where the empty project settings were overriding the settings loaded
+  from a config file.
+  https://github.com/nexB/scancode.io/issues/961
+
 - Control the execution order of Pipelines within a Project. Pipelines are not allowed
   to start anymore unless all the previous ones within a Project have completed.
   https://github.com/nexB/scancode.io/issues/901

@@ -757,6 +757,14 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Return the ``settings`` file content as yml, suitable for a config file."""
         return saneyaml.dump(self.settings)
 
+    def get_enabled_settings(self):
+        """Return the enabled settings with non-empty values."""
+        return {
+            option: value
+            for option, value in self.settings.items()
+            if value not in EMPTY_VALUES
+        }
+
     def get_env(self, field_name=None):
         """
         Return the project environment loaded from the ``.scancode/config.yml`` config
@@ -771,8 +779,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             with suppress(saneyaml.YAMLError):
                 env = saneyaml.load(config_file.read_text())
 
-        # 2. Update with values from the Project ``settings`` field.
-        env.update(self.settings)
+        # 2. Update with defined values from the Project ``settings`` field.
+        env.update(self.get_enabled_settings())
 
         if field_name:
             return env.get(field_name)
