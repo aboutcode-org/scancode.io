@@ -28,13 +28,17 @@ from pathlib import Path
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 from django.db.models import Q
+from django.db.models import Value
 from django.db.models.expressions import Subquery
+from django.db.models.functions import Concat
 from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
 from extractcode import EXTRACT_SUFFIX
 from packagedcode.npm import NpmPackageJsonHandler
+from summarycode.classify import LEGAL_STARTS_ENDS
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -1343,3 +1347,43 @@ def flag_deployed_from_resources_with_missing_license(project, doc_extensions=No
 
     no_license_files.update(status=flag.NO_LICENSES)
     unknown_license_files.update(status=flag.UNKNOWN_LICENSE)
+
+
+def handle_dangling_deployed_legal_files(project, logger):
+    """
+    Scan the legal files with empty status and update status
+    to `REVIEW_DANGLING_LEGAL_FILE`.
+    """
+    to_resources = project.codebaseresources.files().to_codebase().no_status()
+
+    legal_file_filter = Q()
+
+    for token in LEGAL_STARTS_ENDS:
+        legal_file_filter |= Q(name__istartswith=token)
+        legal_file_filter |= Q(name__iendswith=token)
+        legal_file_filter |= Q(name__iendswith=Concat(Value(token), F("extension")))
+
+    legal_files = to_resources.filter(legal_file_filter)
+
+    if legal_files:
+        scancode.scan_resources(
+            resource_qs=legal_files,
+            scan_func=scancode.scan_file,
+            save_func=save_scan_legal_file_results,
+            progress_logger=logger,
+        )
+
+
+def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
+    """
+    Save the legal resource scan results with `REVIEW_DANGLING_LEGAL_FILE`
+    status in the database. Create project errors if any occurred
+    during the scan.
+    """
+    status = flag.REVIEW_DANGLING_LEGAL_FILE
+
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        status = flag.SCANNED_WITH_ERROR
+
+    codebase_resource.set_scan_results(scan_results, status)

@@ -56,6 +56,7 @@ TOO_MANY_MAPS = "too-many-maps"
 NO_JAVA_SOURCE = "no-java-source"
 NPM_PACKAGE_LOOKUP = "npm-package-lookup"
 REQUIRES_REVIEW = "requires-review"
+REVIEW_DANGLING_LEGAL_FILE = "review-dangling-legal-file"
 NOT_DEPLOYED = "not-deployed"
 
 
