@@ -1190,6 +1190,7 @@ class ScanPipeD2DPipesTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         to_resource_files = [
+            self.data_location / "d2d/legal/poject.LICENSE",
             self.data_location / "d2d/legal/license_mit.md",
             self.data_location / "d2d/legal/project_notice.txt",
             self.data_location / "codebase/a.txt",
@@ -1203,4 +1204,4 @@ class ScanPipeD2DPipesTest(TestCase):
             status=flag.REVIEW_DANGLING_LEGAL_FILE
         ).count()
 
-        self.assertEqual(2, expected)
+        self.assertEqual(3, expected)
