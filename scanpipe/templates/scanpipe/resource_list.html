@@ -1,4 +1,5 @@
 {% extends "scanpipe/base.html" %}
+{% load humanize %}
 
 {% block title %}ScanCode.io: {{ project.name }} - Resources{% endblock %}
 
@@ -65,12 +66,17 @@
             {% endif %}
             <td>
               <ul>
-                {% for package in resource.discovered_packages.all %}
+                {% for package in resource.discovered_packages.all|slice:":5" %}
                   <li>
                     <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>
                   </li>
                 {% endfor %}
               </ul>
+              {% if resource.discovered_packages.all|length > 5 %}
+                <a href="{% url 'resource_detail' project.slug resource.path %}#packages" class="button is-small is-fullwidth">
+                    View {{ resource.discovered_packages.all|length|intcomma }} packages
+                </a>
+              {% endif %}
             </td>
           </tr>
         {% empty %}

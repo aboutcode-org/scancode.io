@@ -1179,6 +1179,6 @@ class ScanPipeD2DPipesTest(TestCase):
         from4.refresh_from_db()
 
         self.assertEqual(flag.IGNORED_MEDIA_FILE, from1.status)
-        self.assertEqual(flag.REQUIRES_REVIEW, from2.status)
-        self.assertEqual(flag.REQUIRES_REVIEW, from3.status)
+        self.assertEqual(flag.NO_LICENSES, from2.status)
+        self.assertEqual(flag.UNKNOWN_LICENSE, from3.status)
         self.assertEqual(flag.IGNORED_DOC_FILE, from4.status)
