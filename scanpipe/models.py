@@ -2710,6 +2710,7 @@ class DiscoveredPackage(
             models.Index(fields=["type"]),
             models.Index(fields=["namespace"]),
             models.Index(fields=["name"]),
+            models.Index(fields=["version"]),
             models.Index(fields=["filename"]),
             models.Index(fields=["package_uid"]),
             models.Index(fields=["primary_language"]),
