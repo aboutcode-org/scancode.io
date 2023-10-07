@@ -185,6 +185,11 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
+        d2d.match_purldb_directories_post_process(
+            project=self.project,
+            logger=self.log,
+        )
+
     def match_resources_to_purldb(self):
         """Match selected files by extension in PurlDB."""
         if not purldb.is_available():

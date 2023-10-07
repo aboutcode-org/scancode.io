@@ -481,10 +481,9 @@ def create_package_from_purldb_data(project, resources, package_data, status):
 
 
 def oldest_packages(packages):
-    """
-    Given a list of `packages`, return the oldest instance of each matched Package.
-    """
+    """Given a list of `packages`, return the oldest instance of each Package."""
     from django.utils.dateparse import parse_datetime
+
     earliest_packages_by_sha1 = {}
     for package_data in packages:
         sha1 = package_data["sha1"]
@@ -493,7 +492,9 @@ def oldest_packages(packages):
         if sha1 in earliest_packages_by_sha1:
             earliest_package = earliest_packages_by_sha1.get(sha1)
             earliest_package_release_date = earliest_package["release_date"]
-            earliest_package_release_date = parse_datetime(earliest_package_release_date)
+            earliest_package_release_date = parse_datetime(
+                earliest_package_release_date
+            )
             if release_date < earliest_package_release_date:
                 earliest_packages_by_sha1[sha1] = package_data
         else:
@@ -735,6 +736,35 @@ def match_purldb_directories(project, logger=None):
         f"{matched_count:,d} director{pluralize(matched_count, 'y,ies')} "
         f"matched in PurlDB"
     )
+
+
+def match_purldb_directories_post_process(project, logger=None):
+    """
+    Select the best Package matches for directories that were matched to a
+    Package.
+    """
+    # 1. Get directories with matches
+    matched_directories = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .status(status=flag.MATCHED_TO_PURLDB_DIRECTORY)
+        .order_by("path")
+    )
+
+    # 2. For each directory, get the resources of each package matched to it
+    matched_packages = project.discoveredpackages.filter(
+        codebase_resources__in=matched_directories
+    )
+    resources_by_purl = {}
+    for package in matched_packages.iterator():
+        purl = package.purl
+        package_resources = purldb.get_package_resources(purl)
+        if not package_resources:
+            package_resources = []
+        resources_by_purl[purl] = package_resources
+
+    # 3. From the top directory, compare how many package resources we have to
+    #    the total number of package resources for each package matched
 
 
 def map_javascript(project, logger=None):

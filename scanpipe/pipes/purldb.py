@@ -80,7 +80,7 @@ def is_available():
     return response.status_code == requests.codes.ok
 
 
-def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
+def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT, **kwargs):
     """Wrap the HTTP request calls on the API."""
     if not url:
         return
@@ -100,7 +100,7 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def request_post(url, data, headers=None, timeout=DEFAULT_TIMEOUT):
+def request_post(url, data, headers=None, timeout=DEFAULT_TIMEOUT, **kwargs):
     try:
         response = session.post(url, data=data, timeout=timeout, headers=headers)
         response.raise_for_status()
@@ -109,14 +109,16 @@ def request_post(url, data, headers=None, timeout=DEFAULT_TIMEOUT):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def collect_response_results(response, data, timeout=DEFAULT_TIMEOUT):
+def collect_response_results(
+    response, data=None, timeout=DEFAULT_TIMEOUT, request_type=request_post
+):
     """Return all results from a purldb API response."""
     results = []
     if response and response.get("count"):
         results.extend(response["results"])
         next_page = response.get("next")
         while next_page:
-            response = request_post(url=next_page, data=data, timeout=timeout)
+            response = request_type(url=next_page, data=data, timeout=timeout)
             if response and response.get("count"):
                 results.extend(response["results"])
                 next_page = response.get("next")
@@ -320,3 +322,16 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
         chunk_size=10,
         logger=logger,
     )
+
+
+def get_package_resources(purl, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+    """Return a list consisting of Resource data for the Package `purl` from PurlDB"""
+    payload = {"purl": purl}
+    response = request_get(
+        url=f"{api_url}resources/",
+        payload=payload,
+        timeout=timeout,
+    )
+
+    if response and response.get("count") > 0:
+        return collect_response_results(response, request_type=request_get)
