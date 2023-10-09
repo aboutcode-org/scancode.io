@@ -76,6 +76,7 @@ from scanpipe.forms import ArchiveProjectForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
+from scanpipe.models import PURL_FIELDS
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -176,7 +177,7 @@ SCAN_SUMMARY_FIELDS = [
 
 
 class PrefetchRelatedViewMixin:
-    prefetch_related = None
+    prefetch_related = []
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(*self.prefetch_related)
@@ -1176,10 +1177,12 @@ class ProjectResultsView(ConditionalLoginRequired, generic.DetailView):
 
 class ProjectRelatedViewMixin:
     model_label = None
+    only_fields = ["uuid", "name", "slug"]
 
     def get_project(self):
         if not getattr(self, "project", None):
-            self.project = get_object_or_404(Project, slug=self.kwargs["slug"])
+            project_qs = Project.objects.only(*self.only_fields)
+            self.project = get_object_or_404(project_qs, slug=self.kwargs["slug"])
         return self.project
 
     def get_queryset(self):
@@ -1248,7 +1251,6 @@ class CodebaseResourceListView(
 
 class DiscoveredPackageListView(
     ConditionalLoginRequired,
-    PrefetchRelatedViewMixin,
     ProjectRelatedViewMixin,
     TableColumnsMixin,
     ExportXLSXMixin,
@@ -1258,12 +1260,6 @@ class DiscoveredPackageListView(
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
-    prefetch_related = [
-        Prefetch(
-            "codebase_resources",
-            queryset=unordered_resources.only("path", "name"),
-        ),
-    ]
     table_columns = [
         {
             "field_name": "package_url",
@@ -1287,7 +1283,24 @@ class DiscoveredPackageListView(
     ]
 
     def get_queryset(self):
-        return super().get_queryset().order_by_purl()
+        return (
+            super()
+            .get_queryset()
+            .only(
+                "uuid",
+                "package_uid",
+                *PURL_FIELDS,
+                "project",
+                "primary_language",
+                "declared_license_expression",
+                "compliance_alert",
+                "copyright",
+                "affected_by_vulnerabilities",
+            )
+            .select_related(None)
+            .with_resources_count()
+            .order_by_purl()
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

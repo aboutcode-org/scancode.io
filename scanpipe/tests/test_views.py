@@ -43,6 +43,7 @@ from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
@@ -833,6 +834,19 @@ class ScanPipeViewsTest(TestCase):
         }
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
+
+    def test_scanpipe_views_discovered_package_list_view(self):
+        url = reverse("project_packages", args=[self.project1.slug])
+
+        resource1 = make_resource_file(self.project1, "file1.ext")
+        resource2 = make_resource_file(self.project1, "file2.ext")
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package1.add_resources([resource1, resource2])
+        package2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
+        package2.add_resources([resource1, resource2])
+
+        with self.assertNumQueries(5):
+            self.client.get(url)
 
     def test_scanpipe_views_discovered_package_details_view_tabset(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
