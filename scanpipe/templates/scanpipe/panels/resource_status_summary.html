@@ -9,4 +9,9 @@
       <span class="tag is-rounded ml-1">{{ count|intcomma }}</span>
     </a>
   {% endfor %}
+  <div class="panel-block">
+    <a href="{% url 'resources_grouped_by' project.slug 'status' %}" class="button is-link is-outlined is-fullwidth">
+      View resources grouped by status
+    </a>
+  </div>
 </nav>

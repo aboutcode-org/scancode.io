@@ -37,6 +37,11 @@ urlpatterns = [
         name="resource_diff",
     ),
     path(
+        "project/<slug:slug>/resources/grouped_by/<str:field>/",
+        views.CodebaseResourceGroupByView.as_view(),
+        name="resources_grouped_by",
+    ),
+    path(
         "project/<slug:slug>/resources/<path:path>/",
         views.CodebaseResourceDetailsView.as_view(),
         name="resource_detail",

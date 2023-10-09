@@ -1266,6 +1266,70 @@ class CodebaseResourceListView(
         return context
 
 
+class CodebaseResourceGroupByView(
+    ConditionalLoginRequired,
+    ProjectRelatedViewMixin,
+    generic.ListView,
+):
+    model = CodebaseResource
+    model_label = "resources"
+    template_name = "scanpipe/resource_group_by.html"
+    group_by_fields = [
+        "compliance_alert",
+        "detected_license_expression",
+        "detected_license_expression_spdx",
+        "extension",
+        "mime_type",
+        "programming_language",
+        "status",
+        "tag",
+        "type",
+    ]
+    sort_by_fields = [
+        ("alphabetic", "Alphabetic (A-z)"),
+        ("-alphabetic", "Alphabetic (z-A)"),
+        ("count", "Count (Ascending)"),
+        ("-count", "Count (Descending)"),
+    ]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        group_by_field = self.kwargs["field"]
+        if group_by_field not in self.group_by_fields:
+            raise Http404("Field not supported.")
+
+        sort_by = self.request.GET.get("sort", "alpha")
+
+        object_list = context.pop("object_list")
+        grouped = count_group_by(object_list, group_by_field)
+        grouped = self.apply_sort(grouped, sort_by)
+
+        context.update(
+            {
+                "grouped": grouped,
+                "group_by_fields": self.group_by_fields,
+                "group_by_field": group_by_field,
+                "sort_by_fields": self.sort_by_fields,
+                "sort_by": sort_by,
+            }
+        )
+        return context
+
+    def apply_sort(self, grouped, sort_by):
+        if is_reversed := sort_by.startswith("-"):
+            sort_by = sort_by[1:]
+
+        item_index = 1 if sort_by == "count" else 0
+        return dict(
+            sorted(
+                grouped.items(),
+                key=operator.itemgetter(item_index),
+                reverse=is_reversed,
+            )
+        )
+
+
 class DiscoveredPackageListView(
     ConditionalLoginRequired,
     PrefetchRelatedViewMixin,

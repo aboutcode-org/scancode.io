@@ -1,0 +1,72 @@
+{% extends "scanpipe/base.html" %}
+{% load humanize %}
+
+{% block title %}ScanCode.io: {{ project.name }} - Resources{% endblock %}
+
+{% block content %}
+  <div id="content-header" class="container is-max-widescreen">
+    {% include 'scanpipe/includes/navbar_header.html' %}
+    <div class="is-flex is-justify-content-space-between">
+      {% include 'scanpipe/includes/breadcrumb_detail_view.html' with url_name="project_resources" %}
+    </div>
+
+    <section class="mx-5 px-1 mb-3">
+      <div class="is-flex is-align-items-center has-text-weight-semibold">
+        <span class="is-size-5 has-text-grey-darker">
+          Grouped by
+        </span>
+        <div class="dropdown is-hoverable ml-2">
+          <div class="dropdown-trigger">
+            <button class="button is-info is-light has-text-weight-semibold" aria-haspopup="true" aria-controls="dropdown-grouped-by">
+              <span>{{ group_by_field }}</span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" id="dropdown-grouped-by">
+            <div class="dropdown-content">
+              {% for field_name in group_by_fields %}
+                <a class="dropdown-item" href="{% url 'resources_grouped_by' project.slug field_name %}">{{ field_name }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <span class="is-size-5 has-text-grey-darker ml-2">
+          and sorted by
+        </span>
+        <div class="dropdown is-hoverable ml-2">
+          <div class="dropdown-trigger">
+            <button class="button is-info is-light has-text-weight-semibold" aria-haspopup="true" aria-controls="dropdown-sorted-by">
+              <span>{{ sort_by }}</span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" id="dropdown-sorted-by">
+            <div class="dropdown-content">
+              {% for type, label in sort_by_fields %}
+                <a class="dropdown-item" href="?sort={{ type }}">{{ label}}</a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <hr class="mx-5 mt-0">
+
+    <section class="mx-5 px-1 mb-3">
+      <ul>
+        {% for entry, count in grouped.items %}
+          <li class="mb-2">
+            <a href="">+</a>
+            {{ entry|default:'<i>No value</i>' }}
+            <span class="tag is-rounded ml-1">{{ count|intcomma }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+{% endblock %}
