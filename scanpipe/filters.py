@@ -591,6 +591,35 @@ class DiscoveredPackageSearchFilter(QuerySearchFilter):
         return qs.filter(lookups)
 
 
+class GroupOrderingFilter(django_filters.OrderingFilter):
+    """Add the ability to provide a group a fields to order by."""
+
+    def __init__(self, *args, **kwargs):
+        """grouped_fields = {"group_name": ["field1", "field2", "field3"]}"""
+        self.grouped_fields = kwargs.pop("grouped_fields", {})
+        super().__init__(*args, **kwargs)
+
+    def get_ordering_value(self, param):
+        descending = param.startswith("-")
+        param = param[1:] if descending else param
+
+        group = self.grouped_fields.get(param)
+        if not group:
+            group = [self.param_map.get(param, param)]
+
+        return [f"-{field_name}" if descending else field_name for field_name in group]
+
+    def filter(self, qs, value):
+        if value in EMPTY_VALUES:
+            return qs
+
+        ordering = []
+        for param in value:
+            ordering.extend(self.get_ordering_value(param))
+
+        return qs.order_by(*ordering)
+
+
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "is_vulnerable",
@@ -600,9 +629,14 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = DiscoveredPackageSearchFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
-    sort = django_filters.OrderingFilter(
+    sort = GroupOrderingFilter(
         label="Sort",
         fields=[
+            "package_url",
+            "type",
+            "namespace",
+            "name",
+            "version",
             "declared_license_expression",
             "other_license_expression",
             "compliance_alert",
@@ -610,6 +644,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "primary_language",
             "tag",
         ],
+        grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")

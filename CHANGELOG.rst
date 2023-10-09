@@ -4,7 +4,10 @@ Changelog
 v32.6.1 (unreleased)
 --------------------
 
-- Fixed an issue where the empty project settings were overriding the settings loaded
+- Add ability to sort by Package URL in package list
+  https://github.com/nexB/scancode.io/issues/938
+
+- Fix an issue where the empty project settings were overriding the settings loaded
   from a config file.
   https://github.com/nexB/scancode.io/issues/961
 
