@@ -102,16 +102,16 @@
         </div>
       {% endif %}
 
-      {% if resource_status_summary or resource_licenses_summary %}
+      {% if resource_status_summary or resource_license_summary %}
         <div class="columns">
           {% if resource_status_summary %}
             <div class="column is-half">
               {% include "scanpipe/panels/resource_status_summary.html"  %}
             </div>
           {% endif %}
-          {% if resource_licenses_summary %}
+          {% if resource_license_summary %}
             <div class="column is-half">
-              {% include "scanpipe/panels/resource_licenses_summary.html"  %}
+              {% include "scanpipe/panels/resource_license_summary.html"  %}
             </div>
           {% endif %}
         </div>
