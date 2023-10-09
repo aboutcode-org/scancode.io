@@ -4,6 +4,9 @@ Changelog
 v32.6.1 (unreleased)
 --------------------
 
+- Improve presentation of the "Resources detected license expressions" project section.
+  https://github.com/nexB/scancode.io/issues/937
+
 - Add ability to sort by Package URL in package list
   https://github.com/nexB/scancode.io/issues/938
 
