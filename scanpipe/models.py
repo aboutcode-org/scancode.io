@@ -2464,7 +2464,9 @@ class VulnerabilityQuerySetMixin:
 class DiscoveredPackageQuerySet(
     VulnerabilityQuerySetMixin, PackageURLQuerySetMixin, ProjectRelatedQuerySet
 ):
-    pass
+    def order_by_purl(self):
+        """Order by Package URL fields."""
+        return self.order_by("type", "namespace", "name", "version")
 
 
 class AbstractPackage(models.Model):

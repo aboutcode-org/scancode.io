@@ -197,6 +197,16 @@ class ScanPipeFilterTest(TestCase):
         filterset = PackageFilterSet(data={"search": p1.type})
         self.assertEqual(2, len(filterset.qs))
 
+    def test_scanpipe_filters_package_filterset_sort(self):
+        p1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        p2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
+
+        filterset = PackageFilterSet(data={"sort": "package_url"})
+        self.assertQuerySetEqual([p1, p2], filterset.qs)
+
+        filterset = PackageFilterSet(data={"sort": "-package_url"})
+        self.assertQuerySetEqual([p2, p1], filterset.qs)
+
     def test_scanpipe_filters_dependency_filterset(self):
         DiscoveredPackage.create_from_data(self.project1, package_data1)
         CodebaseResource.objects.create(
