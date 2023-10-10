@@ -1,0 +1,72 @@
+{% load humanize %}
+<table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+  {% include 'scanpipe/includes/list_view_thead.html' %}
+  <tbody>
+    {% for resource in object_list %}
+      <tr>
+        <td class="break-all" style="min-width: 200px;">
+          {% if resource.is_dir %}
+            {{ resource.path }}
+          {% else %}
+            {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+            <a href="{% url 'resource_detail' project.slug resource.path %}">{{ resource.path }}</a>
+          {% endif %}
+        </td>
+        <td>
+          <a href="?status={{ resource.status }}" class="is-black-link">{{ resource.status }}</a>
+        </td>
+        <td>
+           <a href="?type={{ resource.type }}" class="is-black-link">{{ resource.type }}</a>
+        </td>
+        <td>
+          {% if resource.is_file %}
+            {{ resource.size|filesizeformat|default_if_none:"" }}
+          {% endif %}
+        </td>
+        <td class="break-all" style="min-width: 100px;">
+          <a href="?name={{ resource.name }}" class="is-black-link">{{ resource.name }}</a>
+        </td>
+        <td>
+          <a href="?extension={{ resource.extension }}" class="is-black-link">{{ resource.extension }}</a>
+        </td>
+        <td class="break-all">
+          <a href="?programming_language={{ resource.programming_language }}" class="is-black-link">{{ resource.programming_language }}</a>
+        </td>
+        <td class="break-all">
+          <a href="?mime_type={{ resource.mime_type }}" class="is-black-link">{{ resource.mime_type }}</a>
+        </td>
+        <td>
+          <a href="?tag={{ resource.tag }}" class="is-black-link">{{ resource.tag }}</a>
+        </td>
+        <td>
+           <a href="?detected_license_expression={{ resource.detected_license_expression }}" class="is-black-link">{{ resource.detected_license_expression }}</a>
+        </td>
+        {% if display_compliance_alert %}
+          <td>
+            <a href="?compliance_alert={{ resource.compliance_alert }}" class="is-black-link">{{ resource.compliance_alert }}</a>
+          </td>
+        {% endif %}
+        <td>
+          <ul>
+            {% for package in resource.discovered_packages.all|slice:":5" %}
+              <li>
+                <a href="{% url 'project_packages' project.slug %}?purl={{ package.package_url }}">{{ package }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+          {% if resource.discovered_packages.all|length > 5 %}
+            <a href="{% url 'resource_detail' project.slug resource.path %}#packages" class="button is-small is-fullwidth">
+                View {{ resource.discovered_packages.all|length|intcomma }} packages
+            </a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="42" class="has-text-centered p-3">
+          No Resources found. <a href="?">Clear search and filters</a>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -61,9 +61,25 @@
       <ul>
         {% for entry, count in grouped.items %}
           <li class="mb-2">
-            <a href="">+</a>
-            {{ entry|default:'<i>No value</i>' }}
-            <span class="tag is-rounded ml-1">{{ count|intcomma }}</span>
+            <div class="card">
+              <header class="card-header" style="cursor: pointer;"
+                      hx-get="{{ resources_url }}?table_only=True&{{ group_by_field }}={{ entry|default:'_EMPTY_' }}"
+                      hx-target="next .content"
+                      hx-swap="innerHTML"
+                      hx-on:click="this.removeAttribute('hx-get');"
+              >
+                <p class="card-header-title">
+                  {{ entry|default:'<i>No value</i>' }}
+                </p>
+                <button class="card-header-icon" aria-label="more options">
+                  <span class="tag is-rounded ml-1">{{ count|intcomma }}</span>
+                  <span class="icon">
+                    <i class="fas fa-angle-right" aria-hidden="true"></i>
+                  </span>
+                </button>
+              </header>
+              <div class="content"></div>
+            </div>
           </li>
         {% endfor %}
       </ul>

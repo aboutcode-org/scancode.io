@@ -1263,7 +1263,21 @@ class CodebaseResourceListView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["display_compliance_alert"] = scanpipe_app.policies_enabled
+        if self.request.GET.get("table_only"):
+            context["columns_data"] = [
+                {
+                    field: value
+                    for field, value in column.items()
+                    if field not in ["filter", "is_sorted", "sort_query"]
+                }
+                for column in context["columns_data"]
+            ]
         return context
+
+    def get_template_names(self):
+        if self.request.GET.get("table_only"):
+            return ["scanpipe/resource_list_table.html"]
+        return super().get_template_names()
 
 
 class CodebaseResourceGroupByView(
@@ -1312,6 +1326,7 @@ class CodebaseResourceGroupByView(
                 "group_by_field": group_by_field,
                 "sort_by_fields": self.sort_by_fields,
                 "sort_by": sort_by,
+                "resources_url": reverse("project_resources", args=[self.project.slug]),
             }
         )
         return context
