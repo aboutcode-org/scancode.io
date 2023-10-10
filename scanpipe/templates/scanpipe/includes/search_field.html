@@ -1,4 +1,9 @@
 <div{% if export_xlsx_url_query %} class="is-flex is-align-items-center"{% endif %}>
+  {% if display_group_by_link %}
+    <a href="{% url 'resources_grouped_by' project.slug 'detected_license_expression' %}" class="button is-small is-outlined is-info mr-1">
+      Group by view
+    </a>
+  {% endif %}
   {% if export_xlsx_url_query %}
     {% include "scanpipe/dropdowns/list_actions_dropdown.html" %}
   {% endif %}

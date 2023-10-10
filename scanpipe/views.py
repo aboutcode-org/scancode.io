@@ -1263,6 +1263,8 @@ class CodebaseResourceListView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["display_compliance_alert"] = scanpipe_app.policies_enabled
+
+        context["display_group_by_link"] = True
         if self.request.GET.get("table_only"):
             context["columns_data"] = [
                 {
