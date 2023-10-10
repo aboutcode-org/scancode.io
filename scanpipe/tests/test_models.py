@@ -715,6 +715,19 @@ class ScanPipeModelsTest(TestCase):
             run1.set_scancodeio_version()
         self.assertIn("Field scancodeio_version already set to", str(cm.exception))
 
+    def test_scanpipe_run_model_get_diff_url(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual("", run1.scancodeio_version)
+        self.assertIsNone(run1.get_diff_url())
+
+        with mock.patch("scancodeio.__version__", "v32.3.0-28-g0000000"):
+            run1.set_scancodeio_version()
+        self.assertEqual("v32.3.0-28-g0000000", run1.scancodeio_version)
+
+        expected = "https://github.com/nexB/scancode.io/compare/0000000..ffffffff"
+        with mock.patch("scancodeio.__version__", "v31.0.0-1-gffffffff"):
+            self.assertEqual(expected, run1.get_diff_url())
+
     def test_scanpipe_run_model_set_current_step(self):
         run1 = Run.objects.create(project=self.project1)
         self.assertEqual("", run1.current_step)
