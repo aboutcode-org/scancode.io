@@ -85,7 +85,9 @@ from taggit.managers import TaggableManager
 from taggit.models import GenericUUIDTaggedItemBase
 from taggit.models import TaggedItemBase
 
-from scancodeio import __version__ as scancodeio_version
+# from scancodeio import __version__ as scancodeio_version
+# from scancodeio import extract_short_commit
+import scancodeio
 from scanpipe import humanize_time
 from scanpipe import tasks
 
@@ -1593,7 +1595,22 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
             msg = f"Field scancodeio_version already set to {self.scancodeio_version}"
             raise ValueError(msg)
 
-        self.update(scancodeio_version=scancodeio_version)
+        self.update(scancodeio_version=scancodeio.__version__)
+
+    def get_diff_url(self):
+        """
+        Return a GitHub diff URL between this Run commit at the time of execution
+        and the current commit of the ScanCode.io app instance.
+        The URL is only returned if both commit are available and if they differ.
+        """
+        if not (self.scancodeio_version and scancodeio.__version__):
+            return
+
+        run_commit = scancodeio.extract_short_commit(self.scancodeio_version)
+        current_commit = scancodeio.extract_short_commit(scancodeio.__version__)
+
+        if run_commit and current_commit and run_commit != current_commit:
+            return f"{scancodeio.GITHUB_URL}/compare/{run_commit}..{current_commit}"
 
     def set_current_step(self, message):
         """
