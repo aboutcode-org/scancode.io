@@ -28,14 +28,6 @@
           </span>
         {% endif %}
       {% endif %}
-      {% if run.task_id %}
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Task ID</span>
-            <span class="tag is-info">{{ run.task_id }}</span>
-          </div>
-        </div>
-      {% endif %}
       {% if run.status == run.Status.NOT_STARTED or run.status == run.Status.QUEUED %}
         <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-3">
           <i class="fa-solid fa-trash-alt"></i>
@@ -65,6 +57,34 @@
           <i class="fa-solid fa-ban"></i>
           Stop Pipeline
         </a>
+      {% endif %}
+    </div>
+    <div class="field is-grouped is-grouped-multiline">
+      {% if run.execution_time %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">ScanCode.io version</span>
+            {% with run.get_diff_url as diff_url %}
+              {% if diff_url %}
+                <a class="tag is-info" href="{{ diff_url }}" target="_blank">
+                  {{ run.scancodeio_version }}
+                </a>
+              {% else %}
+                <span class="tag is-info">
+                  {{ run.scancodeio_version }}
+                </span>
+              {% endif %}
+            {% endwith %}
+          </div>
+        </div>
+      {% endif %}
+      {% if run.task_id %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Task ID</span>
+            <span class="tag is-info">{{ run.task_id }}</span>
+          </div>
+        </div>
       {% endif %}
     </div>
     <div class="field is-grouped is-grouped-multiline">

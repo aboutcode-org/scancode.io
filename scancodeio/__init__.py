@@ -33,6 +33,7 @@ VERSION = "32.6.0"
 PROJECT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PROJECT_DIR.parent
 SCAN_NOTICE = PROJECT_DIR.joinpath("scan.NOTICE").read_text()
+GITHUB_URL = "https://github.com/nexB/scancode.io"
 
 
 def get_version(version):
@@ -69,6 +70,15 @@ def get_git_describe_from_version_file(version_file_location=ROOT_DIR / ".VERSIO
 
     if version and version.startswith("v"):
         return version
+
+
+def extract_short_commit(git_describe):
+    """
+    Extract the short commit hash from a Git describe string while removing
+    any leading "g" character if present.
+    """
+    short_commit = git_describe.split("-")[-1]
+    return short_commit.lstrip("g")
 
 
 __version__ = get_version(VERSION)
