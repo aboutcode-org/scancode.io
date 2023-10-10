@@ -90,8 +90,8 @@ An overview of the web application usage is available at :ref:`user_interface`.
     and ``CSRF_TRUSTED_ORIGINS`` settings need to be provided in your ``.env`` file,
     for example::
 
-        ALLOWED_HOSTS=.your-domain.com,localhost,127.0.0.1
-        CSRF_TRUSTED_ORIGINS=https://*.your-domain.com,http://127.0.0.1:8001
+        ALLOWED_HOSTS=.your-domain.com
+        CSRF_TRUSTED_ORIGINS=https://*.your-domain.com
 
     Refer to `ALLOWED_HOSTS settings <https://docs.djangoproject.com/
     en/dev/ref/settings/#allowed-hosts>`_ and `CSRF_TRUSTED_ORIGINS settings
