@@ -1290,6 +1290,10 @@ class DiscoveredPackageListView(
             "filter_fieldname": "is_vulnerable",
         },
         {
+            "field_name": "status",
+            "filter_fieldname": "status",
+        },
+        {
             "field_name": "declared_license_expression",
             "filter_fieldname": "declared_license_expression",
         },
@@ -1633,6 +1637,7 @@ class DiscoveredPackageDetailsView(
         "essentials": {
             "fields": [
                 "package_url",
+                "status",
                 "declared_license_expression",
                 {
                     "field_name": "declared_license_expression_spdx",

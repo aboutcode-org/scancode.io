@@ -8,7 +8,6 @@
         {
           "pipeline_name": "deploy_to_develop",
           "status": "not_started",
-          "description": "Establish relationships between two code trees: deployment and development.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,

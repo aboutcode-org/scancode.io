@@ -4,6 +4,9 @@ Changelog
 v32.6.1 (unreleased)
 --------------------
 
+- Add a ``status`` field on the DiscoveredPackage model.
+  https://github.com/nexB/scancode.io/issues/880
+
 - Display the ``Run.scancodeio_version`` in the Pipeline run modal.
   When possible this value is displayed as a link to the diff view between the current
   ScanCode.io version and the version used when the Pipeline was run.

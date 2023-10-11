@@ -31,6 +31,9 @@
                 </a>
               {% endif %}
             </td>
+            <td>
+              <a href="?status={{ package.status }}" class="is-black-link">{{ package.status }}</a>
+            </td>
             <td style="min-width: 300px; max-width: 400px;">
               <a href="?declared_license_expression={{ package.declared_license_expression }}" class="is-black-link">
                 {{ package.declared_license_expression }}

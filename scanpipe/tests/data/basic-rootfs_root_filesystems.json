@@ -8,7 +8,6 @@
         {
           "pipeline_name": "root_filesystems",
           "status": "not_started",
-          "description": "Analyze a Linux root filesystem, also known as rootfs.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -58,9 +57,9 @@
       "version": "6.1-1ubuntu1.18.04",
       "qualifiers": "architecture=amd64",
       "subpath": "",
+      "status": "",
       "tag": "",
       "primary_language": "",
-      "description": "shared libraries for terminal handling\n The ncurses library routines are a terminal-independent method of\n updating character screens with reasonable optimization.\n .\n This package contains the shared libraries necessary to run programs\n compiled with ncurses.",
       "release_date": null,
       "parties": [
         {
@@ -194,9 +193,9 @@
       "version": "1.4-2ubuntu0.16.04.1",
       "qualifiers": "architecture=amd64",
       "subpath": "",
+      "status": "",
       "tag": "",
       "primary_language": "",
-      "description": "Library for Neighbor Discovery Protocol\n libndp is a library for the IPv6 Neighbor Discovery Protocol (NDP).  It\n contains functions for building and parsing NDP messages, and provides\n a high-level interface for sending and receiving NDP messages on a\n network interface.",
       "release_date": null,
       "parties": [
         {

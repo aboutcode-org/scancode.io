@@ -1913,6 +1913,7 @@ class ScanPipeModelsTest(TestCase):
             "filename",
             "affected_by_vulnerabilities",
             "compliance_alert",
+            "status",
             "tag",
         ]
 

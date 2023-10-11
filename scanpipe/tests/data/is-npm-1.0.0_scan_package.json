@@ -60,7 +60,6 @@
       "qualifiers": {},
       "subpath": null,
       "primary_language": "JavaScript",
-      "description": "Check if your code is running as an npm script",
       "release_date": null,
       "parties": [
         {
@@ -303,7 +302,6 @@
           "qualifiers": {},
           "subpath": null,
           "primary_language": "JavaScript",
-          "description": "Check if your code is running as an npm script",
           "release_date": null,
           "parties": [
             {

@@ -624,6 +624,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "is_vulnerable",
         "compliance_alert",
+        "status",
     ]
 
     search = DiscoveredPackageSearchFilter(
@@ -642,6 +643,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "compliance_alert",
             "copyright",
             "primary_language",
+            "status",
             "tag",
         ],
         grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
@@ -655,6 +657,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     declared_license_expression = django_filters.filters.CharFilter(
         widget=HasValueDropdownWidget
     )
+    status = StatusFilter()
 
     class Meta:
         model = DiscoveredPackage
@@ -687,6 +690,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyright",
             "is_vulnerable",
             "compliance_alert",
+            "status",
             "tag",
         ]
 
