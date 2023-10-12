@@ -33,7 +33,9 @@ from django.test import override_settings
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
@@ -41,8 +43,10 @@ from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import dependency_data2
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
@@ -624,6 +628,18 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(b"extract_recursively: no\n", response.getvalue())
         self.assertEqual("application/x-yaml", response.headers["Content-Type"])
 
+    def test_scanpipe_views_project_views(self):
+        self.project1.labels.add("label1", "label2")
+        project2 = Project.objects.create(name="Analysis2")
+        project2.labels.add("label3", "label4")
+
+        url = reverse("project_list")
+        with self.assertNumQueries(8):
+            self.client.get(url)
+
+        with self.assertNumQueries(13):
+            self.client.get(self.project1.get_absolute_url())
+
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
         run = self.project1.add_pipeline("docker")
@@ -834,6 +850,34 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
 
+    def test_scanpipe_views_codebase_resource_views(self):
+        resource1 = make_resource_file(self.project1, "file1.ext")
+        resource2 = make_resource_file(self.project1, "file2.ext")
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package1.add_resources([resource1, resource2])
+
+        url = reverse("project_resources", args=[self.project1.slug])
+        with self.assertNumQueries(7):
+            self.client.get(url)
+
+        with self.assertNumQueries(7):
+            self.client.get(resource1.get_absolute_url())
+
+    def test_scanpipe_views_discovered_package_views(self):
+        resource1 = make_resource_file(self.project1, "file1.ext")
+        resource2 = make_resource_file(self.project1, "file2.ext")
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package1.add_resources([resource1, resource2])
+        package2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
+        package2.add_resources([resource1, resource2])
+
+        url = reverse("project_packages", args=[self.project1.slug])
+        with self.assertNumQueries(5):
+            self.client.get(url)
+
+        with self.assertNumQueries(6):
+            self.client.get(package1.get_absolute_url())
+
     def test_scanpipe_views_discovered_package_details_view_tabset(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         response = self.client.get(package1.get_absolute_url())
@@ -879,6 +923,41 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
+
+    def test_scanpipe_views_discovered_dependency_views(self):
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
+        make_resource_file(
+            self.project1, "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
+        )
+        make_resource_file(self.project1, "data.tar.gz-extract/Gemfile.lock")
+        dep1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
+        DiscoveredDependency.create_from_data(self.project1, dependency_data2)
+
+        url = reverse("project_dependencies", args=[self.project1.slug])
+        with self.assertNumQueries(10):
+            self.client.get(url)
+
+        with self.assertNumQueries(6):
+            self.client.get(dep1.get_absolute_url())
+
+    def test_scanpipe_views_codebase_relation_views(self):
+        CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=make_resource_file(self.project1, "r1"),
+            to_resource=make_resource_file(self.project1, "r2"),
+            map_type="java_to_class",
+        )
+
+        url = reverse("project_relations", args=[self.project1.slug])
+        with self.assertNumQueries(8):
+            self.client.get(url)
+
+    def test_scanpipe_views_project_message_views(self):
+        self.project1.add_message("warning")
+        self.project1.add_message("error")
+        url = reverse("project_messages", args=[self.project1.slug])
+        with self.assertNumQueries(5):
+            self.client.get(url)
 
     def test_scanpipe_views_license_list_view(self):
         url = reverse("license_list")

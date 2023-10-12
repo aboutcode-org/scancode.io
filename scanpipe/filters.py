@@ -705,10 +705,14 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     search = QuerySearchFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
-    sort = django_filters.OrderingFilter(
+    sort = GroupOrderingFilter(
         label="Sort",
         fields=[
+            "package_url",
             "type",
+            "namespace",
+            "name",
+            "version",
             "extracted_requirement",
             "scope",
             "is_runtime",
@@ -718,6 +722,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "datafile_resource",
             "datasource_id",
         ],
+        grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
     type = ParentAllValuesFilter()

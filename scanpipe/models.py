@@ -2485,6 +2485,15 @@ class DiscoveredPackageQuerySet(
         """Order by Package URL fields."""
         return self.order_by("type", "namespace", "name", "version")
 
+    def with_resources_count(self):
+        count_subquery = Subquery(
+            self.filter(pk=OuterRef("pk"))
+            .annotate(resources_count=Count("codebase_resources"))
+            .values("resources_count")[:1],
+            output_field=IntegerField(),
+        )
+        return self.annotate(resources_count=count_subquery)
+
 
 class AbstractPackage(models.Model):
     """These fields should be kept in line with `packagedcode.models.PackageData`."""
