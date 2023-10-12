@@ -637,6 +637,32 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             )
             messages.warning(self.request, message)
 
+    @staticmethod
+    def get_resource_license_summary(project, limit=10):
+        license_counter = count_group_by(
+            project.codebaseresources.files(), "detected_license_expression"
+        )
+
+        if list(license_counter.keys()) == [""]:
+            return
+
+        # Order the license list by the number of detections, higher first
+        licenses_sorted = dict(
+            sorted(license_counter.items(), key=operator.itemgetter(1), reverse=True)
+        )
+
+        # Remove the "no licenses" entry from the top list
+        no_licenses = licenses_sorted.pop("", None)
+
+        # Keep the top entries
+        top_licenses = dict(list(licenses_sorted.items())[:limit])
+
+        # Add the "no licenses" entry at the end
+        if no_licenses:
+            top_licenses[""] = no_licenses
+
+        return top_licenses
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
@@ -675,12 +701,6 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         if list(resource_status_summary.keys()) == [""]:
             resource_status_summary = None
 
-        resource_licenses_summary = count_group_by(
-            project.codebaseresources.files(), "detected_license_expression"
-        )
-        if list(resource_licenses_summary.keys()) == [""]:
-            resource_licenses_summary = None
-
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
@@ -694,7 +714,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "project_clone_form": ProjectCloneForm(project),
                 "project_resources_url": project_resources_url,
                 "resource_status_summary": resource_status_summary,
-                "resource_licenses_summary": resource_licenses_summary,
+                "resource_license_summary": self.get_resource_license_summary(project),
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
                 "pipeline_runs": pipeline_runs,

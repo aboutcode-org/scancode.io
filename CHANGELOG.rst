@@ -4,6 +4,14 @@ Changelog
 v32.6.1 (unreleased)
 --------------------
 
+- Display the ``Run.scancodeio_version`` in the Pipeline run modal.
+  When possible this value is displayed as a link to the diff view between the current
+  ScanCode.io version and the version used when the Pipeline was run.
+  https://github.com/nexB/scancode.io/issues/956
+
+- Improve presentation of the "Resources detected license expressions" project section.
+  https://github.com/nexB/scancode.io/issues/937
+
 - Add ability to sort by Package URL in package list
   https://github.com/nexB/scancode.io/issues/938
 
