@@ -5,9 +5,9 @@
     </dt>
     <dd class="mb-4">
       {% if field_data.template %}
-        {% include field_data.template with field_data=field_data only %}
+        {% include field_data.template with field_data=field_data %}
       {% else %}
-        {% include 'scanpipe/tabset/field_default.html' with field_data=field_data only %}
+        {% include 'scanpipe/tabset/field_default.html' with field_data=field_data %}
       {% endif %}
     </dd>
   {% endfor %}

@@ -503,7 +503,15 @@ class ProjectListView(
     model = Project
     filterset_class = ProjectFilterSet
     template_name = "scanpipe/project_list.html"
-    prefetch_related = ["runs", "labels"]
+    prefetch_related = [
+        "labels",
+        Prefetch(
+            "runs",
+            queryset=Run.objects.only(
+                "uuid", "pipeline_name", "project_id", "task_exitcode"
+            ),
+        ),
+    ]
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("project", 20)
     table_columns = [
         "name",
@@ -546,12 +554,19 @@ class ProjectListView(
         return (
             super()
             .get_queryset()
+            .only(
+                "uuid",
+                "name",
+                "slug",
+                "created_date",
+            )
             .with_counts(
                 "codebaseresources",
                 "discoveredpackages",
                 "discovereddependencies",
                 "projectmessages",
             )
+            .order_by("-created_date")
         )
 
 
@@ -1186,9 +1201,8 @@ class ProjectRelatedViewMixin:
         return self.project
 
     def get_queryset(self):
-        return (
-            super().get_queryset().select_related("project").project(self.get_project())
-        )
+        """Scope the QuerySet to the project."""
+        return super().get_queryset().project(self.get_project())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1209,7 +1223,12 @@ class CodebaseResourceListView(
     filterset_class = ResourceFilterSet
     template_name = "scanpipe/resource_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("resource", 100)
-    prefetch_related = ["discovered_packages"]
+    prefetch_related = [
+        Prefetch(
+            "discovered_packages",
+            queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS),
+        )
+    ]
     table_columns = [
         "path",
         {
@@ -1242,6 +1261,26 @@ class CodebaseResourceListView(
             "filter_is_right": True,
         },
     ]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .only(
+                "path",
+                "status",
+                "type",
+                "size",
+                "name",
+                "extension",
+                "programming_language",
+                "mime_type",
+                "tag",
+                "detected_license_expression",
+                "compliance_alert",
+            )
+            .order_by("path")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1297,7 +1336,6 @@ class DiscoveredPackageListView(
                 "copyright",
                 "affected_by_vulnerabilities",
             )
-            .select_related(None)
             .with_resources_count()
             .order_by_purl()
         )
@@ -1320,7 +1358,14 @@ class DiscoveredDependencyListView(
     filterset_class = DependencyFilterSet
     template_name = "scanpipe/dependency_list.html"
     paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("dependency", 100)
-    prefetch_related = ["for_package", "datafile_resource"]
+    prefetch_related = [
+        Prefetch(
+            "for_package", queryset=DiscoveredPackage.objects.only("uuid", *PURL_FIELDS)
+        ),
+        Prefetch(
+            "datafile_resource", queryset=CodebaseResource.objects.only("path", "name")
+        ),
+    ]
     table_columns = [
         {
             "field_name": "package_url",
@@ -1447,7 +1492,17 @@ class CodebaseResourceDetailsView(
         None: "info",
     }
     prefetch_related = [
-        "discovered_packages",
+        Prefetch(
+            "discovered_packages",
+            queryset=DiscoveredPackage.objects.only(
+                "uuid",
+                *PURL_FIELDS,
+                "package_uid",
+                "affected_by_vulnerabilities",
+                "primary_language",
+                "declared_license_expression",
+            ),
+        ),
         "related_from__from_resource__project",
         "related_to__to_resource__project",
     ]
@@ -1529,6 +1584,9 @@ class CodebaseResourceDetailsView(
             "icon_class": "fa-solid fa-database",
         },
     }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("project")
 
     @staticmethod
     def get_annotations(entries, value_key):
@@ -1621,7 +1679,21 @@ class DiscoveredPackageDetailsView(
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
     template_name = "scanpipe/package_detail.html"
-    prefetch_related = ["codebase_resources__project", "dependencies__project"]
+    prefetch_related = [
+        Prefetch(
+            "codebase_resources",
+            queryset=CodebaseResource.objects.only(
+                "path",
+                "name",
+                "status",
+                "programming_language",
+                "detected_license_expression",
+                "type",
+                "project_id",
+            ),
+        ),
+        "dependencies__project",
+    ]
     tabset = {
         "essentials": {
             "fields": [
@@ -1725,7 +1797,18 @@ class DiscoveredDependencyDetailsView(
     slug_field = "dependency_uid"
     slug_url_kwarg = "dependency_uid"
     template_name = "scanpipe/dependency_detail.html"
-    prefetch_related = ["for_package", "datafile_resource"]
+    prefetch_related = [
+        Prefetch(
+            "for_package",
+            queryset=DiscoveredPackage.objects.only(
+                "uuid", *PURL_FIELDS, "package_uid", "project_id"
+            ),
+        ),
+        Prefetch(
+            "datafile_resource",
+            queryset=CodebaseResource.objects.only("path", "name", "project_id"),
+        ),
+    ]
     tabset = {
         "essentials": {
             "fields": [
