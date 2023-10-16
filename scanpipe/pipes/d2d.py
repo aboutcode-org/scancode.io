@@ -577,12 +577,28 @@ def match_purldb_resource(
     return match_count
 
 
+def most_similar_match(directory_matches):
+    """
+    Given a list of `directory_matches`, return the match with the highest
+    similarity_score.
+    """
+    highest_similarity_score = 0
+    most_similar_match = None
+    for match in directory_matches:
+        similarity_score = match.similarity_score
+        if similarity_score > highest_similarity_score:
+            most_similar_match = match
+            highest_similarity_score = similarity_score
+    return most_similar_match
+
+
 def match_purldb_directory(project, resource):
     """Match a single directory resource in the PurlDB."""
     fingerprint = resource.extra_data.get("directory_content", "")
 
     if results := purldb.match_directory(fingerprint=fingerprint):
-        package_url = results[0]["package"]
+        result = most_similar_match(results)
+        package_url = result["package"]
         if package_data := purldb.request_get(url=package_url):
             return create_package_from_purldb_data(
                 project, [resource], package_data, flag.MATCHED_TO_PURLDB_DIRECTORY
