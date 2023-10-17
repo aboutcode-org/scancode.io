@@ -33,8 +33,8 @@ def info(message, pk):
 
 def get_run_instance(run_pk):
     """Return the run instance using the `run_pk`."""
-    run_model = apps.get_model("scanpipe", "Run")
-    return run_model.objects.get(pk=run_pk)
+    Run = apps.get_model("scanpipe", "Run")
+    return Run.objects.get(pk=run_pk)
 
 
 def report_failure(job, connection, type, value, traceback):
@@ -42,12 +42,18 @@ def report_failure(job, connection, type, value, traceback):
     Report a job failure as a call back when an exception is raised during the Job
     execution but was not caught by the task itself.
     """
-    run = get_run_instance(run_pk=job.id)
+    Run = apps.get_model("scanpipe", "Run")
+    try:
+        run = get_run_instance(run_pk=job.id)
+    except Run.DoesNotExist:
+        info(f"FAILURE to get the Run instance with job.id={job.id}", "Unknown")
+        return
+
     run.set_task_ended(exitcode=1, output=f"value={value} trace={traceback}")
 
 
 def execute_pipeline_task(run_pk):
-    info(f"Enter `execute_pipeline_task` Run.pk/Task.id={run_pk}", run_pk)
+    info(f"Enter `execute_pipeline_task` Run.pk={run_pk}", run_pk)
 
     run = get_run_instance(run_pk)
     project = run.project

@@ -85,8 +85,6 @@ from taggit.managers import TaggableManager
 from taggit.models import GenericUUIDTaggedItemBase
 from taggit.models import TaggedItemBase
 
-# from scancodeio import __version__ as scancodeio_version
-# from scancodeio import extract_short_commit
 import scancodeio
 from scanpipe import humanize_time
 from scanpipe import tasks
