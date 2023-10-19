@@ -32,7 +32,7 @@ from django.db.models import Q
 from django.db.models.expressions import Subquery
 from django.template.defaultfilters import pluralize
 
-from commoncode.paths import common_prefix
+from commoncode.paths import common_prefix, common_path_suffix
 from extractcode import EXTRACT_SUFFIX
 from packagedcode.npm import NpmPackageJsonHandler
 
@@ -754,6 +754,10 @@ def match_purldb_directories(project, logger=None):
     )
 
 
+def common_entries(list1, list2):
+    return [entry for entry in list1 if entry in list2]
+
+
 def match_purldb_directories_post_process(project, logger=None):
     """
     Select the best Package matches for directories that were matched to a
@@ -781,6 +785,51 @@ def match_purldb_directories_post_process(project, logger=None):
 
     # 3. From the top directory, compare how many package resources we have to
     #    the total number of package resources for each package matched
+    # TODO: figure out how to normalize paths between our codebase and what we got from purldb
+    # 3.1. create a mapping of paths by filenames
+    resources_by_filenames_by_purls = defaultdict(lambda: defaultdict(list))
+    for purl, resources in resources_by_purl.items():
+        for resource in resources:
+            resources_by_filenames_by_purls[purl][resource.name].append(resource)
+
+    # 3.2. for a directory in our codebase that was matched to a package, look
+    # up that directory in the package resources mapping, get the sha1's of the
+    # descendants of the directory that has been matched to a package and the
+    # sha1's of the desdendents of the directory on the package side
+    for matched_directory in matched_directories.iterator():
+        matched_directory.refresh_from_db()
+        matched_directory_descendants = matched_directory.descendants()
+        matched_directory_descendants_sha1s = [r.sha1 for r in matched_directory_descendants if r.is_file]
+
+        best_matched_package = None
+        best_matched_package_percentage = 0.0
+        for package in directory.discovered_packages.all():
+            directories = resources_by_filenames_by_purls[package.purl][directory.name]
+
+            for directory in directories:
+                directory_path = directory.get('path')
+
+                directory_descendants = []
+                for _, resource in resources_by_filenames_by_purls[package.purl].items():
+                    resource_path = resource.get('path')
+                    if resource_path.startswith(directory_path):
+                        directory_descendants.append(resource)
+
+                directory_descendants_sha1s = [r.get('sha1') for r in directory_descendants if r.get('type') == 'file']
+
+                # Do comparisons
+                common_sha1s = common_entries(matched_directory_descendants_sha1s, directory_descendants_sha1s)
+                package_resource_percentage_match =  len(common_sha1s) / len(directory_descendants_sha1s)
+
+                # pick best score
+                if package_resource_percentage_match > best_matched_package_percentage:
+                    best_matched_package_percentage = package_resource_percentage_match
+                    best_matched_package = package
+
+        # Delete package match from the project
+        # TODO: needs more testing to see if this works
+        if best_matched_package:
+            directory.discovered_packages.exclude(pk=best_matched_package.pk).delete()
 
 
 def map_javascript(project, logger=None):
