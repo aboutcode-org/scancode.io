@@ -1457,4 +1457,7 @@ def _match_purldb_resources_post_process(
 
     for package in common_discovered_packages:
         package.add_resources(list(interesting_codebase_resources))
+
+    # TODO: remove this debug status
+    interesting_codebase_resources.update(status="matched-to-purldb-resource-pp")
     return interesting_codebase_resources.count()
