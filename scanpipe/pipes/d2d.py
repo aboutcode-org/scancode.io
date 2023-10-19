@@ -1387,3 +1387,74 @@ def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
         status = flag.SCANNED_WITH_ERROR
 
     codebase_resource.set_scan_results(scan_results, status)
+
+
+def match_purldb_resources_post_process(project, logger=None):
+    """Choose the best package for PurlDB matched resources."""
+    to_extract_directories = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .filter(path__regex=r"^.*-extract$")
+    )
+
+    to_resources = project.codebaseresources.files().filter(
+        status=flag.MATCHED_TO_PURLDB_RESOURCE
+    )
+
+    resource_count = to_extract_directories.count()
+
+    if logger:
+        logger(
+            f"Refining matching for {resource_count:,d} "
+            f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+        )
+
+    resource_iterator = to_extract_directories.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
+    map_count = 0
+
+    for directory in progress.iter(resource_iterator):
+        map_count += _match_purldb_resources_post_process(
+            directory, to_extract_directories, to_resources
+        )
+
+    logger(f"{map_count:,d} resource matching refined")
+
+
+def _match_purldb_resources_post_process(
+    directory_path, to_extract_directories, to_resources
+):
+    # Skip, if the extract directory contains nested archive.
+    nested_archive = to_extract_directories.filter(
+        path__regex=rf"^{directory_path}.*-extract$"
+    ).count()
+
+    if nested_archive > 0:
+        return 0
+
+    interesting_codebase_resources = to_resources.filter(
+        path__startswith=directory_path
+    ).filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
+
+    if not interesting_codebase_resources:
+        return 0
+
+    first_codebase_resource = interesting_codebase_resources.first()
+    common_discovered_packages = first_codebase_resource.discovered_packages.all()
+
+    for resource in interesting_codebase_resources[1:]:
+        common_discovered_packages = common_discovered_packages.filter(
+            id__in=resource.discovered_packages.values_list("id", flat=True)
+        )
+
+    common_discovered_packages = list(common_discovered_packages)
+
+    if not common_discovered_packages:
+        return 0
+
+    for resource in interesting_codebase_resources:
+        resource.discovered_packages.clear()
+
+    for package in common_discovered_packages:
+        package.add_resources(list(interesting_codebase_resources))
+    return interesting_codebase_resources.count()
