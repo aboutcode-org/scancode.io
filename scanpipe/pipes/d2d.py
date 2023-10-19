@@ -585,7 +585,7 @@ def most_similar_match(directory_matches):
     highest_similarity_score = 0
     most_similar_match = None
     for match in directory_matches:
-        similarity_score = match.similarity_score
+        similarity_score = match.get('similarity_score')
         if similarity_score > highest_similarity_score:
             most_similar_match = match
             highest_similarity_score = similarity_score
@@ -790,7 +790,8 @@ def match_purldb_directories_post_process(project, logger=None):
     resources_by_filenames_by_purls = defaultdict(lambda: defaultdict(list))
     for purl, resources in resources_by_purl.items():
         for resource in resources:
-            resources_by_filenames_by_purls[purl][resource.name].append(resource)
+            resource_name = resource.get('name')
+            resources_by_filenames_by_purls[purl][resource_name].append(resource)
 
     # 3.2. for a directory in our codebase that was matched to a package, look
     # up that directory in the package resources mapping, get the sha1's of the
@@ -803,8 +804,8 @@ def match_purldb_directories_post_process(project, logger=None):
 
         best_matched_package = None
         best_matched_package_percentage = 0.0
-        for package in directory.discovered_packages.all():
-            directories = resources_by_filenames_by_purls[package.purl][directory.name]
+        for package in matched_directory.discovered_packages.all():
+            directories = resources_by_filenames_by_purls[package.purl][matched_directory.name]
 
             for directory in directories:
                 directory_path = directory.get('path')
