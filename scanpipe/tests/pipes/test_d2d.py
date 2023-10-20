@@ -184,6 +184,7 @@ class ScanPipeD2DPipesTest(TestCase):
                     "fingerprint": "abcdef",
                     "matched_fingerprint": "abcdef",
                     "package": "http://private.purldb.io/api/packages/package-id-123",
+                    "similarity_score": 1.0,
                 }
             ],
             package_data,
@@ -1179,6 +1180,86 @@ class ScanPipeD2DPipesTest(TestCase):
         from4.refresh_from_db()
 
         self.assertEqual(flag.IGNORED_MEDIA_FILE, from1.status)
-        self.assertEqual(flag.REQUIRES_REVIEW, from2.status)
-        self.assertEqual(flag.REQUIRES_REVIEW, from3.status)
+        self.assertEqual(flag.NO_LICENSES, from2.status)
+        self.assertEqual(flag.UNKNOWN_LICENSE, from3.status)
         self.assertEqual(flag.IGNORED_DOC_FILE, from4.status)
+
+    def test_scanpipe_pipes_d2d_handle_dangling_deployed_legal_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_dir.mkdir(parents=True)
+        to_resource_files = [
+            self.data_location / "d2d/legal/project.LICENSE",
+            self.data_location / "d2d/legal/license_mit.md",
+            self.data_location / "d2d/legal/project_notice.txt",
+            self.data_location / "codebase/a.txt",
+        ]
+        copy_inputs(to_resource_files, to_dir)
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        d2d.handle_dangling_deployed_legal_files(project=self.project1, logger=None)
+
+        expected = self.project1.codebaseresources.filter(
+            status=flag.REVIEW_DANGLING_LEGAL_FILE
+        ).count()
+
+        self.assertEqual(3, expected)
+
+    def test_scanpipe_pipes_d2d_oldest_packages(self):
+        packages = [
+            {
+                "purl": "pkg:other/org.elasticsearch/elasticsearch@7.17.9",
+                "release_date": "2023-02-01T00:27:00Z",
+                "sha1": "foo",
+            },
+            {
+                "purl": "pkg:maven/org.elasticsearch/elasticsearch@7.17.9",
+                "release_date": "2023-02-01T00:24:00Z",
+                "sha1": "foo",
+            },
+            {
+                "purl": "pkg:maven/org.elasticsearch/elasticsearch@7.1.0",
+                "release_date": "2021-02-01T00:27:00Z",
+                "sha1": "baz",
+            },
+        ]
+        results = d2d.oldest_packages(packages)
+        expected = [
+            {
+                "purl": "pkg:maven/org.elasticsearch/elasticsearch@7.17.9",
+                "release_date": "2023-02-01T00:24:00Z",
+                "sha1": "foo",
+            },
+            {
+                "purl": "pkg:maven/org.elasticsearch/elasticsearch@7.1.0",
+                "release_date": "2021-02-01T00:27:00Z",
+                "sha1": "baz",
+            },
+        ]
+        self.assertEquals(expected, results)
+
+    def test_scanpipe_pipes_d2d_most_similar_match(self):
+        directory_matches = [
+            {
+                "fingerprint": "00000047d267462aa14fedcb70e79fc53b2ea0d3",
+                "matched_fingerprint": "00000047d267462aa14fedcb70e79fc53b2ea0d3",
+                "package": "https://example.com/foo.jar",
+                "similarity_score": 0.89
+            },
+            {
+                "fingerprint": "00000047d267462aa14fedcb70e79fc53b2ea0d3",
+                "matched_fingerprint": "00000047d267462aa14fedcb70e79fc53b2ea0d3",
+                "package": "https://bar.com/foo.jar",
+                "similarity_score": 1.0
+            },
+        ]
+        result = d2d.most_similar_match(directory_matches)
+        expected = {
+            "fingerprint": "00000047d267462aa14fedcb70e79fc53b2ea0d3",
+            "matched_fingerprint": "00000047d267462aa14fedcb70e79fc53b2ea0d3",
+            "package": "https://bar.com/foo.jar",
+            "similarity_score": 1.0
+        }
+        self.assertEqual(expected, result)
