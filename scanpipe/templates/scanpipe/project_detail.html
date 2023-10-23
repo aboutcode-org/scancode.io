@@ -102,20 +102,10 @@
         </div>
       {% endif %}
 
-      {% if resource_status_summary or resource_license_summary %}
-        <div class="columns">
-          {% if resource_status_summary %}
-            <div class="column is-half">
-              {% include "scanpipe/panels/resource_status_summary.html"  %}
-            </div>
-          {% endif %}
-          {% if resource_license_summary %}
-            <div class="column is-half">
-              {% include "scanpipe/panels/resource_license_summary.html"  %}
-            </div>
-          {% endif %}
-        </div>
-      {% endif %}
+      <div class="columns">
+        <div hx-get="{% url 'project_resource_status_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
+        <div hx-get="{% url 'project_resource_license_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
+      </div>
 
       {% if project.extra_data %}
         <article id="project-extra-data" class="panel is-info">
