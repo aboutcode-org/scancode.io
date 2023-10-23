@@ -637,32 +637,6 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             )
             messages.warning(self.request, message)
 
-    @staticmethod
-    def get_resource_license_summary(project, limit=10):
-        license_counter = count_group_by(
-            project.codebaseresources.files(), "detected_license_expression"
-        )
-
-        if list(license_counter.keys()) == [""]:
-            return
-
-        # Order the license list by the number of detections, higher first
-        licenses_sorted = dict(
-            sorted(license_counter.items(), key=operator.itemgetter(1), reverse=True)
-        )
-
-        # Remove the "no licenses" entry from the top list
-        no_licenses = licenses_sorted.pop("", None)
-
-        # Keep the top entries
-        top_licenses = dict(list(licenses_sorted.items())[:limit])
-
-        # Add the "no licenses" entry at the end
-        if no_licenses:
-            top_licenses[""] = no_licenses
-
-        return top_licenses
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
@@ -697,10 +671,6 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         )
         codebase_root.sort(key=operator.methodcaller("is_file"))
 
-        resource_status_summary = count_group_by(project.codebaseresources, "status")
-        if list(resource_status_summary.keys()) == [""]:
-            resource_status_summary = None
-
         pipeline_runs = project.runs.all()
         self.check_run_scancode_version(pipeline_runs)
 
@@ -713,8 +683,6 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "add_labels_form": AddLabelsForm(),
                 "project_clone_form": ProjectCloneForm(project),
                 "project_resources_url": project_resources_url,
-                "resource_status_summary": resource_status_summary,
-                "resource_license_summary": self.get_resource_license_summary(project),
                 "license_clarity": license_clarity,
                 "scan_summary": scan_summary,
                 "pipeline_runs": pipeline_runs,
@@ -879,6 +847,75 @@ class ProjectChartsView(ConditionalLoginRequired, generic.DetailView):
 
                 context[f"{group_name}_{field_name}"] = self.get_summary(field_values)
 
+        return context
+
+
+class ProjectResourceStatusSummaryView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/panels/resource_status_summary.html"
+
+    @staticmethod
+    def get_resource_status_summary(project):
+        status_counter = count_group_by(project.codebaseresources, "status")
+
+        if list(status_counter.keys()) == [""]:
+            return
+
+        # Order the status list by occurrences, higher first
+        sorted_by_count = dict(
+            sorted(status_counter.items(), key=operator.itemgetter(1), reverse=True)
+        )
+
+        # Remove the "no status" entry from the top list
+        no_status = sorted_by_count.pop("", None)
+
+        # Add the "no status" entry at the end
+        if no_status:
+            sorted_by_count[""] = no_status
+
+        return sorted_by_count
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        summary = self.get_resource_status_summary(project=self.object)
+        context["resource_status_summary"] = summary
+        return context
+
+
+class ProjectResourceLicenseSummaryView(ConditionalLoginRequired, generic.DetailView):
+    model = Project
+    template_name = "scanpipe/panels/resource_license_summary.html"
+
+    @staticmethod
+    def get_resource_license_summary(project, limit=10):
+        license_counter = count_group_by(
+            project.codebaseresources.files(), "detected_license_expression"
+        )
+
+        if list(license_counter.keys()) == [""]:
+            return
+
+        # Order the license list by the number of detections, higher first
+        sorted_by_count = dict(
+            sorted(license_counter.items(), key=operator.itemgetter(1), reverse=True)
+        )
+
+        # Remove the "no licenses" entry from the top list
+        no_licenses = sorted_by_count.pop("", None)
+
+        # Keep the top entries
+        top_licenses = dict(list(sorted_by_count.items())[:limit])
+
+        # Add the "no licenses" entry at the end
+        if no_licenses:
+            top_licenses[""] = no_licenses
+
+        return top_licenses
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        summary = self.get_resource_license_summary(project=self.object)
+        context["resource_license_summary"] = summary
         return context
 
 
@@ -1318,7 +1355,7 @@ class DiscoveredPackageListView(
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 10)
     table_columns = [
         {
             "field_name": "package_url",
@@ -1338,7 +1375,10 @@ class DiscoveredPackageListView(
             "filter_fieldname": "copyright",
         },
         "primary_language",
-        "resources",
+        {
+            "field_name": "resources",
+            "sort_name": "resources_count",
+        },
     ]
 
     def get_queryset(self):

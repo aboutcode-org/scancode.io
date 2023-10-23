@@ -172,6 +172,16 @@ urlpatterns = [
         name="project_charts",
     ),
     path(
+        "project/<slug:slug>/resource_status_summary/",
+        views.ProjectResourceStatusSummaryView.as_view(),
+        name="project_resource_status_summary",
+    ),
+    path(
+        "project/<slug:slug>/resource_license_summary/",
+        views.ProjectResourceLicenseSummaryView.as_view(),
+        name="project_resource_license_summary",
+    ),
+    path(
         "project/<slug:slug>/",
         views.ProjectDetailView.as_view(),
         name="project_detail",
