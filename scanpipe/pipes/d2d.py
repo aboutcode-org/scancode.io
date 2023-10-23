@@ -1439,24 +1439,31 @@ def _match_purldb_resources_post_process(
     if not interesting_codebase_resources:
         return 0
 
-    first_codebase_resource = interesting_codebase_resources.first()
-    common_discovered_packages = first_codebase_resource.discovered_packages.all()
+    packages_map = {}
 
-    for resource in interesting_codebase_resources[1:]:
-        common_discovered_packages = common_discovered_packages.filter(
-            id__in=resource.discovered_packages.values_list("id", flat=True)
-        )
+    for resource in interesting_codebase_resources:
+        for package in resource.discovered_packages.all():
+            if package in packages_map:
+                packages_map[package].append(resource)
+            else:
+                packages_map[package] = [resource]
 
-    common_discovered_packages = list(common_discovered_packages)
-
-    if not common_discovered_packages:
-        return 0
+    # Rank the packages by most number of matched resources
+    ranked_packages = dict(
+        sorted(packages_map.items(), key=lambda item: len(item[1]), reverse=True)
+    )
 
     for resource in interesting_codebase_resources:
         resource.discovered_packages.clear()
 
-    for package in common_discovered_packages:
-        package.add_resources(list(interesting_codebase_resources))
+    for package, resources in ranked_packages.items():
+        empty_resources = [
+            resource
+            for resource in resources
+            if not resource.discovered_packages.exists()
+        ]
+        if empty_resources:
+            package.add_resources(empty_resources)
 
     # TODO: remove this debug status
     interesting_codebase_resources.update(status="matched-to-purldb-resource-pp")
