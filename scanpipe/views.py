@@ -1318,7 +1318,7 @@ class DiscoveredPackageListView(
     model = DiscoveredPackage
     filterset_class = PackageFilterSet
     template_name = "scanpipe/package_list.html"
-    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 100)
+    paginate_by = settings.SCANCODEIO_PAGINATE_BY.get("package", 10)
     table_columns = [
         {
             "field_name": "package_url",
@@ -1338,7 +1338,10 @@ class DiscoveredPackageListView(
             "filter_fieldname": "copyright",
         },
         "primary_language",
-        "resources",
+        {
+            "field_name": "resources",
+            "sort_name": "resources_count",
+        },
     ]
 
     def get_queryset(self):

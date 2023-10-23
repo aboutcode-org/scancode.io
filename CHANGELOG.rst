@@ -49,6 +49,9 @@ v32.6.1 (unreleased)
   This allows to include those files in the SBOMs and attribution outputs.
   https://github.com/nexB/scancode.io/issues/914
 
+- Enable sorting the packages list by resources count.
+  https://github.com/nexB/scancode.io/issues/978
+
 v32.6.0 (2023-08-29)
 --------------------
 

@@ -643,6 +643,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyright",
             "primary_language",
             "tag",
+            "resources_count",
         ],
         grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
