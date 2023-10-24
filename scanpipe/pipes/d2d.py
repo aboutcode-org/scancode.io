@@ -1424,17 +1424,12 @@ def match_purldb_resources_post_process(project, logger=None):
 def _match_purldb_resources_post_process(
     directory_path, to_extract_directories, to_resources
 ):
-    # Skip, if the extract directory contains nested archive.
-    nested_archive = to_extract_directories.filter(
-        path__regex=rf"^{directory_path}.*-extract$"
-    ).count()
-
-    if nested_archive > 0:
-        return 0
-
-    interesting_codebase_resources = to_resources.filter(
-        path__startswith=directory_path
-    ).filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
+    # Exclude the content of nested archive.
+    interesting_codebase_resources = (
+        to_resources.filter(path__startswith=directory_path)
+        .filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
+        .exclude(path__regex=rf"^{directory_path}.*-extract\/.*$")
+    )
 
     if not interesting_codebase_resources:
         return 0
@@ -1465,6 +1460,8 @@ def _match_purldb_resources_post_process(
         if empty_resources:
             package.add_resources(empty_resources)
 
+    count = interesting_codebase_resources.count()
+
     # TODO: remove this debug status
     interesting_codebase_resources.update(status="matched-to-purldb-resource-pp")
-    return interesting_codebase_resources.count()
+    return count
