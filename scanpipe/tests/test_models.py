@@ -1467,6 +1467,7 @@ class ScanPipeModelsTest(TestCase):
         make_resource_file(self.project1, path="dir/.example")
         make_resource_file(self.project1, path="dir/subdir/readme.html")
         make_resource_file(self.project1, path="foo$.class")
+        make_resource_file(self.project1, path="example-1.0.jar")
 
         patterns = [
             "example",
@@ -1483,6 +1484,7 @@ class ScanPipeModelsTest(TestCase):
             "dir/*/readme.*",
             r"*$.class",
             "*readme.htm?",
+            "example-*.jar",
         ]
 
         for pattern in patterns:

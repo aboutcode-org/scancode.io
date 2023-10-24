@@ -61,7 +61,7 @@
       "source_packages": [],
       "extra_data": {
         "ignored_resources": [
-          "flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/ConfigurationProvider.class"
+          "*flume-ng-node-*.jar-extract/org/apache/flume/node/ConfigurationProvider.class"
         ]
       },
       "package_uid": "",
@@ -112,9 +112,9 @@
       "status": "not-deployed",
       "tag": "from",
       "extension": ".ABOUT",
-      "md5": "04c25308d59068db649ebfd5d8103338",
-      "sha1": "9625fc925a01cfa22b6e1ce083a1b1802c2ce78c",
-      "sha256": "46142b274cda38e9c183001b58a72c8fc442b2162ae85e9a453a2c7a1a86d427",
+      "md5": "4f8ac19bc3661bbaac91fb8652b6c4cb",
+      "sha1": "ac27839cc3010c96b34796be83bc2e6b6bc1882b",
+      "sha256": "055133491484d680991ed98ba1f791e88f4552955e15d9c5b3b14c5d46b4ee16",
       "sha512": "",
       "programming_language": "",
       "is_binary": false,
@@ -143,9 +143,9 @@
       "status": "about-mapped",
       "tag": "from",
       "extension": ".ABOUT",
-      "md5": "b1d5c62c364d4470557bfba7d0338758",
-      "sha1": "828f79d9fc0619a5b869c46a54b10ee3573a00bb",
-      "sha256": "de514210e135dddffb6ace69aa5fe27e1873146e05eeb5b05c6de1f8c00b0010",
+      "md5": "c7fab493a90ebf247954e1e30582ba8f",
+      "sha1": "3090f7d036bf68c5421364ac03a094715348f9de",
+      "sha256": "71f10662c0806de172a04a07fffbb3d22bd72ddacef4188849a480afd4e46849",
       "sha512": "",
       "programming_language": "",
       "is_binary": false,
@@ -174,9 +174,9 @@
       "status": "about-mapped",
       "tag": "from",
       "extension": ".LICENSE",
-      "md5": "2b42edef8fa55315f34f2370b4715ca9",
-      "sha1": "58853eb8199b5afe72a73a25fd8cf8c94285174b",
-      "sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1",
+      "md5": "94c82ae800466538d15278d6be4feedc",
+      "sha1": "3837fdbc9d942bcd1c5f2d419148e944f7ce996a",
+      "sha256": "a4da19948e6906fa8af95a258b9a354f641adc6215956f0ec63f429a10f0f603",
       "sha512": "",
       "programming_language": "",
       "is_binary": false,

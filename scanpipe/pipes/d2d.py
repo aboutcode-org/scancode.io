@@ -790,8 +790,8 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
         )
         return
 
-    filename = package_data.get("filename")
-    if not filename:
+    files_pattern = package_data.get("filename")
+    if not files_pattern:
         # Cannot map anything without the about_resource value.
         project.add_error(
             description="ABOUT file does not have about_resource",
@@ -800,12 +800,12 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
         )
         return
 
-    ignored_resources = []
+    ignored_resource_patterns = []
+    codebase_resources = to_resources.path_pattern(pattern=files_pattern)
     if extra_data := package_data.get("extra_data"):
-        ignored_resources = extra_data.get("ignored_resources")
+        ignored_resource_patterns = extra_data.get("ignored_resources")
 
     # Fetch all resources that are covered by the .ABOUT file.
-    codebase_resources = to_resources.filter(path__contains=f"/{filename.lstrip('/')}")
     if not codebase_resources:
         # If there's nothing to map on the ``to/`` do not create the package.
         project.add_warning(
@@ -819,11 +819,10 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
         return
 
     # Ignore resources for paths in `ignored_resources` attribute
-    if ignored_resources:
-        lookups = Q()
-        for resource_path in ignored_resources:
-            lookups |= Q(**{"path__contains": resource_path})
-        codebase_resources = codebase_resources.filter(~lookups)
+    if ignored_resource_patterns:
+        codebase_resources = codebase_resources.path_patterns(
+            patterns=ignored_resource_patterns
+        )
 
     # Create the Package using .ABOUT data and assigned related codebase_resources
     pipes.update_or_create_package(project, package_data, codebase_resources)
