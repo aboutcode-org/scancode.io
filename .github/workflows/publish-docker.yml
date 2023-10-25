@@ -55,5 +55,5 @@ jobs:
           push: true
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/nexb/scancode.io:latest
           labels: ${{ steps.meta.outputs.labels }}
