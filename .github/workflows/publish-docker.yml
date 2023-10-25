@@ -25,7 +25,6 @@ jobs:
 
       # Uses the `docker/login-action` action to log in to the Container registry using
       # the account and password that will publish the packages.
-      # Once published, the packages are scoped to the account defined here.
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -33,24 +32,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # This step uses [docker/metadata-action]
-      # (https://github.com/docker/metadata-action#about)
-      # to extract tags and labels that will be applied to the specified image.
+      # Extract tags and labels that will be applied to the specified image.
       # The `id` "meta" allows the output of this step to be referenced in a subsequent
-      # step. The `images` value provides the base name for the tags and labels.
+      # step.
+      # The `images` value provides the base name for the tags and labels.
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      # This step uses the `docker/build-push-action` action to build the image,
-      # based on your repository's `Dockerfile`.
+      # Build the image based on your repository's `Dockerfile`.
       # If the build succeeds, it pushes the image to GitHub Packages.
       # It uses the `context` parameter to define the build's context as the set of
-      # files located in the specified path. For more information,
-      # see "[Usage](https://github.com/docker/build-push-action#usage)" in the
-      # README of the `docker/build-push-action` repository.
+      # files located in the specified path.
       # It uses the `tags` and `labels` parameters to tag and label the image with
       # the output from the "meta" step.
       - name: Build and push Docker image
@@ -60,37 +55,5 @@ jobs:
           push: true
           tags: |
             ${{ steps.meta.outputs.tags }}
-            ${{ env.REGISTRY }}/nexb/scancode.io:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
-
-
-#name: Publish Docker image on GHCR
-#
-#on: [push, pull_request]
-#
-#jobs:
-#  build-and-publish:
-#    name: Build Docker image and publish on GHCR
-#    runs-on: ubuntu-22.04
-#
-#    steps:
-#      - name: Set up QEMU
-#        uses: docker/setup-qemu-action@v3
-#
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v3
-#
-#      - name: Login to GitHub Container Registry
-#        uses: docker/login-action@v3
-#        with:
-#          registry: ghcr.io
-#          username: ${{ github.actor }}
-#          password: ${{ secrets.GITHUB_TOKEN }}
-#
-#      - name: Build and push
-#        uses: docker/build-push-action@v5
-#        with:
-#          push: true
-#          tags: |
-#            nexb/scancode.io:latest
-#            nexb/scancode.io:${{ github.sha }}
