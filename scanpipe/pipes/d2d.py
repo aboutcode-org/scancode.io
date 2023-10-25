@@ -1418,7 +1418,7 @@ def match_purldb_resources_post_process(project, logger=None):
             directory, to_extract_directories, to_resources
         )
 
-    logger(f"{map_count:,d} resource matching refined")
+    logger(f"{map_count:,d} resource processed")
 
 
 def _match_purldb_resources_post_process(
@@ -1443,7 +1443,7 @@ def _match_purldb_resources_post_process(
             else:
                 packages_map[package] = [resource]
 
-    # Rank the packages by most number of matched resources
+    # Rank the packages by most number of matched resources.
     ranked_packages = dict(
         sorted(packages_map.items(), key=lambda item: len(item[1]), reverse=True)
     )
@@ -1452,16 +1452,12 @@ def _match_purldb_resources_post_process(
         resource.discovered_packages.clear()
 
     for package, resources in ranked_packages.items():
-        empty_resources = [
+        unmapped_resources = [
             resource
             for resource in resources
             if not resource.discovered_packages.exists()
         ]
-        if empty_resources:
-            package.add_resources(empty_resources)
+        if unmapped_resources:
+            package.add_resources(unmapped_resources)
 
-    count = interesting_codebase_resources.count()
-
-    # TODO: remove this debug status
-    interesting_codebase_resources.update(status="matched-to-purldb-resource-pp")
-    return count
+    return interesting_codebase_resources.count()
