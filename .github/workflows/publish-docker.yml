@@ -1,7 +1,11 @@
 name: Publish Docker image on GHCR
 # https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions
-#
-on: [push, pull_request]
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
 
 # Defines two custom environment variables for the workflow.
 # These are used for the Container registry domain,
