@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v32.6.1 (unreleased)
+v32.7.0 (2023-10-25)
 --------------------
 
 - Display the ``Run.scancodeio_version`` in the Pipeline run modal.
