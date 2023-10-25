@@ -24,4 +24,4 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: ghcr.io/user/app:latest
+          tags: ${{ steps.vars.outputs.tags }}
