@@ -1,9 +1,10 @@
-name: Publish Docker image to GHCR
+name: Publish Docker image on GHCR
 
 on: [push, pull_request]
 
 jobs:
   build-and-publish:
+    name: Build Docker image and publish on GHCR
     runs-on: ubuntu-22.04
 
     steps:
@@ -25,5 +26,5 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ github.repository }}:latest
-            ${{ github.repository }}:${{ github.sha }}
+            nexb/scancode.io:latest
+            nexb/scancode.io:${{ github.sha }}
