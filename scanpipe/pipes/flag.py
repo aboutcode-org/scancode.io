@@ -35,6 +35,7 @@ NOT_ANALYZED = "not-analyzed"
 
 IGNORED_WHITEOUT = "ignored-whiteout"
 IGNORED_EMPTY_FILE = "ignored-empty-file"
+IGNORED_WHITESPACE_FILE = "ignored-whitespace-file"
 IGNORED_DIRECTORY = "ignored-directory"
 IGNORED_PATTERN = "ignored-pattern"
 IGNORED_MEDIA_FILE = "ignored-media-file"

@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-FROM --platform=linux/amd64 python:3.11
+FROM --platform=linux/amd64 python:3.11-slim
 
 LABEL org.opencontainers.image.source="https://github.com/nexB/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -56,6 +56,7 @@ RUN apt-get update \
        libdevmapper1.02.1 \
        libguestfs-tools \
        linux-image-amd64 \
+       git \
        wait-for-it \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

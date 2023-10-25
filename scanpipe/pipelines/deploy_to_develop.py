@@ -48,6 +48,7 @@ class DeployToDevelop(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.fingerprint_codebase_directories,
             cls.flag_empty_files,
+            cls.flag_whitespace_files,
             cls.flag_ignored_resources,
             cls.map_about_files,
             cls.map_checksum,
@@ -135,6 +136,14 @@ class DeployToDevelop(Pipeline):
     def fingerprint_codebase_directories(self):
         """Compute directory fingerprints for matching"""
         matchcode.fingerprint_codebase_directories(self.project, to_codebase_only=True)
+
+    def flag_whitespace_files(self):
+        """
+        Flag whitespace files with size less than or equal
+        to 1 byte as ignored.
+        """
+        qs = self.project.codebaseresources.files().filter(size__lte=1)
+        qs.update(status=flag.IGNORED_WHITESPACE_FILE)
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
