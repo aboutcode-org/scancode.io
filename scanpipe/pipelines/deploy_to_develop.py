@@ -138,10 +138,9 @@ class DeployToDevelop(Pipeline):
     def flag_whitespace_files(self):
         """
         Flag whitespace files with size less than or equal
-        to 1 byte as ignored.
+        to 100 byte as ignored.
         """
-        qs = self.project.codebaseresources.files().filter(size__lte=1)
-        qs.update(status=flag.IGNORED_WHITESPACE_FILE)
+        d2d.flag_whitespace_files(project=self.project)
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
