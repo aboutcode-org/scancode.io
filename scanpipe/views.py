@@ -879,6 +879,9 @@ class ProjectResourceStatusSummaryView(ConditionalLoginRequired, generic.DetailV
         context = super().get_context_data(**kwargs)
         summary = self.get_resource_status_summary(project=self.object)
         context["resource_status_summary"] = summary
+        context["project_resources_url"] = reverse(
+            "project_resources", args=[self.object.slug]
+        )
         return context
 
 
@@ -916,6 +919,9 @@ class ProjectResourceLicenseSummaryView(ConditionalLoginRequired, generic.Detail
         context = super().get_context_data(**kwargs)
         summary = self.get_resource_license_summary(project=self.object)
         context["resource_license_summary"] = summary
+        context["project_resources_url"] = reverse(
+            "project_resources", args=[self.object.slug]
+        )
         return context
 
 
