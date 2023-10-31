@@ -1145,7 +1145,8 @@ class ScanPipeModelsTest(TestCase):
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
-        self.assertEqual("", resource.compliance_alert)
+        resource.compliance_alert = resource.compute_compliance_alert()
+        self.assertEqual("warning", resource.compliance_alert)
 
         license_expression = "bsd-new"
         self.assertNotIn(license_expression, scanpipe_app.license_policies_index)

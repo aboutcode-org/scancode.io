@@ -1967,7 +1967,7 @@ class ComplianceAlertMixin(models.Model):
         """Compute and return the compliance_alert value from the licenses policies."""
         license_expression = getattr(self, self.license_expression_field, "")
         if not license_expression:
-            return ""
+            return self.Compliance.WARNING
 
         alerts = []
         policy_index = scanpipe_app.license_policies_index
