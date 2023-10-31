@@ -69,6 +69,7 @@ class DeployToDevelop(Pipeline):
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
             cls.flag_deployed_from_resources_with_missing_license,
+            cls.create_local_files_packages,
         )
 
     purldb_package_extensions = [".jar", ".war", ".zip"]
