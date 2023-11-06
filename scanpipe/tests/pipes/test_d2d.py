@@ -268,6 +268,16 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_directory(
             self.project1, path="to/archive.lpkg-extract", status=flag.IGNORED_DIRECTORY
         )
+        to_archive_embedded = make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/embedded-archive.lpkg",
+            is_archive=True,
+        )
+        make_resource_directory(
+            self.project1,
+            path="to/archive.lpkg-extract/embedded-archive.lpkg-extract",
+            status=flag.IGNORED_DIRECTORY,
+        )
         make_resource_file(
             self.project1,
             path="to/archive.lpkg-extract/file1.txt",
@@ -278,19 +288,25 @@ class ScanPipeD2DPipesTest(TestCase):
             path="to/archive.lpkg-extract/file2.txt",
             status=flag.MATCHED_TO_PURLDB_RESOURCE,
         )
+        resource1 = make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/embedded-archive.lpkg-extract/file3.txt",
+            status=flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
 
         d2d.flag_processed_archives(self.project1)
+
+        to_archive_embedded.refresh_from_db()
+        self.assertEqual(flag.ARCHIVE_PROCESSED, to_archive_embedded.status)
+
         to_archive.refresh_from_db()
         self.assertEqual(flag.ARCHIVE_PROCESSED, to_archive.status)
 
-        to_archive.update(status="")
-        make_resource_file(
-            self.project1,
-            path="to/archive.lpkg-extract/file3.txt",
-        )
+        to_archive_embedded.update(status="")
+        resource1.update(status="")
         d2d.flag_processed_archives(self.project1)
-        to_archive.refresh_from_db()
-        self.assertEqual("", to_archive.status)
+        to_archive_embedded.refresh_from_db()
+        self.assertEqual("", to_archive_embedded.status)
 
     def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(
