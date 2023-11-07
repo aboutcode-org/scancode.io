@@ -38,12 +38,15 @@ class DWARF(DeployToDevelop):
             cls.flag_mapped_resources_archives_and_ignored_directories,
         )
 
+
+
     def build_inventory_from_scans(self):
         """Build inventories"""
-        for input_path, tag in [(self.from_file, "from"), (self.to_file, "to")]:
-            input.load_inventory_from_toolkit_scan(
-                self.project, input_path, resource_defaults={"tag": tag}
-            )
+        for input_paths, tag in [(self.from_files, "from"), (self.to_files, "to")]:
+            for input_path in input_paths:
+                input.load_inventory_from_toolkit_scan(
+                    self.project, input_path, resource_defaults={"tag": tag}
+                )
 
     def map_dwarf_paths(self):
         """Map DWARF paths"""
