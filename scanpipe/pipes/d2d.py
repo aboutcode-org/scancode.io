@@ -1119,7 +1119,9 @@ def flag_processed_archives(project):
     have statuses. If so, it updates the status of the package archive to
     "archive-processed".
     """
-    to_resources = project.codebaseresources.all().to_codebase().no_status()
+    to_resources = (
+        project.codebaseresources.all().to_codebase().no_status().order_by("-path")
+    )
 
     for archive_resource in to_resources.archives():
         extract_path = archive_resource.path + EXTRACT_SUFFIX
@@ -1387,6 +1389,26 @@ def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
         status = flag.SCANNED_WITH_ERROR
 
     codebase_resource.set_scan_results(scan_results, status)
+
+
+def flag_whitespace_files(project):
+    """
+    Flag whitespace files with size less than or equal
+    to 100 byte as ignored.
+    """
+    resources = project.codebaseresources.files().no_status().filter(size__lte=100)
+
+    # Set of whitespace characters.
+    whitespace_set = set(b" \n\r\t\f\b")
+
+    for resource in resources:
+        binary_data = open(resource.location, "rb").read()
+        binary_set = set(binary_data)
+        non_whitespace_bytes = binary_set - whitespace_set
+
+        # If resource contains only whitespace characters.
+        if not non_whitespace_bytes:
+            resource.update(status=flag.IGNORED_WHITESPACE_FILE)
 
 
 def match_purldb_resources_post_process(project, logger=None):
