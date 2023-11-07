@@ -1779,14 +1779,17 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         """Resources with a path that match the provided ``pattern``."""
         return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
 
-    def path_patterns(self, patterns):
+    def path_patterns(self, patterns, ignore=False):
         """Resources with a path that match the provided ``pattern``."""
         lookups = Q()
         for resource_pattern in patterns:
             lookups |= Q(
                 **{"path__regex": posix_regex_to_django_regex_lookup(resource_pattern)}
             )
-        return self.filter(~lookups)
+        if ignore:
+            return self.filter(~lookups)
+        else:
+            return self.filter(lookups)
 
     def has_directory_content_fingerprint(self):
         """
