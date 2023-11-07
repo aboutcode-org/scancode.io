@@ -1119,7 +1119,9 @@ def flag_processed_archives(project):
     have statuses. If so, it updates the status of the package archive to
     "archive-processed".
     """
-    to_resources = project.codebaseresources.all().to_codebase().no_status()
+    to_resources = (
+        project.codebaseresources.all().to_codebase().no_status().order_by("-path")
+    )
 
     for archive_resource in to_resources.archives():
         extract_path = archive_resource.path + EXTRACT_SUFFIX
