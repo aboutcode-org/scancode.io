@@ -66,6 +66,8 @@ class DeployToDevelop(Pipeline):
             cls.map_path,
             cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.perform_house_keeping_tasks,
+            cls.match_purldb_resources_post_process,
+            cls.remove_packages_without_resources,
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
             cls.flag_deployed_from_resources_with_missing_license,
@@ -251,6 +253,17 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
+
+    def match_purldb_resources_post_process(self):
+        """Choose the best package for PurlDB matched resources."""
+        d2d.match_purldb_resources_post_process(self.project, logger=self.log)
+
+    def remove_packages_without_resources(self):
+        """Remove packages without any resources."""
+        package_without_resources = self.project.discoveredpackages.filter(
+            codebase_resources__isnull=True
+        )
+        package_without_resources.delete()
 
     def scan_unmapped_to_files(self):
         """

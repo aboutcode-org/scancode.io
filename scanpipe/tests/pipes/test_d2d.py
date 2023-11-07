@@ -38,6 +38,7 @@ from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 from scanpipe.tests import resource_data1
 
 
@@ -1256,3 +1257,67 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertNotEqual(
             flag.IGNORED_WHITESPACE_FILE, non_whitespace_resource.status
         )
+
+    def test_scanpipe_pipes_d2d_match_purldb_resources_post_process(self):
+        to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
+        to_mini = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_dir = (
+            self.project1.codebase_path
+            / "to/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web-extract/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_inputs([to_map, to_mini], to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_resources = self.project1.codebaseresources.filter(
+            path__startswith=(
+                "to/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web-extract/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+
+        to_mini_resource = self.project1.codebaseresources.filter(
+            path=(
+                "to/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web-extract/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+
+        dummy_package_data1 = package_data1.copy()
+        dummy_package_data1["uuid"] = uuid.uuid4()
+        package1, _ = d2d.create_package_from_purldb_data(
+            self.project1,
+            to_resources,
+            dummy_package_data1,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        dummy_package_data2 = package_data2.copy()
+        dummy_package_data2["uuid"] = uuid.uuid4()
+        package2, _ = d2d.create_package_from_purldb_data(
+            self.project1,
+            to_mini_resource,
+            dummy_package_data2,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        buffer = io.StringIO()
+        d2d.match_purldb_resources_post_process(
+            self.project1,
+            logger=buffer.write,
+        )
+        expected = (
+            "Refining matching for 1 " f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        package1_resource_count = package1.codebase_resources.count()
+        package2_resource_count = package2.codebase_resources.count()
+
+        self.assertEqual(2, package1_resource_count)
+        self.assertEqual(0, package2_resource_count)
