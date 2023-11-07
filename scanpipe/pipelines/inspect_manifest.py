@@ -27,7 +27,7 @@ from scanpipe.pipes import update_or_create_package
 
 class InspectManifest(Pipeline):
     """
-    Inspect one or more manifest files and resolve its packages.
+    Inspect one or more manifest files and resolve their associated packages.
 
     Supports:
     - BOM: SPDX document, CycloneDX BOM, AboutCode ABOUT file

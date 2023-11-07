@@ -55,9 +55,11 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.models import RunNotAllowedToStart
+from scanpipe.models import UUIDTaggedItem
 from scanpipe.models import get_project_work_directory
 from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipes.fetch import Download
@@ -65,6 +67,7 @@ from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import license_policies_index
+from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
@@ -150,21 +153,25 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(work_path.exists())
 
         self.project1.add_pipeline("docker")
+        self.project1.labels.add("label1", "label2")
+        self.assertEqual(2, UUIDTaggedItem.objects.count())
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
 
         delete_log = self.project1.delete_related_objects()
         expected = {
-            "scanpipe.DiscoveredPackage_codebase_resources": 1,
-            "scanpipe.DiscoveredPackage": 1,
-            "scanpipe.ProjectError": 0,
             "scanpipe.CodebaseRelation": 0,
-            "scanpipe.DiscoveredDependency": 0,
             "scanpipe.CodebaseResource": 1,
+            "scanpipe.DiscoveredDependency": 0,
+            "scanpipe.DiscoveredPackage": 1,
+            "scanpipe.DiscoveredPackage_codebase_resources": 1,
+            "scanpipe.ProjectMessage": 0,
             "scanpipe.Run": 1,
         }
         self.assertEqual(expected, delete_log)
+        # Make sure the labels were deleted too.
+        self.assertEqual(0, UUIDTaggedItem.objects.count())
 
     def test_scanpipe_project_model_delete(self):
         work_path = self.project1.work_path
@@ -198,7 +205,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.reset()
 
         self.assertTrue(Project.objects.filter(name=self.project1.name).exists())
-        self.assertEqual(0, self.project1.projecterrors.count())
+        self.assertEqual(0, self.project1.projectmessages.count())
         self.assertEqual(0, self.project1.runs.count())
         self.assertEqual(0, self.project1.discoveredpackages.count())
         self.assertEqual(0, self.project1.codebaseresources.count())
@@ -209,6 +216,50 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.output_path.exists())
         self.assertTrue(self.project1.codebase_path.exists())
         self.assertTrue(self.project1.tmp_path.exists())
+
+    def test_scanpipe_project_model_clone(self):
+        self.project1.add_input_source(filename="file1", source="uploaded")
+        self.project1.add_input_source(filename="file2", source="https://download.url")
+        self.project1.update(settings={"extract_recursively": True})
+        new_file_path1 = self.project1.input_path / "file.zip"
+        new_file_path1.touch()
+        run1 = self.project1.add_pipeline("docker")
+        run2 = self.project1.add_pipeline("find_vulnerabilities")
+        subscription1 = self.project1.add_webhook_subscription("http://domain.url")
+
+        cloned_project = self.project1.clone("cloned project")
+        self.assertIsInstance(cloned_project, Project)
+        self.assertNotEqual(self.project1.pk, cloned_project.pk)
+        self.assertNotEqual(self.project1.slug, cloned_project.slug)
+        self.assertNotEqual(self.project1.work_directory, cloned_project.work_directory)
+
+        self.assertEqual("cloned project", cloned_project.name)
+        self.assertEqual({}, cloned_project.settings)
+        self.assertEqual({}, cloned_project.input_sources)
+        self.assertEqual([], list(cloned_project.inputs()))
+        self.assertEqual([], list(cloned_project.runs.all()))
+        self.assertEqual([], list(cloned_project.webhooksubscriptions.all()))
+
+        cloned_project2 = self.project1.clone(
+            "cloned project full",
+            copy_inputs=True,
+            copy_pipelines=True,
+            copy_settings=True,
+            copy_subscriptions=True,
+            execute_now=False,
+        )
+        self.assertEqual(self.project1.settings, cloned_project2.settings)
+        self.assertEqual(self.project1.input_sources, cloned_project2.input_sources)
+        self.assertEqual(1, len(list(cloned_project2.inputs())))
+        runs = cloned_project2.runs.all()
+        self.assertEqual(
+            ["docker", "find_vulnerabilities"], [run.pipeline_name for run in runs]
+        )
+        self.assertNotEqual(run1.pk, runs[0].pk)
+        self.assertNotEqual(run2.pk, runs[1].pk)
+        self.assertEqual(1, len(cloned_project2.webhooksubscriptions.all()))
+        cloned_subscription = cloned_project2.webhooksubscriptions.get()
+        self.assertNotEqual(subscription1.uuid, cloned_subscription.uuid)
 
     def test_scanpipe_project_model_input_sources_list_property(self):
         self.project1.add_input_source(filename="file1", source="uploaded")
@@ -282,6 +333,13 @@ class ScanPipeModelsTest(TestCase):
         self.assertIsNone(self.project1.get_latest_output("none"))
         self.assertEqual(scan3, self.project1.get_latest_output("scancode"))
         self.assertEqual(summary2, self.project1.get_latest_output("summary"))
+
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_project_model_get_output_files_info(self):
+        self.assertEqual([], self.project1.get_output_files_info())
+        self.project1.get_output_file_path("file", "ext").write_text("Some content")
+        expected = [{"name": "file-2010-10-10-10-10-10.ext", "size": 12}]
+        self.assertEqual(expected, self.project1.get_output_files_info())
 
     def test_scanpipe_project_model_write_input_file(self):
         self.assertEqual([], self.project1.input_files)
@@ -459,33 +517,6 @@ class ScanPipeModelsTest(TestCase):
         run2.save()
         self.assertEqual(None, self.project1.get_next_run())
 
-    def test_scanpipe_project_model_get_latest_failed_run(self):
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1 = self.create_run()
-        run2 = self.create_run()
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = 0
-        run1.save()
-        self.assertEqual(None, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = 1
-        run1.save()
-        self.assertEqual(run1, self.project1.get_latest_failed_run())
-
-        run2.task_exitcode = 0
-        run2.save()
-        self.assertEqual(run1, self.project1.get_latest_failed_run())
-
-        run2.task_exitcode = 1
-        run2.save()
-        self.assertEqual(run2, self.project1.get_latest_failed_run())
-
-        run1.task_exitcode = None
-        run1.save()
-        self.assertEqual(run2, self.project1.get_latest_failed_run())
-
     def test_scanpipe_project_model_raise_if_run_in_progress(self):
         run1 = self.create_run()
         self.assertIsNone(self.project1._raise_if_run_in_progress())
@@ -510,7 +541,7 @@ class ScanPipeModelsTest(TestCase):
         project_qs = Project.objects.with_counts(
             "codebaseresources",
             "discoveredpackages",
-            "projecterrors",
+            "projectmessages",
         )
 
         project = project_qs.get(pk=self.project_asgiref.pk)
@@ -518,8 +549,8 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(18, project.codebaseresources.count())
         self.assertEqual(2, project.discoveredpackages_count)
         self.assertEqual(2, project.discoveredpackages.count())
-        self.assertEqual(2, project.projecterrors_count)
-        self.assertEqual(2, project.projecterrors.count())
+        self.assertEqual(2, project.projectmessages_count)
+        self.assertEqual(2, project.projectmessages.count())
 
     def test_scanpipe_project_related_queryset_get_or_none(self):
         self.assertIsNone(CodebaseResource.objects.get_or_none(path="path/"))
@@ -550,6 +581,22 @@ class ScanPipeModelsTest(TestCase):
         config_file.write_text(self.project1.get_settings_as_yml())
         self.assertEqual(env_from_test_config, self.project1.get_env())
 
+    def test_get_enabled_settings(self):
+        self.assertEqual({}, self.project1.settings)
+        self.assertEqual({}, self.project1.get_enabled_settings())
+
+        self.project1.update(
+            settings={"ignored_patterns": None, "attribution_template": ""}
+        )
+        self.assertEqual({}, self.project1.get_enabled_settings())
+
+        self.project1.update(
+            settings={"ignored_patterns": "ignore_me", "attribution_template": ""}
+        )
+        self.assertEqual(
+            {"ignored_patterns": "ignore_me"}, self.project1.get_enabled_settings()
+        )
+
     def test_scanpipe_project_get_env(self):
         self.assertEqual({}, self.project1.get_env())
 
@@ -562,7 +609,7 @@ class ScanPipeModelsTest(TestCase):
         }
         self.assertEqual(expected, self.project1.get_env())
 
-        config = {"extract_recursively": True}
+        config = {"extract_recursively": True, "ignored_patterns": None}
         self.project1.settings = config
         self.project1.save()
         expected = {
@@ -578,6 +625,18 @@ class ScanPipeModelsTest(TestCase):
         config_file_location = str(self.project1.get_input_config_file())
         self.assertTrue(config_file_location.endswith("input/scancode-config.yml"))
         self.assertEqual({}, self.project1.get_env())
+
+    def test_scanpipe_project_model_labels(self):
+        self.project1.labels.add("label1", "label2")
+        self.assertEqual(2, UUIDTaggedItem.objects.count())
+        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+
+        self.project1.labels.remove("label1")
+        self.assertEqual(1, UUIDTaggedItem.objects.count())
+        self.assertEqual(["label2"], sorted(self.project1.labels.names()))
+
+        self.project1.labels.clear()
+        self.assertEqual(0, UUIDTaggedItem.objects.count())
 
     def test_scanpipe_model_update_mixin(self):
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
@@ -655,6 +714,19 @@ class ScanPipeModelsTest(TestCase):
         with self.assertRaises(ValueError) as cm:
             run1.set_scancodeio_version()
         self.assertIn("Field scancodeio_version already set to", str(cm.exception))
+
+    def test_scanpipe_run_model_get_diff_url(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual("", run1.scancodeio_version)
+        self.assertIsNone(run1.get_diff_url())
+
+        with mock.patch("scancodeio.__version__", "v32.3.0-28-g0000000"):
+            run1.set_scancodeio_version()
+        self.assertEqual("v32.3.0-28-g0000000", run1.scancodeio_version)
+
+        expected = "https://github.com/nexB/scancode.io/compare/0000000..ffffffff"
+        with mock.patch("scancodeio.__version__", "v31.0.0-1-gffffffff"):
+            self.assertEqual(expected, run1.get_diff_url())
 
     def test_scanpipe_run_model_set_current_step(self):
         run1 = Run.objects.create(project=self.project1)
@@ -847,6 +919,9 @@ class ScanPipeModelsTest(TestCase):
         qs = self.project1.runs.executed()
         self.assertQuerySetEqual(qs, [executed, succeed, failed])
 
+        qs = self.project1.runs.not_executed()
+        self.assertQuerySetEqual(qs, [running, not_started, queued])
+
         qs = self.project1.runs.succeed()
         self.assertQuerySetEqual(qs, [succeed])
 
@@ -874,6 +949,44 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(Run.Status.QUEUED, queued.status)
         self.assertEqual(Run.Status.SUCCESS, succeed.status)
         self.assertEqual(Run.Status.FAILURE, failed.status)
+
+    def test_scanpipe_run_model_get_previous_runs(self):
+        run1 = self.create_run()
+        run2 = self.create_run()
+        run3 = self.create_run()
+        self.assertQuerySetEqual([], run1.get_previous_runs())
+        self.assertQuerySetEqual([run1], run2.get_previous_runs())
+        self.assertQuerySetEqual([run1, run2], run3.get_previous_runs())
+
+    def test_scanpipe_run_model_can_start(self):
+        run1 = self.create_run()
+        run2 = self.create_run()
+        run3 = self.create_run()
+
+        self.assertTrue(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertFalse(run3.can_start)
+
+        run1.set_task_started(run1.pk)
+        self.assertFalse(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertFalse(run3.can_start)
+
+        run1.set_task_ended(exitcode=0)
+        self.assertFalse(run1.can_start)
+        self.assertTrue(run2.can_start)
+        self.assertFalse(run3.can_start)
+
+        run2.set_task_stopped()
+        self.assertFalse(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertTrue(run3.can_start)
+
+        run1.reset_task_values()
+        run1.set_task_started(run1.pk)
+        self.assertFalse(run1.can_start)
+        self.assertFalse(run2.can_start)
+        self.assertFalse(run3.can_start)
 
     @override_settings(SCANCODEIO_ASYNC=True)
     @mock.patch("scanpipe.models.Run.execute_task_async")
@@ -1184,9 +1297,14 @@ class ScanPipeModelsTest(TestCase):
 
         qs = CodebaseResource.objects.unknown_license()
         self.assertEqual(0, len(qs))
+        qs = CodebaseResource.objects.has_license_expression()
+        self.assertEqual(0, len(qs))
 
         file.update(detected_license_expression="gpl-3.0 AND unknown")
         qs = CodebaseResource.objects.unknown_license()
+        self.assertEqual(1, len(qs))
+        self.assertIn(file, qs)
+        qs = CodebaseResource.objects.has_license_expression()
         self.assertEqual(1, len(qs))
         self.assertIn(file, qs)
 
@@ -1203,6 +1321,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(3, CodebaseResource.objects.not_in_package().count())
 
         file.create_and_add_package(package_data1)
+        file.create_and_add_package(package_data2)
         self.assertEqual(1, CodebaseResource.objects.in_package().count())
         self.assertEqual(2, CodebaseResource.objects.not_in_package().count())
 
@@ -1421,11 +1540,13 @@ class ScanPipeModelsTest(TestCase):
         resource = make_resource_file(self.project1, path="")
         self.assertEqual([], resource.get_path_segments_with_subpath())
 
-        resource = make_resource_file(self.project1, path="root/subpath/file.txt")
+        path = "root/subpath/archive.zip-extract/file.txt"
+        resource = make_resource_file(self.project1, path=path)
         expected = [
-            ("root", "root"),
-            ("subpath", "root/subpath"),
-            ("file.txt", "root/subpath/file.txt"),
+            ("root", "root", False),
+            ("subpath", "root/subpath", False),
+            ("archive.zip", "root/subpath/archive.zip", True),
+            ("file.txt", "root/subpath/archive.zip-extract/file.txt", False),
         ]
         self.assertEqual(expected, resource.get_path_segments_with_subpath())
 
@@ -1780,6 +1901,60 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertTrue(package.is_vulnerable)
 
+    def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
+        scanpipe_only_fields = [
+            "id",
+            "uuid",
+            "project",
+            "missing_resources",
+            "modified_resources",
+            "codebase_resources",
+            "package_uid",
+            "filename",
+            "affected_by_vulnerabilities",
+            "compliance_alert",
+            "tag",
+        ]
+
+        discovered_package_fields = [
+            field.name
+            for field in DiscoveredPackage._meta.get_fields()
+            if field.name not in scanpipe_only_fields
+        ]
+        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
+
+        for toolkit_field in toolkit_package_fields:
+            self.assertIn(toolkit_field, discovered_package_fields)
+
+        for scanpipe_field in discovered_package_fields:
+            self.assertIn(scanpipe_field, toolkit_package_fields)
+
+    def test_scanpipe_codebase_resource_queryset_has_directory_content_fingerprint(
+        self,
+    ):
+        # This should be returned
+        directory1 = make_resource_directory(self.project1, path="directory1")
+        directory1.extra_data = {
+            "directory_content": "00000003238f6ed2c218090d4da80b3b42160e69"
+        }
+        directory1.save()
+
+        # This should not be returned because the fingerprint should be ignored
+        directory2 = make_resource_directory(self.project1, path="directory2")
+        directory2.extra_data = {
+            "directory_content": "0000000000000000000000000000000000000000"
+        }
+        directory2.save()
+
+        # This should not be returned because it does not contain a directory
+        # fingerprint
+        make_resource_directory(self.project1, path="directory3")
+
+        self.assertEqual(3, self.project1.codebaseresources.count())
+        expected = self.project1.codebaseresources.filter(path="directory1")
+        results = self.project1.codebaseresources.has_directory_content_fingerprint()
+        self.assertQuerySetEqual(expected, results, ordered=False)
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """
@@ -1809,8 +1984,59 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertEqual(pipeline_class.get_summary(), run.description)
         mock_execute_task.assert_not_called()
 
-        project1.add_pipeline(pipeline_name, execute_now=True)
+        project2 = Project.objects.create(name="Analysis 2")
+        project2.add_pipeline(pipeline_name, execute_now=True)
         mock_execute_task.assert_called_once()
+
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_project_model_add_pipeline_run_can_start(self, mock_execute_task):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "inspect_manifest"
+        run1 = project1.add_pipeline(pipeline_name, execute_now=False)
+        run2 = project1.add_pipeline(pipeline_name, execute_now=True)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertTrue(run1.can_start)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertFalse(run2.can_start)
+        mock_execute_task.assert_not_called()
+
+    @mock.patch("scanpipe.models.Run.execute_task_async")
+    def test_scanpipe_project_model_add_pipeline_start_method(self, mock_execute_task):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "inspect_manifest"
+        run1 = project1.add_pipeline(pipeline_name, execute_now=False)
+        run2 = project1.add_pipeline(pipeline_name, execute_now=False)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+        self.assertEqual(Run.Status.NOT_STARTED, run1.status)
+
+        self.assertFalse(run2.can_start)
+        with self.assertRaises(RunNotAllowedToStart):
+            run2.start()
+        mock_execute_task.assert_not_called()
+
+        self.assertTrue(run1.can_start)
+        run1.start()
+        mock_execute_task.assert_called_once()
+
+    def test_scanpipe_project_model_add_info(self):
+        project1 = Project.objects.create(name="Analysis")
+        message = project1.add_info(description="This is an info")
+        self.assertEqual(message, ProjectMessage.objects.get())
+        self.assertEqual("", message.model)
+        self.assertEqual(ProjectMessage.Severity.INFO, message.severity)
+        self.assertEqual({}, message.details)
+        self.assertEqual("This is an info", message.description)
+        self.assertEqual("", message.traceback)
+
+    def test_scanpipe_project_model_add_warning(self):
+        project1 = Project.objects.create(name="Analysis")
+        message = project1.add_warning(description="This is a warning")
+        self.assertEqual(message, ProjectMessage.objects.get())
+        self.assertEqual("", message.model)
+        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
+        self.assertEqual({}, message.details)
+        self.assertEqual("This is a warning", message.description)
+        self.assertEqual("", message.traceback)
 
     def test_scanpipe_project_model_add_error(self):
         project1 = Project.objects.create(name="Analysis")
@@ -1818,16 +2044,17 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             "name": "value",
             "release_date": datetime.fromisoformat("2008-02-01"),
         }
-        error = project1.add_error(
-            error=Exception("Error message"),
+        message = project1.add_error(
             model="Package",
             details=details,
+            exception=Exception("Error message"),
         )
-        self.assertEqual(error, ProjectError.objects.get())
-        self.assertEqual("Package", error.model)
-        self.assertEqual(details, error.details)
-        self.assertEqual("Error message", error.message)
-        self.assertEqual("", error.traceback)
+        self.assertEqual(message, ProjectMessage.objects.get())
+        self.assertEqual("Package", message.model)
+        self.assertEqual(ProjectMessage.Severity.ERROR, message.severity)
+        self.assertEqual(details, message.details)
+        self.assertEqual("Error message", message.description)
+        self.assertEqual("", message.traceback)
 
     def test_scanpipe_project_model_update_extra_data(self):
         project1 = Project.objects.create(name="Analysis")
@@ -1863,10 +2090,10 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         codebase_resource = CodebaseResource.objects.create(project=project1)
         error = codebase_resource.add_error(Exception("Error message"))
 
-        self.assertEqual(error, ProjectError.objects.get())
+        self.assertEqual(error, ProjectMessage.objects.get())
         self.assertEqual("CodebaseResource", error.model)
         self.assertTrue(error.details)
-        self.assertEqual("Error message", error.message)
+        self.assertEqual("Error message", error.description)
         self.assertEqual("", error.traceback)
 
     def test_scanpipe_codebase_resource_model_add_errors(self):
@@ -1874,7 +2101,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         codebase_resource = CodebaseResource.objects.create(project=project1)
         codebase_resource.add_error(Exception("Error1"))
         codebase_resource.add_error(Exception("Error2"))
-        self.assertEqual(2, ProjectError.objects.count())
+        self.assertEqual(2, ProjectMessage.objects.count())
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_project_error_model_save_non_valid_related_object(self):
@@ -1887,14 +2114,14 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         # The DiscoveredPackage was not created
         self.assertIsNone(package.id)
         self.assertEqual(0, DiscoveredPackage.objects.count())
-        # A ProjectError was saved instead
-        self.assertEqual(1, project1.projecterrors.count())
+        # A ProjectMessage was saved instead
+        self.assertEqual(1, project1.projectmessages.count())
 
-        error = project1.projecterrors.get()
+        error = project1.projectmessages.get()
         self.assertEqual("DiscoveredPackage", error.model)
         self.assertEqual(long_value, error.details["filename"])
         self.assertEqual(
-            "value too long for type character varying(255)", error.message
+            "value too long for type character varying(255)", error.description
         )
 
         codebase_resource = CodebaseResource.objects.create(
@@ -1902,7 +2129,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         )
         self.assertIsNone(codebase_resource.id)
         self.assertEqual(0, CodebaseResource.objects.count())
-        self.assertEqual(2, project1.projecterrors.count())
+        self.assertEqual(2, project1.projectmessages.count())
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_package_model_create_from_data(self):
@@ -1926,26 +2153,26 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         incomplete_data["name"] = ""
         self.assertIsNone(DiscoveredPackage.create_from_data(project1, incomplete_data))
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        error = project1.projecterrors.latest("created_date")
+        error = project1.projectmessages.latest("created_date")
         self.assertEqual("DiscoveredPackage", error.model)
         expected_message = "No values for the following required fields: name"
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_message, error.description)
         self.assertEqual(package_data1["purl"], error.details["purl"])
         self.assertEqual("", error.details["name"])
         self.assertEqual("", error.traceback)
 
         package_count = DiscoveredPackage.objects.count()
-        project_error_count = ProjectError.objects.count()
+        project_message_count = ProjectMessage.objects.count()
         bad_data = dict(package_data1)
         bad_data["version"] = "a" * 200
         # The exception are not capture at the DiscoveredPackage.create_from_data but
         # rather in the CodebaseResource.create_and_add_package method so resource data
-        # can be injected in the ProjectError record.
+        # can be injected in the ProjectMessage record.
         with self.assertRaises(DataError):
             DiscoveredPackage.create_from_data(project1, bad_data)
 
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        self.assertEqual(project_error_count, ProjectError.objects.count())
+        self.assertEqual(project_message_count, ProjectMessage.objects.count())
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
     def test_scanpipe_discovered_dependency_model_create_from_data(self):
@@ -1987,13 +2214,14 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             DiscoveredDependency.create_from_data(project1, incomplete_data)
         )
         self.assertEqual(dependency_count, DiscoveredDependency.objects.count())
-        error = project1.projecterrors.latest("created_date")
-        self.assertEqual("DiscoveredDependency", error.model)
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("DiscoveredDependency", message.model)
+        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
         expected_message = "No values for the following required fields: dependency_uid"
-        self.assertEqual(expected_message, error.message)
-        self.assertEqual(dependency_data1["purl"], error.details["purl"])
-        self.assertEqual("", error.details["dependency_uid"])
-        self.assertEqual("", error.traceback)
+        self.assertEqual(expected_message, message.description)
+        self.assertEqual(dependency_data1["purl"], message.details["purl"])
+        self.assertEqual("", message.details["dependency_uid"])
+        self.assertEqual("", message.traceback)
 
     def test_scanpipe_discovered_package_model_unique_package_uid_in_project(self):
         project1 = Project.objects.create(name="Analysis")
@@ -2013,7 +2241,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertFalse(package3.package_uid)
 
     @skipIf(connection.vendor == "sqlite", "No max_length constraints on SQLite.")
-    def test_scanpipe_codebase_resource_create_and_add_package_errors(self):
+    def test_scanpipe_codebase_resource_create_and_add_package_warnings(self):
         project1 = Project.objects.create(name="Analysis")
         resource = CodebaseResource.objects.create(project=project1, path="p")
 
@@ -2024,38 +2252,12 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         package = resource.create_and_add_package(bad_data)
         self.assertIsNone(package)
         self.assertEqual(package_count, DiscoveredPackage.objects.count())
-        error = project1.projecterrors.latest("created_date")
-        self.assertEqual("DiscoveredPackage", error.model)
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("DiscoveredPackage", message.model)
+        self.assertEqual(ProjectMessage.Severity.WARNING, message.severity)
         expected_message = "value too long for type character varying(100)"
-        self.assertEqual(expected_message, error.message)
-        self.assertEqual(bad_data["version"], error.details["version"])
-        self.assertTrue(error.details["codebase_resource_pk"])
-        self.assertEqual(resource.path, error.details["codebase_resource_path"])
-        self.assertIn("in save", error.traceback)
-
-    def test_scanpipe_package_model_integrity_with_toolkit_package_model(self):
-        scanpipe_only_fields = [
-            "id",
-            "uuid",
-            "project",
-            "missing_resources",
-            "modified_resources",
-            "codebase_resources",
-            "package_uid",
-            "filename",
-            "affected_by_vulnerabilities",
-            "compliance_alert",
-        ]
-
-        discovered_package_fields = [
-            field.name
-            for field in DiscoveredPackage._meta.get_fields()
-            if field.name not in scanpipe_only_fields
-        ]
-        toolkit_package_fields = [field.name for field in PackageData.__attrs_attrs__]
-
-        for toolkit_field in toolkit_package_fields:
-            self.assertIn(toolkit_field, discovered_package_fields)
-
-        for scanpipe_field in discovered_package_fields:
-            self.assertIn(scanpipe_field, toolkit_package_fields)
+        self.assertEqual(expected_message, message.description)
+        self.assertEqual(bad_data["version"], message.details["version"])
+        self.assertTrue(message.details["codebase_resource_pk"])
+        self.assertEqual(resource.path, message.details["codebase_resource_path"])
+        self.assertIn("in save", message.traceback)

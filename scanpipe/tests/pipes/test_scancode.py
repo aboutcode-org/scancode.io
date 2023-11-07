@@ -205,13 +205,13 @@ class ScanPipeScancodePipesTest(TestCase):
             project=project1, path="not available"
         )
 
-        self.assertEqual(0, project1.projecterrors.count())
+        self.assertEqual(0, project1.projectmessages.count())
         scan_results, scan_errors = scancode.scan_file(codebase_resource1.location)
         scancode.save_scan_file_results(codebase_resource1, scan_results, scan_errors)
 
         codebase_resource1.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource1.status)
-        self.assertEqual(4, project1.projecterrors.count())
+        self.assertEqual(4, project1.projectmessages.count())
 
         copy_input(self.data_location / "notice.NOTICE", project1.codebase_path)
         codebase_resource2 = CodebaseResource.objects.create(
@@ -238,15 +238,15 @@ class ScanPipeScancodePipesTest(TestCase):
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)
-        self.assertEqual(1, project1.projecterrors.count())
-        error = project1.projecterrors.latest("created_date")
-        self.assertEqual("CodebaseResource", error.model)
-        self.assertEqual("", error.traceback)
-        expected_message = (
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("CodebaseResource", message.model)
+        self.assertEqual("", message.traceback)
+        expected_description = (
             "ERROR: for scanner: copyrights:\n"
             "ERROR: Processing interrupted: timeout after 120 seconds."
         )
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_description, message.description)
 
     @mock.patch("scanpipe.pipes.scancode._scan_resource")
     def test_scanpipe_pipes_scancode_scan_for_files(self, mock_scan_resource):
@@ -290,9 +290,9 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual("", resource3.detected_license_expression)
         self.assertEqual(["copy"], resource3.copyrights)
 
-    @mock.patch("scanpipe.pipes.scancode._scan_and_save")
+    @mock.patch("scanpipe.pipes.scancode.scan_resources")
     def test_scanpipe_pipes_scancode_scan_for_files_scancode_license_score(
-        self, mock_scan_and_save
+        self, mock_scan_resources
     ):
         project1 = Project.objects.create(
             name="Analysis",
@@ -301,7 +301,8 @@ class ScanPipeScancodePipesTest(TestCase):
 
         scancode.scan_for_files(project1)
         expected = {"min_license_score": 99}
-        self.assertEqual(expected, mock_scan_and_save.call_args_list[-1].args[-1])
+        call = mock_scan_resources.call_args_list[-1]
+        self.assertEqual(expected, call.kwargs["scan_func_kwargs"])
 
     def test_scanpipe_pipes_scancode_scan_for_package_data_timeout(self):
         input_location = str(self.data_location / "notice.NOTICE")
@@ -330,17 +331,17 @@ class ScanPipeScancodePipesTest(TestCase):
 
         codebase_resource.refresh_from_db()
         self.assertEqual("scanned-with-error", codebase_resource.status)
-        self.assertEqual(1, project1.projecterrors.count())
-        error = project1.projecterrors.latest("created_date")
-        self.assertEqual("CodebaseResource", error.model)
-        self.assertEqual("", error.traceback)
-        expected_message = (
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.latest("created_date")
+        self.assertEqual("CodebaseResource", message.model)
+        self.assertEqual("", message.traceback)
+        expected_description = (
             "ERROR: for scanner: package_data:\n"
             "ERROR: Processing interrupted: timeout after 120 seconds."
         )
-        self.assertEqual(expected_message, error.message)
+        self.assertEqual(expected_description, message.description)
 
-    def test_scanpipe_pipes_scancode_scan_and_save_multiprocessing_with_threading(self):
+    def test_scanpipe_pipes_scancode_scan_resources_multiprocessing_threading(self):
         def noop(*args, **kwargs):
             pass
 
@@ -352,12 +353,12 @@ class ScanPipeScancodePipesTest(TestCase):
         scan_func.__name__ = ""
 
         with override_settings(SCANCODEIO_PROCESSES=-1):
-            scancode._scan_and_save(resource_qs, scan_func, noop)
+            scancode.scan_resources(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertFalse(with_threading)
 
         with override_settings(SCANCODEIO_PROCESSES=0):
-            scancode._scan_and_save(resource_qs, scan_func, noop)
+            scancode.scan_resources(resource_qs, scan_func, noop)
         with_threading = scan_func.call_args[0][-1]
         self.assertTrue(with_threading)
 
@@ -395,6 +396,23 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(18, CodebaseResource.objects.count())
         self.assertEqual(1, DiscoveredPackage.objects.count())
         self.assertEqual(1, DiscoveredDependency.objects.count())
+
+    def test_scanpipe_pipes_scancode_get_packages_with_purl_from_resources(self):
+        project = Project.objects.create(name="Analysis")
+        filename = "package_assembly_codebase.json"
+        project_scan_location = self.data_location / "scancode" / filename
+        input.load_inventory_from_toolkit_scan(project, project_scan_location)
+
+        project.discoveredpackages.all().delete()
+        self.assertEqual(0, project.discoveredpackages.count())
+
+        packages = list(scancode.get_packages_with_purl_from_resources(project))
+
+        package_purl_exists = [True for package in packages if package.purl]
+        package_purls = [package.purl for package in packages]
+        self.assertTrue(package_purl_exists)
+        self.assertEqual(len(package_purl_exists), 1)
+        self.assertTrue("pkg:npm/test@0.1.0" in package_purls)
 
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")

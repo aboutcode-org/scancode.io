@@ -36,12 +36,15 @@ from django.test import tag
 
 from scancode.cli_test_utils import purl_with_fake_uuid
 
+from scanpipe import pipes
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
 from scanpipe.pipes import output
+from scanpipe.pipes import scancode
+from scanpipe.pipes.input import copy_input
 from scanpipe.tests import FIXTURES_REGEN
 from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
@@ -141,11 +144,11 @@ class ScanPipePipelinesTest(TestCase):
         with pipeline.save_errors(Exception):
             raise Exception("Error message")
 
-        error = project1.projecterrors.get()
-        self.assertEqual("do_nothing", error.model)
-        self.assertEqual({}, error.details)
-        self.assertEqual("Error message", error.message)
-        self.assertIn('raise Exception("Error message")', error.traceback)
+        message = project1.projectmessages.get()
+        self.assertEqual("do_nothing", message.model)
+        self.assertEqual({}, message.details)
+        self.assertEqual("Error message", message.description)
+        self.assertIn('raise Exception("Error message")', message.traceback)
 
     def test_scanpipe_pipelines_is_pipeline(self):
         self.assertFalse(is_pipeline(None))
@@ -246,8 +249,8 @@ class RootFSPipelineTest(TestCase):
             extract_archive.return_value = ["Error"]
             pipeline_instance.extract_input_files_to_codebase_directory()
 
-        error = project1.projecterrors.get()
-        self.assertEqual("Error\nError", error.message)
+        error = project1.projectmessages.get()
+        self.assertEqual("Error\nError", error.description)
 
 
 def sort_scanned_files_by_path(scan_data):
@@ -293,6 +296,7 @@ class PipelinesIntegrationTest(TestCase):
         "mime_type",
         "notes",
         "settings",
+        "description",
     ]
 
     def _without_keys(self, data, exclude_keys):
@@ -445,6 +449,24 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
+    def test_scanpipe_scan_codebase_packages_does_not_create_packages(self):
+        pipeline_name = "scan_codebase_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        filename = "is-npm-1.0.0.tgz"
+        input_location = self.data_location / filename
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(0, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencies.count())
+
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="Analysis")
@@ -509,9 +531,9 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        project_errors = [pe.message for pe in project1.projecterrors.all()]
-        self.assertEqual(1, len(project_errors))
-        self.assertEqual("Distro not found.", project_errors[0])
+        project_messages = project1.projectmessages.all()
+        self.assertEqual(1, len(project_messages))
+        self.assertEqual("Distro not found.", project_messages[0].description)
 
         result_file = output.to_json(project1)
         expected_file = (
@@ -861,7 +883,9 @@ class PipelinesIntegrationTest(TestCase):
             )
             self.assertEqual(expected["filename"], package.filename)
 
-    def test_scanpipe_deploy_to_develop_pipeline_integration_test(self):
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_deploy_to_develop_pipeline_integration_test(self, mock_request):
+        mock_request.return_value = None
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
@@ -884,7 +908,9 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "flume-ng-node-d2d.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self):
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self, mock_request):
+        mock_request.return_value = None
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
@@ -898,7 +924,7 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertEqual(43, project1.codebaseresources.count())
+        self.assertEqual(44, project1.codebaseresources.count())
         self.assertEqual(31, project1.codebaserelations.count())
         self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
@@ -906,6 +932,14 @@ class PipelinesIntegrationTest(TestCase):
         result_file = output.to_json(project1)
         expected_file = data_dir / "expected.json"
         self.assertPipelineResultEqual(expected_file, result_file)
+
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.get()
+        self.assertEqual("map_about_files", message.model)
+        expected = (
+            "Resource paths listed at about_resource is not found in the to/ codebase"
+        )
+        self.assertIn(expected, message.description)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
@@ -925,10 +959,11 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        def mock_request_post_return(url, data, timeout):
+        def mock_request_post_return(url, data, headers, timeout):
+            payload = json.loads(data)
             return {
-                "queued_packages_count": len(data["package_urls"]),
-                "queued_packages": data["package_urls"],
+                "queued_packages_count": len(payload["packages"]),
+                "queued_packages": payload["packages"],
                 "unqueued_packages_count": 1,
                 "unqueued_packages": [],
                 "unsupported_packages_count": 1,
@@ -944,9 +979,46 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertIn("Populating PurlDB with 2 DiscoveredPackage", run.log)
+        self.assertIn("Populating PurlDB with 2 PURLs from DiscoveredPackage", run.log)
         self.assertIn("Successfully queued 2 PURLs for indexing in PurlDB", run.log)
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)
-        self.assertIn("Populating PurlDB with 4 DiscoveredDependency", run.log)
-        self.assertIn("Successfully queued 4 PURLs for indexing in PurlDB", run.log)
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_populate_purldb_pipeline_integration_without_assembly(
+        self, mock_is_available, mock_request_post
+    ):
+        pipeline_name = "populate_purldb"
+        project1 = Project.objects.create(name="Utility: PurlDB")
+
+        def mock_request_post_return(url, data, headers, timeout):
+            payload = json.loads(data)
+            return {
+                "queued_packages_count": len(payload["packages"]),
+                "queued_packages": payload["packages"],
+                "unqueued_packages_count": 1,
+                "unqueued_packages": [],
+                "unsupported_packages_count": 1,
+                "unsupported_packages": [],
+            }
+
+        mock_request_post.side_effect = mock_request_post_return
+        mock_is_available.return_value = True
+
+        package_json_location = self.data_location / "manifests" / "package.json"
+        copy_input(package_json_location, project1.codebase_path)
+        pipes.collect_and_create_codebase_resources(project1)
+
+        scancode.scan_for_application_packages(project1, assemble=False)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertIn("Populating PurlDB with 7 detected PURLs", run.log)
+        self.assertIn("Successfully queued 7 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
+        self.assertIn("Couldn't index 1 unsupported PURLs", run.log)

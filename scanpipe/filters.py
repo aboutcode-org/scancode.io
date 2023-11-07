@@ -20,7 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import shlex
+
 from django.apps import apps
+from django.core.exceptions import FieldError
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.db.models import Q
@@ -37,7 +40,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
-from scanpipe.models import ProjectError
+from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -219,6 +222,63 @@ class FilterSetUtilsMixin:
         return queryset
 
 
+def parse_query_string_to_lookups(query_string, default_lookup_expr, default_field):
+    """Parse a query string and convert it into queryset lookups using Q objects."""
+    lookups = Q()
+    terms = shlex.split(query_string)
+
+    lookup_types = {
+        "=": "iexact",
+        "^": "istartswith",
+        "$": "iendswith",
+        "~": "icontains",
+        ">": "gt",
+        "<": "lt",
+    }
+
+    for term in terms:
+        lookup_expr = default_lookup_expr
+        negated = False
+
+        if ":" in term:
+            field_name, search_value = term.split(":", maxsplit=1)
+            if field_name.endswith(tuple(lookup_types.keys())):
+                lookup_symbol = field_name[-1]
+                lookup_expr = lookup_types.get(lookup_symbol)
+                field_name = field_name[:-1]
+
+            if field_name.startswith("-"):
+                field_name = field_name[1:]
+                negated = True
+
+        else:
+            search_value = term
+            field_name = default_field
+
+        lookups &= Q(**{f"{field_name}__{lookup_expr}": search_value}, _negated=negated)
+
+    return lookups
+
+
+class QuerySearchFilter(django_filters.CharFilter):
+    """Add support for complex query syntax in search filter."""
+
+    def filter(self, qs, value):
+        if not value:
+            return qs
+
+        lookups = parse_query_string_to_lookups(
+            query_string=value,
+            default_lookup_expr=self.lookup_expr,
+            default_field=self.field_name,
+        )
+
+        try:
+            return qs.filter(lookups)
+        except FieldError:
+            return qs.none()
+
+
 class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "sort",
@@ -226,7 +286,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "status",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
@@ -237,7 +297,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "discoveredpackages_count",
             "discovereddependencies_count",
             "codebaseresources_count",
-            "projecterrors_count",
+            "projectmessages_count",
         ],
         empty_label="Newest",
         choices=(
@@ -250,8 +310,8 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ("discovereddependencies_count", "Dependencies (-)"),
             ("-codebaseresources_count", "Resources (+)"),
             ("codebaseresources_count", "Resources (-)"),
-            ("-projecterrors_count", "Errors (+)"),
-            ("projecterrors_count", "Errors (-)"),
+            ("-projectmessages_count", "Messages (+)"),
+            ("projectmessages_count", "Messages (-)"),
         ),
     )
     pipeline = django_filters.ChoiceFilter(
@@ -270,6 +330,11 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             ("succeed", "Success"),
             ("failed", "Failure"),
         ],
+        distinct=True,
+    )
+    label = django_filters.CharFilter(
+        label="Label",
+        field_name="labels__slug",
         distinct=True,
     )
 
@@ -398,7 +463,7 @@ class ResourceFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "relation_map_type",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search",
         field_name="path",
         lookup_expr="icontains",
@@ -510,13 +575,16 @@ class IsVulnerable(django_filters.ChoiceFilter):
         return qs
 
 
-class DiscoveredPackageSearchFilter(django_filters.CharFilter):
+class DiscoveredPackageSearchFilter(QuerySearchFilter):
     def filter(self, qs, value):
         if not value:
             return qs
 
         if value.startswith("pkg:"):
             return qs.for_package_url(value)
+
+        if ":" in value:
+            return super().filter(qs, value)
 
         search_fields = ["type", "namespace", "name", "version"]
         lookups = Q()
@@ -526,22 +594,61 @@ class DiscoveredPackageSearchFilter(django_filters.CharFilter):
         return qs.filter(lookups)
 
 
+class GroupOrderingFilter(django_filters.OrderingFilter):
+    """Add the ability to provide a group a fields to order by."""
+
+    def __init__(self, *args, **kwargs):
+        """grouped_fields = {"group_name": ["field1", "field2", "field3"]}"""
+        self.grouped_fields = kwargs.pop("grouped_fields", {})
+        super().__init__(*args, **kwargs)
+
+    def get_ordering_value(self, param):
+        descending = param.startswith("-")
+        param = param[1:] if descending else param
+
+        group = self.grouped_fields.get(param)
+        if not group:
+            group = [self.param_map.get(param, param)]
+
+        return [f"-{field_name}" if descending else field_name for field_name in group]
+
+    def filter(self, qs, value):
+        if value in EMPTY_VALUES:
+            return qs
+
+        ordering = []
+        for param in value:
+            ordering.extend(self.get_ordering_value(param))
+
+        return qs.order_by(*ordering)
+
+
 class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
     dropdown_widget_fields = [
         "is_vulnerable",
         "compliance_alert",
     ]
 
-    search = DiscoveredPackageSearchFilter(label="Search", lookup_expr="icontains")
-    sort = django_filters.OrderingFilter(
+    search = DiscoveredPackageSearchFilter(
+        label="Search", field_name="name", lookup_expr="icontains"
+    )
+    sort = GroupOrderingFilter(
         label="Sort",
         fields=[
+            "package_url",
+            "type",
+            "namespace",
+            "name",
+            "version",
             "declared_license_expression",
             "other_license_expression",
             "compliance_alert",
             "copyright",
             "primary_language",
+            "tag",
+            "resources_count",
         ],
+        grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
     is_vulnerable = IsVulnerable(field_name="affected_by_vulnerabilities")
@@ -584,6 +691,7 @@ class PackageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "copyright",
             "is_vulnerable",
             "compliance_alert",
+            "tag",
         ]
 
 
@@ -598,13 +706,17 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "is_vulnerable",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search", field_name="name", lookup_expr="icontains"
     )
-    sort = django_filters.OrderingFilter(
+    sort = GroupOrderingFilter(
         label="Sort",
         fields=[
+            "package_url",
             "type",
+            "namespace",
+            "name",
+            "version",
             "extracted_requirement",
             "scope",
             "is_runtime",
@@ -614,6 +726,7 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
             "datafile_resource",
             "datasource_id",
         ],
+        grouped_fields={"package_url": ["type", "namespace", "name", "version"]},
     )
     purl = PackageURLFilter(label="Package URL")
     type = ParentAllValuesFilter()
@@ -645,24 +758,30 @@ class DependencyFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         ]
 
 
-class ErrorFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
-    search = django_filters.CharFilter(
-        label="Search", field_name="message", lookup_expr="icontains"
+class ProjectMessageFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
+    search = QuerySearchFilter(
+        label="Search", field_name="description", lookup_expr="icontains"
     )
     sort = django_filters.OrderingFilter(
         label="Sort",
         fields=[
+            "severity",
             "model",
         ],
     )
 
     class Meta:
-        model = ProjectError
+        model = ProjectMessage
         fields = [
             "search",
+            "severity",
             "model",
-            "message",
+            "description",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.filters["severity"].extra["widget"] = BulmaDropdownWidget()
 
 
 class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
@@ -671,7 +790,7 @@ class RelationFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
         "map_type",
     ]
 
-    search = django_filters.CharFilter(
+    search = QuerySearchFilter(
         label="Search",
         field_name="to_resource__path",
         lookup_expr="icontains",

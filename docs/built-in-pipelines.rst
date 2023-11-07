@@ -94,7 +94,7 @@ Scan Codebase
 
 Scan Codebase Package
 ---------------------
-.. autoclass:: scanpipe.pipelines.scan_codebase_package.ScanCodebasePackage()
+.. autoclass:: scanpipe.pipelines.scan_codebase_packages.ScanCodebasePackages()
     :members:
     :member-order: bysource
 

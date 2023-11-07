@@ -344,10 +344,10 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("status", *options, stdout=out)
 
         output = out.getvalue()
-        self.assertIn("Project: my_project", output)
+        self.assertIn("my_project", output)
         self.assertIn("- CodebaseResource: 0", output)
         self.assertIn("- DiscoveredPackage: 0", output)
-        self.assertIn("- ProjectError: 0", output)
+        self.assertIn("- ProjectMessage: 0", output)
         self.assertIn("[NOT_STARTED] docker", output)
 
         run.task_id = uuid.uuid4()

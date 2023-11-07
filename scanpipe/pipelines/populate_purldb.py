@@ -22,58 +22,51 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
+from scanpipe.pipes import scancode
 
 
 class PopulatePurlDB(Pipeline):
-    """Populate PurlDB with project discovered packages and dependencies."""
+    """Populate PurlDB with discovered project packages and their dependencies."""
 
     @classmethod
     def steps(cls):
         return (
             cls.populate_purldb_with_discovered_packages,
             cls.populate_purldb_with_discovered_dependencies,
+            cls.populate_purldb_with_detected_purls,
         )
 
     def populate_purldb_with_discovered_packages(self):
         """Add DiscoveredPackage to PurlDB."""
-        self.feed_purldb(
-            packages=self.project.discoveredpackages.all(),
-            package_type="DiscoveredPackage",
+        purldb.populate_purldb_with_discovered_packages(
+            project=self.project, logger=self.log
         )
 
     def populate_purldb_with_discovered_dependencies(self):
         """Add DiscoveredDependency to PurlDB."""
-        self.feed_purldb(
-            packages=self.project.discovereddependencies.all(),
-            package_type="DiscoveredDependency",
+        purldb.populate_purldb_with_discovered_dependencies(
+            project=self.project, logger=self.log
         )
 
-    def feed_purldb(self, packages, package_type):
-        """Feed PurlDB with list of PURLs for indexing."""
-        if not purldb.is_available():
-            raise Exception("PurlDB is not available.")
+    def populate_purldb_with_detected_purls(self):
+        """Add DiscoveredPackage to PurlDB."""
+        no_packages_and_no_dependencies = all(
+            [
+                not self.project.discoveredpackages.exists(),
+                not self.project.discovereddependencies.exists(),
+            ]
+        )
+        # Even when there are no packages/dependencies, resource level
+        # package data could be detected (i.e. when we detect packages,
+        # but skip the assembly step that creates
+        # package/dependency instances)
+        if no_packages_and_no_dependencies:
+            packages = scancode.get_packages_with_purl_from_resources(self.project)
+            purls = [{"purl": package.purl} for package in packages]
 
-        package_urls = [package.purl for package in packages]
-        self.log(f"Populating PurlDB with {len(package_urls):,d} {package_type}")
-
-        response = purldb.submit_purls(purls=package_urls)
-        queued_packages_count = response.get("queued_packages_count", 0)
-        unqueued_packages_count = response.get("unqueued_packages_count", 0)
-        unsupported_packages_count = response.get("unsupported_packages_count", 0)
-
-        if queued_packages_count > 0:
-            self.log(
-                f"Successfully queued {queued_packages_count:,d} "
-                f"PURLs for indexing in PurlDB"
-            )
-
-        if unqueued_packages_count > 0:
-            self.log(
-                f"{unqueued_packages_count:,d} PURLs were already "
-                f"present in PurlDB index queue"
-            )
-
-        if unsupported_packages_count > 0:
-            self.log(
-                f"Couldn't index {unsupported_packages_count:,d} unsupported PURLs"
+            self.log(f"Populating PurlDB with {len(purls):,d} " "detected PURLs"),
+            purldb.feed_purldb(
+                packages=purls,
+                chunk_size=100,
+                logger=self.log,
             )

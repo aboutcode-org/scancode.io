@@ -24,8 +24,8 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from scanpipe import pipes
 from scanpipe.models import Project
-from scanpipe.pipes import d2d
 from scanpipe.pipes import js
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
@@ -55,7 +55,7 @@ class ScanPipeJsTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
         to_resource = self.project1.codebaseresources.get(
             path=(
                 "to/project.tar.zst-extract/osgi/marketplace/"
@@ -77,7 +77,7 @@ class ScanPipeJsTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
         to_resource = self.project1.codebaseresources.get(
             path=(
                 "to/project.tar.zst-extract/osgi/marketplace/"
@@ -99,7 +99,7 @@ class ScanPipeJsTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
         to_resource = self.project1.codebaseresources.get(
             path=(
                 "to/project.tar.zst-extract/osgi/marketplace/"
@@ -124,7 +124,7 @@ class ScanPipeJsTest(TestCase):
         )
         to_dir.mkdir(parents=True)
         copy_input(to_input_location, to_dir)
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
         to_resource = self.project1.codebaseresources.get(
             path=(
                 "to/project.tar.zst-extract/osgi/marketplace/"
@@ -152,7 +152,7 @@ class ScanPipeJsTest(TestCase):
         ]
         copy_inputs(resource_files, to_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         map_file = self.project1.codebaseresources.get(
             path=(
@@ -205,7 +205,7 @@ class ScanPipeJsTest(TestCase):
         from_dir.mkdir(parents=True)
         copy_input(from_input_location, from_dir)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         to_map1 = self.project1.codebaseresources.get(
             path=(
@@ -279,7 +279,7 @@ class ScanPipeJsTest(TestCase):
         copy_input(from_input_location, from_dir)
         copy_input(from_input_location, from_dir_ambiguous)
 
-        d2d.collect_and_create_codebase_resources(self.project1)
+        pipes.collect_and_create_codebase_resources(self.project1)
 
         to_map = self.project1.codebaseresources.get(
             path=(

@@ -42,7 +42,10 @@ environ.Env.read_env(ENV_FILE)
 
 SECRET_KEY = env.str("SECRET_KEY")
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[".localhost", "127.0.0.1", "[::1]"])
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=[".localhost", "127.0.0.1", "[::1]", "host.docker.internal"],
+)
 
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 
@@ -137,6 +140,7 @@ INSTALLED_APPS = [
     "django_rq",
     "django_probes",
     "fontawesomefree",
+    "taggit",
 ]
 
 MIDDLEWARE = [
@@ -225,10 +229,15 @@ AUTH_PASSWORD_VALIDATORS = [
 IS_TESTS = "test" in sys.argv
 
 if IS_TESTS:
-    # Do not pollute the workspace while running the tests
+    # Do not pollute the workspace while running the tests.
     SCANCODEIO_WORKSPACE_LOCATION = tempfile.mkdtemp()
     SCANCODEIO_REQUIRE_AUTHENTICATION = True
     SCANCODEIO_SCAN_FILE_TIMEOUT = 120
+    # The default password hasher is rather slow by design.
+    # Using a faster hashing algorithm in the testing context to speed up the run.
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+    ]
 
 # Debug toolbar
 
@@ -237,24 +246,6 @@ if DEBUG and DEBUG_TOOLBAR:
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
     INTERNAL_IPS = ["127.0.0.1"]
-
-# Cache
-
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "default",
-    },
-    "scan_results": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "scan",
-        "TIMEOUT": 86_400,  # 1 day
-        "OPTIONS": {
-            # Maximum entries allowed in the cache before old values are deleted
-            "MAX_ENTRIES": 1_000_000,
-        },
-    },
-}
 
 # Logging
 
@@ -311,7 +302,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATIC_ROOT = "/var/scancodeio/static/"
+STATIC_ROOT = env.str("STATIC_ROOT", default="/var/scancodeio/static/")
 
 STATICFILES_DIRS = [
     PROJECT_DIR("static"),

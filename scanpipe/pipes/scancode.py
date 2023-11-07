@@ -261,14 +261,11 @@ def save_scan_package_results(codebase_resource, scan_results, scan_errors):
         codebase_resource.update(status=flag.SCANNED_WITH_ERROR)
 
 
-def _log_progress(scan_func, resource, resource_count, index):
-    progress = f"{index / resource_count * 100:.1f}% ({index}/{resource_count})"
-    logger.info(f"{scan_func.__name__} {progress} completed pk={resource.pk}")
-
-
-def _scan_and_save(resource_qs, scan_func, save_func, scan_func_kwargs=None):
+def scan_resources(
+    resource_qs, scan_func, save_func, scan_func_kwargs=None, progress_logger=None
+):
     """
-    Run the `scan_func` on the codebase resources if the provided `resource_qs`.
+    Run the `scan_func` on the codebase resources of the provided `resource_qs`.
     The `save_func` is called to save the results.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
@@ -288,13 +285,14 @@ def _scan_and_save(resource_qs, scan_func, save_func, scan_func_kwargs=None):
     resource_count = resource_qs.count()
     logger.info(f"Scan {resource_count} codebase resources with {scan_func.__name__}")
     resource_iterator = resource_qs.iterator(chunk_size=2000)
-
+    progress = pipes.LoopProgress(resource_count, logger=progress_logger)
     max_workers = get_max_workers(keep_available=1)
 
     if max_workers <= 0:
         with_threading = False if max_workers == -1 else True
-        for index, resource in enumerate(resource_iterator):
-            _log_progress(scan_func, resource, resource_count, index)
+        for resource in progress.iter(resource_iterator):
+            progress.log_progress()
+            logger.debug(f"{scan_func.__name__} pk={resource.pk}")
             scan_results, scan_errors = scan_func(
                 resource.location, with_threading, **scan_func_kwargs
             )
@@ -312,14 +310,15 @@ def _scan_and_save(resource_qs, scan_func, save_func, scan_func_kwargs=None):
         # Iterate over the Futures as they complete (finished or cancelled)
         future_as_completed = concurrent.futures.as_completed(future_to_resource)
 
-        for index, future in enumerate(future_as_completed, start=1):
+        for future in progress.iter(future_as_completed):
             resource = future_to_resource[future]
-            _log_progress(scan_func, resource, resource_count, index)
+            progress.log_progress()
+            logger.debug(f"{scan_func.__name__} pk={resource.pk}")
             scan_results, scan_errors = future.result()
             save_func(resource, scan_results, scan_errors)
 
 
-def scan_for_files(project, resource_qs=None):
+def scan_for_files(project, resource_qs=None, progress_logger=None):
     """
     Run a license, copyright, email, and url scan on files without a status for
     a `project`.
@@ -335,14 +334,25 @@ def scan_for_files(project, resource_qs=None):
     if license_score := project.get_env("scancode_license_score"):
         scan_func_kwargs["min_license_score"] = license_score
 
-    _scan_and_save(resource_qs, scan_file, save_scan_file_results, scan_func_kwargs)
+    scan_resources(
+        resource_qs=resource_qs,
+        scan_func=scan_file,
+        save_func=save_scan_file_results,
+        scan_func_kwargs=scan_func_kwargs,
+        progress_logger=progress_logger,
+    )
 
 
-def scan_for_application_packages(project):
+def scan_for_application_packages(project, assemble=True, progress_logger=None):
     """
-    Run a package scan on files without a status for a `project`,
-    then create DiscoveredPackage and DiscoveredDependency instances
-    from the detected package data
+    Run a package scan on resources without a status for a `project`,
+    and add them in their respective `package_data` attribute.
+    Then create DiscoveredPackage and DiscoveredDependency instances
+    from the detected package data optionally. If the `assemble` argument
+    is set to `True`, DiscoveredPackage and DiscoveredDependency instances
+    are created and added to the project by assembling resource level
+    package_data, and resources which belong in the DiscoveredPackage
+    instance, are assigned to that package.
 
     Multiprocessing is enabled by default on this pipe, the number of processes can be
     controlled through the SCANCODEIO_PROCESSES setting.
@@ -351,22 +361,24 @@ def scan_for_application_packages(project):
 
     # Collect detected Package data and save it to the CodebaseResource it was
     # detected from.
-    _scan_and_save(
+    scan_resources(
         resource_qs=resource_qs,
         scan_func=scan_for_package_data,
         save_func=save_scan_package_results,
+        progress_logger=progress_logger,
     )
 
     # Iterate through CodebaseResources with Package data and handle them using
     # the proper Package handler from packagedcode.
-    assemble_packages(project=project)
+    if assemble:
+        assemble_packages(project=project)
 
 
 def add_resource_to_package(package_uid, resource, project):
     """
     Relate a DiscoveredPackage to `resource` from `project` using `package_uid`.
 
-    Add a ProjectError when the DiscoveredPackage could not be fetched using the
+    Add a ProjectMessage when the DiscoveredPackage could not be fetched using the
     provided `package_uid`.
     """
     if not package_uid:
@@ -428,6 +440,24 @@ def assemble_packages(project):
                     seen_resource_paths.add(item.path)
                 else:
                     logger.info(f"Unknown Package assembly item type: {item!r}")
+
+
+def get_packages_with_purl_from_resources(project):
+    """
+    Yield Dependency or PackageData objects created from detected package_data
+    in all the project resources. Both Dependency and PackageData objects have
+    the `purl` attribute with a valid purl.
+    """
+    for resource in project.codebaseresources.has_package_data():
+        for package_mapping in resource.package_data:
+            for dependency in package_mapping.get("dependencies"):
+                yield packagedcode_models.Dependency.from_dependent_package(
+                    dependent_package=dependency,
+                    datafile_path=resource.path,
+                    datasource_id=package_mapping.get("datasource_id"),
+                    package_uid=None,
+                )
+            yield packagedcode_models.PackageData.from_dict(mapping=package_mapping)
 
 
 def get_pretty_params(args):

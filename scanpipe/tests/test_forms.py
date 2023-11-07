@@ -112,4 +112,9 @@ class ScanPipeFormsTest(TestCase):
             "scancode_license_score": 10,
         }
         self.assertEqual(expected, project.settings)
+        expected = {
+            "extract_recursively": False,
+            "ignored_patterns": ["*.ext", "dir/*"],
+            "scancode_license_score": 10,
+        }
         self.assertEqual(expected, project.get_env())

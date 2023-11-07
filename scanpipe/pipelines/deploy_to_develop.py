@@ -20,16 +20,18 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import matchcode
 from scanpipe.pipes import purldb
 from scanpipe.pipes import scancode
 
 
 class DeployToDevelop(Pipeline):
     """
-    Relate deploy and develop code trees.
+    Establish relationships between two code trees: deployment and development.
 
     This pipeline is expecting 2 archive files with "from-" and "to-" filename
     prefixes as inputs:
@@ -44,21 +46,29 @@ class DeployToDevelop(Pipeline):
             cls.extract_inputs_to_codebase_directory,
             cls.extract_archives_in_place,
             cls.collect_and_create_codebase_resources,
+            cls.fingerprint_codebase_directories,
             cls.flag_empty_files,
+            cls.flag_whitespace_files,
             cls.flag_ignored_resources,
             cls.map_about_files,
             cls.map_checksum,
+            cls.match_archives_to_purldb,
             cls.find_java_packages,
             cls.map_java_to_class,
             cls.map_jar_to_source,
             cls.map_javascript,
-            cls.match_purldb,
+            cls.match_directories_to_purldb,
+            cls.match_resources_to_purldb,
             cls.map_javascript_post_purldb_match,
             cls.map_javascript_path,
             cls.map_javascript_colocation,
+            cls.map_thirdparty_npm_packages,
             cls.map_path,
             cls.flag_mapped_resources_archives_and_ignored_directories,
+            cls.perform_house_keeping_tasks,
+            cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
+            cls.flag_deployed_from_resources_with_missing_license,
         )
 
     purldb_package_extensions = [".jar", ".war", ".zip"]
@@ -75,6 +85,17 @@ class DeployToDevelop(Pipeline):
         ".less",
         ".sass",
         ".soy",
+        ".class",
+    ]
+    doc_extensions = [
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".ppt",
+        ".pptx",
+        ".tex",
+        ".odt",
+        ".odp",
     ]
 
     def get_inputs(self):
@@ -108,7 +129,18 @@ class DeployToDevelop(Pipeline):
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
-        d2d.collect_and_create_codebase_resources(self.project)
+        pipes.collect_and_create_codebase_resources(self.project)
+
+    def fingerprint_codebase_directories(self):
+        """Compute directory fingerprints for matching"""
+        matchcode.fingerprint_codebase_directories(self.project, to_codebase_only=True)
+
+    def flag_whitespace_files(self):
+        """
+        Flag whitespace files with size less than or equal
+        to 100 byte as ignored.
+        """
+        d2d.flag_whitespace_files(project=self.project)
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
@@ -117,6 +149,19 @@ class DeployToDevelop(Pipeline):
     def map_checksum(self):
         """Map using SHA1 checksum."""
         d2d.map_checksum(project=self.project, checksum_field="sha1", logger=self.log)
+
+    def match_archives_to_purldb(self):
+        """Match selected package archives by extension to PurlDB."""
+        if not purldb.is_available():
+            self.log("PurlDB is not available. Skipping.")
+            return
+
+        d2d.match_purldb_resources(
+            project=self.project,
+            extensions=self.purldb_package_extensions,
+            matcher_func=d2d.match_purldb_package,
+            logger=self.log,
+        )
 
     def find_java_packages(self):
         """Find the java package of the .java source files."""
@@ -137,20 +182,24 @@ class DeployToDevelop(Pipeline):
         """
         d2d.map_javascript(project=self.project, logger=self.log)
 
-    def match_purldb(self):
+    def match_directories_to_purldb(self):
+        """Match selected directories in PurlDB."""
+        if not purldb.is_available():
+            self.log("PurlDB is not available. Skipping.")
+            return
+
+        d2d.match_purldb_directories(
+            project=self.project,
+            logger=self.log,
+        )
+
+    def match_resources_to_purldb(self):
         """Match selected files by extension in PurlDB."""
         if not purldb.is_available():
             self.log("PurlDB is not available. Skipping.")
             return
 
-        d2d.match_purldb(
-            project=self.project,
-            extensions=self.purldb_package_extensions,
-            matcher_func=d2d.match_purldb_package,
-            logger=self.log,
-        )
-
-        d2d.match_purldb(
+        d2d.match_purldb_resources(
             project=self.project,
             extensions=self.purldb_resource_extensions,
             matcher_func=d2d.match_purldb_resource,
@@ -169,6 +218,10 @@ class DeployToDevelop(Pipeline):
         """Map JavaScript files based on neighborhood file mapping."""
         d2d.map_javascript_colocation(project=self.project, logger=self.log)
 
+    def map_thirdparty_npm_packages(self):
+        """Map thirdparty package using package.json metadata."""
+        d2d.map_thirdparty_npm_packages(project=self.project, logger=self.log)
+
     def map_path(self):
         """Map using path similarities."""
         d2d.map_path(project=self.project, logger=self.log)
@@ -179,7 +232,45 @@ class DeployToDevelop(Pipeline):
         flag.flag_ignored_directories(self.project)
         d2d.flag_processed_archives(self.project)
 
+    def perform_house_keeping_tasks(self):
+        """
+        On deployed side
+            - PurlDB match files with ``no-java-source`` and empty status,
+                if no match is found update status to ``requires-review``.
+            - Update status for uninteresting files.
+            - Flag the dangling legal files for review.
+
+        On devel side
+            - Update status for not deployed files.
+        """
+        d2d.match_resources_with_no_java_source(project=self.project, logger=self.log)
+        d2d.handle_dangling_deployed_legal_files(project=self.project, logger=self.log)
+        d2d.match_unmapped_resources(
+            project=self.project,
+            matched_extensions=self.purldb_resource_extensions,
+            logger=self.log,
+        )
+        d2d.flag_undeployed_resources(project=self.project)
+
+    def scan_unmapped_to_files(self):
+        """
+        Scan unmapped/matched ``to/`` files for copyrights, licenses,
+        emails, and urls and update the status to `requires-review`.
+        """
+        d2d.scan_unmapped_to_files(project=self.project, logger=self.log)
+
     def scan_mapped_from_for_files(self):
         """Scan mapped ``from/`` files for copyrights, licenses, emails, and urls."""
         scan_files = d2d.get_from_files_for_scanning(self.project.codebaseresources)
-        scancode.scan_for_files(self.project, scan_files)
+        scancode.scan_for_files(self.project, scan_files, progress_logger=self.log)
+
+    def create_local_files_packages(self):
+        """Create local-files packages for codebase resources not part of a package."""
+        d2d.create_local_files_packages(self.project)
+
+    def flag_deployed_from_resources_with_missing_license(self):
+        """Update the status for deployed from files with missing license."""
+        d2d.flag_deployed_from_resources_with_missing_license(
+            self.project,
+            doc_extensions=self.doc_extensions,
+        )

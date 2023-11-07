@@ -7,6 +7,8 @@ services:
       - docker.env
     volumes:
       - db_data:/var/lib/postgresql/data/
+    shm_size: "1gb"
+    restart: always
 
   redis:
     image: redis
@@ -15,10 +17,11 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
+    restart: always
 
   web:
     build: .
-    command: sh -c "
+    command: wait-for-it --strict --timeout=60 db:5432 -- sh -c "
         ./manage.py migrate &&
         ./manage.py collectstatic --no-input --verbosity 0 --clear &&
         gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8"
@@ -27,6 +30,7 @@ services:
     expose:
       - 8000
     volumes:
+      - .env:/opt/scancodeio/.env
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
       - static:/var/scancodeio/static/
@@ -35,27 +39,34 @@ services:
 
   worker:
     build: .
-    command: wait-for-it web:8000 -- ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker --queue-class scancodeio.worker.ScanCodeIOQueue --verbosity 2
+    # Ensure that potential db migrations run first by waiting until "web" is up
+    command: wait-for-it --strict --timeout=120 web:8000 -- sh -c "
+        ./manage.py rqworker --worker-class scancodeio.worker.ScanCodeIOWorker
+                             --queue-class scancodeio.worker.ScanCodeIOQueue
+                             --verbosity 1"
     env_file:
       - docker.env
     volumes:
+      - .env:/opt/scancodeio/.env
       - /etc/scancodeio/:/etc/scancodeio/
       - workspace:/var/scancodeio/workspace/
     depends_on:
       - redis
       - db
-      - web # Ensure that potential db migrations run first
+      - web
 
   nginx:
     image: nginx
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     volumes:
       - ./etc/nginx/conf.d/:/etc/nginx/conf.d/
+      - /var/www/html:/var/www/html
       - static:/var/scancodeio/static/
     depends_on:
       - web
+    restart: always
 
 volumes:
   db_data:

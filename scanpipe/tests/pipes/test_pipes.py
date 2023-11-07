@@ -135,6 +135,27 @@ class ScanPipePipesTest(TestCase):
         self.assertIn(resource1, package.codebase_resources.all())
         self.assertIn(resource2, package.codebase_resources.all())
 
+    @mock.patch("uuid.uuid4")
+    def test_scanpipe_pipes_create_local_files_package(self, mock_uuid4):
+        forced_uuid = "b74fe5df-e965-415e-ba65-f38421a0695d"
+        mock_uuid4.return_value = forced_uuid
+
+        p1 = Project.objects.create(name="P1")
+        resource1 = make_resource_file(project=p1, path="filename.ext")
+
+        defaults = {
+            "declared_license_expression": "mit",
+            "copyright": "Copyright",
+        }
+        local_package = pipes.create_local_files_package(
+            p1, defaults, codebase_resources=[resource1.pk]
+        )
+        expected_purl = f"pkg:local-files/{p1.slug}/{forced_uuid}"
+        self.assertEqual(expected_purl, local_package.purl)
+        self.assertEqual("mit", local_package.declared_license_expression)
+        self.assertEqual("Copyright", local_package.copyright)
+        self.assertEqual([expected_purl], resource1.for_packages)
+
     def test_scanpipe_pipes_update_or_create_package_package_uid(self):
         p1 = Project.objects.create(name="Analysis")
         package_data = dict(package_data1)
@@ -236,7 +257,7 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         # Duplicated path: skip the creation and no project error added
         pipes.make_codebase_resource(p1, resource_location)
         self.assertEqual(1, p1.codebaseresources.count())
-        self.assertEqual(0, p1.projecterrors.count())
+        self.assertEqual(0, p1.projectmessages.count())
 
     def test_scanpipe_add_resource_to_package(self):
         project1 = Project.objects.create(name="Analysis")
@@ -249,8 +270,8 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
 
         scancode.add_resource_to_package("not_available", resource1, project1)
         self.assertFalse(resource1.for_packages)
-        self.assertEqual(1, project1.projecterrors.count())
-        error = project1.projecterrors.get()
+        self.assertEqual(1, project1.projectmessages.count())
+        error = project1.projectmessages.get()
         self.assertEqual("assemble_package", error.model)
         expected = {"resource": "filename.ext", "package_uid": "not_available"}
         self.assertEqual(expected, error.details)
@@ -264,37 +285,35 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         scancode.add_resource_to_package(package1.package_uid, resource1, project1)
         self.assertEqual(len(resource1.for_packages), 1)
 
-    def test_scanpipe_get_progress_percentage(self):
-        self.assertEqual(0.0, pipes.get_progress_percentage(0, 10))
-        self.assertEqual(50.0, pipes.get_progress_percentage(5, 10))
-        self.assertEqual(90.0, pipes.get_progress_percentage(9, 10))
-        self.assertEqual(60.0, pipes.get_progress_percentage(3, 5))
-
-        with self.assertRaises(ValueError):
-            pipes.get_progress_percentage(10, 1)
-
-    def test_scanpipe_log_progress(self):
-        buffer = io.StringIO()
-        last_percent = pipes.log_progress(
-            log_func=buffer.write,
-            current_index=1,
-            total_count=10,
-            last_percent=0,
-            increment_percent=5,
+    def test_scanpipe_loop_progress_as_context_manager(self):
+        total_iterations = 100
+        progress_step = 10
+        expected = (
+            "Progress: 10% (10/100)"
+            "Progress: 20% (20/100)"
+            "Progress: 30% (30/100)"
+            "Progress: 40% (40/100)"
+            "Progress: 50% (50/100)"
+            "Progress: 60% (60/100)"
+            "Progress: 70% (70/100)"
+            "Progress: 80% (80/100)"
+            "Progress: 90% (90/100)"
+            "Progress: 100% (100/100)"
         )
-        self.assertEqual(10, last_percent)
-        self.assertEqual("Progress: 10% (1/10)", buffer.getvalue())
 
         buffer = io.StringIO()
-        last_percent = pipes.log_progress(
-            log_func=buffer.write,
-            current_index=20,
-            total_count=100,
-            last_percent=15,
-            increment_percent=5,
-        )
-        self.assertEqual(20, last_percent)
-        self.assertEqual("Progress: 20% (20/100)", buffer.getvalue())
+        logger = buffer.write
+        progress = pipes.LoopProgress(total_iterations, logger, progress_step=10)
+        for _ in progress.iter(range(total_iterations)):
+            pass
+        self.assertEqual(expected, buffer.getvalue())
+
+        buffer = io.StringIO()
+        logger = buffer.write
+        with pipes.LoopProgress(total_iterations, logger, progress_step) as progress:
+            for _ in progress.iter(range(total_iterations)):
+                pass
+        self.assertEqual(expected, buffer.getvalue())
 
     def test_scanpipe_pipes_get_resource_diff_ratio(self):
         project1 = Project.objects.create(name="Analysis")
@@ -327,3 +346,39 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         with self.assertRaises(ValueError) as error:
             get_text_str_diff_ratio(1, 2)
         self.assertEqual("Values must be str", str(error.exception))
+
+    def test_scanpipe_pipes_get_resource_codebase_root(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "codebase" / "a.txt"
+        file_location = copy_input(input_location, p1.codebase_path)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("", codebase_root)
+
+        to_dir = p1.codebase_path / "to"
+        to_dir.mkdir()
+        file_location = copy_input(input_location, to_dir)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("to", codebase_root)
+
+        from_dir = p1.codebase_path / "from"
+        from_dir.mkdir()
+        file_location = copy_input(input_location, from_dir)
+        codebase_root = pipes.get_resource_codebase_root(p1, file_location)
+        self.assertEqual("from", codebase_root)
+
+    def test_scanpipe_pipes_collect_and_create_codebase_resources(self):
+        p1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "codebase" / "a.txt"
+        to_dir = p1.codebase_path / "to"
+        to_dir.mkdir()
+        from_dir = p1.codebase_path / "from"
+        from_dir.mkdir()
+        copy_input(input_location, to_dir)
+        copy_input(input_location, from_dir)
+        pipes.collect_and_create_codebase_resources(p1)
+
+        self.assertEqual(4, p1.codebaseresources.count())
+        from_resource = p1.codebaseresources.get(path="from/a.txt")
+        self.assertEqual("from", from_resource.tag)
+        to_resource = p1.codebaseresources.get(path="to/a.txt")
+        self.assertEqual("to", to_resource.tag)

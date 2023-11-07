@@ -54,6 +54,17 @@ def make_resource_file(project, path, **extra):
     )
 
 
+def make_resource_directory(project, path, **extra):
+    return CodebaseResource.objects.create(
+        project=project,
+        path=path,
+        name=path.split("/")[-1],
+        type=CodebaseResource.Type.DIRECTORY,
+        tag=path.split("/")[0],
+        **extra
+    )
+
+
 resource_data1 = {
     "path": "notice.NOTICE",
     "type": "file",
@@ -175,6 +186,20 @@ dependency_data2 = {
     "for_package_uid": for_package_uid,
     "datafile_path": "data.tar.gz-extract/Gemfile.lock",
     "datasource_id": "gemfile_lock",
+}
+
+dependency_data3 = {
+    "purl": "pkg:pypi/dask",
+    "package_type": "pypi",
+    "extracted_requirement": ">= 1.0",
+    "scope": "install",
+    "is_runtime": True,
+    "is_optional": False,
+    "is_resolved": False,
+    "dependency_uid": "pkg:pypi/dask?uuid=e656b571-7d3f-46d1-b95b-8f037aef9692",
+    "for_package_uid": for_package_uid,
+    "datafile_path": "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO",
+    "datasource_id": "pypi_sdist_pkginfo",
 }
 
 license_policies = [

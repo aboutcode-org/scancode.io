@@ -4,7 +4,7 @@
 {% block title %}ScanCode.io: {{ project.name }}{% endblock %}
 
 {% block extrahead %}
-  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous" />
+  <link rel="stylesheet" href="{% static 'billboard-3.0.1-datalab.min.css' %}" crossorigin="anonymous">
 {% endblock %}
 
 {% block content %}
@@ -30,21 +30,31 @@
               Created {{ project.created_date|naturaltime }}
             </span>
           </span>
+          {% include 'scanpipe/includes/project_labels.html' with labels=labels only %}
+          <a class="modal-button is-size-7" data-target="add-labels-modal" aria-haspopup="true">
+            Edit labels
+          </a>
         </div>
       </div>
-      <div>
+      <div style="min-width:fit-content;">
         <a href="{% url 'project_settings' project.slug %}" class="button is-smaller is-info is-outlined">
-          <span class="icon is-small">
+          <span class="icon width-1">
             <i class="fa-solid fa-sliders-h"></i>
           </span>
           <span>Settings</span>
         </a>
+        <button class="button is-smaller is-link is-outlined modal-button" data-target="clone-modal" aria-haspopup="true">
+          <span class="icon width-1">
+            <i class="fa-regular fa-clone"></i>
+          </span>
+          <span>Clone</span>
+        </button>
         <a href="{% url 'project_add' %}" class="button is-smaller is-link">New Project</a>
       </div>
     </section>
 
     <hr class="mx-5 mt-0">
-    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" only %}
+    {% include "scanpipe/includes/project_summary_level.html" with project=project title_class="title" %}
 
     <section class="pt-0 mx-5">
       {% if project.resource_count or project.package_count %}
@@ -68,14 +78,14 @@
 
       <div class="columns">
         <div class="column">
-          {% include "scanpipe/includes/project_inputs.html" %}
+          {% include "scanpipe/panels/project_inputs.html" %}
         </div>
         <div class="column">
-          {% include "scanpipe/includes/project_pipelines.html" %}
+          {% include "scanpipe/panels/project_pipelines.html" %}
         </div>
       </div>
 
-      {% if codebase_root or resource_status_summary %}
+      {% if codebase_root or project.output_root %}
         <div class="columns">
           {% if codebase_root %}
             <div class="column">
@@ -84,13 +94,18 @@
               </div>
             </div>
           {% endif %}
-          {% if resource_status_summary %}
-            <div class="column is-half">
-              {% include "scanpipe/includes/resource_status_summary.html"  %}
-            </div>
+          {% if project.output_root %}
+              <div class="column is-half">
+                {% include "scanpipe/panels/project_outputs.html" %}
+              </div>
           {% endif %}
         </div>
       {% endif %}
+
+      <div class="columns">
+        <div hx-get="{% url 'project_resource_status_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
+        <div hx-get="{% url 'project_resource_license_summary' project.slug %}" hx-trigger="load" hx-swap="outerHTML"></div>
+      </div>
 
       {% if project.extra_data %}
         <article id="project-extra-data" class="panel is-info">
@@ -115,12 +130,12 @@
         <div class="columns">
           {% if license_clarity %}
             <div class="column is-two-fifths">
-              {% include "scanpipe/includes/license_clarity_panel.html" %}
+              {% include "scanpipe/panels/license_clarity_panel.html" %}
             </div>
           {% endif %}
           {% if scan_summary %}
             <div class="column">
-              {% include "scanpipe/includes/scan_summary_panel.html" %}
+              {% include "scanpipe/panels/scan_summary_panel.html" %}
             </div>
           {% endif %}
         </div>
@@ -128,14 +143,26 @@
     </section>
 
     {% if project.resource_count or project.package_count %}
-      <section id="charts" class="mx-5 pt-5" hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load">
-        <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
-        Loading the charts...
+      <section id="charts" class="mx-5 pt-5">
+        {% if project.resource_count < 5000 and project.package_count < 5000 %}
+          <div hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="load" hx-target="#charts"></div>
+          <i class="fa-solid fa-spinner fa-pulse" aria-hidden="true"></i>
+          Loading the charts...
+        {% else %}
+          <button class="button is-info is-outlined is-fullwidth mt-5 mb-6" hx-get="{% url 'project_charts' project.slug %}?file-filter={{ file_filter }}" hx-trigger="click" hx-swap="outerHTML">
+            <span class="icon">
+              <i class="fa-solid fa-chart-pie"></i>
+            </span>
+            <span>Load the charts</span>
+          </button>
+        {% endif %}
       </section>
     {% endif %}
   </div>
 
-  {% include 'scanpipe/includes/run_modal.html' %}
+  {% include 'scanpipe/modals/run_modal.html' %}
+  {% include 'scanpipe/modals/clone_modal.html' %}
+  {% include "scanpipe/modals/add_labels_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -154,5 +181,7 @@
 
     onSubmitOverlay("#add-pipeline-modal form");
     onSubmitOverlay("#add-inputs-modal form");
+    onSubmitOverlay("#add-labels-modal form");
+    onSubmitOverlay("#clone-modal form");
   </script>
 {% endblock %}

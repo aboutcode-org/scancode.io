@@ -20,6 +20,8 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from extractcode import EXTRACT_SUFFIX
+
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import flag
 from scanpipe.pipes import rootfs
@@ -27,7 +29,7 @@ from scanpipe.pipes import scancode
 
 
 class RootFS(Pipeline):
-    """Analyze a Linux root filesystem, aka rootfs."""
+    """Analyze a Linux root filesystem, also known as rootfs."""
 
     @classmethod
     def steps(cls):
@@ -54,7 +56,7 @@ class RootFS(Pipeline):
         errors = []
 
         for input_file in input_files:
-            extract_target = target_path / f"{input_file.name}-extract"
+            extract_target = target_path / f"{input_file.name}{EXTRACT_SUFFIX}"
             extract_errors = scancode.extract_archive(input_file, extract_target)
             errors.extend(extract_errors)
 
@@ -92,7 +94,7 @@ class RootFS(Pipeline):
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
-        scancode.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
 
     def match_not_analyzed_to_system_packages(self):
         """
@@ -119,7 +121,7 @@ class RootFS(Pipeline):
 
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
-        scancode.scan_for_files(self.project)
+        scancode.scan_for_files(self.project, progress_logger=self.log)
 
     def analyze_scanned_files(self):
         """Analyze single file scan results for completeness."""

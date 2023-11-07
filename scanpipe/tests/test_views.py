@@ -22,6 +22,7 @@
 
 import json
 import shutil
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -32,7 +33,9 @@ from django.test import override_settings
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
+from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
 from scanpipe.pipes import make_relation
@@ -40,8 +43,10 @@ from scanpipe.pipes import update_or_create_dependency
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import dependency_data2
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 from scanpipe.views import ProjectCodebaseView
 from scanpipe.views import ProjectDetailView
 
@@ -153,6 +158,36 @@ class ScanPipeViewsTest(TestCase):
         expected = '<a href="?sort=" class="dropdown-item is-active">Newest</a>'
         self.assertContains(response, expected)
 
+    def test_scanpipe_views_project_actions_view(self):
+        url = reverse("project_action")
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(url)
+        self.assertEqual(404, response.status_code)
+
+        data = {"action": "does_not_exists"}
+        response = self.client.post(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        data = {"action": "delete"}
+        response = self.client.post(url, data=data)
+        self.assertEqual(404, response.status_code)
+
+        random_uuid = uuid.uuid4()
+        data = {
+            "action": "delete",
+            "selected_ids": f"{self.project1.uuid},{random_uuid}",
+        }
+        response = self.client.post(url, data=data, follow=True)
+        self.assertRedirects(response, reverse("project_list"))
+        expected = '<div class="message-body">1 projects have been delete.</div>'
+        self.assertContains(response, expected, html=True)
+        expected = (
+            f'<div class="message-body">Project {random_uuid} does not exist.</div>'
+        )
+        self.assertContains(response, expected, html=True)
+
     def test_scanpipe_views_project_details_is_archived(self):
         url = self.project1.get_absolute_url()
         expected1 = "WARNING: This project is archived and read-only."
@@ -201,6 +236,23 @@ class ScanPipeViewsTest(TestCase):
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
         url = reverse("project_download_input", args=[self.project1.slug, filename])
+        response = self.client.get(url)
+        self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
+        self.assertEqual("application/octet-stream", response.headers["Content-Type"])
+        self.assertEqual(
+            'attachment; filename="notice.NOTICE"',
+            response.headers["Content-Disposition"],
+        )
+
+    def test_scanpipe_views_project_details_download_output_view(self):
+        url = reverse("project_download_output", args=[self.project1.slug, "file.zip"])
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.output_path)
+        filename = file_location.name
+        url = reverse("project_download_output", args=[self.project1.slug, filename])
         response = self.client.get(url)
         self.assertTrue(response.getvalue().startswith(b"# SPDX-License-Identifier"))
         self.assertEqual("application/octet-stream", response.headers["Content-Type"])
@@ -261,10 +313,38 @@ class ScanPipeViewsTest(TestCase):
             "pipeline": "docker",
         }
         response = self.client.post(url, data, follow=True)
+        self.assertEqual(404, response.status_code)
+
+        data["add-pipeline-submit"] = ""
+        response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Pipeline added.")
         run = self.project1.runs.get()
         self.assertEqual("docker", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
+
+    def test_scanpipe_views_project_details_add_labels(self):
+        url = self.project1.get_absolute_url()
+        data = {
+            "labels": "label1, label2",
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(404, response.status_code)
+
+        data["add-labels-submit"] = ""
+        response = self.client.post(url, data, follow=True)
+        self.assertContains(response, "Label(s) added.")
+        self.assertEqual(["label1", "label2"], sorted(self.project1.labels.names()))
+
+    def test_scanpipe_views_project_delete_label(self):
+        self.project1.labels.add("label1")
+        url = reverse("project_delete_label", args=[self.project1.slug, "label1"])
+        response = self.client.get(url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(url)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual({}, response.json())
+        self.assertEqual([], list(self.project1.labels.names()))
 
     def test_scanpipe_views_project_details_charts_view(self):
         url = reverse("project_charts", args=[self.project1.slug])
@@ -548,6 +628,18 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(b"extract_recursively: no\n", response.getvalue())
         self.assertEqual("application/x-yaml", response.headers["Content-Type"])
 
+    def test_scanpipe_views_project_views(self):
+        self.project1.labels.add("label1", "label2")
+        project2 = Project.objects.create(name="Analysis2")
+        project2.labels.add("label3", "label4")
+
+        url = reverse("project_list")
+        with self.assertNumQueries(8):
+            self.client.get(url)
+
+        with self.assertNumQueries(11):
+            self.client.get(self.project1.get_absolute_url())
+
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
         run = self.project1.add_pipeline("docker")
@@ -567,6 +659,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(404, response.status_code)
 
         run.set_task_stopped()
+        response = self.client.get(url)
+        self.assertEqual(404, response.status_code)
+
+        run.reset_task_values()
+        run2 = self.project1.add_pipeline("docker")
+        url = reverse("project_execute_pipeline", args=[self.project1.slug, run2.uuid])
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 
@@ -752,6 +850,34 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
         self.assertContains(response, '<table class="diff"')
 
+    def test_scanpipe_views_codebase_resource_views(self):
+        resource1 = make_resource_file(self.project1, "file1.ext")
+        resource2 = make_resource_file(self.project1, "file2.ext")
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package1.add_resources([resource1, resource2])
+
+        url = reverse("project_resources", args=[self.project1.slug])
+        with self.assertNumQueries(7):
+            self.client.get(url)
+
+        with self.assertNumQueries(7):
+            self.client.get(resource1.get_absolute_url())
+
+    def test_scanpipe_views_discovered_package_views(self):
+        resource1 = make_resource_file(self.project1, "file1.ext")
+        resource2 = make_resource_file(self.project1, "file2.ext")
+        package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
+        package1.add_resources([resource1, resource2])
+        package2 = DiscoveredPackage.create_from_data(self.project1, package_data2)
+        package2.add_resources([resource1, resource2])
+
+        url = reverse("project_packages", args=[self.project1.slug])
+        with self.assertNumQueries(5):
+            self.client.get(url)
+
+        with self.assertNumQueries(6):
+            self.client.get(package1.get_absolute_url())
+
     def test_scanpipe_views_discovered_package_details_view_tabset(self):
         package1 = DiscoveredPackage.create_from_data(self.project1, package_data1)
         response = self.client.get(package1.get_absolute_url())
@@ -797,6 +923,41 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, "tab-vulnerabilities")
         self.assertContains(response, '<section id="tab-vulnerabilities"')
         self.assertContains(response, "VCID-cah8-awtr-aaad")
+
+    def test_scanpipe_views_discovered_dependency_views(self):
+        DiscoveredPackage.create_from_data(self.project1, package_data1)
+        make_resource_file(
+            self.project1, "daglib-0.3.2.tar.gz-extract/daglib-0.3.2/PKG-INFO"
+        )
+        make_resource_file(self.project1, "data.tar.gz-extract/Gemfile.lock")
+        dep1 = DiscoveredDependency.create_from_data(self.project1, dependency_data1)
+        DiscoveredDependency.create_from_data(self.project1, dependency_data2)
+
+        url = reverse("project_dependencies", args=[self.project1.slug])
+        with self.assertNumQueries(10):
+            self.client.get(url)
+
+        with self.assertNumQueries(6):
+            self.client.get(dep1.get_absolute_url())
+
+    def test_scanpipe_views_codebase_relation_views(self):
+        CodebaseRelation.objects.create(
+            project=self.project1,
+            from_resource=make_resource_file(self.project1, "r1"),
+            to_resource=make_resource_file(self.project1, "r2"),
+            map_type="java_to_class",
+        )
+
+        url = reverse("project_relations", args=[self.project1.slug])
+        with self.assertNumQueries(8):
+            self.client.get(url)
+
+    def test_scanpipe_views_project_message_views(self):
+        self.project1.add_message("warning")
+        self.project1.add_message("error")
+        url = reverse("project_messages", args=[self.project1.slug])
+        with self.assertNumQueries(5):
+            self.client.get(url)
 
     def test_scanpipe_views_license_list_view(self):
         url = reverse("license_list")

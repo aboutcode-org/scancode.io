@@ -57,14 +57,14 @@ class ScanCodeIOWorker(Worker):
 class ScanCodeIOQueue(Queue):
     """Modified version of RQ Queue including ScanCode.io customizations."""
 
-    # Reduce the "cleaning lock" ttl from default hardcoded 899 seconds to 60 seconds.
-    cleaning_lock_ttl = 60
+    # Reduce the "cleaning lock" ttl from default hardcoded 899 seconds to 59 seconds.
+    cleaning_lock_ttl = 59
 
-    def acquire_cleaning_lock(self):
-        """
-        Return a boolean indicating whether a lock to clean this queue is
-        acquired.
-        """
-        return self.connection.set(
+    def acquire_maintenance_lock(self) -> bool:
+        """Return a boolean indicating if a lock to clean this queue is acquired."""
+        lock_acquired = self.connection.set(
             self.registry_cleaning_key, 1, nx=1, ex=self.cleaning_lock_ttl
         )
+        if not lock_acquired:
+            return False
+        return lock_acquired

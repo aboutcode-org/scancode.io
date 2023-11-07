@@ -45,7 +45,7 @@
       <p class="heading">Resources</p>
       <p class="{{ title_class }}">
         {% if project.resource_count %}
-          <a href="{% url 'project_resources' project.slug %}">
+          <a href="{{ project_resources_url }}">
             {{ project.resource_count|intcomma }}
           </a>
         {% else %}
@@ -68,11 +68,11 @@
   {% endif %}
   <div class="level-item has-text-centered">
     <div>
-      <p class="heading">Errors</p>
+      <p class="heading">Messages</p>
       <p class="{{ title_class }}">
-        {% if project.error_count %}
-          <a href="{% url 'project_errors' project.slug %}">
-            {{ project.error_count|intcomma }}
+        {% if project.message_count %}
+          <a href="{% url 'project_messages' project.slug %}">
+            {{ project.message_count|intcomma }}
           </a>
         {% else %}
           <span>0</span>

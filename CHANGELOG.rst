@@ -1,7 +1,58 @@
 Changelog
 =========
 
-v32.5.3 (unreleased)
+v32.7.0 (2023-10-25)
+--------------------
+
+- Display the ``Run.scancodeio_version`` in the Pipeline run modal.
+  When possible this value is displayed as a link to the diff view between the current
+  ScanCode.io version and the version used when the Pipeline was run.
+  https://github.com/nexB/scancode.io/issues/956
+
+- Improve presentation of the "Resources detected license expressions" project section.
+  https://github.com/nexB/scancode.io/issues/937
+
+- Add ability to sort by Package URL in package list
+  https://github.com/nexB/scancode.io/issues/938
+
+- Fix an issue where the empty project settings were overriding the settings loaded
+  from a config file.
+  https://github.com/nexB/scancode.io/issues/961
+
+- Control the execution order of Pipelines within a Project. Pipelines are not allowed
+  to start anymore unless all the previous ones within a Project have completed.
+  https://github.com/nexB/scancode.io/issues/901
+
+- Add support for webhook subscriptions in project clone.
+  https://github.com/nexB/scancode.io/pull/910
+
+- Add resources license expression summary panel in the project details view.
+  This panel displays the list of licenses detected in the project and include links
+  to the resources list.
+  https://github.com/nexB/scancode.io/pull/355
+
+- Add the ``tag`` field on the DiscoveredPackage model. This new field is used to store
+  the layer id where the package was found in the Docker context.
+  https://github.com/nexB/scancode.io/issues/919
+
+- Add to apply actions, such as archive, delete, and reset to a selection of project
+  from the main list.
+  https://github.com/nexB/scancode.io/issues/488
+
+- Add new "Outputs" panel in the Project details view.
+  Output files are listed and can be downloaded from the panel.
+  https://github.com/nexB/scancode.io/issues/678
+
+- Add a step in the ``deploy_to_develop`` pipelines to create "local-files" packages
+  with from-side resource files that have one or more relations with to-side resources
+  that are not part of a package.
+  This allows to include those files in the SBOMs and attribution outputs.
+  https://github.com/nexB/scancode.io/issues/914
+
+- Enable sorting the packages list by resources count.
+  https://github.com/nexB/scancode.io/issues/978
+
+v32.6.0 (2023-08-29)
 --------------------
 
 - Improve the performance of the codebase relations list view to support large number
@@ -20,6 +71,25 @@ v32.5.3 (unreleased)
 - Add a new step in the ``deploy_to_develop`` pipeline where we tag archives as
   processed, if all the resources in their extracted directory is mapped/processed.
   https://github.com/nexB/scancode.io/issues/827
+
+- Add the ability to clone a project.
+  https://github.com/nexB/scancode.io/issues/874
+
+- Improve perceived display performance of projects charts and stats on home page.
+  The charts are displayed when the number of resources or packages are less than
+  5000 records. Else, a button to load the charts is displayed.
+  https://github.com/nexB/scancode.io/issues/844
+
+- Add advanced search query system to all list views.
+  Refer to the documentation for details about the search syntax.
+  https://github.com/nexB/scancode.io/issues/871
+
+- Migrate the ProjectError model to a global ProjectMessage.
+  3 level of severity available: INFO, WARNING, and ERROR.
+  https://github.com/nexB/scancode.io/issues/338
+
+- Add label/tag system that can be used to group and filters projects.
+  https://github.com/nexB/scancode.io/issues/769
 
 v32.5.2 (2023-08-14)
 --------------------

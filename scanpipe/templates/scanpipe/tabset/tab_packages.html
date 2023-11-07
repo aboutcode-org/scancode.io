@@ -11,9 +11,10 @@
       {% for package in tab_data.fields.discovered_packages.value %}
         <tr class="break-word">
           <td title="{{ package.package_uid }}">
-            <a href="{{ package.get_absolute_url }}">{{ package.package_url }}</a>
+            {# CAUTION: Avoid relying on get_absolute_url to prevent unnecessary query triggers #}
+            <a href="{% url 'package_detail' project.slug package.uuid %}">{{ package.package_url }}</a>
             {% if package.is_vulnerable %}
-              <a href="{{ package.get_absolute_url }}#vulnerabilities">
+              <a href="{% url 'package_detail' project.slug package.uuid %}#vulnerabilities">
                 <i class="fa-solid fa-bug fa-sm has-text-danger" title="Vulnerabilities"></i>
               </a>
             {% endif %}

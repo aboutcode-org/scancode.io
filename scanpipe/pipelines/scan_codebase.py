@@ -70,16 +70,12 @@ class ScanCodebase(Pipeline):
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
-        for resource_path in self.project.walk_codebase_path():
-            pipes.make_codebase_resource(
-                project=self.project,
-                location=str(resource_path),
-            )
+        pipes.collect_and_create_codebase_resources(self.project)
 
     def scan_for_application_packages(self):
         """Scan unknown resources for packages information."""
-        scancode.scan_for_application_packages(self.project)
+        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
 
     def scan_for_files(self):
         """Scan unknown resources for copyrights, licenses, emails, and urls."""
-        scancode.scan_for_files(self.project)
+        scancode.scan_for_files(self.project, progress_logger=self.log)

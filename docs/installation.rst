@@ -90,8 +90,8 @@ An overview of the web application usage is available at :ref:`user_interface`.
     and ``CSRF_TRUSTED_ORIGINS`` settings need to be provided in your ``.env`` file,
     for example::
 
-        ALLOWED_HOSTS=.your-domain.com,localhost,127.0.0.1
-        CSRF_TRUSTED_ORIGINS=https://*.your-domain.com,http://127.0.0.1:8001
+        ALLOWED_HOSTS=.your-domain.com
+        CSRF_TRUSTED_ORIGINS=https://*.your-domain.com
 
     Refer to `ALLOWED_HOSTS settings <https://docs.djangoproject.com/
     en/dev/ref/settings/#allowed-hosts>`_ and `CSRF_TRUSTED_ORIGINS settings
@@ -145,45 +145,51 @@ interface with::
 Offline installation with Docker
 --------------------------------
 
-It is possible to install and run ScanCode.io on a server which is not connected to
-internet.
+ScanCode.io can be installed and operated on a server that is not connected to the
+internet, such as an "airgapped" or isolated server.
 
-The Docker images are build on a machine with internet access and copied to the server.
+To achieve this, Docker images are initially built on a machine with internet access
+and subsequently transferred to the "offline" server for isolated installation.
 
 .. note::
-    The ``docker`` command is required on both the local machine and the server.
+    ``docker`` and ``docker compose`` are required on both the local machine
+    and the server.
 
-Build the Images
-^^^^^^^^^^^^^^^^
+Build the offline installation package
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Build and save the docker images on your local machine::
+Build and save the offline installation package with docker images, configuration
+and scripts on your local machine::
 
-    make docker-images
+    make offline-package
 
-A compressed tarball ``scancodeio-images-VERSION.tar.gz`` containing all the docker
-images will be created in the :guilabel:`dist/` directory.
+A tarball ``scancodeio-offline-package-VERSION.tar`` will be
+created in the :guilabel:`dist/` directory.
 
-Copy Images and docker-compose files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install on an offline server
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Copy the compressed tarball and the local ``docker-compose.yml`` file to the server.
+Copy the tarball to the server then extract it replacing ``VERSION`` with
+the actual version value::
 
-.. warning::
-    The ``docker-compose.yml`` file is required to run the application.
+    tar -xf scancodeio-offline-package-VERSION.tar
 
-Load the Images
-^^^^^^^^^^^^^^^
+Change to the extracted ``build/`` directory::
 
-Copy the tarball to the server and load the images::
+    cd build
 
-    docker load --input scancodeio-images-VERSION.tar.gz
+Load the docker Images::
 
-Run the App
-^^^^^^^^^^^
+    docker load --input scancodeio-images.tar.gz
 
-Start the ScanCode.io services::
+Run on an offline server
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-    docker compose --file docker-compose.yml up
+Run the App by starting the ScanCode.io services::
+
+    docker compose --file docker-compose-offline.yml up
+
+And visit the web UI at: http://localhost/project/
 
 .. note::
     The nginx service (webserver) requires the port 80 to be available on the host.
@@ -261,6 +267,15 @@ Clone and Configure
 
     When ``PYTHON_EXE`` is not specified, by default, the ``python3`` executable is
     used.
+
+ .. tip::
+    When running M1 based MacOS, you can also install SCIO in x86 mode using rosetta::
+
+        softwareupdate --install-rosetta
+        arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+        arch -x86_64 /usr/local/Homebrew/bin/brew install python@3.11
+        make dev PYTHON_EXE=/usr/local/bin/python3.11
+        (. bin/activate; pip install psycopg[binary])
 
  * Create an environment file::
 

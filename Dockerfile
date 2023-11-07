@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-FROM --platform=linux/amd64 python:3.11
+FROM --platform=linux/amd64 python:3.11-slim
 
 LABEL org.opencontainers.image.source="https://github.com/nexB/scancode.io"
 LABEL org.opencontainers.image.description="ScanCode.io"
@@ -56,6 +56,7 @@ RUN apt-get update \
        libdevmapper1.02.1 \
        libguestfs-tools \
        linux-image-amd64 \
+       git \
        wait-for-it \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -83,7 +84,7 @@ RUN mkdir -p /var/$APP_NAME/static/ \
  && mkdir -p /var/$APP_NAME/workspace/
 
 # Install the dependencies before the codebase COPY for proper Docker layer caching
-COPY --chown=$APP_USER:$APP_USER setup.cfg setup.py $APP_DIR
+COPY --chown=$APP_USER:$APP_USER setup.cfg setup.py $APP_DIR/
 RUN pip install --no-cache-dir .
 
 # Copy the codebase and set the proper permissions for the APP_USER

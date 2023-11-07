@@ -20,20 +20,30 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from collections import Counter
+from collections import defaultdict
 from contextlib import suppress
-from itertools import islice
 from pathlib import Path
-from timeit import default_timer as timer
 
+from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 from django.db.models import Q
+from django.db.models import Value
+from django.db.models.expressions import Subquery
+from django.db.models.functions import Concat
+from django.template.defaultfilters import pluralize
 
 from commoncode.paths import common_prefix
+from extractcode import EXTRACT_SUFFIX
+from packagedcode.npm import NpmPackageJsonHandler
+from summarycode.classify import LEGAL_STARTS_ENDS
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
+from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
 from scanpipe.pipes import js
@@ -59,47 +69,6 @@ def get_inputs(project):
         raise FileNotFoundError("to* input files not found.")
 
     return from_files, to_files
-
-
-def get_resource_codebase_root(project, resource_path):
-    """Return "to" or "from" depending on the resource location in the codebase."""
-    relative_path = Path(resource_path).relative_to(project.codebase_path)
-    first_part = relative_path.parts[0]
-    if first_part in ["to", "from"]:
-        return first_part
-    return ""
-
-
-def yield_resources_from_codebase(project):
-    """
-    Yield CodebaseResource instances, including their ``info`` data, ready to be
-    inserted in the database using ``save()`` or ``bulk_create()``.
-    """
-    for resource_path in project.walk_codebase_path():
-        yield pipes.make_codebase_resource(
-            project=project,
-            location=resource_path,
-            save=False,
-            tag=get_resource_codebase_root(project, resource_path),
-        )
-
-
-def collect_and_create_codebase_resources(project, batch_size=5000):
-    """
-    Collect and create codebase resources including the "to/" and "from/" context using
-    the resource tag field.
-
-    The default ``batch_size`` can be overriden, although the benefits of a value
-    greater than 5000 objects are usually not significant.
-    """
-    model_class = CodebaseResource
-    objs = yield_resources_from_codebase(project)
-
-    while True:
-        batch = list(islice(objs, batch_size))
-        if not batch:
-            break
-        model_class.objects.bulk_create(batch, batch_size)
 
 
 def get_extracted_path(resource):
@@ -165,17 +134,9 @@ def map_checksum(project, checksum_field, logger=None):
         )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(resource_count, logger)
+
+    for to_resource in progress.iter(resource_iterator):
         _map_checksum_resource(to_resource, from_resources, checksum_field)
 
 
@@ -232,23 +193,10 @@ def map_java_to_class(project, logger=None):
     from_classes_index = pathmap.build_index(indexables, with_subpaths=False)
 
     resource_iterator = to_resources_dot_class.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
-        if logger:
-            last_percent = pipes.log_progress(
-                logger,
-                resource_index,
-                resource_count,
-                last_percent,
-                increment_percent=10,
-                start_time=start_time,
-            )
-        _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
+    progress = LoopProgress(resource_count, logger)
 
-    # Flag not mapped .class in to/ codebase
-    to_resources_dot_class = to_resources.filter(extension=".class")
-    to_resources_dot_class.update(status=flag.NO_JAVA_SOURCE)
+    for to_resource in progress.iter(resource_iterator):
+        _map_java_to_class_resource(to_resource, from_resources, from_classes_index)
 
 
 def get_indexable_qualified_java_paths_from_values(resource_values):
@@ -307,10 +255,11 @@ def find_java_packages(project, logger=None):
             ".java resources."
         )
 
-    scancode._scan_and_save(
+    scancode.scan_resources(
         resource_qs=from_java_resources,
         scan_func=scan_for_java_package,
         save_func=save_java_package_scan_results,
+        progress_logger=logger,
     )
 
 
@@ -397,17 +346,9 @@ def map_jar_to_source(project, logger=None):
         )
 
     resource_iterator = to_jars.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, jar_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            to_jars_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(to_jars_count, logger)
+
+    for jar_resource in progress.iter(resource_iterator):
         _map_jar_to_source_resource(jar_resource, to_resources, from_resources)
 
 
@@ -418,10 +359,13 @@ def _map_path_resource(
     if not match:
         return
 
+    # Don't path map resource solely based on the file name.
+    if match.matched_path_length < 2:
+        return
+
     # Only create relations when the number of matches if inferior or equal to
     # the current number of path segment matched.
     if len(match.resource_ids) > match.matched_path_length:
-        to_resource.update(status=flag.TOO_MANY_MAPS)
         return
 
     for resource_id in match.resource_ids:
@@ -468,65 +412,192 @@ def map_path(project, logger=None):
     )
 
     resource_iterator = to_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(resource_count, logger)
+
+    for to_resource in progress.iter(resource_iterator):
         _map_path_resource(to_resource, from_resources, from_resources_index)
 
 
-def create_package_from_purldb_data(project, resource, package_data):
-    """Create a DiscoveredPackage instance from PurlDB ``package_data``."""
+def get_project_resources_qs(project, resources):
+    """
+    Return a queryset of CodebaseResources from `project` containing the
+    CodebaseResources from `resources` . If a CodebaseResource in `resources` is
+    an archive or directory, then their descendants are also included in the
+    queryset.
+
+    Return None if `resources` is empty or None.
+    """
+    lookups = Q()
+    for resource in resources or []:
+        lookups |= Q(path=resource.path)
+        if resource.is_archive:
+            # This is done to capture the extracted contents of the archive we
+            # matched to. Generally, the archive contents are in a directory
+            # that is the archive path with `-extract` at the end.
+            lookups |= Q(path__startswith=resource.path)
+        elif resource.is_dir:
+            # We add a trailing slash to avoid matching on directories we do not
+            # intend to. For example, if we have matched on the directory with
+            # the path `foo/bar/1`, using the __startswith filter without
+            # including a trailing slash on the path would have us get all
+            # diretories under `foo/bar/` that start with 1, such as
+            # `foo/bar/10001`, `foo/bar/123`, etc., when we just want `foo/bar/1`
+            # and its descendants.
+            path = f"{resource.path}/"
+            lookups |= Q(path__startswith=path)
+    if lookups:
+        return project.codebaseresources.filter(lookups)
+
+
+def create_package_from_purldb_data(project, resources, package_data, status):
+    """
+    Create a DiscoveredPackage instance from PurlDB ``package_data``.
+
+    Return a tuple, containing the created DiscoveredPackage and the number of
+    CodebaseResources matched to PurlDB that are part of that DiscoveredPackage.
+    """
     package_data = package_data.copy()
     # Do not re-use uuid from PurlDB as DiscoveredPackage.uuid is unique and a
     # PurlDB match can be found in different projects.
     package_data.pop("uuid", None)
     package_data.pop("dependencies", None)
-    extracted_resources = project.codebaseresources.to_codebase().filter(
-        path__startswith=resource.path
-    )
+
+    resources_qs = get_project_resources_qs(project, resources)
     package = pipes.update_or_create_package(
         project=project,
         package_data=package_data,
-        codebase_resources=extracted_resources,
+        codebase_resources=resources_qs,
     )
-    # Override the status as "purldb match" as we can rely on the codebase relation
-    # for the mapping information.
-    extracted_resources.update(status=flag.MATCHED_TO_PURLDB)
-    return package
+    # Get the number of already matched CodebaseResources from `resources_qs`
+    # before we update the status of all CodebaseResources from `resources_qs`,
+    # then subtract the number of already matched CodebaseResources from the
+    # total number of CodebaseResources updated. This is to prevent
+    # double-counting of CodebaseResources that were matched to purldb
+    purldb_statuses = [
+        flag.MATCHED_TO_PURLDB_PACKAGE,
+        flag.MATCHED_TO_PURLDB_RESOURCE,
+        flag.MATCHED_TO_PURLDB_DIRECTORY,
+    ]
+    matched_resources_count = resources_qs.exclude(status__in=purldb_statuses).update(
+        status=status
+    )
+    return package, matched_resources_count
 
 
-def match_purldb_package(project, resource):
-    """Match an archive type resource in the PurlDB."""
-    if results := purldb.match_package(sha1=resource.sha1):
-        package_data = results[0]
-        return create_package_from_purldb_data(project, resource, package_data)
+def match_purldb_package(
+    project, resources_by_sha1, enhance_package_data=True, **kwargs
+):
+    """
+    Given a mapping of lists of CodebaseResources by their sha1 values,
+    `resources_by_sha1`, send those sha1 values to purldb packages API endpoint,
+    process the matched Package data, then return the number of
+    CodebaseResources that were matched to a Package.
+    """
+    match_count = 0
+    sha1_list = list(resources_by_sha1.keys())
+    if results := purldb.match_packages(
+        sha1_list=sha1_list,
+        enhance_package_data=enhance_package_data,
+    ):
+        # Process matched Package data
+        for package_data in results:
+            sha1 = package_data["sha1"]
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
+            _, matched_resources_count = create_package_from_purldb_data(
+                project=project,
+                resources=resources,
+                package_data=package_data,
+                status=flag.MATCHED_TO_PURLDB_PACKAGE,
+            )
+            match_count += matched_resources_count
+    return match_count
 
 
-def match_purldb_resource(project, resource):
-    """Match a single file resource in the PurlDB."""
-    sha1_list = [resource.sha1]
-    if resource.path.endswith(".map"):
-        sha1_list.extend(js.source_content_sha1_list(resource))
+def match_purldb_resource(
+    project, resources_by_sha1, package_data_by_purldb_urls=None, **kwargs
+):
+    """
+    Given a mapping of lists of CodebaseResources by their sha1 values,
+    `resources_by_sha1`, send those sha1 values to purldb resources API
+    endpoint, process the matched Package data, then return the number of
+    CodebaseResources that were matched to a Package.
 
-    if results := purldb.match_resource(sha1_list=sha1_list):
+    `package_data_by_purldb_urls` is a mapping of package data by their purldb
+    package instance URLs. This is intended to be used as a cache, to avoid
+    retrieving package data we retrieved before.
+    """
+    package_data_by_purldb_urls = package_data_by_purldb_urls or {}
+    match_count = 0
+    sha1_list = list(resources_by_sha1.keys())
+    if results := purldb.match_resources(sha1_list=sha1_list):
+        # Process match results
+        for result in results:
+            # Get package data
+            package_instance_url = result["package"]
+            if package_instance_url not in package_data_by_purldb_urls:
+                # Get and cache package data if we do not have it
+                if package_data := purldb.request_get(url=package_instance_url):
+                    package_data_by_purldb_urls[package_instance_url] = package_data
+            else:
+                # Use cached package data
+                package_data = package_data_by_purldb_urls[package_instance_url]
+            sha1 = result["sha1"]
+            resources = resources_by_sha1.get(sha1) or []
+            if not resources:
+                continue
+            _, matched_resources_count = create_package_from_purldb_data(
+                project=project,
+                resources=resources,
+                package_data=package_data,
+                status=flag.MATCHED_TO_PURLDB_RESOURCE,
+            )
+            match_count += matched_resources_count
+    return match_count
+
+
+def match_purldb_directory(project, resource):
+    """Match a single directory resource in the PurlDB."""
+    fingerprint = resource.extra_data.get("directory_content", "")
+
+    if results := purldb.match_directory(fingerprint=fingerprint):
         package_url = results[0]["package"]
         if package_data := purldb.request_get(url=package_url):
-            return create_package_from_purldb_data(project, resource, package_data)
+            return create_package_from_purldb_data(
+                project, [resource], package_data, flag.MATCHED_TO_PURLDB_DIRECTORY
+            )
 
 
-def match_purldb(project, extensions, matcher_func, logger=None):
+def match_sha1s_to_purldb(
+    project, resources_by_sha1, matcher_func, package_data_by_purldb_urls
+):
+    """
+    Process `resources_by_sha1` with `matcher_func` and return a 3-tuple
+    contaning an empty defaultdict(list), the number of matches and the number
+    of sha1s sent to purldb.
+    """
+    matched_count = matcher_func(
+        project=project,
+        resources_by_sha1=resources_by_sha1,
+        package_data_by_purldb_urls=package_data_by_purldb_urls,
+    )
+    sha1_count = len(resources_by_sha1)
+    # Clear out resources_by_sha1 when we are done with the current batch of
+    # CodebaseResources
+    resources_by_sha1 = defaultdict(list)
+    return resources_by_sha1, matched_count, sha1_count
+
+
+def match_purldb_resources(
+    project, extensions, matcher_func, chunk_size=1000, logger=None
+):
     """
     Match against PurlDB selecting codebase resources using provided
-    ``package_extensions`` for archive type files, and ``resource_extensions`` for
-    single resource files.
+    ``package_extensions`` for archive type files, and ``resource_extensions``.
+
+    Match requests are sent off in batches of 1000 SHA1s. This number is set
+    using `chunk_size`.
     """
     to_resources = (
         project.codebaseresources.files()
@@ -537,29 +608,114 @@ def match_purldb(project, extensions, matcher_func, logger=None):
     )
     resource_count = to_resources.count()
 
+    extensions_str = ", ".join(extensions)
     if logger:
-        extensions_str = ", ".join(extensions)
-        logger(f"Matching {resource_count:,d} {extensions_str} resources in PurlDB")
+        if resource_count > 0:
+            logger(
+                f"Matching {resource_count:,d} {extensions_str} resources in PurlDB, "
+                "using SHA1"
+            )
+        else:
+            logger(
+                f"Skipping matching for {extensions_str} resources, "
+                f"as there are {resource_count:,d}"
+            )
 
-    resource_iterator = to_resources.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    matched_count = 0
+    _match_purldb_resources(
+        project=project,
+        to_resources=to_resources,
+        matcher_func=matcher_func,
+        chunk_size=chunk_size,
+        logger=logger,
+    )
 
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
+
+def _match_purldb_resources(
+    project, to_resources, matcher_func, chunk_size=1000, logger=None
+):
+    resource_count = to_resources.count()
+    resource_iterator = to_resources.iterator(chunk_size=chunk_size)
+    progress = LoopProgress(resource_count, logger)
+    total_matched_count = 0
+    total_sha1_count = 0
+    processed_resources_count = 0
+    resources_by_sha1 = defaultdict(list)
+    package_data_by_purldb_urls = {}
+
+    for to_resource in progress.iter(resource_iterator):
+        resources_by_sha1[to_resource.sha1].append(to_resource)
+        if to_resource.path.endswith(".map"):
+            for js_sha1 in js.source_content_sha1_list(to_resource):
+                resources_by_sha1[js_sha1].append(to_resource)
+        processed_resources_count += 1
+
+        if processed_resources_count % chunk_size == 0:
+            resources_by_sha1, matched_count, sha1_count = match_sha1s_to_purldb(
+                project=project,
+                resources_by_sha1=resources_by_sha1,
+                matcher_func=matcher_func,
+                package_data_by_purldb_urls=package_data_by_purldb_urls,
+            )
+            total_matched_count += matched_count
+            total_sha1_count += sha1_count
+
+    if resources_by_sha1:
+        resources_by_sha1, matched_count, sha1_count = match_sha1s_to_purldb(
+            project=project,
+            resources_by_sha1=resources_by_sha1,
+            matcher_func=matcher_func,
+            package_data_by_purldb_urls=package_data_by_purldb_urls,
         )
-        matched_package = matcher_func(project, to_resource)
-        if matched_package:
-            matched_count += 1
+        total_matched_count += matched_count
+        total_sha1_count += sha1_count
 
-    logger(f"{matched_count:,d} resource(s) matched in PurlDB")
+    logger(
+        f"{total_matched_count:,d} resources matched in PurlDB "
+        f"using {total_sha1_count:,d} SHA1s"
+    )
+
+
+def match_purldb_directories(project, logger=None):
+    """Match against PurlDB selecting codebase directories."""
+    # If we are able to get match results for a directory fingerprint, then that
+    # means every resource and directory under that directory is part of a
+    # Package. By starting from the root to/ directory, we are attempting to
+    # match as many files as we can before attempting to match further down. The
+    # more "higher-up" directories we can match to means that we reduce the
+    # number of queries made to purldb.
+    to_directories = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .no_status(status=flag.ABOUT_MAPPED)
+        .no_status(status=flag.MATCHED_TO_PURLDB_PACKAGE)
+        .order_by("path")
+    )
+    directory_count = to_directories.count()
+
+    if logger:
+        logger(
+            f"Matching {directory_count:,d} "
+            f"director{pluralize(directory_count, 'y,ies')} from to/ in PurlDB"
+        )
+
+    directory_iterator = to_directories.iterator(chunk_size=2000)
+    progress = LoopProgress(directory_count, logger)
+
+    for directory in progress.iter(directory_iterator):
+        directory.refresh_from_db()
+        if directory.status != flag.MATCHED_TO_PURLDB_DIRECTORY:
+            match_purldb_directory(project, directory)
+
+    matched_count = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .filter(status=flag.MATCHED_TO_PURLDB_DIRECTORY)
+        .count()
+    )
+    logger(
+        f"{matched_count:,d} director{pluralize(matched_count, 'y,ies')} "
+        f"matched in PurlDB"
+    )
 
 
 def map_javascript(project, logger=None):
@@ -583,17 +739,9 @@ def map_javascript(project, logger=None):
     )
 
     resource_iterator = to_resources_dot_map.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_dot_map in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            to_resources_dot_map_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(to_resources_dot_map_count, logger)
+
+    for to_dot_map in progress.iter(resource_iterator):
         _map_javascript_resource(
             to_dot_map, to_resources_minified, from_resources_index, from_resources
         )
@@ -629,12 +777,27 @@ def _map_javascript_resource(
 def _map_about_file_resource(project, about_file_resource, to_resources):
     about_file_location = str(about_file_resource.location_path)
     package_data = resolve.resolve_about_package(about_file_location)
+
+    error_message_details = {
+        "path": about_file_resource.path,
+        "package_data": package_data,
+    }
     if not package_data:
+        project.add_error(
+            description="Cannot create package from ABOUT file",
+            model="map_about_files",
+            details=error_message_details,
+        )
         return
 
     filename = package_data.get("filename")
     if not filename:
         # Cannot map anything without the about_resource value.
+        project.add_error(
+            description="ABOUT file does not have about_resource",
+            model="map_about_files",
+            details=error_message_details,
+        )
         return
 
     ignored_resources = []
@@ -645,6 +808,14 @@ def _map_about_file_resource(project, about_file_resource, to_resources):
     codebase_resources = to_resources.filter(path__contains=f"/{filename.lstrip('/')}")
     if not codebase_resources:
         # If there's nothing to map on the ``to/`` do not create the package.
+        project.add_warning(
+            description=(
+                "Resource paths listed at about_resource is not found"
+                " in the to/ codebase"
+            ),
+            model="map_about_files",
+            details=error_message_details,
+        )
         return
 
     # Ignore resources for paths in `ignored_resources` attribute
@@ -699,9 +870,9 @@ def map_javascript_post_purldb_match(project, logger=None):
 
     to_resources = project_files.to_codebase()
 
-    to_resources_dot_map = to_resources.filter(status=flag.MATCHED_TO_PURLDB).filter(
-        extension=".map"
-    )
+    to_resources_dot_map = to_resources.filter(
+        status=flag.MATCHED_TO_PURLDB_RESOURCE
+    ).filter(extension=".map")
 
     to_resources_minified = to_resources.no_status().filter(
         extension__in=[".css", ".js"]
@@ -724,17 +895,9 @@ def map_javascript_post_purldb_match(project, logger=None):
     )
 
     resource_iterator = to_resources_minified.iterator(chunk_size=2000)
-    last_percent = 0
-    start_time = timer()
-    for resource_index, to_minified in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            to_resources_minified_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    progress = LoopProgress(to_resources_minified_count, logger)
+
+    for to_minified in progress.iter(resource_iterator):
         _map_javascript_post_purldb_match_resource(
             to_minified, to_resources_dot_map, to_resources_dot_map_index
         )
@@ -795,24 +958,15 @@ def map_javascript_path(project, logger=None):
     )
 
     resource_iterator = to_resources_key.iterator(chunk_size=2000)
-    last_percent = 0
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
-    start_time = timer()
 
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    for to_resource in progress.iter(resource_iterator):
         map_count += _map_javascript_path_resource(
             to_resource, to_resources, from_resources_index, from_resources
         )
 
-    logger(f"{map_count:,d} resource(s) mapped")
+    logger(f"{map_count:,d} resources mapped")
 
 
 def _map_javascript_path_resource(
@@ -888,24 +1042,13 @@ def map_javascript_colocation(project, logger=None):
         )
 
     resource_iterator = to_resources_key.iterator(chunk_size=2000)
-    last_percent = 0
+    progress = LoopProgress(resource_count, logger)
     map_count = 0
-    start_time = timer()
 
-    for resource_index, to_resource in enumerate(resource_iterator):
-        last_percent = pipes.log_progress(
-            logger,
-            resource_index,
-            resource_count,
-            last_percent,
-            increment_percent=10,
-            start_time=start_time,
-        )
+    for to_resource in progress.iter(resource_iterator):
         map_count += _map_javascript_colocation_resource(
             to_resource, to_resources, from_resources, project
         )
-
-    logger(f"{map_count:,d} resource(s) mapped")
 
 
 def _map_javascript_colocation_resource(
@@ -964,31 +1107,308 @@ def _map_javascript_colocation_resource(
 
 def flag_processed_archives(project):
     """
-    Resources without an assigned status which are package archives, and all
-    resources inside the archive has a status, should also be considered as
-    processed.
+    Flag package archives as processed if they meet the following criteria:
+
+    1. They have no assigned status.
+    2. They are identified as package archives.
+    3. All resources inside the corresponding archive '-extract' directory
+       have an assigned status.
+
+    This function iterates through the package archives in the project and
+    checks whether all resources within their associated '-extract' directory
+    have statuses. If so, it updates the status of the package archive to
+    "archive-processed".
     """
-    to_resources = project.codebaseresources.files().to_codebase()
-    to_resources_archives = to_resources.no_status().filter(is_archive=True)
+    to_resources = (
+        project.codebaseresources.all().to_codebase().no_status().order_by("-path")
+    )
 
-    for to_archive in to_resources_archives:
-        archive_extract_path = to_archive.path + "-extract"
-        archive_extract_resource = to_resources.filter(path=archive_extract_path)
+    for archive_resource in to_resources.archives():
+        extract_path = archive_resource.path + EXTRACT_SUFFIX
+        archive_unmapped_resources = to_resources.filter(path__startswith=extract_path)
+        # Check if all resources in the archive "-extract" directory have been mapped.
+        # Flag the archive resource as processed only when all resources are mapped.
+        if not archive_unmapped_resources.exists():
+            archive_resource.update(status=flag.ARCHIVE_PROCESSED)
 
-        # There are archives which are not extracted by default, so
-        # we check if the extracted archive exists
-        if not archive_extract_resource.exists():
-            continue
 
-        archive_resources_unmapped = to_resources.no_status().filter(
-            path__startswith=archive_extract_path
+def map_thirdparty_npm_packages(project, logger=None):
+    """Map thirdparty package using package.json metadata."""
+    project_files = project.codebaseresources.files()
+
+    to_package_json = (
+        project_files.to_codebase()
+        .filter(path__regex=r"^.*\/node_modules\/.*\/package\.json$")
+        .exclude(path__regex=r"^.*\/node_modules\/.*\/node_modules\/.*$")
+    )
+
+    to_resources = project_files.to_codebase().no_status()
+    resource_count = to_package_json.count()
+
+    if logger:
+        logger(
+            f"Mapping {resource_count:,d} to/ resources against from/ codebase"
+            " based on package.json metadata."
         )
-        # If there are resources in the archives which are unmapped,
-        # they are not considered as processed
-        if archive_resources_unmapped.exists():
-            continue
 
-        to_archive.update(status=flag.ARCHIVE_PROCESSED)
+    resource_iterator = to_package_json.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
+    map_count = 0
+
+    for package_json in progress.iter(resource_iterator):
+        map_count += _map_thirdparty_npm_packages(package_json, to_resources, project)
+
+    logger(f"{map_count:,d} resources mapped")
+
+
+def _map_thirdparty_npm_packages(package_json, to_resources, project):
+    """Map thirdparty package using package.json metadata."""
+    path = Path(package_json.path.lstrip("/"))
+    path_parent = str(path.parent)
+
+    package = next(NpmPackageJsonHandler.parse(package_json.location))
+
+    package_resources = to_resources.filter(path__startswith=path_parent)
+
+    purl_in_package = all([package, package.type, package.name, package.version])
+
+    if not package_resources or not purl_in_package:
+        return 0
+
+    package_data = package.to_dict()
+    package_data.pop("dependencies")
+    pipes.update_or_create_package(
+        project=project,
+        package_data=package_data,
+        codebase_resources=package_resources,
+    )
+
+    package_resources.no_status().update(status=flag.NPM_PACKAGE_LOOKUP)
+    return package_resources.count()
+
+
+def get_from_files_related_with_not_in_package_to_files(project):
+    """
+    Return from-side resource files that have one or more relations
+    with to-side resources that are not part of a package.
+    Only resources with a ``detected_license_expression`` value are returned.
+    """
+    files_qs = project.codebaseresources.files()
+    to_files_without_package = files_qs.to_codebase().not_in_package()
+    from_files_qs = (
+        files_qs.from_codebase()
+        .has_license_expression()
+        .filter(
+            related_to__to_resource__in=Subquery(to_files_without_package.values("pk"))
+        )
+    )
+    return from_files_qs
+
+
+def create_local_files_packages(project):
+    """
+    Create local-files packages for codebase resources not part of a package.
+
+    Resources are grouped by license_expression within a local-files packages.
+    """
+    from_files_qs = get_from_files_related_with_not_in_package_to_files(project)
+
+    # Do not include any other fields in the ``values()``
+    license_field = CodebaseResource.license_expression_field
+    grouped_by_license = from_files_qs.values(license_field).order_by(license_field)
+
+    grouped_by_license = grouped_by_license.annotate(
+        grouped_resource_ids=ArrayAgg("id", distinct=True),
+        grouped_copyrights=ArrayAgg("copyrights", distinct=True),
+    )
+
+    for group in grouped_by_license:
+        codebase_resource_ids = sorted(set(group["grouped_resource_ids"]))
+        copyrights = [
+            entry["copyright"]
+            for copyrights in group["grouped_copyrights"]
+            for entry in copyrights
+        ]
+
+        defaults = {
+            "declared_license_expression": group.get("detected_license_expression"),
+            # The Counter is used to sort by most frequent values.
+            "copyright": "\n\n".join(Counter(copyrights).keys()),
+        }
+        pipes.create_local_files_package(project, defaults, codebase_resource_ids)
+
+
+def match_resources_with_no_java_source(project, logger=None):
+    """
+    Match resources with ``no-java-source`` to PurlDB, if no match
+    is found update status to ``requires-review``.
+    """
+    project_files = project.codebaseresources.files()
+
+    to_no_java_source = project_files.to_codebase().filter(status=flag.NO_JAVA_SOURCE)
+
+    if to_no_java_source:
+        resource_count = to_no_java_source.count()
+        if logger:
+            logger(
+                f"Mapping {resource_count:,d} to/ resources with {flag.NO_JAVA_SOURCE} "
+                "status in PurlDB using SHA1"
+            )
+
+        _match_purldb_resources(
+            project=project,
+            to_resources=to_no_java_source,
+            matcher_func=match_purldb_resource,
+            logger=logger,
+        )
+        to_no_java_source.exclude(status=flag.MATCHED_TO_PURLDB_RESOURCE).update(
+            status=flag.REQUIRES_REVIEW
+        )
+
+
+def match_unmapped_resources(project, matched_extensions=None, logger=None):
+    """
+    Match resources with empty status to PurlDB, if unmatched
+    update status as ``requires-review``.
+    """
+    project_files = project.codebaseresources.files()
+
+    to_unmapped = project_files.to_codebase().no_status().exclude(is_media=True)
+
+    if matched_extensions:
+        to_unmapped.exclude(extension__in=matched_extensions)
+
+    if to_unmapped:
+        resource_count = to_unmapped.count()
+        if logger:
+            logger(
+                f"Mapping {resource_count:,d} to/ resources with "
+                "empty status in PurlDB using SHA1"
+            )
+
+        _match_purldb_resources(
+            project=project,
+            to_resources=to_unmapped,
+            matcher_func=match_purldb_resource,
+            logger=logger,
+        )
+        to_unmapped.exclude(status=flag.MATCHED_TO_PURLDB_RESOURCE).update(
+            status=flag.REQUIRES_REVIEW
+        )
+
+    to_without_status = project_files.to_codebase().no_status()
+
+    to_without_status.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
+    to_without_status.update(status=flag.REQUIRES_REVIEW)
+
+
+def flag_undeployed_resources(project):
+    """Update status for undeployed files."""
+    project_files = project.codebaseresources.files()
+    from_unmapped = project_files.from_codebase().no_status()
+    from_unmapped.update(status=flag.NOT_DEPLOYED)
+
+
+def scan_unmapped_to_files(project, logger=None):
+    """
+    Scan unmapped/matched ``to/`` files for copyrights, licenses,
+    emails, and urls and update the status to `requires-review`.
+    """
+    scan_files = (
+        project.codebaseresources.files()
+        .to_codebase()
+        .filter(status=flag.REQUIRES_REVIEW)
+    )
+    scancode.scan_for_files(project, scan_files, progress_logger=logger)
+
+    project.codebaseresources.files().to_codebase().filter(status=flag.SCANNED).update(
+        status=flag.REQUIRES_REVIEW
+    )
+
+
+def flag_deployed_from_resources_with_missing_license(project, doc_extensions=None):
+    """Update the status for deployed from files with missing license."""
+    # Retrieve scanned from files with an empty ``detected_license_expression``
+    # or a ``unknown`` license expression.
+    scanned_from_files = (
+        project.codebaseresources.files().from_codebase().filter(status=flag.SCANNED)
+    )
+
+    # Media files don't require any review.
+    scanned_from_files.filter(is_media=True).update(status=flag.IGNORED_MEDIA_FILE)
+
+    # Document files don't require any review.
+    if doc_extensions:
+        scanned_from_files.filter(extension__in=doc_extensions).update(
+            status=flag.IGNORED_DOC_FILE
+        )
+
+    no_license_files = scanned_from_files.filter(detected_license_expression="")
+    unknown_license_files = scanned_from_files.unknown_license()
+
+    no_license_files.update(status=flag.NO_LICENSES)
+    unknown_license_files.update(status=flag.UNKNOWN_LICENSE)
+
+
+def handle_dangling_deployed_legal_files(project, logger):
+    """
+    Scan the legal files with empty status and update status
+    to `REVIEW_DANGLING_LEGAL_FILE`.
+    """
+    to_resources = project.codebaseresources.files().to_codebase().no_status()
+
+    legal_file_filter = Q()
+
+    for token in LEGAL_STARTS_ENDS:
+        legal_file_filter |= Q(name__istartswith=token)
+        legal_file_filter |= Q(name__iendswith=token)
+        legal_file_filter |= Q(name__iendswith=Concat(Value(token), F("extension")))
+
+    legal_files = to_resources.filter(legal_file_filter)
+
+    if legal_files:
+        scancode.scan_resources(
+            resource_qs=legal_files,
+            scan_func=scancode.scan_file,
+            save_func=save_scan_legal_file_results,
+            progress_logger=logger,
+        )
+
+
+def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
+    """
+    Save the legal resource scan results with `REVIEW_DANGLING_LEGAL_FILE`
+    status in the database. Create project errors if any occurred
+    during the scan.
+    """
+    status = flag.REVIEW_DANGLING_LEGAL_FILE
+
+    if scan_errors:
+        codebase_resource.add_errors(scan_errors)
+        status = flag.SCANNED_WITH_ERROR
+
+    codebase_resource.set_scan_results(scan_results, status)
+
+
+def flag_whitespace_files(project):
+    """
+    Flag whitespace files with size less than or equal
+    to 100 byte as ignored.
+    """
+    resources = project.codebaseresources.files().no_status().filter(size__lte=100)
+
+    # Set of whitespace characters.
+    whitespace_set = set(b" \n\r\t\f\b")
+
+    for resource in resources:
+        binary_data = open(resource.location, "rb").read()
+        binary_set = set(binary_data)
+        non_whitespace_bytes = binary_set - whitespace_set
+
+        # If resource contains only whitespace characters.
+        if not non_whitespace_bytes:
+            resource.update(status=flag.IGNORED_WHITESPACE_FILE)
 
 
 def _map_dwarf_path_resource(

@@ -8,10 +8,10 @@
   </h3>
   <div class="columns is-gapless">
     <div class="column">
-      <div id="package_type_chart" data-url="{% url 'project_packages' project.slug %}" data-lookup_field="type"></div>
+      <div id="package_type_chart" data-url="{{ packages_url }}" data-lookup_field="type"></div>
     </div>
     <div class="column">
-      <div id="package_license_chart" data-url="{% url 'project_packages' project.slug %}" data-lookup_field="declared_license_expression"></div>
+      <div id="package_license_chart" data-url="{{ packages_url }}" data-lookup_field="declared_license_expression"></div>
     </div>
   </div>
 {% endif %}
@@ -24,18 +24,18 @@
   </h3>
   <div class="columns is-gapless">
     <div class="column">
-      <div id="dependency_type_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="type"></div>
+      <div id="dependency_type_chart" data-url="{{ dependencies_url }}" data-lookup_field="type"></div>
     </div>
     <div class="column">
-      <div id="dependency_is_runtime_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="is_runtime"></div>
+      <div id="dependency_is_runtime_chart" data-url="{{ dependencies_url }}" data-lookup_field="is_runtime"></div>
     </div>
   </div>
   <div class="columns is-gapless">
     <div class="column">
-      <div id="dependency_is_optional_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="is_optional"></div>
+      <div id="dependency_is_optional_chart" data-url="{{ dependencies_url }}" data-lookup_field="is_optional"></div>
     </div>
     <div class="column">
-      <div id="dependency_is_resolved_chart" data-url="{% url 'project_dependencies' project.slug %}" data-lookup_field="is_resolved"></div>
+      <div id="dependency_is_resolved_chart" data-url="{{ dependencies_url }}" data-lookup_field="is_resolved"></div>
     </div>
   </div>
 {% endif %}
@@ -47,15 +47,15 @@
   </h3>
   {% include "scanpipe/includes/file_filter.html" with project=project file_filter=file_filter only %}
   <div class="columns is-gapless">
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="programming_language" %}
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="mime_type" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="programming_language" url=resources_url %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="mime_type" url=resources_url %}
   </div>
   <div class="columns is-gapless">
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="holders" %}
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="copyrights" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="holders" url=resources_url %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="copyrights" url=resources_url %}
   </div>
   <div class="columns is-gapless">
-    {% include "scanpipe/includes/resource_chart_column.html" with field_name="detected_license_expression" %}
+    {% include "scanpipe/includes/resource_chart_column.html" with field_name="detected_license_expression" url=resources_url %}
     <div class="column"></div>
   </div>
   {% if file_compliance_alert %}
@@ -64,7 +64,7 @@
       Policies
     </h3>
     <div class="columns is-gapless">
-      {% include "scanpipe/includes/resource_chart_column.html" with field_name="compliance_alert" %}
+      {% include "scanpipe/includes/resource_chart_column.html" with field_name="compliance_alert" url=resources_url %}
       <div class="column"></div>
     </div>
   {% endif %}

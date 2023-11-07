@@ -108,13 +108,14 @@ class BasePipeline:
         self.log(f"Pipeline [{self.pipeline_name}] starting")
         steps = self.get_steps()
         steps_count = len(steps)
+        pipeline_start_time = timer()
 
         for current_index, step in enumerate(steps, start=1):
             step_name = step.__name__
 
             self.run.set_current_step(f"{current_index}/{steps_count} {step_name}")
             self.log(f"Step [{step_name}] starting")
-            start_time = timer()
+            step_start_time = timer()
 
             try:
                 step(self)
@@ -123,22 +124,24 @@ class BasePipeline:
                 tb = "".join(traceback.format_tb(e.__traceback__))
                 return 1, f"{e}\n\nTraceback:\n{tb}"
 
-            run_time = timer() - start_time
-            self.log(f"Step [{step.__name__}] completed in {humanize_time(run_time)}")
+            step_run_time = timer() - step_start_time
+            self.log(f"Step [{step_name}] completed in {humanize_time(step_run_time)}")
 
-        self.run.set_current_step("")
-        self.log("Pipeline completed")
+        self.run.set_current_step("")  # Reset the `current_step` field on completion
+        pipeline_run_time = timer() - pipeline_start_time
+        self.log(f"Pipeline completed in {humanize_time(pipeline_run_time)}")
 
         return 0, ""
 
-    def add_error(self, error):
-        """Create a `ProjectError` record on the current `project`."""
-        self.project.add_error(error, model=self.pipeline_name)
+    def add_error(self, exception):
+        """Create a ``ProjectMessage`` ERROR record on the current `project`."""
+        self.project.add_error(model=self.pipeline_name, exception=exception)
 
     @contextmanager
     def save_errors(self, *exceptions):
         """
-        Context manager to save specified exceptions as `ProjectError` in the database.
+        Context manager to save specified exceptions as ``ProjectMessage`` in the
+        database.
 
         Example in a Pipeline step:
 
@@ -148,7 +151,7 @@ class BasePipeline:
         try:
             yield
         except exceptions as error:
-            self.add_error(error)
+            self.add_error(exception=error)
 
 
 class Pipeline(BasePipeline):

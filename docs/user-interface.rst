@@ -163,3 +163,65 @@ the project's name.
 
 .. image:: images/user-interface-delete-modal.png
    :width: 500
+
+Search Syntax
+-------------
+
+When searching on objects list views, you can use a powerful search syntax to refine
+your queries and find exactly what you're looking for.
+This guide will walk you through the search syntax and provide examples to help you
+get started.
+
+Basic Search
+^^^^^^^^^^^^
+
+- **Single Term**: Enter a single word to search for exact matches.
+
+  Example: ``file.txt``
+
+- **Quoted Phrases**: Use double quotes to search for exact phrases.
+
+  Example: ``"name version"``
+
+Advanced Search
+^^^^^^^^^^^^^^^
+
+- **Field Searches**: Specify fields to narrow down your search.
+  Use ``field_name:`` followed by your search term.
+
+  Example: ``name:file.txt``
+
+- **Negation**: Use a hyphen (-) before a field name to exclude results.
+
+  Example: ``-name:file.txt``
+
+- **Lookup Types**: Use lookup types to perform specific searches.
+
+    - ``=``: Exact match
+    - ``^``: Starts with
+    - ``$``: Ends with
+    - ``~``: Contains
+    - ``>``: Greater than
+    - ``<``: Less than
+
+Example: ``path^:dir1``
+
+Combining Queries
+^^^^^^^^^^^^^^^^^
+
+Multiple queries are combined with the ``AND`` operator:
+
+Example: ``name:file.txt status:scanned``
+
+
+Examples
+^^^^^^^^
+
+Here are some examples of advanced searches:
+
+**Search for Resources**:
+
+ - Find resources by name and license_expression:
+   ``name:LICENSE detected_license_expression:mit``
+ - Find resources by path ending:
+   ``path$:directory_without_slash``

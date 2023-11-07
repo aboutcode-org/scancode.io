@@ -41,7 +41,7 @@ from scanpipe.api.serializers import CodebaseResourceSerializer
 from scanpipe.api.serializers import DiscoveredDependencySerializer
 from scanpipe.api.serializers import DiscoveredPackageSerializer
 from scanpipe.api.serializers import PipelineSerializer
-from scanpipe.api.serializers import ProjectErrorSerializer
+from scanpipe.api.serializers import ProjectMessageSerializer
 from scanpipe.api.serializers import ProjectSerializer
 from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
@@ -120,6 +120,16 @@ class ProjectViewSet(
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     filterset_class = ProjectFilterSet
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                "labels",
+                "runs",
+            )
+        )
 
     @action(detail=True, renderer_classes=[renderers.JSONRenderer])
     def results(self, request, *args, **kwargs):
@@ -202,12 +212,12 @@ class ProjectViewSet(
         return self.get_paginated_response(serializer.data)
 
     @action(detail=True)
-    def errors(self, request, *args, **kwargs):
+    def messages(self, request, *args, **kwargs):
         project = self.get_object()
-        queryset = project.projecterrors.all()
+        queryset = project.projectmessages.all()
 
         paginated_qs = self.paginate_queryset(queryset)
-        serializer = ProjectErrorSerializer(paginated_qs, many=True)
+        serializer = ProjectMessageSerializer(paginated_qs, many=True)
 
         return self.get_paginated_response(serializer.data)
 
@@ -368,7 +378,7 @@ class RunViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             message = {"status": "Pipeline already queued."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        transaction.on_commit(run.execute_task_async)
+        transaction.on_commit(run.start)
 
         return Response({"status": f"Pipeline {run.pipeline_name} started."})
 

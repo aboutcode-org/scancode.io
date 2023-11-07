@@ -1,0 +1,31 @@
+<div class="modal" id="modal-projects-archive">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Archive selected projects, are you sure?</p>
+      <button class="delete" aria-label="close"></button>
+    </header>
+    <form action="{% url 'project_action' %}" method="post" id="archive-projects-form">{% csrf_token %}
+      <section class="modal-card-body">
+        <div class="notification is-warning has-text-weight-semibold">
+          The selected projects will be marked as archived and will become read-only.
+          Those will not appear in the project list by default anymore.
+        </div>
+        <p class="mb-2">
+          The selected directories will be removed:
+        </p>
+        <ul class="mb-5">
+          {{ archive_form.as_ul }}
+        </ul>
+        <p>
+          Are you sure you want to do this?
+        </p>
+      </section>
+      <input type="hidden" name="action" value="archive">
+      <footer class="modal-card-foot is-flex is-justify-content-space-between">
+        <button class="button has-text-weight-semibold" type="reset">No, Cancel</button>
+        <button class="button is-warning" type="button" data-action-trigger="archive-projects">Yes, Archive Projects</button>
+      </footer>
+    </form>
+  </div>
+</div>
