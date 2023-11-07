@@ -1221,3 +1221,38 @@ class ScanPipeD2DPipesTest(TestCase):
         ).count()
 
         self.assertEqual(3, expected)
+
+    def test_scanpipe_pipes_flag_whitespace_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_dir.mkdir(parents=True)
+        to_resource_files = [
+            self.data_location / "d2d/non_whitespace_file.txt",
+            self.data_location / "d2d/whitespace_file.txt",
+        ]
+        copy_inputs(to_resource_files, to_dir)
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        whitespace_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/whitespace_file.txt"
+            )
+        )
+        non_whitespace_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/non_whitespace_file.txt"
+            )
+        )
+
+        d2d.flag_whitespace_files(project=self.project1)
+        whitespace_resource.refresh_from_db()
+        non_whitespace_resource.refresh_from_db()
+
+        self.assertEqual(flag.IGNORED_WHITESPACE_FILE, whitespace_resource.status)
+        self.assertNotEqual(
+            flag.IGNORED_WHITESPACE_FILE, non_whitespace_resource.status
+        )

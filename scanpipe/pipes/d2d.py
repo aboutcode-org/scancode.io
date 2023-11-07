@@ -1389,3 +1389,23 @@ def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
         status = flag.SCANNED_WITH_ERROR
 
     codebase_resource.set_scan_results(scan_results, status)
+
+
+def flag_whitespace_files(project):
+    """
+    Flag whitespace files with size less than or equal
+    to 100 byte as ignored.
+    """
+    resources = project.codebaseresources.files().no_status().filter(size__lte=100)
+
+    # Set of whitespace characters.
+    whitespace_set = set(b" \n\r\t\f\b")
+
+    for resource in resources:
+        binary_data = open(resource.location, "rb").read()
+        binary_set = set(binary_data)
+        non_whitespace_bytes = binary_set - whitespace_set
+
+        # If resource contains only whitespace characters.
+        if not non_whitespace_bytes:
+            resource.update(status=flag.IGNORED_WHITESPACE_FILE)
