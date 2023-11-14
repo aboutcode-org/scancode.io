@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import json
 import shutil
 import sys
 import tempfile
@@ -1141,6 +1142,17 @@ class ScanPipeModelsTest(TestCase):
         resource.update(path="decompose_l_u_8hpp_source.html")
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
+
+    def test_scanpipe_codebase_resource_model_file_content_for_map(self):
+        map_file_path = self.data_location / "d2d-javascript/to/main.js.map"
+        copy_input(map_file_path, self.project1.codebase_path)
+        resource = self.project1.codebaseresources.create(path="main.js.map")
+
+        f = open(map_file_path, "r")
+        expected = json.load(f)
+        result = json.loads(resource.file_content)
+
+        self.assertEqual(expected, result)
 
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
