@@ -34,6 +34,7 @@ from django.conf import settings
 from django.test import TestCase
 from django.test import tag
 
+from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
 
 from scanpipe import pipes
@@ -317,6 +318,28 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
+    def purl_fields_with_fake_uuid(self, value, key):
+        purl_name = "fixed-name-for-testing-5642512d1758"
+        purl_namespace = "fixed-namespace-for-testing-5642512d1758"
+        if key == "name":
+            return purl_name
+        elif key == "namespace":
+            return purl_namespace
+        elif key == "purl" or key == "for_packages":
+            purl_old = PackageURL.from_string(value)
+            if purl_old.type != "local-files":
+                return purl_with_fake_uuid(value)
+
+            purl = PackageURL(
+                name=purl_name,
+                namespace=purl_namespace,
+                type="local-files",
+                version=purl_old.version,
+                qualifiers=purl_old.qualifiers,
+                subpath=purl_old.subpath,
+            )
+            return purl.to_string()
+
     def _normalize_package_uids(self, data):
         """
         Return the `data`, where any `package_uid` value has been normalized
@@ -326,6 +349,9 @@ class PipelinesIntegrationTest(TestCase):
             return [self._normalize_package_uids(entry) for entry in data]
 
         if isinstance(data, dict):
+            is_local_files = False
+            if data.get("type") and data["type"] == "local-files":
+                is_local_files = True
             normalized_data = {}
             for key, value in data.items():
                 if isinstance(value, (list, dict)):
@@ -335,8 +361,13 @@ class PipelinesIntegrationTest(TestCase):
                     and value
                 ):
                     value = purl_with_fake_uuid(value)
-                if key == "for_packages":
-                    value = [purl_with_fake_uuid(package_uid) for package_uid in value]
+                if key == "for_packages" and value:
+                    value = [
+                        self.purl_fields_with_fake_uuid(package_uid, key)
+                        for package_uid in value
+                    ]
+                if is_local_files and key in ("name", "namespace", "purl") and value:
+                    value = self.purl_fields_with_fake_uuid(value, key)
                 normalized_data[key] = value
             return normalized_data
 
@@ -901,7 +932,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(57, project1.codebaseresources.count())
         self.assertEqual(18, project1.codebaserelations.count())
-        self.assertEqual(0, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
@@ -926,7 +957,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(44, project1.codebaseresources.count())
         self.assertEqual(31, project1.codebaserelations.count())
-        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
