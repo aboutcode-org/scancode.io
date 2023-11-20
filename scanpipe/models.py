@@ -2967,7 +2967,7 @@ class DiscoveredPackage(
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=purl or str(self.uuid),
+            bom_ref=self.package_uid or str(self.uuid),
             purl=purl,
             licenses=licenses,
             copyright_=self.copyright,
