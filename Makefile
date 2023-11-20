@@ -37,14 +37,6 @@ SCANCODEIO_DB_PASSWORD=scancodeio
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 DATE=$(shell date +"%Y-%m-%d_%H%M")
 
-# Use sudo for postgres, but only on Linux
-UNAME := $(shell uname)
-ifeq ($(UNAME), Linux)
-	SUDO_POSTGRES=sudo -u postgres
-else
-	SUDO_POSTGRES=
-endif
-
 virtualenv:
 	@echo "-> Bootstrap the virtualenv with PYTHON_EXE=${PYTHON_EXE}"
 	@${PYTHON_EXE} ${VIRTUALENV_PYZ} --never-download --no-periodic-update .
@@ -107,12 +99,12 @@ migrate:
 postgresdb:
 	@echo "-> Configure PostgreSQL database"
 	@echo "-> Create database user ${SCANCODEIO_DB_NAME}"
-	@${SUDO_POSTGRES} createuser --no-createrole --no-superuser --login --inherit --createdb '${SCANCODEIO_DB_USER}' || true
-	@${SUDO_POSTGRES} psql -c "alter user ${SCANCODEIO_DB_USER} with encrypted password '${SCANCODEIO_DB_PASSWORD}';" || true
+	@createuser --no-createrole --no-superuser --login --inherit --createdb '${SCANCODEIO_DB_USER}' || true
+	@psql -c "alter user ${SCANCODEIO_DB_USER} with encrypted password '${SCANCODEIO_DB_PASSWORD}';" || true
 	@echo "-> Drop ${SCANCODEIO_DB_NAME} database"
-	@${SUDO_POSTGRES} dropdb ${SCANCODEIO_DB_NAME} || true
+	@dropdb ${SCANCODEIO_DB_NAME} || true
 	@echo "-> Create ${SCANCODEIO_DB_NAME} database"
-	@${SUDO_POSTGRES} createdb --owner=${SCANCODEIO_DB_USER} ${POSTGRES_INITDB_ARGS} ${SCANCODEIO_DB_NAME}
+	@createdb --owner=${SCANCODEIO_DB_USER} ${POSTGRES_INITDB_ARGS} ${SCANCODEIO_DB_NAME}
 	@$(MAKE) migrate
 
 backupdb:
