@@ -103,11 +103,18 @@ class RunStatusCommandMixin:
                     status = status or "(no status)"
                     messages.append(f"   - {status}: {count}")
 
-        inputs, missing_inputs = project.inputs_with_source
-        if inputs:
+        inputs_sources = project.get_inputs_with_source()
+        if inputs_sources:
             messages.append("\nInputs:")
-            for input in inputs:
-                messages.append(f" - {input.get('name')} ({input.get('source')})")
+            for inputs_source in inputs_sources:
+                line = f" - {inputs_source.get('filename', '')} "
+                if inputs_source.get("is_uploaded"):
+                    line += "[source=uploaded]"
+                else:
+                    line += f"[download_url={inputs_source.get('download_url')}]"
+                if not inputs_source.get("exists"):
+                    line += self.style.ERROR(" NOT ON DISK")
+                messages.append(line)
 
         return messages
 
@@ -172,7 +179,7 @@ class AddInputCommandMixin:
             self.project.copy_input_from(file_location)
             filename = Path(file_location).name
             copied.append(filename)
-            self.project.add_input_source(filename, source="uploaded", save=True)
+            self.project.add_input_source(filename=filename, is_uploaded=True)
 
         msg = f"File{pluralize(inputs_files)} copied to the project inputs directory:"
         self.stdout.write(msg, self.style.SUCCESS)

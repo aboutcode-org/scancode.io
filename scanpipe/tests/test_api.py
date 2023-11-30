@@ -296,11 +296,16 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
-        expected = {
-            "filename": "archive.zip",
-            "source": "https://example.com/archive.zip",
-        }
-        self.assertEqual([expected], response.data["input_sources"])
+        expected = [
+            {
+                "filename": "archive.zip",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "exists": True,
+                "uuid": response.data["input_sources"][0]["uuid"],
+            }
+        ]
+        self.assertEqual(expected, response.data["input_sources"])
         self.assertEqual(["archive.zip"], response.data["input_root"])
 
         mock_get.side_effect = [
@@ -321,10 +326,19 @@ class ScanPipeAPITest(TransactionTestCase):
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
         expected = [
-            {"filename": "archive.zip", "source": "https://example.com/archive.zip"},
+            {
+                "filename": "archive.zip",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "exists": True,
+                "uuid": response.data["input_sources"][0]["uuid"],
+            },
             {
                 "filename": "second.tar.gz",
-                "source": "https://example.com/second.tar.gz",
+                "download_url": "https://example.com/second.tar.gz",
+                "is_uploaded": False,
+                "exists": True,
+                "uuid": response.data["input_sources"][1]["uuid"],
             },
         ]
         self.assertEqual(expected, response.data["input_sources"])

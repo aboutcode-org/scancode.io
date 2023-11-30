@@ -81,6 +81,7 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -642,14 +643,15 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
         project = self.object
         project_resources_url = reverse("project_resources", args=[project.slug])
 
-        inputs, missing_inputs = project.inputs_with_source
-        if missing_inputs:
-            missing_files = "\n- ".join(missing_inputs.keys())
-            message = (
-                f"The following input files are not available on disk anymore:\n"
-                f"- {missing_files}"
-            )
-            messages.error(self.request, message)
+        # TODO: Only for uploaded files
+        # inputs, missing_inputs = project.inputs_with_source
+        # if missing_inputs:
+        #     missing_files = "\n- ".join(missing_inputs.keys())
+        #     message = (
+        #         f"The following input files are not available on disk anymore:\n"
+        #         f"- {missing_files}"
+        #     )
+        #     messages.error(self.request, message)
 
         if project.is_archived:
             message = "WARNING: This project is archived and read-only."
@@ -676,7 +678,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
 
         context.update(
             {
-                "inputs_with_source": inputs,
+                "input_sources": project.get_inputs_with_source(),
                 "labels": list(project.labels.all()),
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
@@ -1155,17 +1157,16 @@ def delete_pipeline_view(request, slug, run_uuid):
 
 @require_POST
 @conditional_login_required
-def delete_input_view(request, slug, input_name):
+def delete_input_view(request, slug, input_uuid):
     project = get_object_or_404(Project, slug=slug)
 
     if not project.can_change_inputs:
         raise Http404("Inputs cannot be deleted on this project.")
 
-    deleted = project.delete_input(name=input_name)
-    if deleted:
-        messages.success(request, f"Input {input_name} deleted.")
-    else:
-        messages.error(request, f"Input {input_name} not found.")
+    input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
+    input_source.delete()
+    messages.success(request, f'Input "{input_source.filename}" deleted.')
+
     return redirect(project)
 
 
@@ -1186,8 +1187,8 @@ def download_project_file(request, slug, filename, path_type):
 
 
 @conditional_login_required
-def download_input_view(request, slug, filename):
-    return download_project_file(request, slug, filename, "input")
+def download_input_view(request, slug, uuid):
+    return download_project_file(request, slug, uuid, "input")
 
 
 @conditional_login_required

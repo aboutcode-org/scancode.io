@@ -31,6 +31,7 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
@@ -122,6 +123,18 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
         ]
 
 
+class InputSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InputSource
+        fields = [
+            "filename",
+            "download_url",
+            "is_uploaded",
+            "exists",
+            "uuid",
+        ]
+
+
 class ProjectSerializer(
     ExcludeFromListViewMixin,
     PipelineChoicesMixin,
@@ -146,7 +159,11 @@ class ProjectSerializer(
     webhook_url = serializers.CharField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
-    input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
+    input_sources = InputSourceSerializer(
+        source="inputsources",
+        many=True,
+        read_only=True,
+    )
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_packages_summary = serializers.SerializerMethodField()
     discovered_dependencies_summary = serializers.SerializerMethodField()
@@ -190,6 +207,7 @@ class ProjectSerializer(
             "settings",
             "input_root",
             "output_root",
+            "input_sources",
             "extra_data",
             "message_count",
             "resource_count",
