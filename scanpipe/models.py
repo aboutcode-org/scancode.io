@@ -848,7 +848,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.get_root_content(self.input_path)
 
     def get_inputs_with_source(self):
-        """Return a input list including the filename, download_url, and size data."""
+        """Return an input list including the filename, download_url, and size data."""
         input_sources = []
         seen_filenames = set()
 

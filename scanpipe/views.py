@@ -589,6 +589,10 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/project_detail.html"
 
+    def get_queryset(self):
+        """Scope the QuerySet to the project."""
+        return super().get_queryset()
+
     @staticmethod
     def get_license_clarity_data(scan_summary_json):
         license_clarity_score = scan_summary_json.get("license_clarity_score", {})

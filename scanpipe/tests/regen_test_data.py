@@ -64,8 +64,7 @@ class RegenTestData(TestCase):
         filename = "asgiref-3.3.0-py3-none-any.whl"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "-", save=True)
-
+        project1.add_input_source(filename=filename, is_uploaded=True)
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
@@ -73,10 +72,19 @@ class RegenTestData(TestCase):
         self.assertEqual(0, exitcode)
 
         # ScanCode-toolkit scan result
-        scan_options = ["--copyright", "--info", "--license", "--package"]
         scan_location = str(project1.codebase_path)
         output_location = str(self.data_location / "asgiref-3.3.0_toolkit_scan.json")
-        scancode.run_scancode(scan_location, output_location, scan_options)
+        run_scan_args = {
+            "copyright": True,
+            "info": True,
+            "license": True,
+            "package": True,
+        }
+        scancode.run_scan(
+            location=scan_location,
+            output_file=output_location,
+            run_scan_args=run_scan_args,
+        )
 
         # ScanCode.io results
         test_file_location = self.data_location / "asgiref-3.3.0_scanpipe_output.json"
@@ -124,10 +132,17 @@ class RegenTestData(TestCase):
         project2.copy_input_from(input_location)
         input.copy_input(input_file, project2.codebase_path)
         scancode.extract_archives(location=project2.codebase_path)
-        scan_options = ["--info", "--package"]
         scan_location = str(
             project2.codebase_path / "package_assembly_codebase.tar.gz-extract/"
         )
         json_filename = "package_assembly_codebase.json"
         output_location = str(self.data_location / "scancode" / json_filename)
-        scancode.run_scancode(scan_location, output_location, scan_options)
+        run_scan_args = {
+            "info": True,
+            "package": True,
+        }
+        scancode.run_scan(
+            location=scan_location,
+            output_file=output_location,
+            run_scan_args=run_scan_args,
+        )

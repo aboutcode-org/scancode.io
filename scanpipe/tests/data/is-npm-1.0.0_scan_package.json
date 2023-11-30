@@ -60,7 +60,6 @@
       "qualifiers": {},
       "subpath": null,
       "primary_language": "JavaScript",
-      "description": "Check if your code is running as an npm script",
       "release_date": null,
       "parties": [
         {
@@ -253,7 +252,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": true,
-      "is_script": false,
+      "is_script": true,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -303,7 +302,6 @@
           "qualifiers": {},
           "subpath": null,
           "primary_language": "JavaScript",
-          "description": "Check if your code is running as an npm script",
           "release_date": null,
           "parties": [
             {
@@ -459,7 +457,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
+      "is_script": true,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
