@@ -539,3 +539,19 @@ def enrich_discovered_packages(project, logger=logger.info):
         f"enriched with the PurlDB."
     )
     return updated_package_count
+
+
+def send_project_json_to_matchcode(project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+    """
+    """
+    project_json_contents = open(project_json_location, "rb")
+    files = {"upload_file": project_json_contents}
+
+    response = request_post(
+        url=f"{api_url}matching/",
+        data={},
+        timeout=timeout,
+        files=files,
+    )
+
+    return response
