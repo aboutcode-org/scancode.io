@@ -100,9 +100,9 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def request_post(url, data, headers=None, timeout=DEFAULT_TIMEOUT):
+def request_post(url, data, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
     try:
-        response = session.post(url, data=data, timeout=timeout, headers=headers)
+        response = session.post(url, data=data, timeout=timeout, headers=headers, files=files)
         response.raise_for_status()
         return response.json()
     except (requests.RequestException, ValueError, TypeError) as exception:
@@ -320,3 +320,19 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
         chunk_size=10,
         logger=logger,
     )
+
+
+def send_project_json_to_matchcode(project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+    """
+    """
+    project_json_contents = open(project_json_location, "rb")
+    files = {"upload_file": project_json_contents}
+
+    response = request_post(
+        url=f"{api_url}matching/",
+        data={},
+        timeout=timeout,
+        files=files,
+    )
+
+    return response
