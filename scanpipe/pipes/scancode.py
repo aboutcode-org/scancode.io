@@ -471,13 +471,6 @@ def run_scan(location, output_file, run_scan_args):
     If `raise_on_error` is enabled, a ScancodeError will be raised if an error occurs
     during the scan.
     """
-    run_args = settings.SCANCODE_TOOLKIT_RUN_SCAN_ARGS.copy()
-    # The run_scan_args should override any values provided in the settings
-    run_args.update(run_scan_args)
-
-    if "timeout" in run_args:
-        run_args["timeout"] = int(run_args.get("timeout"))
-
     success, results = scancode_run_scan(
         input=shlex.quote(location),
         processes=get_max_workers(keep_available=1),
@@ -485,8 +478,9 @@ def run_scan(location, output_file, run_scan_args):
         verbose=False,
         return_results=True,
         echo_func=None,
-        pretty_params=get_pretty_params(run_args),
-        **run_args,
+        pretty_params=get_pretty_params(run_scan_args),
+        timeout=settings.SCANCODEIO_SCAN_FILE_TIMEOUT,
+        **run_scan_args,
     )
 
     if success:

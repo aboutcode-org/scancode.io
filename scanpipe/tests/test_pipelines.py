@@ -449,7 +449,7 @@ class PipelinesIntegrationTest(TestCase):
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
         # Do not override the regen as this file is generated in regen_test_data
-        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, scancode_file)
 
         summary_file = project1.get_latest_output(filename="summary")
         expected_file = (

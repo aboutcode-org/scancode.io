@@ -428,10 +428,10 @@ class ScanPipeScancodePipesTest(TestCase):
         mock_run_scan.return_value = True, "{}"
         output_file = tempfile.mkstemp()[1]
 
-        with override_settings(SCANCODE_TOOLKIT_RUN_SCAN_ARGS={"timeout": 60}):
+        with override_settings(SCANCODEIO_SCAN_FILE_TIMEOUT=10):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
-            self.assertEqual(60, run_scan_kwargs.get("timeout"))
+            self.assertEqual(10, run_scan_kwargs.get("timeout"))
 
         with override_settings(SCANCODEIO_PROCESSES=10):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})

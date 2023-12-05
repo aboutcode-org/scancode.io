@@ -8,7 +8,6 @@
         {
           "pipeline_name": "deploy_to_develop",
           "status": "not_started",
-          "description": "Establish relationships between two code trees: deployment and development.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -76,7 +75,6 @@
       "subpath": "",
       "tag": "",
       "primary_language": "",
-      "description": "",
       "release_date": null,
       "parties": [],
       "keywords": [],
@@ -1708,14 +1706,14 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
       "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
@@ -1729,14 +1727,14 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
       "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
@@ -1757,13 +1755,6 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
-      "status": "about-mapped",
-      "map_type": "about_file",
-      "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
-    },
-    {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
       "status": "about-mapped",
       "map_type": "about_file",
@@ -1771,7 +1762,7 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
@@ -1779,6 +1770,13 @@
     },
     {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
+      "status": "about-mapped",
+      "map_type": "about_file",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.ABOUT"
+    },
+    {
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
       "status": "about-mapped",
       "map_type": "about_file",
       "score": "",
