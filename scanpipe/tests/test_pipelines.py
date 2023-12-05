@@ -26,7 +26,6 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from unittest import expectedFailure
 from unittest import mock
 from unittest import skipIf
 
@@ -523,7 +522,7 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    @expectedFailure  # Expected results are inconsistent across systems
+    @skipIf(sys.platform != "linux", "Expected results are inconsistent across OS")
     def test_scanpipe_docker_pipeline_alpine_integration_test(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
@@ -575,7 +574,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
-    @expectedFailure  # Expected results are inconsistent across systems
     def test_scanpipe_docker_pipeline_rpm_integration_test(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
