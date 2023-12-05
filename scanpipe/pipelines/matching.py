@@ -61,28 +61,31 @@ class Matching(ScanCodebase):
         # poll and get match results
         while True:
             response = purldb.request_get(results_url)
-            if response.ok:
+            if response:
                 match_results = response
                 break
             time.sleep(10)
 
-        # map match results
+        # organize resources by package_uids
         matched_packages = match_results.get('packages', [])
         resource_results = match_results.get('files', [])
+        resource_paths_by_package_uids = defaultdict(list)
         for matched_package in matched_packages:
             package_uid = matched_package['package_uid']
-            # Get resources
-            resource_paths = []
             for resource in resource_results:
                 if package_uid in resource.get('for_packages', []):
-                    resource_paths.append(resource.path)
+                    resource_paths_by_package_uids[package_uid].append(resource['path'])
+
+        # Map package matches
+        for matched_package in matched_packages:
+            package_uid = matched_package['package_uid']
+            resource_paths = resource_paths_by_package_uids[package_uid]
             resources = self.project.codebaseresources.filter(path__in=resource_paths)
 
-            # Create package matche
+            # Create package matches
             create_package_from_purldb_data(
                 self.project,
                 resources=resources,
                 package_data=matched_package,
                 status=flag.MATCHED_TO_PURLDB_PACKAGE,
             )
-
