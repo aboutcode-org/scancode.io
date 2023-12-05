@@ -13,7 +13,6 @@
         {
           "pipeline_name": "docker",
           "status": "not_started",
-          "description": "Analyze Docker images.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,

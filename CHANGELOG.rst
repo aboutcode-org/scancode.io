@@ -1,6 +1,16 @@
 Changelog
 =========
 
+v32.8.0 (unreleased)
+--------------------
+
+- Refactor run_scancode to not fail on scan errors happening at the resource level,
+  such as a timeout. Project error message are created instead.
+  https://github.com/nexB/scancode.io/issues/1018
+
+- Add support for the SCANCODEIO_SCAN_FILE_TIMEOUT setting in the scan_package pipeline.
+  https://github.com/nexB/scancode.io/issues/1018
+
 v32.7.0 (2023-10-25)
 --------------------
 

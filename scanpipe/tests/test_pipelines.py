@@ -26,7 +26,6 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from unittest import expectedFailure
 from unittest import mock
 from unittest import skipIf
 
@@ -449,7 +448,7 @@ class PipelinesIntegrationTest(TestCase):
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
         # Do not override the regen as this file is generated in regen_test_data
-        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, scancode_file)
 
         summary_file = project1.get_latest_output(filename="summary")
         expected_file = (
@@ -523,7 +522,7 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    @expectedFailure  # Expected results are inconsistent across systems
+    @skipIf(sys.platform != "linux", "Expected results are inconsistent across OS")
     def test_scanpipe_docker_pipeline_alpine_integration_test(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
@@ -575,7 +574,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
-    @expectedFailure  # Expected results are inconsistent across systems
     def test_scanpipe_docker_pipeline_rpm_integration_test(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")

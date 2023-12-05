@@ -13,7 +13,6 @@
         {
           "pipeline_name": "docker",
           "status": "not_started",
-          "description": "Analyze Docker images.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -126,7 +125,6 @@
       "subpath": "",
       "tag": "img-f596dc-layer-01-d92879",
       "primary_language": "",
-      "description": "Debian base system miscellaneous files\n This package contains the basic filesystem hierarchy of a Debian system, and\n several important miscellaneous files, such as /etc/debian_version,\n /etc/host.conf, /etc/issue, /etc/motd, /etc/profile, and others,\n and the text of several common licenses in use on Debian systems.",
       "release_date": null,
       "parties": [
         {
@@ -183,7 +181,6 @@
       "subpath": "",
       "tag": "img-f596dc-layer-02-cb3279",
       "primary_language": "",
-      "description": "GNU C Library: Shared libraries\n Contains the standard libraries that are used by nearly all programs on\n the system. This package includes shared versions of the standard C library\n and the standard math library, as well as many others.",
       "release_date": null,
       "parties": [
         {
@@ -242,7 +239,6 @@
       "subpath": "",
       "tag": "img-f596dc-layer-02-cb3279",
       "primary_language": "",
-      "description": "Secure Sockets Layer toolkit - shared libraries\n This package is part of the OpenSSL project's implementation of the SSL\n and TLS cryptographic protocols for secure communication over the\n Internet.\n .\n It provides the libssl and libcrypto shared libraries.",
       "release_date": null,
       "parties": [
         {
@@ -301,7 +297,6 @@
       "subpath": "",
       "tag": "img-f596dc-layer-01-d92879",
       "primary_language": "",
-      "description": "Basic TCP/IP networking system\n This package provides the necessary infrastructure for basic TCP/IP based\n networking.\n .\n In particular, it supplies common name-to-number mappings in /etc/services,\n /etc/rpc, /etc/protocols and /etc/ethertypes.",
       "release_date": null,
       "parties": [
         {
@@ -358,7 +353,6 @@
       "subpath": "",
       "tag": "img-f596dc-layer-02-cb3279",
       "primary_language": "",
-      "description": "Secure Sockets Layer toolkit - cryptographic utility\n This package is part of the OpenSSL project's implementation of the SSL\n and TLS cryptographic protocols for secure communication over the\n Internet.\n .\n It contains the general-purpose command line binary /usr/bin/openssl,\n useful for cryptographic operations such as:\n  * creating RSA, DH, and DSA key parameters;\n  * creating X.509 certificates, CSRs, and CRLs;\n  * calculating message digests;\n  * encrypting and decrypting with ciphers;\n  * testing SSL/TLS clients and servers;\n  * handling S/MIME signed or encrypted mail.",
       "release_date": null,
       "parties": [
         {
@@ -415,7 +409,6 @@
       "subpath": "",
       "tag": "img-f596dc-layer-01-d92879",
       "primary_language": "",
-      "description": "time zone and daylight-saving time data\n This package contains data required for the implementation of\n standard local time for many representative locations around the\n globe. It is updated periodically to reflect changes made by\n political bodies to time zone boundaries, UTC offsets, and\n daylight-saving rules.",
       "release_date": null,
       "parties": [
         {
@@ -14749,7 +14742,6 @@
           "namespace": "debian",
           "extra_data": {},
           "qualifiers": {},
-          "description": null,
           "notice_text": null,
           "api_data_url": null,
           "dependencies": [],
@@ -15909,7 +15901,6 @@
           "namespace": null,
           "extra_data": {},
           "qualifiers": {},
-          "description": null,
           "notice_text": null,
           "api_data_url": null,
           "dependencies": [],

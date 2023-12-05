@@ -25,7 +25,6 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 
 from commoncode.hash import multi_checksums
-from scancode import ScancodeError
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import input
@@ -99,14 +98,18 @@ class ScanPackage(Pipeline):
         if license_score := self.project.get_env("scancode_license_score"):
             run_scan_args["license_score"] = license_score
 
-        errors = scancode.run_scan(
+        scanning_errors = scancode.run_scan(
             location=str(self.project.codebase_path),
             output_file=self.scan_output_location,
             run_scan_args=run_scan_args,
         )
 
-        if errors:
-            raise ScancodeError(errors)
+        for resource_path, errors in scanning_errors.items():
+            self.project.add_error(
+                description="\n".join(errors),
+                model=self.pipeline_name,
+                details={"path": resource_path},
+            )
 
         if not scan_output_path.exists():
             raise FileNotFoundError("ScanCode output not available.")

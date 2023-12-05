@@ -416,22 +416,22 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_run_scancode(self):
         project = Project.objects.create(name="name with space")
-        output = scancode.run_scan(
+        scanning_errors = scancode.run_scan(
             location=str(project.codebase_path),
             output_file=str(project.get_output_file_path("scancode", "json")),
             run_scan_args={"info": True},
         )
-        self.assertIsNone(output)
+        self.assertEqual({}, scanning_errors)
 
     @mock.patch("scanpipe.pipes.scancode.scancode_run_scan")
     def test_scanpipe_pipes_scancode_run_scan_args(self, mock_run_scan):
-        mock_run_scan.return_value = True, "{}"
+        mock_run_scan.return_value = True, {}
         output_file = tempfile.mkstemp()[1]
 
-        with override_settings(SCANCODE_TOOLKIT_RUN_SCAN_ARGS={"timeout": 60}):
+        with override_settings(SCANCODEIO_SCAN_FILE_TIMEOUT=10):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
-            self.assertEqual(60, run_scan_kwargs.get("timeout"))
+            self.assertEqual(10, run_scan_kwargs.get("timeout"))
 
         with override_settings(SCANCODEIO_PROCESSES=10):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
