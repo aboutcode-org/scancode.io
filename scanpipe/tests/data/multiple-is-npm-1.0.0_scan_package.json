@@ -345,7 +345,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": true,
-      "is_script": true,
+      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -461,7 +461,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": true,
-      "is_script": true,
+      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -666,7 +666,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": true,
+      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -924,7 +924,7 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": true,
+      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"

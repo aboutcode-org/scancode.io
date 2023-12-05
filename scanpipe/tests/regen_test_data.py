@@ -48,7 +48,7 @@ class RegenTestData(TestCase):
     $ ./manage.py test --pattern "regen*.py"
 
     - Docker:
-    $ docker compose run --volume "$(pwd)":/app web \
+    $ docker compose run --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ web \
         ./manage.py test --pattern "regen*.py"
 
     Warning: Once the test data is updated, run the whole test suite with the
