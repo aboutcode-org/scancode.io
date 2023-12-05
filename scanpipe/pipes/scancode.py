@@ -466,12 +466,8 @@ def get_pretty_params(args):
 
 
 def run_scan(location, output_file, run_scan_args):
-    """
-    Scan the `location` content and write the results into an `output_file`.
-    If `raise_on_error` is enabled, a ScancodeError will be raised if an error occurs
-    during the scan.
-    """
-    success, results = scancode_run_scan(
+    """Scan the `location` content and write the results into an `output_file`."""
+    _success, results = scancode_run_scan(
         input=shlex.quote(location),
         processes=get_max_workers(keep_available=1),
         quiet=True,
@@ -483,15 +479,18 @@ def run_scan(location, output_file, run_scan_args):
         **run_scan_args,
     )
 
-    if success:
+    # ``_success`` will be False if any scanning errors occur, but we still want
+    # to generate the results output in that case.
+    if results:
         Path(output_file).write_text(json.dumps(results, indent=2))
-        return
 
-    errors = {}
+    # Capture scan errors logged at the files level.
+    scanning_errors = {}
     for file in results.get("files", []):
-        if scan_errors := file.get("scan_errors"):
-            errors[file.get("path")] = scan_errors
-    return errors
+        if errors := file.get("scan_errors"):
+            scanning_errors[file.get("path")] = errors
+
+    return scanning_errors
 
 
 def get_virtual_codebase(project, input_location):
