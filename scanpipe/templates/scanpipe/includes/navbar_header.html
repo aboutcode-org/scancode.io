@@ -27,9 +27,12 @@
           <a class="navbar-item" href="{% url 'account_profile' %}">
             Profile settings
           </a>
-          <a class="navbar-item" href="{% url 'logout' %}">
-            Sign out
-          </a>
+          <form id="logout-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="navbar-item button is-white has-text-grey-dark is-fullwidth is-justify-content-flex-start" type="submit">
+              Sign out
+            </button>
+          </form>
           <hr class="navbar-divider">
           <div class="navbar-item">
             <i>ScanCode.io {{ SCANCODEIO_VERSION }}</i>

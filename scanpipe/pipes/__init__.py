@@ -302,19 +302,6 @@ def get_bin_executable(filename):
     return str(Path(sys.executable).parent / filename)
 
 
-def remove_prefix(text, prefix):
-    """
-    Remove the `prefix` from `text`.
-    Note that build-in `removeprefix` was added in Python3.9 but we need to keep
-    this one for Python3.8 support.
-    https://docs.python.org/3.9/library/stdtypes.html#str.removeprefix
-    """
-    if text.startswith(prefix):
-        prefix_len = len(prefix)
-        return text[prefix_len:]
-    return text
-
-
 class LoopProgress:
     """
     A context manager for logging progress in loops.

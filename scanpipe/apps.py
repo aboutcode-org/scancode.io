@@ -23,6 +23,7 @@
 import inspect
 import logging
 import sys
+import warnings
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
@@ -74,6 +75,12 @@ class ScanPipeConfig(AppConfig):
         # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
         if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
+            warnings.filterwarnings(
+                "ignore",
+                message="Accessing the database during app initialization",
+                category=RuntimeWarning,
+                module="django",
+            )
             self.sync_runs_and_jobs()
 
     def load_pipelines(self):
@@ -82,9 +89,7 @@ class ScanPipeConfig(AppConfig):
         pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
-
-        # Ignore duplicated entries caused by duplicated paths in `sys.path`.
-        pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
+        pipeline_entry_points = set(entry_points.select(group="scancodeio_pipelines"))
 
         for entry_point in sorted(pipeline_entry_points):
             self.register_pipeline(name=entry_point.name, cls=entry_point.load())

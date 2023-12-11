@@ -1402,7 +1402,8 @@ def flag_whitespace_files(project):
     whitespace_set = set(b" \n\r\t\f\b")
 
     for resource in resources:
-        binary_data = open(resource.location, "rb").read()
+        with open(resource.location, "rb") as f:
+            binary_data = f.read()
         binary_set = set(binary_data)
         non_whitespace_bytes = binary_set - whitespace_set
 
