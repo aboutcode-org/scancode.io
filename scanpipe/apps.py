@@ -23,6 +23,7 @@
 import inspect
 import logging
 import sys
+import warnings
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
@@ -74,6 +75,12 @@ class ScanPipeConfig(AppConfig):
         # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
         if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
+            warnings.filterwarnings(
+                "ignore",
+                message="Accessing the database during app initialization",
+                category=RuntimeWarning,
+                module="django",
+            )
             self.sync_runs_and_jobs()
 
     def load_pipelines(self):
