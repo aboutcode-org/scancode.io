@@ -253,13 +253,16 @@ class RootFSPipelineTest(TestCase):
         self.assertEqual("Error\nError", error.description)
 
 
-def sort_scanned_files_by_path(scan_data):
+def sort_for_os_compatibility(scan_data):
     """
-    Sort the ``scan_data`` files in place. Return ``scan_data``.
+    Sort the ``scan_data`` files and relations in place. Return ``scan_data``.
     """
-    files = scan_data.get("files")
-    if files:
+    if files := scan_data.get("files"):
         files.sort(key=lambda x: x["path"])
+
+    if relations := scan_data.get("relations"):
+        relations.sort(key=lambda x: x["to_resource"])
+
     return scan_data
 
 
@@ -292,8 +295,9 @@ class PipelinesIntegrationTest(TestCase):
         # system_environment differs between systems
         "system_environment",
         "file_type",
-        # mime type is inconsistent across systems
+        # mime type and is_script are inconsistent across systems
         "mime_type",
+        "is_script",
         "notes",
         "settings",
         "description",
@@ -381,7 +385,7 @@ class PipelinesIntegrationTest(TestCase):
         result_json = json.loads(Path(result_file).read_text())
         result_json = self._normalize_package_uids(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
-        result_data = sort_scanned_files_by_path(result_data)
+        result_data = sort_for_os_compatibility(result_data)
 
         if regen:
             expected_file.write_text(json.dumps(result_data, indent=2))
@@ -389,7 +393,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_json = json.loads(expected_file.read_text())
         expected_json = self._normalize_package_uids(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
-        expected_data = sort_scanned_files_by_path(expected_data)
+        expected_data = sort_for_os_compatibility(expected_data)
 
         self.assertEqual(expected_data, result_data)
 
