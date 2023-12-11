@@ -82,9 +82,7 @@ class ScanPipeConfig(AppConfig):
         pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
-
-        # Ignore duplicated entries caused by duplicated paths in `sys.path`.
-        pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
+        pipeline_entry_points = set(entry_points.select(group="scancodeio_pipelines"))
 
         for entry_point in sorted(pipeline_entry_points):
             self.register_pipeline(name=entry_point.name, cls=entry_point.load())

@@ -963,7 +963,7 @@ class ScanPipeD2DPipesTest(TestCase):
             "directory1/foo.txt",
         ]
         expected_qs = self.project1.codebaseresources.filter(path__in=expected_paths)
-        self.assertQuerysetEqual(expected_qs, resources_qs)
+        self.assertQuerySetEqual(expected_qs, resources_qs)
 
     def test_scanpipe_pipes_d2d_get_from_files_related_with_not_in_package_to_files(
         self,
@@ -971,15 +971,15 @@ class ScanPipeD2DPipesTest(TestCase):
         from_resource1 = make_resource_file(self.project1, "from/foo.java")
         to_resource1 = make_resource_file(self.project1, "to/foo.class")
         qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
-        self.assertQuerysetEqual([], qs)
+        self.assertQuerySetEqual([], qs)
 
         pipes.make_relation(from_resource1, to_resource1, "java_to_class")
         qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
-        self.assertQuerysetEqual([], qs)
+        self.assertQuerySetEqual([], qs)
 
         from_resource1.update(detected_license_expression="mit")
         qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
-        self.assertQuerysetEqual([from_resource1], qs)
+        self.assertQuerySetEqual([from_resource1], qs)
 
     def test_scanpipe_pipes_d2d_create_local_files_packages(self):
         from_resource1 = make_resource_file(
