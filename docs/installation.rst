@@ -224,7 +224,7 @@ Pre-installation Checklist
 
 Before you install ScanCode.io, make sure you have the following prerequisites:
 
- * **Python: versions 3.8 to 3.11** found at https://www.python.org/downloads/
+ * **Python: versions 3.10 to 3.11** found at https://www.python.org/downloads/
  * **Git**: most recent release available at https://git-scm.com/
  * **PostgreSQL**: release 11 or later found at https://www.postgresql.org/ or
    https://postgresapp.com/ on macOS
