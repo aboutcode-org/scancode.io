@@ -30,7 +30,7 @@ from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
-from python_inspector.resolve_cli import resolve_dependencies
+from python_inspector.api import resolve_dependencies
 from scancode.api import get_package_data
 
 from scanpipe.models import DiscoveredPackage
