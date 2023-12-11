@@ -1,8 +1,11 @@
 Changelog
 =========
 
-v32.8.0 (unreleased)
+v33.0.0 (unreleased)
 --------------------
+
+- Upgrade Django to version 5.0 and drop support for Python 3.8 and 3.9
+  https://github.com/nexB/scancode.io/issues/1020
 
 - Refactor run_scancode to not fail on scan errors happening at the resource level,
   such as a timeout. Project error message are created instead.
