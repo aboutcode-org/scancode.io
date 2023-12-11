@@ -30,7 +30,7 @@ from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
-from python_inspector.resolve_cli import resolver_api
+from python_inspector.resolve_cli import resolve_dependencies
 from scancode.api import get_package_data
 
 from scanpipe.models import DiscoveredPackage
@@ -64,7 +64,7 @@ def resolve_pypi_packages(input_location):
     python_version = f"{sys.version_info.major}{sys.version_info.minor}"
     operating_system = "linux"
 
-    inspector_output = resolver_api(
+    inspector_output = resolve_dependencies(
         requirement_files=[input_location],
         python_version=python_version,
         operating_system=operating_system,

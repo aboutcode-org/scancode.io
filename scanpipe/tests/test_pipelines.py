@@ -766,9 +766,9 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, exitcode, msg=out)
         self.assertIn("No package type found for", out)
 
-    @mock.patch("scanpipe.pipes.resolve.resolver_api")
+    @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
     def test_scanpipe_inspect_manifest_pipeline_pypi_integration_test(
-        self, resolver_api
+        self, resolve_dependencies
     ):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
@@ -776,13 +776,13 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        resolver_api.return_value = mock.Mock(packages=[])
+        resolve_dependencies.return_value = mock.Mock(packages=[])
         project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
         exitcode, out = pipeline.execute()
         self.assertEqual(1, exitcode, msg=out)
         self.assertIn("No packages could be resolved", out)
 
-        resolver_api.return_value = mock.Mock(packages=[package_data1])
+        resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
