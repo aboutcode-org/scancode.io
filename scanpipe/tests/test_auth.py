@@ -100,10 +100,13 @@ class ScanCodeIOAuthTest(TestCase):
 
     def test_scancodeio_auth_logout_view(self):
         response = self.client.get(logout_url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(logout_url)
         self.assertRedirects(response, login_url)
 
         self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
-        response = self.client.get(logout_url)
+        response = self.client.post(logout_url)
         self.assertRedirects(response, login_url)
 
     def test_scancodeio_account_profile_view(self):
