@@ -34,6 +34,9 @@ ENV_FILE=.env
 SCANCODEIO_DB_NAME=scancodeio
 SCANCODEIO_DB_USER=scancodeio
 SCANCODEIO_DB_PASSWORD=scancodeio
+DOCKER_COMPOSE=docker compose -f docker-compose.yml
+DOCKER_EXEC=${DOCKER_COMPOSE} exec
+DB_CONTAINER_NAME=db
 POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=en_US.UTF-8 --lc-ctype=en_US.UTF-8
 DATE=$(shell date +"%Y-%m-%d_%H%M")
 
@@ -158,4 +161,13 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images offline-package
+bash:
+	${DOCKER_EXEC} web bash
+
+shell:
+	${DOCKER_EXEC} web ./manage.py shell
+
+psql:
+	${DOCKER_EXEC} ${DB_CONTAINER_NAME} psql --username=${SCANCODEIO_DB_USER} postgres
+
+.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images offline-package bash shell psql

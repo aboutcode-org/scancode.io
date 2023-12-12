@@ -137,3 +137,19 @@ How can I trigger a pipeline scan from a CI/CD, such as Jenkins, TeamCity or Azu
 ------------------------------------------------------------------------------------------
 
 You can use the :ref:`rest_api` to automate your project or pipeline management.
+
+Optimizing Database Performance
+-------------------------------
+
+To enhance the performance of the database, it is highly recommended to leverage
+tools like PGTune.
+PGTune is designed to generate an optimized configuration for PostgreSQL,
+tailored to the maximum performance achievable on a specific hardware configuration.
+
+1. Utilize `PGTune <https://pgtune.leopard.in.ua/>`_  to generate a configuration
+file optimized for PostgreSQL based on your hardware specifications.
+
+2. Replace the default configuration, at ``./etc/postgresql/postgresql.conf``,
+with your custom configuration.
+
+3. Start, or restart, the Docker containers.

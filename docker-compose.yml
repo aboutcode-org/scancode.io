@@ -7,6 +7,7 @@ services:
       - docker.env
     volumes:
       - db_data:/var/lib/postgresql/data/
+      - ./etc/postgresql/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
     shm_size: "1gb"
     restart: always
 

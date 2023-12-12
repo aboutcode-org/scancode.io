@@ -7,6 +7,9 @@ v33.0.0 (unreleased)
 - Upgrade Django to version 5.0 and drop support for Python 3.8 and 3.9
   https://github.com/nexB/scancode.io/issues/1020
 
+- Add support for custom PostgreSQL configuration file in the docker compose context.
+  https://github.com/nexB/scancode.io/issues/1024
+
 - Refactor run_scancode to not fail on scan errors happening at the resource level,
   such as a timeout. Project error message are created instead.
   https://github.com/nexB/scancode.io/issues/1018
