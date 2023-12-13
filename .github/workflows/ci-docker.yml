@@ -16,5 +16,8 @@ jobs:
       - name: Build and run the Docker Compose stack
         run: docker compose up -d
 
+      - name: DEBUG postgres conf
+        run: docker compose run db psql --username=scancodeio scancodeio -c "TABLE pg_file_settings;"
+
       - name: Run tests
         run: docker compose run -e FROM_DOCKER_IMAGE=1 web python ./manage.py test --verbosity=2 --noinput
