@@ -27,7 +27,7 @@ ACTIVATE?=. bin/activate;
 VIRTUALENV_PYZ=etc/thirdparty/virtualenv.pyz
 BLACK_ARGS=--exclude=".cache|migrations|data|lib|bin|var"
 # Do not depend on Python to generate the SECRET_KEY
-GET_SECRET_KEY=`base64 /dev/urandom | head -c50`
+GET_SECRET_KEY=`head -c50 /dev/urandom | base64 | head -c50`
 # Customize with `$ make envfile ENV_FILE=/etc/scancodeio/.env`
 ENV_FILE=.env
 # Customize with `$ make postgresdb SCANCODEIO_DB_PASSWORD=YOUR_PASSWORD`
