@@ -48,11 +48,18 @@ class RegenTestData(TestCase):
     $ ./manage.py test --pattern "regen*.py"
 
     - Docker:
-    $ docker compose run --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ web \
-        ./manage.py test --pattern "regen*.py"
+    $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
+        web ./manage.py test --pattern "regen*.py"
 
     Warning: Once the test data is updated, run the whole test suite with the
     `SCANCODEIO_TEST_FIXTURES_REGEN` setting enabled to regen the expected files.
+
+    - Local:
+    $ SCANCODEIO_TEST_FIXTURES_REGEN=True ./manage.py test
+
+    - Docker:
+    $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
+        -e SCANCODEIO_TEST_FIXTURES_REGEN=True web ./manage.py test
     """
 
     data_location = Path(__file__).parent / "data"
