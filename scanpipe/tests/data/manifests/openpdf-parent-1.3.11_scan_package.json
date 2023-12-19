@@ -368,7 +368,6 @@
       "urls": [],
       "files_count": 1,
       "dirs_count": 0,
-      "size_count": 15846,
       "scan_errors": []
     },
     {
@@ -377,9 +376,9 @@
       "name": "openpdf-parent-1.3.11.pom.xml",
       "base_name": "openpdf-parent-1.3.11.pom",
       "extension": ".xml",
-      "sha1": "7af0b4ced4e734a53fe3e370717a9739c36654a0",
-      "md5": "6ae8888036645de0e8cb26de212682d7",
-      "sha256": "db80a712402a1b3fdb85435cef52b2884cca944e3d6123063e98ae4e5590c840",
+      "sha1": "41e2f6a5b09f09c4fce485afeed7a343113dddce",
+      "md5": "73b12e96d197ec2a2a8358a69986c569",
+      "sha256": "bc9734e1119c7bcbf4079123225444fe6250a33ee7402d03d048d6cc3a8e1a2c",
       "programming_language": null,
       "is_binary": false,
       "is_text": true,
@@ -629,7 +628,7 @@
               "rule_identifier": "lgpl-3.0_286.RULE",
               "rule_relevance": 100,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_286.RULE",
-              "matched_text": "        <license>\r\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\r\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\r\n            <distribution>repo</distribution>\r\n        </license>"
+              "matched_text": "        <license>\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\n            <distribution>repo</distribution>\n        </license>"
             },
             {
               "score": 95.83,
@@ -642,7 +641,7 @@
               "rule_identifier": "mpl-2.0_106.RULE",
               "rule_relevance": 100,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_106.RULE",
-              "matched_text": "        <license>\r\n            <name>Mozilla Public License Version 2.0</name>\r\n            <url>http://www.mozilla.org/MPL/2.0/</url>\r\n            <distribution>repo</distribution>\r\n        </license>\r\n    </licenses>"
+              "matched_text": "        <license>\n            <name>Mozilla Public License Version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    </licenses>"
             }
           ],
           "identifier": "lgpl_3_0_and_mpl_2_0-73a0015e-b50f-d0e4-00c9-3c91e730a3fe"
@@ -698,7 +697,6 @@
       ],
       "files_count": 0,
       "dirs_count": 0,
-      "size_count": 0,
       "scan_errors": []
     }
   ]

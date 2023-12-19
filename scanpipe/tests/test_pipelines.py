@@ -289,6 +289,7 @@ class PipelinesIntegrationTest(TestCase):
         "log",
         "uuid",
         "size",  # directory sizes are OS dependant
+        "size_count",
         "--json-pp",
         "--processes",
         "--verbose",
@@ -461,7 +462,6 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, summary_file)
 
     def test_scanpipe_scan_package_single_file(self):
-        self.maxDiff = None
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
