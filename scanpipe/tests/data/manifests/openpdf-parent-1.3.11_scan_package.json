@@ -1,0 +1,705 @@
+{
+  "headers": [
+    {
+      "tool_name": "scancode-toolkit",
+      "options": {
+        "--copyright": true,
+        "--email": true,
+        "--info": true,
+        "--license": true,
+        "--license-text": true,
+        "--package": true,
+        "--url": true,
+        "--classify": true,
+        "--summary": true
+      },
+      "notice": "Generated with ScanCode and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\nScanCode should be considered or used as legal advice. Consult an Attorney\nfor any legal advice.\nScanCode is a free software code scanning tool from nexB Inc. and others.\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.",
+      "output_format_version": "3.0.0",
+      "message": null,
+      "errors": [],
+      "warnings": [],
+      "extra_data": {
+        "spdx_license_list_version": "3.21",
+        "files_count": 1
+      }
+    }
+  ],
+  "summary": {
+    "declared_license_expression": "lgpl-3.0 AND mpl-2.0 AND unknown",
+    "license_clarity_score": {
+      "score": 0,
+      "declared_license": false,
+      "identification_precision": false,
+      "has_license_text": false,
+      "declared_copyrights": false,
+      "conflicting_license_categories": false,
+      "ambiguous_compound_licensing": true
+    },
+    "declared_holder": "",
+    "primary_language": "Java",
+    "other_license_expressions": [
+      {
+        "value": "lgpl-3.0 AND mpl-2.0",
+        "count": 1
+      }
+    ],
+    "other_holders": [
+      {
+        "value": null,
+        "count": 1
+      }
+    ],
+    "other_languages": []
+  },
+  "packages": [
+    {
+      "type": "maven",
+      "namespace": "com.github.librepdf",
+      "name": "openpdf-parent",
+      "version": "1.3.11",
+      "qualifiers": {},
+      "subpath": null,
+      "primary_language": "Java",
+      "release_date": null,
+      "parties": [
+        {
+          "type": "person",
+          "role": "developer",
+          "name": "The OpenPDF Project",
+          "email": null,
+          "url": null
+        }
+      ],
+      "keywords": [],
+      "homepage_url": "https://github.com/LibrePDF/OpenPDF",
+      "download_url": null,
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "sha512": null,
+      "bug_tracking_url": null,
+      "code_view_url": "scm:git:https://github.com/LibrePDF/OpenPDF",
+      "vcs_url": "git+https://github.com/LibrePDF/OpenPDF",
+      "copyright": null,
+      "holder": null,
+      "declared_license_expression": "(lgpl-3.0 AND mpl-2.0) AND unknown",
+      "declared_license_expression_spdx": "(LGPL-3.0-only AND MPL-2.0) AND LicenseRef-scancode-unknown",
+      "license_detections": [
+        {
+          "license_expression": "lgpl-3.0 AND mpl-2.0",
+          "matches": [
+            {
+              "score": 60.87,
+              "start_line": 1,
+              "end_line": 3,
+              "matched_length": 14,
+              "match_coverage": 60.87,
+              "matcher": "3-seq",
+              "license_expression": "lgpl-3.0",
+              "rule_identifier": "lgpl-3.0_286.RULE",
+              "rule_relevance": 100,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_286.RULE",
+              "matched_text": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0"
+            },
+            {
+              "score": 100.0,
+              "start_line": 3,
+              "end_line": 3,
+              "matched_length": 6,
+              "match_coverage": 100.0,
+              "matcher": "2-aho",
+              "license_expression": "mpl-2.0",
+              "rule_identifier": "mpl-2.0_39.RULE",
+              "rule_relevance": 100,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_39.RULE",
+              "matched_text": "- name: Mozilla Public License Version 2.0"
+            },
+            {
+              "score": 100.0,
+              "start_line": 4,
+              "end_line": 4,
+              "matched_length": 7,
+              "match_coverage": 100.0,
+              "matcher": "2-aho",
+              "license_expression": "mpl-2.0",
+              "rule_identifier": "mpl-2.0_4.RULE",
+              "rule_relevance": 100,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_4.RULE",
+              "matched_text": "  url: http://www.mozilla.org/MPL/2.0/"
+            }
+          ],
+          "identifier": "lgpl_3_0_and_mpl_2_0-b7655c0e-0952-1d9b-4eb2-dc3ea13530fc"
+        },
+        {
+          "license_expression": "unknown",
+          "matches": [
+            {
+              "score": 100.0,
+              "start_line": 1,
+              "end_line": 4,
+              "matched_length": 34,
+              "match_coverage": 100.0,
+              "matcher": "5-undetected",
+              "license_expression": "unknown",
+              "rule_identifier": "package-manifest-unknown-a1caadc51a47c77231f0a9c701baffcd857d60b9",
+              "rule_relevance": 100,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-a1caadc51a47c77231f0a9c701baffcd857d60b9",
+              "matched_text": "license - name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/"
+            }
+          ],
+          "identifier": "unknown-f46cfae0-fdb7-963e-99c5-424004c87f2d"
+        }
+      ],
+      "other_license_expression": null,
+      "other_license_expression_spdx": null,
+      "other_license_detections": [],
+      "extracted_license_statement": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/\n",
+      "notice_text": null,
+      "source_packages": [
+        "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?classifier=sources"
+      ],
+      "extra_data": {},
+      "repository_homepage_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/",
+      "repository_download_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/openpdf-parent-1.3.11.jar",
+      "api_data_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/openpdf-parent-1.3.11.pom",
+      "package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_paths": [
+        "codebase/openpdf-parent-1.3.11.pom.xml"
+      ],
+      "datasource_ids": [
+        "maven_pom"
+      ],
+      "purl": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11"
+    }
+  ],
+  "dependencies": [
+    {
+      "purl": "pkg:maven/org.assertj/assertj-core@3.12.1",
+      "extracted_requirement": "3.12.1",
+      "scope": "test",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.assertj/assertj-core@3.12.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.junit.jupiter/junit-jupiter-api@5.5.1",
+      "extracted_requirement": "5.5.1",
+      "scope": "test",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.junit.jupiter/junit-jupiter-api@5.5.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.junit.jupiter/junit-jupiter-params@5.5.1",
+      "extracted_requirement": "5.5.1",
+      "scope": "test",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.junit.jupiter/junit-jupiter-params@5.5.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.junit.jupiter/junit-jupiter-engine@5.5.1",
+      "extracted_requirement": "5.5.1",
+      "scope": "test",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.junit.jupiter/junit-jupiter-engine@5.5.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.mockito/mockito-core@2.25.1",
+      "extracted_requirement": "2.25.1",
+      "scope": "test",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.mockito/mockito-core@2.25.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.hamcrest/hamcrest-library@2.1",
+      "extracted_requirement": "2.1",
+      "scope": "test",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.hamcrest/hamcrest-library@2.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.hamcrest/hamcrest-core@2.1",
+      "extracted_requirement": "2.1",
+      "scope": "test",
+      "is_runtime": false,
+      "is_optional": true,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.hamcrest/hamcrest-core@2.1?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.bouncycastle/bcprov-jdk15on@1.63",
+      "extracted_requirement": "1.63",
+      "scope": "dependencymanagement",
+      "is_runtime": false,
+      "is_optional": false,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.bouncycastle/bcprov-jdk15on@1.63?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/org.bouncycastle/bcpkix-jdk15on@1.63",
+      "extracted_requirement": "1.63",
+      "scope": "dependencymanagement",
+      "is_runtime": false,
+      "is_optional": false,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/org.bouncycastle/bcpkix-jdk15on@1.63?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    },
+    {
+      "purl": "pkg:maven/com.github.spotbugs/spotbugs@3.1.12",
+      "extracted_requirement": "3.1.12",
+      "scope": "dependencymanagement",
+      "is_runtime": false,
+      "is_optional": false,
+      "is_resolved": true,
+      "resolved_package": {},
+      "extra_data": {},
+      "dependency_uid": "pkg:maven/com.github.spotbugs/spotbugs@3.1.12?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "for_package_uid": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datafile_path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "datasource_id": "maven_pom"
+    }
+  ],
+  "license_detections": [
+    {
+      "identifier": "lgpl_3_0_and_mpl_2_0-73a0015e-b50f-d0e4-00c9-3c91e730a3fe",
+      "license_expression": "lgpl-3.0 AND mpl-2.0",
+      "detection_count": 1
+    },
+    {
+      "identifier": "lgpl_3_0_and_mpl_2_0-b7655c0e-0952-1d9b-4eb2-dc3ea13530fc",
+      "license_expression": "lgpl-3.0 AND mpl-2.0",
+      "detection_count": 1
+    },
+    {
+      "identifier": "unknown-f46cfae0-fdb7-963e-99c5-424004c87f2d",
+      "license_expression": "unknown",
+      "detection_count": 1
+    }
+  ],
+  "files": [
+    {
+      "path": "codebase",
+      "type": "directory",
+      "name": "codebase",
+      "base_name": "codebase",
+      "extension": "",
+      "sha1": null,
+      "md5": null,
+      "sha256": null,
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": false,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "package_data": [],
+      "for_packages": [
+        "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": true,
+      "is_key_file": false,
+      "detected_license_expression": null,
+      "detected_license_expression_spdx": null,
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": 0,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "emails": [],
+      "urls": [],
+      "files_count": 1,
+      "dirs_count": 0,
+      "size_count": 15846,
+      "scan_errors": []
+    },
+    {
+      "path": "codebase/openpdf-parent-1.3.11.pom.xml",
+      "type": "file",
+      "name": "openpdf-parent-1.3.11.pom.xml",
+      "base_name": "openpdf-parent-1.3.11.pom",
+      "extension": ".xml",
+      "sha1": "7af0b4ced4e734a53fe3e370717a9739c36654a0",
+      "md5": "6ae8888036645de0e8cb26de212682d7",
+      "sha256": "db80a712402a1b3fdb85435cef52b2884cca944e3d6123063e98ae4e5590c840",
+      "programming_language": null,
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_source": false,
+      "package_data": [
+        {
+          "type": "maven",
+          "namespace": "com.github.librepdf",
+          "name": "openpdf-parent",
+          "version": "1.3.11",
+          "qualifiers": {},
+          "subpath": null,
+          "primary_language": "Java",
+          "release_date": null,
+          "parties": [
+            {
+              "type": "person",
+              "role": "developer",
+              "name": "The OpenPDF Project",
+              "email": null,
+              "url": null
+            }
+          ],
+          "keywords": [],
+          "homepage_url": "https://github.com/LibrePDF/OpenPDF",
+          "download_url": null,
+          "sha1": null,
+          "md5": null,
+          "sha256": null,
+          "sha512": null,
+          "bug_tracking_url": null,
+          "code_view_url": "scm:git:https://github.com/LibrePDF/OpenPDF",
+          "vcs_url": "git+https://github.com/LibrePDF/OpenPDF",
+          "copyright": null,
+          "holder": null,
+          "declared_license_expression": "(lgpl-3.0 AND mpl-2.0) AND unknown",
+          "declared_license_expression_spdx": "(LGPL-3.0-only AND MPL-2.0) AND LicenseRef-scancode-unknown",
+          "license_detections": [
+            {
+              "license_expression": "lgpl-3.0 AND mpl-2.0",
+              "matches": [
+                {
+                  "score": 60.87,
+                  "start_line": 1,
+                  "end_line": 3,
+                  "matched_length": 14,
+                  "match_coverage": 60.87,
+                  "matcher": "3-seq",
+                  "license_expression": "lgpl-3.0",
+                  "rule_identifier": "lgpl-3.0_286.RULE",
+                  "rule_relevance": 100,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_286.RULE",
+                  "matched_text": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0"
+                },
+                {
+                  "score": 100.0,
+                  "start_line": 3,
+                  "end_line": 3,
+                  "matched_length": 6,
+                  "match_coverage": 100.0,
+                  "matcher": "2-aho",
+                  "license_expression": "mpl-2.0",
+                  "rule_identifier": "mpl-2.0_39.RULE",
+                  "rule_relevance": 100,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_39.RULE",
+                  "matched_text": "- name: Mozilla Public License Version 2.0"
+                },
+                {
+                  "score": 100.0,
+                  "start_line": 4,
+                  "end_line": 4,
+                  "matched_length": 7,
+                  "match_coverage": 100.0,
+                  "matcher": "2-aho",
+                  "license_expression": "mpl-2.0",
+                  "rule_identifier": "mpl-2.0_4.RULE",
+                  "rule_relevance": 100,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_4.RULE",
+                  "matched_text": "  url: http://www.mozilla.org/MPL/2.0/"
+                }
+              ],
+              "identifier": "lgpl_3_0_and_mpl_2_0-b7655c0e-0952-1d9b-4eb2-dc3ea13530fc"
+            },
+            {
+              "license_expression": "unknown",
+              "matches": [
+                {
+                  "score": 100.0,
+                  "start_line": 1,
+                  "end_line": 4,
+                  "matched_length": 34,
+                  "match_coverage": 100.0,
+                  "matcher": "5-undetected",
+                  "license_expression": "unknown",
+                  "rule_identifier": "package-manifest-unknown-a1caadc51a47c77231f0a9c701baffcd857d60b9",
+                  "rule_relevance": 100,
+                  "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/package-manifest-unknown-a1caadc51a47c77231f0a9c701baffcd857d60b9",
+                  "matched_text": "license - name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/"
+                }
+              ],
+              "identifier": "unknown-f46cfae0-fdb7-963e-99c5-424004c87f2d"
+            }
+          ],
+          "other_license_expression": null,
+          "other_license_expression_spdx": null,
+          "other_license_detections": [],
+          "extracted_license_statement": "- name: GNU General Lesser Public License (LGPL) version 3.0\n  url: http://www.gnu.org/licenses/lgpl.html\n- name: Mozilla Public License Version 2.0\n  url: http://www.mozilla.org/MPL/2.0/\n",
+          "notice_text": null,
+          "source_packages": [
+            "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?classifier=sources"
+          ],
+          "file_references": [],
+          "extra_data": {},
+          "dependencies": [
+            {
+              "purl": "pkg:maven/org.assertj/assertj-core@3.12.1",
+              "extracted_requirement": "3.12.1",
+              "scope": "test",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.junit.jupiter/junit-jupiter-api@5.5.1",
+              "extracted_requirement": "5.5.1",
+              "scope": "test",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.junit.jupiter/junit-jupiter-params@5.5.1",
+              "extracted_requirement": "5.5.1",
+              "scope": "test",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.junit.jupiter/junit-jupiter-engine@5.5.1",
+              "extracted_requirement": "5.5.1",
+              "scope": "test",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.mockito/mockito-core@2.25.1",
+              "extracted_requirement": "2.25.1",
+              "scope": "test",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.hamcrest/hamcrest-library@2.1",
+              "extracted_requirement": "2.1",
+              "scope": "test",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.hamcrest/hamcrest-core@2.1",
+              "extracted_requirement": "2.1",
+              "scope": "test",
+              "is_runtime": false,
+              "is_optional": true,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.bouncycastle/bcprov-jdk15on@1.63",
+              "extracted_requirement": "1.63",
+              "scope": "dependencymanagement",
+              "is_runtime": false,
+              "is_optional": false,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/org.bouncycastle/bcpkix-jdk15on@1.63",
+              "extracted_requirement": "1.63",
+              "scope": "dependencymanagement",
+              "is_runtime": false,
+              "is_optional": false,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            },
+            {
+              "purl": "pkg:maven/com.github.spotbugs/spotbugs@3.1.12",
+              "extracted_requirement": "3.1.12",
+              "scope": "dependencymanagement",
+              "is_runtime": false,
+              "is_optional": false,
+              "is_resolved": true,
+              "resolved_package": {},
+              "extra_data": {}
+            }
+          ],
+          "repository_homepage_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/",
+          "repository_download_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/openpdf-parent-1.3.11.jar",
+          "api_data_url": "https://repo1.maven.org/maven2/com/github/librepdf/openpdf-parent/1.3.11/openpdf-parent-1.3.11.pom",
+          "datasource_id": "maven_pom",
+          "purl": "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11"
+        }
+      ],
+      "for_packages": [
+        "pkg:maven/com.github.librepdf/openpdf-parent@1.3.11?uuid=fixed-uid-done-for-testing-5642512d1758"
+      ],
+      "is_legal": false,
+      "is_manifest": false,
+      "is_readme": false,
+      "is_top_level": false,
+      "is_key_file": false,
+      "detected_license_expression": "lgpl-3.0 AND mpl-2.0",
+      "detected_license_expression_spdx": "LGPL-3.0-only AND MPL-2.0",
+      "license_detections": [
+        {
+          "license_expression": "lgpl-3.0 AND mpl-2.0",
+          "matches": [
+            {
+              "score": 78.26,
+              "start_line": 12,
+              "end_line": 16,
+              "matched_length": 18,
+              "match_coverage": 78.26,
+              "matcher": "3-seq",
+              "license_expression": "lgpl-3.0",
+              "rule_identifier": "lgpl-3.0_286.RULE",
+              "rule_relevance": 100,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/lgpl-3.0_286.RULE",
+              "matched_text": "        <license>\r\n            <name>GNU General Lesser Public License (LGPL) version 3.0</name>\r\n            <url>http://www.gnu.org/licenses/lgpl.html</url>\r\n            <distribution>repo</distribution>\r\n        </license>"
+            },
+            {
+              "score": 95.83,
+              "start_line": 17,
+              "end_line": 22,
+              "matched_length": 23,
+              "match_coverage": 95.83,
+              "matcher": "3-seq",
+              "license_expression": "mpl-2.0",
+              "rule_identifier": "mpl-2.0_106.RULE",
+              "rule_relevance": 100,
+              "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/mpl-2.0_106.RULE",
+              "matched_text": "        <license>\r\n            <name>Mozilla Public License Version 2.0</name>\r\n            <url>http://www.mozilla.org/MPL/2.0/</url>\r\n            <distribution>repo</distribution>\r\n        </license>\r\n    </licenses>"
+            }
+          ],
+          "identifier": "lgpl_3_0_and_mpl_2_0-73a0015e-b50f-d0e4-00c9-3c91e730a3fe"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 3.42,
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "emails": [],
+      "urls": [
+        {
+          "url": "http://maven.apache.org/xsd/maven-4.0.0.xsd",
+          "start_line": 2,
+          "end_line": 2
+        },
+        {
+          "url": "http://www.gnu.org/licenses/lgpl.html",
+          "start_line": 14,
+          "end_line": 14
+        },
+        {
+          "url": "http://www.mozilla.org/MPL/2.0/",
+          "start_line": 19,
+          "end_line": 19
+        },
+        {
+          "url": "https://github.com/LibrePDF/OpenPDF",
+          "start_line": 31,
+          "end_line": 31
+        },
+        {
+          "url": "https://oss.sonatype.org/",
+          "start_line": 216,
+          "end_line": 216
+        },
+        {
+          "url": "https://github.com/librepdf",
+          "start_line": 347,
+          "end_line": 347
+        },
+        {
+          "url": "http://central.sonatype.org/pages/apache-maven.html#distribution-management-and-authentication",
+          "start_line": 350,
+          "end_line": 350
+        },
+        {
+          "url": "https://oss.sonatype.org/content/repositories/snapshots",
+          "start_line": 354,
+          "end_line": 354
+        }
+      ],
+      "files_count": 0,
+      "dirs_count": 0,
+      "size_count": 0,
+      "scan_errors": []
+    }
+  ]
+}

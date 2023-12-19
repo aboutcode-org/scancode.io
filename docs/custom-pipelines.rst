@@ -76,11 +76,11 @@ ones, or remove any of them.
                 # Original steps from the ScanCodebase pipeline
                 cls.copy_inputs_to_codebase_directory,
                 cls.extract_archives,
-                cls.run_scancode,
-                cls.build_inventory_from_scan,
-
-                # Commented-out as not interested in a csv output
-                # cls.csv_output,
+                cls.collect_and_create_codebase_resources,
+                cls.flag_empty_files,
+                cls.flag_ignored_resources,
+                cls.scan_for_application_packages,
+                cls.scan_for_files,
 
                 # My extra steps
                 cls.extra_step1,

@@ -47,7 +47,7 @@ class ScanPackage(Pipeline):
             cls.get_package_input,
             cls.collect_input_information,
             cls.extract_input_to_codebase_directory,
-            cls.run_scancode,
+            cls.run_scan,
             cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
         )
@@ -94,7 +94,7 @@ class ScanPackage(Pipeline):
         if extract_errors:
             self.add_error("\n".join(extract_errors))
 
-    def run_scancode(self):
+    def run_scan(self):
         """Scan extracted codebase/ content."""
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
