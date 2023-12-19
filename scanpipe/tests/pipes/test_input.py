@@ -55,6 +55,13 @@ class ScanPipeInputPipesTest(TestCase):
         )
         self.assertEqual("scancode-toolkit", tool_name)
 
+    def test_scanpipe_pipes_input_is_archive(self):
+        input_location = self.data_location / "notice.NOTICE"
+        self.assertFalse(input.is_archive(input_location))
+
+        input_location = self.data_location / "archive.zip"
+        self.assertTrue(input.is_archive(input_location))
+
     def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
         project = Project.objects.create(name="Analysis")
         input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"

@@ -28,6 +28,7 @@ from django.core.validators import EMPTY_VALUES
 from django.db import models
 
 import openpyxl
+from typecode.contenttype import get_type
 
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
@@ -63,6 +64,11 @@ def get_tool_name_from_scan_headers(scan_data):
         first_header = headers[0]
         tool_name = first_header.get("tool_name", "")
         return tool_name
+
+
+def is_archive(location):
+    """Return True if the file at ``location`` is an archive."""
+    return get_type(location).is_archive
 
 
 def load_inventory_from_toolkit_scan(project, input_location):

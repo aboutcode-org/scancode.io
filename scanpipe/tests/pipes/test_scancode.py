@@ -414,7 +414,7 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(len(package_purl_exists), 1)
         self.assertTrue("pkg:npm/test@0.1.0" in package_purls)
 
-    def test_scanpipe_pipes_scancode_run_scancode(self):
+    def test_scanpipe_pipes_scancode_run_scan(self):
         project = Project.objects.create(name="name with space")
         scanning_errors = scancode.run_scan(
             location=str(project.codebase_path),

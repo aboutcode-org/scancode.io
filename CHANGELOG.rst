@@ -14,6 +14,9 @@ v33.0.0 (unreleased)
 - Add support for the SCANCODEIO_SCAN_FILE_TIMEOUT setting in the scan_package pipeline.
   https://github.com/nexB/scancode.io/issues/1018
 
+- Add support for non-archive single file in the scan_package pipeline.
+  https://github.com/nexB/scancode.io/issues/1009
+
 v32.7.0 (2023-10-25)
 --------------------
 
