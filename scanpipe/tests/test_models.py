@@ -27,6 +27,7 @@ import tempfile
 import uuid
 from contextlib import redirect_stdout
 from datetime import datetime
+from datetime import timezone as tz
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -754,11 +755,11 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertIsNone(run1.execution_time)
 
-        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=timezone.utc)
+        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=tz.utc)
         run1.save()
         self.assertIsNone(run1.execution_time)
 
-        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual(25.0, run1.execution_time)
 
@@ -771,19 +772,19 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertIsNone(run1.execution_time_for_display)
 
-        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=timezone.utc)
+        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=tz.utc)
         run1.save()
         self.assertIsNone(run1.execution_time_for_display)
 
-        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual("25 seconds", run1.execution_time_for_display)
 
-        run1.task_end_date = datetime(1984, 10, 10, 10, 12, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 10, 12, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual("145 seconds (2.4 minutes)", run1.execution_time_for_display)
 
-        run1.task_end_date = datetime(1984, 10, 10, 11, 12, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 11, 12, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual("3745 seconds (1.0 hours)", run1.execution_time_for_display)
 

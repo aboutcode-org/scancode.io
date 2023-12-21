@@ -48,11 +48,18 @@ class RegenTestData(TestCase):
     $ ./manage.py test --pattern "regen*.py"
 
     - Docker:
-    $ docker compose run --volume "$(pwd)":/app web \
-        ./manage.py test --pattern "regen*.py"
+    $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
+        web ./manage.py test --pattern "regen*.py"
 
     Warning: Once the test data is updated, run the whole test suite with the
     `SCANCODEIO_TEST_FIXTURES_REGEN` setting enabled to regen the expected files.
+
+    - Local:
+    $ SCANCODEIO_TEST_FIXTURES_REGEN=True ./manage.py test
+
+    - Docker:
+    $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
+        -e SCANCODEIO_TEST_FIXTURES_REGEN=True web ./manage.py test
     """
 
     data_location = Path(__file__).parent / "data"
@@ -72,18 +79,15 @@ class RegenTestData(TestCase):
         self.assertEqual(0, exitcode)
 
         # ScanCode-toolkit scan result
-        scan_location = str(project1.codebase_path)
-        output_location = str(self.data_location / "asgiref-3.3.0_toolkit_scan.json")
-        run_scan_args = {
-            "copyright": True,
-            "info": True,
-            "license": True,
-            "package": True,
-        }
         scancode.run_scan(
-            location=scan_location,
-            output_file=output_location,
-            run_scan_args=run_scan_args,
+            location=str(project1.codebase_path),
+            output_file=str(self.data_location / "asgiref-3.3.0_toolkit_scan.json"),
+            run_scan_args={
+                "copyright": True,
+                "info": True,
+                "license": True,
+                "package": True,
+            },
         )
 
         # ScanCode.io results
@@ -136,13 +140,11 @@ class RegenTestData(TestCase):
             project2.codebase_path / "package_assembly_codebase.tar.gz-extract/"
         )
         json_filename = "package_assembly_codebase.json"
-        output_location = str(self.data_location / "scancode" / json_filename)
-        run_scan_args = {
-            "info": True,
-            "package": True,
-        }
         scancode.run_scan(
             location=scan_location,
-            output_file=output_location,
-            run_scan_args=run_scan_args,
+            output_file=str(self.data_location / "scancode" / json_filename),
+            run_scan_args={
+                "info": True,
+                "package": True,
+            },
         )

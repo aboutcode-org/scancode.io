@@ -132,19 +132,6 @@ synchronously in the web server process.
 
         export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
-SCANCODE_TOOLKIT_RUN_SCAN_ARGS
-------------------------------
-
-Use this setting to provide any default options for running ScanCode-toolkit.
-
-.. note::
-    Refer to `ScanCode-toolkit Available Options <https://scancode-toolkit.readthedocs.io/en/latest/cli-reference/list-options.html>`_
-    for the full list of available options.
-
-The following example explicitly defines a timeout value of 60::
-
-    SCANCODE_TOOLKIT_RUN_SCAN_ARGS="timeout=60,"
-
 SCANCODEIO_TASK_TIMEOUT
 -----------------------
 

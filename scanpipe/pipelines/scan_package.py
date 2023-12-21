@@ -25,17 +25,18 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 
 from commoncode.hash import multi_checksums
-from scancode import ScancodeError
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import input
 from scanpipe.pipes import scancode
+from scanpipe.pipes.input import copy_input
+from scanpipe.pipes.input import is_archive
 from scanpipe.pipes.scancode import extract_archive
 
 
 class ScanPackage(Pipeline):
     """
-    Scan a single package archive with ScanCode-toolkit.
+    Scan a single package file or package archive with ScanCode-toolkit.
 
     The output is a summary of the scan results in JSON format.
     """
@@ -43,10 +44,10 @@ class ScanPackage(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.get_package_archive_input,
-            cls.collect_archive_information,
-            cls.extract_archive_to_codebase_directory,
-            cls.run_scancode,
+            cls.get_package_input,
+            cls.collect_input_information,
+            cls.extract_input_to_codebase_directory,
+            cls.run_scan,
             cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
         )
@@ -63,34 +64,37 @@ class ScanPackage(Pipeline):
         "summary": True,
     }
 
-    def get_package_archive_input(self):
-        """Locate the input package archive in the project's input/ directory."""
+    def get_package_input(self):
+        """Locate the package input in the project's input/ directory."""
         input_files = self.project.input_files
         inputs = list(self.project.inputs())
 
         if len(inputs) != 1 or len(input_files) != 1:
             raise Exception("Only 1 input file supported")
 
-        self.archive_path = inputs[0]
+        self.input_path = inputs[0]
 
-    def collect_archive_information(self):
-        """Collect and store information about the input archive in the project."""
+    def collect_input_information(self):
+        """Collect and store information about the project input."""
         self.project.update_extra_data(
             {
-                "filename": self.archive_path.name,
-                "size": self.archive_path.stat().st_size,
-                **multi_checksums(self.archive_path),
+                "filename": self.input_path.name,
+                "size": self.input_path.stat().st_size,
+                **multi_checksums(self.input_path),
             }
         )
 
-    def extract_archive_to_codebase_directory(self):
-        """Extract package archive with extractcode."""
-        extract_errors = extract_archive(self.archive_path, self.project.codebase_path)
+    def extract_input_to_codebase_directory(self):
+        """Copy or extract input to project codebase/ directory."""
+        if not is_archive(self.input_path):
+            copy_input(self.input_path, self.project.codebase_path)
+            return
 
+        extract_errors = extract_archive(self.input_path, self.project.codebase_path)
         if extract_errors:
             self.add_error("\n".join(extract_errors))
 
-    def run_scancode(self):
+    def run_scan(self):
         """Scan extracted codebase/ content."""
         scan_output_path = self.project.get_output_file_path("scancode", "json")
         self.scan_output_location = str(scan_output_path.absolute())
@@ -99,14 +103,18 @@ class ScanPackage(Pipeline):
         if license_score := self.project.get_env("scancode_license_score"):
             run_scan_args["license_score"] = license_score
 
-        errors = scancode.run_scan(
+        scanning_errors = scancode.run_scan(
             location=str(self.project.codebase_path),
             output_file=self.scan_output_location,
             run_scan_args=run_scan_args,
         )
 
-        if errors:
-            raise ScancodeError(errors)
+        for resource_path, errors in scanning_errors.items():
+            self.project.add_error(
+                description="\n".join(errors),
+                model=self.pipeline_name,
+                details={"path": resource_path},
+            )
 
         if not scan_output_path.exists():
             raise FileNotFoundError("ScanCode output not available.")

@@ -7,7 +7,7 @@ This tutorial complements the :ref:`rest_api` section, and the aim here is to
 show the API features while analyzing a package archive.
 
 .. tip::
-    As a perquisite, check our :ref:`rest_api` chapter for more details on REST
+    As a pre-requisite, check our :ref:`rest_api` chapter for more details on REST
     API and how to get started.
 
 Instructions:
