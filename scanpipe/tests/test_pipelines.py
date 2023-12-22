@@ -796,9 +796,9 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = ("No manifests found for resolving packages")
+        expected = "No manifests found for resolving packages"
         self.assertIn(expected, message.description)
-    
+
     def test_scanpipe_inspect_manifest_pipeline_integration_empty_manifest(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
@@ -811,8 +811,24 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = ("No packages could be resolved for")
+        expected = "No packages could be resolved for"
         self.assertIn(expected, message.description)
+
+    def test_scanpipe_inspect_manifest_pipeline_integration_misc(self):
+        pipeline_name = "inspect_manifest"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = (
+            self.data_location / "manifests" / "python-inspector-0.10.0.zip"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(26, project1.discoveredpackages.count())
 
     @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
     def test_scanpipe_inspect_manifest_pipeline_pypi_integration(
