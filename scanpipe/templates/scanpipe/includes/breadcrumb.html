@@ -8,10 +8,24 @@
         <li><a href="{{ project.get_absolute_url }}" class="has-text-grey">{{ project.name }}</a></li>
       {% endif %}
       {% if current %}
-        <li class="is-active"><a href="#" aria-current="page">{{ current }}</a></li>
+        <li>
+          <a id="current-page-link" href="#"  class="has-text-black-bis">
+            {{ current }}
+          </a>
+        </li>
       {% else %}
         <li class="is-active"><a href="#" aria-current="page">{{ project.name }}</a></li>
       {% endif %}
     {% endif %}
   </ul>
 </nav>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Get the current relative URL using JavaScript
+    var currentRelativeUrl = window.location.pathname;
+
+    // Set the href attribute of the link to the current relative URL
+    document.getElementById('current-page-link').href = currentRelativeUrl;
+  });
+</script>
