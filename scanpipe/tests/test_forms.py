@@ -43,7 +43,7 @@ class ScanPipeFormsTest(TestCase):
         mock_get.side_effect = Exception
         form = InputsBaseForm(data=data)
         self.assertFalse(form.is_valid())
-        expected = {"input_urls": ["Could not fetch: https://example.com/archive.zip"]}
+        expected = {"input_urls": ["Could not fetch:\nhttps://example.com/archive.zip"]}
         self.assertEqual(expected, form.errors)
 
         mock_get.side_effect = None

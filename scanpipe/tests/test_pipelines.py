@@ -493,7 +493,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "is-npm-1.0.0.tgz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -534,7 +534,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "daglib-0.6.0-py3-none-any.whl"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -560,7 +560,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "alpine_3_15_4.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -583,7 +583,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "minitag.tar"
         input_location = self.data_location / "image-with-symlinks" / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -611,7 +611,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "centos.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -634,7 +634,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "debian.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -657,7 +657,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "gcr_io_distroless_base.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()

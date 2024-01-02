@@ -201,13 +201,27 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"java_to_class": 1}
         self.assertEqual(expected, response.data["codebase_relations_summary"])
 
-        self.project1.add_input_source(filename="file1", source="uploaded")
-        self.project1.add_input_source(filename="file2", source="https://download.url")
-        self.project1.save()
+        input1 = self.project1.add_input_source(filename="file1", is_uploaded=True)
+        input2 = self.project1.add_input_source(
+            filename="file2", download_url="https://download.url"
+        )
+
         response = self.csrf_client.get(self.project1_detail_url)
         expected = [
-            {"filename": "file1", "source": "uploaded"},
-            {"filename": "file2", "source": "https://download.url"},
+            {
+                "filename": "file1",
+                "download_url": "",
+                "is_uploaded": True,
+                "exists": False,
+                "uuid": str(input1.uuid),
+            },
+            {
+                "filename": "file2",
+                "download_url": "https://download.url",
+                "is_uploaded": False,
+                "exists": False,
+                "uuid": str(input2.uuid),
+            },
         ]
         self.assertEqual(expected, response.data["input_sources"])
 

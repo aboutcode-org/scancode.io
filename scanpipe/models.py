@@ -847,6 +847,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         return self.get_root_content(self.input_path)
 
+    @property
+    def input_sources(self):
+        return self.get_inputs_with_source()
+
     def get_inputs_with_source(self):
         """Return an input list including the filename, download_url, and size data."""
         input_sources = []
@@ -856,7 +860,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             input_sources.append(
                 {
                     # Fields
-                    "uuid": input_source.uuid,
+                    "uuid": str(input_source.uuid),
                     "filename": input_source.filename,
                     "download_url": input_source.download_url,
                     "is_uploaded": input_source.is_uploaded,
@@ -869,19 +873,19 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             )
             seen_filenames.add(input_source.filename)
 
-            # Inputs located in `input_path` but without an input source.
-            # Those are usually manually copied there.
-            for path in self.input_path.glob("*"):
-                if path.name not in seen_filenames:
-                    input_sources.append(
-                        {
-                            "filename": path.name,
-                            "is_uploaded": False,
-                            "is_file": path.is_file(),
-                            "size": path.stat().st_size,
-                            "exists": True,
-                        }
-                    )
+        # Inputs located in `input_path` but without an input source.
+        # Those are usually manually copied there.
+        for path in self.input_path.glob("*"):
+            if path.name not in seen_filenames:
+                input_sources.append(
+                    {
+                        "filename": path.name,
+                        "is_uploaded": False,
+                        "is_file": path.is_file(),
+                        "size": path.stat().st_size,
+                        "exists": True,
+                    }
+                )
 
         return input_sources
 

@@ -1178,7 +1178,7 @@ def delete_input_view(request, slug, input_uuid):
 
     input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
     input_source.delete()
-    messages.success(request, f'Input "{input_source.filename}" deleted.')
+    messages.success(request, f"Input {input_source.filename} deleted.")
 
     return redirect(project)
 
