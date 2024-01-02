@@ -642,20 +642,29 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             )
             messages.warning(self.request, message)
 
+    def check_for_missing_inputs(self, project):
+        uploaded_input_sources = project.inputsources.filter(is_uploaded=True)
+        missing_inputs = [
+            input_source
+            for input_source in uploaded_input_sources
+            if not input_source.exists()
+        ]
+
+        if missing_inputs:
+            filenames = [input_source.filename for input_source in missing_inputs]
+            missing_files = "\n- ".join(filenames)
+            message = (
+                f"The following input files are not available on disk anymore:\n"
+                f"- {missing_files}"
+            )
+            messages.error(self.request, message)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         project = self.object
         project_resources_url = reverse("project_resources", args=[project.slug])
 
-        # TODO: Only for uploaded files
-        # inputs, missing_inputs = project.inputs_with_source
-        # if missing_inputs:
-        #     missing_files = "\n- ".join(missing_inputs.keys())
-        #     message = (
-        #         f"The following input files are not available on disk anymore:\n"
-        #         f"- {missing_files}"
-        #     )
-        #     messages.error(self.request, message)
+        self.check_for_missing_inputs(project)
 
         if project.is_archived:
             message = "WARNING: This project is archived and read-only."
