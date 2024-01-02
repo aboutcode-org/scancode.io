@@ -24,6 +24,7 @@ from django import forms
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
+import requests
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
@@ -50,6 +51,22 @@ class MultipleFileField(forms.FileField):
         return result
 
 
+def check_urls_availability(urls):
+    """Check the accessibility of a list of URLs."""
+    errors = []
+    for url in urls:
+        if not url.startswith("http"):
+            continue
+
+        try:
+            response = requests.head(url, timeout=3)
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            errors.append(url)
+
+    return errors
+
+
 class InputsBaseForm(forms.Form):
     input_files = MultipleFileField(required=False)
     input_urls = forms.CharField(
@@ -74,29 +91,26 @@ class InputsBaseForm(forms.Form):
     class Media:
         js = ("add-inputs.js",)
 
-    # TODO: Check if URL available!
-    # def clean_input_urls(self):
-    #     """
-    #     Fetch the `input_urls` and sets the `downloads` objects in the cleaned_data.
-    #     A validation error is raised, if at least one URL can't be fetched.
-    #     """
-    #     input_urls = self.cleaned_data.get("input_urls", [])
-    #
-    #     self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
-    #     if errors:
-    #         raise ValidationError("Could not fetch: " + "\n".join(errors))
-    #
-    #     return input_urls
+    def clean_input_urls(self):
+        """
+        Fetch the `input_urls` and sets the `downloads` objects in the cleaned_data.
+        A validation error is raised if at least one URL can't be fetched.
+        """
+        input_urls_str = self.cleaned_data.get("input_urls", "")
+        input_urls = input_urls_str.split()
+
+        errors = check_urls_availability(input_urls)
+        if errors:
+            raise ValidationError("Could not fetch:\n" + "\n".join(errors))
+
+        return input_urls
 
     def handle_inputs(self, project):
         input_files = self.files.getlist("input_files")
-        # downloads = self.cleaned_data.get("downloads")
-        input_urls_str = self.cleaned_data.get("input_urls", "")
-
         if input_files:
             project.add_uploads(input_files)
 
-        input_urls = input_urls_str.split()
+        input_urls = self.cleaned_data.get("input_urls", [])
         for url in input_urls:
             project.add_input_source(download_url=url)
 
