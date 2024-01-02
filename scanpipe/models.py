@@ -573,11 +573,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         self._raise_if_run_in_progress()
 
         if remove_input:
-            # TODO: Review this
-            shutil.rmtree(self.input_path, ignore_errors=True)
             # Delete the file on disk but keep the InputSource entries for reference.
-            for input_source in self.inputsources.all():
-                input_source.delete_file()
+            shutil.rmtree(self.input_path, ignore_errors=True)
 
         if remove_codebase:
             shutil.rmtree(self.codebase_path, ignore_errors=True)
@@ -653,8 +650,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         if not keep_input:
             work_directories.append(self.input_path)
-            # TODO:
-            # self.input_sources = []
+            self.inputsources.all().delete()
 
         self.extra_data = {}
         self.save()
@@ -676,8 +672,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Clone this project using the provided ``clone_name`` as new project name."""
         cloned_project = Project.objects.create(
             name=clone_name,
-            # TODO
-            # input_sources=self.input_sources if copy_inputs else {},
             settings=self.settings if copy_settings else {},
         )
 
@@ -685,6 +679,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             cloned_project.labels.add(*labels)
 
         if copy_inputs:
+            # Clone the InputSource instances
+            for input_source in self.inputsources.all():
+                input_source.pk = None
+                input_source.project = cloned_project
+                input_source.save()
+            # Copy the files from the input work directory
             for input_location in self.inputs():
                 cloned_project.copy_input_from(input_location)
 
@@ -967,16 +967,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         from scanpipe.pipes.input import move_inputs
 
         move_inputs([input_location], self.input_path)
-
-    def delete_input(self, name):
-        """Delete the provided ``name`` input from disk and from ``input_sources``."""
-        file_path = self.input_path / name
-        file_path.unlink(missing_ok=True)
-
-        # TODO:
-        # if self.input_sources.pop(name, None):
-        #     self.save(update_fields=["input_sources"])
-        #     return True
 
     def add_input_source(self, download_url="", filename="", is_uploaded=False):
         """
