@@ -142,7 +142,7 @@ urlpatterns = [
         name="project_delete_input",
     ),
     path(
-        "project/<slug:slug>/download_input/<uuid:input_uuid>/",
+        "project/<slug:slug>/download_input/<str:filename>/",
         views.download_input_view,
         name="project_download_input",
     ),

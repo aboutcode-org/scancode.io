@@ -1458,7 +1458,8 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
 
     def delete_file(self):
         """Delete the file on disk."""
-        self.path.unlink(missing_ok=True)
+        if path := self.path:
+            path.unlink(missing_ok=True)
 
     @property
     def size(self):

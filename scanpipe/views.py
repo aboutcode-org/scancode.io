@@ -1200,8 +1200,8 @@ def download_project_file(request, slug, filename, path_type):
 
 
 @conditional_login_required
-def download_input_view(request, slug, uuid):
-    return download_project_file(request, slug, uuid, "input")
+def download_input_view(request, slug, filename):
+    return download_project_file(request, slug, filename, "input")
 
 
 @conditional_login_required
