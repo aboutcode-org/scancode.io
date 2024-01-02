@@ -17,7 +17,7 @@
                   {% if input.is_uploaded %}
                     Uploaded
                   {% elif input.download_url %}
-                    Download from {{ input.download_url }}
+                    {{ input.download_url }}
                   {% else %}
                     Manually added
                   {% endif %}

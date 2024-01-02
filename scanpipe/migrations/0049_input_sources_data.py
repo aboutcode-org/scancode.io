@@ -35,6 +35,7 @@ def reverse_migrate_project_input_sources_data(apps, schema_editor):
             for source in project.inputsources.all()
         }
         project.save()
+        project.inputsources.all().delete()
 
 
 class Migration(migrations.Migration):
