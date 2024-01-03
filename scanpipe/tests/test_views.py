@@ -33,6 +33,8 @@ from django.test import override_settings
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+import requests
+
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -199,8 +201,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, expected1)
 
-    @mock.patch("requests.get")
-    def test_scanpipe_views_project_details_add_inputs(self, mock_get):
+    @mock.patch("requests.head")
+    def test_scanpipe_views_project_details_add_inputs(self, mock_head):
         url = self.project1.get_absolute_url()
 
         data = {
@@ -208,24 +210,28 @@ class ScanPipeViewsTest(TestCase):
             "add-inputs-submit": "",
         }
 
-        mock_get.side_effect = Exception
+        mock_head.side_effect = requests.exceptions.RequestException
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Input file addition error.")
 
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="url/archive.zip",
-        )
+        mock_head.side_effect = None
+        mock_head.return_value = mock.Mock(headers={}, status_code=200)
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Input file(s) added.")
 
-        self.assertEqual(["archive.zip"], self.project1.input_files)
-        expected = {"archive.zip": "https://example.com/archive.zip"}
-        self.project1.refresh_from_db()
-        self.assertEqual(expected, self.project1.input_sources)
+        inputs_with_source = self.project1.get_inputs_with_source()
+        expected = [
+            {
+                "uuid": str(self.project1.inputsources.get().uuid),
+                "filename": "",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "size": None,
+                "is_file": True,
+                "exists": False,
+            }
+        ]
+        self.assertEqual(expected, inputs_with_source)
 
     def test_scanpipe_views_project_details_download_input_view(self):
         url = reverse("project_download_input", args=[self.project1.slug, "file.zip"])

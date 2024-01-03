@@ -252,7 +252,9 @@ class ScanPipeModelsTest(TestCase):
             execute_now=False,
         )
         self.assertEqual(self.project1.settings, cloned_project2.settings)
-        self.assertEqual(self.project1.input_sources, cloned_project2.input_sources)
+        self.assertEqual(
+            len(self.project1.input_sources), len(cloned_project2.input_sources)
+        )
         self.assertEqual(1, len(list(cloned_project2.inputs())))
         runs = cloned_project2.runs.all()
         self.assertEqual(

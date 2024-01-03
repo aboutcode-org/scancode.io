@@ -24,6 +24,8 @@ from unittest import mock
 
 from django.test import TestCase
 
+import requests
+
 from scanpipe.forms import InputsBaseForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
@@ -34,31 +36,37 @@ class ScanPipeFormsTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
-    @mock.patch("requests.get")
-    def test_scanpipe_forms_inputs_base_form_input_urls(self, mock_get):
+    @mock.patch("requests.head")
+    def test_scanpipe_forms_inputs_base_form_input_urls(self, mock_head):
         data = {
             "input_urls": "https://example.com/archive.zip",
         }
 
-        mock_get.side_effect = Exception
+        mock_head.side_effect = requests.exceptions.RequestException
         form = InputsBaseForm(data=data)
         self.assertFalse(form.is_valid())
         expected = {"input_urls": ["Could not fetch:\nhttps://example.com/archive.zip"]}
         self.assertEqual(expected, form.errors)
 
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="url/archive.zip",
-        )
+        mock_head.side_effect = None
+        mock_head.return_value = mock.Mock(headers={}, status_code=200)
         form = InputsBaseForm(data=data)
         self.assertTrue(form.is_valid())
         form.handle_inputs(project=self.project1)
-        self.assertEqual(["archive.zip"], self.project1.input_files)
-        expected = {"archive.zip": "https://example.com/archive.zip"}
-        self.assertEqual(expected, self.project1.input_sources)
+
+        inputs_with_source = self.project1.get_inputs_with_source()
+        expected = [
+            {
+                "uuid": str(self.project1.inputsources.get().uuid),
+                "filename": "",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "size": None,
+                "is_file": True,
+                "exists": False,
+            }
+        ]
+        self.assertEqual(expected, inputs_with_source)
 
     def test_scanpipe_forms_project_form_name(self):
         data = {
