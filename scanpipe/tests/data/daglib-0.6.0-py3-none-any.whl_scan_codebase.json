@@ -6,7 +6,10 @@
       "input_sources": [
         {
           "filename": "daglib-0.6.0-py3-none-any.whl",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [

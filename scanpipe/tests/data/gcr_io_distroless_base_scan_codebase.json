@@ -6,7 +6,10 @@
       "input_sources": [
         {
           "filename": "gcr_io_distroless_base.tar.gz",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [

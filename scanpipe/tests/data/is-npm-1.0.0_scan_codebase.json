@@ -6,7 +6,10 @@
       "input_sources": [
         {
           "filename": "is-npm-1.0.0.tgz",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [

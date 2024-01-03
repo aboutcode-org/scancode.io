@@ -3,7 +3,20 @@
     {
       "tool_name": "scanpipe",
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "input_sources": [],
+      "input_sources": [
+        {
+          "filename": "from-flume-ng-node-1.9.0.zip",
+          "is_uploaded": false,
+          "is_file": true,
+          "exists": true
+        },
+        {
+          "filename": "to-flume-ng-node-1.9.0.zip",
+          "is_uploaded": false,
+          "is_file": true,
+          "exists": true
+        }
+      ],
       "runs": [
         {
           "pipeline_name": "deploy_to_develop",
@@ -3430,14 +3443,14 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/META-INF/maven/org.apache.flume/flume-ng-node/pom.xml"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
       "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.java"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider$ChannelComponent.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/AbstractConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
@@ -3451,14 +3464,14 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/AbstractZooKeeperConfigurationProvider.java"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
       "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/Application.java"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application$1.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/Application.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
@@ -3486,13 +3499,6 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/MaterializedConfiguration.java"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
-      "status": "mapped",
-      "map_type": "java_to_class",
-      "score": "",
-      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java"
-    },
-    {
       "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider$FileWatcherRunnable.class",
       "status": "mapped",
       "map_type": "java_to_class",
@@ -3500,14 +3506,21 @@
       "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.class",
+      "status": "mapped",
+      "map_type": "java_to_class",
+      "score": "",
+      "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingPropertiesFileConfigurationProvider.java"
+    },
+    {
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",
       "from_resource": "from/flume-ng-node-1.9.0-sources.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.java"
     },
     {
-      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider$1.class",
+      "to_resource": "to/flume-ng-node-1.9.0.jar-extract/org/apache/flume/node/PollingZooKeeperConfigurationProvider.class",
       "status": "mapped",
       "map_type": "java_to_class",
       "score": "",

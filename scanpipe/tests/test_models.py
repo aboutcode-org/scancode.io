@@ -238,7 +238,7 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual("cloned project", cloned_project.name)
         self.assertEqual({}, cloned_project.settings)
-        self.assertEqual({}, cloned_project.input_sources)
+        self.assertEqual([], cloned_project.input_sources)
         self.assertEqual([], list(cloned_project.inputs()))
         self.assertEqual([], list(cloned_project.runs.all()))
         self.assertEqual([], list(cloned_project.webhooksubscriptions.all()))
@@ -430,26 +430,6 @@ class ScanPipeModelsTest(TestCase):
 
         input_sources = self.project1.inputsources.all()
         self.assertEqual(2, len(input_sources))
-
-    def test_scanpipe_project_model_delete_input(self):
-        self.assertEqual({}, self.project1.input_sources)
-        self.assertEqual([], list(self.project1.inputs()))
-        deleted = self.project1.delete_input(name="not_existing")
-        self.assertFalse(deleted)
-
-        file_location = self.data_location / "notice.NOTICE"
-        copy_input(file_location, self.project1.input_path)
-        self.project1.add_input_source(filename=file_location.name, is_uploaded=True)
-        self.assertEqual({file_location.name: "uploaded"}, self.project1.input_sources)
-        self.assertEqual(
-            [file_location.name], [path.name for path in self.project1.inputs()]
-        )
-
-        deleted = self.project1.delete_input(name=file_location.name)
-        self.assertTrue(deleted)
-        self.project1.refresh_from_db()
-        self.assertEqual({}, self.project1.input_sources)
-        self.assertEqual([], list(self.project1.inputs()))
 
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data_location / "notice.NOTICE"
@@ -1109,6 +1089,25 @@ class ScanPipeModelsTest(TestCase):
             "csv_output                         0.06 seconds 1.2%\n"
         )
         self.assertEqual(expected, output.getvalue())
+
+    def test_scanpipe_input_source_model_delete_input(self):
+        self.assertEqual([], self.project1.input_sources)
+        self.assertEqual([], list(self.project1.inputs()))
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.input_path)
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertEqual(1, self.project1.inputsources.count())
+        self.assertEqual(
+            [file_location.name], [path.name for path in self.project1.inputs()]
+        )
+
+        deleted = input_source.delete()
+        self.assertTrue(deleted)
+        self.assertEqual([], self.project1.input_sources)
+        self.assertEqual([], list(self.project1.inputs()))
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(
