@@ -887,7 +887,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                     }
                 )
 
-        return input_sources
+        # Sort by filename for consistency across systems
+        sorted_input_sources = sorted(input_sources, key=itemgetter("filename"))
+        return sorted_input_sources
 
     @property
     def output_root(self):
