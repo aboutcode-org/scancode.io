@@ -44,9 +44,6 @@ class RegenTestData(TestCase):
 
     Usages:
 
-    - Local:
-    $ ./manage.py test --pattern "regen*.py"
-
     - Docker:
     $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
         web ./manage.py test --pattern "regen*.py"
