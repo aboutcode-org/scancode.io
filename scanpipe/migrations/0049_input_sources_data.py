@@ -27,6 +27,7 @@ def migrate_project_input_sources_data(apps, schema_editor):
 
 def reverse_migrate_project_input_sources_data(apps, schema_editor):
     Project = apps.get_model("scanpipe", "Project")
+    InputSource = apps.get_model("scanpipe", "InputSource")
 
     projects = Project.objects.filter(inputsources__isnull=False)
     for project in projects:
@@ -35,7 +36,8 @@ def reverse_migrate_project_input_sources_data(apps, schema_editor):
             for source in project.inputsources.all()
         }
         project.save()
-        project.inputsources.all().delete()
+
+    InputSource.objects.all().delete()
 
 
 class Migration(migrations.Migration):
