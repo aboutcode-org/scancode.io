@@ -39,6 +39,7 @@ from scancode.cli_test_utils import purl_with_fake_uuid
 from scanpipe import pipes
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipelines import InputFileError
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
@@ -134,6 +135,56 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Pipeline [raise_exception] starting", run.log)
         self.assertIn("Step [raise_exception_step] starting", run.log)
         self.assertIn("Pipeline failed", run.log)
+
+    def test_scanpipe_pipeline_class_download_inputs_attribute(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        self.assertTrue(pipeline.download_inputs)
+        pipeline.execute()
+        self.assertIn("Step [download_missing_inputs]", run.log)
+
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        pipeline.download_inputs = False
+        pipeline.execute()
+        self.assertNotIn("Step [download_missing_inputs]", run.log)
+
+    @mock.patch("requests.get")
+    def test_scanpipe_pipeline_class_download_missing_inputs(self, mock_get):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+
+        file_location = Path(__file__).parent / "data" / "notice.NOTICE"
+        input_source = project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertFalse(input_source.exists())
+        with self.assertRaises(InputFileError) as error:
+            pipeline.download_missing_inputs()
+        error_msg = "Uploaded file filename=notice.NOTICE [uploaded] not available."
+        self.assertEqual(f"['{error_msg}']", str(error.exception))
+        self.assertIn(error_msg, run.log)
+
+        project1.copy_input_from(file_location)
+        self.assertTrue(input_source.exists())
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        pipeline.download_missing_inputs()
+        self.assertEqual("", run.log)
+
+        download_url = "https://download.url/file.zip"
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url=download_url
+        )
+        input_source2 = project1.add_input_source(download_url=download_url)
+        pipeline.download_missing_inputs()
+        self.assertIn("Fetching input from https://download.url/file.zip", run.log)
+        input_source2.refresh_from_db()
+        self.assertEqual("file.zip", input_source2.filename)
+        self.assertTrue(input_source2.exists())
+        mock_get.assert_called_once()
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
