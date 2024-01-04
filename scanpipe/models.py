@@ -1477,6 +1477,10 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         """Fetch the file from this instance ``download_url`` field."""
         from scanpipe.pipes.fetch import fetch_url
 
+        if self.exists():
+            logger.info("The input source file already exists.")
+            return
+
         if not self.download_url:
             raise Exception("No `download_url` value to be fetched.")
 

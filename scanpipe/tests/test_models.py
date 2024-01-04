@@ -1145,6 +1145,25 @@ class ScanPipeModelsTest(TestCase):
         input_source.delete_file()
         self.assertFalse(input_source.exists())
 
+    @mock.patch("requests.get")
+    def test_scanpipe_input_source_model_fetch(self, mock_get):
+        download_url = "https://download.url/file.zip"
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url=download_url
+        )
+
+        input_source = self.project1.add_input_source(download_url=download_url)
+        destination = input_source.fetch()
+        self.assertTrue(str(destination).endswith("input/file.zip"))
+
+        self.assertEqual("file.zip", input_source.filename)
+        self.assertFalse(input_source.is_uploaded)
+        self.assertTrue(input_source.exists())
+        mock_get.assert_called_once()
+
+        self.assertIsNone(input_source.fetch())
+        mock_get.assert_called_once()
+
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(
             project=self.project1, path="filename.ext"
