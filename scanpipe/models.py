@@ -970,9 +970,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Move the file at `input_location` to the current project's input/
         directory.
         """
-        from scanpipe.pipes.input import move_inputs
+        from scanpipe.pipes.input import move_input
 
-        move_inputs([input_location], self.input_path)
+        return move_input(input_location, self.input_path)
 
     def add_input_source(self, download_url="", filename="", is_uploaded=False):
         """
@@ -1474,7 +1474,7 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
             return self.path.stat().st_size
 
     def fetch(self):
-        """Fetch the file from this instance `source` field."""
+        """Fetch the file from this instance ``download_url`` field."""
         from scanpipe.pipes.fetch import fetch_url
 
         if not self.download_url:
@@ -1484,7 +1484,8 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         self.filename = downloaded.filename
         self.save()
 
-        self.project.move_input_from(downloaded.path)
+        destination = self.project.move_input_from(downloaded.path)
+        return destination
 
 
 class RunQuerySet(ProjectRelatedQuerySet):

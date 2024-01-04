@@ -1092,6 +1092,30 @@ class ScanPipeModelsTest(TestCase):
         )
         self.assertEqual(expected, output.getvalue())
 
+    def test_scanpipe_input_source_model_str(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertEqual("filename=notice.NOTICE [uploaded]", str(input_source))
+
+    def test_scanpipe_input_source_model_path(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertTrue(str(input_source.path).endswith("input/notice.NOTICE"))
+
+    def test_scanpipe_input_source_model_exists(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertFalse(input_source.exists())
+
+        copy_input(file_location, self.project1.input_path)
+        self.assertTrue(input_source.exists())
+
     def test_scanpipe_input_source_model_delete_input(self):
         self.assertEqual([], self.project1.input_sources)
         self.assertEqual([], list(self.project1.inputs()))
@@ -1110,6 +1134,16 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(deleted)
         self.assertEqual([], self.project1.input_sources)
         self.assertEqual([], list(self.project1.inputs()))
+
+    def test_scanpipe_input_source_model_delete_file(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        copy_input(file_location, self.project1.input_path)
+        self.assertTrue(input_source.exists())
+        input_source.delete_file()
+        self.assertFalse(input_source.exists())
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(
