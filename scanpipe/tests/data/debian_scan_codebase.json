@@ -8,6 +8,7 @@
           "filename": "debian.tar.gz",
           "download_url": "https://download.url",
           "is_uploaded": false,
+          "tag": "",
           "is_file": true,
           "exists": true
         }

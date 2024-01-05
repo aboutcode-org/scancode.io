@@ -43,6 +43,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("is_uploaded", models.BooleanField(default=False)),
+                ("tag", models.CharField(blank=True, max_length=50)),
                 (
                     "project",
                     models.ForeignKey(

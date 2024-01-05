@@ -226,6 +226,7 @@ class ScanPipeViewsTest(TestCase):
                 "filename": "",
                 "download_url": "https://example.com/archive.zip",
                 "is_uploaded": False,
+                "tag": "",
                 "size": None,
                 "is_file": True,
                 "exists": False,

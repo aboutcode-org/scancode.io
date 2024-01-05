@@ -864,6 +864,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                     "filename": input_source.filename,
                     "download_url": input_source.download_url,
                     "is_uploaded": input_source.is_uploaded,
+                    "tag": input_source.tag,
                     # Properties
                     "size": input_source.size,
                     "is_file": True,
@@ -1425,6 +1426,7 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
         help_text=_("Name of the file as uploaded or downloaded from a source."),
     )
     is_uploaded = models.BooleanField(default=False)
+    tag = models.CharField(blank=True, max_length=50)
 
     def __str__(self):
         if self.is_uploaded:
