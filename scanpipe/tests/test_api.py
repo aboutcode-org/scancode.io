@@ -212,6 +212,7 @@ class ScanPipeAPITest(TransactionTestCase):
                 "filename": "file1",
                 "download_url": "",
                 "is_uploaded": True,
+                "tag": "",
                 "exists": False,
                 "uuid": str(input1.uuid),
             },
@@ -219,6 +220,7 @@ class ScanPipeAPITest(TransactionTestCase):
                 "filename": "file2",
                 "download_url": "https://download.url",
                 "is_uploaded": False,
+                "tag": "",
                 "exists": False,
                 "uuid": str(input2.uuid),
             },
@@ -315,6 +317,7 @@ class ScanPipeAPITest(TransactionTestCase):
                 "filename": "archive.zip",
                 "download_url": "https://example.com/archive.zip",
                 "is_uploaded": False,
+                "tag": "",
                 "exists": True,
                 "uuid": response.data["input_sources"][0]["uuid"],
             }

@@ -130,6 +130,7 @@ class InputSourceSerializer(serializers.ModelSerializer):
             "filename",
             "download_url",
             "is_uploaded",
+            "tag",
             "exists",
             "uuid",
         ]
