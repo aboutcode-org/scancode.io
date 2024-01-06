@@ -303,3 +303,20 @@ def fetch_urls(urls):
             downloads.append(downloaded)
 
     return downloads, errors
+
+
+def check_urls_availability(urls):
+    """Check the accessibility of a list of URLs."""
+    errors = []
+
+    for url in urls:
+        if not url.startswith("http"):
+            continue
+
+        try:
+            response = requests.head(url, timeout=3)
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            errors.append(url)
+
+    return errors

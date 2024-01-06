@@ -36,7 +36,6 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
-from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -262,17 +261,13 @@ class ProjectSerializer(
         execute_now = validated_data.pop("execute_now", False)
         webhook_url = validated_data.pop("webhook_url", None)
 
-        downloads, errors = fetch_urls(input_urls)
-        if errors:
-            raise serializers.ValidationError("Could not fetch: " + "\n".join(errors))
-
         project = super().create(validated_data)
 
         if upload_file:
             project.add_uploads([upload_file])
 
-        if downloads:
-            project.add_downloads(downloads)
+        for url in input_urls:
+            project.add_input_source(download_url=url)
 
         if webhook_url:
             project.add_webhook_subscription(webhook_url)

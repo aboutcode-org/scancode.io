@@ -24,11 +24,11 @@ from django import forms
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
-import requests
 from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
+from scanpipe.pipes.fetch import check_urls_availability
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -49,22 +49,6 @@ class MultipleFileField(forms.FileField):
         else:
             result = single_file_clean(data, initial)
         return result
-
-
-def check_urls_availability(urls):
-    """Check the accessibility of a list of URLs."""
-    errors = []
-    for url in urls:
-        if not url.startswith("http"):
-            continue
-
-        try:
-            response = requests.head(url, timeout=3)
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            errors.append(url)
-
-    return errors
 
 
 class InputsBaseForm(forms.Form):
