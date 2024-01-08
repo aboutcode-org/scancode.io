@@ -201,19 +201,34 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"java_to_class": 1}
         self.assertEqual(expected, response.data["codebase_relations_summary"])
 
-        self.project1.add_input_source(filename="file1", source="uploaded")
-        self.project1.add_input_source(filename="file2", source="https://download.url")
-        self.project1.save()
+        input1 = self.project1.add_input_source(filename="file1", is_uploaded=True)
+        input2 = self.project1.add_input_source(
+            filename="file2", download_url="https://download.url"
+        )
+
         response = self.csrf_client.get(self.project1_detail_url)
         expected = [
-            {"filename": "file1", "source": "uploaded"},
-            {"filename": "file2", "source": "https://download.url"},
+            {
+                "filename": "file1",
+                "download_url": "",
+                "is_uploaded": True,
+                "tag": "",
+                "exists": False,
+                "uuid": str(input1.uuid),
+            },
+            {
+                "filename": "file2",
+                "download_url": "https://download.url",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": str(input2.uuid),
+            },
         ]
         self.assertEqual(expected, response.data["input_sources"])
 
-    @mock.patch("requests.get")
     @mock.patch("scanpipe.models.Run.execute_task_async")
-    def test_scanpipe_api_project_create(self, mock_execute_pipeline_task, mock_get):
+    def test_scanpipe_api_project_create_base(self, mock_execute_pipeline_task):
         data = {}
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
@@ -285,9 +300,6 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(created_project_detail_url)
         self.assertEqual(["upload_file"], response.data["input_root"])
 
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url="archive.zip"
-        )
         data = {
             "name": "Upload",
             "input_urls": ["https://example.com/archive.zip"],
@@ -296,19 +308,18 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
-        expected = {
-            "filename": "archive.zip",
-            "source": "https://example.com/archive.zip",
-        }
-        self.assertEqual([expected], response.data["input_sources"])
-        self.assertEqual(["archive.zip"], response.data["input_root"])
-
-        mock_get.side_effect = [
-            mock.Mock(content=b"\x00", headers={}, status_code=200, url="archive.zip"),
-            mock.Mock(
-                content=b"\x00", headers={}, status_code=200, url="second.tar.gz"
-            ),
+        expected = [
+            {
+                "filename": "",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": response.data["input_sources"][0]["uuid"],
+            }
         ]
+        self.assertEqual(expected, response.data["input_sources"])
+
         data = {
             "name": "Upload 2 archives",
             "input_urls": [
@@ -321,15 +332,24 @@ class ScanPipeAPITest(TransactionTestCase):
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
         expected = [
-            {"filename": "archive.zip", "source": "https://example.com/archive.zip"},
             {
-                "filename": "second.tar.gz",
-                "source": "https://example.com/second.tar.gz",
+                "filename": "",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": response.data["input_sources"][0]["uuid"],
+            },
+            {
+                "filename": "",
+                "download_url": "https://example.com/second.tar.gz",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": response.data["input_sources"][1]["uuid"],
             },
         ]
         self.assertEqual(expected, response.data["input_sources"])
-        expected = ["archive.zip", "second.tar.gz"]
-        self.assertEqual(expected, sorted(response.data["input_root"]))
 
     def test_scanpipe_api_project_create_multiple_pipelines(self):
         data = {
@@ -659,34 +679,25 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
-    @mock.patch("requests.get")
-    def test_scanpipe_api_project_action_add_input(self, mock_get):
+    def test_scanpipe_api_project_action_add_input(self):
         url = reverse("project-add-input", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
         expected = "upload_file or input_urls required."
         self.assertEqual(expected, response.data.get("status"))
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="https://example.com/archive.zip",
-        )
         data = {
             "input_urls": "https://example.com/archive.zip",
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Input(s) added."}, response.data)
-        self.assertEqual(["archive.zip"], self.project1.input_root)
 
         data = {
             "upload_file": io.BytesIO(b"Content"),
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Input(s) added."}, response.data)
-        expected = sorted(["upload_file", "archive.zip"])
+        expected = sorted(["upload_file"])
         self.assertEqual(expected, sorted(self.project1.input_root))
 
         run = self.project1.add_pipeline("docker")

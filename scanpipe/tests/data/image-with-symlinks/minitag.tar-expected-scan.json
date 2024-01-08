@@ -6,7 +6,11 @@
       "input_sources": [
         {
           "filename": "minitag.tar",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [

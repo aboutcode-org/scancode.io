@@ -137,7 +137,7 @@ urlpatterns = [
         name="project_delete_pipeline",
     ),
     path(
-        "project/<slug:slug>/delete_input/<str:input_name>/",
+        "project/<slug:slug>/delete_input/<uuid:input_uuid>/",
         views.delete_input_view,
         name="project_delete_input",
     ),

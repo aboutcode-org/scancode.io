@@ -51,11 +51,16 @@ def copy_inputs(input_locations, dest_path):
         copy_input(input_location, dest_path)
 
 
+def move_input(input_location, dest_path):
+    """Move the provided ``input_location`` to the ``dest_path``."""
+    destination = dest_path / Path(input_location).name
+    return shutil.move(input_location, destination)
+
+
 def move_inputs(inputs, dest_path):
     """Move the provided ``inputs`` to the ``dest_path``."""
     for input_location in inputs:
-        destination = dest_path / Path(input_location).name
-        shutil.move(input_location, destination)
+        move_input(input_location, dest_path)
 
 
 def get_tool_name_from_scan_headers(scan_data):

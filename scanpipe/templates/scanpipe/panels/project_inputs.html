@@ -2,39 +2,45 @@
   <p class="panel-heading py-2 is-size-6">
     Inputs
   </p>
-  {% for input in inputs_with_source %}
+  {% for input_source in input_sources %}
     <div class="panel-block is-justify-content-space-between is-up">
-      <div class="break-all pr-2 is-cursor-help dropdown is-hoverable">
+      <div class="break-all pr-2 is-cursor-help dropdown is-hoverable is-wider-x2">
         <div class="panel-icon pt-1">
           <div class="dropdown-trigger">
-            <i class="is-size-6 {% if input.is_file %}fa-regular fa-file{% else %}fa-solid fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.name|slugify }}"></i>
+            <i class="is-size-6 {% if input_source.is_file %}fa-regular fa-file{% else %}fa-solid fa-folder{% endif %}" aria-hidden="true" aria-haspopup="true" aria-controls="dropdown-input-{{ file.filename|slugify }}"></i>
           </div>
-          <div class="dropdown-menu" id="dropdown-input-{{ file.name|slugify }}" role="menu">
+          <div class="dropdown-menu" id="dropdown-input-{{ file.filename|slugify }}" role="menu">
             <div class="dropdown-content">
               <div class="dropdown-item">
                 Source:
                 <strong>
-                  {% if input.source == "not_found" %}
-                    Manually added
-                  {% elif input.source == "uploaded" %}
+                  {% if input_source.is_uploaded %}
                     Uploaded
-                  {% elif input.source %}
-                    Downloaded from {{ input.source }}
+                  {% elif input_source.download_url %}
+                    {{ input_source.download_url }}
+                  {% else %}
+                    Manually added
                   {% endif %}
                   </strong>
               </div>
             </div>
           </div>
         </div>
-        {{ input.name }}
+        {% if input_source.filename %}
+          {{ input_source.filename }}
+        {% else %}
+          {{ input_source.download_url }}
+        {% endif %}
       </div>
       <div class="is-flex is-size-7">
-        {% if input.is_file %}
-          <span class="mr-1">{{ input.size|filesizeformat }}</span>
+        {% if input_source.is_file and input_source.size %}
+          <span class="mr-1">{{ input_source.size|filesizeformat }}</span>
         {% endif %}
-        <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input.name %}"><span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span></a>
-        {% if project.can_change_inputs %}
-          <a class="modal-button is-grey-link is-clickable ml-1" data-target="modal-inputs-delete" aria-haspopup="true" data-url="{% url 'project_delete_input' project.slug input.name %}" data-filename="{{ input.name }}" href="#"><i class="fa-regular fa-trash-can"></i></a>
+        {% if input_source.exists and input_source.filename %}
+          <a class="is-grey-link is-clickable" href="{% url 'project_download_input' project.slug input_source.filename %}"><span class="icon width-1 height-1"><i class="fa-solid fa-download"></i></span></a>
+        {% endif %}
+        {% if project.can_change_inputs and input_source.uuid %}
+          <a class="modal-button is-grey-link is-clickable ml-1" data-target="modal-inputs-delete" aria-haspopup="true" data-url="{% url 'project_delete_input' project.slug input_source.uuid %}" data-filename="{{ input_source.filename }}" href="#"><i class="fa-regular fa-trash-can"></i></a>
         {% endif %}
       </div>
     </div>

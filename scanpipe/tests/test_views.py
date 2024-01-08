@@ -33,6 +33,8 @@ from django.test import override_settings
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
 
+import requests
+
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
@@ -199,8 +201,8 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, expected1)
 
-    @mock.patch("requests.get")
-    def test_scanpipe_views_project_details_add_inputs(self, mock_get):
+    @mock.patch("requests.head")
+    def test_scanpipe_views_project_details_add_inputs(self, mock_head):
         url = self.project1.get_absolute_url()
 
         data = {
@@ -208,24 +210,29 @@ class ScanPipeViewsTest(TestCase):
             "add-inputs-submit": "",
         }
 
-        mock_get.side_effect = Exception
+        mock_head.side_effect = requests.exceptions.RequestException
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Input file addition error.")
 
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="url/archive.zip",
-        )
+        mock_head.side_effect = None
+        mock_head.return_value = mock.Mock(headers={}, status_code=200)
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Input file(s) added.")
 
-        self.assertEqual(["archive.zip"], self.project1.input_files)
-        expected = {"archive.zip": "https://example.com/archive.zip"}
-        self.project1.refresh_from_db()
-        self.assertEqual(expected, self.project1.input_sources)
+        inputs_with_source = self.project1.get_inputs_with_source()
+        expected = [
+            {
+                "uuid": str(self.project1.inputsources.get().uuid),
+                "filename": "",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "tag": "",
+                "size": None,
+                "is_file": True,
+                "exists": False,
+            }
+        ]
+        self.assertEqual(expected, inputs_with_source)
 
     def test_scanpipe_views_project_details_download_input_view(self):
         url = reverse("project_download_input", args=[self.project1.slug, "file.zip"])
@@ -262,23 +269,21 @@ class ScanPipeViewsTest(TestCase):
         )
 
     def test_scanpipe_views_project_details_delete_input_view(self):
-        url = reverse("project_delete_input", args=[self.project1.slug, "file.zip"])
+        random_uuid = str(uuid.uuid4())
+        url = reverse("project_delete_input", args=[self.project1.slug, random_uuid])
         response = self.client.get(url)
         self.assertEqual(405, response.status_code)
-
         response = self.client.post(url, follow=True)
-        self.assertRedirects(response, self.project1.get_absolute_url())
-        expected = '<div class="message-body">Input file.zip not found.</div>'
-        self.assertContains(response, expected, html=True)
+        self.assertEqual(404, response.status_code)
 
         file_location = self.data_location / "notice.NOTICE"
         copy_input(file_location, self.project1.input_path)
         filename = file_location.name
-        self.project1.add_input_source(filename=filename, source="uploaded", save=True)
+        input1 = self.project1.add_input_source(filename=filename, is_uploaded=True)
 
         self.project1.update(is_archived=True)
         self.assertFalse(self.project1.can_change_inputs)
-        url = reverse("project_delete_input", args=[self.project1.slug, filename])
+        url = reverse("project_delete_input", args=[self.project1.slug, input1.uuid])
         response = self.client.post(url)
         self.assertEqual(404, response.status_code)
 
@@ -289,14 +294,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertRedirects(response, self.project1.get_absolute_url())
         expected = f'<div class="message-body">Input {filename} deleted.</div>'
         self.assertContains(response, expected, html=True)
-        self.project1.refresh_from_db()
-        self.assertEqual({}, self.project1.input_sources)
+
+        self.assertEqual([], self.project1.input_sources)
         self.assertEqual([], list(self.project1.inputs()))
 
     def test_scanpipe_views_project_details_missing_inputs(self):
-        self.project1.add_input_source(
-            filename="missing.zip", source="uploaded", save=True
-        )
+        self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
         url = self.project1.get_absolute_url()
         response = self.client.get(url)
         expected = (
@@ -637,7 +640,7 @@ class ScanPipeViewsTest(TestCase):
         with self.assertNumQueries(8):
             self.client.get(url)
 
-        with self.assertNumQueries(11):
+        with self.assertNumQueries(13):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")

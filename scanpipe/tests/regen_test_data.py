@@ -44,9 +44,6 @@ class RegenTestData(TestCase):
 
     Usages:
 
-    - Local:
-    $ ./manage.py test --pattern "regen*.py"
-
     - Docker:
     $ docker compose run --rm --volume "$(pwd)/scanpipe/":/opt/scancodeio/scanpipe/ \
         web ./manage.py test --pattern "regen*.py"
@@ -71,8 +68,7 @@ class RegenTestData(TestCase):
         filename = "asgiref-3.3.0-py3-none-any.whl"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "-", save=True)
-
+        project1.add_input_source(filename=filename, is_uploaded=True)
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 

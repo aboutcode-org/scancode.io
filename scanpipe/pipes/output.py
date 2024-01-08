@@ -167,7 +167,7 @@ class JSONResultsGenerator:
     sent directly to a StreamingHttpResponse.
     The results would have to be streamed to a file first, then iterated by the
     StreamingHttpResponse, which do not work great in a HTTP request context as
-    the request can timeout while the file is generated.
+    the request can time out while the file is generated.
 
     This class re-use Serializers from the API to avoid code duplication.
     Those imports need to be kept internal to this class to prevent circular import
@@ -224,7 +224,7 @@ class JSONResultsGenerator:
             "created_date": project.created_date,
             "notes": project.notes,
             "settings": project.settings,
-            "input_sources": project.input_sources_list,
+            "input_sources": project.get_inputs_with_source(),
             "runs": runs.data,
             "extra_data": project.extra_data,
         }

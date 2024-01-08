@@ -271,6 +271,14 @@ def _get_fetcher(url):
     return fetch_http
 
 
+def fetch_url(url):
+    """Fetch provided `url` and returns the result as a `Download` object."""
+    fetcher = _get_fetcher(url)
+    logger.info(f'Fetching "{url}" using {fetcher.__name__}')
+    downloaded = fetcher(url)
+    return downloaded
+
+
 def fetch_urls(urls):
     """
     Fetch provided `urls` list.
@@ -286,13 +294,29 @@ def fetch_urls(urls):
     for url in urls:
         if not url:
             continue
-        fetcher = _get_fetcher(url)
-        logger.info(f'Fetching "{url}" using {fetcher.__name__}')
+
         try:
-            downloaded = fetcher(url)
+            downloaded = fetch_url(url)
         except Exception:
             errors.append(url)
         else:
             downloads.append(downloaded)
 
     return downloads, errors
+
+
+def check_urls_availability(urls):
+    """Check the accessibility of a list of URLs."""
+    errors = []
+
+    for url in urls:
+        if not url.startswith("http"):
+            continue
+
+        try:
+            response = requests.head(url, timeout=3)
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            errors.append(url)
+
+    return errors
