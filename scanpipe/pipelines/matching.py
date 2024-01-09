@@ -53,39 +53,8 @@ class Matching(ScanCodebase):
         self.scan_output_location = to_json(self.project)
 
     def match_to_purldb(self):
-        # send scan to purldb
-        response = purldb.send_project_json_to_matchcode(self.scan_output_location)
-        url = response.get("url")
-        results_url = url + "results/"
-
-        # poll and get match results
-        while True:
-            response = purldb.request_get(results_url)
-            if response:
-                match_results = response
-                break
-            time.sleep(10)
-
-        # organize resources by package_uids
-        matched_packages = match_results.get('packages', [])
-        resource_results = match_results.get('files', [])
-        resource_paths_by_package_uids = defaultdict(list)
-        for matched_package in matched_packages:
-            package_uid = matched_package['package_uid']
-            for resource in resource_results:
-                if package_uid in resource.get('for_packages', []):
-                    resource_paths_by_package_uids[package_uid].append(resource['path'])
-
-        # Map package matches
-        for matched_package in matched_packages:
-            package_uid = matched_package['package_uid']
-            resource_paths = resource_paths_by_package_uids[package_uid]
-            resources = self.project.codebaseresources.filter(path__in=resource_paths)
-
-            # Create package matches
-            create_package_from_purldb_data(
-                self.project,
-                resources=resources,
-                package_data=matched_package,
-                status=flag.MATCHED_TO_PURLDB_PACKAGE,
-            )
+        """
+        Match Project codebase against PurlDB and create DiscoveredPackages from
+        matched package data.
+        """
+        purldb.match_to_purldb(self.project)
