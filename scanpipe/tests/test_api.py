@@ -96,11 +96,17 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, self.project1_detail_url)
 
     def test_scanpipe_api_project_list(self):
-        response = self.csrf_client.get(self.project_list_url)
+        Project.objects.create(name="2")
+        Project.objects.create(name="3")
+
+        with self.assertNumQueries(8):
+            response = self.csrf_client.get(self.project_list_url)
 
         self.assertContains(response, self.project1_detail_url)
-        self.assertEqual(1, response.data["count"])
+        self.assertEqual(3, response.data["count"])
+        self.assertContains(response, "input_sources")
         self.assertNotContains(response, "input_root")
+        self.assertNotContains(response, "next_run")
         self.assertNotContains(response, "extra_data")
         self.assertNotContains(response, "message_count")
         self.assertNotContains(response, "resource_count")
@@ -268,7 +274,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
         self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline_name"])
-        self.assertEqual(data["pipeline"], response.data["next_run"])
         mock_execute_pipeline_task.assert_not_called()
 
         data = {
@@ -280,7 +285,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
         self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline_name"])
-        self.assertEqual(data["pipeline"], response.data["next_run"])
         mock_execute_pipeline_task.assert_not_called()
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
@@ -360,7 +364,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
         self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
-        self.assertEqual("docker", response.data["next_run"])
 
         data = {
             "name": "Single list",
@@ -370,7 +373,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
         self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
-        self.assertEqual("docker", response.data["next_run"])
 
         data = {
             "name": "Multi list",
@@ -381,7 +383,6 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(2, len(response.data["runs"]))
         self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
         self.assertEqual("scan_package", response.data["runs"][1]["pipeline_name"])
-        self.assertEqual("docker", response.data["next_run"])
 
         data = {
             "name": "Multi string",

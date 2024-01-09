@@ -207,7 +207,7 @@ class ProjectSerializer(
             "settings",
             "input_root",
             "output_root",
-            "input_sources",
+            "next_run",
             "extra_data",
             "message_count",
             "resource_count",

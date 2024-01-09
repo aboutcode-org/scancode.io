@@ -127,6 +127,7 @@ class ProjectViewSet(
             .prefetch_related(
                 "labels",
                 "runs",
+                "inputsources",
             )
         )
 
