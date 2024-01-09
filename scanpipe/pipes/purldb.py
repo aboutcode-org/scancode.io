@@ -20,8 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+from collections import defaultdict
 import json
 import logging
+import time
 
 from django.conf import settings
 
@@ -30,6 +32,7 @@ from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
+from scanpipe.pipes import flag
 from scanpipe.pipes import LoopProgress
 
 label = "PurlDB"
@@ -324,6 +327,8 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
 
 def send_project_json_to_matchcode(project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """
+    Given a path to a ScanCode.io Project JSON output, `project_json_location`,
+    send the contents of the JSON file to PurlDB for matching.
     """
     project_json_contents = open(project_json_location, "rb")
     files = {"upload_file": project_json_contents}
@@ -336,3 +341,54 @@ def send_project_json_to_matchcode(project_json_location, timeout=DEFAULT_TIMEOU
     )
 
     return response
+
+
+def match_to_purldb(project):
+    """
+    Given a `project` where `scan_output_location` has been set, send the scan
+    of the project to PurlDB for matching. When available, process match results
+    by DiscoveredPackges from the matched package data.
+    """
+    from scanpipe.pipes.d2d import create_package_from_purldb_data
+
+    # send scan to purldb
+    response = send_project_json_to_matchcode(project.scan_output_location)
+    run_url = response["runs"][0]["url"]
+    url = response.get("url")
+    results_url = url + "results/"
+
+    # poll and see if the match run is ready
+    while True:
+        response = request_get(run_url)
+        if response:
+            status = response["status"]
+            if status == "success":
+                break
+        time.sleep(10)
+
+    # get match results
+    match_results = request_get(results_url)
+
+    # map match results
+    matched_packages = match_results.get('packages', [])
+    resource_results = match_results.get('files', [])
+    resource_paths_by_package_uids = defaultdict(list)
+    for matched_package in matched_packages:
+        package_uid = matched_package['package_uid']
+        for resource in resource_results:
+            if package_uid in resource.get('for_packages', []):
+                resource_paths_by_package_uids[package_uid].append(resource['path'])
+
+    # Map package matches
+    for matched_package in matched_packages:
+        package_uid = matched_package['package_uid']
+        resource_paths = resource_paths_by_package_uids[package_uid]
+        resources = project.codebaseresources.filter(path__in=resource_paths)
+
+        # Create package matches
+        create_package_from_purldb_data(
+            project,
+            resources=resources,
+            package_data=matched_package,
+            status=flag.MATCHED_TO_PURLDB_PACKAGE,
+        )

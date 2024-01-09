@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import json
 from pathlib import Path
 from unittest import mock
 
@@ -33,6 +34,7 @@ from scanpipe.models import Project
 from scanpipe.pipes import purldb
 from scanpipe.tests import dependency_data2
 from scanpipe.tests import dependency_data3
+from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
 
 
@@ -102,3 +104,46 @@ class ScanPipePurlDBTest(TestCase):
         self.assertIn(
             "1 PURLs were already present in PurlDB index queue", expected_log
         )
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_match_to_purldb(
+        self, mock_is_available, mock_request_post, mock_request_get,
+    ):
+        r1 = make_resource_file(
+            self.project1,
+            path="elasticsearch-x-content-7.17.9-sources.jar",
+            sha1="30d21add57abe04beece3f28a079671dbc9043e4",
+        )
+
+        mock_is_available.return_value = True
+
+        def mock_request_post_return(url, data, files, timeout):
+            request_post_response_loc = self.data_location / "purldb" / "match_to_purldb" / "request_post_response.json"
+            with open(request_post_response_loc, 'r') as f:
+                return json.load(f)
+        mock_request_post.side_effect = mock_request_post_return
+
+        request_post_response_loc = self.data_location / "purldb" / "match_to_purldb" / "request_get_check_response.json"
+        with open(request_post_response_loc, 'r') as f:
+            mock_request_get_check_return = json.load(f)
+
+        request_post_response_loc = self.data_location / "purldb" / "match_to_purldb" / "request_get_results_response.json"
+        with open(request_post_response_loc, 'r') as f:
+            mock_request_get_results_return = json.load(f)
+        mock_request_get.side_effect = [mock_request_get_check_return, mock_request_get_results_return]
+
+        self.project1.scan_output_location = self.data_location / "purldb" / "match_to_purldb" / "codebase.json"
+
+        # Ensure we do not have any Packages or Package relations
+        self.assertEqual(0, self.project1.discoveredpackages.all().count())
+        self.assertFalse(0, len(r1.for_packages))
+
+        purldb.match_to_purldb(self.project1)
+
+        # Ensure that we created the DiscoveredPackage from matched Package data
+        # and associtated the correct Resource to it.
+        self.assertEqual(1, self.project1.discoveredpackages.all().count())
+        package = self.project1.discoveredpackages.first()
+        self.assertEqual([package.package_uid], r1.for_packages)
