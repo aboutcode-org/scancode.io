@@ -19,21 +19,14 @@
 #
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
-from collections import defaultdict
-import time
 
+from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import purldb
 from scanpipe.pipes.output import to_json
-from scanpipe.pipelines.scan_codebase import ScanCodebase
-
-from scanpipe.pipes.d2d import create_package_from_purldb_data
-from scanpipe.pipes import flag
 
 
 class Matching(ScanCodebase):
-    """
-    Given an archive containing a codebase, match the contents against PurlDB
-    """
+    """Given an archive containing a codebase, match the contents against PurlDB"""
 
     @classmethod
     def steps(cls):

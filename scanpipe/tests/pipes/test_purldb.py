@@ -109,7 +109,10 @@ class ScanPipePurlDBTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
     def test_scanpipe_pipes_match_to_purldb(
-        self, mock_is_available, mock_request_post, mock_request_get,
+        self,
+        mock_is_available,
+        mock_request_post,
+        mock_request_get,
     ):
         r1 = make_resource_file(
             self.project1,
@@ -120,21 +123,42 @@ class ScanPipePurlDBTest(TestCase):
         mock_is_available.return_value = True
 
         def mock_request_post_return(url, data, files, timeout):
-            request_post_response_loc = self.data_location / "purldb" / "match_to_purldb" / "request_post_response.json"
-            with open(request_post_response_loc, 'r') as f:
+            request_post_response_loc = (
+                self.data_location
+                / "purldb"
+                / "match_to_purldb"
+                / "request_post_response.json"
+            )
+            with open(request_post_response_loc, "r") as f:
                 return json.load(f)
+
         mock_request_post.side_effect = mock_request_post_return
 
-        request_post_response_loc = self.data_location / "purldb" / "match_to_purldb" / "request_get_check_response.json"
-        with open(request_post_response_loc, 'r') as f:
+        request_post_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_check_response.json"
+        )
+        with open(request_post_response_loc, "r") as f:
             mock_request_get_check_return = json.load(f)
 
-        request_post_response_loc = self.data_location / "purldb" / "match_to_purldb" / "request_get_results_response.json"
-        with open(request_post_response_loc, 'r') as f:
+        request_post_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_results_response.json"
+        )
+        with open(request_post_response_loc, "r") as f:
             mock_request_get_results_return = json.load(f)
-        mock_request_get.side_effect = [mock_request_get_check_return, mock_request_get_results_return]
+        mock_request_get.side_effect = [
+            mock_request_get_check_return,
+            mock_request_get_results_return,
+        ]
 
-        self.project1.scan_output_location = self.data_location / "purldb" / "match_to_purldb" / "codebase.json"
+        self.project1.scan_output_location = (
+            self.data_location / "purldb" / "match_to_purldb" / "codebase.json"
+        )
 
         # Ensure we do not have any Packages or Package relations
         self.assertEqual(0, self.project1.discoveredpackages.all().count())

@@ -20,10 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from collections import defaultdict
 import json
 import logging
 import time
+from collections import defaultdict
 
 from django.conf import settings
 
@@ -32,8 +32,8 @@ from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
-from scanpipe.pipes import flag
 from scanpipe.pipes import LoopProgress
+from scanpipe.pipes import flag
 
 label = "PurlDB"
 logger = logging.getLogger(__name__)
@@ -105,7 +105,9 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
 
 def request_post(url, data, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
     try:
-        response = session.post(url, data=data, timeout=timeout, headers=headers, files=files)
+        response = session.post(
+            url, data=data, timeout=timeout, headers=headers, files=files
+        )
         response.raise_for_status()
         return response.json()
     except (requests.RequestException, ValueError, TypeError) as exception:
@@ -325,7 +327,9 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
     )
 
 
-def send_project_json_to_matchcode(project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+def send_project_json_to_matchcode(
+    project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
+):
     """
     Given a path to a ScanCode.io Project JSON output, `project_json_location`,
     send the contents of the JSON file to PurlDB for matching.
@@ -370,18 +374,18 @@ def match_to_purldb(project):
     match_results = request_get(results_url)
 
     # map match results
-    matched_packages = match_results.get('packages', [])
-    resource_results = match_results.get('files', [])
+    matched_packages = match_results.get("packages", [])
+    resource_results = match_results.get("files", [])
     resource_paths_by_package_uids = defaultdict(list)
     for matched_package in matched_packages:
-        package_uid = matched_package['package_uid']
+        package_uid = matched_package["package_uid"]
         for resource in resource_results:
-            if package_uid in resource.get('for_packages', []):
-                resource_paths_by_package_uids[package_uid].append(resource['path'])
+            if package_uid in resource.get("for_packages", []):
+                resource_paths_by_package_uids[package_uid].append(resource["path"])
 
     # Map package matches
     for matched_package in matched_packages:
-        package_uid = matched_package['package_uid']
+        package_uid = matched_package["package_uid"]
         resource_paths = resource_paths_by_package_uids[package_uid]
         resources = project.codebaseresources.filter(path__in=resource_paths)
 
