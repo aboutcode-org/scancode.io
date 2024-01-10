@@ -23,8 +23,8 @@
               </div>
             </div>
 
-            <label class="label mt-5">Inputs</label>
-            <div class="box">
+            <label class="label">Inputs</label>
+            <div class="box py-3">
               <label class="label has-text-weight-semibold" for="{{ form.input_files.id_for_label }}">Upload files</label>
               <div class="file has-name is-boxed is-fullwidth" id="input_files_box">
                 <label class="file-label">
@@ -43,7 +43,7 @@
                 </label>
               </div>
 
-              <div class="field mt-5">
+              <div class="field mt-4">
                 <label class="label has-text-weight-semibold" for="{{ form.input_urls.id_for_label }}">{{ form.input_urls.label }}</label>
                 <div class="control">
                   {{ form.input_urls }}
@@ -52,7 +52,7 @@
               </div>
             </div>
 
-            <div class="field mt-5">
+            <div class="field">
               <label class="label" for="{{ form.pipeline.id_for_label }}">Pipeline</label>
               <div class="control">
                 <span class="select">
@@ -68,7 +68,7 @@
               </label>
             </div>
 
-            <div class="columns mt-4 is-variable is-1">
+            <div class="columns mt-3 is-variable is-1">
               <div class="column is-one-third">
                 <a href="{% url 'project_list' %}" class="button is-fullwidth">Cancel</a>
               </div>
@@ -83,7 +83,7 @@
         <div class="column has-background-light has-border-radius">
           <h3 class="subtitle mb-3">Pipelines:</h3>
           {% for pipeline_name, pipeline_info in pipelines.items %}
-            <div class="mb-3">
+            <div {% if not forloop.last %}class="mb-3"{% endif %}>
               <div>
                 <a class="help-text modal-button" data-target="{{ pipeline_name }}-modal" aria-haspopup="true">
                   <strong>{{ pipeline_name }}</strong>

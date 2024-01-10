@@ -119,3 +119,23 @@ class ScanPipeAppsTest(TestCase):
 
         scanpipe_app.sync_runs_and_jobs()
         self.assertEqual(2, mock_sync_with_job.call_count)
+
+    def test_scanpipe_apps_get_pipeline_choices(self):
+        blank_entry = ("", "---------")
+        main_pipline = ("scan_codebase", "scan_codebase")
+        addon_pipline = ("find_vulnerabilities", "find_vulnerabilities")
+
+        choices = scanpipe_app.get_pipeline_choices()
+        self.assertIn(blank_entry, choices)
+        self.assertIn(main_pipline, choices)
+        self.assertIn(addon_pipline, choices)
+
+        choices = scanpipe_app.get_pipeline_choices(include_blank=False)
+        self.assertNotIn(blank_entry, choices)
+        self.assertIn(main_pipline, choices)
+        self.assertIn(addon_pipline, choices)
+
+        choices = scanpipe_app.get_pipeline_choices(include_addon=False)
+        self.assertIn(blank_entry, choices)
+        self.assertIn(main_pipline, choices)
+        self.assertNotIn(addon_pipline, choices)

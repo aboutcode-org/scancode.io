@@ -157,10 +157,15 @@ class ScanPipeConfig(AppConfig):
     def pipelines(self):
         return dict(self._pipelines)
 
-    def get_pipeline_choices(self, include_blank=True):
+    def get_pipeline_choices(self, include_blank=True, include_addon=True):
         """Return a `choices` list of tuple suitable for a Django ChoiceField."""
+        pipeline_names = (
+            name
+            for name, cls in self.pipelines.items()
+            if include_addon or not cls.is_addon
+        )
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
-        choices.extend([(name, name) for name in self.pipelines.keys()])
+        choices.extend([(name, name) for name in pipeline_names])
         return choices
 
     def get_scancode_licenses(self):
