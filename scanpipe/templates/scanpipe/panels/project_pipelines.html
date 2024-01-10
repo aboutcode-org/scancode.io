@@ -16,6 +16,14 @@
         Add pipeline
       </button>
       {% include "scanpipe/modals/add_pipeline_modal.html" %}
+      {% if project.can_start_pipelines %}
+        <a class="button is-success is-fullwidth ml-2" href="">
+          <span class="icon width-1">
+            <i class="fa-solid fa-play-circle"></i>
+          </span>
+          <span>Run pipelines</span>
+        </a>
+      {% endif %}
     {% endif %}
   </div>
 </article>

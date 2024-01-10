@@ -944,7 +944,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def can_change_inputs(self):
         """
         Return True until one pipeline run has started its execution on the project.
-        Always False when the project is archived.
+        Always return False when the project is archived.
         """
         return not self.is_archived and not self.runs.has_start_date().exists()
 
@@ -1044,6 +1044,33 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         the current project.
         """
         return WebhookSubscription.objects.create(project=self, target_url=target_url)
+
+    @cached_property
+    def can_start_pipelines(self):
+        """
+        Return True if at least one "not started" pipeline is assigned to this project
+        and if no pipeline runs is currently "queued or running".
+        "not started".
+        Always return False when the project is archived.
+        """
+        runs = self.runs.all()
+        # Using Run QuerySet only once to avoid extra DB queries.
+        not_started_runs = [run for run in runs if run.status == run.Status.NOT_STARTED]
+        queued_or_running_runs = [
+            run for run in runs if run.status in (run.Status.QUEUED, run.Status.RUNNING)
+        ]
+
+        conditions = [
+            not self.is_archived,
+            not_started_runs,  # At least one run is "not started"
+            not queued_or_running_runs,  # No runs are currently running or queued
+        ]
+        return all(conditions)
+
+    def start_pipelines(self):
+        """Start the next "not started" pipeline execution."""
+        if next_not_started_run := self.get_next_run():
+            return next_not_started_run.start()
 
     def get_next_run(self):
         """Return the next non-executed Run instance assigned to current project."""
@@ -3334,10 +3361,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         }
 
     def deliver(self, pipeline_run):
-        """
-        Delivers this WebhookSubscription by POSTing a HTTP request on the
-        `target_url`.
-        """
+        """Deliver this Webhook by sending a POST request to the `target_url`."""
         payload = self.get_payload(pipeline_run)
 
         logger.info(f"Sending Webhook uuid={self.uuid}.")

@@ -409,6 +409,32 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(expected, self.project1.get_inputs_with_source())
         self.assertEqual(expected, self.project1.input_sources)
 
+    def test_scanpipe_project_model_can_start_pipelines(self):
+        self.assertFalse(self.project1.can_start_pipelines)
+
+        # Not started
+        run = self.project1.add_pipeline("docker")
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.can_start_pipelines)
+
+        # Queued
+        run.task_start_date = timezone.now()
+        run.save()
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertFalse(self.project1.can_start_pipelines)
+
+        # Success
+        run.task_end_date = timezone.now()
+        run.task_exitcode = 0
+        run.save()
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertFalse(self.project1.can_start_pipelines)
+
+        # Another "Not started"
+        self.project1.add_pipeline("docker")
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.can_start_pipelines)
+
     def test_scanpipe_project_model_can_change_inputs(self):
         self.assertTrue(self.project1.can_change_inputs)
 
