@@ -119,6 +119,11 @@ class ScanPipePurlDBTest(TestCase):
             path="elasticsearch-x-content-7.17.9-sources.jar",
             sha1="30d21add57abe04beece3f28a079671dbc9043e4",
         )
+        r2 = make_resource_file(
+            self.project1,
+            path="something-else.json",
+            sha1="deadbeef",
+        )
 
         mock_is_available.return_value = True
 
@@ -163,6 +168,7 @@ class ScanPipePurlDBTest(TestCase):
         # Ensure we do not have any Packages or Package relations
         self.assertEqual(0, self.project1.discoveredpackages.all().count())
         self.assertFalse(0, len(r1.for_packages))
+        self.assertFalse(0, len(r2.for_packages))
 
         purldb.match_to_purldb(self.project1)
 
@@ -171,3 +177,5 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual(1, self.project1.discoveredpackages.all().count())
         package = self.project1.discoveredpackages.first()
         self.assertEqual([package.package_uid], r1.for_packages)
+        # This resource should not have a Package match
+        self.assertFalse(0, len(r2.for_packages))
