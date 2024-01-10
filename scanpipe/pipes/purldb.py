@@ -20,10 +20,10 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/aboutcode-org/scancode.io for support and download.
 
-from collections import defaultdict
 import json
 import logging
 import time
+from collections import defaultdict
 
 from django.conf import settings
 from django.template.defaultfilters import pluralize
@@ -544,7 +544,9 @@ def enrich_discovered_packages(project, logger=logger.info):
     return updated_package_count
 
 
-def send_project_json_to_matchcode(project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
+def send_project_json_to_matchcode(
+    project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
+):
     """
     Given a path to a ScanCode.io Project JSON output, `project_json_location`,
     send the contents of the JSON file to PurlDB for matching.
@@ -589,18 +591,18 @@ def match_to_purldb(project):
     match_results = request_get(results_url)
 
     # map match results
-    matched_packages = match_results.get('packages', [])
-    resource_results = match_results.get('files', [])
+    matched_packages = match_results.get("packages", [])
+    resource_results = match_results.get("files", [])
     resource_paths_by_package_uids = defaultdict(list)
     for matched_package in matched_packages:
-        package_uid = matched_package['package_uid']
+        package_uid = matched_package["package_uid"]
         for resource in resource_results:
-            if package_uid in resource.get('for_packages', []):
-                resource_paths_by_package_uids[package_uid].append(resource['path'])
+            if package_uid in resource.get("for_packages", []):
+                resource_paths_by_package_uids[package_uid].append(resource["path"])
 
     # Map package matches
     for matched_package in matched_packages:
-        package_uid = matched_package['package_uid']
+        package_uid = matched_package["package_uid"]
         resource_paths = resource_paths_by_package_uids[package_uid]
         resources = project.codebaseresources.filter(path__in=resource_paths)
 
