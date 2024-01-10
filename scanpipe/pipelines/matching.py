@@ -20,28 +20,27 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines.scan_codebase import ScanCodebase
+from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
 from scanpipe.pipes.output import to_json
 
 
-class Matching(ScanCodebase):
-    """Given an archive containing a codebase, match the contents against PurlDB"""
+class Matching(Pipeline):
+    """Match the CodebaseResources of a Project against PurlDB"""
+
+    is_addon = True
 
     @classmethod
     def steps(cls):
         return (
-            cls.copy_inputs_to_codebase_directory,
-            cls.extract_archives,
-            cls.collect_and_create_codebase_resources,
             cls.create_codebase_json,
             cls.match_to_purldb,
         )
 
     def create_codebase_json(self):
         """
-        Copy input files to the project's codebase/ directory.
-        The code can also be copied there prior to running the Pipeline.
+        Create JSON output for self.project and set self.scan_output_location to
+        the location of the JSON output.
         """
         self.scan_output_location = to_json(self.project)
 
