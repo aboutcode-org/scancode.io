@@ -79,6 +79,16 @@ class ScanPipeFormsTest(TestCase):
         obj = form.save()
         self.assertEqual("Test Name", obj.name)
 
+    def test_scanpipe_forms_project_form_pipeline_choices(self):
+        blank_entry = ("", "---------")
+        main_pipline = ("scan_codebase", "scan_codebase")
+        addon_pipline = ("find_vulnerabilities", "find_vulnerabilities")
+
+        choices = ProjectForm().fields["pipeline"].choices
+        self.assertIn(blank_entry, choices)
+        self.assertIn(main_pipline, choices)
+        self.assertNotIn(addon_pipline, choices)
+
     def test_scanpipe_forms_project_settings_form_update_name_and_notes(self):
         data = {
             "name": "new name",

@@ -26,6 +26,9 @@ v33.0.0 (unreleased)
 - Add support for non-archive single file in the scan_package pipeline.
   https://github.com/nexB/scancode.io/issues/1009
 
+- Do not include "add-on" pipelines in the "New project" form choices.
+  https://github.com/nexB/scancode.io/issues/1041
+
 v32.7.0 (2023-10-25)
 --------------------
 

@@ -581,6 +581,7 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
         context["pipelines"] = {
             key: pipeline_class.get_info()
             for key, pipeline_class in scanpipe_app.pipelines.items()
+            if not pipeline_class.is_addon
         }
         return context
 

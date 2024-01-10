@@ -46,7 +46,10 @@ class InputFileError(Exception):
 class BasePipeline:
     """Base class for all pipelines."""
 
+    # Flag specifying whether to download missing inputs as an initial step.
     download_inputs = True
+    # Flag indicating if the Pipeline is an add-on, meaning it cannot be run first.
+    is_addon = False
 
     def __init__(self, run):
         """Load the Run and Project instances."""

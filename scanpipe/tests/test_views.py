@@ -465,6 +465,12 @@ class ScanPipeViewsTest(TestCase):
         expected = ["Dir", "Zdir", "a", "z", "a.txt", "z.txt"]
         self.assertEqual(expected, [path.name for path in codebase_root])
 
+    def test_scanpipe_views_project_create_view(self):
+        url = reverse("project_add")
+        response = self.client.get(url)
+        self.assertContains(response, "scan_codebase")
+        self.assertNotContains(response, "find_vulnerabilities")
+
     def test_scanpipe_views_project_codebase_view(self):
         url = reverse("project_codebase", args=[self.project1.slug])
 
