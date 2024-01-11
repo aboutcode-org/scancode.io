@@ -650,14 +650,15 @@ class ScanPipeViewsTest(TestCase):
             self.client.get(self.project1.get_absolute_url())
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
-    def test_scanpipe_views_execute_pipeline_view(self, mock_execute_task):
+    def test_scanpipe_views_execute_pipelines_view(self, mock_execute_task):
         run = self.project1.add_pipeline("docker")
-        url = reverse("project_execute_pipeline", args=[self.project1.slug, run.uuid])
+        url = reverse("project_execute_pipelines", args=[self.project1.slug])
 
         response = self.client.get(url, follow=True)
-        expected = f"Pipeline {run.pipeline_name} run started."
+        expected = "Pipelines run started."
         self.assertContains(response, expected)
         mock_execute_task.assert_called_once()
+        self.assertRedirects(response, self.project1.get_absolute_url())
 
         run.set_task_queued()
         response = self.client.get(url)
@@ -668,12 +669,6 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(404, response.status_code)
 
         run.set_task_stopped()
-        response = self.client.get(url)
-        self.assertEqual(404, response.status_code)
-
-        run.reset_task_values()
-        run2 = self.project1.add_pipeline("docker")
-        url = reverse("project_execute_pipeline", args=[self.project1.slug, run2.uuid])
         response = self.client.get(url)
         self.assertEqual(404, response.status_code)
 

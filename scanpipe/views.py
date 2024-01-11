@@ -86,7 +86,6 @@ from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
-from scanpipe.models import RunNotAllowedToStart
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
@@ -589,6 +588,9 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
 class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/project_detail.html"
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("runs")
 
     @staticmethod
     def get_license_clarity_data(scan_summary_json):
@@ -1123,19 +1125,16 @@ class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateVi
 
 
 @conditional_login_required
-def execute_pipeline_view(request, slug, run_uuid):
+def execute_pipelines_view(request, slug):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
-    if run.status != run.Status.NOT_STARTED:
-        raise Http404("Pipeline already queued, started or completed.")
+    if not project.can_start_pipelines:
+        raise Http404
 
-    try:
-        run.start()
-    except RunNotAllowedToStart as error:
-        raise Http404(error)
+    job = project.start_pipelines()
+    if job:
+        messages.success(request, "Pipelines run started.")
 
-    messages.success(request, f"Pipeline {run.pipeline_name} run started.")
     return redirect(project)
 
 
