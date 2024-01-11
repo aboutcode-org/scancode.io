@@ -25,7 +25,7 @@ from scanpipe.pipes import purldb
 from scanpipe.pipes.output import to_json
 
 
-class MatchCodebaseToPurlDB(Pipeline):
+class MatchToPurlDB(Pipeline):
     """Check CodebaseResources of a Project against PurlDB for Package matches."""
 
     is_addon = True
