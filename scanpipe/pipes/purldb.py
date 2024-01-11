@@ -37,6 +37,7 @@ from univers.version_range import InvalidVersionRange
 from aboutcode.pipeline import LoopProgress
 from scanpipe.pipes import _clean_package_data
 from scanpipe.pipes import flag
+from scanpipe.pipes.output import to_json
 
 
 class PurlDBException(Exception):
@@ -566,14 +567,15 @@ def send_project_json_to_matchcode(
 
 def match_to_purldb(project):
     """
-    Given a `project` where `scan_output_location` has been set, send the scan
-    of the project to PurlDB for matching. When available, process match results
-    by DiscoveredPackges from the matched package data.
+    Given a `project`, create and send a scan of the project to PurlDB for
+    matching. When available, process match results by DiscoveredPackges from
+    the matched package data.
     """
     from scanpipe.pipes.d2d import create_package_from_purldb_data
 
-    # send scan to purldb
-    response = send_project_json_to_matchcode(project.scan_output_location)
+    # Create scan from `project` and send to purldb
+    scan_output_location = to_json(project)
+    response = send_project_json_to_matchcode(scan_output_location)
     run_url = response["runs"][0]["url"]
     url = response.get("url")
     results_url = url + "results/"
