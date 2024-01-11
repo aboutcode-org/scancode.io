@@ -335,17 +335,17 @@ def send_project_json_to_matchcode(
     Given a path to a ScanCode.io Project JSON output, `project_json_location`,
     send the contents of the JSON file to PurlDB for matching.
     """
-    project_json_contents = open(project_json_location, "rb")
-    files = {"upload_file": project_json_contents}
+    with open(project_json_location, "rb") as f:
+        files = {"upload_file": f}
 
-    response = request_post(
-        url=f"{api_url}matching/",
-        data={},
-        timeout=timeout,
-        files=files,
-    )
+        response = request_post(
+            url=f"{api_url}matching/",
+            data={},
+            timeout=timeout,
+            files=files,
+        )
 
-    return response
+        return response
 
 
 def match_to_purldb(project):
