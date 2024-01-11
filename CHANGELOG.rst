@@ -29,6 +29,11 @@ v33.0.0 (unreleased)
 - Do not include "add-on" pipelines in the "New project" form choices.
   https://github.com/nexB/scancode.io/issues/1041
 
+- Display a "Run pipelines" button in the "Pipelines" panel.
+  Remove the ability to run a single pipeline in favor of running all "not started"
+  project pipeline.
+  https://github.com/nexB/scancode.io/issues/997
+
 v32.7.0 (2023-10-25)
 --------------------
 

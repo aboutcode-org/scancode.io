@@ -15,19 +15,6 @@
           {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
         </div>
       </div>
-      {% if run.status == run.Status.NOT_STARTED %}
-        {% if run.can_start %}
-          <a href="{% url 'project_execute_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-weight-bold">
-            <i class="fa-solid fa-play-circle"></i>
-            Run pipeline
-          </a>
-        {% else %}
-          <span>
-            <i class="fa-solid fa-play-circle"></i>
-            Run pipeline: Not available until previous pipelines have completed.
-          </span>
-        {% endif %}
-      {% endif %}
       {% if run.status == run.Status.NOT_STARTED or run.status == run.Status.QUEUED %}
         <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-3">
           <i class="fa-solid fa-trash-alt"></i>
