@@ -22,7 +22,6 @@
 
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipes import purldb
-from scanpipe.pipes.output import to_json
 
 
 class MatchToPurlDB(Pipeline):
@@ -32,17 +31,7 @@ class MatchToPurlDB(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (
-            cls.create_codebase_json,
-            cls.match_to_purldb,
-        )
-
-    def create_codebase_json(self):
-        """
-        Create JSON output for self.project and set self.scan_output_location to
-        the location of the JSON output.
-        """
-        self.scan_output_location = to_json(self.project)
+        return (cls.match_to_purldb,)
 
     def match_to_purldb(self):
         """
