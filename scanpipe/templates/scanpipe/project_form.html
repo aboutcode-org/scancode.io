@@ -85,8 +85,9 @@
           {% for pipeline_name, pipeline_info in pipelines.items %}
             <div {% if not forloop.last %}class="mb-3"{% endif %}>
               <div>
-                <a class="help-text modal-button" data-target="{{ pipeline_name }}-modal" aria-haspopup="true">
+                <a class="modal-button" data-target="{{ pipeline_name }}-modal" aria-haspopup="true">
                   <strong>{{ pipeline_name }}</strong>
+                  <i class="fa-regular fa-circle-question"></i>
                 </a>
                 <div id="{{ pipeline_name }}-modal" class="modal">
                   <div class="modal-background"></div>
