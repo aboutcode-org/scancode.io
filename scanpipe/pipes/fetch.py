@@ -29,6 +29,7 @@ import subprocess  # nosec
 import tempfile
 from collections import namedtuple
 from pathlib import Path
+from urllib.parse import unquote
 from urllib.parse import urlparse
 
 import requests
@@ -85,7 +86,7 @@ def fetch_http(uri, to=None):
     if not filename:
         # Using `response.url` in place of provided `Scan.uri` since the former
         # will be more accurate in case of HTTP redirect.
-        filename = Path(urlparse(response.url).path).name
+        filename = unquote(Path(urlparse(response.url).path).name)
 
     download_directory = to or tempfile.mkdtemp()
     output_file = Path(download_directory, filename)

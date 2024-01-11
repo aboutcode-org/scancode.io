@@ -1514,10 +1514,14 @@ class InputSource(UUIDPKModel, ProjectRelatedModel):
             raise Exception("No `download_url` value to be fetched.")
 
         downloaded = fetch_url(url=self.download_url)
-        self.filename = downloaded.filename
-        self.save()
-
         destination = self.project.move_input_from(downloaded.path)
+
+        # Force a commit to the database to ensure the file on disk is not rendered
+        # as "manually uploaded" in the UI.
+        with transaction.atomic():
+            self.filename = downloaded.filename
+            self.save()
+
         return destination
 
 
