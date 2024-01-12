@@ -32,10 +32,19 @@ class MatchToPurlDB(Pipeline):
     @classmethod
     def steps(cls):
         return (
+            cls.check_purldb_service_availability,
             cls.send_project_json_to_matchcode,
             cls.poll_matching_results,
             cls.create_packages_from_match_results,
         )
+
+    def check_purldb_service_availability(self):
+        """Check if the PurlDB service if configured and available."""
+        if not purldb.is_configured():
+            raise Exception("PurlDB is not configured.")
+
+        if not purldb.is_available():
+            raise Exception("PurlDB is not available.")
 
     def send_project_json_to_matchcode(self):
         """Create a JSON scan of the project Codebase and send it to MatchCode."""
