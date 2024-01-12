@@ -48,9 +48,7 @@ class MatchToPurlDB(Pipeline):
 
     def send_project_json_to_matchcode(self):
         """Create a JSON scan of the project Codebase and send it to MatchCode."""
-        self.run_url, self.results_url = purldb.send_project_json_to_matchcode(
-            self.project
-        )
+        self.run_url = purldb.send_project_json_to_matchcode(self.project)
 
     def poll_matching_results(self):
         """Wait until the match results are ready by polling the match run status."""
