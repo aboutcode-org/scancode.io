@@ -22,6 +22,7 @@
 
 import io
 import json
+from collections import defaultdict
 from pathlib import Path
 from unittest import mock
 
@@ -361,6 +362,63 @@ class ScanPipePurlDBTest(TestCase):
 
         # Ensure that we created the DiscoveredPackage from matched Package data
         # and associtated the correct Resource to it.
+        self.assertEqual(1, self.project1.discoveredpackages.all().count())
+        package = self.project1.discoveredpackages.first()
+        self.assertEqual([package.package_uid], r1.for_packages)
+        # This resource should not have a Package match
+        self.assertFalse(0, len(r2.for_packages))
+
+    def test_scanpipe_pipes_purldb_map_match_results(self):
+        request_post_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_results_response.json"
+        )
+        with open(request_post_response_loc, "r") as f:
+            match_results = json.load(f)
+
+        resource_paths_by_package_uids = purldb.map_match_results(match_results)
+        expected = defaultdict(list)
+        expected_package_uid = (
+            "pkg:maven/org.elasticsearch/elasticsearch-x-content@7.17.9"
+            "?classifier=sources&uuid=a8814800-8120-4f50-ba4f-08c443ccda8e"
+        )
+        expected[expected_package_uid].append(
+            "elasticsearch-x-content-7.17.9-sources.jar"
+        )
+        self.assertEqual(expected, resource_paths_by_package_uids)
+
+    def test_scanpipe_pipes_purldb_create_packages_from_match_results(self):
+        r1 = make_resource_file(
+            self.project1,
+            path="elasticsearch-x-content-7.17.9-sources.jar",
+            sha1="30d21add57abe04beece3f28a079671dbc9043e4",
+        )
+        r2 = make_resource_file(
+            self.project1,
+            path="something-else.json",
+            sha1="deadbeef",
+        )
+
+        request_post_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_results_response.json"
+        )
+        with open(request_post_response_loc, "r") as f:
+            match_results = json.load(f)
+
+        self.assertEqual(0, self.project1.discoveredpackages.all().count())
+        self.assertFalse(0, len(r1.for_packages))
+        self.assertFalse(0, len(r2.for_packages))
+
+        resource_paths_by_package_uids = purldb.map_match_results(match_results)
+        purldb.create_packages_from_match_results(
+            self.project1, match_results, resource_paths_by_package_uids
+        )
+
         self.assertEqual(1, self.project1.discoveredpackages.all().count())
         package = self.project1.discoveredpackages.first()
         self.assertEqual([package.package_uid], r1.for_packages)
