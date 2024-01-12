@@ -414,24 +414,24 @@ class ScanPipeScancodePipesTest(TestCase):
         self.assertEqual(len(package_purl_exists), 1)
         self.assertTrue("pkg:npm/test@0.1.0" in package_purls)
 
-    def test_scanpipe_pipes_scancode_run_scancode(self):
+    def test_scanpipe_pipes_scancode_run_scan(self):
         project = Project.objects.create(name="name with space")
-        output = scancode.run_scan(
+        scanning_errors = scancode.run_scan(
             location=str(project.codebase_path),
             output_file=str(project.get_output_file_path("scancode", "json")),
             run_scan_args={"info": True},
         )
-        self.assertIsNone(output)
+        self.assertEqual({}, scanning_errors)
 
     @mock.patch("scanpipe.pipes.scancode.scancode_run_scan")
     def test_scanpipe_pipes_scancode_run_scan_args(self, mock_run_scan):
-        mock_run_scan.return_value = True, "{}"
+        mock_run_scan.return_value = True, {}
         output_file = tempfile.mkstemp()[1]
 
-        with override_settings(SCANCODE_TOOLKIT_RUN_SCAN_ARGS={"timeout": 60}):
+        with override_settings(SCANCODEIO_SCAN_FILE_TIMEOUT=10):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
             run_scan_kwargs = mock_run_scan.call_args.kwargs
-            self.assertEqual(60, run_scan_kwargs.get("timeout"))
+            self.assertEqual(10, run_scan_kwargs.get("timeout"))
 
         with override_settings(SCANCODEIO_PROCESSES=10):
             scancode.run_scan(location=None, output_file=output_file, run_scan_args={})
@@ -458,10 +458,10 @@ class ScanPipeScancodePipesTest(TestCase):
         uuid = "ba110d49-b6f2-4c86-8d89-a6fd34838ca8"
         package.update(package_uid=f"pkg:npm/is-npm@1.0.0?uuid={uuid}")
 
-        # Patching the ``file_type`` values as those OS dependant.
+        # Patching the ``file_type`` and ``mime_typea` values as those are OS dependant.
         # Note that we cannot use proper ``mock`` as the ``scan_package`` pipeline
         # uses a subprocess call to run the ``scancode`` command.
-        project1.codebaseresources.all().update(file_type="")
+        project1.codebaseresources.all().update(file_type="", mime_type="text/plain")
 
         scan_output_location = self.data_location / "is-npm-1.0.0_scan_package.json"
         summary = scancode.make_results_summary(project1, scan_output_location)

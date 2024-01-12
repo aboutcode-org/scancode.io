@@ -47,7 +47,6 @@ from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
-from scanpipe.pipes.fetch import fetch_urls
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
@@ -128,6 +127,7 @@ class ProjectViewSet(
             .prefetch_related(
                 "labels",
                 "runs",
+                "inputsources",
             )
         )
 
@@ -278,16 +278,11 @@ class ProjectViewSet(
             message = {"status": "upload_file or input_urls required."}
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
-        downloads, errors = fetch_urls(input_urls)
-        if errors:
-            message = {"status": ("Could not fetch: " + ", ".join(errors))}
-            return Response(message, status=status.HTTP_400_BAD_REQUEST)
-
         if upload_file:
             project.add_uploads([upload_file])
 
-        if downloads:
-            project.add_downloads(downloads)
+        for url in input_urls:
+            project.add_input_source(download_url=url)
 
         return Response({"status": "Input(s) added."})
 

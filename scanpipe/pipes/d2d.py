@@ -1162,7 +1162,9 @@ def flag_processed_archives(project):
     have statuses. If so, it updates the status of the package archive to
     "archive-processed".
     """
-    to_resources = project.codebaseresources.all().to_codebase().no_status()
+    to_resources = (
+        project.codebaseresources.all().to_codebase().no_status().order_by("-path")
+    )
 
     for archive_resource in to_resources.archives():
         extract_path = archive_resource.path + EXTRACT_SUFFIX
@@ -1430,3 +1432,98 @@ def save_scan_legal_file_results(codebase_resource, scan_results, scan_errors):
         status = flag.SCANNED_WITH_ERROR
 
     codebase_resource.set_scan_results(scan_results, status)
+
+
+def flag_whitespace_files(project):
+    """
+    Flag whitespace files with size less than or equal
+    to 100 byte as ignored.
+    """
+    resources = project.codebaseresources.files().no_status().filter(size__lte=100)
+
+    # Set of whitespace characters.
+    whitespace_set = set(b" \n\r\t\f\b")
+
+    for resource in resources:
+        with open(resource.location, "rb") as f:
+            binary_data = f.read()
+        binary_set = set(binary_data)
+        non_whitespace_bytes = binary_set - whitespace_set
+
+        # If resource contains only whitespace characters.
+        if not non_whitespace_bytes:
+            resource.update(status=flag.IGNORED_WHITESPACE_FILE)
+
+
+def match_purldb_resources_post_process(project, logger=None):
+    """Choose the best package for PurlDB matched resources."""
+    to_extract_directories = (
+        project.codebaseresources.directories()
+        .to_codebase()
+        .filter(path__regex=r"^.*-extract$")
+    )
+
+    to_resources = project.codebaseresources.files().filter(
+        status=flag.MATCHED_TO_PURLDB_RESOURCE
+    )
+
+    resource_count = to_extract_directories.count()
+
+    if logger:
+        logger(
+            f"Refining matching for {resource_count:,d} "
+            f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+        )
+
+    resource_iterator = to_extract_directories.iterator(chunk_size=2000)
+    progress = LoopProgress(resource_count, logger)
+    map_count = 0
+
+    for directory in progress.iter(resource_iterator):
+        map_count += _match_purldb_resources_post_process(
+            directory, to_extract_directories, to_resources
+        )
+
+    logger(f"{map_count:,d} resource processed")
+
+
+def _match_purldb_resources_post_process(
+    directory_path, to_extract_directories, to_resources
+):
+    # Exclude the content of nested archive.
+    interesting_codebase_resources = (
+        to_resources.filter(path__startswith=directory_path)
+        .filter(status=flag.MATCHED_TO_PURLDB_RESOURCE)
+        .exclude(path__regex=rf"^{directory_path}.*-extract\/.*$")
+    )
+
+    if not interesting_codebase_resources:
+        return 0
+
+    packages_map = {}
+
+    for resource in interesting_codebase_resources:
+        for package in resource.discovered_packages.all():
+            if package in packages_map:
+                packages_map[package].append(resource)
+            else:
+                packages_map[package] = [resource]
+
+    # Rank the packages by most number of matched resources.
+    ranked_packages = dict(
+        sorted(packages_map.items(), key=lambda item: len(item[1]), reverse=True)
+    )
+
+    for resource in interesting_codebase_resources:
+        resource.discovered_packages.clear()
+
+    for package, resources in ranked_packages.items():
+        unmapped_resources = [
+            resource
+            for resource in resources
+            if not resource.discovered_packages.exists()
+        ]
+        if unmapped_resources:
+            package.add_resources(unmapped_resources)
+
+    return interesting_codebase_resources.count()

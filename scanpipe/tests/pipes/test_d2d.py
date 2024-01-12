@@ -38,6 +38,7 @@ from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
 from scanpipe.tests import make_resource_file
 from scanpipe.tests import package_data1
+from scanpipe.tests import package_data2
 from scanpipe.tests import resource_data1
 
 
@@ -268,6 +269,16 @@ class ScanPipeD2DPipesTest(TestCase):
         make_resource_directory(
             self.project1, path="to/archive.lpkg-extract", status=flag.IGNORED_DIRECTORY
         )
+        to_archive_embedded = make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/embedded-archive.lpkg",
+            is_archive=True,
+        )
+        make_resource_directory(
+            self.project1,
+            path="to/archive.lpkg-extract/embedded-archive.lpkg-extract",
+            status=flag.IGNORED_DIRECTORY,
+        )
         make_resource_file(
             self.project1,
             path="to/archive.lpkg-extract/file1.txt",
@@ -278,19 +289,25 @@ class ScanPipeD2DPipesTest(TestCase):
             path="to/archive.lpkg-extract/file2.txt",
             status=flag.MATCHED_TO_PURLDB_RESOURCE,
         )
+        resource1 = make_resource_file(
+            self.project1,
+            path="to/archive.lpkg-extract/embedded-archive.lpkg-extract/file3.txt",
+            status=flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
 
         d2d.flag_processed_archives(self.project1)
+
+        to_archive_embedded.refresh_from_db()
+        self.assertEqual(flag.ARCHIVE_PROCESSED, to_archive_embedded.status)
+
         to_archive.refresh_from_db()
         self.assertEqual(flag.ARCHIVE_PROCESSED, to_archive.status)
 
-        to_archive.update(status="")
-        make_resource_file(
-            self.project1,
-            path="to/archive.lpkg-extract/file3.txt",
-        )
+        to_archive_embedded.update(status="")
+        resource1.update(status="")
         d2d.flag_processed_archives(self.project1)
-        to_archive.refresh_from_db()
-        self.assertEqual("", to_archive.status)
+        to_archive_embedded.refresh_from_db()
+        self.assertEqual("", to_archive_embedded.status)
 
     def test_scanpipe_pipes_d2d_map_java_to_class(self):
         from1 = make_resource_file(
@@ -946,7 +963,7 @@ class ScanPipeD2DPipesTest(TestCase):
             "directory1/foo.txt",
         ]
         expected_qs = self.project1.codebaseresources.filter(path__in=expected_paths)
-        self.assertQuerysetEqual(expected_qs, resources_qs)
+        self.assertQuerySetEqual(expected_qs, resources_qs)
 
     def test_scanpipe_pipes_d2d_get_from_files_related_with_not_in_package_to_files(
         self,
@@ -954,15 +971,15 @@ class ScanPipeD2DPipesTest(TestCase):
         from_resource1 = make_resource_file(self.project1, "from/foo.java")
         to_resource1 = make_resource_file(self.project1, "to/foo.class")
         qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
-        self.assertQuerysetEqual([], qs)
+        self.assertQuerySetEqual([], qs)
 
         pipes.make_relation(from_resource1, to_resource1, "java_to_class")
         qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
-        self.assertQuerysetEqual([], qs)
+        self.assertQuerySetEqual([], qs)
 
         from_resource1.update(detected_license_expression="mit")
         qs = d2d.get_from_files_related_with_not_in_package_to_files(self.project1)
-        self.assertQuerysetEqual([from_resource1], qs)
+        self.assertQuerySetEqual([from_resource1], qs)
 
     def test_scanpipe_pipes_d2d_create_local_files_packages(self):
         from_resource1 = make_resource_file(
@@ -1205,3 +1222,102 @@ class ScanPipeD2DPipesTest(TestCase):
         ).count()
 
         self.assertEqual(3, expected)
+
+    def test_scanpipe_pipes_flag_whitespace_files(self):
+        to_dir = (
+            self.project1.codebase_path / "to/project.tar.zst-extract/osgi/marketplace/"
+            "resources/node_modules/foo-bar"
+        )
+        to_dir.mkdir(parents=True)
+        to_resource_files = [
+            self.data_location / "d2d/non_whitespace_file.txt",
+            self.data_location / "d2d/whitespace_file.txt",
+        ]
+        copy_inputs(to_resource_files, to_dir)
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        whitespace_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/whitespace_file.txt"
+            )
+        )
+        non_whitespace_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/project.tar.zst-extract/osgi/marketplace/"
+                "resources/node_modules/foo-bar/non_whitespace_file.txt"
+            )
+        )
+
+        d2d.flag_whitespace_files(project=self.project1)
+        whitespace_resource.refresh_from_db()
+        non_whitespace_resource.refresh_from_db()
+
+        self.assertEqual(flag.IGNORED_WHITESPACE_FILE, whitespace_resource.status)
+        self.assertNotEqual(
+            flag.IGNORED_WHITESPACE_FILE, non_whitespace_resource.status
+        )
+
+    def test_scanpipe_pipes_d2d_match_purldb_resources_post_process(self):
+        to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
+        to_mini = self.data_location / "d2d-javascript" / "to" / "main.js"
+        to_dir = (
+            self.project1.codebase_path
+            / "to/project.tar.zst/modules/apps/adaptive-media/"
+            "adaptive-media-web-extract/src/main/resources/META-INF/resources/"
+            "adaptive_media/js"
+        )
+        to_dir.mkdir(parents=True)
+        copy_inputs([to_map, to_mini], to_dir)
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        to_resources = self.project1.codebaseresources.filter(
+            path__startswith=(
+                "to/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web-extract/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+
+        to_mini_resource = self.project1.codebaseresources.filter(
+            path=(
+                "to/project.tar.zst/modules/apps/adaptive-media/"
+                "adaptive-media-web-extract/src/main/resources/META-INF/resources/"
+                "adaptive_media/js/main.js"
+            )
+        )
+
+        dummy_package_data1 = package_data1.copy()
+        dummy_package_data1["uuid"] = uuid.uuid4()
+        package1, _ = d2d.create_package_from_purldb_data(
+            self.project1,
+            to_resources,
+            dummy_package_data1,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        dummy_package_data2 = package_data2.copy()
+        dummy_package_data2["uuid"] = uuid.uuid4()
+        package2, _ = d2d.create_package_from_purldb_data(
+            self.project1,
+            to_mini_resource,
+            dummy_package_data2,
+            flag.MATCHED_TO_PURLDB_RESOURCE,
+        )
+
+        buffer = io.StringIO()
+        d2d.match_purldb_resources_post_process(
+            self.project1,
+            logger=buffer.write,
+        )
+        expected = (
+            "Refining matching for 1 " f"{flag.MATCHED_TO_PURLDB_RESOURCE} archives."
+        )
+        self.assertIn(expected, buffer.getvalue())
+
+        package1_resource_count = package1.codebase_resources.count()
+        package2_resource_count = package2.codebase_resources.count()
+
+        self.assertEqual(2, package1_resource_count)
+        self.assertEqual(0, package2_resource_count)

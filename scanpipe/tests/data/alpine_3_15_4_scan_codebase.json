@@ -6,14 +6,17 @@
       "input_sources": [
         {
           "filename": "alpine_3_15_4.tar.gz",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [
         {
           "pipeline_name": "docker",
           "status": "not_started",
-          "description": "Analyze Docker images.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -108,7 +111,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "Alpine base dir structure and init scripts",
       "release_date": "2021-09-16",
       "parties": [
         {
@@ -218,7 +220,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "Public keys for Alpine Linux packages",
       "release_date": "2021-10-18",
       "parties": [
         {
@@ -448,7 +449,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "Alpine Package Keeper - package manager for alpine",
       "release_date": "2021-09-25",
       "parties": [
         {
@@ -523,7 +523,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "Size optimized toolbox of many common UNIX utilities",
       "release_date": "2022-04-04",
       "parties": [
         {
@@ -609,7 +608,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "Pre generated bundle of Mozilla certificates",
       "release_date": "2022-01-17",
       "parties": [
         {
@@ -686,81 +684,6 @@
       "affected_by_vulnerabilities": []
     },
     {
-      "purl": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64",
-      "type": "alpine",
-      "namespace": "",
-      "name": "libc-utils",
-      "version": "0.7.2-r3",
-      "qualifiers": "arch=x86_64",
-      "subpath": "",
-      "tag": "img-06c7c4-layer-01-40e48c",
-      "primary_language": "",
-      "description": "Meta package to pull in correct libc",
-      "release_date": "2020-03-31",
-      "parties": [
-        {
-          "url": null,
-          "name": "Natanael Copa ",
-          "role": "maintainer",
-          "type": "person",
-          "email": "<ncopa@alpinelinux.org>"
-        }
-      ],
-      "keywords": [],
-      "homepage_url": "https://alpinelinux.org",
-      "download_url": "",
-      "bug_tracking_url": "",
-      "code_view_url": "",
-      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=60424133be2e79bbfeff3d58147a22886f817ce2",
-      "repository_homepage_url": "",
-      "repository_download_url": "",
-      "api_data_url": "",
-      "md5": "",
-      "sha1": "",
-      "sha256": "",
-      "sha512": "",
-      "copyright": "",
-      "holder": "",
-      "declared_license_expression": "bsd-simplified AND bsd-new",
-      "declared_license_expression_spdx": "BSD-2-Clause AND BSD-3-Clause",
-      "license_detections": [
-        {
-          "matches": [
-            {
-              "score": 100.0,
-              "matcher": "1-spdx-id",
-              "end_line": 1,
-              "rule_url": null,
-              "start_line": 1,
-              "matched_text": "bsd-2-clause AND bsd-3-clause",
-              "match_coverage": 100.0,
-              "matched_length": 7,
-              "rule_relevance": 100,
-              "rule_identifier": "spdx-license-identifier-bsd-simplified AND bsd-new-dc707a661bb1da34ff773b7e9955e0235b3b3f74",
-              "license_expression": "bsd-simplified AND bsd-new"
-            }
-          ],
-          "identifier": "bsd_simplified_and_bsd_new-73e0acf3-001a-667e-f37b-135c6b8a5cad",
-          "license_expression": "bsd-simplified AND bsd-new"
-        }
-      ],
-      "other_license_expression": "",
-      "other_license_expression_spdx": "",
-      "other_license_detections": [],
-      "extracted_license_statement": "BSD-2-Clause AND BSD-3-Clause",
-      "notice_text": "",
-      "source_packages": [
-        "pkg:alpine/libc-dev@0.7.2-r3"
-      ],
-      "extra_data": {},
-      "package_uid": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
-      "file_references": [],
-      "missing_resources": [],
-      "modified_resources": [],
-      "affected_by_vulnerabilities": []
-    },
-    {
       "purl": "pkg:alpine/libcrypto1.1@1.1.1n-r0?arch=x86_64",
       "type": "alpine",
       "namespace": "",
@@ -770,7 +693,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "Crypto library from openssl",
       "release_date": "2022-03-15",
       "parties": [
         {
@@ -871,6 +793,80 @@
       "affected_by_vulnerabilities": []
     },
     {
+      "purl": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64",
+      "type": "alpine",
+      "namespace": "",
+      "name": "libc-utils",
+      "version": "0.7.2-r3",
+      "qualifiers": "arch=x86_64",
+      "subpath": "",
+      "tag": "img-06c7c4-layer-01-40e48c",
+      "primary_language": "",
+      "release_date": "2020-03-31",
+      "parties": [
+        {
+          "url": null,
+          "name": "Natanael Copa ",
+          "role": "maintainer",
+          "type": "person",
+          "email": "<ncopa@alpinelinux.org>"
+        }
+      ],
+      "keywords": [],
+      "homepage_url": "https://alpinelinux.org",
+      "download_url": "",
+      "bug_tracking_url": "",
+      "code_view_url": "",
+      "vcs_url": "git+http://git.alpinelinux.org/aports/commit/?id=60424133be2e79bbfeff3d58147a22886f817ce2",
+      "repository_homepage_url": "",
+      "repository_download_url": "",
+      "api_data_url": "",
+      "md5": "",
+      "sha1": "",
+      "sha256": "",
+      "sha512": "",
+      "copyright": "",
+      "holder": "",
+      "declared_license_expression": "bsd-simplified AND bsd-new",
+      "declared_license_expression_spdx": "BSD-2-Clause AND BSD-3-Clause",
+      "license_detections": [
+        {
+          "matches": [
+            {
+              "score": 100.0,
+              "matcher": "1-spdx-id",
+              "end_line": 1,
+              "rule_url": null,
+              "start_line": 1,
+              "matched_text": "bsd-2-clause AND bsd-3-clause",
+              "match_coverage": 100.0,
+              "matched_length": 7,
+              "rule_relevance": 100,
+              "rule_identifier": "spdx-license-identifier-bsd-simplified AND bsd-new-dc707a661bb1da34ff773b7e9955e0235b3b3f74",
+              "license_expression": "bsd-simplified AND bsd-new"
+            }
+          ],
+          "identifier": "bsd_simplified_and_bsd_new-73e0acf3-001a-667e-f37b-135c6b8a5cad",
+          "license_expression": "bsd-simplified AND bsd-new"
+        }
+      ],
+      "other_license_expression": "",
+      "other_license_expression_spdx": "",
+      "other_license_detections": [],
+      "extracted_license_statement": "BSD-2-Clause AND BSD-3-Clause",
+      "notice_text": "",
+      "source_packages": [
+        "pkg:alpine/libc-dev@0.7.2-r3"
+      ],
+      "extra_data": {},
+      "package_uid": "pkg:alpine/libc-utils@0.7.2-r3?arch=x86_64&uuid=fixed-uid-done-for-testing-5642512d1758",
+      "datasource_id": "",
+      "file_references": [],
+      "missing_resources": [],
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
+    },
+    {
       "purl": "pkg:alpine/libretls@3.3.4-r3?arch=x86_64",
       "type": "alpine",
       "namespace": "",
@@ -880,7 +876,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "port of libtls from libressl to openssl",
       "release_date": "2022-03-16",
       "parties": [
         {
@@ -966,7 +961,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "SSL shared libraries",
       "release_date": "2022-03-15",
       "parties": [
         {
@@ -1052,7 +1046,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "the musl c library (libc) implementation",
       "release_date": "2021-09-23",
       "parties": [
         {
@@ -1138,7 +1131,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "the musl c library (libc) implementation",
       "release_date": "2021-09-23",
       "parties": [
         {
@@ -1213,7 +1205,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "Scan ELF binaries for stuff",
       "release_date": "2021-10-13",
       "parties": [
         {
@@ -1288,7 +1279,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "EXternal ssl_client for busybox wget",
       "release_date": "2022-04-04",
       "parties": [
         {
@@ -1363,7 +1353,6 @@
       "subpath": "",
       "tag": "img-06c7c4-layer-01-40e48c",
       "primary_language": "",
-      "description": "A compression/decompression Library",
       "release_date": "2022-03-28",
       "parties": [
         {

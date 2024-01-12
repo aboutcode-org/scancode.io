@@ -95,15 +95,18 @@ class ScanCodeIOAuthTest(TestCase):
         self.assertContains(response, expected, html=True)
         expected = f'<a class="navbar-item" href="{profile_url}">Profile settings</a>'
         self.assertContains(response, expected, html=True)
-        expected = f'<a class="navbar-item" href="{logout_url}">Sign out</a>'
-        self.assertContains(response, expected, html=True)
+        expected = f'<form id="logout-form" method="post" action="{logout_url}">'
+        self.assertContains(response, expected)
 
     def test_scancodeio_auth_logout_view(self):
         response = self.client.get(logout_url)
+        self.assertEqual(405, response.status_code)
+
+        response = self.client.post(logout_url)
         self.assertRedirects(response, login_url)
 
         self.client.login(username=self.basic_user.username, password=TEST_PASSWORD)
-        response = self.client.get(logout_url)
+        response = self.client.post(logout_url)
         self.assertRedirects(response, login_url)
 
     def test_scancodeio_account_profile_view(self):
@@ -132,7 +135,7 @@ class ScanCodeIOAuthTest(TestCase):
             ("project_results", [a_uuid, a_string]),
             ("resource_raw", [a_uuid, a_int]),
             ("resource_detail", [a_uuid, a_int]),
-            ("project_execute_pipeline", [a_uuid, a_uuid]),
+            ("project_execute_pipelines", [a_uuid]),
             ("project_stop_pipeline", [a_uuid, a_uuid]),
             ("project_delete_pipeline", [a_uuid, a_uuid]),
             ("run_detail", [a_uuid]),

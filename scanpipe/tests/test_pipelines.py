@@ -26,7 +26,6 @@ import sys
 import tempfile
 import warnings
 from pathlib import Path
-from unittest import expectedFailure
 from unittest import mock
 from unittest import skipIf
 
@@ -34,11 +33,13 @@ from django.conf import settings
 from django.test import TestCase
 from django.test import tag
 
+from packageurl import PackageURL
 from scancode.cli_test_utils import purl_with_fake_uuid
 
 from scanpipe import pipes
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipelines import InputFileError
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
 from scanpipe.pipelines import root_filesystems
@@ -134,6 +135,56 @@ class ScanPipePipelinesTest(TestCase):
         self.assertIn("Pipeline [raise_exception] starting", run.log)
         self.assertIn("Step [raise_exception_step] starting", run.log)
         self.assertIn("Pipeline failed", run.log)
+
+    def test_scanpipe_pipeline_class_download_inputs_attribute(self):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        self.assertTrue(pipeline.download_inputs)
+        pipeline.execute()
+        self.assertIn("Step [download_missing_inputs]", run.log)
+
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        pipeline.download_inputs = False
+        pipeline.execute()
+        self.assertNotIn("Step [download_missing_inputs]", run.log)
+
+    @mock.patch("requests.get")
+    def test_scanpipe_pipeline_class_download_missing_inputs(self, mock_get):
+        project1 = Project.objects.create(name="Analysis")
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+
+        file_location = Path(__file__).parent / "data" / "notice.NOTICE"
+        input_source = project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertFalse(input_source.exists())
+        with self.assertRaises(InputFileError) as error:
+            pipeline.download_missing_inputs()
+        error_msg = "Uploaded file filename=notice.NOTICE [uploaded] not available."
+        self.assertEqual(f"['{error_msg}']", str(error.exception))
+        self.assertIn(error_msg, run.log)
+
+        project1.copy_input_from(file_location)
+        self.assertTrue(input_source.exists())
+        run = project1.add_pipeline("do_nothing")
+        pipeline = run.make_pipeline_instance()
+        pipeline.download_missing_inputs()
+        self.assertEqual("", run.log)
+
+        download_url = "https://download.url/file.zip"
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url=download_url
+        )
+        input_source2 = project1.add_input_source(download_url=download_url)
+        pipeline.download_missing_inputs()
+        self.assertIn("Fetching input from https://download.url/file.zip", run.log)
+        input_source2.refresh_from_db()
+        self.assertEqual("file.zip", input_source2.filename)
+        self.assertTrue(input_source2.exists())
+        mock_get.assert_called_once()
 
     def test_scanpipe_pipeline_class_save_errors_context_manager(self):
         project1 = Project.objects.create(name="Analysis")
@@ -253,13 +304,16 @@ class RootFSPipelineTest(TestCase):
         self.assertEqual("Error\nError", error.description)
 
 
-def sort_scanned_files_by_path(scan_data):
+def sort_for_os_compatibility(scan_data):
     """
-    Sort the ``scan_data`` files in place. Return ``scan_data``.
+    Sort the ``scan_data`` files and relations in place. Return ``scan_data``.
     """
-    files = scan_data.get("files")
-    if files:
+    if files := scan_data.get("files"):
         files.sort(key=lambda x: x["path"])
+
+    if relations := scan_data.get("relations"):
+        relations.sort(key=lambda x: x["to_resource"])
+
     return scan_data
 
 
@@ -286,14 +340,16 @@ class PipelinesIntegrationTest(TestCase):
         "log",
         "uuid",
         "size",  # directory sizes are OS dependant
+        "size_count",
         "--json-pp",
         "--processes",
         "--verbose",
         # system_environment differs between systems
         "system_environment",
         "file_type",
-        # mime type is inconsistent across systems
+        # mime type and is_script are inconsistent across systems
         "mime_type",
+        "is_script",
         "notes",
         "settings",
         "description",
@@ -317,6 +373,28 @@ class PipelinesIntegrationTest(TestCase):
 
         return data
 
+    def purl_fields_with_fake_uuid(self, value, key):
+        purl_name = "fixed-name-for-testing-5642512d1758"
+        purl_namespace = "fixed-namespace-for-testing-5642512d1758"
+        if key == "name":
+            return purl_name
+        elif key == "namespace":
+            return purl_namespace
+        elif key == "purl" or key == "for_packages":
+            purl_old = PackageURL.from_string(value)
+            if purl_old.type != "local-files":
+                return purl_with_fake_uuid(value)
+
+            purl = PackageURL(
+                name=purl_name,
+                namespace=purl_namespace,
+                type="local-files",
+                version=purl_old.version,
+                qualifiers=purl_old.qualifiers,
+                subpath=purl_old.subpath,
+            )
+            return purl.to_string()
+
     def _normalize_package_uids(self, data):
         """
         Return the `data`, where any `package_uid` value has been normalized
@@ -326,6 +404,9 @@ class PipelinesIntegrationTest(TestCase):
             return [self._normalize_package_uids(entry) for entry in data]
 
         if isinstance(data, dict):
+            is_local_files = False
+            if data.get("type") and data["type"] == "local-files":
+                is_local_files = True
             normalized_data = {}
             for key, value in data.items():
                 if isinstance(value, (list, dict)):
@@ -335,8 +416,13 @@ class PipelinesIntegrationTest(TestCase):
                     and value
                 ):
                     value = purl_with_fake_uuid(value)
-                if key == "for_packages":
-                    value = [purl_with_fake_uuid(package_uid) for package_uid in value]
+                if key == "for_packages" and value:
+                    value = [
+                        self.purl_fields_with_fake_uuid(package_uid, key)
+                        for package_uid in value
+                    ]
+                if is_local_files and key in ("name", "namespace", "purl") and value:
+                    value = self.purl_fields_with_fake_uuid(value, key)
                 normalized_data[key] = value
             return normalized_data
 
@@ -351,7 +437,7 @@ class PipelinesIntegrationTest(TestCase):
         result_json = json.loads(Path(result_file).read_text())
         result_json = self._normalize_package_uids(result_json)
         result_data = self._without_keys(result_json, self.exclude_from_diff)
-        result_data = sort_scanned_files_by_path(result_data)
+        result_data = sort_for_os_compatibility(result_data)
 
         if regen:
             expected_file.write_text(json.dumps(result_data, indent=2))
@@ -359,12 +445,12 @@ class PipelinesIntegrationTest(TestCase):
         expected_json = json.loads(expected_file.read_text())
         expected_json = self._normalize_package_uids(expected_json)
         expected_data = self._without_keys(expected_json, self.exclude_from_diff)
-        expected_data = sort_scanned_files_by_path(expected_data)
+        expected_data = sort_for_os_compatibility(expected_data)
 
         self.assertEqual(expected_data, result_data)
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
-    def test_scanpipe_scan_package_pipeline_integration_test(self):
+    def test_scanpipe_scan_package_pipeline_integration(self):
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
@@ -398,7 +484,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("pkg:npm/is-npm@1.0.0", key_file_package_purl)
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
-    def test_scanpipe_scan_package_pipeline_integration_multiple_packages_test(self):
+    def test_scanpipe_scan_package_pipeline_integration_multiple_packages(self):
         pipeline_name = "scan_package"
         project1 = Project.objects.create(name="Analysis")
 
@@ -418,7 +504,7 @@ class PipelinesIntegrationTest(TestCase):
         scancode_file = project1.get_latest_output(filename="scancode")
         expected_file = self.data_location / "multiple-is-npm-1.0.0_scan_package.json"
         # Do not override the regen as this file is generated in regen_test_data
-        self.assertPipelineResultEqual(expected_file, scancode_file, regen=False)
+        self.assertPipelineResultEqual(expected_file, scancode_file)
 
         summary_file = project1.get_latest_output(filename="summary")
         expected_file = (
@@ -426,14 +512,39 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, summary_file)
 
-    def test_scanpipe_scan_codebase_pipeline_integration_test(self):
+    def test_scanpipe_scan_package_single_file(self):
+        pipeline_name = "scan_package"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = (
+            self.data_location / "manifests" / "openpdf-parent-1.3.11.pom.xml"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+
+        self.assertEqual(1, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(10, project1.discovereddependencies.count())
+
+        scancode_file = project1.get_latest_output(filename="scancode")
+        expected_file = (
+            self.data_location / "manifests" / "openpdf-parent-1.3.11_scan_package.json"
+        )
+        self.assertPipelineResultEqual(expected_file, scancode_file)
+
+    def test_scanpipe_scan_codebase_pipeline_integration(self):
         pipeline_name = "scan_codebase"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "is-npm-1.0.0.tgz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -474,7 +585,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "daglib-0.6.0-py3-none-any.whl"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -492,15 +603,15 @@ class PipelinesIntegrationTest(TestCase):
         )
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    @expectedFailure  # Expected results are inconsistent across systems
-    def test_scanpipe_docker_pipeline_alpine_integration_test(self):
+    @skipIf(sys.platform != "linux", "Expected results are inconsistent across OS")
+    def test_scanpipe_docker_pipeline_alpine_integration(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "alpine_3_15_4.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -523,7 +634,7 @@ class PipelinesIntegrationTest(TestCase):
         filename = "minitag.tar"
         input_location = self.data_location / "image-with-symlinks" / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -544,15 +655,14 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
-    @expectedFailure  # Expected results are inconsistent across systems
-    def test_scanpipe_docker_pipeline_rpm_integration_test(self):
+    def test_scanpipe_docker_pipeline_rpm_integration(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "centos.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -568,14 +678,14 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "centos_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    def test_scanpipe_docker_pipeline_debian_integration_test(self):
+    def test_scanpipe_docker_pipeline_debian_integration(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "debian.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -591,14 +701,14 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "debian_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    def test_scanpipe_docker_pipeline_distroless_debian_integration_test(self):
+    def test_scanpipe_docker_pipeline_distroless_debian_integration(self):
         pipeline_name = "docker"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "gcr_io_distroless_base.tar.gz"
         input_location = self.data_location / filename
         project1.copy_input_from(input_location)
-        project1.add_input_source(filename, "https://download.url", save=True)
+        project1.add_input_source("https://download.url", filename)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -614,7 +724,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "gcr_io_distroless_base_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    def test_scanpipe_rootfs_pipeline_integration_test(self):
+    def test_scanpipe_rootfs_pipeline_integration(self):
         pipeline_name = "root_filesystems"
         project1 = Project.objects.create(name="Analysis")
 
@@ -635,7 +745,7 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "basic-rootfs_root_filesystems.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    def test_scanpipe_load_inventory_pipeline_integration_test(self):
+    def test_scanpipe_load_inventory_pipeline_integration(self):
         pipeline_name = "load_inventory"
         project1 = Project.objects.create(name="Tool: scancode-toolkit")
 
@@ -677,7 +787,7 @@ class PipelinesIntegrationTest(TestCase):
     @mock.patch("scanpipe.pipes.vulnerablecode.is_available")
     @mock.patch("scanpipe.pipes.vulnerablecode.is_configured")
     @mock.patch("scanpipe.pipes.vulnerablecode.bulk_search_by_purl")
-    def test_scanpipe_find_vulnerabilities_pipeline_integration_test(
+    def test_scanpipe_find_vulnerabilities_pipeline_integration(
         self, mock_bulk_search_by_purl, mock_is_configured, mock_is_available
     ):
         pipeline_name = "find_vulnerabilities"
@@ -725,7 +835,7 @@ class PipelinesIntegrationTest(TestCase):
         expected = vulnerability_data[0]["affected_by_vulnerabilities"]
         self.assertEqual(expected, package1.affected_by_vulnerabilities)
 
-    def test_scanpipe_inspect_manifest_pipeline_integration_test(self):
+    def test_scanpipe_inspect_manifest_pipeline_integration(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 
@@ -737,9 +847,9 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, exitcode, msg=out)
         self.assertIn("No package type found for", out)
 
-    @mock.patch("scanpipe.pipes.resolve.resolver_api")
-    def test_scanpipe_inspect_manifest_pipeline_pypi_integration_test(
-        self, resolver_api
+    @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
+    def test_scanpipe_inspect_manifest_pipeline_pypi_integration(
+        self, resolve_dependencies
     ):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
@@ -747,13 +857,13 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        resolver_api.return_value = mock.Mock(packages=[])
+        resolve_dependencies.return_value = mock.Mock(packages=[])
         project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
         exitcode, out = pipeline.execute()
         self.assertEqual(1, exitcode, msg=out)
         self.assertIn("No packages could be resolved", out)
 
-        resolver_api.return_value = mock.Mock(packages=[package_data1])
+        resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
@@ -764,7 +874,7 @@ class PipelinesIntegrationTest(TestCase):
             if value and field_name not in exclude_fields:
                 self.assertEqual(value, getattr(discoveredpackage, field_name))
 
-    def test_scanpipe_inspect_manifest_pipeline_aboutfile_integration_test(self):
+    def test_scanpipe_inspect_manifest_pipeline_aboutfile_integration(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 
@@ -786,7 +896,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("4.0.8", discoveredpackage.version)
         self.assertEqual("bsd-new", discoveredpackage.declared_license_expression)
 
-    def test_scanpipe_inspect_manifest_pipeline_spdx_integration_test(self):
+    def test_scanpipe_inspect_manifest_pipeline_spdx_integration(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 
@@ -808,7 +918,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("MIT", discoveredpackage.extracted_license_statement)
         self.assertEqual("mit", discoveredpackage.declared_license_expression)
 
-    def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration_test(self):
+    def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration(self):
         pipeline_name = "inspect_manifest"
         project1 = Project.objects.create(name="Analysis")
 
@@ -884,7 +994,7 @@ class PipelinesIntegrationTest(TestCase):
             self.assertEqual(expected["filename"], package.filename)
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
-    def test_scanpipe_deploy_to_develop_pipeline_integration_test(self, mock_request):
+    def test_scanpipe_deploy_to_develop_pipeline_integration(self, mock_request):
         mock_request.return_value = None
         pipeline_name = "deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
@@ -901,7 +1011,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(57, project1.codebaseresources.count())
         self.assertEqual(18, project1.codebaserelations.count())
-        self.assertEqual(0, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
@@ -926,7 +1036,7 @@ class PipelinesIntegrationTest(TestCase):
 
         self.assertEqual(44, project1.codebaseresources.count())
         self.assertEqual(31, project1.codebaserelations.count())
-        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(2, project1.discoveredpackages.count())
         self.assertEqual(0, project1.discovereddependencies.count())
 
         result_file = output.to_json(project1)
@@ -943,7 +1053,7 @@ class PipelinesIntegrationTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_post")
     @mock.patch("scanpipe.pipes.purldb.is_available")
-    def test_scanpipe_populate_purldb_pipeline_integration_test(
+    def test_scanpipe_populate_purldb_pipeline_integration(
         self, mock_is_available, mock_request_post
     ):
         pipeline_name1 = "load_inventory"

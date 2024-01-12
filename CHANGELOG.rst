@@ -1,6 +1,39 @@
 Changelog
 =========
 
+v33.0.0 (unreleased)
+--------------------
+
+- Upgrade Django to version 5.0 and drop support for Python 3.8 and 3.9
+  https://github.com/nexB/scancode.io/issues/1020
+
+- Fetching "Download URL" inputs is now delegated to an initial pipeline step that is
+  always run as the start of a pipeline.
+  This allows to run pipelines on workers running from a remote location, external to
+  the main ScanCode.io app server.
+  https://github.com/nexB/scancode.io/issues/410
+
+- Migrate the Project.input_sources field into a InputSource model.
+  https://github.com/nexB/scancode.io/issues/410
+
+- Refactor run_scancode to not fail on scan errors happening at the resource level,
+  such as a timeout. Project error message are created instead.
+  https://github.com/nexB/scancode.io/issues/1018
+
+- Add support for the SCANCODEIO_SCAN_FILE_TIMEOUT setting in the scan_package pipeline.
+  https://github.com/nexB/scancode.io/issues/1018
+
+- Add support for non-archive single file in the scan_package pipeline.
+  https://github.com/nexB/scancode.io/issues/1009
+
+- Do not include "add-on" pipelines in the "New project" form choices.
+  https://github.com/nexB/scancode.io/issues/1041
+
+- Display a "Run pipelines" button in the "Pipelines" panel.
+  Remove the ability to run a single pipeline in favor of running all "not started"
+  project pipeline.
+  https://github.com/nexB/scancode.io/issues/997
+
 v32.7.0 (2023-10-25)
 --------------------
 

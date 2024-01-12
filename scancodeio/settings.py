@@ -78,8 +78,6 @@ SCANCODEIO_CONFIG_FILE = env.str(
     "SCANCODEIO_CONFIG_FILE", default="scancode-config.yml"
 )
 
-SCANCODE_TOOLKIT_RUN_SCAN_ARGS = env.dict("SCANCODE_TOOLKIT_RUN_SCAN_ARGS", default={})
-
 SCANCODEIO_LOG_LEVEL = env.str("SCANCODEIO_LOG_LEVEL", "INFO")
 
 # Set the number of parallel processes to use for ScanCode related scan execution.

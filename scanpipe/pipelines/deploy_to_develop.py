@@ -66,9 +66,12 @@ class DeployToDevelop(Pipeline):
             cls.map_path,
             cls.flag_mapped_resources_archives_and_ignored_directories,
             cls.perform_house_keeping_tasks,
+            cls.match_purldb_resources_post_process,
+            cls.remove_packages_without_resources,
             cls.scan_unmapped_to_files,
             cls.scan_mapped_from_for_files,
             cls.flag_deployed_from_resources_with_missing_license,
+            cls.create_local_files_packages,
         )
 
     purldb_package_extensions = [".jar", ".war", ".zip"]
@@ -138,10 +141,9 @@ class DeployToDevelop(Pipeline):
     def flag_whitespace_files(self):
         """
         Flag whitespace files with size less than or equal
-        to 1 byte as ignored.
+        to 100 byte as ignored.
         """
-        qs = self.project.codebaseresources.files().filter(size__lte=1)
-        qs.update(status=flag.IGNORED_WHITESPACE_FILE)
+        d2d.flag_whitespace_files(project=self.project)
 
     def map_about_files(self):
         """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
@@ -252,6 +254,17 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
         d2d.flag_undeployed_resources(project=self.project)
+
+    def match_purldb_resources_post_process(self):
+        """Choose the best package for PurlDB matched resources."""
+        d2d.match_purldb_resources_post_process(self.project, logger=self.log)
+
+    def remove_packages_without_resources(self):
+        """Remove packages without any resources."""
+        package_without_resources = self.project.discoveredpackages.filter(
+            codebase_resources__isnull=True
+        )
+        package_without_resources.delete()
 
     def scan_unmapped_to_files(self):
         """

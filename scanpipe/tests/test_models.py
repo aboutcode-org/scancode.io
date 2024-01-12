@@ -27,6 +27,7 @@ import tempfile
 import uuid
 from contextlib import redirect_stdout
 from datetime import datetime
+from datetime import timezone as tz
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -218,8 +219,10 @@ class ScanPipeModelsTest(TestCase):
         self.assertTrue(self.project1.tmp_path.exists())
 
     def test_scanpipe_project_model_clone(self):
-        self.project1.add_input_source(filename="file1", source="uploaded")
-        self.project1.add_input_source(filename="file2", source="https://download.url")
+        self.project1.add_input_source(filename="file1", is_uploaded=True)
+        self.project1.add_input_source(
+            filename="file2", download_url="https://download.url"
+        )
         self.project1.update(settings={"extract_recursively": True})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
@@ -235,7 +238,7 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertEqual("cloned project", cloned_project.name)
         self.assertEqual({}, cloned_project.settings)
-        self.assertEqual({}, cloned_project.input_sources)
+        self.assertEqual([], cloned_project.input_sources)
         self.assertEqual([], list(cloned_project.inputs()))
         self.assertEqual([], list(cloned_project.runs.all()))
         self.assertEqual([], list(cloned_project.webhooksubscriptions.all()))
@@ -249,7 +252,9 @@ class ScanPipeModelsTest(TestCase):
             execute_now=False,
         )
         self.assertEqual(self.project1.settings, cloned_project2.settings)
-        self.assertEqual(self.project1.input_sources, cloned_project2.input_sources)
+        self.assertEqual(
+            len(self.project1.input_sources), len(cloned_project2.input_sources)
+        )
         self.assertEqual(1, len(list(cloned_project2.inputs())))
         runs = cloned_project2.runs.all()
         self.assertEqual(
@@ -260,16 +265,6 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, len(cloned_project2.webhooksubscriptions.all()))
         cloned_subscription = cloned_project2.webhooksubscriptions.get()
         self.assertNotEqual(subscription1.uuid, cloned_subscription.uuid)
-
-    def test_scanpipe_project_model_input_sources_list_property(self):
-        self.project1.add_input_source(filename="file1", source="uploaded")
-        self.project1.add_input_source(filename="file2", source="https://download.url")
-
-        expected = [
-            {"filename": "file1", "source": "uploaded"},
-            {"filename": "file2", "source": "https://download.url"},
-        ]
-        self.assertEqual(expected, self.project1.input_sources_list)
 
     def test_scanpipe_project_model_inputs_and_input_files_and_input_root(self):
         self.assertEqual([], list(self.project1.inputs()))
@@ -369,43 +364,76 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([input_filename], self.project1.input_files)
         self.assertFalse(Path(input_location).exists())
 
-    def test_scanpipe_project_model_inputs_with_source(self):
-        inputs, missing_inputs = self.project1.inputs_with_source
-        self.assertEqual([], inputs)
-        self.assertEqual({}, missing_inputs)
+    def test_scanpipe_project_model_get_inputs_with_source(self):
+        self.assertEqual([], self.project1.get_inputs_with_source())
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.add_uploads([uploaded_file])
         self.project1.copy_input_from(self.data_location / "notice.NOTICE")
-        self.project1.add_input_source(filename="missing.zip", source="uploaded")
+        self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
-        inputs, missing_inputs = self.project1.inputs_with_source
-        sha256_1 = "ed7002b439e9ac845f22357d822bac1444730fbdb6016d3ec9432297b9ec9f73"
-        sha256_2 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
+        uuid1, uuid2 = [
+            str(input_source.uuid) for input_source in self.project1.inputsources.all()
+        ]
+
         expected = [
             {
-                "is_file": True,
-                "name": "file.ext",
-                "sha256": sha256_1,
+                "uuid": uuid1,
+                "filename": "file.ext",
+                "download_url": "",
+                "is_uploaded": True,
+                "tag": "",
                 "size": 7,
-                "source": "uploaded",
+                "is_file": True,
+                "exists": True,
             },
             {
+                "uuid": uuid2,
+                "filename": "missing.zip",
+                "download_url": "",
+                "is_uploaded": True,
+                "tag": "",
+                "size": None,
                 "is_file": True,
-                "name": "notice.NOTICE",
-                "sha256": sha256_2,
+                "exists": False,
+            },
+            {
+                "filename": "notice.NOTICE",
+                "is_uploaded": False,
+                "is_file": True,
                 "size": 1178,
-                "source": "not_found",
+                "exists": True,
             },
         ]
 
-        def sort_by_name(x):
-            return x.get("name")
+        self.assertEqual(expected, self.project1.get_inputs_with_source())
+        self.assertEqual(expected, self.project1.input_sources)
 
-        self.assertEqual(
-            sorted(expected, key=sort_by_name), sorted(inputs, key=sort_by_name)
-        )
-        self.assertEqual({"missing.zip": "uploaded"}, missing_inputs)
+    def test_scanpipe_project_model_can_start_pipelines(self):
+        self.assertFalse(self.project1.can_start_pipelines)
+
+        # Not started
+        run = self.project1.add_pipeline("docker")
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.can_start_pipelines)
+
+        # Queued
+        run.task_start_date = timezone.now()
+        run.save()
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertFalse(self.project1.can_start_pipelines)
+
+        # Success
+        run.task_end_date = timezone.now()
+        run.task_exitcode = 0
+        run.save()
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertFalse(self.project1.can_start_pipelines)
+
+        # Another "Not started"
+        self.project1.add_pipeline("docker")
+        self.project1 = Project.objects.get(uuid=self.project1.uuid)
+        self.assertTrue(self.project1.can_start_pipelines)
 
     def test_scanpipe_project_model_can_change_inputs(self):
         self.assertTrue(self.project1.can_change_inputs)
@@ -420,34 +448,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.can_change_inputs)
 
     def test_scanpipe_project_model_add_input_source(self):
-        self.assertEqual({}, self.project1.input_sources)
+        self.assertEqual(0, self.project1.inputsources.count())
 
-        self.project1.add_input_source("filename", "source", save=True)
-        self.project1.refresh_from_db()
-        self.assertEqual({"filename": "source"}, self.project1.input_sources)
+        with self.assertRaises(Exception) as cm:
+            self.project1.add_input_source()
+        expected = "Provide at least a value for download_url or filename."
+        self.assertEqual(expected, str(cm.exception))
 
-    def test_scanpipe_project_model_delete_input(self):
-        self.assertEqual({}, self.project1.input_sources)
-        self.assertEqual([], list(self.project1.inputs()))
-        deleted = self.project1.delete_input(name="not_existing")
-        self.assertFalse(deleted)
+        self.project1.add_input_source(download_url="https://download.url")
+        self.project1.add_input_source(filename="file.tar", is_uploaded=True)
 
-        file_location = self.data_location / "notice.NOTICE"
-        copy_input(file_location, self.project1.input_path)
-        self.project1.add_input_source(
-            filename=file_location.name, source="uploaded", save=True
-        )
-        self.project1.refresh_from_db()
-        self.assertEqual({file_location.name: "uploaded"}, self.project1.input_sources)
-        self.assertEqual(
-            [file_location.name], [path.name for path in self.project1.inputs()]
-        )
-
-        deleted = self.project1.delete_input(name=file_location.name)
-        self.assertTrue(deleted)
-        self.project1.refresh_from_db()
-        self.assertEqual({}, self.project1.input_sources)
-        self.assertEqual([], list(self.project1.inputs()))
+        input_sources = self.project1.inputsources.all()
+        self.assertEqual(2, len(input_sources))
 
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data_location / "notice.NOTICE"
@@ -465,37 +477,39 @@ class ScanPipeModelsTest(TestCase):
 
         self.project1.add_downloads([download])
 
-        inputs, missing_inputs = self.project1.inputs_with_source
-        sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
+        inputs_with_source = self.project1.get_inputs_with_source()
         expected = [
             {
-                "is_file": True,
-                "name": "notice.NOTICE",
-                "sha256": sha256,
+                "uuid": str(self.project1.inputsources.get().uuid),
+                "filename": "notice.NOTICE",
+                "download_url": "https://example.com/filename.zip",
+                "is_uploaded": False,
+                "tag": "",
                 "size": 1178,
-                "source": "https://example.com/filename.zip",
+                "is_file": True,
+                "exists": True,
             }
         ]
-        self.assertEqual(expected, inputs)
-        self.assertEqual({}, missing_inputs)
+        self.assertEqual(expected, inputs_with_source)
 
     def test_scanpipe_project_model_add_uploads(self):
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.add_uploads([uploaded_file])
 
-        inputs, missing_inputs = self.project1.inputs_with_source
-        sha256 = "ed7002b439e9ac845f22357d822bac1444730fbdb6016d3ec9432297b9ec9f73"
+        inputs_with_source = self.project1.get_inputs_with_source()
         expected = [
             {
-                "name": "file.ext",
-                "is_file": True,
-                "sha256": sha256,
+                "uuid": str(self.project1.inputsources.get().uuid),
+                "filename": "file.ext",
+                "download_url": "",
+                "is_uploaded": True,
+                "tag": "",
                 "size": 7,
-                "source": "uploaded",
+                "is_file": True,
+                "exists": True,
             }
         ]
-        self.assertEqual(expected, inputs)
-        self.assertEqual({}, missing_inputs)
+        self.assertEqual(expected, inputs_with_source)
 
     def test_scanpipe_project_model_add_webhook_subscription(self):
         self.assertEqual(0, self.project1.webhooksubscriptions.count())
@@ -754,11 +768,11 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertIsNone(run1.execution_time)
 
-        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=timezone.utc)
+        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=tz.utc)
         run1.save()
         self.assertIsNone(run1.execution_time)
 
-        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual(25.0, run1.execution_time)
 
@@ -771,19 +785,19 @@ class ScanPipeModelsTest(TestCase):
 
         self.assertIsNone(run1.execution_time_for_display)
 
-        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=timezone.utc)
+        run1.task_start_date = datetime(1984, 10, 10, 10, 10, 10, tzinfo=tz.utc)
         run1.save()
         self.assertIsNone(run1.execution_time_for_display)
 
-        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 10, 10, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual("25 seconds", run1.execution_time_for_display)
 
-        run1.task_end_date = datetime(1984, 10, 10, 10, 12, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 10, 12, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual("145 seconds (2.4 minutes)", run1.execution_time_for_display)
 
-        run1.task_end_date = datetime(1984, 10, 10, 11, 12, 35, tzinfo=timezone.utc)
+        run1.task_end_date = datetime(1984, 10, 10, 11, 12, 35, tzinfo=tz.utc)
         run1.save()
         self.assertEqual("3745 seconds (1.0 hours)", run1.execution_time_for_display)
 
@@ -1107,6 +1121,78 @@ class ScanPipeModelsTest(TestCase):
             "csv_output                         0.06 seconds 1.2%\n"
         )
         self.assertEqual(expected, output.getvalue())
+
+    def test_scanpipe_input_source_model_str(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertEqual("filename=notice.NOTICE [uploaded]", str(input_source))
+
+    def test_scanpipe_input_source_model_path(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertTrue(str(input_source.path).endswith("input/notice.NOTICE"))
+
+    def test_scanpipe_input_source_model_exists(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertFalse(input_source.exists())
+
+        copy_input(file_location, self.project1.input_path)
+        self.assertTrue(input_source.exists())
+
+    def test_scanpipe_input_source_model_delete_input(self):
+        self.assertEqual([], self.project1.input_sources)
+        self.assertEqual([], list(self.project1.inputs()))
+
+        file_location = self.data_location / "notice.NOTICE"
+        copy_input(file_location, self.project1.input_path)
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        self.assertEqual(1, self.project1.inputsources.count())
+        self.assertEqual(
+            [file_location.name], [path.name for path in self.project1.inputs()]
+        )
+
+        deleted = input_source.delete()
+        self.assertTrue(deleted)
+        self.assertEqual([], self.project1.input_sources)
+        self.assertEqual([], list(self.project1.inputs()))
+
+    def test_scanpipe_input_source_model_delete_file(self):
+        file_location = self.data_location / "notice.NOTICE"
+        input_source = self.project1.add_input_source(
+            filename=file_location.name, is_uploaded=True
+        )
+        copy_input(file_location, self.project1.input_path)
+        self.assertTrue(input_source.exists())
+        input_source.delete_file()
+        self.assertFalse(input_source.exists())
+
+    @mock.patch("requests.get")
+    def test_scanpipe_input_source_model_fetch(self, mock_get):
+        download_url = "https://download.url/file.zip"
+        mock_get.return_value = mock.Mock(
+            content=b"\x00", headers={}, status_code=200, url=download_url
+        )
+
+        input_source = self.project1.add_input_source(download_url=download_url)
+        destination = input_source.fetch()
+        self.assertTrue(str(destination).endswith("input/file.zip"))
+
+        self.assertEqual("file.zip", input_source.filename)
+        self.assertFalse(input_source.is_uploaded)
+        self.assertTrue(input_source.exists())
+        mock_get.assert_called_once()
+
+        self.assertIsNone(input_source.fetch())
+        mock_get.assert_called_once()
 
     def test_scanpipe_codebase_resource_model_methods(self):
         resource = CodebaseResource.objects.create(
@@ -1809,7 +1895,8 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_data1["name"], cyclonedx_component.name)
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
         purl = "pkg:deb/debian/adduser@3.118?arch=all"
-        self.assertEqual(purl, str(cyclonedx_component.bom_ref))
+        bom_ref = package.package_uid
+        self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
         self.assertEqual(purl, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
         expected = "GPL-2.0-only AND GPL-2.0-or-later"

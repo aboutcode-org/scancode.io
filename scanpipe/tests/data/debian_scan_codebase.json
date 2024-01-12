@@ -6,14 +6,17 @@
       "input_sources": [
         {
           "filename": "debian.tar.gz",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [
         {
           "pipeline_name": "docker",
           "status": "not_started",
-          "description": "Analyze Docker images.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -108,7 +111,6 @@
       "subpath": "",
       "tag": "img-c19c05-layer-01-8a6376",
       "primary_language": "",
-      "description": "shared libraries for terminal handling\n The ncurses library routines are a terminal-independent method of\n updating character screens with reasonable optimization.\n .\n This package contains the shared libraries necessary to run programs\n compiled with ncurses.",
       "release_date": null,
       "parties": [
         {
@@ -278,7 +280,6 @@
       "subpath": "",
       "tag": "img-c19c05-layer-01-8a6376",
       "primary_language": "",
-      "description": "Library for Neighbor Discovery Protocol\n libndp is a library for the IPv6 Neighbor Discovery Protocol (NDP).  It\n contains functions for building and parsing NDP messages, and provides\n a high-level interface for sending and receiving NDP messages on a\n network interface.",
       "release_date": null,
       "parties": [
         {

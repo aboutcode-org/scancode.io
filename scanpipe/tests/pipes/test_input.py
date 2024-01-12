@@ -55,6 +55,13 @@ class ScanPipeInputPipesTest(TestCase):
         )
         self.assertEqual("scancode-toolkit", tool_name)
 
+    def test_scanpipe_pipes_input_is_archive(self):
+        input_location = self.data_location / "notice.NOTICE"
+        self.assertFalse(input.is_archive(input_location))
+
+        input_location = self.data_location / "archive.zip"
+        self.assertTrue(input.is_archive(input_location))
+
     def test_scanpipe_pipes_scancode_load_inventory_from_toolkit_scan(self):
         project = Project.objects.create(name="Analysis")
         input_location = self.data_location / "asgiref-3.3.0_toolkit_scan.json"
@@ -89,11 +96,11 @@ class ScanPipeInputPipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_load_inventory_from_scanpipe_with_relations(self):
         project = Project.objects.create(name="1")
-        input_location = self.data_location / "flume-ng-node-d2d.json"
+        input_location = self.data_location / "flume-ng-node-d2d-input.json"
         scan_data = json.loads(input_location.read_text())
         input.load_inventory_from_scanpipe(project, scan_data)
         self.assertEqual(57, project.codebaseresources.count())
-        self.assertEqual(0, project.discoveredpackages.count())
+        self.assertEqual(1, project.discoveredpackages.count())
         self.assertEqual(0, project.discovereddependencies.count())
         self.assertEqual(18, project.codebaserelations.count())
 

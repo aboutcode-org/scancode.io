@@ -8,9 +8,9 @@ include setup.*
 include *.ini
 include *.yml
 include *.yaml
-include *.env
 include *ignore
 include Dockerfile
+include docker*
 include .VERSION
 
 graft scancodeio

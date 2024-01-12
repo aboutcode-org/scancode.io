@@ -2,17 +2,24 @@
   "headers": [
     {
       "tool_name": "scanpipe",
-      "tool_version": "32.2.0",
+      "tool_version": "v32.7.0-14-g313874e",
       "other_tools": [
-        "pkg:pypi/scancode-toolkit@32.0.0rc4"
+        "pkg:pypi/scancode-toolkit@32.0.8"
       ],
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "uuid": "cbd609b2-525a-4052-9860-201b879b20d9",
-      "created_date": "2023-05-08T04:34:00.013Z",
+      "uuid": "5e0199f6-3a5f-486a-9ab0-e1fa1bc07da4",
+      "created_date": "2023-11-30T14:34:02.486Z",
+      "notes": "",
+      "settings": {},
       "input_sources": [
         {
+          "uuid": "34418c93-ca65-4d70-a267-851ee7cf4d93",
           "filename": "asgiref-3.3.0-py3-none-any.whl",
-          "source": "-"
+          "download_url": "",
+          "is_uploaded": true,
+          "size": 19948,
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [
@@ -20,15 +27,15 @@
           "pipeline_name": "scan_codebase",
           "status": "not_started",
           "description": "Scan a codebase with ScanCode-toolkit.",
-          "uuid": "69d0d86d-6462-47db-b933-6638642bbbfc",
-          "created_date": "2023-05-08T06:34:00.018045+02:00",
+          "uuid": "63241b6d-f164-484d-9b0d-0c24caecaa39",
+          "created_date": "2023-11-30T15:34:02.489396+01:00",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
           "task_end_date": null,
           "task_exitcode": null,
           "task_output": "",
-          "log": "2023-05-08 06:34:00.01 Pipeline [scan_codebase] starting\n2023-05-08 06:34:00.02 Step [copy_inputs_to_codebase_directory] starting\n2023-05-08 06:34:00.02 Step [copy_inputs_to_codebase_directory] completed in 0.00 seconds\n2023-05-08 06:34:00.02 Step [extract_archives] starting\n2023-05-08 06:34:00.04 Step [extract_archives] completed in 0.02 seconds\n2023-05-08 06:34:00.04 Step [collect_and_create_codebase_resources] starting\n2023-05-08 06:34:00.16 Step [collect_and_create_codebase_resources] completed in 0.11 seconds\n2023-05-08 06:34:00.16 Step [flag_empty_files] starting\n2023-05-08 06:34:00.16 Step [flag_empty_files] completed in 0.00 seconds\n2023-05-08 06:34:00.16 Step [scan_for_application_packages] starting\n2023-05-08 06:34:01.88 Step [scan_for_application_packages] completed in 1.72 seconds\n2023-05-08 06:34:01.88 Step [scan_for_files] starting\n2023-05-08 06:34:03.54 Step [scan_for_files] completed in 1.66 seconds\n2023-05-08 06:34:03.54 Pipeline completed\n",
+          "log": "2023-11-30 15:34:02.48 Pipeline [scan_codebase] starting\n2023-11-30 15:34:02.49 Step [copy_inputs_to_codebase_directory] starting\n2023-11-30 15:34:02.49 Step [copy_inputs_to_codebase_directory] completed in 0 seconds\n2023-11-30 15:34:02.49 Step [extract_archives] starting\n2023-11-30 15:34:02.54 Step [extract_archives] completed in 0 seconds\n2023-11-30 15:34:02.54 Step [collect_and_create_codebase_resources] starting\n2023-11-30 15:34:02.61 Step [collect_and_create_codebase_resources] completed in 0 seconds\n2023-11-30 15:34:02.61 Step [flag_empty_files] starting\n2023-11-30 15:34:02.61 Step [flag_empty_files] completed in 0 seconds\n2023-11-30 15:34:02.61 Step [flag_ignored_resources] starting\n2023-11-30 15:34:02.62 Step [flag_ignored_resources] completed in 0 seconds\n2023-11-30 15:34:02.62 Step [scan_for_application_packages] starting\n2023-11-30 15:34:04.19 Progress: 11% (2/18) ETA: 13 seconds\n2023-11-30 15:34:04.19 Progress: 22% (4/18) ETA: 6 seconds\n2023-11-30 15:34:04.19 Progress: 33% (6/18) ETA: 3 seconds\n2023-11-30 15:34:04.20 Progress: 44% (8/18) ETA: 2 seconds\n2023-11-30 15:34:04.20 Progress: 55% (10/18) ETA: 1 seconds\n2023-11-30 15:34:04.20 Progress: 66% (12/18) ETA: 1 seconds\n2023-11-30 15:34:04.20 Progress: 77% (14/18)\n2023-11-30 15:34:04.21 Progress: 88% (16/18)\n2023-11-30 15:34:04.21 Progress: 100% (18/18)\n2023-11-30 15:34:04.33 Step [scan_for_application_packages] completed in 2 seconds\n2023-11-30 15:34:04.34 Step [scan_for_files] starting\n2023-11-30 15:34:04.37 Progress: 12% (2/16)\n2023-11-30 15:34:04.37 Progress: 25% (4/16)\n2023-11-30 15:34:04.65 Progress: 37% (6/16) ETA: 1 seconds\n2023-11-30 15:34:04.65 Progress: 50% (8/16)\n2023-11-30 15:34:04.75 Progress: 62% (10/16)\n2023-11-30 15:34:05.04 Progress: 75% (12/16)\n2023-11-30 15:34:05.57 Progress: 87% (14/16)\n2023-11-30 15:34:05.90 Progress: 100% (16/16)\n2023-11-30 15:34:06.06 Step [scan_for_files] completed in 2 seconds\n2023-11-30 15:34:06.06 Pipeline completed in 4 seconds\n",
           "execution_time": null
         }
       ],
@@ -44,6 +51,7 @@
       "version": "3.3.0",
       "qualifiers": "",
       "subpath": "",
+      "tag": "",
       "primary_language": "Python",
       "description": "ASGI specs, helper code, and adapters\nasgiref\n=======\n\n.. image:: https://api.travis-ci.org/django/asgiref.svg\n    :target: https://travis-ci.org/django/asgiref\n\n.. image:: https://img.shields.io/pypi/v/asgiref.svg\n    :target: https://pypi.python.org/pypi/asgiref\n\nASGI is a standard for Python asynchronous web apps and servers to communicate\nwith each other, and positioned as an asynchronous successor to WSGI. You can\nread more at https://asgi.readthedocs.io/en/latest/\n\nThis package includes ASGI base libraries, such as:\n\n* Sync-to-async and async-to-sync function wrappers, ``asgiref.sync``\n* Server base classes, ``asgiref.server``\n* A WSGI-to-ASGI adapter, in ``asgiref.wsgi``\n\n\nFunction wrappers\n-----------------\n\nThese allow you to wrap or decorate async or sync functions to call them from\nthe other style (so you can call async functions from a synchronous thread,\nor vice-versa).\n\nIn particular:\n\n* AsyncToSync lets a synchronous subthread stop and wait while the async\n  function is called on the main thread's event loop, and then control is\n  returned to the thread when the async function is finished.\n\n* SyncToAsync lets async code call a synchronous function, which is run in\n  a threadpool and control returned to the async coroutine when the synchronous\n  function completes.\n\nThe idea is to make it easier to call synchronous APIs from async code and\nasynchronous APIs from synchronous code so it's easier to transition code from\none style to the other. In the case of Channels, we wrap the (synchronous)\nDjango view system with SyncToAsync to allow it to run inside the (asynchronous)\nASGI server.\n\nNote that exactly what threads things run in is very specific, and aimed to\nkeep maximum compatibility with old synchronous code. See\n\"Synchronous code & Threads\" below for a full explanation. By default,\n``sync_to_async`` will run all synchronous code in the program in the same\nthread for safety reasons; you can disable this for more performance with\n``@sync_to_async(thread_sensitive=False)``, but make sure that your code does\nnot rely on anything bound to threads (like database connections) when you do.\n\n\nThreadlocal replacement\n-----------------------\n\nThis is a drop-in replacement for ``threading.local`` that works with both\nthreads and asyncio Tasks. Even better, it will proxy values through from a\ntask-local context to a thread-local context when you use ``sync_to_async``\nto run things in a threadpool, and vice-versa for ``async_to_sync``.\n\nIf you instead want true thread- and task-safety, you can set\n``thread_critical`` on the Local object to ensure this instead.\n\n\nServer base classes\n-------------------\n\nIncludes a ``StatelessServer`` class which provides all the hard work of\nwriting a stateless server (as in, does not handle direct incoming sockets\nbut instead consumes external streams or sockets to work out what is happening).\n\nAn example of such a server would be a chatbot server that connects out to\na central chat server and provides a \"connection scope\" per user chatting to\nit. There's only one actual connection, but the server has to separate things\ninto several scopes for easier writing of the code.\n\nYou can see an example of this being used in `frequensgi <https://github.com/andrewgodwin/frequensgi>`_.\n\n\nWSGI-to-ASGI adapter\n--------------------\n\nAllows you to wrap a WSGI application so it appears as a valid ASGI application.\n\nSimply wrap it around your WSGI application like so::\n\n    asgi_application = WsgiToAsgi(wsgi_application)\n\nThe WSGI application will be run in a synchronous threadpool, and the wrapped\nASGI application will be one that accepts ``http`` class messages.\n\nPlease note that not all extended features of WSGI may be supported (such as\nfile handles for incoming POST bodies).\n\n\nDependencies\n------------\n\n``asgiref`` requires Python 3.5 or higher.\n\n\nContributing\n------------\n\nPlease refer to the\n`main Channels contributing docs <https://github.com/django/channels/blob/master/CONTRIBUTING.rst>`_.\n\n\nTesting\n'''''''\n\nTo run tests, make sure you have installed the ``tests`` extra with the package::\n\n    cd asgiref/\n    pip install -e .[tests]\n    pytest\n\n\nBuilding the documentation\n''''''''''''''''''''''''''\n\nThe documentation uses `Sphinx <http://www.sphinx-doc.org>`_::\n\n    cd asgiref/docs/\n    pip install sphinx\n\nTo build the docs, you can use the default tools::\n\n    sphinx-build -b html . _build/html  # or `make html`, if you've got make set up\n    cd _build/html\n    python -m http.server\n\n...or you can use ``sphinx-autobuild`` to run a server and rebuild/reload\nyour documentation changes automatically::\n\n    pip install sphinx-autobuild\n    sphinx-autobuild . _build/html\n\n\nImplementation Details\n----------------------\n\nSynchronous code & threads\n''''''''''''''''''''''''''\n\nThe ``asgiref.sync`` module provides two wrappers that let you go between\nasynchronous and synchronous code at will, while taking care of the rough edges\nfor you.\n\nUnfortunately, the rough edges are numerous, and the code has to work especially\nhard to keep things in the same thread as much as possible. Notably, the\nrestrictions we are working with are:\n\n* All synchronous code called through ``SyncToAsync`` and marked with\n  ``thread_sensitive`` should run in the same thread as each other (and if the\n  outer layer of the program is synchronous, the main thread)\n\n* If a thread already has a running async loop, ``AsyncToSync`` can't run things\n  on that loop if it's blocked on synchronous code that is above you in the\n  call stack.\n\nThe first compromise you get to might be that ``thread_sensitive`` code should\njust run in the same thread and not spawn in a sub-thread, fulfilling the first\nrestriction, but that immediately runs you into the second restriction.\n\nThe only real solution is to essentially have a variant of ThreadPoolExecutor\nthat executes any ``thread_sensitive`` code on the outermost synchronous\nthread - either the main thread, or a single spawned subthread.\n\nThis means you now have two basic states:\n\n* If the outermost layer of your program is synchronous, then all async code\n  run through ``AsyncToSync`` will run in a per-call event loop in arbitary\n  sub-threads, while all ``thread_sensitive`` code will run in the main thread.\n\n* If the outermost layer of your program is asynchronous, then all async code\n  runs on the main thread's event loop, and all ``thread_sensitive`` synchronous\n  code will run in a single shared sub-thread.\n\nCruicially, this means that in both cases there is a thread which is a shared\nresource that all ``thread_sensitive`` code must run on, and there is a chance\nthat this thread is currently blocked on its own ``AsyncToSync`` call. Thus,\n``AsyncToSync`` needs to act as an executor for thread code while it's blocking.\n\nThe ``CurrentThreadExecutor`` class provides this functionality; rather than\nsimply waiting on a Future, you can call its ``run_until_future`` method and\nit will run submitted code until that Future is done. This means that code\ninside the call can then run code on your thread.\n\n\nMaintenance and Security\n------------------------\n\nTo report security issues, please contact security@djangoproject.com. For GPG\nsignatures and more security process information, see\nhttps://docs.djangoproject.com/en/dev/internals/security/.\n\nTo report bugs or request new features, please open a new GitHub issue.\n\nThis repository is part of the Channels project. For the shepherd and maintenance team, please see the\n`main Channels readme <https://github.com/django/channels/blob/master/README.rst>`_.",
       "release_date": null,
@@ -115,7 +123,7 @@
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
               "start_line": 1,
-              "matched_text": "['License :: OSI Approved :: BSD License']",
+              "matched_text": "- 'License :: OSI Approved :: BSD License'",
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 99,
@@ -130,7 +138,8 @@
       "other_license_expression": "",
       "other_license_expression_spdx": "",
       "other_license_detections": [],
-      "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
+      "extracted_license_statement": "license: BSD\nclassifiers:\n  - 'License :: OSI Approved :: BSD License'\n",
+      "compliance_alert": "ok",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {
@@ -138,11 +147,12 @@
         "Documentation": "https://asgi.readthedocs.io/",
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=e60b7109-14eb-47af-9568-09b4b630dca5",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=bde3119a-b84d-4bc9-bc7c-09782f5dfb02",
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/asgiref@3.3.0",
@@ -152,6 +162,7 @@
       "version": "3.3.0",
       "qualifiers": "",
       "subpath": "",
+      "tag": "",
       "primary_language": "Python",
       "description": "ASGI specs, helper code, and adapters\nasgiref\n=======\n\n.. image:: https://api.travis-ci.org/django/asgiref.svg\n    :target: https://travis-ci.org/django/asgiref\n\n.. image:: https://img.shields.io/pypi/v/asgiref.svg\n    :target: https://pypi.python.org/pypi/asgiref\n\nASGI is a standard for Python asynchronous web apps and servers to communicate\nwith each other, and positioned as an asynchronous successor to WSGI. You can\nread more at https://asgi.readthedocs.io/en/latest/\n\nThis package includes ASGI base libraries, such as:\n\n* Sync-to-async and async-to-sync function wrappers, ``asgiref.sync``\n* Server base classes, ``asgiref.server``\n* A WSGI-to-ASGI adapter, in ``asgiref.wsgi``\n\n\nFunction wrappers\n-----------------\n\nThese allow you to wrap or decorate async or sync functions to call them from\nthe other style (so you can call async functions from a synchronous thread,\nor vice-versa).\n\nIn particular:\n\n* AsyncToSync lets a synchronous subthread stop and wait while the async\n  function is called on the main thread's event loop, and then control is\n  returned to the thread when the async function is finished.\n\n* SyncToAsync lets async code call a synchronous function, which is run in\n  a threadpool and control returned to the async coroutine when the synchronous\n  function completes.\n\nThe idea is to make it easier to call synchronous APIs from async code and\nasynchronous APIs from synchronous code so it's easier to transition code from\none style to the other. In the case of Channels, we wrap the (synchronous)\nDjango view system with SyncToAsync to allow it to run inside the (asynchronous)\nASGI server.\n\nNote that exactly what threads things run in is very specific, and aimed to\nkeep maximum compatibility with old synchronous code. See\n\"Synchronous code & Threads\" below for a full explanation. By default,\n``sync_to_async`` will run all synchronous code in the program in the same\nthread for safety reasons; you can disable this for more performance with\n``@sync_to_async(thread_sensitive=False)``, but make sure that your code does\nnot rely on anything bound to threads (like database connections) when you do.\n\n\nThreadlocal replacement\n-----------------------\n\nThis is a drop-in replacement for ``threading.local`` that works with both\nthreads and asyncio Tasks. Even better, it will proxy values through from a\ntask-local context to a thread-local context when you use ``sync_to_async``\nto run things in a threadpool, and vice-versa for ``async_to_sync``.\n\nIf you instead want true thread- and task-safety, you can set\n``thread_critical`` on the Local object to ensure this instead.\n\n\nServer base classes\n-------------------\n\nIncludes a ``StatelessServer`` class which provides all the hard work of\nwriting a stateless server (as in, does not handle direct incoming sockets\nbut instead consumes external streams or sockets to work out what is happening).\n\nAn example of such a server would be a chatbot server that connects out to\na central chat server and provides a \"connection scope\" per user chatting to\nit. There's only one actual connection, but the server has to separate things\ninto several scopes for easier writing of the code.\n\nYou can see an example of this being used in `frequensgi <https://github.com/andrewgodwin/frequensgi>`_.\n\n\nWSGI-to-ASGI adapter\n--------------------\n\nAllows you to wrap a WSGI application so it appears as a valid ASGI application.\n\nSimply wrap it around your WSGI application like so::\n\n    asgi_application = WsgiToAsgi(wsgi_application)\n\nThe WSGI application will be run in a synchronous threadpool, and the wrapped\nASGI application will be one that accepts ``http`` class messages.\n\nPlease note that not all extended features of WSGI may be supported (such as\nfile handles for incoming POST bodies).\n\n\nDependencies\n------------\n\n``asgiref`` requires Python 3.5 or higher.\n\n\nContributing\n------------\n\nPlease refer to the\n`main Channels contributing docs <https://github.com/django/channels/blob/master/CONTRIBUTING.rst>`_.\n\n\nTesting\n'''''''\n\nTo run tests, make sure you have installed the ``tests`` extra with the package::\n\n    cd asgiref/\n    pip install -e .[tests]\n    pytest\n\n\nBuilding the documentation\n''''''''''''''''''''''''''\n\nThe documentation uses `Sphinx <http://www.sphinx-doc.org>`_::\n\n    cd asgiref/docs/\n    pip install sphinx\n\nTo build the docs, you can use the default tools::\n\n    sphinx-build -b html . _build/html  # or `make html`, if you've got make set up\n    cd _build/html\n    python -m http.server\n\n...or you can use ``sphinx-autobuild`` to run a server and rebuild/reload\nyour documentation changes automatically::\n\n    pip install sphinx-autobuild\n    sphinx-autobuild . _build/html\n\n\nImplementation Details\n----------------------\n\nSynchronous code & threads\n''''''''''''''''''''''''''\n\nThe ``asgiref.sync`` module provides two wrappers that let you go between\nasynchronous and synchronous code at will, while taking care of the rough edges\nfor you.\n\nUnfortunately, the rough edges are numerous, and the code has to work especially\nhard to keep things in the same thread as much as possible. Notably, the\nrestrictions we are working with are:\n\n* All synchronous code called through ``SyncToAsync`` and marked with\n  ``thread_sensitive`` should run in the same thread as each other (and if the\n  outer layer of the program is synchronous, the main thread)\n\n* If a thread already has a running async loop, ``AsyncToSync`` can't run things\n  on that loop if it's blocked on synchronous code that is above you in the\n  call stack.\n\nThe first compromise you get to might be that ``thread_sensitive`` code should\njust run in the same thread and not spawn in a sub-thread, fulfilling the first\nrestriction, but that immediately runs you into the second restriction.\n\nThe only real solution is to essentially have a variant of ThreadPoolExecutor\nthat executes any ``thread_sensitive`` code on the outermost synchronous\nthread - either the main thread, or a single spawned subthread.\n\nThis means you now have two basic states:\n\n* If the outermost layer of your program is synchronous, then all async code\n  run through ``AsyncToSync`` will run in a per-call event loop in arbitary\n  sub-threads, while all ``thread_sensitive`` code will run in the main thread.\n\n* If the outermost layer of your program is asynchronous, then all async code\n  runs on the main thread's event loop, and all ``thread_sensitive`` synchronous\n  code will run in a single shared sub-thread.\n\nCruicially, this means that in both cases there is a thread which is a shared\nresource that all ``thread_sensitive`` code must run on, and there is a chance\nthat this thread is currently blocked on its own ``AsyncToSync`` call. Thus,\n``AsyncToSync`` needs to act as an executor for thread code while it's blocking.\n\nThe ``CurrentThreadExecutor`` class provides this functionality; rather than\nsimply waiting on a Future, you can call its ``run_until_future`` method and\nit will run submitted code until that Future is done. This means that code\ninside the call can then run code on your thread.\n\n\nMaintenance and Security\n------------------------\n\nTo report security issues, please contact security@djangoproject.com. For GPG\nsignatures and more security process information, see\nhttps://docs.djangoproject.com/en/dev/internals/security/.\n\nTo report bugs or request new features, please open a new GitHub issue.\n\nThis repository is part of the Channels project. For the shepherd and maintenance team, please see the\n`main Channels readme <https://github.com/django/channels/blob/master/README.rst>`_.",
       "release_date": null,
@@ -223,7 +234,7 @@
               "end_line": 1,
               "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
               "start_line": 1,
-              "matched_text": "['License :: OSI Approved :: BSD License']",
+              "matched_text": "- 'License :: OSI Approved :: BSD License'",
               "match_coverage": 100.0,
               "matched_length": 5,
               "rule_relevance": 99,
@@ -238,7 +249,8 @@
       "other_license_expression": "",
       "other_license_expression_spdx": "",
       "other_license_detections": [],
-      "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
+      "extracted_license_statement": "license: BSD\nclassifiers:\n  - 'License :: OSI Approved :: BSD License'\n",
+      "compliance_alert": "ok",
       "notice_text": "",
       "source_packages": [],
       "extra_data": {
@@ -246,11 +258,12 @@
         "Documentation": "https://asgi.readthedocs.io/",
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
-      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9",
+      "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29",
       "datasource_id": "",
       "file_references": [],
       "missing_resources": [],
-      "modified_resources": []
+      "modified_resources": [],
+      "affected_by_vulnerabilities": []
     }
   ],
   "dependencies": [
@@ -261,11 +274,12 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest?uuid=ea2921dd-6dfd-4d20-b018-6d611f2c71e5",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=e60b7109-14eb-47af-9568-09b4b630dca5",
+      "dependency_uid": "pkg:pypi/pytest?uuid=9765092b-63ed-4d11-bfea-fa233c651023",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=bde3119a-b84d-4bc9-bc7c-09782f5dfb02",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest",
@@ -274,11 +288,12 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest?uuid=d5506e2e-5172-4435-93e0-b4929f31d8d7",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9",
+      "dependency_uid": "pkg:pypi/pytest?uuid=b5a6ea40-24f6-42fb-bfb6-26ce54d064d0",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -287,11 +302,12 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=cd6e2840-3615-4f33-9e9b-1222026a1b90",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=e60b7109-14eb-47af-9568-09b4b630dca5",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=bfef530d-4ed3-4a49-b2fe-9af21096c726",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=bde3119a-b84d-4bc9-bc7c-09782f5dfb02",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl",
       "datasource_id": "pypi_wheel",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     },
     {
       "purl": "pkg:pypi/pytest-asyncio",
@@ -300,11 +316,12 @@
       "is_runtime": true,
       "is_optional": true,
       "is_resolved": false,
-      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=ab7f2ac4-cf40-4717-8d41-067e66bad5aa",
-      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9",
+      "dependency_uid": "pkg:pypi/pytest-asyncio?uuid=928a0127-23f5-4d24-9be2-e1483bbc3dbe",
+      "for_package_uid": "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29",
       "datafile_path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA",
       "datasource_id": "pypi_wheel_metadata",
-      "package_type": "pypi"
+      "package_type": "pypi",
+      "affected_by_vulnerabilities": []
     }
   ],
   "files": [
@@ -571,7 +588,7 @@
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
                   "start_line": 1,
-                  "matched_text": "['License :: OSI Approved :: BSD License']",
+                  "matched_text": "- 'License :: OSI Approved :: BSD License'",
                   "match_coverage": 100.0,
                   "matched_length": 5,
                   "rule_relevance": 99,
@@ -588,13 +605,13 @@
           "other_license_detections": [],
           "other_license_expression": null,
           "declared_license_expression": "bsd-new",
-          "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
+          "extracted_license_statement": "license: BSD\nclassifiers:\n  - 'License :: OSI Approved :: BSD License'\n",
           "other_license_expression_spdx": null,
           "declared_license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=e60b7109-14eb-47af-9568-09b4b630dca5"
+        "pkg:pypi/asgiref@3.3.0?uuid=bde3119a-b84d-4bc9-bc7c-09782f5dfb02"
       ],
       "emails": [],
       "urls": [],
@@ -729,7 +746,6 @@
       "detected_license_expression_spdx": "BSD-3-Clause",
       "license_detections": [
         {
-          "policy": null,
           "matches": [
             {
               "score": 100.0,
@@ -751,7 +767,7 @@
       ],
       "license_clues": [],
       "percentage_of_license_text": 95.11,
-      "compliance_alert": "missing",
+      "compliance_alert": "ok",
       "copyrights": [
         {
           "end_line": 1,
@@ -769,7 +785,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1038,7 +1054,7 @@
                   "end_line": 1,
                   "rule_url": "https://github.com/nexB/scancode-toolkit/tree/develop/src/licensedcode/data/rules/pypi_bsd_license.RULE",
                   "start_line": 1,
-                  "matched_text": "['License :: OSI Approved :: BSD License']",
+                  "matched_text": "- 'License :: OSI Approved :: BSD License'",
                   "match_coverage": 100.0,
                   "matched_length": 5,
                   "rule_relevance": 99,
@@ -1055,13 +1071,13 @@
           "other_license_detections": [],
           "other_license_expression": null,
           "declared_license_expression": "bsd-new",
-          "extracted_license_statement": "{'license': 'BSD', 'classifiers': ['License :: OSI Approved :: BSD License']}",
+          "extracted_license_statement": "license: BSD\nclassifiers:\n  - 'License :: OSI Approved :: BSD License'\n",
           "other_license_expression_spdx": null,
           "declared_license_expression_spdx": "BSD-3-Clause"
         }
       ],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1080,7 +1096,7 @@
       "sha256": "2c1983592aa38f0bfb0afacc73ddc5b46ce10e8e89ceaa9fed1e5fc6361b608d",
       "sha512": "",
       "mime_type": "text/csv",
-      "file_type": "CSV text",
+      "file_type": "CSV ASCII text",
       "programming_language": "",
       "is_binary": false,
       "is_text": true,
@@ -1098,44 +1114,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
-      ],
-      "emails": [],
-      "urls": [],
-      "extra_data": {}
-    },
-    {
-      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
-      "type": "file",
-      "name": "WHEEL",
-      "status": "scanned",
-      "tag": "",
-      "extension": "",
-      "size": 92,
-      "md5": "5ccc7519eb42f1dfceee6e7d685f1ff5",
-      "sha1": "ddd91bc89b15fc5c66e0fa259392955c74ba041f",
-      "sha256": "11546323af45e6a5639bf620a9c4d73e74c0bf705f494af4595007b923f75e8a",
-      "sha512": "",
-      "mime_type": "text/plain",
-      "file_type": "ASCII text",
-      "programming_language": "",
-      "is_binary": false,
-      "is_text": true,
-      "is_archive": false,
-      "is_media": false,
-      "is_key_file": false,
-      "detected_license_expression": "",
-      "detected_license_expression_spdx": "",
-      "license_detections": [],
-      "license_clues": [],
-      "percentage_of_license_text": null,
-      "compliance_alert": "",
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "package_data": [],
-      "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1172,7 +1151,44 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
+      ],
+      "emails": [],
+      "urls": [],
+      "extra_data": {}
+    },
+    {
+      "path": "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/WHEEL",
+      "type": "file",
+      "name": "WHEEL",
+      "status": "scanned",
+      "tag": "",
+      "extension": "",
+      "size": 92,
+      "md5": "5ccc7519eb42f1dfceee6e7d685f1ff5",
+      "sha1": "ddd91bc89b15fc5c66e0fa259392955c74ba041f",
+      "sha256": "11546323af45e6a5639bf620a9c4d73e74c0bf705f494af4595007b923f75e8a",
+      "sha512": "",
+      "mime_type": "text/plain",
+      "file_type": "ASCII text",
+      "programming_language": "",
+      "is_binary": false,
+      "is_text": true,
+      "is_archive": false,
+      "is_media": false,
+      "is_key_file": false,
+      "detected_license_expression": "",
+      "detected_license_expression_spdx": "",
+      "license_detections": [],
+      "license_clues": [],
+      "percentage_of_license_text": null,
+      "compliance_alert": "",
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "package_data": [],
+      "for_packages": [
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1209,7 +1225,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1246,7 +1262,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1283,7 +1299,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1320,7 +1336,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1357,7 +1373,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1394,7 +1410,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1431,7 +1447,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],
@@ -1461,7 +1477,6 @@
       "detected_license_expression_spdx": "Apache-2.0",
       "license_detections": [
         {
-          "policy": null,
           "matches": [
             {
               "score": 100.0,
@@ -1483,13 +1498,13 @@
       ],
       "license_clues": [],
       "percentage_of_license_text": 1.22,
-      "compliance_alert": "missing",
+      "compliance_alert": "ok",
       "copyrights": [],
       "holders": [],
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [
@@ -1542,7 +1557,7 @@
       "authors": [],
       "package_data": [],
       "for_packages": [
-        "pkg:pypi/asgiref@3.3.0?uuid=f66d2b7c-233e-4a6a-93d8-1d17732704e9"
+        "pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
       ],
       "emails": [],
       "urls": [],

@@ -6,14 +6,17 @@
       "input_sources": [
         {
           "filename": "is-npm-1.0.0.tgz",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [
         {
           "pipeline_name": "scan_codebase",
           "status": "not_started",
-          "description": "Scan a codebase with ScanCode-toolkit.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -37,7 +40,6 @@
       "subpath": "",
       "tag": "",
       "primary_language": "JavaScript",
-      "description": "Check if your code is running as an npm script",
       "release_date": null,
       "parties": [
         {
@@ -310,7 +312,6 @@
           "namespace": null,
           "extra_data": {},
           "qualifiers": {},
-          "description": "Check if your code is running as an npm script",
           "notice_text": null,
           "api_data_url": "https://registry.npmjs.org/is-npm/1.0.0",
           "dependencies": [
