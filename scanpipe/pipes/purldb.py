@@ -346,18 +346,18 @@ def send_project_json_to_matchcode(
         files=files,
     )
     run_url = response["runs"][0]["url"]
-    url = response.get("url")
-    results_url = url + "results/"
-    return run_url, results_url
+    return run_url
 
 
-def poll_until_success(run_url, results_url, sleep=10):
+def poll_until_success(run_url, sleep=10):
     # poll and see if the match run is ready
     while True:
         response = request_get(run_url)
         if response:
             status = response["status"]
             if status == "success":
+                project_url = response["project"]
+                results_url = project_url + "results/"
                 return request_get(results_url)
         time.sleep(sleep)
 
