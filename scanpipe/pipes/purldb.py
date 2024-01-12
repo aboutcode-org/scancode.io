@@ -329,33 +329,36 @@ def populate_purldb_with_discovered_dependencies(project, logger=logger.info):
 
 
 def send_project_json_to_matchcode(
-    project_json_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
+    project, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
 ):
     """
-    Given a path to a ScanCode.io Project JSON output, `project_json_location`,
-    send the contents of the JSON file to PurlDB for matching.
+    Given a `project`, create a JSON scan of the `project` CodebaseResources and
+    send it to PurlDB for matching. Return a tuple containing strings of the url
+    to the particular match run and the url to the match results.
     """
-    with open(project_json_location, "rb") as f:
+    scan_output_location = to_json(project)
+    with open(scan_output_location, "rb") as f:
         files = {"upload_file": f}
+    response = request_post(
+        url=f"{api_url}matching/",
+        data={},
+        timeout=timeout,
+        files=files,
+    )
+    run_url = response["runs"][0]["url"]
+    url = response.get("url")
+    results_url = url + "results/"
+    return run_url, results_url
 
-        response = request_post(
-            url=f"{api_url}matching/",
-            data={},
-            timeout=timeout,
-            files=files,
-        )
 
-        return response
-
-
-def poll_until_success(url, sleep=10):
+def poll_until_success(run_url, results_url, sleep=10):
     # poll and see if the match run is ready
     while True:
-        response = request_get(url)
+        response = request_get(run_url)
         if response:
             status = response["status"]
             if status == "success":
-                break
+                return request_get(results_url)
         time.sleep(sleep)
 
 
@@ -369,11 +372,10 @@ def map_match_results(match_results):
     return resource_paths_by_package_uids
 
 
-def create_packages_from_match_results(
-    project, match_results, resource_paths_by_package_uids
-):
+def create_packages_from_match_results(project, match_results):
     from scanpipe.pipes.d2d import create_package_from_purldb_data
 
+    resource_paths_by_package_uids = map_match_results(match_results)
     matched_packages = match_results.get("packages", [])
     for matched_package in matched_packages:
         package_uid = matched_package["package_uid"]

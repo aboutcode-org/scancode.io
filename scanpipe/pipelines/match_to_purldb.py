@@ -31,11 +31,22 @@ class MatchToPurlDB(Pipeline):
 
     @classmethod
     def steps(cls):
-        return (cls.match_to_purldb,)
+        return (
+            cls.send_project_json_to_matchcode,
+            cls.poll_matching_results,
+            cls.create_packages_from_match_results,
+        )
 
-    def match_to_purldb(self):
-        """
-        Match Project codebase against PurlDB and create DiscoveredPackages from
-        matched package data.
-        """
-        purldb.match_to_purldb(self.project)
+    def send_project_json_to_matchcode(self):
+        """Create a JSON scan of the project Codebase and send it to MatchCode."""
+        self.run_url, self.results_url = purldb.send_project_json_to_matchcode(
+            self.project
+        )
+
+    def poll_matching_results(self):
+        """Wait until the match results are ready by polling the match run status."""
+        self.match_results = purldb.poll_until_success(self.run_url)
+
+    def create_packages_from_match_results(self):
+        """Create DiscoveredPackages from match results."""
+        purldb.create_packages_from_match_results(self.project, self.match_results)
