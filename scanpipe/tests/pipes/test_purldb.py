@@ -313,16 +313,11 @@ class ScanPipePurlDBTest(TestCase):
 
         mock_request_post.side_effect = mock_request_post_return
 
-        run_url, results_url = purldb.send_project_json_to_matchcode(self.project1)
+        run_url = purldb.send_project_json_to_matchcode(self.project1)
         expected_run_url = (
             "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
         )
-        expected_results_url = (
-            "http://192.168.1.12/api/matching/"
-            "65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/results/"
-        )
         self.assertEqual(expected_run_url, run_url)
-        self.assertEqual(expected_results_url, results_url)
 
     @mock.patch("scanpipe.pipes.purldb.request_get")
     @mock.patch("scanpipe.pipes.purldb.is_available")
@@ -354,12 +349,7 @@ class ScanPipePurlDBTest(TestCase):
         ]
 
         run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
-        results_url = (
-            "http://192.168.1.12/api/matching/"
-            "65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/results/"
-        )
-
-        match_results = purldb.poll_until_success(run_url, results_url)
+        match_results = purldb.poll_until_success(run_url)
         self.assertEqual(mock_request_get_results_return, match_results)
 
     def test_scanpipe_pipes_purldb_map_match_results(self):
