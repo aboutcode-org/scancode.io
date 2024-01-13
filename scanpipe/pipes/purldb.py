@@ -350,7 +350,10 @@ def send_project_json_to_matchcode(
 
 
 def poll_until_success(run_url, sleep=10):
-    # poll and see if the match run is ready
+    """
+    Given a URL to a scancode.io run instance, `run_url`, return the results of
+    the Project for this run when the pipeline has been successfully completed.
+    """
     while True:
         response = request_get(run_url)
         if response:
@@ -363,6 +366,12 @@ def poll_until_success(run_url, sleep=10):
 
 
 def map_match_results(match_results):
+    """
+    Given `match_results`, which is a mapping of ScanCode.io codebase results,
+    return a defaultdict(list) where the keys are the package_uid of matched
+    packages and the value is a list containing the paths of Resources
+    associated with the package_uid.
+    """
     resource_results = match_results.get("files", [])
     resource_paths_by_package_uids = defaultdict(list)
     for resource in resource_results:
@@ -373,6 +382,11 @@ def map_match_results(match_results):
 
 
 def create_packages_from_match_results(project, match_results):
+    """
+    Given `match_results`, which is a mapping of ScanCode.io codebase results,
+    use the Package data from it to create DiscoveredPackages for `project` and
+    associate the proper Resources of `project` to the DiscoveredPackages.
+    """
     from scanpipe.pipes.d2d import create_package_from_purldb_data
 
     resource_paths_by_package_uids = map_match_results(match_results)
@@ -389,31 +403,3 @@ def create_packages_from_match_results(project, match_results):
             package_data=matched_package,
             status=flag.MATCHED_TO_PURLDB_PACKAGE,
         )
-
-
-def match_to_purldb(project):
-    """
-    Given a `project`, create and send a scan of the project to PurlDB for
-    matching. When available, process match results by DiscoveredPackges from
-    the matched package data.
-    """
-    # Create scan from `project` and send to purldb
-    scan_output_location = to_json(project)
-    response = send_project_json_to_matchcode(scan_output_location)
-    run_url = response["runs"][0]["url"]
-    url = response.get("url")
-    results_url = url + "results/"
-
-    # poll and see if the match run is ready
-    poll_until_success(run_url)
-
-    # get match results
-    match_results = request_get(results_url)
-
-    # map match results
-    resource_paths_by_package_uids = map_match_results(match_results)
-
-    # Map package matches
-    create_packages_from_match_results(
-        project, match_results, resource_paths_by_package_uids
-    )
