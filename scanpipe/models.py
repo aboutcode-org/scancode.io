@@ -1795,8 +1795,8 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
 
 def convert_glob_to_django_regex(glob_pattern):
     """
-    Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
-    Django regex lookup.
+    Convert a glob pattern to an equivalent django regex pattern
+    compatible with the Django regex lookup.
     """
     escaped_pattern = re.escape(glob_pattern)
     escaped_pattern = escaped_pattern.replace(r"\*", ".*")  # Replace \* with .*

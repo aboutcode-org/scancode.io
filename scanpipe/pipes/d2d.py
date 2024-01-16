@@ -23,9 +23,9 @@
 from collections import Counter
 from collections import defaultdict
 from contextlib import suppress
+from dataclasses import dataclass
 from pathlib import Path
 from re import match as regex_match
-from typing import NamedTuple
 
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import MultipleObjectsReturned
@@ -777,7 +777,14 @@ def _map_javascript_resource(
             resource.update(status=flag.MAPPED)
 
 
-class AboutFileIndexes(NamedTuple):
+@dataclass
+class AboutFileIndexes:
+    """
+    Stores the regex path patterns, and ignore patterns,
+    package data and about file/mapped resources to create
+    packages from About files and map to deployed resources.
+    """
+
     # Mapping of About file paths and the regex pattern
     # string for the files documented
     regex_by_about_path: dict
