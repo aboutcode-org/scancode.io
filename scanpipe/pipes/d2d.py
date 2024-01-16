@@ -45,7 +45,7 @@ from summarycode.classify import LEGAL_STARTS_ENDS
 from scanpipe import pipes
 from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
-from scanpipe.models import posix_regex_to_django_regex_lookup
+from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes import get_resource_diff_ratio
@@ -778,20 +778,34 @@ def _map_javascript_resource(
 
 
 class AboutFileIndexes(NamedTuple):
+    # Mapping of About file paths and the regex pattern
+    # string for the files documented
     regex_by_about_path: dict
+    # Mapping of About file paths and a list of path pattern
+    # strings, for the files to be ignored
     ignore_regex_by_about_path: dict
+    # Resource objects for About files present in the codebase,
+    # by their path
     about_resources_by_path: dict
+    # mapping of package data present in the About file, by path
     about_pkgdata_by_path: dict
+    # List of mapped resources for each About file, by path
     mapped_resources_by_aboutpath: dict
 
     @classmethod
-    def create_indexes(cls, project, from_about_files):
-        """Return an ABOUT file index or None."""
+    def create_indexes(cls, project, from_about_files, logger=None):
+        """
+        Return an ABOUT file index, containing path pattern mappings,
+        package data, and resources, created from `from_about_files`,
+        the About file resources.
+        """
         about_pkgdata_by_path = {}
         regex_by_about_path = {}
         ignore_regex_by_about_path = {}
         about_resources_by_path = {}
         mapped_resources_by_aboutpath = {}
+
+        count_indexed_about_files = 0
 
         for about_file_resource in from_about_files:
             package_data = resolve.resolve_about_package(
@@ -820,18 +834,25 @@ class AboutFileIndexes(NamedTuple):
                 )
                 continue
             else:
-                regex = posix_regex_to_django_regex_lookup(files_pattern)
+                count_indexed_about_files += 1
+                regex = convert_glob_to_django_regex(files_pattern)
                 regex_by_about_path[about_file_resource.path] = regex
 
             if extra_data := package_data.get("extra_data"):
                 ignore_regex = []
                 for pattern in extra_data.get("ignored_resources", []):
-                    ignore_regex.append(posix_regex_to_django_regex_lookup(pattern))
+                    ignore_regex.append(convert_glob_to_django_regex(pattern))
                 if ignore_regex:
                     ignore_regex_by_about_path[about_file_resource.path] = ignore_regex
 
             about_resources_by_path[about_file_resource.path] = about_file_resource
             mapped_resources_by_aboutpath[about_file_resource.path] = []
+
+        if logger:
+            logger(
+                f"Created mapping index from {count_indexed_about_files:,d} .ABOUT "
+                f"files in the from/ codebase."
+            )
 
         return cls(
             about_pkgdata_by_path=about_pkgdata_by_path,
@@ -841,25 +862,46 @@ class AboutFileIndexes(NamedTuple):
             mapped_resources_by_aboutpath=mapped_resources_by_aboutpath,
         )
 
-    def match_to_resources(self, to_resources):
+    def get_matched_about_path(self, to_resource):
+        """
+        Map `to_resource` using the about file index, and if
+        mapped, return the path string to the About file it
+        was mapped to, and if not mapped or ignored, return
+        None.
+        """
+        resource_mapped = False
+        for about_path, regex_pattern in self.regex_by_about_path.items():
+            if regex_match(pattern=regex_pattern, string=to_resource.path):
+                resource_mapped = True
+                break
+
+        if not resource_mapped:
+            return
+
+        ignore_regex_patterns = self.ignore_regex_by_about_path.get(about_path, [])
+        ignore_resource = False
+        for ignore_regex_pattern in ignore_regex_patterns:
+            if regex_match(pattern=ignore_regex_pattern, string=to_resource.path):
+                ignore_resource = True
+                break
+
+        if ignore_resource:
+            return
+
+        return about_path
+
+    def map_deployed_to_devel_using_about(self, to_resources):
+        """
+        Return mapped resources which are mapped using the
+        path patterns in About file indexes. Resources are
+        mapped for each About file in the index, and
+        their status is updated accordingly.
+        """
+        mapped_to_resources = []
+
         for to_resource in to_resources:
-            resource_matched = False
-            for about_path, regex_pattern in self.regex_by_about_path.items():
-                if regex_match(pattern=regex_pattern, string=to_resource.path):
-                    resource_matched = True
-                    break
-
-            if not resource_matched:
-                continue
-
-            ignore_regex_patterns = self.ignore_regex_by_about_path.get(about_path, [])
-            ignore_resource = False
-            for ignore_regex_pattern in ignore_regex_patterns:
-                if regex_match(pattern=ignore_regex_pattern, string=to_resource.path):
-                    ignore_resource = True
-                    break
-
-            if ignore_resource:
+            about_path = self.get_matched_about_path(to_resource)
+            if not about_path:
                 continue
 
             mapped_resources_about = self.mapped_resources_by_aboutpath.get(about_path)
@@ -867,9 +909,20 @@ class AboutFileIndexes(NamedTuple):
                 mapped_resources_about.append(to_resource)
             else:
                 self.mapped_resources_by_aboutpath[about_path] = [to_resource]
+            mapped_to_resources.append(to_resource)
             to_resource.update(status=flag.ABOUT_MAPPED)
 
+        return mapped_to_resources
+
     def create_about_packages_relations(self, project):
+        """
+        Create packages using About file package data, if the About file
+        has mapped resources on the to/ codebase and creates the mappings
+        for the package created and mapped resources.
+        """
+        about_purls = set()
+        mapped_about_resources = []
+
         for about_path, mapped_resources in self.mapped_resources_by_aboutpath.items():
             about_file_resource = self.about_resources_by_path[about_path]
             package_data = self.about_pkgdata_by_path[about_file_resource.path]
@@ -890,7 +943,13 @@ class AboutFileIndexes(NamedTuple):
                 continue
 
             # Create the Package using .ABOUT data and assign related codebase_resources
-            pipes.update_or_create_package(project, package_data, mapped_resources)
+            about_package = pipes.update_or_create_package(
+                project=project,
+                package_data=package_data,
+                codebase_resources=mapped_resources,
+            )
+            about_purls.add(about_package.purl)
+            mapped_about_resources.append(about_file_resource)
 
             # Map the .ABOUT file resource to all related resources in the ``to/`` side.
             for mapped_resource in mapped_resources:
@@ -910,6 +969,8 @@ class AboutFileIndexes(NamedTuple):
             )
             about_file_companions.update(status=flag.ABOUT_MAPPED)
 
+        return about_purls, mapped_about_resources
+
 
 def map_about_files(project, logger=None):
     """Map ``from/`` .ABOUT files to their related ``to/`` resources."""
@@ -920,20 +981,36 @@ def map_about_files(project, logger=None):
     if not from_about_files.exists():
         return
 
-    indexes = AboutFileIndexes.create_indexes(
-        project=project, from_about_files=from_about_files
-    )
-
-    to_resources = project_resources.to_codebase().no_status()
-
     if logger:
         logger(
             f"Mapping {from_about_files.count():,d} .ABOUT files found in the from/ "
             f"codebase."
         )
 
-    indexes.match_to_resources(to_resources)
-    indexes.create_about_packages_relations(project)
+    indexes = AboutFileIndexes.create_indexes(
+        project=project, from_about_files=from_about_files
+    )
+
+    # Ignoring empty or ignored files as they are not relevant anyway
+    to_resources = project_resources.to_codebase().no_status()
+    mapped_to_resources = indexes.map_deployed_to_devel_using_about(
+        to_resources=to_resources,
+    )
+    if logger:
+        logger(
+            f"Mapped {len(mapped_to_resources):,d} resources from the "
+            f"to/ codebase to the About files in the from. codebase."
+        )
+
+    about_purls, mapped_about_resources = indexes.create_about_packages_relations(
+        project=project,
+    )
+    if logger:
+        logger(
+            f"Created {len(about_purls):,d} new packages from "
+            f"{len(mapped_about_resources):,d} About files which "
+            f"were mapped to resources in the to/ side."
+        )
 
 
 def map_javascript_post_purldb_match(project, logger=None):
