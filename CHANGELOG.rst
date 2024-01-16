@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v33.0.0 (unreleased)
+v33.0.0 (2024-01-16)
 --------------------
 
 - Upgrade Django to version 5.0 and drop support for Python 3.8 and 3.9
