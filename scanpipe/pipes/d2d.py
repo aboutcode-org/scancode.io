@@ -921,6 +921,26 @@ class AboutFileIndexes:
 
         return mapped_to_resources
 
+    def get_about_file_companions(self, about_path):
+        """
+        Given an ``about_path`` path string to an About file,
+        get CodebaseResource objects for the companion license
+        and notice files.
+        """
+        about_file_resource = self.about_resources_by_path.get(about_path)
+        about_file_extra_data = self.about_pkgdata_by_path.get(about_path).get(
+            "extra_data"
+        )
+
+        about_file_companion_names = [
+            about_file_extra_data.get("license_file"),
+            about_file_extra_data.get("notice_file"),
+        ]
+        about_file_companions = about_file_resource.siblings().filter(
+            name__in=about_file_companion_names
+        )
+        return about_file_companions
+
     def create_about_packages_relations(self, project):
         """
         Create packages using About file package data, if the About file
@@ -932,11 +952,11 @@ class AboutFileIndexes:
 
         for about_path, mapped_resources in self.mapped_resources_by_aboutpath.items():
             about_file_resource = self.about_resources_by_path[about_path]
-            package_data = self.about_pkgdata_by_path[about_file_resource.path]
+            package_data = self.about_pkgdata_by_path[about_path]
 
             if not mapped_resources:
                 error_message_details = {
-                    "path": about_file_resource.path,
+                    "path": about_path,
                     "package_data": package_data,
                 }
                 project.add_warning(
@@ -968,12 +988,7 @@ class AboutFileIndexes:
 
             about_file_resource.update(status=flag.ABOUT_MAPPED)
 
-        for about_file_resource in self.about_resources_by_path.values():
-            about_file_companions = (
-                about_file_resource.siblings()
-                .filter(name__startswith=about_file_resource.name_without_extension)
-                .filter(extension__in=[".LICENSE", ".NOTICE"])
-            )
+            about_file_companions = self.get_about_file_companions(about_path)
             about_file_companions.update(status=flag.ABOUT_MAPPED)
 
         return about_purls, mapped_about_resources

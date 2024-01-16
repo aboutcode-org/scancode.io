@@ -111,10 +111,12 @@
       "other_license_expression": "",
       "other_license_expression_spdx": "",
       "other_license_detections": [],
-      "extracted_license_statement": "",
+      "extracted_license_statement": "                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   ",
       "notice_text": "notice",
       "source_packages": [],
       "extra_data": {
+        "notice_file": "flume-ng-node-1.9.0-sources.NOTICE",
+        "license_file": "flume-ng-node-1.9.0-sources.LICENSE",
         "ignored_resources": [
           "*flume-ng-node-*.jar-extract/org/apache/flume/node/ConfigurationProvider.class"
         ]
