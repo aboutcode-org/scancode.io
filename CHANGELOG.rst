@@ -34,6 +34,10 @@ v33.0.0 (unreleased)
   project pipeline.
   https://github.com/nexB/scancode.io/issues/997
 
+- Fix an issue where the pipeline details cannot be fetched when using URLs that
+  include credentials such as "user:pass@domain".
+  https://github.com/nexB/scancode.io/issues/998
+
 v32.7.0 (2023-10-25)
 --------------------
 
