@@ -30,3 +30,15 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Upload built archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: pypi_archives
+          path: dist/*
+
+      - name: Create a GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          files: dist/*
