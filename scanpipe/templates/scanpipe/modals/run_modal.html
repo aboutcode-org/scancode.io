@@ -15,7 +15,6 @@
     // path to the `fetch` function may not work correctly, especially for URLs
     // that include credentials such as "user:pass@domain.com".
     let run_detail_url = new URL(run_detail_path, window.location.origin);
-    console.log(run_detail_url);
 
     fetch(run_detail_url).then(function (response) {
       if (response.ok) {
