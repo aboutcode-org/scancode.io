@@ -138,31 +138,22 @@ class ScanPipePurlDBTest(TestCase):
     ):
         mock_is_available.return_value = True
 
-        request_get_check_response_loc = (
-            self.data_location
-            / "purldb"
-            / "match_to_purldb"
-            / "request_get_check_response.json"
-        )
-        with open(request_get_check_response_loc, "r") as f:
-            mock_request_get_check_return = json.load(f)
+        def mock_request_get_return(url):
+            request_get_check_response_loc = (
+                self.data_location
+                / "purldb"
+                / "match_to_purldb"
+                / "request_get_check_response.json"
+            )
+            with open(request_get_check_response_loc, "r") as f:
+                mock_request_get_check_return = json.load(f)
+            return mock_request_get_check_return
 
-        request_get_results_response_loc = (
-            self.data_location
-            / "purldb"
-            / "match_to_purldb"
-            / "request_get_results_response.json"
-        )
-        with open(request_get_results_response_loc, "r") as f:
-            mock_request_get_results_return = json.load(f)
-        mock_request_get.side_effect = [
-            mock_request_get_check_return,
-            mock_request_get_results_return,
-        ]
+        mock_request_get.side_effect = mock_request_get_return
 
         run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
-        match_results = purldb.poll_until_success(run_url)
-        self.assertEqual(mock_request_get_results_return, match_results)
+        return_value = purldb.poll_until_success(run_url)
+        self.assertEqual(True, return_value)
 
     def test_scanpipe_pipes_purldb_map_match_results(self):
         request_post_response_loc = (
@@ -217,3 +208,35 @@ class ScanPipePurlDBTest(TestCase):
         self.assertEqual([package.package_uid], r1.for_packages)
         # This resource should not have a Package match
         self.assertFalse(0, len(r2.for_packages))
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_get_match_results(self, mock_is_available, mock_request_get):
+        mock_is_available.return_value = True
+
+        request_get_check_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_check_response.json"
+        )
+        with open(request_get_check_response_loc, "r") as f:
+            mock_request_get_check_return = json.load(f)
+
+        request_get_results_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_results_response.json"
+        )
+        with open(request_get_results_response_loc, "r") as f:
+            mock_request_get_results_return = json.load(f)
+        mock_request_get.side_effect = [
+            mock_request_get_check_return,
+            mock_request_get_results_return,
+        ]
+
+        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
+        match_results = purldb.get_match_results(run_url)
+
+        self.assertEqual(mock_request_get_results_return, match_results)
