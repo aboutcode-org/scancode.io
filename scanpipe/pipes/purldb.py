@@ -568,18 +568,27 @@ def send_project_json_to_matchcode(
 
 def poll_until_success(run_url, sleep=10):
     """
-    Given a URL to a scancode.io run instance, `run_url`, return the results of
-    the Project for this run when the pipeline has been successfully completed.
+    Given a URL to a scancode.io run instance, `run_url`, return True when the
+    run instance has completed successfully.
     """
     while True:
         response = request_get(run_url)
         if response:
             status = response["status"]
             if status == "success":
-                project_url = response["project"]
-                results_url = project_url + "results/"
-                return request_get(results_url)
+                return True
         time.sleep(sleep)
+
+
+def get_match_results(run_url):
+    """
+    Given the `run_url` for a pipeline running the matchcode matching pipeline,
+    return the match results for that run.
+    """
+    response = request_get(run_url)
+    project_url = response["project"]
+    results_url = project_url + "results/"
+    return request_get(results_url)
 
 
 def map_match_results(match_results):

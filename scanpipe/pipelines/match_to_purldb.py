@@ -59,8 +59,9 @@ class MatchToPurlDB(Pipeline):
 
     def poll_matching_results(self):
         """Wait until the match results are ready by polling the match run status."""
-        self.match_results = purldb.poll_until_success(self.run_url)
+        purldb.poll_until_success(self.run_url)
 
     def create_packages_from_match_results(self):
         """Create DiscoveredPackages from match results."""
-        purldb.create_packages_from_match_results(self.project, self.match_results)
+        match_results = purldb.get_match_results(self.run_url)
+        purldb.create_packages_from_match_results(self.project, match_results)
