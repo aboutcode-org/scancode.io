@@ -42,7 +42,7 @@ from scanpipe.models import Project
 from scanpipe.pipelines import InputFileError
 from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import is_pipeline
-from scanpipe.pipelines import root_filesystems
+from scanpipe.pipelines import root_filesystem
 from scanpipe.pipes import output
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -288,8 +288,8 @@ class ScanPipePipelinesTest(TestCase):
 class RootFSPipelineTest(TestCase):
     def test_scanpipe_rootfs_pipeline_extract_input_files_errors(self):
         project1 = Project.objects.create(name="Analysis")
-        run = project1.add_pipeline("root_filesystems")
-        pipeline_instance = root_filesystems.RootFS(run)
+        run = project1.add_pipeline("analyze_root_filesystem_or_vm_image")
+        pipeline_instance = root_filesystem.RootFS(run)
 
         # Create 2 files in the input/ directory to generate error twice
         project1.move_input_from(tempfile.mkstemp()[1])
@@ -451,7 +451,7 @@ class PipelinesIntegrationTest(TestCase):
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
     def test_scanpipe_scan_package_pipeline_integration(self):
-        pipeline_name = "scan_package"
+        pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "is-npm-1.0.0.tgz"
@@ -485,7 +485,7 @@ class PipelinesIntegrationTest(TestCase):
 
     @skipIf(from_docker_image, "Random failure in the Docker context.")
     def test_scanpipe_scan_package_pipeline_integration_multiple_packages(self):
-        pipeline_name = "scan_package"
+        pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "multiple-is-npm-1.0.0.tar.gz"
@@ -513,7 +513,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, summary_file)
 
     def test_scanpipe_scan_package_single_file(self):
-        pipeline_name = "scan_package"
+        pipeline_name = "scan_single_package"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = (
@@ -605,7 +605,7 @@ class PipelinesIntegrationTest(TestCase):
 
     @skipIf(sys.platform != "linux", "Expected results are inconsistent across OS")
     def test_scanpipe_docker_pipeline_alpine_integration(self):
-        pipeline_name = "docker"
+        pipeline_name = "analyze_docker_image"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "alpine_3_15_4.tar.gz"
@@ -628,7 +628,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_does_not_report_errors_for_broken_symlinks(self):
-        pipeline_name = "docker"
+        pipeline_name = "analyze_docker_image"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "minitag.tar"
@@ -656,7 +656,7 @@ class PipelinesIntegrationTest(TestCase):
 
     @skipIf(sys.platform != "linux", "RPM related features only supported on Linux.")
     def test_scanpipe_docker_pipeline_rpm_integration(self):
-        pipeline_name = "docker"
+        pipeline_name = "analyze_docker_image"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "centos.tar.gz"
@@ -679,7 +679,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_debian_integration(self):
-        pipeline_name = "docker"
+        pipeline_name = "analyze_docker_image"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "debian.tar.gz"
@@ -702,7 +702,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_docker_pipeline_distroless_debian_integration(self):
-        pipeline_name = "docker"
+        pipeline_name = "analyze_docker_image"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "gcr_io_distroless_base.tar.gz"
@@ -725,7 +725,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertPipelineResultEqual(expected_file, result_file)
 
     def test_scanpipe_rootfs_pipeline_integration(self):
-        pipeline_name = "root_filesystems"
+        pipeline_name = "analyze_root_filesystem_or_vm_image"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "basic-rootfs.tar.gz"
@@ -836,7 +836,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(expected, package1.affected_by_vulnerabilities)
 
     def test_scanpipe_inspect_manifest_pipeline_integration(self):
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
 
         run = project1.add_pipeline(pipeline_name)
@@ -851,7 +851,7 @@ class PipelinesIntegrationTest(TestCase):
     def test_scanpipe_inspect_manifest_pipeline_pypi_integration(
         self, resolve_dependencies
     ):
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
 
         run = project1.add_pipeline(pipeline_name)
@@ -875,7 +875,7 @@ class PipelinesIntegrationTest(TestCase):
                 self.assertEqual(value, getattr(discoveredpackage, field_name))
 
     def test_scanpipe_inspect_manifest_pipeline_aboutfile_integration(self):
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = (
@@ -897,7 +897,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("bsd-new", discoveredpackage.declared_license_expression)
 
     def test_scanpipe_inspect_manifest_pipeline_spdx_integration(self):
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "manifests" / "toml.spdx.json"
@@ -919,7 +919,7 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("mit", discoveredpackage.declared_license_expression)
 
     def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration(self):
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "cyclonedx/nested.cdx.json"
@@ -996,7 +996,7 @@ class PipelinesIntegrationTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.request_post")
     def test_scanpipe_deploy_to_develop_pipeline_integration(self, mock_request):
         mock_request.return_value = None
-        pipeline_name = "deploy_to_develop"
+        pipeline_name = "map_deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
         jar_location = self.data_location / "d2d" / "jars"
@@ -1021,7 +1021,7 @@ class PipelinesIntegrationTest(TestCase):
     @mock.patch("scanpipe.pipes.purldb.request_post")
     def test_scanpipe_deploy_to_develop_pipeline_with_about_file(self, mock_request):
         mock_request.return_value = None
-        pipeline_name = "deploy_to_develop"
+        pipeline_name = "map_deploy_to_develop"
         project1 = Project.objects.create(name="Analysis")
 
         data_dir = self.data_location / "d2d" / "about_files"

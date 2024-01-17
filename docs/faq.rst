@@ -36,7 +36,7 @@ Here are some general guidelines based on different input scenarios:
   use the :ref:`load_inventory <pipeline_load_inventory>` pipeline.
 - When you have **manifest files**, such as a
   **CycloneDX BOM, SPDX document, lockfile**, etc.,
-  use the :ref:`inspect_manifest <pipeline_inspect_manifest>` pipeline.
+  use the :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using
   the :ref:`deploy_to_develop <pipeline_deploy_to_develop>` pipeline.
 

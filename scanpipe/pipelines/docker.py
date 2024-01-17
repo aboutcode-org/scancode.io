@@ -20,7 +20,7 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines.root_filesystems import RootFS
+from scanpipe.pipelines.root_filesystem import RootFS
 from scanpipe.pipes import docker
 from scanpipe.pipes import rootfs
 

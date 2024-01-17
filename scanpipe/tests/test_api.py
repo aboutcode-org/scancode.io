@@ -268,7 +268,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         data = {
             "name": "Name",
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
@@ -278,7 +278,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         data = {
             "name": "OtherName",
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
             "upload_file": io.BytesIO(b"Content"),
         }
         response = self.csrf_client.post(self.project_list_url, data)
@@ -292,7 +292,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         data = {
             "name": "BetterName",
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
             "upload_file": io.BytesIO(b"Content"),
             "execute_now": True,
         }
@@ -358,42 +358,53 @@ class ScanPipeAPITest(TransactionTestCase):
     def test_scanpipe_api_project_create_multiple_pipelines(self):
         data = {
             "name": "Single string",
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
-        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
 
         data = {
             "name": "Single list",
-            "pipeline": ["docker"],
+            "pipeline": ["analyze_docker_image"],
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
-        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
 
         data = {
             "name": "Multi list",
-            "pipeline": ["docker", "scan_package"],
+            "pipeline": ["analyze_docker_image", "scan_single_package"],
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(2, len(response.data["runs"]))
-        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
-        self.assertEqual("scan_package", response.data["runs"][1]["pipeline_name"])
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
+        self.assertEqual(
+            "scan_single_package", response.data["runs"][1]["pipeline_name"]
+        )
 
         data = {
             "name": "Multi string",
-            "pipeline": "docker,scan_package",
+            "pipeline": "analyze_docker_image,scan_single_package",
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
         expected = {
             "pipeline": [
                 ErrorDetail(
-                    string='"docker,scan_package" is not a valid choice.',
+                    string=(
+                        '"analyze_docker_image,scan_single_package" '
+                        "is not a valid choice."
+                    ),
                     code="invalid_choice",
                 )
             ]
@@ -582,7 +593,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(10, len(response.data.keys()))
 
     def test_scanpipe_api_project_action_delete(self):
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(task_id=uuid.uuid4())
         self.assertEqual(run.Status.RUNNING, run.status)
 
@@ -624,7 +635,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
 
     def test_scanpipe_api_project_action_reset(self):
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(1, self.project1.codebaseresources.count())
         self.assertEqual(1, self.project1.discoveredpackages.count())
@@ -657,14 +668,14 @@ class ScanPipeAPITest(TransactionTestCase):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
         self.assertEqual("Pipeline required.", response.data.get("status"))
-        self.assertIn("docker", response.data.get("pipelines"))
+        self.assertIn("analyze_docker_image", response.data.get("pipelines"))
 
         data = {"pipeline": "not_available"}
         response = self.csrf_client.post(url, data=data)
         expected = {"status": "not_available is not a valid pipeline."}
         self.assertEqual(expected, response.data)
 
-        data = {"pipeline": "docker"}
+        data = {"pipeline": "analyze_docker_image"}
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_not_called()
@@ -701,7 +712,7 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = sorted(["upload_file"])
         self.assertEqual(expected, sorted(self.project1.input_root))
 
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(task_id=uuid.uuid4())
         response = self.csrf_client.get(url)
         expected = "Cannot add inputs once a pipeline has started to execute."
@@ -709,13 +720,13 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
     def test_scanpipe_api_run_detail(self):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-detail", args=[run1.uuid])
         response = self.csrf_client.get(url)
 
         self.assertEqual(str(run1.uuid), response.data["uuid"])
         self.assertIn(self.project1_detail_url, response.data["project"])
-        self.assertEqual("docker", response.data["pipeline_name"])
+        self.assertEqual("analyze_docker_image", response.data["pipeline_name"])
         self.assertEqual("Analyze Docker images.", response.data["description"])
         self.assertEqual("", response.data["scancodeio_version"])
         self.assertIsNone(response.data["task_id"])
@@ -727,10 +738,10 @@ class ScanPipeAPITest(TransactionTestCase):
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-start-pipeline", args=[run1.uuid])
         response = self.csrf_client.post(url)
-        expected = {"status": "Pipeline docker started."}
+        expected = {"status": "Pipeline analyze_docker_image started."}
         self.assertEqual(expected, response.data)
         mock_execute_task.assert_called_once()
 
@@ -757,7 +768,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
     @override_settings(SCANCODEIO_ASYNC=False)
     def test_scanpipe_api_run_action_stop_pipeline(self):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-stop-pipeline", args=[run1.uuid])
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
@@ -767,7 +778,7 @@ class ScanPipeAPITest(TransactionTestCase):
         run1.set_task_started(run1.pk)
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {"status": "Pipeline docker stopped."}
+        expected = {"status": "Pipeline analyze_docker_image stopped."}
         self.assertEqual(expected, response.data)
 
         run1.refresh_from_db()
@@ -775,26 +786,26 @@ class ScanPipeAPITest(TransactionTestCase):
 
     @override_settings(SCANCODEIO_ASYNC=False)
     def test_scanpipe_api_run_action_delete_pipeline(self):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-delete-pipeline", args=[run1.uuid])
 
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {"status": "Pipeline docker deleted."}
+        expected = {"status": "Pipeline analyze_docker_image deleted."}
         self.assertEqual(expected, response.data)
         self.assertFalse(Run.objects.filter(pk=run1.pk).exists())
 
-        run2 = self.project1.add_pipeline("docker")
+        run2 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-delete-pipeline", args=[run2.uuid])
 
         run2.set_task_queued()
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {"status": "Pipeline docker deleted."}
+        expected = {"status": "Pipeline analyze_docker_image deleted."}
         self.assertEqual(expected, response.data)
         self.assertFalse(Run.objects.filter(pk=run2.pk).exists())
 
-        run3 = self.project1.add_pipeline("docker")
+        run3 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-delete-pipeline", args=[run3.uuid])
 
         run3.set_task_started(run3.pk)

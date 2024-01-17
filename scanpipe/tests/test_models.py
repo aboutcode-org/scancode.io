@@ -153,7 +153,7 @@ class ScanPipeModelsTest(TestCase):
         work_path = self.project1.work_path
         self.assertTrue(work_path.exists())
 
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         self.project1.labels.add("label1", "label2")
         self.assertEqual(2, UUIDTaggedItem.objects.count())
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
@@ -180,7 +180,7 @@ class ScanPipeModelsTest(TestCase):
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.write_input_file(uploaded_file)
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
@@ -198,7 +198,7 @@ class ScanPipeModelsTest(TestCase):
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.write_input_file(uploaded_file)
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
@@ -226,7 +226,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.update(settings={"extract_recursively": True})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         run2 = self.project1.add_pipeline("find_vulnerabilities")
         subscription1 = self.project1.add_webhook_subscription("http://domain.url")
 
@@ -258,7 +258,8 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, len(list(cloned_project2.inputs())))
         runs = cloned_project2.runs.all()
         self.assertEqual(
-            ["docker", "find_vulnerabilities"], [run.pipeline_name for run in runs]
+            ["analyze_docker_image", "find_vulnerabilities"],
+            [run.pipeline_name for run in runs],
         )
         self.assertNotEqual(run1.pk, runs[0].pk)
         self.assertNotEqual(run2.pk, runs[1].pk)
@@ -413,7 +414,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.can_start_pipelines)
 
         # Not started
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
         self.assertTrue(self.project1.can_start_pipelines)
 
@@ -431,14 +432,14 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.can_start_pipelines)
 
         # Another "Not started"
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
         self.assertTrue(self.project1.can_start_pipelines)
 
     def test_scanpipe_project_model_can_change_inputs(self):
         self.assertTrue(self.project1.can_change_inputs)
 
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
         self.assertTrue(self.project1.can_change_inputs)
 
@@ -2061,7 +2062,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             project1.add_pipeline(pipeline_name)
         self.assertEqual("Unknown pipeline: not_available", str(error.exception))
 
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         project1.add_pipeline(pipeline_name)
         pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
 
@@ -2078,7 +2079,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_project_model_add_pipeline_run_can_start(self, mock_execute_task):
         project1 = Project.objects.create(name="Analysis")
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         run1 = project1.add_pipeline(pipeline_name, execute_now=False)
         run2 = project1.add_pipeline(pipeline_name, execute_now=True)
         self.assertEqual(Run.Status.NOT_STARTED, run1.status)
@@ -2090,7 +2091,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_project_model_add_pipeline_start_method(self, mock_execute_task):
         project1 = Project.objects.create(name="Analysis")
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         run1 = project1.add_pipeline(pipeline_name, execute_now=False)
         run2 = project1.add_pipeline(pipeline_name, execute_now=False)
         self.assertEqual(Run.Status.NOT_STARTED, run1.status)
