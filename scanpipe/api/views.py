@@ -247,6 +247,7 @@ class ProjectViewSet(
 
         pipeline = request.data.get("pipeline")
         if pipeline:
+            pipeline = scanpipe_app.get_new_pipeline_name(pipeline)
             if pipeline in scanpipe_app.pipelines:
                 execute_now = request.data.get("execute_now")
                 project.add_pipeline(pipeline, execute_now)

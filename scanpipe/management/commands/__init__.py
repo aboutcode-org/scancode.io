@@ -247,9 +247,17 @@ def validate_copy_from(copy_from):
 
 def validate_pipelines(pipeline_names):
     """Raise an error if one of the `pipeline_names` is not available."""
+    # Backward compatibility with old pipeline names.
+    pipeline_names = [
+        scanpipe_app.get_new_pipeline_name(pipeline_name)
+        for pipeline_name in pipeline_names
+    ]
+
     for pipeline_name in pipeline_names:
         if pipeline_name not in scanpipe_app.pipelines:
             raise CommandError(
                 f"{pipeline_name} is not a valid pipeline. \n"
                 f"Available: {', '.join(scanpipe_app.pipelines.keys())}"
             )
+
+    return pipeline_names

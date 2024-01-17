@@ -411,6 +411,32 @@ class ScanPipeAPITest(TransactionTestCase):
         }
         self.assertEqual(expected, response.data)
 
+    def test_scanpipe_api_project_create_pipeline_old_name_compatibility(self):
+        data = {
+            "name": "Single string",
+            "pipeline": "docker",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
+
+        data = {
+            "name": "Multi list",
+            "pipeline": ["docker_windows", "scan_package"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["runs"]))
+        self.assertEqual(
+            "analyze_windows_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
+        self.assertEqual(
+            "scan_single_package", response.data["runs"][1]["pipeline_name"]
+        )
+
     def test_scanpipe_api_project_create_labels(self):
         data = {
             "name": "Project1",
@@ -690,6 +716,16 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
+
+    def test_scanpipe_api_project_action_add_pipeline_old_name_compatibility(self):
+        url = reverse("project-add-pipeline", args=[self.project1.uuid])
+        data = {
+            "pipeline": "docker",  # old name
+            "execute_now": False,
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Pipeline added."}, response.data)
+        self.assertEqual("analyze_docker_image", self.project1.runs.get().pipeline_name)
 
     def test_scanpipe_api_project_action_add_input(self):
         url = reverse("project-add-input", args=[self.project1.uuid])

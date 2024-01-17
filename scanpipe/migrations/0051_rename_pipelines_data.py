@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-pipeline_names_mapping = {
+pipeline_old_names_mapping = {
     "docker": "analyze_docker_image",
     "root_filesystems": "analyze_root_filesystem_or_vm_image",
     "docker_windows": "analyze_windows_docker_image",
@@ -15,13 +15,13 @@ pipeline_names_mapping = {
 
 def rename_pipelines_data(apps, schema_editor):
     Run = apps.get_model("scanpipe", "Run")
-    for old_name, new_name in pipeline_names_mapping.items():
+    for old_name, new_name in pipeline_old_names_mapping.items():
         Run.objects.filter(pipeline_name=old_name).update(pipeline_name=new_name)
 
 
 def reverse_rename_pipelines_data(apps, schema_editor):
     Run = apps.get_model("scanpipe", "Run")
-    for old_name, new_name in pipeline_names_mapping.items():
+    for old_name, new_name in pipeline_old_names_mapping.items():
         Run.objects.filter(pipeline_name=new_name).update(pipeline_name=old_name)
 
 

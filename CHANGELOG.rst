@@ -1,6 +1,22 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- Rename multiple pipelines for consistency and precision:
+   * docker: analyze_docker_image
+   * root_filesystems: analyze_root_filesystem_or_vm_image
+   * docker_windows: analyze_windows_docker_image
+   * inspect_manifest: inspect_packages
+   * deploy_to_develop: map_deploy_to_develop
+   * scan_package: scan_single_package
+
+  A data migration is included to facilitate the migration of existing data.
+  Only the new names are available in the web UI but the REST API and CLI are backward
+  compatible with the old names.
+  https://github.com/nexB/scancode.io/issues/1044
+
 v33.0.0 (2024-01-16)
 --------------------
 

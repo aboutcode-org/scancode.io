@@ -101,6 +101,8 @@ class ScanPipeManagementCommandTest(TestCase):
             self.pipeline_name,
             "--pipeline",
             "analyze_root_filesystem_or_vm_image",
+            "--pipeline",
+            "scan_package",  # old name backward compatibility
         ]
         call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
@@ -108,6 +110,7 @@ class ScanPipeManagementCommandTest(TestCase):
         expected = [
             self.pipeline_name,
             "analyze_root_filesystem_or_vm_image",
+            "scan_single_package",
         ]
         self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
 
@@ -248,6 +251,7 @@ class ScanPipeManagementCommandTest(TestCase):
         pipelines = [
             self.pipeline_name,
             "analyze_root_filesystem_or_vm_image",
+            "scan_package",  # old name backward compatibility
         ]
 
         options = pipelines[:]
@@ -258,11 +262,16 @@ class ScanPipeManagementCommandTest(TestCase):
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
         expected = (
-            "Pipelines analyze_docker_image, analyze_root_filesystem_or_vm_image "
-            "added to the project"
+            "Pipelines analyze_docker_image, analyze_root_filesystem_or_vm_image, "
+            "scan_single_package added to the project"
         )
         self.assertIn(expected, out.getvalue())
-        self.assertEqual(pipelines, [run.pipeline_name for run in project.runs.all()])
+        expected = [
+            "analyze_docker_image",
+            "analyze_root_filesystem_or_vm_image",
+            "scan_single_package",
+        ]
+        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
 
         options = ["--project", project.name, "non-existing"]
         expected = "non-existing is not a valid pipeline"
