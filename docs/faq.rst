@@ -23,22 +23,22 @@ Selecting the right pipeline for your needs depends primarily on the type of inp
 data you have available.
 Here are some general guidelines based on different input scenarios:
 
-- If you have a **Docker image** as input, use the :ref:`docker <pipeline_docker>`
-  pipeline.
+- If you have a **Docker image** as input, use the
+  :ref:`analyze_docker_image <pipeline_analyze_docker_image>` pipeline.
 - For a full **codebase compressed as an archive**, choose the
   :ref:`scan_codebase <pipeline_scan_codebase>` pipeline.
 - If you have a **single package archive**, opt for the
-  :ref:`scan_package <pipeline_scan_package>` pipeline.
+  :ref:`scan_single_package <pipeline_scan_single_package>` pipeline.
 - When dealing with a **Linux root filesystem** (rootfs), the
-  :ref:`root_filesystems <pipeline_root_filesystems>` pipeline is the appropriate
-  choice.
+  :ref:`analyze_root_filesystem_or_vm_image <pipeline_analyze_root_filesystem>` pipeline
+  is the appropriate choice.
 - For processing the results of a **ScanCode-toolkit scan** or **ScanCode.io scan**,
   use the :ref:`load_inventory <pipeline_load_inventory>` pipeline.
 - When you have **manifest files**, such as a
   **CycloneDX BOM, SPDX document, lockfile**, etc.,
   use the :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using
-  the :ref:`deploy_to_develop <pipeline_deploy_to_develop>` pipeline.
+  the :ref:`map_deploy_to_develop <pipeline_map_deploy_to_develop>` pipeline.
 
 These pipelines will automatically execute the necessary steps to scan and create the
 packages, dependencies, and resources for your project based on the input data provided.
@@ -56,10 +56,11 @@ by running some of the following additional pipelines:
   Please ensure that you have set up
   :ref:`PurlDB <scancodeio_settings_purldb>` before running this pipeline.
 
-What is the difference between scan_codebase and scan_package pipelines?
-------------------------------------------------------------------------
+What is the difference between scan_codebase and scan_single_package pipelines?
+-------------------------------------------------------------------------------
 
-The key differences are that the :ref:`scan_package <pipeline_scan_package>` pipeline
+The key differences are that the
+:ref:`scan_single_package <pipeline_scan_single_package>` pipeline
 treats the input as if it were a single package, such as a package archive, and
 computes a **License clarity** and a **Scan summary** to aggregate the package scan
 data:
@@ -116,8 +117,9 @@ The following tools and libraries are used during the docker images analysis pip
  - Secondary libraries and plugins from
    `scancode-plugins <https://github.com/nexB/scancode-plugins>`_.
 
-The pipeline documentation is available at :ref:`pipeline_docker` and its source code
-at `docker.py <https://github.com/nexB/scancode.io/blob/main/scanpipe/pipelines/docker.py>`_.
+The pipeline documentation is available at :ref:`pipeline_analyze_docker_image` and
+its source code at
+`docker.py <https://github.com/nexB/scancode.io/blob/main/scanpipe/pipelines/docker.py>`_.
 It is hopefully designed to be simple and readable code.
 
 Am I able to run ScanCode.io on Windows?

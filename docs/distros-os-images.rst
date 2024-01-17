@@ -39,18 +39,19 @@ may be only used for certain pipelines:
 - **RPM-based** Linux distros: RHEL, Fedora, openSUSE/SUSE
 - **Alpine** Linux distros
 
-For the above three flavors, the :ref:`docker <pipeline_docker>` and
-:ref:`root_filesystems <pipeline_root_filesystems>` pipelines support comprehensive
-detection of installed system packages, their provenance, their license metadata,
-and their installed files.
+For the above three flavors, the
+:ref:`analyze_docker_image <pipeline_analyze_docker_image>` and
+:ref:`analyze_root_filesystem_or_vm_image <pipeline_analyze_root_filesystem>` pipelines
+support comprehensive detection of installed system packages, their provenance,
+their license metadata, and their installed files.
 
-- For **Windows**, the :ref:`docker_windows <pipeline_docker_windows>` pipeline supports
-  Windows Docker images with extensive detection of installed Windows packages,
-  programs, and the majority of installed files.
+- For **Windows**, the :ref:`analyze_windows_docker_image <analyze_windows_docker_image>`
+  pipeline supports Windows Docker images with extensive detection of installed Windows
+  packages, programs, and the majority of installed files.
 
 - **Distroless** Docker images system packages are detected with the
-  :ref:`docker <pipeline_docker>` pipeline; package and license metadata are also
-  detected.
+  :ref:`analyze_docker_image <pipeline_analyze_docker_image>` pipeline; package and
+  license metadata are also detected.
   However, some work needs to be done to achieve comprehensive support and fix
   the issue of system packages ot tracking their installed files. Check `this
   open GitHub issue <https://github.com/GoogleContainerTools/distroless/issues/741>`_

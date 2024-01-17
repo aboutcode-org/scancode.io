@@ -18,7 +18,7 @@ Pipeline Base Class
     :members:
     :member-order: bysource
 
-.. _pipeline_docker:
+.. _pipeline_analyze_docker_image:
 
 Analyse Docker Image
 --------------------
@@ -26,7 +26,7 @@ Analyse Docker Image
     :members:
     :member-order: bysource
 
-.. _pipeline_root_filesystems:
+.. _pipeline_analyze_root_filesystem:
 
 Analyze Root Filesystem or VM Image
 -----------------------------------
@@ -34,7 +34,7 @@ Analyze Root Filesystem or VM Image
     :members:
     :member-order: bysource
 
-.. _pipeline_docker_windows:
+.. _analyze_windows_docker_image:
 
 Analyse Docker Windows Image
 ----------------------------
@@ -66,7 +66,7 @@ Load Inventory
     :members:
     :member-order: bysource
 
-.. _pipeline_deploy_to_develop:
+.. _pipeline_map_deploy_to_develop:
 
 Map Deploy To Develop
 ---------------------
@@ -98,7 +98,7 @@ Scan Codebase Package
     :members:
     :member-order: bysource
 
-.. _pipeline_scan_package:
+.. _pipeline_scan_single_package:
 
 Scan Single Package
 -------------------

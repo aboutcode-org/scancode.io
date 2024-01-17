@@ -94,7 +94,7 @@ Using cURL:
     data='{
         "name": "project_name",
         "input_urls": "https://download.url/package.archive",
-        "pipeline": "scan_package",
+        "pipeline": "scan_single_package",
         "execute_now": true
     }'
 
@@ -111,7 +111,7 @@ Using cURL:
         upload_file="/path/to/the/archive.zip"
 
         curl -F "name=project_name" \
-             -F "pipeline=scan_package" \
+             -F "pipeline=scan_single_package" \
              -F "execute_now=True" \
              -F "upload_file=@$upload_file" \
              "$api_url"
@@ -131,7 +131,7 @@ Using Python and the **"requests"** library:
     data = {
         "name": "project_name",
         "input_urls": "https://download.url/package.archive",
-        "pipeline": "scan_package",
+        "pipeline": "scan_single_package",
         "execute_now": True,
     }
     response = requests.post(api_url, data=data)
@@ -149,7 +149,7 @@ Using Python and the **"requests"** library:
         api_url = "http://localhost/api/projects/"
         data = {
             "name": "project_name",
-            "pipeline": "scan_package",
+            "pipeline": "scan_single_package",
             "execute_now": True,
         }
         files = {"upload_file": open("/path/to/the/archive.zip", "rb")}
@@ -279,7 +279,7 @@ Using cURL:
     api_url="http://localhost/api/projects/6461408c-726c-4b70-aa7a-c9cc9d1c9685/add_pipeline/"
     content_type="Content-Type: application/json"
     data='{
-        "pipeline": "docker",
+        "pipeline": "analyze_docker_image",
         "execute_now": true
     }'
 
@@ -434,7 +434,7 @@ The run details view returns all information available about a pipeline run.
 
     {
         "url": "http://localhost/api/runs/8d5c3962-5fca-47d7-b8c8-47a19247714e/",
-        "pipeline_name": "scan_package",
+        "pipeline_name": "scan_single_package",
         "status": "success",
         "description": "A pipeline to scan a single package archive with ScanCode-toolkit.",
         "project": "http://localhost/api/projects/cd5b0459-303f-4e92-99c4-ea6d0a70193e/",

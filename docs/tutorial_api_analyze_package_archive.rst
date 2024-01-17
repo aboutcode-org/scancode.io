@@ -15,7 +15,7 @@ Instructions:
 - First, let's create a new project called ``boolean.py-3.8``.
 - We'll be using this `package <https://github.com/bastikr/boolean.py/archive/refs/tags/v3.8.zip>`_
   as the project input.
-- We can add and execute the scan_package pipeline on our new project.
+- We can add and execute the scan_single_package pipeline on our new project.
 
 .. note::
     Whether you follow this tutorial and previous instructions using cURL or
@@ -33,7 +33,7 @@ Using cURL
     data='{
         "name": "boolean.py-3.8",
         "input_urls": "https://github.com/bastikr/boolean.py/archive/refs/tags/v3.8.zip",
-        "pipeline": "scan_package",
+        "pipeline": "scan_single_package",
         "execute_now": true
     }'
 
@@ -52,7 +52,7 @@ Using cURL
         {
             "name": "boolean.py-3.8",
             "input_urls": "https://github.com/bastikr/boolean.py/archive/refs/tags/v3.8.zip",
-            "pipeline": "scan_package",
+            "pipeline": "scan_single_package",
             "execute_now": true
         }
 
@@ -100,7 +100,7 @@ Using Python script
     data = {
         "name": "boolean.py-3.8",
         "input_urls": "https://github.com/bastikr/boolean.py/archive/refs/tags/v3.8.zip",
-        "pipeline": "scan_package",
+        "pipeline": "scan_single_package",
         "execute_now": True,
     }
     response = requests.post(api_url, data=data)

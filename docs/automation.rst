@@ -93,7 +93,7 @@ For instance, you can create a project and trigger it using the following comman
 crontab::
 
     docker compose exec -it web scanpipe create-project scan-$(date +"%Y-%m-%dT%H:%M:%S") \
-      --pipeline scan_package \
+      --pipeline scan_single_package \
       --input-url https://github.com/package-url/packageurl-python/archive/refs/heads/main.zip \
       --execute
 
