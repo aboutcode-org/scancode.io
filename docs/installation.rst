@@ -140,6 +140,18 @@ interface with::
 
     docker compose exec -it web scanpipe COMMAND
 
+Use alternative HTTP ports
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, the application is accessible on port 80 for HTTP and 443 for HTTPS
+requests. This assumes that these ports are not already occupied by another
+application. You can customize both of these ports by adjusting the following
+variables in the ``.env`` file, located in the root of the application directory,
+next to the ``docker-compose.yml`` file::
+
+    NGINX_PUBLISHED_HTTP_PORT=8080
+    NGINX_PUBLISHED_HTTPS_PORT=8443
+
 .. _offline_installation:
 
 Offline installation with Docker
@@ -202,20 +214,6 @@ And visit the web UI at: http://localhost/project/
 
          sudo systemctl stop nginx
          sudo systemctl stop apache2
-
-See also the next section for setting up custom HTTP ports.
-
-Use alternative HTTP ports
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-By default, the application is accessible on port 80 for HTTP and 443 for HTTPS
-requests. This assumes that these ports are not already occupied by another
-application. You can customize both of these ports by adjusting the following
-variables in the ``.env`` file, located in the root of the application directory,
-next to the ``docker-compose.yml`` file::
-
-    NGINX_PUBLISHED_HTTP_PORT=8080
-    NGINX_PUBLISHED_HTTPS_PORT=8443
 
 .. _local_development_installation:
 
