@@ -35,6 +35,12 @@ from univers.version_range import InvalidVersionRange
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes.output import to_json
+from scanpipe.models import AbstractTaskFieldsModel
+
+
+class PurlDBException(Exception):
+    pass
+
 
 label = "PurlDB"
 logger = logging.getLogger(__name__)
@@ -354,12 +360,30 @@ def poll_until_success(run_url, sleep=10):
     Given a URL to a scancode.io run instance, `run_url`, return True when the
     run instance has completed successfully.
     """
+    run_status = AbstractTaskFieldsModel.Status
     while True:
         response = request_get(run_url)
         if response:
             status = response["status"]
-            if status == "success":
+            if status == run_status.SUCCESS:
                 return True
+
+            if status in [
+                run_status.NOT_STARTED,
+                run_status.QUEUED,
+                run_status.RUNNING,
+            ]:
+                continue
+
+            if status in [
+                run_status.FAILURE,
+                run_status.STOPPED,
+                run_status.STALE,
+            ]:
+                log = response["log"]
+                msg = f"Matching run has stopped:\n\n{log}"
+                raise PurlDBException(msg)
+
         time.sleep(sleep)
 
 
