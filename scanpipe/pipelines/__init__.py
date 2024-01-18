@@ -23,7 +23,6 @@
 import inspect
 import logging
 import traceback
-import warnings
 from contextlib import contextmanager
 from functools import wraps
 from pydoc import getdoc
@@ -41,6 +40,16 @@ logger = logging.getLogger(__name__)
 
 class InputFileError(Exception):
     """InputFile is missing or cannot be downloaded."""
+
+
+def tag_method(*tags):
+    """Tag methods with specified values."""
+
+    def decorator(func):
+        setattr(func, "tags", tags)
+        return func
+
+    return decorator
 
 
 class BasePipeline:
@@ -63,19 +72,28 @@ class BasePipeline:
         raise NotImplementedError
 
     @classmethod
-    def get_steps(cls):
+    def get_steps(cls, tags=None):
         """
-        Raise a deprecation warning when the steps are defined as a tuple instead of
-        a classmethod.
-        """
-        if callable(cls.steps):
-            return cls.steps()
+        Return the list of steps defined in the ``steps`` class method.
 
-        warnings.warn(
-            f"Defining ``steps`` as a tuple is deprecated in {cls} "
-            f"Use a ``steps(cls)`` classmethod instead."
-        )
-        return cls.steps
+        If the optional ``tags`` parameter is provided, only include steps labeled
+        with tags that intersect with the provided list. If a step has no tags or
+        if ``tags`` is not specified, include the step in the result.
+        """
+        if not callable(cls.steps):
+            raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
+
+        steps = cls.steps()
+
+        if tags is not None:
+            steps = tuple(
+                step
+                for step in steps
+                if not getattr(step, "tags", [])
+                or set(getattr(step, "tags")).intersection(tags)
+            )
+
+        return steps
 
     @classmethod
     def get_doc(cls):

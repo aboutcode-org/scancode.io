@@ -24,7 +24,6 @@ import json
 import os
 import sys
 import tempfile
-import warnings
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -51,6 +50,7 @@ from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
+from scanpipe.tests.pipelines.with_tags import WithTags
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
@@ -242,17 +242,37 @@ class ScanPipePipelinesTest(TestCase):
         )
         self.assertEqual(expected, DoNothing.get_steps())
 
-        expected = (StepsAsAttribute.step1,)
-        with warnings.catch_warnings(record=True) as caught_warnings:
-            self.assertEqual(expected, StepsAsAttribute.get_steps())
-            self.assertEqual(len(caught_warnings), 1)
-            caught_warning = caught_warnings[0]
+        with self.assertRaises(TypeError) as cm:
+            StepsAsAttribute.get_steps()
+        expected = "Use a ``steps(cls)`` classmethod to declare the steps."
+        self.assertEqual(expected, str(cm.exception))
+
+    def test_scanpipe_pipelines_class_get_steps_with_tags(self):
+        expected = (
+            WithTags.tagged_with_foo_and_bar,
+            WithTags.tagged_with_bar,
+            WithTags.tagged_with_excluded,
+            WithTags.no_tags,
+        )
+        self.assertEqual(expected, WithTags.get_steps())
+
+        expected = (WithTags.no_tags,)
+        self.assertEqual(expected, WithTags.get_steps(tags=[]))
+        self.assertEqual(expected, WithTags.get_steps(tags=["not"]))
 
         expected = (
-            f"Defining ``steps`` as a tuple is deprecated in {StepsAsAttribute} "
-            f"Use a ``steps(cls)`` classmethod instead."
+            WithTags.tagged_with_foo_and_bar,
+            WithTags.tagged_with_bar,
+            WithTags.no_tags,
         )
-        self.assertEqual(expected, str(caught_warning.message))
+        self.assertEqual(expected, WithTags.get_steps(tags=["bar"]))
+        self.assertEqual(expected, WithTags.get_steps(tags=["foo", "bar"]))
+
+        expected = (
+            WithTags.tagged_with_foo_and_bar,
+            WithTags.no_tags,
+        )
+        self.assertEqual(expected, WithTags.get_steps(tags=["foo"]))
 
     def test_scanpipe_pipelines_class_env_loaded_from_config_file(self):
         project1 = Project.objects.create(name="Analysis")
