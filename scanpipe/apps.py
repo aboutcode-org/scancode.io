@@ -168,6 +168,27 @@ class ScanPipeConfig(AppConfig):
         choices.extend([(name, name) for name in pipeline_names])
         return choices
 
+    @staticmethod
+    def get_new_pipeline_name(pipeline_name):
+        """Backward compatibility with old pipeline names."""
+        pipeline_old_names_mapping = {
+            "docker": "analyze_docker_image",
+            "root_filesystems": "analyze_root_filesystem_or_vm_image",
+            "docker_windows": "analyze_windows_docker_image",
+            "inspect_manifest": "inspect_packages",
+            "deploy_to_develop": "map_deploy_to_develop",
+            "scan_package": "scan_single_package",
+        }
+        if new_name := pipeline_old_names_mapping.get(pipeline_name):
+            warnings.warn(
+                f"Pipeline name {pipeline_name} is deprecated and will be "
+                f"removed in a future release. Use {new_name} instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return new_name
+        return pipeline_name
+
     def get_scancode_licenses(self):
         """
         Load licenses-related information from the ScanCode-toolkit ``licensedcode``

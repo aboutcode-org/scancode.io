@@ -122,20 +122,31 @@ class ScanPipeAppsTest(TestCase):
 
     def test_scanpipe_apps_get_pipeline_choices(self):
         blank_entry = ("", "---------")
-        main_pipline = ("scan_codebase", "scan_codebase")
-        addon_pipline = ("find_vulnerabilities", "find_vulnerabilities")
+        main_pipeline = ("scan_codebase", "scan_codebase")
+        addon_pipeline = ("find_vulnerabilities", "find_vulnerabilities")
 
         choices = scanpipe_app.get_pipeline_choices()
         self.assertIn(blank_entry, choices)
-        self.assertIn(main_pipline, choices)
-        self.assertIn(addon_pipline, choices)
+        self.assertIn(main_pipeline, choices)
+        self.assertIn(addon_pipeline, choices)
 
         choices = scanpipe_app.get_pipeline_choices(include_blank=False)
         self.assertNotIn(blank_entry, choices)
-        self.assertIn(main_pipline, choices)
-        self.assertIn(addon_pipline, choices)
+        self.assertIn(main_pipeline, choices)
+        self.assertIn(addon_pipeline, choices)
 
         choices = scanpipe_app.get_pipeline_choices(include_addon=False)
         self.assertIn(blank_entry, choices)
-        self.assertIn(main_pipline, choices)
-        self.assertNotIn(addon_pipline, choices)
+        self.assertIn(main_pipeline, choices)
+        self.assertNotIn(addon_pipeline, choices)
+
+    def test_scanpipe_apps_get_new_pipeline_name(self):
+        self.assertEqual(
+            "scan_codebase", scanpipe_app.get_new_pipeline_name("scan_codebase")
+        )
+        self.assertEqual(
+            "not_existing", scanpipe_app.get_new_pipeline_name("not_existing")
+        )
+        self.assertEqual(
+            "analyze_docker_image", scanpipe_app.get_new_pipeline_name("docker")
+        )

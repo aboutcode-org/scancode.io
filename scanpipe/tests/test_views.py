@@ -96,12 +96,12 @@ class ScanPipeViewsTest(TestCase):
         self.assertContains(response, is_archived_filters, html=True)
 
         pipeline_filters = [
-            "?pipeline=docker",
-            "?pipeline=docker_windows",
+            "?pipeline=analyze_docker_image",
+            "?pipeline=analyze_windows_docker_image",
             "?pipeline=load_inventory",
-            "?pipeline=root_filesystems",
+            "?pipeline=analyze_root_filesystem_or_vm_image",
             "?pipeline=scan_codebase",
-            "?pipeline=scan_package",
+            "?pipeline=scan_single_package",
         ]
         for pipeline_filter in pipeline_filters:
             self.assertContains(response, pipeline_filter)
@@ -313,7 +313,7 @@ class ScanPipeViewsTest(TestCase):
     def test_scanpipe_views_project_details_add_pipelines(self):
         url = self.project1.get_absolute_url()
         data = {
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
         }
         response = self.client.post(url, data, follow=True)
         self.assertEqual(404, response.status_code)
@@ -322,7 +322,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.post(url, data, follow=True)
         self.assertContains(response, "Pipeline added.")
         run = self.project1.runs.get()
-        self.assertEqual("docker", run.pipeline_name)
+        self.assertEqual("analyze_docker_image", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
     def test_scanpipe_views_project_details_add_labels(self):
@@ -550,7 +550,7 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_archive_view(self):
         url = reverse("project_archive", args=[self.project1.slug])
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(run.pk)
 
         response = self.client.post(url, follow=True)
@@ -569,7 +569,7 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_delete_view(self):
         url = reverse("project_delete", args=[self.project1.slug])
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(run.pk)
 
         response = self.client.post(url, follow=True)
@@ -587,7 +587,7 @@ class ScanPipeViewsTest(TestCase):
 
     def test_scanpipe_views_project_reset_view(self):
         url = reverse("project_reset", args=[self.project1.slug])
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(run.pk)
 
         response = self.client.post(url, follow=True)
@@ -651,7 +651,7 @@ class ScanPipeViewsTest(TestCase):
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_views_execute_pipelines_view(self, mock_execute_task):
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_execute_pipelines", args=[self.project1.slug])
 
         response = self.client.get(url, follow=True)
@@ -674,7 +674,7 @@ class ScanPipeViewsTest(TestCase):
 
     @mock.patch("scanpipe.models.Run.stop_task")
     def test_scanpipe_views_stop_pipeline_view(self, mock_stop_task):
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_stop_pipeline", args=[self.project1.slug, run.uuid])
 
         response = self.client.get(url)
@@ -688,7 +688,7 @@ class ScanPipeViewsTest(TestCase):
 
     @mock.patch("scanpipe.models.Run.delete_task")
     def test_scanpipe_views_delete_pipeline_view(self, mock_delete_task):
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("project_delete_pipeline", args=[self.project1.slug, run.uuid])
 
         response = self.client.get(url, follow=True)
@@ -701,7 +701,7 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(404, response.status_code)
 
     def test_scanpipe_views_run_status_view(self):
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run_status", args=[run.uuid])
 
         response = self.client.get(url)
