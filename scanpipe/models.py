@@ -2299,8 +2299,10 @@ class CodebaseResource(
         # This workaround ensures that the entire content of map files is displayed.
         file_type = get_type(self.location)
         if file_type.is_js_map:
-            f = open(self.location, "r")
-            return json.dumps(json.load(f), indent=2)
+            with open(self.location, "r") as file:
+                content = json.load(file)
+
+            return json.dumps(content, indent=2)
 
         numbered_lines = numbered_text_lines(self.location)
         numbered_lines = self._regroup_numbered_lines(numbered_lines)

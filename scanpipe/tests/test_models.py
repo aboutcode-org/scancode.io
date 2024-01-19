@@ -1148,8 +1148,9 @@ class ScanPipeModelsTest(TestCase):
         copy_input(map_file_path, self.project1.codebase_path)
         resource = self.project1.codebaseresources.create(path="main.js.map")
 
-        f = open(map_file_path, "r")
-        expected = json.load(f)
+        with open(map_file_path, "r") as file:
+            expected = json.load(file)
+
         result = json.loads(resource.file_content)
 
         self.assertEqual(expected, result)
