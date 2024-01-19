@@ -3,12 +3,18 @@
     {
       "tool_name": "scanpipe",
       "notice": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n",
-      "input_sources": [],
+      "input_sources": [
+        {
+          "filename": "basic-rootfs.tar.gz",
+          "is_uploaded": false,
+          "is_file": true,
+          "exists": true
+        }
+      ],
       "runs": [
         {
-          "pipeline_name": "root_filesystems",
+          "pipeline_name": "analyze_root_filesystem_or_vm_image",
           "status": "not_started",
-          "description": "Analyze a Linux root filesystem, also known as rootfs.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,
@@ -60,7 +66,6 @@
       "subpath": "",
       "tag": "",
       "primary_language": "",
-      "description": "shared libraries for terminal handling\n The ncurses library routines are a terminal-independent method of\n updating character screens with reasonable optimization.\n .\n This package contains the shared libraries necessary to run programs\n compiled with ncurses.",
       "release_date": null,
       "parties": [
         {
@@ -196,7 +201,6 @@
       "subpath": "",
       "tag": "",
       "primary_language": "",
-      "description": "Library for Neighbor Discovery Protocol\n libndp is a library for the IPv6 Neighbor Discovery Protocol (NDP).  It\n contains functions for building and parsing NDP messages, and provides\n a high-level interface for sending and receiving NDP messages on a\n network interface.",
       "release_date": null,
       "parties": [
         {

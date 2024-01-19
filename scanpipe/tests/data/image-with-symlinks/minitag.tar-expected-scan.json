@@ -6,14 +6,17 @@
       "input_sources": [
         {
           "filename": "minitag.tar",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [
         {
-          "pipeline_name": "docker",
+          "pipeline_name": "analyze_docker_image",
           "status": "not_started",
-          "description": "Analyze Docker images.",
           "scancodeio_version": "",
           "task_id": null,
           "task_start_date": null,

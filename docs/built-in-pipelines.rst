@@ -18,26 +18,26 @@ Pipeline Base Class
     :members:
     :member-order: bysource
 
-.. _pipeline_deploy_to_develop:
+.. _pipeline_analyze_docker_image:
 
-Deploy To Develop
------------------
-.. autoclass:: scanpipe.pipelines.deploy_to_develop.DeployToDevelop()
-    :members:
-    :member-order: bysource
-
-.. _pipeline_docker:
-
-Docker Image Analysis
----------------------
+Analyse Docker Image
+--------------------
 .. autoclass:: scanpipe.pipelines.docker.Docker()
     :members:
     :member-order: bysource
 
-.. _pipeline_docker_windows:
+.. _pipeline_analyze_root_filesystem:
 
-Docker Windows Image Analysis
------------------------------
+Analyze Root Filesystem or VM Image
+-----------------------------------
+.. autoclass:: scanpipe.pipelines.root_filesystem.RootFS()
+    :members:
+    :member-order: bysource
+
+.. _analyze_windows_docker_image:
+
+Analyse Docker Windows Image
+----------------------------
 .. autoclass:: scanpipe.pipelines.docker_windows.DockerWindows()
     :members:
     :member-order: bysource
@@ -50,19 +50,27 @@ Find Vulnerabilities
     :members:
     :member-order: bysource
 
-.. _pipeline_inspect_manifest:
+.. _pipeline_inspect_packages:
 
-Inspect Manifest
+Inspect Packages
 ----------------
-.. autoclass:: scanpipe.pipelines.inspect_manifest.InspectManifest()
+.. autoclass:: scanpipe.pipelines.inspect_packages.InspectPackages()
     :members:
     :member-order: bysource
 
 .. _pipeline_load_inventory:
 
-Load Inventory From Scan
-------------------------
+Load Inventory
+--------------
 .. autoclass:: scanpipe.pipelines.load_inventory.LoadInventory()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_map_deploy_to_develop:
+
+Map Deploy To Develop
+---------------------
+.. autoclass:: scanpipe.pipelines.deploy_to_develop.DeployToDevelop()
     :members:
     :member-order: bysource
 
@@ -71,14 +79,6 @@ Load Inventory From Scan
 Populate PurlDB
 ---------------
 .. autoclass:: scanpipe.pipelines.populate_purldb.PopulatePurlDB()
-    :members:
-    :member-order: bysource
-
-.. _pipeline_root_filesystems:
-
-Root Filesystem Analysis
-------------------------
-.. autoclass:: scanpipe.pipelines.root_filesystems.RootFS()
     :members:
     :member-order: bysource
 
@@ -98,10 +98,10 @@ Scan Codebase Package
     :members:
     :member-order: bysource
 
-.. _pipeline_scan_package:
+.. _pipeline_scan_single_package:
 
-Scan Package
-------------
-.. autoclass:: scanpipe.pipelines.scan_package.ScanPackage()
+Scan Single Package
+-------------------
+.. autoclass:: scanpipe.pipelines.scan_single_package.ScanSinglePackage()
     :members:
     :member-order: bysource

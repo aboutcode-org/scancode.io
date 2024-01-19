@@ -23,6 +23,7 @@
 import inspect
 import logging
 import sys
+import warnings
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
@@ -74,6 +75,12 @@ class ScanPipeConfig(AppConfig):
         # before its running process death.
         # In ASYNC mode, the cleanup is handled by the "ScanCodeIOWorker" worker.
         if not settings.SCANCODEIO_ASYNC and "runserver" in sys.argv:
+            warnings.filterwarnings(
+                "ignore",
+                message="Accessing the database during app initialization",
+                category=RuntimeWarning,
+                module="django",
+            )
             self.sync_runs_and_jobs()
 
     def load_pipelines(self):
@@ -82,9 +89,7 @@ class ScanPipeConfig(AppConfig):
         pipelines Python files found at `SCANCODEIO_PIPELINES_DIRS` locations.
         """
         entry_points = importlib_metadata.entry_points()
-
-        # Ignore duplicated entries caused by duplicated paths in `sys.path`.
-        pipeline_entry_points = set(entry_points.get("scancodeio_pipelines"))
+        pipeline_entry_points = set(entry_points.select(group="scancodeio_pipelines"))
 
         for entry_point in sorted(pipeline_entry_points):
             self.register_pipeline(name=entry_point.name, cls=entry_point.load())
@@ -152,11 +157,37 @@ class ScanPipeConfig(AppConfig):
     def pipelines(self):
         return dict(self._pipelines)
 
-    def get_pipeline_choices(self, include_blank=True):
+    def get_pipeline_choices(self, include_blank=True, include_addon=True):
         """Return a `choices` list of tuple suitable for a Django ChoiceField."""
+        pipeline_names = (
+            name
+            for name, cls in self.pipelines.items()
+            if include_addon or not cls.is_addon
+        )
         choices = list(BLANK_CHOICE_DASH) if include_blank else []
-        choices.extend([(name, name) for name in self.pipelines.keys()])
+        choices.extend([(name, name) for name in pipeline_names])
         return choices
+
+    @staticmethod
+    def get_new_pipeline_name(pipeline_name):
+        """Backward compatibility with old pipeline names."""
+        pipeline_old_names_mapping = {
+            "docker": "analyze_docker_image",
+            "root_filesystems": "analyze_root_filesystem_or_vm_image",
+            "docker_windows": "analyze_windows_docker_image",
+            "inspect_manifest": "inspect_packages",
+            "deploy_to_develop": "map_deploy_to_develop",
+            "scan_package": "scan_single_package",
+        }
+        if new_name := pipeline_old_names_mapping.get(pipeline_name):
+            warnings.warn(
+                f"Pipeline name {pipeline_name} is deprecated and will be "
+                f"removed in a future release. Use {new_name} instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return new_name
+        return pipeline_name
 
     def get_scancode_licenses(self):
         """

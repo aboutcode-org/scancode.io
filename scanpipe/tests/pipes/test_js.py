@@ -133,9 +133,11 @@ class ScanPipeJsTest(TestCase):
                 "resources/adaptive_media/js/main.js.map"
             )
         )
-        expected = open(expected_location, "r").read()
-        result = js.get_map_sources_content(to_resource)
 
+        with open(expected_location, "r") as f:
+            expected = f.read()
+
+        result = js.get_map_sources_content(to_resource)
         self.assertEqual([expected], result)
 
     def test_scanpipe_pipes_js_get_minified_resource(self):

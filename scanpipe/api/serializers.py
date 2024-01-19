@@ -31,11 +31,11 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.pipes import count_group_by
-from scanpipe.pipes.fetch import fetch_urls
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -77,6 +77,11 @@ class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
             self.fail("not_a_list", input_type=type(data).__name__)
         if not self.allow_empty and len(data) == 0:
             self.fail("empty")
+
+        # Backward compatibility with old pipeline names.
+        # This will need to be refactored in case this OrderedMultipleChoiceField
+        # class is used for another field that is not ``pipeline`` related.
+        data = [scanpipe_app.get_new_pipeline_name(pipeline) for pipeline in data]
 
         return [
             super(serializers.MultipleChoiceField, self).to_internal_value(item)
@@ -122,6 +127,19 @@ class RunSerializer(SerializerExcludeFieldsMixin, serializers.ModelSerializer):
         ]
 
 
+class InputSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InputSource
+        fields = [
+            "filename",
+            "download_url",
+            "is_uploaded",
+            "tag",
+            "exists",
+            "uuid",
+        ]
+
+
 class ProjectSerializer(
     ExcludeFromListViewMixin,
     PipelineChoicesMixin,
@@ -146,7 +164,11 @@ class ProjectSerializer(
     webhook_url = serializers.CharField(write_only=True, required=False)
     next_run = serializers.CharField(source="get_next_run", read_only=True)
     runs = RunSerializer(many=True, read_only=True)
-    input_sources = serializers.JSONField(source="input_sources_list", read_only=True)
+    input_sources = InputSourceSerializer(
+        source="inputsources",
+        many=True,
+        read_only=True,
+    )
     codebase_resources_summary = serializers.SerializerMethodField()
     discovered_packages_summary = serializers.SerializerMethodField()
     discovered_dependencies_summary = serializers.SerializerMethodField()
@@ -190,6 +212,7 @@ class ProjectSerializer(
             "settings",
             "input_root",
             "output_root",
+            "next_run",
             "extra_data",
             "message_count",
             "resource_count",
@@ -243,17 +266,13 @@ class ProjectSerializer(
         execute_now = validated_data.pop("execute_now", False)
         webhook_url = validated_data.pop("webhook_url", None)
 
-        downloads, errors = fetch_urls(input_urls)
-        if errors:
-            raise serializers.ValidationError("Could not fetch: " + "\n".join(errors))
-
         project = super().create(validated_data)
 
         if upload_file:
             project.add_uploads([upload_file])
 
-        if downloads:
-            project.add_downloads(downloads)
+        for url in input_urls:
+            project.add_input_source(download_url=url)
 
         if webhook_url:
             project.add_webhook_subscription(webhook_url)

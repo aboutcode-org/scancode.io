@@ -41,12 +41,12 @@ class ScanPipeFetchPipesTest(TestCase):
         downloaded_file = fetch.fetch_http(url)
         self.assertTrue(Path(downloaded_file.directory, "filename.zip").exists())
 
-        redirect_url = "https://example.com/redirect.zip"
+        url_with_spaces = "https://example.com/space%20in%20name.zip"
         mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url=redirect_url
+            content=b"\x00", headers={}, status_code=200, url=url_with_spaces
         )
         downloaded_file = fetch.fetch_http(url)
-        self.assertTrue(Path(downloaded_file.directory, "redirect.zip").exists())
+        self.assertTrue(Path(downloaded_file.directory, "space in name.zip").exists())
 
         headers = {
             "content-disposition": 'attachment; filename="another_name.zip"',

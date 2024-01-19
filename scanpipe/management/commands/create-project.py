@@ -85,7 +85,7 @@ class Command(AddInputCommandMixin, BaseCommand):
             raise CommandError("\n".join(e.messages))
 
         # Run validation before creating the project in the database
-        validate_pipelines(pipeline_names)
+        pipeline_names = validate_pipelines(pipeline_names)
         validate_input_files(inputs_files)
         validate_copy_from(copy_from)
 

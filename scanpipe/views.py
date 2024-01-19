@@ -81,11 +81,11 @@ from scanpipe.models import CodebaseRelation
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
+from scanpipe.models import InputSource
 from scanpipe.models import Project
 from scanpipe.models import ProjectMessage
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
-from scanpipe.models import RunNotAllowedToStart
 from scanpipe.pipes import count_group_by
 from scanpipe.pipes import output
 
@@ -580,6 +580,7 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
         context["pipelines"] = {
             key: pipeline_class.get_info()
             for key, pipeline_class in scanpipe_app.pipelines.items()
+            if not pipeline_class.is_addon
         }
         return context
 
@@ -587,6 +588,9 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
 class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
     model = Project
     template_name = "scanpipe/project_detail.html"
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("runs")
 
     @staticmethod
     def get_license_clarity_data(scan_summary_json):
@@ -637,19 +641,29 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             )
             messages.warning(self.request, message)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        project = self.object
-        project_resources_url = reverse("project_resources", args=[project.slug])
+    def check_for_missing_inputs(self, project):
+        uploaded_input_sources = project.inputsources.filter(is_uploaded=True)
+        missing_inputs = [
+            input_source
+            for input_source in uploaded_input_sources
+            if not input_source.exists()
+        ]
 
-        inputs, missing_inputs = project.inputs_with_source
         if missing_inputs:
-            missing_files = "\n- ".join(missing_inputs.keys())
+            filenames = [input_source.filename for input_source in missing_inputs]
+            missing_files = "\n- ".join(filenames)
             message = (
                 f"The following input files are not available on disk anymore:\n"
                 f"- {missing_files}"
             )
             messages.error(self.request, message)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.object
+        project_resources_url = reverse("project_resources", args=[project.slug])
+
+        self.check_for_missing_inputs(project)
 
         if project.is_archived:
             message = "WARNING: This project is archived and read-only."
@@ -676,7 +690,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
 
         context.update(
             {
-                "inputs_with_source": inputs,
+                "input_sources": project.get_inputs_with_source(),
                 "labels": list(project.labels.all()),
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
@@ -1111,19 +1125,16 @@ class ProjectCloneView(ConditionalLoginRequired, FormAjaxMixin, generic.UpdateVi
 
 
 @conditional_login_required
-def execute_pipeline_view(request, slug, run_uuid):
+def execute_pipelines_view(request, slug):
     project = get_object_or_404(Project, slug=slug)
-    run = get_object_or_404(Run, uuid=run_uuid, project=project)
 
-    if run.status != run.Status.NOT_STARTED:
-        raise Http404("Pipeline already queued, started or completed.")
+    if not project.can_start_pipelines:
+        raise Http404
 
-    try:
-        run.start()
-    except RunNotAllowedToStart as error:
-        raise Http404(error)
+    job = project.start_pipelines()
+    if job:
+        messages.success(request, "Pipelines run started.")
 
-    messages.success(request, f"Pipeline {run.pipeline_name} run started.")
     return redirect(project)
 
 
@@ -1155,17 +1166,16 @@ def delete_pipeline_view(request, slug, run_uuid):
 
 @require_POST
 @conditional_login_required
-def delete_input_view(request, slug, input_name):
+def delete_input_view(request, slug, input_uuid):
     project = get_object_or_404(Project, slug=slug)
 
     if not project.can_change_inputs:
         raise Http404("Inputs cannot be deleted on this project.")
 
-    deleted = project.delete_input(name=input_name)
-    if deleted:
-        messages.success(request, f"Input {input_name} deleted.")
-    else:
-        messages.error(request, f"Input {input_name} not found.")
+    input_source = get_object_or_404(InputSource, uuid=input_uuid, project=project)
+    input_source.delete()
+    messages.success(request, f"Input {input_source.filename} deleted.")
+
     return redirect(project)
 
 
