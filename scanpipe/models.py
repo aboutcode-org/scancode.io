@@ -2422,6 +2422,17 @@ class CodebaseResource(
         for optimal compatibility.
         """
         from textcode.analysis import numbered_text_lines
+        from typecode import get_type
+
+        # When reading a map file, Textcode only provides the content inside
+        # `sourcesContent`, which can be misleading during any kind of review.
+        # This workaround ensures that the entire content of map files is displayed.
+        file_type = get_type(self.location)
+        if file_type.is_js_map:
+            with open(self.location, "r") as file:
+                content = json.load(file)
+
+            return json.dumps(content, indent=2)
 
         numbered_lines = numbered_text_lines(self.location)
         numbered_lines = self._regroup_numbered_lines(numbered_lines)
