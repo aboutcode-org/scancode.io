@@ -642,6 +642,46 @@ def match_purldb_resources(
     )
 
 
+def match_purldb_resources2(
+    project, extensions, matcher_func, chunk_size=1000, logger=None
+):
+    """
+    Match against PurlDB selecting codebase resources using provided
+    ``package_extensions`` for archive type files, and ``resource_extensions``.
+
+    Match requests are sent off in batches of 1000 SHA1s. This number is set
+    using `chunk_size`.
+    """
+    to_resources = (
+        project.codebaseresources.files()
+        .no_status()
+        .has_value("sha1")
+        .filter(extension__in=extensions)
+    )
+    resource_count = to_resources.count()
+
+    extensions_str = ", ".join(extensions)
+    if logger:
+        if resource_count > 0:
+            logger(
+                f"Matching {resource_count:,d} {extensions_str} resources in PurlDB, "
+                "using SHA1"
+            )
+        else:
+            logger(
+                f"Skipping matching for {extensions_str} resources, "
+                f"as there are {resource_count:,d}"
+            )
+
+    _match_purldb_resources(
+        project=project,
+        to_resources=to_resources,
+        matcher_func=matcher_func,
+        chunk_size=chunk_size,
+        logger=logger,
+    )
+
+
 def _match_purldb_resources(
     project, to_resources, matcher_func, chunk_size=1000, logger=None
 ):
