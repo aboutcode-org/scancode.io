@@ -234,8 +234,8 @@ class ScanPipeOutputPipesTest(TestCase):
         expected_location = self.data_path / "cyclonedx/django-4.0.10_as_cdx.json"
         results_as_json = results.as_json()
 
-        if True:
-            expected_location.write_text(results_as_json)
+        # if True:
+        #     expected_location.write_text(results_as_json)
 
         self.assertJSONEqual(results_as_json, expected_location.read_text())
 
