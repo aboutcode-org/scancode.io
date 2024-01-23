@@ -24,6 +24,7 @@ import collections
 import json
 import shutil
 import tempfile
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
@@ -229,7 +230,8 @@ class ScanPipeOutputPipesTest(TestCase):
 
         with mock.patch("cyclonedx.model.bom.uuid4") as mock_uuid4:
             with mock.patch("cyclonedx.model.bom.datetime") as mock_datetime:
-                mock_uuid4.return_value = "b74fe5df-e965-415e-ba65-f38421a0695d"
+                fake_uuid = uuid.UUID("b74fe5df-e965-415e-ba65-f38421a0695d")
+                mock_uuid4.return_value = fake_uuid
                 mock_datetime.now = lambda tz: ""
                 output_file = output.to_cyclonedx(project=project)
 

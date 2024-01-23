@@ -65,9 +65,9 @@ import requests
 import saneyaml
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
+from cyclonedx.factory.license import LicenseFactory
 from cyclonedx.model import component as cyclonedx_component
 from extractcode import EXTRACT_SUFFIX
-from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
@@ -90,6 +90,7 @@ from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
+cyclonedx_license_factory = LicenseFactory()
 
 
 class RunInProgressError(Exception):
@@ -3062,9 +3063,7 @@ class DiscoveredPackage(
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
         if expression_spdx := self.get_declared_license_expression_spdx():
-            licenses = [
-                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
-            ]
+            licenses = [cyclonedx_license_factory.make_from_string(expression_spdx)]
 
         hash_fields = {
             "md5": cyclonedx_model.HashAlgorithm.MD5,
@@ -3073,7 +3072,7 @@ class DiscoveredPackage(
             "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
         }
         hashes = [
-            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            cyclonedx_model.HashType(alg=algorithm, content=hash_value)
             for field_name, algorithm in hash_fields.items()
             if (hash_value := getattr(self, field_name))
         ]
@@ -3097,21 +3096,30 @@ class DiscoveredPackage(
             if (value := getattr(self, field_name)) not in EMPTY_VALUES
         ]
 
-        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        reference_type = cyclonedx_model.ExternalReferenceType
+        url_field_to_cdx_type = {
+            "api_data_url": reference_type.BOM,
+            "bug_tracking_url": reference_type.ISSUE_TRACKER,
+            "code_view_url": reference_type.OTHER,
+            "download_url": reference_type.DISTRIBUTION,
+            "homepage_url": reference_type.WEBSITE,
+            "repository_download_url": reference_type.DISTRIBUTION,
+            "repository_homepage_url": reference_type.WEBSITE,
+            "vcs_url": reference_type.VCS,
+        }
         external_references = [
-            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
-            for field_name, reference_type in cyclonedx_url_to_type.items()
+            cyclonedx_model.ExternalReference(type=reference_type, url=url)
+            for field_name, reference_type in url_field_to_cdx_type.items()
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        purl = self.package_url
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
             bom_ref=self.package_uid or str(self.uuid),
-            purl=purl,
+            purl=self.get_package_url(),
             licenses=licenses,
-            copyright_=self.copyright,
+            copyright=self.copyright,
             description=self.description,
             hashes=hashes,
             properties=properties,

@@ -34,9 +34,9 @@ from django.template import Template
 
 import saneyaml
 import xlsxwriter
-from cyclonedx import output as cyclonedx_output
 from cyclonedx.model import bom as cyclonedx_bom
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.output.json import JsonV1Dot5
 from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
@@ -584,38 +584,37 @@ def get_cyclonedx_bom(project):
     Return a CycloneDX `Bom` object filled with provided `project` data.
     See https://cyclonedx.org/use-cases/#dependency-graph
     """
-    components = [
-        *get_queryset(project, "discoveredpackage"),
-    ]
-
-    cyclonedx_components = [component.as_cyclonedx() for component in components]
-
-    bom = cyclonedx_bom.Bom(components=cyclonedx_components)
-
-    project_as_cyclonedx = cyclonedx_component.Component(
+    project_as_root_component = cyclonedx_component.Component(
         name=project.name,
         bom_ref=str(project.uuid),
     )
 
-    project_as_cyclonedx.dependencies.update(
-        [component.bom_ref for component in cyclonedx_components]
+    bom = cyclonedx_bom.Bom(
+        metadata=cyclonedx_bom.BomMetaData(
+            component=project_as_root_component,
+            tools=[
+                cyclonedx_bom.Tool(
+                    name="ScanCode.io",
+                    version=scancodeio_version,
+                )
+            ],
+            properties=[
+                cyclonedx_bom.Property(
+                    name="notice",
+                    value=SCAN_NOTICE,
+                )
+            ],
+        ),
     )
 
-    bom.metadata = cyclonedx_bom.BomMetaData(
-        component=project_as_cyclonedx,
-        tools=[
-            cyclonedx_bom.Tool(
-                name="ScanCode.io",
-                version=scancodeio_version,
-            )
-        ],
-        properties=[
-            cyclonedx_bom.Property(
-                name="notice",
-                value=SCAN_NOTICE,
-            )
-        ],
-    )
+    components = [
+        *get_queryset(project, "discoveredpackage"),
+    ]
+    cyclonedx_components = [component.as_cyclonedx() for component in components]
+
+    for component in cyclonedx_components:
+        bom.components.add(component)
+        bom.register_dependency(project_as_root_component, [component])
 
     return bom
 
@@ -628,16 +627,12 @@ def to_cyclonedx(project):
     """
     output_file = project.get_output_file_path("results", "cdx.json")
 
-    cyclonedx_bom = get_cyclonedx_bom(project)
+    bom = get_cyclonedx_bom(project)
+    json_outputter = JsonV1Dot5(bom)
+    serialized_json = json_outputter.output_as_string(indent=2)
 
-    outputter = cyclonedx_output.get_instance(
-        bom=cyclonedx_bom,
-        output_format=cyclonedx_output.OutputFormat.JSON,
-    )
-
-    bom_json = outputter.output_as_string()
     with output_file.open("w") as file:
-        file.write(bom_json)
+        file.write(serialized_json)
 
     return output_file
 
