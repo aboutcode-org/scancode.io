@@ -31,6 +31,7 @@ class FindVulnerabilities(Pipeline):
     Vulnerability data is stored on each package and dependency instance.
     """
 
+    download_inputs = False
     is_addon = True
 
     @classmethod
