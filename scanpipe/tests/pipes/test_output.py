@@ -229,17 +229,16 @@ class ScanPipeOutputPipesTest(TestCase):
         project = Project.objects.get(name="asgiref")
 
         with mock.patch("cyclonedx.model.bom.uuid4") as mock_uuid4:
-            with mock.patch("cyclonedx.model.bom.datetime") as mock_datetime:
-                fake_uuid = uuid.UUID("b74fe5df-e965-415e-ba65-f38421a0695d")
-                mock_uuid4.return_value = fake_uuid
-                mock_datetime.now = lambda tz: ""
-                output_file = output.to_cyclonedx(project=project)
+            fake_uuid = uuid.UUID("b74fe5df-e965-415e-ba65-f38421a0695d")
+            mock_uuid4.return_value = fake_uuid
+            output_file = output.to_cyclonedx(project=project)
 
         self.assertIn(output_file.name, project.output_root)
 
         # Patch the tool version
         results_json = json.loads(output_file.read_text())
-        results_json["metadata"]["tools"][0]["version"] = "31.0.0"
+        results_json["metadata"]["tools"][0]["version"] = "0.0.0"
+        results_json["metadata"]["timestamp"] = ""
         results = json.dumps(results_json, indent=2)
 
         expected_location = self.data_path / "cyclonedx/asgiref-3.3.0.cdx.json"

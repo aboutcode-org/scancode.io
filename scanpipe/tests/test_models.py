@@ -1909,7 +1909,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
         bom_ref = package.package_uid
         self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
-        package_url = PackageURL.from_string("pkg:deb/debian/adduser@3.118?arch=all")
+        package_url = PackageURL.from_string(package_data1["package_uid"])
         self.assertEqual(package_url, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
         expected = "GPL-2.0-only AND GPL-2.0-or-later"

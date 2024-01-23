@@ -3113,11 +3113,19 @@ class DiscoveredPackage(
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
+        # Always use the ``package_uid`` when defined to ensure having unique
+        # package_url in the BOM when several instances of the same DiscoveredPackage
+        # are present in the project.
+        try:
+            package_url = PackageURL.from_string(self.package_uid)
+        except ValueError:
+            package_url = self.get_package_url()
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=self.package_uid or str(self.uuid),
-            purl=self.get_package_url(),
+            bom_ref=str(package_url),
+            purl=package_url,
             licenses=licenses,
             copyright=self.copyright,
             description=self.description,
