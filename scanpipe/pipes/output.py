@@ -34,8 +34,9 @@ from django.template import Template
 
 import saneyaml
 import xlsxwriter
-from cyclonedx.model import bom as cyclonedx_bom
-from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import bom as cdx_bom
+from cyclonedx.model import component as cdx_component
+from cyclonedx.model import vulnerability as cdx_vulnerability
 from cyclonedx.output.json import JsonV1Dot5
 from license_expression import Licensing
 from license_expression import ordered_unique
@@ -579,42 +580,114 @@ def to_spdx(project, include_files=False):
     return output_file
 
 
+def vulnerability_as_cyclonedx(vulnerability_data, component_bom_ref):
+    affects = [cdx_vulnerability.BomTarget(ref=f"urn:cdx:{component_bom_ref}")]
+
+    source = cdx_vulnerability.VulnerabilitySource(
+        name="VulnerableCode",
+        url=vulnerability_data.get("url"),
+    )
+
+    references = []
+    ratings = []
+    for reference in vulnerability_data.get("references", []):
+        source = cdx_vulnerability.VulnerabilitySource(
+            url=reference.get("reference_url"),
+        )
+
+        references.append(
+            cdx_vulnerability.VulnerabilityReference(
+                id=reference.get("reference_id"),
+                source=source,
+            )
+        )
+
+        for score_entry in reference.get("scores", []):
+            # CycloneDX only support a float value as ``score``
+            score_value = score_entry.get("value")
+            try:
+                score = float(score_value)
+                severity = None
+            except ValueError:
+                score = None
+                severity = getattr(
+                    cdx_vulnerability.VulnerabilitySeverity,
+                    score_value.upper(),
+                    None,
+                )
+
+            ratings.append(
+                cdx_vulnerability.VulnerabilityRating(
+                    source=source,
+                    score=score,
+                    severity=severity,
+                    # Providing a value for method raise a AssertionError
+                    # method=method,
+                    vector=score_entry.get("scoring_elements"),
+                )
+            )
+
+    cwes = [
+        weakness.get("cwe_id") for weakness in vulnerability_data.get("weaknesses", [])
+    ]
+
+    return cdx_vulnerability.Vulnerability(
+        id=vulnerability_data.get("vulnerability_id"),
+        source=source,
+        description=vulnerability_data.get("summary"),
+        affects=affects,
+        references=references,
+        cwes=cwes,
+        ratings=ratings,
+    )
+
+
 def get_cyclonedx_bom(project):
     """
     Return a CycloneDX `Bom` object filled with provided `project` data.
     See https://cyclonedx.org/use-cases/#dependency-graph
     """
-    project_as_root_component = cyclonedx_component.Component(
+    project_as_root_component = cdx_component.Component(
         name=project.name,
         bom_ref=str(project.uuid),
     )
 
-    bom = cyclonedx_bom.Bom(
-        metadata=cyclonedx_bom.BomMetaData(
-            component=project_as_root_component,
-            tools=[
-                cyclonedx_bom.Tool(
-                    name="ScanCode.io",
-                    version=scancodeio_version,
-                )
-            ],
-            properties=[
-                cyclonedx_bom.Property(
-                    name="notice",
-                    value=SCAN_NOTICE,
-                )
-            ],
-        ),
+    bom = cdx_bom.Bom()
+    bom.metadata = cdx_bom.BomMetaData(
+        component=project_as_root_component,
+        tools=[
+            cdx_bom.Tool(
+                name="ScanCode.io",
+                version=scancodeio_version,
+            )
+        ],
+        properties=[
+            cdx_bom.Property(
+                name="notice",
+                value=SCAN_NOTICE,
+            )
+        ],
     )
 
-    components = [
-        *get_queryset(project, "discoveredpackage"),
-    ]
-    cyclonedx_components = [component.as_cyclonedx() for component in components]
+    components = []
+    vulnerabilities = []
+    for package in get_queryset(project, "discoveredpackage"):
+        component = package.as_cyclonedx()
+        components.append(component)
 
-    for component in cyclonedx_components:
+        for vulnerability_data in package.affected_by_vulnerabilities:
+            vulnerabilities.append(
+                vulnerability_as_cyclonedx(
+                    vulnerability_data=vulnerability_data,
+                    component_bom_ref=component.bom_ref,
+                )
+            )
+
+    for component in components:
         bom.components.add(component)
         bom.register_dependency(project_as_root_component, [component])
+
+    bom.vulnerabilities = vulnerabilities
 
     return bom
 

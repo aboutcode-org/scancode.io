@@ -222,6 +222,23 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
+    def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
+        component_bom_ref = "pkg:pypi/django@4.0.10"
+        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
+
+        vulnerability_data = json.loads(data_location.read_text())
+        results = output.vulnerability_as_cyclonedx(
+            vulnerability_data, component_bom_ref
+        )
+
+        expected_location = self.data_path / "cyclonedx/django-4.0.10_as_cdx.json"
+        results_as_json = results.as_json()
+
+        if True:
+            expected_location.write_text(results_as_json)
+
+        self.assertJSONEqual(results_as_json, expected_location.read_text())
+
     def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
