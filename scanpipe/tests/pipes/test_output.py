@@ -245,6 +245,14 @@ class ScanPipeOutputPipesTest(TestCase):
 
         project = Project.objects.get(name="asgiref")
 
+        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
+        vulnerability_data = json.loads(data_location.read_text())
+        package = project.discoveredpackages.get(
+            uuid="55d95cd9-71f9-4cbe-8574-bde9469cc6dc"
+        )
+        package.affected_by_vulnerabilities = [vulnerability_data]
+        package.save()
+
         with mock.patch("cyclonedx.model.bom.uuid4") as mock_uuid4:
             fake_uuid = uuid.UUID("b74fe5df-e965-415e-ba65-f38421a0695d")
             mock_uuid4.return_value = fake_uuid
@@ -256,6 +264,7 @@ class ScanPipeOutputPipesTest(TestCase):
         results_json = json.loads(output_file.read_text())
         results_json["metadata"]["tools"][0]["version"] = "0.0.0"
         results_json["metadata"]["timestamp"] = ""
+        results_json["vulnerabilities"][0]["bom-ref"] = "BomRef"
         results = json.dumps(results_json, indent=2)
 
         expected_location = self.data_path / "cyclonedx/asgiref-3.3.0.cdx.json"

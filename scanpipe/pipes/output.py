@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import csv
+import decimal
 import json
 import re
 from operator import attrgetter
@@ -606,9 +607,9 @@ def vulnerability_as_cyclonedx(vulnerability_data, component_bom_ref):
             # CycloneDX only support a float value as ``score``
             score_value = score_entry.get("value")
             try:
-                score = float(score_value)
+                score = decimal.Decimal(score_value)
                 severity = None
-            except ValueError:
+            except decimal.DecimalException:
                 score = None
                 severity = getattr(
                     cdx_vulnerability.VulnerabilitySeverity,

@@ -118,6 +118,86 @@
   },
   "serialNumber": "urn:uuid:b74fe5df-e965-415e-ba65-f38421a0695d",
   "version": 1,
+  "vulnerabilities": [
+    {
+      "affects": [
+        {
+          "ref": "urn:cdx:pkg:pypi/asgiref@3.3.0?uuid=59acfc0c-6436-442e-8ae5-9eb0f37baa29"
+        }
+      ],
+      "bom-ref": "BomRef",
+      "cwes": [
+        1
+      ],
+      "description": "Django bypasses validation when using one form field to upload multiple files",
+      "id": "VCID-589h-ndhj-aaab",
+      "ratings": [
+        {
+          "severity": "critical",
+          "source": {
+            "url": "https://github.com/advisories/GHSA-r3xc-prgr-mg9p"
+          },
+          "vector": ""
+        },
+        {
+          "severity": "medium",
+          "source": {
+            "url": "https://groups.google.com/forum/#!forum/django-announce"
+          },
+          "vector": ""
+        },
+        {
+          "score": 6.5,
+          "source": {
+            "url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2023-31047.json"
+          },
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+        },
+        {
+          "score": 9.8,
+          "source": {
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-31047"
+          },
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        }
+      ],
+      "references": [
+        {
+          "id": "",
+          "source": {
+            "url": "https://access.redhat.com/hydra/rest/securitydata/cve/CVE-2023-31047.json"
+          }
+        },
+        {
+          "id": "",
+          "source": {
+            "url": "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-31047"
+          }
+        },
+        {
+          "id": "",
+          "source": {
+            "url": "https://groups.google.com/forum/#!forum/django-announce"
+          }
+        },
+        {
+          "id": "CVE-2023-31047",
+          "source": {
+            "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-31047"
+          }
+        },
+        {
+          "id": "GHSA-r3xc-prgr-mg9p",
+          "source": {
+            "url": "https://github.com/advisories/GHSA-r3xc-prgr-mg9p"
+          }
+        }
+      ],
+      "source": {
+        "url": "https://github.com/advisories/GHSA-r3xc-prgr-mg9p"
+      }
+    }
+  ],
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5"
