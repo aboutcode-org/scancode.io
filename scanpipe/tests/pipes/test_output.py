@@ -244,12 +244,13 @@ class ScanPipeOutputPipesTest(TestCase):
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
-
-        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
-        vulnerability_data = json.loads(data_location.read_text())
         package = project.discoveredpackages.get(
             uuid="55d95cd9-71f9-4cbe-8574-bde9469cc6dc"
         )
+
+        package.other_license_expression_spdx = "Apache-2.0 AND (MPL-1.1 OR GPL-2.0)"
+        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
+        vulnerability_data = json.loads(data_location.read_text())
         package.affected_by_vulnerabilities = [vulnerability_data]
         package.save()
 

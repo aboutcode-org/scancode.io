@@ -3063,7 +3063,7 @@ class DiscoveredPackage(
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
         if expression_spdx := self.get_declared_license_expression_spdx():
-            licenses = [cyclonedx_license_factory.make_from_string(expression_spdx)]
+            licenses = [cyclonedx_license_factory.make_with_expression(expression_spdx)]
 
         hash_fields = {
             "md5": cyclonedx_model.HashAlgorithm.MD5,
@@ -3121,6 +3121,17 @@ class DiscoveredPackage(
         except ValueError:
             package_url = self.get_package_url()
 
+        evidence = None
+        if self.other_license_expression_spdx:
+            evidence_licenses = [
+                cyclonedx_license_factory.make_with_expression(
+                    self.other_license_expression_spdx
+                )
+            ]
+            evidence = cyclonedx_component.ComponentEvidence(
+                licenses=evidence_licenses,
+            )
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
@@ -3132,6 +3143,7 @@ class DiscoveredPackage(
             hashes=hashes,
             properties=properties,
             external_references=external_references,
+            evidence=evidence,
         )
 
 

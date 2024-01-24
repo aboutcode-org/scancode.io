@@ -1912,8 +1912,14 @@ class ScanPipeModelsTest(TestCase):
         package_url = PackageURL.from_string(package_data1["package_uid"])
         self.assertEqual(package_url, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
-        expected = "GPL-2.0-only AND GPL-2.0-or-later"
-        self.assertEqual(expected, cyclonedx_component.licenses[0].value)
+        self.assertEqual(
+            package_data1["declared_license_expression_spdx"],
+            cyclonedx_component.licenses[0].value,
+        )
+        self.assertEqual(
+            package_data1["other_license_expression_spdx"],
+            cyclonedx_component.evidence.licenses[0].value,
+        )
         self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
         self.assertEqual(1, len(cyclonedx_component.hashes))
