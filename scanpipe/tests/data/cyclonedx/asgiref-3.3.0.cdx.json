@@ -1,4 +1,29 @@
 {
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:b74fe5df-e965-415e-ba65-f38421a0695d",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "bom-ref": "5e0199f6-3a5f-486a-9ab0-e1fa1bc07da4",
+      "name": "asgiref",
+      "type": "library"
+    },
+    "properties": [
+      {
+        "name": "notice",
+        "value": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n"
+      }
+    ],
+    "timestamp": "",
+    "tools": [
+      {
+        "name": "ScanCode.io",
+        "version": "0.0.0"
+      }
+    ]
+  },
   "components": [
     {
       "bom-ref": "pkg:pypi/asgiref@3.3.0?uuid=bde3119a-b84d-4bc9-bc7c-09782f5dfb02",
@@ -99,28 +124,6 @@
       "ref": "pkg:pypi/asgiref@3.3.0?uuid=bde3119a-b84d-4bc9-bc7c-09782f5dfb02"
     }
   ],
-  "metadata": {
-    "component": {
-      "bom-ref": "5e0199f6-3a5f-486a-9ab0-e1fa1bc07da4",
-      "name": "asgiref",
-      "type": "library"
-    },
-    "properties": [
-      {
-        "name": "notice",
-        "value": "Generated with ScanCode.io and provided on an \"AS IS\" BASIS, WITHOUT WARRANTIES\nOR CONDITIONS OF ANY KIND, either express or implied.\nNo content created from ScanCode.io should be considered or used as legal advice.\nConsult an Attorney for any legal advice.\nScanCode.io is a free software code scanning tool from nexB Inc. and others\nlicensed under the Apache License version 2.0.\nScanCode is a trademark of nexB Inc.\nVisit https://github.com/nexB/scancode.io for support and download.\n"
-      }
-    ],
-    "timestamp": "",
-    "tools": [
-      {
-        "name": "ScanCode.io",
-        "version": "0.0.0"
-      }
-    ]
-  },
-  "serialNumber": "urn:uuid:b74fe5df-e965-415e-ba65-f38421a0695d",
-  "version": 1,
   "vulnerabilities": [
     {
       "affects": [
@@ -200,8 +203,5 @@
         "url": "https://github.com/advisories/GHSA-r3xc-prgr-mg9p"
       }
     }
-  ],
-  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
-  "bomFormat": "CycloneDX",
-  "specVersion": "1.5"
+  ]
 }

@@ -38,7 +38,10 @@ import xlsxwriter
 from cyclonedx.model import bom as cdx_bom
 from cyclonedx.model import component as cdx_component
 from cyclonedx.model import vulnerability as cdx_vulnerability
-from cyclonedx.output.json import JsonV1Dot5
+from cyclonedx.output import OutputFormat
+from cyclonedx.output import make_outputter
+from cyclonedx.schema import SchemaVersion
+from cyclonedx.validation.json import JsonStrictValidator
 from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
@@ -693,7 +696,21 @@ def get_cyclonedx_bom(project):
     return bom
 
 
-def to_cyclonedx(project):
+def sort_bom_with_schema_ordering(bom_as_dict, schema_version):
+    """Sort the ``bom_as_dict`` using the ordering from the ``schema_version``."""
+    schema_file = JsonStrictValidator(schema_version)._schema_file
+    with open(schema_file) as sf:
+        schema_dict = json.loads(sf.read())
+
+    order_from_schema = list(schema_dict.get("properties", {}).keys())
+    ordered_dict = {
+        key: bom_as_dict.get(key) for key in order_from_schema if key in bom_as_dict
+    }
+
+    return json.dumps(ordered_dict, indent=2)
+
+
+def to_cyclonedx(project, schema_version=SchemaVersion.V1_5):
     """
     Generate output for the provided ``project`` in CycloneDX BOM format.
     The output file is created in the ``project`` "output/" directory.
@@ -702,11 +719,19 @@ def to_cyclonedx(project):
     output_file = project.get_output_file_path("results", "cdx.json")
 
     bom = get_cyclonedx_bom(project)
-    json_outputter = JsonV1Dot5(bom)
-    serialized_json = json_outputter.output_as_string(indent=2)
+    json_outputter = make_outputter(bom, OutputFormat.JSON, schema_version)
+
+    # Using the internal API in place of the output_as_string() method to avoid
+    # a round of deserialization/serialization while fixing the field ordering.
+    json_outputter.generate()
+    bom_as_dict = json_outputter._bom_json
+
+    # The default order out of the outputter is not great, the following sorts the
+    # bom using the order from the schema.
+    sorted_json = sort_bom_with_schema_ordering(bom_as_dict, schema_version)
 
     with output_file.open("w") as file:
-        file.write(serialized_json)
+        file.write(sorted_json)
 
     return output_file
 
