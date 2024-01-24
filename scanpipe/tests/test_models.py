@@ -1944,6 +1944,18 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("vcs", external_references[0].type)
         self.assertEqual("https://packages.vcs.url", external_references[0].url)
 
+        # LicenseRef are not supported by the license_factory.make_with_expression
+        license_ref_expression = "LicenseRef-scancode-bash-exception-gpl-2.0"
+        package.declared_license_expression_spdx = license_ref_expression
+        package.other_license_expression_spdx = license_ref_expression
+        package.save()
+        cyclonedx_component = package.as_cyclonedx()
+        self.assertEqual(license_ref_expression, cyclonedx_component.licenses[0].value)
+        self.assertEqual(
+            license_ref_expression,
+            cyclonedx_component.evidence.licenses[0].value,
+        )
+
     def test_scanpipe_discovered_package_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
         package_data = package_data1.copy()

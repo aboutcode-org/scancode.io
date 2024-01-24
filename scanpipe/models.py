@@ -65,8 +65,8 @@ import requests
 import saneyaml
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
-from cyclonedx.factory.license import LicenseFactory
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import license as cyclonedx_license
 from extractcode import EXTRACT_SUFFIX
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
@@ -90,7 +90,6 @@ from scanpipe import tasks
 
 logger = logging.getLogger(__name__)
 scanpipe_app = apps.get_app_config("scanpipe")
-cyclonedx_license_factory = LicenseFactory()
 
 
 class RunInProgressError(Exception):
@@ -3063,7 +3062,9 @@ class DiscoveredPackage(
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
         if expression_spdx := self.get_declared_license_expression_spdx():
-            licenses = [cyclonedx_license_factory.make_with_expression(expression_spdx)]
+            # Using the LicenseExpression directly as the make_with_expression does not
+            # support the "LicenseRef-" keys.
+            licenses = [cyclonedx_license.LicenseExpression(value=expression_spdx)]
 
         hash_fields = {
             "md5": cyclonedx_model.HashAlgorithm.MD5,
@@ -3123,13 +3124,12 @@ class DiscoveredPackage(
 
         evidence = None
         if self.other_license_expression_spdx:
-            evidence_licenses = [
-                cyclonedx_license_factory.make_with_expression(
-                    self.other_license_expression_spdx
-                )
-            ]
             evidence = cyclonedx_component.ComponentEvidence(
-                licenses=evidence_licenses,
+                licenses=[
+                    cyclonedx_license.LicenseExpression(
+                        value=self.other_license_expression_spdx
+                    )
+                ],
             )
 
         return cyclonedx_component.Component(

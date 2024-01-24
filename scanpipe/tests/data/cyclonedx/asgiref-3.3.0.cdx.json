@@ -70,7 +70,7 @@
       "evidence": {
         "licenses": [
           {
-            "expression": "Apache-2.0 AND (MPL-1.1 OR GPL-2.0)"
+            "expression": "Apache-2.0 AND LicenseRef-test"
           }
         ]
       },
