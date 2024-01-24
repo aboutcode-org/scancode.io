@@ -399,7 +399,9 @@ class ScanPipePurlDBTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_get")
     @mock.patch("scanpipe.pipes.purldb.is_available")
-    def test_scanpipe_pipes_purldb_get_match_results(self, mock_is_available, mock_request_get):
+    def test_scanpipe_pipes_purldb_get_match_results(
+        self, mock_is_available, mock_request_get
+    ):
         mock_is_available.return_value = True
 
         request_get_check_response_loc = (

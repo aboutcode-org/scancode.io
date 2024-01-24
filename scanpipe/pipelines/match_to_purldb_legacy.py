@@ -21,8 +21,8 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
-from scanpipe.pipes import purldb
 from scanpipe.pipes import d2d
+from scanpipe.pipes import purldb
 
 
 class MatchToPurlDBLegacy(ScanCodebase):

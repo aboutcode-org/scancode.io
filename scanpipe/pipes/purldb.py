@@ -35,10 +35,10 @@ from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
 from aboutcode.pipeline import LoopProgress
+from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.pipes import _clean_package_data
 from scanpipe.pipes import flag
 from scanpipe.pipes.output import to_json
-from scanpipe.models import AbstractTaskFieldsModel
 
 
 class PurlDBException(Exception):
