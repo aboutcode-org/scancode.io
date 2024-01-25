@@ -34,6 +34,10 @@ v33.0.0 (unreleased)
   project pipeline.
   https://github.com/nexB/scancode.io/issues/997
 
+- In "map_deploy_to_develop" pipeline, add support for path patterns
+  in About file attributes documenting resource paths.
+  https://github.com/nexB/scancode.io/issues/1004
+
 v32.7.0 (2023-10-25)
 --------------------
 

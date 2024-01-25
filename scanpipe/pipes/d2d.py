@@ -780,9 +780,10 @@ def _map_javascript_resource(
 @dataclass
 class AboutFileIndexes:
     """
-    Stores the regex path patterns, and ignore patterns,
-    package data and about file/mapped resources to create
-    packages from About files and map to deployed resources.
+    About file indexes are used to create packages from
+    About files and map the resources described in them
+    to the respective packages created, using regex path
+    patterns and other About file data.
     """
 
     # Mapping of About file paths and the regex pattern
