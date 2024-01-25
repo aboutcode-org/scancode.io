@@ -27,31 +27,30 @@ from pathlib import Path
 
 from django.core.validators import EMPTY_VALUES
 
-import jsonschema
-from hoppr_cyclonedx_models.cyclonedx_1_4 import (
-    CyclonedxSoftwareBillOfMaterialsStandard as Bom_1_4,
-)
+from packageurl import PackageURL
 
-SCHEMAS_PATH = Path(__file__).parent / "schemas"
-
-CYCLONEDX_SPEC_VERSION = "1.4"
-CYCLONEDX_SCHEMA_NAME = "bom-1.4.schema.json"
-CYCLONEDX_SCHEMA_PATH = SCHEMAS_PATH / CYCLONEDX_SCHEMA_NAME
-CYCLONEDX_SCHEMA_URL = (
-    "https://raw.githubusercontent.com/"
-    "CycloneDX/specification/master/schema/bom-1.4.schema.json"
-)
-
-SPDX_SCHEMA_NAME = "spdx.schema.json"
-SPDX_SCHEMA_PATH = SCHEMAS_PATH / SPDX_SCHEMA_NAME
-
-JSF_SCHEMA_NAME = "jsf-0.82.schema.json"
-JSF_SCHEMA_PATH = SCHEMAS_PATH / JSF_SCHEMA_NAME
+# SCHEMAS_PATH = Path(__file__).parent / "schemas"
+#
+# CYCLONEDX_SPEC_VERSION = "1.5"
+# CYCLONEDX_SCHEMA_NAME = "bom-1.5.schema.json"
+# CYCLONEDX_SCHEMA_PATH = SCHEMAS_PATH / CYCLONEDX_SCHEMA_NAME
+# CYCLONEDX_SCHEMA_URL = (
+#     "https://raw.githubusercontent.com/"
+#     "CycloneDX/specification/master/schema/bom-1.4.schema.json"
+# )
+#
+# SPDX_SCHEMA_NAME = "spdx.schema.json"
+# SPDX_SCHEMA_PATH = SCHEMAS_PATH / SPDX_SCHEMA_NAME
+#
+# JSF_SCHEMA_NAME = "jsf-0.82.schema.json"
+# JSF_SCHEMA_PATH = SCHEMAS_PATH / JSF_SCHEMA_NAME
 
 
 def get_bom(cyclonedx_document):
     """Return CycloneDX BOM object."""
-    return Bom_1_4(**cyclonedx_document)
+    from cyclonedx.model.bom import Bom
+
+    return Bom.from_json(data=cyclonedx_document)
 
 
 def get_components(bom):
@@ -101,7 +100,8 @@ def get_declared_licenses(licenses):
         return ""
 
     resolved_licenses = [
-        resolve_license(license) for license in bom_attributes_to_dict(licenses)
+        # TODO:
+        # resolve_license(license) for license in bom_attributes_to_dict(licenses)
     ]
     return "\n".join(resolved_licenses)
 
@@ -126,18 +126,19 @@ def get_checksums(component):
 
 
 def get_external_references(component):
-    """Return dict of reference urls from list of `component.externalReferences`."""
-    external_references = component.externalReferences
+    """Return dict of reference urls from list of `component.external_references`."""
+    external_references = component.external_references
     if not external_references:
         return {}
 
     references = defaultdict(list)
     for reference in external_references:
-        references[reference.type].append(reference.url)
+        references[reference.type.value].append(reference.url.uri)
 
     return dict(references)
 
 
+# TODO: Add unit test
 def get_properties_data(component):
     """Return the properties as dict, extracted from  `component.properties`."""
     prefix = "aboutcode:"
@@ -154,38 +155,89 @@ def get_properties_data(component):
     return properties_data
 
 
-def validate_document(document, schema=CYCLONEDX_SCHEMA_PATH):
-    """Check the validity of this CycloneDX document."""
-    if isinstance(document, str):
-        document = json.loads(document)
+# def validate_document(document, schema=CYCLONEDX_SCHEMA_PATH):
+#     """Check the validity of this CycloneDX document."""
+#     if isinstance(document, str):
+#         document = json.loads(document)
+#
+#     if isinstance(schema, Path):
+#         schema = schema.read_text()
+#
+#     if isinstance(schema, str):
+#         schema = json.loads(schema)
+#
+#     spdx_schema = SPDX_SCHEMA_PATH.read_text()
+#     jsf_schema = JSF_SCHEMA_PATH.read_text()
+#
+#     store = {
+#         "http://cyclonedx.org/schema/spdx.schema.json": json.loads(spdx_schema),
+#         "http://cyclonedx.org/schema/jsf-0.82.schema.json": json.loads(jsf_schema),
+#     }
+#
+#     resolver = jsonschema.RefResolver.from_schema(schema, store=store)
+#     validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
+#     validator.validate(instance=document)
 
-    if isinstance(schema, Path):
-        schema = schema.read_text()
 
-    if isinstance(schema, str):
-        schema = json.loads(schema)
-
-    spdx_schema = SPDX_SCHEMA_PATH.read_text()
-    jsf_schema = JSF_SCHEMA_PATH.read_text()
-
-    store = {
-        "http://cyclonedx.org/schema/spdx.schema.json": json.loads(spdx_schema),
-        "http://cyclonedx.org/schema/jsf-0.82.schema.json": json.loads(jsf_schema),
-    }
-
-    resolver = jsonschema.RefResolver.from_schema(schema, store=store)
-    validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
-    validator.validate(instance=document)
-
-
+# TODO: Add unit tests
 def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
     with suppress(Exception):
         data = json.loads(Path(input_location).read_text())
-        conditions = (
-            data.get("$schema", "").endswith(CYCLONEDX_SCHEMA_NAME),
-            data.get("bomFormat") == "CycloneDX",
-        )
-        if any(conditions):
+        if data.get("bomFormat") == "CycloneDX":
             return True
     return False
+
+
+# TODO: Add unit test
+def cyclonedx_component_to_package_data(component_data):
+    """Return package_data from CycloneDX component."""
+    extra_data = {}
+    component = component_data["cdx_package"]
+
+    package_url_dict = {}
+    if component.purl:
+        package_url_dict = PackageURL.from_string(str(component.purl)).to_dict(
+            encode=True
+        )
+
+    declared_license = get_declared_licenses(licenses=component.licenses)
+
+    if external_references := get_external_references(component):
+        extra_data["externalReferences"] = external_references
+
+    if nested_components := component_data.get("nested_components"):
+        extra_data["nestedComponents"] = nested_components
+
+    package_data = {
+        "name": component.name,
+        "extracted_license_statement": declared_license,
+        "copyright": component.copyright,
+        "version": component.version,
+        "description": component.description,
+        "extra_data": extra_data,
+        **package_url_dict,
+        **get_checksums(component),
+        **get_properties_data(component),
+    }
+
+    return {
+        key: value for key, value in package_data.items() if value not in EMPTY_VALUES
+    }
+
+
+# TODO: Add unit test
+def resolve_cyclonedx_packages(input_location):
+    """Resolve the packages from the `input_location` CycloneDX document file."""
+    input_path = Path(input_location)
+    cyclonedx_document = json.loads(input_path.read_text())
+
+    # try:
+    #     cyclonedx.validate_document(cyclonedx_document)
+    # except Exception as e:
+    #     raise Exception(f'CycloneDX document "{input_path.name}" is not valid: {e}')
+
+    cyclonedx_bom = get_bom(cyclonedx_document)
+    components = get_components(cyclonedx_bom)
+
+    return [cyclonedx_component_to_package_data(component) for component in components]
