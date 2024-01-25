@@ -66,8 +66,8 @@ import saneyaml
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import license as cyclonedx_license
 from extractcode import EXTRACT_SUFFIX
-from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
@@ -2422,6 +2422,17 @@ class CodebaseResource(
         for optimal compatibility.
         """
         from textcode.analysis import numbered_text_lines
+        from typecode import get_type
+
+        # When reading a map file, Textcode only provides the content inside
+        # `sourcesContent`, which can be misleading during any kind of review.
+        # This workaround ensures that the entire content of map files is displayed.
+        file_type = get_type(self.location)
+        if file_type.is_js_map:
+            with open(self.location, "r") as file:
+                content = json.load(file)
+
+            return json.dumps(content, indent=2)
 
         numbered_lines = numbered_text_lines(self.location)
         numbered_lines = self._regroup_numbered_lines(numbered_lines)
@@ -3051,9 +3062,9 @@ class DiscoveredPackage(
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
         if expression_spdx := self.get_declared_license_expression_spdx():
-            licenses = [
-                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
-            ]
+            # Using the LicenseExpression directly as the make_with_expression method
+            # does not support the "LicenseRef-" keys.
+            licenses = [cyclonedx_license.LicenseExpression(value=expression_spdx)]
 
         hash_fields = {
             "md5": cyclonedx_model.HashAlgorithm.MD5,
@@ -3062,7 +3073,7 @@ class DiscoveredPackage(
             "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
         }
         hashes = [
-            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            cyclonedx_model.HashType(alg=algorithm, content=hash_value)
             for field_name, algorithm in hash_fields.items()
             if (hash_value := getattr(self, field_name))
         ]
@@ -3086,25 +3097,53 @@ class DiscoveredPackage(
             if (value := getattr(self, field_name)) not in EMPTY_VALUES
         ]
 
-        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        reference_type = cyclonedx_model.ExternalReferenceType
+        url_field_to_cdx_type = {
+            "api_data_url": reference_type.BOM,
+            "bug_tracking_url": reference_type.ISSUE_TRACKER,
+            "code_view_url": reference_type.OTHER,
+            "download_url": reference_type.DISTRIBUTION,
+            "homepage_url": reference_type.WEBSITE,
+            "repository_download_url": reference_type.DISTRIBUTION,
+            "repository_homepage_url": reference_type.WEBSITE,
+            "vcs_url": reference_type.VCS,
+        }
         external_references = [
-            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
-            for field_name, reference_type in cyclonedx_url_to_type.items()
+            cyclonedx_model.ExternalReference(type=reference_type, url=url)
+            for field_name, reference_type in url_field_to_cdx_type.items()
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        purl = self.package_url
+        # Always use the package_uid when available to ensure having unique
+        # package_url in the BOM when several instances of the same DiscoveredPackage
+        # (i.e. same purl) are present in the project.
+        try:
+            package_url = PackageURL.from_string(self.package_uid)
+        except ValueError:
+            package_url = self.get_package_url()
+
+        evidence = None
+        if self.other_license_expression_spdx:
+            evidence = cyclonedx_component.ComponentEvidence(
+                licenses=[
+                    cyclonedx_license.LicenseExpression(
+                        value=self.other_license_expression_spdx
+                    )
+                ],
+            )
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=self.package_uid or str(self.uuid),
-            purl=purl,
+            bom_ref=str(package_url),
+            purl=package_url,
             licenses=licenses,
-            copyright_=self.copyright,
+            copyright=self.copyright,
             description=self.description,
             hashes=hashes,
             properties=properties,
             external_references=external_references,
+            evidence=evidence,
         )
 
 

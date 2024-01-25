@@ -19,7 +19,7 @@
       ],
       "runs": [
         {
-          "pipeline_name": "deploy_to_develop",
+          "pipeline_name": "map_deploy_to_develop",
           "status": "not_started",
           "scancodeio_version": "",
           "task_id": null,

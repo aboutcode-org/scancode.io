@@ -1007,7 +1007,7 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertEqual("local-files", package.type)
         self.assertEqual(self.project1.slug, package.namespace)
         self.assertEqual("mit", package.declared_license_expression)
-        self.assertEqual("Copyright 2023\n\nCopyright 1984", package.copyright)
+        self.assertEqual("Copyright 2023\nCopyright 1984", package.copyright)
 
     @mock.patch("scanpipe.pipes.d2d._match_purldb_resources")
     def test_match_resources_with_no_java_source(self, mock_match_purldb_resources):

@@ -1,7 +1,27 @@
 Changelog
 =========
 
-v33.0.0 (unreleased)
+Unreleased
+----------
+
+- Rename multiple pipelines for consistency and precision:
+   * docker: analyze_docker_image
+   * root_filesystems: analyze_root_filesystem_or_vm_image
+   * docker_windows: analyze_windows_docker_image
+   * inspect_manifest: inspect_packages
+   * deploy_to_develop: map_deploy_to_develop
+   * scan_package: scan_single_package
+
+  A data migration is included to facilitate the migration of existing data.
+  Only the new names are available in the web UI but the REST API and CLI are backward
+  compatible with the old names.
+  https://github.com/nexB/scancode.io/issues/1044
+
+- Generate CycloneDX SBOM in 1.5 spec format, migrated from 1.4 previously.
+  The Package vulnerabilities are now included in the CycloneDX SBOM when available.
+  https://github.com/nexB/scancode.io/issues/807
+
+v33.0.0 (2024-01-16)
 --------------------
 
 - Upgrade Django to version 5.0 and drop support for Python 3.8 and 3.9
@@ -37,6 +57,10 @@ v33.0.0 (unreleased)
 - In "map_deploy_to_develop" pipeline, add support for path patterns
   in About file attributes documenting resource paths.
   https://github.com/nexB/scancode.io/issues/1004
+
+- Fix an issue where the pipeline details cannot be fetched when using URLs that
+  include credentials such as "user:pass@domain".
+  https://github.com/nexB/scancode.io/issues/998
 
 v32.7.0 (2023-10-25)
 --------------------

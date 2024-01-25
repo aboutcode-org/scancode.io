@@ -6,7 +6,7 @@
       "input_sources": [],
       "runs": [
         {
-          "pipeline_name": "deploy_to_develop",
+          "pipeline_name": "map_deploy_to_develop",
           "status": "not_started",
           "description": "Establish relationships between two code trees: deployment and development.",
           "scancodeio_version": "",

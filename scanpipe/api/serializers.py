@@ -78,6 +78,11 @@ class OrderedMultipleChoiceField(serializers.MultipleChoiceField):
         if not self.allow_empty and len(data) == 0:
             self.fail("empty")
 
+        # Backward compatibility with old pipeline names.
+        # This will need to be refactored in case this OrderedMultipleChoiceField
+        # class is used for another field that is not ``pipeline`` related.
+        data = [scanpipe_app.get_new_pipeline_name(pipeline) for pipeline in data]
+
         return [
             super(serializers.MultipleChoiceField, self).to_internal_value(item)
             for item in data

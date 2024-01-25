@@ -13,7 +13,7 @@
       ],
       "runs": [
         {
-          "pipeline_name": "root_filesystems",
+          "pipeline_name": "analyze_root_filesystem_or_vm_image",
           "status": "not_started",
           "scancodeio_version": "",
           "task_id": null,

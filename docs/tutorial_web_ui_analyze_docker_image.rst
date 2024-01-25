@@ -38,9 +38,10 @@ Instructions
 - Paste the input Docker image's URL,
   `docker://alpine/httpie <https://hub.docker.com/r/alpine/httpie/>`_,
   in the **"Download URL"** field, which fetches the image from the provided URL.
-- Use the **"Pipeline"** dropdown list, add the **"docker"** pipeline to your project
-- You can add and execute the docker pipeline in one operation by checking the
-  **"Execute pipeline now"** checkbox.
+- Use the **"Pipeline"** dropdown list, add the ``analyze_docker_image`` pipeline to
+  your project.
+- You can add and execute the ``analyze_docker_image`` pipeline in one operation by
+  checking the **"Execute pipeline now"** checkbox.
 
 .. image:: images/tutorial-web-ui-project-form.png
 

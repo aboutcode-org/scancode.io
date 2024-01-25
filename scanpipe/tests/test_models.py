@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import json
 import shutil
 import sys
 import tempfile
@@ -47,6 +48,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
+from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
 
@@ -153,7 +155,7 @@ class ScanPipeModelsTest(TestCase):
         work_path = self.project1.work_path
         self.assertTrue(work_path.exists())
 
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         self.project1.labels.add("label1", "label2")
         self.assertEqual(2, UUIDTaggedItem.objects.count())
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
@@ -180,7 +182,7 @@ class ScanPipeModelsTest(TestCase):
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.write_input_file(uploaded_file)
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
@@ -198,7 +200,7 @@ class ScanPipeModelsTest(TestCase):
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
         self.project1.write_input_file(uploaded_file)
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         resource = CodebaseResource.objects.create(project=self.project1, path="path")
         package = DiscoveredPackage.objects.create(project=self.project1)
         resource.discovered_packages.add(package)
@@ -226,7 +228,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.update(settings={"extract_recursively": True})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         run2 = self.project1.add_pipeline("find_vulnerabilities")
         subscription1 = self.project1.add_webhook_subscription("http://domain.url")
 
@@ -258,7 +260,8 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual(1, len(list(cloned_project2.inputs())))
         runs = cloned_project2.runs.all()
         self.assertEqual(
-            ["docker", "find_vulnerabilities"], [run.pipeline_name for run in runs]
+            ["analyze_docker_image", "find_vulnerabilities"],
+            [run.pipeline_name for run in runs],
         )
         self.assertNotEqual(run1.pk, runs[0].pk)
         self.assertNotEqual(run2.pk, runs[1].pk)
@@ -413,7 +416,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.can_start_pipelines)
 
         # Not started
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
         self.assertTrue(self.project1.can_start_pipelines)
 
@@ -431,14 +434,14 @@ class ScanPipeModelsTest(TestCase):
         self.assertFalse(self.project1.can_start_pipelines)
 
         # Another "Not started"
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
         self.assertTrue(self.project1.can_start_pipelines)
 
     def test_scanpipe_project_model_can_change_inputs(self):
         self.assertTrue(self.project1.can_change_inputs)
 
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         self.project1 = Project.objects.get(uuid=self.project1.uuid)
         self.assertTrue(self.project1.can_change_inputs)
 
@@ -1228,6 +1231,18 @@ class ScanPipeModelsTest(TestCase):
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
+    def test_scanpipe_codebase_resource_model_file_content_for_map(self):
+        map_file_path = self.data_location / "d2d-javascript/to/main.js.map"
+        copy_input(map_file_path, self.project1.codebase_path)
+        resource = self.project1.codebaseresources.create(path="main.js.map")
+
+        with open(map_file_path, "r") as file:
+            expected = json.load(file)
+
+        result = json.loads(resource.file_content)
+
+        self.assertEqual(expected, result)
+
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
@@ -1894,13 +1909,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("library", cyclonedx_component.type)
         self.assertEqual(package_data1["name"], cyclonedx_component.name)
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
-        purl = "pkg:deb/debian/adduser@3.118?arch=all"
         bom_ref = package.package_uid
         self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
-        self.assertEqual(purl, cyclonedx_component.purl)
+        package_url = PackageURL.from_string(package_data1["package_uid"])
+        self.assertEqual(package_url, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
-        expected = "GPL-2.0-only AND GPL-2.0-or-later"
-        self.assertEqual(expected, cyclonedx_component.licenses[0].expression)
+        self.assertEqual(
+            package_data1["declared_license_expression_spdx"],
+            cyclonedx_component.licenses[0].value,
+        )
+        self.assertEqual(
+            package_data1["other_license_expression_spdx"],
+            cyclonedx_component.evidence.licenses[0].value,
+        )
         self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
         self.assertEqual(1, len(cyclonedx_component.hashes))
@@ -1918,8 +1939,24 @@ class ScanPipeModelsTest(TestCase):
 
         external_references = cyclonedx_component.external_references
         self.assertEqual(1, len(external_references))
+        self.assertEqual(
+            "<ExternalReference SCM, https://packages.vcs.url>",
+            str(external_references[0]),
+        )
         self.assertEqual("vcs", external_references[0].type)
         self.assertEqual("https://packages.vcs.url", external_references[0].url)
+
+        # LicenseRef are not supported by the license_factory.make_with_expression
+        license_ref_expression = "LicenseRef-scancode-bash-exception-gpl-2.0"
+        package.declared_license_expression_spdx = license_ref_expression
+        package.other_license_expression_spdx = license_ref_expression
+        package.save()
+        cyclonedx_component = package.as_cyclonedx()
+        self.assertEqual(license_ref_expression, cyclonedx_component.licenses[0].value)
+        self.assertEqual(
+            license_ref_expression,
+            cyclonedx_component.evidence.licenses[0].value,
+        )
 
     def test_scanpipe_discovered_package_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
@@ -2063,7 +2100,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
             project1.add_pipeline(pipeline_name)
         self.assertEqual("Unknown pipeline: not_available", str(error.exception))
 
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         project1.add_pipeline(pipeline_name)
         pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
 
@@ -2080,7 +2117,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_project_model_add_pipeline_run_can_start(self, mock_execute_task):
         project1 = Project.objects.create(name="Analysis")
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         run1 = project1.add_pipeline(pipeline_name, execute_now=False)
         run2 = project1.add_pipeline(pipeline_name, execute_now=True)
         self.assertEqual(Run.Status.NOT_STARTED, run1.status)
@@ -2092,7 +2129,7 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_project_model_add_pipeline_start_method(self, mock_execute_task):
         project1 = Project.objects.create(name="Analysis")
-        pipeline_name = "inspect_manifest"
+        pipeline_name = "inspect_packages"
         run1 = project1.add_pipeline(pipeline_name, execute_now=False)
         run2 = project1.add_pipeline(pipeline_name, execute_now=False)
         self.assertEqual(Run.Status.NOT_STARTED, run1.status)

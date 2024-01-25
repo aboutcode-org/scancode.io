@@ -41,7 +41,7 @@ class Command(ProjectCommand):
     def handle(self, *pipeline_names, **options):
         super().handle(*pipeline_names, **options)
 
-        validate_pipelines(pipeline_names)
+        pipeline_names = validate_pipelines(pipeline_names)
         for pipeline_name in pipeline_names:
             self.project.add_pipeline(pipeline_name)
 

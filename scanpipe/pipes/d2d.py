@@ -1405,7 +1405,7 @@ def create_local_files_packages(project):
         defaults = {
             "declared_license_expression": group.get("detected_license_expression"),
             # The Counter is used to sort by most frequent values.
-            "copyright": "\n\n".join(Counter(copyrights).keys()),
+            "copyright": "\n".join(Counter(copyrights).keys()),
         }
         pipes.create_local_files_package(project, defaults, codebase_resource_ids)
 

@@ -134,14 +134,6 @@ bump:
 	@echo "-> Bump the version"
 	@${ACTIVATE} bumpver update --no-fetch --patch
 
-publish:
-	@echo "-> Cleanup dist/ and build/ directories"
-	rm -rf dist/ build/
-	@echo "-> Build source and wheel distribution packages"
-	@${ACTIVATE} python setup.py sdist bdist_wheel
-	@echo "-> Upload packages on pypi"
-	@${ACTIVATE} twine upload dist/*
-
 docker-images:
 	@echo "-> Build Docker services"
 	docker compose build
@@ -158,4 +150,4 @@ offline-package: docker-images
 	@mkdir -p dist/
 	@tar -cf dist/scancodeio-offline-package-`git describe --tags`.tar build/
 
-.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump publish docker-images offline-package
+.PHONY: virtualenv conf dev envfile install check bandit valid isort check-deploy clean migrate postgresdb sqlitedb backupdb run test docs bump docker-images offline-package

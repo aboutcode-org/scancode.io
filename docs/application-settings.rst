@@ -18,6 +18,12 @@ file.
 .. tip::
     Settings specific to ScanCode.io are all prefixed with ``SCANCODEIO_``.
 
+**Restarting the services is required following any changes to .env:**
+
+.. code-block:: bash
+
+    docker compose restart web worker
+
 DATABASE
 --------
 
