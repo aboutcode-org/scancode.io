@@ -24,6 +24,7 @@ import collections
 import json
 import shutil
 import tempfile
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
@@ -221,23 +222,50 @@ class ScanPipeOutputPipesTest(TestCase):
             output_file = output.to_xlsx(project=project)
         self.assertIn(output_file.name, project.output_root)
 
+    def test_scanpipe_pipes_outputs_vulnerability_as_cyclonedx(self):
+        component_bom_ref = "pkg:pypi/django@4.0.10"
+        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
+
+        vulnerability_data = json.loads(data_location.read_text())
+        results = output.vulnerability_as_cyclonedx(
+            vulnerability_data, component_bom_ref
+        )
+
+        expected_location = self.data_path / "cyclonedx/django-4.0.10_as_cdx.json"
+        results_as_json = results.as_json()
+
+        # if True:
+        #     expected_location.write_text(results_as_json)
+
+        self.assertJSONEqual(results_as_json, expected_location.read_text())
+
     def test_scanpipe_pipes_outputs_to_cyclonedx(self, regen=FIXTURES_REGEN):
         fixtures = self.data_path / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
 
         project = Project.objects.get(name="asgiref")
+        package = project.discoveredpackages.get(
+            uuid="55d95cd9-71f9-4cbe-8574-bde9469cc6dc"
+        )
+
+        package.other_license_expression_spdx = "Apache-2.0 AND LicenseRef-test"
+        data_location = self.data_path / "cyclonedx/django-4.0.10-vulnerability.json"
+        vulnerability_data = json.loads(data_location.read_text())
+        package.affected_by_vulnerabilities = [vulnerability_data]
+        package.save()
 
         with mock.patch("cyclonedx.model.bom.uuid4") as mock_uuid4:
-            with mock.patch("cyclonedx.model.bom.datetime") as mock_datetime:
-                mock_uuid4.return_value = "b74fe5df-e965-415e-ba65-f38421a0695d"
-                mock_datetime.now = lambda tz: ""
-                output_file = output.to_cyclonedx(project=project)
+            fake_uuid = uuid.UUID("b74fe5df-e965-415e-ba65-f38421a0695d")
+            mock_uuid4.return_value = fake_uuid
+            output_file = output.to_cyclonedx(project=project)
 
         self.assertIn(output_file.name, project.output_root)
 
         # Patch the tool version
         results_json = json.loads(output_file.read_text())
-        results_json["metadata"]["tools"][0]["version"] = "31.0.0"
+        results_json["metadata"]["tools"][0]["version"] = "0.0.0"
+        results_json["metadata"]["timestamp"] = ""
+        results_json["vulnerabilities"][0]["bom-ref"] = "BomRef"
         results = json.dumps(results_json, indent=2)
 
         expected_location = self.data_path / "cyclonedx/asgiref-3.3.0.cdx.json"

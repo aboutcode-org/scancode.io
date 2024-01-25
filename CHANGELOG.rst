@@ -17,6 +17,10 @@ Unreleased
   compatible with the old names.
   https://github.com/nexB/scancode.io/issues/1044
 
+- Generate CycloneDX SBOM in 1.5 spec format, migrated from 1.4 previously.
+  The Package vulnerabilities are now included in the CycloneDX SBOM when available.
+  https://github.com/nexB/scancode.io/issues/807
+
 v33.0.0 (2024-01-16)
 --------------------
 

@@ -48,6 +48,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
+from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
 
@@ -1906,13 +1907,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("library", cyclonedx_component.type)
         self.assertEqual(package_data1["name"], cyclonedx_component.name)
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
-        purl = "pkg:deb/debian/adduser@3.118?arch=all"
         bom_ref = package.package_uid
         self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
-        self.assertEqual(purl, cyclonedx_component.purl)
+        package_url = PackageURL.from_string(package_data1["package_uid"])
+        self.assertEqual(package_url, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
-        expected = "GPL-2.0-only AND GPL-2.0-or-later"
-        self.assertEqual(expected, cyclonedx_component.licenses[0].expression)
+        self.assertEqual(
+            package_data1["declared_license_expression_spdx"],
+            cyclonedx_component.licenses[0].value,
+        )
+        self.assertEqual(
+            package_data1["other_license_expression_spdx"],
+            cyclonedx_component.evidence.licenses[0].value,
+        )
         self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
         self.assertEqual(1, len(cyclonedx_component.hashes))
@@ -1930,8 +1937,24 @@ class ScanPipeModelsTest(TestCase):
 
         external_references = cyclonedx_component.external_references
         self.assertEqual(1, len(external_references))
+        self.assertEqual(
+            "<ExternalReference SCM, https://packages.vcs.url>",
+            str(external_references[0]),
+        )
         self.assertEqual("vcs", external_references[0].type)
         self.assertEqual("https://packages.vcs.url", external_references[0].url)
+
+        # LicenseRef are not supported by the license_factory.make_with_expression
+        license_ref_expression = "LicenseRef-scancode-bash-exception-gpl-2.0"
+        package.declared_license_expression_spdx = license_ref_expression
+        package.other_license_expression_spdx = license_ref_expression
+        package.save()
+        cyclonedx_component = package.as_cyclonedx()
+        self.assertEqual(license_ref_expression, cyclonedx_component.licenses[0].value)
+        self.assertEqual(
+            license_ref_expression,
+            cyclonedx_component.evidence.licenses[0].value,
+        )
 
     def test_scanpipe_discovered_package_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
