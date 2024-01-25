@@ -33,6 +33,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import Project
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
+from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import copy_inputs
 from scanpipe.tests import make_resource_directory
@@ -1257,6 +1258,126 @@ class ScanPipeD2DPipesTest(TestCase):
         self.assertNotEqual(
             flag.IGNORED_WHITESPACE_FILE, non_whitespace_resource.status
         )
+
+    def test_scanpipe_pipes_create_about_file_indexes(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data_location / "d2d/about_files/to-with-jar.zip",
+            self.data_location / "d2d/about_files/from-with-about-file.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        from_about_files = (
+            self.project1.codebaseresources.files()
+            .from_codebase()
+            .filter(extension=".ABOUT")
+        )
+        about_file_indexes = d2d.AboutFileIndexes.create_indexes(
+            project=self.project1,
+            from_about_files=from_about_files,
+        )
+
+        about_path = "from/flume-ng-node-1.9.0-sources.ABOUT"
+        about_notice_path = "from/flume-ng-node-1.9.0-sources.NOTICE"
+
+        about_notice_file = self.project1.codebaseresources.get(path=about_notice_path)
+
+        self.assertIn(
+            about_path, list(about_file_indexes.about_resources_by_path.keys())
+        )
+        about_regex = d2d.convert_glob_to_django_regex(
+            glob_pattern="*flume-ng-node-*.jar*"
+        )
+        self.assertEqual(
+            about_file_indexes.regex_by_about_path.get(about_path), about_regex
+        )
+        self.assertEqual(
+            about_file_indexes.about_pkgdata_by_path.get(about_path).get("name"),
+            "log4j",
+        )
+        self.assertIn(
+            about_notice_file, about_file_indexes.get_about_file_companions(about_path)
+        )
+        to_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/flume-ng-node-1.9.0.jar-extract/org/apache/"
+                "flume/node/AbstractZooKeeperConfigurationProvider.class"
+            )
+        )
+        self.assertEqual(
+            about_file_indexes.get_matched_about_path(to_resource), about_path
+        )
+
+    def test_scanpipe_pipes_map_d2d_using_about(self):
+        input_dir = self.project1.input_path
+        input_resources = [
+            self.data_location / "d2d/about_files/to-with-jar.zip",
+            self.data_location / "d2d/about_files/from-with-about-file.zip",
+        ]
+        copy_inputs(input_resources, input_dir)
+        self.from_files, self.to_files = d2d.get_inputs(self.project1)
+
+        inputs_with_codebase_path_destination = [
+            (self.from_files, self.project1.codebase_path / d2d.FROM),
+            (self.to_files, self.project1.codebase_path / d2d.TO),
+        ]
+
+        for input_files, codebase_path in inputs_with_codebase_path_destination:
+            for input_file_path in input_files:
+                scancode.extract_archive(input_file_path, codebase_path)
+
+        scancode.extract_archives(
+            self.project1.codebase_path,
+            recurse=True,
+        )
+
+        pipes.collect_and_create_codebase_resources(self.project1)
+
+        from_about_files = (
+            self.project1.codebaseresources.files()
+            .from_codebase()
+            .filter(extension=".ABOUT")
+        )
+        about_file_indexes = d2d.AboutFileIndexes.create_indexes(
+            project=self.project1,
+            from_about_files=from_about_files,
+        )
+
+        to_resources = self.project1.codebaseresources.to_codebase()
+        about_file_indexes.map_deployed_to_devel_using_about(
+            to_resources=to_resources,
+        )
+
+        about_path = "from/flume-ng-node-1.9.0-sources.ABOUT"
+        to_resource = self.project1.codebaseresources.get(
+            path=(
+                "to/flume-ng-node-1.9.0.jar-extract/org/apache/"
+                "flume/node/AbstractZooKeeperConfigurationProvider.class"
+            )
+        )
+        self.assertIn(
+            to_resource,
+            about_file_indexes.mapped_resources_by_aboutpath.get(about_path),
+        )
+
+        about_file_indexes.create_about_packages_relations(self.project1)
 
     def test_scanpipe_pipes_d2d_match_purldb_resources_post_process(self):
         to_map = self.data_location / "d2d-javascript" / "to" / "main.js.map"
