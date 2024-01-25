@@ -35,6 +35,7 @@ from scancode.api import get_package_data
 
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import cyclonedx
+from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
 
 """
@@ -45,8 +46,10 @@ Resolve packages from manifest, lockfile, and SBOM.
 def resolve_packages(input_location):
     """Resolve the packages from manifest file."""
     default_package_type = get_default_package_type(input_location)
+    # we only try to resolve packages if file at input_location is
+    # a package manifest, and ignore for other files
     if not default_package_type:
-        raise Exception(f"No package type found for {input_location}")
+        return
 
     # The ScanCode.io resolvers take precedence over the ScanCode-toolkit ones.
     resolver = resolver_registry.get(default_package_type)
@@ -57,6 +60,16 @@ def resolve_packages(input_location):
         resolved_packages = package_data.get("package_data", [])
 
     return resolved_packages
+
+
+def get_manifest_resources(project):
+    """Get all resources in the codebase which are package manifests."""
+    for resource in project.codebaseresources.no_status():
+        manifest_type = get_default_package_type(input_location=resource.location)
+        if manifest_type:
+            resource.update(status=flag.APPLICATION_PACKAGE)
+
+    return project.codebaseresources.filter(status=flag.APPLICATION_PACKAGE)
 
 
 def resolve_pypi_packages(input_location):

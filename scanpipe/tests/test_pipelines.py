@@ -843,9 +843,43 @@ class PipelinesIntegrationTest(TestCase):
         pipeline = run.make_pipeline_instance()
 
         project1.move_input_from(tempfile.mkstemp()[1])
+        pipeline.execute()
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.get()
+        self.assertEqual("get_packages_from_manifest", message.model)
+        expected = "No manifests found for resolving packages"
+        self.assertIn(expected, message.description)
+
+    def test_scanpipe_inspect_manifest_pipeline_integration_empty_manifest(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
+        pipeline.execute()
+        self.assertEqual(1, project1.projectmessages.count())
+        message = project1.projectmessages.get()
+        self.assertEqual("get_packages_from_manifest", message.model)
+        expected = "No packages could be resolved for"
+        self.assertIn(expected, message.description)
+
+    def test_scanpipe_inspect_manifest_pipeline_integration_misc(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = (
+            self.data_location / "manifests" / "python-inspector-0.10.0.zip"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
         exitcode, out = pipeline.execute()
-        self.assertEqual(1, exitcode, msg=out)
-        self.assertIn("No package type found for", out)
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(26, project1.discoveredpackages.count())
 
     @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
     def test_scanpipe_inspect_manifest_pipeline_pypi_integration(
@@ -857,12 +891,7 @@ class PipelinesIntegrationTest(TestCase):
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
 
-        resolve_dependencies.return_value = mock.Mock(packages=[])
         project1.move_input_from(tempfile.mkstemp(suffix="requirements.txt")[1])
-        exitcode, out = pipeline.execute()
-        self.assertEqual(1, exitcode, msg=out)
-        self.assertIn("No packages could be resolved", out)
-
         resolve_dependencies.return_value = mock.Mock(packages=[package_data1])
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
