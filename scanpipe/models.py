@@ -3062,8 +3062,8 @@ class DiscoveredPackage(
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
         if expression_spdx := self.get_declared_license_expression_spdx():
-            # Using the LicenseExpression directly as the make_with_expression does not
-            # support the "LicenseRef-" keys.
+            # Using the LicenseExpression directly as the make_with_expression method
+            # does not support the "LicenseRef-" keys.
             licenses = [cyclonedx_license.LicenseExpression(value=expression_spdx)]
 
         hash_fields = {
@@ -3114,9 +3114,9 @@ class DiscoveredPackage(
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        # Always use the ``package_uid`` when defined to ensure having unique
+        # Always use the package_uid when available to ensure having unique
         # package_url in the BOM when several instances of the same DiscoveredPackage
-        # are present in the project.
+        # (i.e. same purl) are present in the project.
         try:
             package_url = PackageURL.from_string(self.package_uid)
         except ValueError:

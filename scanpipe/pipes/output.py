@@ -607,7 +607,9 @@ def vulnerability_as_cyclonedx(vulnerability_data, component_bom_ref):
         )
 
         for score_entry in reference.get("scores", []):
-            # CycloneDX only support a float value as ``score``
+            # CycloneDX only support a float value for the score field,
+            # where on the VulnerableCode data it can be either a score float value
+            # or a severity string value.
             score_value = score_entry.get("value")
             try:
                 score = decimal.Decimal(score_value)
@@ -626,7 +628,7 @@ def vulnerability_as_cyclonedx(vulnerability_data, component_bom_ref):
                     score=score,
                     severity=severity,
                     # Providing a value for method raise a AssertionError
-                    # method=method,
+                    # method=score_entry.get("scoring_system"),
                     vector=score_entry.get("scoring_elements"),
                 )
             )
