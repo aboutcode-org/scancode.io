@@ -27,8 +27,7 @@ from scanpipe.pipes import update_or_create_package
 
 class InspectPackages(ScanCodebase):
     """
-    Inspect a codebase/package with one or more manifest files and
-    resolve their associated packages.
+    Inspect a codebase manifest files and resolve their associated packages.
 
     Supports resolved packages for:
     - Python: using nexB/python-inspector, supports requirements.txt and

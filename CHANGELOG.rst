@@ -21,6 +21,9 @@ Unreleased
   The Package vulnerabilities are now included in the CycloneDX SBOM when available.
   https://github.com/nexB/scancode.io/issues/807
 
+- Improve the inspect_manifest pipeline to accept archives as inputs.
+  https://github.com/nexB/scancode.io/issues/1034
+
 v33.0.0 (2024-01-16)
 --------------------
 
