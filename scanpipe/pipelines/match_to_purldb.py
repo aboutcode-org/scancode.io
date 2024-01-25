@@ -34,6 +34,7 @@ class MatchToPurlDB(Pipeline):
     CodebaseResources to those DiscoveredPackges.
     """
 
+    download_inputs = False
     is_addon = True
 
     @classmethod

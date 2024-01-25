@@ -32,10 +32,10 @@ from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
+from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.pipes import LoopProgress
 from scanpipe.pipes import flag
 from scanpipe.pipes.output import to_json
-from scanpipe.models import AbstractTaskFieldsModel
 
 
 class PurlDBException(Exception):
@@ -110,7 +110,7 @@ def request_get(url, payload=None, timeout=DEFAULT_TIMEOUT):
         logger.debug(f"{label} [Exception] {exception}")
 
 
-def request_post(url, data, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
+def request_post(url, data=None, headers=None, files=None, timeout=DEFAULT_TIMEOUT):
     try:
         response = session.post(
             url, data=data, timeout=timeout, headers=headers, files=files
@@ -347,7 +347,6 @@ def send_project_json_to_matchcode(
         files = {"upload_file": f}
     response = request_post(
         url=f"{api_url}matching/",
-        data={},
         timeout=timeout,
         files=files,
     )
@@ -428,8 +427,6 @@ def create_packages_from_match_results(project, match_results):
         package_uid = matched_package["package_uid"]
         resource_paths = resource_paths_by_package_uids[package_uid]
         resources = project.codebaseresources.filter(path__in=resource_paths)
-
-        # Create package matches
         create_package_from_purldb_data(
             project,
             resources=resources,

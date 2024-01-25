@@ -28,6 +28,7 @@ from unittest import mock
 
 from django.test import TestCase
 
+from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
@@ -113,7 +114,7 @@ class ScanPipePurlDBTest(TestCase):
     ):
         mock_is_available.return_value = True
 
-        def mock_request_post_return(url, data, files, timeout):
+        def mock_request_post_return(url, files, timeout):
             request_post_response_loc = (
                 self.data_location
                 / "purldb"
@@ -136,24 +137,104 @@ class ScanPipePurlDBTest(TestCase):
     def test_scanpipe_pipes_purldb_poll_until_success(
         self, mock_is_available, mock_request_get
     ):
+        run_status = AbstractTaskFieldsModel.Status
+
         mock_is_available.return_value = True
 
-        def mock_request_get_return(url):
-            request_get_check_response_loc = (
-                self.data_location
-                / "purldb"
-                / "match_to_purldb"
-                / "request_get_check_response.json"
-            )
-            with open(request_get_check_response_loc, "r") as f:
-                mock_request_get_check_return = json.load(f)
-            return mock_request_get_check_return
-
-        mock_request_get.side_effect = mock_request_get_return
-
+        # Success
         run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.SUCCESS,
+            },
+        ]
         return_value = purldb.poll_until_success(run_url)
         self.assertEqual(True, return_value)
+
+        # Failure
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.FAILURE,
+                "log": "failure message",
+            },
+        ]
+        with self.assertRaises(Exception) as context:
+            purldb.poll_until_success(run_url)
+        self.assertTrue("failure message" in str(context.exception))
+
+        # Stopped
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.STOPPED,
+                "log": "stop message",
+            },
+        ]
+        with self.assertRaises(Exception) as context:
+            purldb.poll_until_success(run_url)
+        self.assertTrue("stop message" in str(context.exception))
+
+        # Stale
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.STALE,
+                "log": "stale message",
+            },
+        ]
+        with self.assertRaises(Exception) as context:
+            purldb.poll_until_success(run_url)
+        self.assertTrue("stale message" in str(context.exception))
 
     def test_scanpipe_pipes_purldb_map_match_results(self):
         request_post_response_loc = (
@@ -211,7 +292,9 @@ class ScanPipePurlDBTest(TestCase):
 
     @mock.patch("scanpipe.pipes.purldb.request_get")
     @mock.patch("scanpipe.pipes.purldb.is_available")
-    def test_scanpipe_pipes_purldb_get_match_results(self, mock_is_available, mock_request_get):
+    def test_scanpipe_pipes_purldb_get_match_results(
+        self, mock_is_available, mock_request_get
+    ):
         mock_is_available.return_value = True
 
         request_get_check_response_loc = (
