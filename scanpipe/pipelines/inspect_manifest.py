@@ -78,19 +78,14 @@ class InspectManifest(ScanCodebase):
             return
 
         for resource in self.manifest_resources:
-            packages = resolve.resolve_packages(resource.location)
-            if not packages:
-                error_message_details = {
-                    "path": resource.path,
-                }
+            if packages := resolve.resolve_packages(resource.location):
+                self.resolved_packages.extend(packages)
+            else:
                 self.project.add_error(
                     description="No packages could be resolved for",
                     model="get_packages_from_manifest",
-                    details=error_message_details,
+                    details={"path": resource.path},
                 )
-                continue
-
-            self.resolved_packages.extend(packages)
 
     def create_resolved_packages(self):
         """Create the resolved packages and their dependencies in the database."""

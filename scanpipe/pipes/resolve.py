@@ -46,8 +46,8 @@ Resolve packages from manifest, lockfile, and SBOM.
 def resolve_packages(input_location):
     """Resolve the packages from manifest file."""
     default_package_type = get_default_package_type(input_location)
-    # if resolving packages from a codebase/package we do nothing if a
-    # file at input_location is not a package manifest.
+    # we only try to resolve packages if file at input_location is
+    # a package manifest, and ignore for other files
     if not default_package_type:
         return
 
@@ -63,7 +63,7 @@ def resolve_packages(input_location):
 
 
 def get_manifest_resources(project):
-    """Get a list of locations for all package manifests in a project"""
+    """Get all resources in the codebase which are package manifests."""
     for resource in project.codebaseresources.no_status():
         manifest_type = get_default_package_type(input_location=resource.location)
         if manifest_type:
