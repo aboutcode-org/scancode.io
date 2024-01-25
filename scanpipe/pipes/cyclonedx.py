@@ -27,23 +27,10 @@ from pathlib import Path
 
 from django.core.validators import EMPTY_VALUES
 
+from cyclonedx.schema import SchemaVersion
+from cyclonedx.validation import ValidationError
+from cyclonedx.validation.json import JsonStrictValidator
 from packageurl import PackageURL
-
-# SCHEMAS_PATH = Path(__file__).parent / "schemas"
-#
-# CYCLONEDX_SPEC_VERSION = "1.5"
-# CYCLONEDX_SCHEMA_NAME = "bom-1.5.schema.json"
-# CYCLONEDX_SCHEMA_PATH = SCHEMAS_PATH / CYCLONEDX_SCHEMA_NAME
-# CYCLONEDX_SCHEMA_URL = (
-#     "https://raw.githubusercontent.com/"
-#     "CycloneDX/specification/master/schema/bom-1.4.schema.json"
-# )
-#
-# SPDX_SCHEMA_NAME = "spdx.schema.json"
-# SPDX_SCHEMA_PATH = SCHEMAS_PATH / SPDX_SCHEMA_NAME
-#
-# JSF_SCHEMA_NAME = "jsf-0.82.schema.json"
-# JSF_SCHEMA_PATH = SCHEMAS_PATH / JSF_SCHEMA_NAME
 
 
 def get_bom(cyclonedx_document):
@@ -55,16 +42,19 @@ def get_bom(cyclonedx_document):
 
 def get_components(bom):
     """Return list of components from CycloneDX BOM."""
+    # TODO: Test list(bom._get_all_components())
     return recursive_component_collector(bom.components, [])
 
 
 def bom_attributes_to_dict(cyclonedx_attributes):
     """Return list of dict from a list of CycloneDX attributes."""
+    from cyclonedx.schema.schema import SchemaVersion1Dot5
+
     if not cyclonedx_attributes:
         return []
 
     return [
-        json.loads(attribute.json(exclude_unset=True, by_alias=True))
+        json.loads(attribute.as_json(view_=SchemaVersion1Dot5))
         for attribute in cyclonedx_attributes
     ]
 
@@ -155,36 +145,30 @@ def get_properties_data(component):
     return properties_data
 
 
-# def validate_document(document, schema=CYCLONEDX_SCHEMA_PATH):
-#     """Check the validity of this CycloneDX document."""
-#     if isinstance(document, str):
-#         document = json.loads(document)
-#
-#     if isinstance(schema, Path):
-#         schema = schema.read_text()
-#
-#     if isinstance(schema, str):
-#         schema = json.loads(schema)
-#
-#     spdx_schema = SPDX_SCHEMA_PATH.read_text()
-#     jsf_schema = JSF_SCHEMA_PATH.read_text()
-#
-#     store = {
-#         "http://cyclonedx.org/schema/spdx.schema.json": json.loads(spdx_schema),
-#         "http://cyclonedx.org/schema/jsf-0.82.schema.json": json.loads(jsf_schema),
-#     }
-#
-#     resolver = jsonschema.RefResolver.from_schema(schema, store=store)
-#     validator = jsonschema.Draft7Validator(schema=schema, resolver=resolver)
-#     validator.validate(instance=document)
+def validate_document(document):
+    """
+    Check the validity of this CycloneDX document.
+
+    The validator is loaded from the document specVersion property.
+    """
+    if isinstance(document, str):
+        document = json.loads(document)
+
+    spec_version = document.get("specVersion")
+    if not spec_version:
+        return ValidationError("'specVersion' is a required property")
+
+    schema_version = SchemaVersion.from_version(spec_version)
+
+    json_validator = JsonStrictValidator(schema_version)
+    return json_validator._validata_data(document)
 
 
-# TODO: Add unit tests
 def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
     with suppress(Exception):
         data = json.loads(Path(input_location).read_text())
-        if data.get("bomFormat") == "CycloneDX":
+        if data.get("bomFormat") == "CycloneDX" and data.get("$schema"):
             return True
     return False
 
@@ -226,16 +210,15 @@ def cyclonedx_component_to_package_data(component_data):
     }
 
 
-# TODO: Add unit test
 def resolve_cyclonedx_packages(input_location):
     """Resolve the packages from the `input_location` CycloneDX document file."""
     input_path = Path(input_location)
     cyclonedx_document = json.loads(input_path.read_text())
 
-    # try:
-    #     cyclonedx.validate_document(cyclonedx_document)
-    # except Exception as e:
-    #     raise Exception(f'CycloneDX document "{input_path.name}" is not valid: {e}')
+    if errors := validate_document(cyclonedx_document):
+        raise ValueError(
+            f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
+        )
 
     cyclonedx_bom = get_bom(cyclonedx_document)
     components = get_components(cyclonedx_bom)

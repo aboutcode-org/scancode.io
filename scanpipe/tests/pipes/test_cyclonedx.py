@@ -26,12 +26,14 @@ from pathlib import Path
 from django.test import TestCase
 
 from cyclonedx.model.bom import Bom
+from cyclonedx.validation import ValidationError
 
 from scanpipe.pipes import cyclonedx
 
 
 class ScanPipeCycloneDXPipesTest(TestCase):
-    bom_file = Path(__file__).parent.parent / "data/cyclonedx/nested.cdx.json"
+    data_location = Path(__file__).parent.parent / "data"
+    bom_file = data_location / "cyclonedx" / "nested.cdx.json"
     bom_json = bom_file.read_text()
     bom_parsed = json.loads(bom_json)
     bom = cyclonedx.get_bom(bom_parsed)
@@ -39,6 +41,11 @@ class ScanPipeCycloneDXPipesTest(TestCase):
     def test_scanpipe_cyclonedx_get_bom(self):
         bom = cyclonedx.get_bom(self.bom_parsed)
         self.assertIsInstance(bom, Bom)
+
+    def test_scanpipe_cyclonedx_is_cyclonedx_bom(self):
+        self.assertTrue(cyclonedx.is_cyclonedx_bom(self.bom_file))
+        input_location = self.data_location / "cyclonedx" / "missing_schema.json"
+        self.assertFalse(cyclonedx.is_cyclonedx_bom(input_location))
 
     def test_scanpipe_cyclonedx_bom_attributes_to_dict(self):
         component_level1 = self.bom.components[0]
@@ -110,8 +117,8 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_get_components(self):
-        # empty_bom = Bom(bomFormat="CycloneDX", specVersion="1.4", version=1)
-        # self.assertEqual([], cyclonedx.get_components(empty_bom))
+        empty_bom = Bom()
+        self.assertEqual([], cyclonedx.get_components(empty_bom))
 
         components = cyclonedx.get_components(self.bom)
         self.assertEqual(3, len(components))
@@ -184,4 +191,26 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_validate_document(self):
-        cyclonedx.validate_document(self.bom_json)
+        error = cyclonedx.validate_document(document="{}")
+        self.assertIsInstance(error, ValidationError)
+        self.assertEqual("'specVersion' is a required property", str(error))
+
+        error = cyclonedx.validate_document(document='{"specVersion": "1.5"}')
+        self.assertIsInstance(error, ValidationError)
+        self.assertIn("'bomFormat' is a required property", str(error)[:50])
+
+        error = cyclonedx.validate_document(self.bom_json)
+        self.assertIsNone(error)
+
+    def test_scanpipe_cyclonedx_resolve_cyclonedx_packages(self):
+        input_location = self.data_location / "cyclonedx" / "missing_schema.json"
+        with self.assertRaises(ValueError) as cm:
+            cyclonedx.resolve_cyclonedx_packages(input_location)
+        expected_error = (
+            'CycloneDX document "missing_schema.json" is not valid:\n'
+            "Additional properties are not allowed ('invalid_entry' was unexpected)"
+        )
+        self.assertIn(expected_error, str(cm.exception))
+
+        packages = cyclonedx.resolve_cyclonedx_packages(self.bom_file)
+        self.assertEqual(3, len(packages))
