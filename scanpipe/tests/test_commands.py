@@ -60,7 +60,7 @@ def raise_interrupt(run_pk):
 
 
 class ScanPipeManagementCommandTest(TestCase):
-    pipeline_name = "docker"
+    pipeline_name = "analyze_docker_image"
     pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
 
     def test_scanpipe_management_command_create_project_base(self):
@@ -100,14 +100,17 @@ class ScanPipeManagementCommandTest(TestCase):
             "--pipeline",
             self.pipeline_name,
             "--pipeline",
-            "root_filesystems",
+            "analyze_root_filesystem_or_vm_image",
+            "--pipeline",
+            "scan_package",  # old name backward compatibility
         ]
         call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
         expected = [
             self.pipeline_name,
-            "root_filesystems",
+            "analyze_root_filesystem_or_vm_image",
+            "scan_single_package",
         ]
         self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
 
@@ -247,7 +250,8 @@ class ScanPipeManagementCommandTest(TestCase):
 
         pipelines = [
             self.pipeline_name,
-            "root_filesystems",
+            "analyze_root_filesystem_or_vm_image",
+            "scan_package",  # old name backward compatibility
         ]
 
         options = pipelines[:]
@@ -257,10 +261,17 @@ class ScanPipeManagementCommandTest(TestCase):
 
         options.extend(["--project", project.name])
         call_command("add-pipeline", *options, stdout=out)
-        self.assertIn(
-            "Pipelines docker, root_filesystems added to the project", out.getvalue()
+        expected = (
+            "Pipelines analyze_docker_image, analyze_root_filesystem_or_vm_image, "
+            "scan_single_package added to the project"
         )
-        self.assertEqual(pipelines, [run.pipeline_name for run in project.runs.all()])
+        self.assertIn(expected, out.getvalue())
+        expected = [
+            "analyze_docker_image",
+            "analyze_root_filesystem_or_vm_image",
+            "scan_single_package",
+        ]
+        self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
 
         options = ["--project", project.name, "non-existing"]
         expected = "non-existing is not a valid pipeline"
@@ -270,7 +281,7 @@ class ScanPipeManagementCommandTest(TestCase):
     def test_scanpipe_management_command_show_pipeline(self):
         pipeline_names = [
             self.pipeline_name,
-            "root_filesystems",
+            "analyze_root_filesystem_or_vm_image",
         ]
 
         project = Project.objects.create(name="my_project")
@@ -280,7 +291,10 @@ class ScanPipeManagementCommandTest(TestCase):
         options = ["--project", project.name, "--no-color"]
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
-        expected = " [NOT_STARTED] docker\n" " [NOT_STARTED] root_filesystems\n"
+        expected = (
+            " [NOT_STARTED] analyze_docker_image\n"
+            " [NOT_STARTED] analyze_root_filesystem_or_vm_image\n"
+        )
         self.assertEqual(expected, out.getvalue())
 
         project.runs.filter(pipeline_name=pipeline_names[0]).update(task_exitcode=0)
@@ -288,7 +302,10 @@ class ScanPipeManagementCommandTest(TestCase):
 
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
-        expected = " [SUCCESS] docker\n" " [FAILURE] root_filesystems\n"
+        expected = (
+            " [SUCCESS] analyze_docker_image\n"
+            " [FAILURE] analyze_root_filesystem_or_vm_image\n"
+        )
         self.assertEqual(expected, out.getvalue())
 
     def test_scanpipe_management_command_execute(self):
@@ -304,7 +321,7 @@ class ScanPipeManagementCommandTest(TestCase):
         run1 = project.add_pipeline(self.pipeline_name)
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_success):
             call_command("execute", *options, stdout=out)
-        expected = "Start the docker pipeline execution..."
+        expected = "Start the analyze_docker_image pipeline execution..."
         self.assertIn(expected, out.getvalue())
         expected = "successfully executed on project my_project"
         self.assertIn(expected, out.getvalue())
@@ -316,7 +333,7 @@ class ScanPipeManagementCommandTest(TestCase):
         err = StringIO()
         run2 = project.add_pipeline(self.pipeline_name)
 
-        expected = "Error during docker execution:\nError log"
+        expected = "Error during analyze_docker_image execution:\nError log"
         with mock.patch("scanpipe.tasks.execute_pipeline_task", task_failure):
             with self.assertRaisesMessage(CommandError, expected):
                 call_command("execute", *options, stdout=out, stderr=err)
@@ -348,14 +365,14 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("- CodebaseResource: 0", output)
         self.assertIn("- DiscoveredPackage: 0", output)
         self.assertIn("- ProjectMessage: 0", output)
-        self.assertIn("[NOT_STARTED] docker", output)
+        self.assertIn("[NOT_STARTED] analyze_docker_image", output)
 
         run.task_id = uuid.uuid4()
         run.save()
         out = StringIO()
         call_command("status", *options, stdout=out)
         output = out.getvalue()
-        self.assertIn("[QUEUED] docker", output)
+        self.assertIn("[QUEUED] analyze_docker_image", output)
 
         run.task_start_date = timezone.now()
         run.log = (
@@ -367,7 +384,7 @@ class ScanPipeManagementCommandTest(TestCase):
         call_command("status", *options, stdout=out)
 
         output = out.getvalue()
-        self.assertIn("[RUNNING] docker", output)
+        self.assertIn("[RUNNING] analyze_docker_image", output)
         for line in run.log.splitlines():
             self.assertIn(line, output)
 
@@ -377,7 +394,9 @@ class ScanPipeManagementCommandTest(TestCase):
         out = StringIO()
         call_command("status", *options, stdout=out)
         output = out.getvalue()
-        expected = f"[SUCCESS] docker (executed in {run.execution_time} seconds)"
+        expected = (
+            f"[SUCCESS] analyze_docker_image (executed in {run.execution_time} seconds)"
+        )
         self.assertIn(expected, output)
 
     def test_scanpipe_management_command_list_project(self):
@@ -508,7 +527,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
     def test_scanpipe_management_command_reset_project(self):
         project = Project.objects.create(name="my_project")
-        project.add_pipeline("docker")
+        project.add_pipeline("analyze_docker_image")
         CodebaseResource.objects.create(project=project, path="filename.ext")
         DiscoveredPackage.objects.create(project=project)
 

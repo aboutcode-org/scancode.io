@@ -269,7 +269,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [],
       "for_packages": [],
       "is_legal": false,
@@ -289,7 +288,6 @@
       "urls": [],
       "files_count": 6,
       "dirs_count": 3,
-      "size_count": 2374,
       "scan_errors": []
     },
     {
@@ -307,7 +305,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [],
       "for_packages": [],
       "is_legal": false,
@@ -327,7 +324,6 @@
       "urls": [],
       "files_count": 6,
       "dirs_count": 2,
-      "size_count": 2374,
       "scan_errors": []
     },
     {
@@ -345,7 +341,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": true,
-      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -367,7 +362,6 @@
       "urls": [],
       "files_count": 0,
       "dirs_count": 0,
-      "size_count": 0,
       "scan_errors": []
     },
     {
@@ -385,7 +379,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [],
       "for_packages": [],
       "is_legal": false,
@@ -405,7 +398,6 @@
       "urls": [],
       "files_count": 3,
       "dirs_count": 1,
-      "size_count": 1187,
       "scan_errors": []
     },
     {
@@ -423,7 +415,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [],
       "for_packages": [],
       "is_legal": false,
@@ -443,7 +434,6 @@
       "urls": [],
       "files_count": 3,
       "dirs_count": 0,
-      "size_count": 1187,
       "scan_errors": []
     },
     {
@@ -461,7 +451,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": true,
-      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -483,7 +472,6 @@
       "urls": [],
       "files_count": 0,
       "dirs_count": 0,
-      "size_count": 0,
       "scan_errors": []
     },
     {
@@ -501,7 +489,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [
         {
           "type": "npm",
@@ -648,7 +635,6 @@
       ],
       "files_count": 0,
       "dirs_count": 0,
-      "size_count": 0,
       "scan_errors": []
     },
     {
@@ -666,7 +652,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -741,7 +726,6 @@
       ],
       "files_count": 0,
       "dirs_count": 0,
-      "size_count": 0,
       "scan_errors": []
     },
     {
@@ -759,7 +743,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [
         {
           "type": "npm",
@@ -906,7 +889,6 @@
       ],
       "files_count": 0,
       "dirs_count": 0,
-      "size_count": 0,
       "scan_errors": []
     },
     {
@@ -924,7 +906,6 @@
       "is_archive": false,
       "is_media": false,
       "is_source": false,
-      "is_script": false,
       "package_data": [],
       "for_packages": [
         "pkg:npm/is-npm@1.0.0?uuid=fixed-uid-done-for-testing-5642512d1758"
@@ -999,7 +980,6 @@
       ],
       "files_count": 0,
       "dirs_count": 0,
-      "size_count": 0,
       "scan_errors": []
     }
   ]

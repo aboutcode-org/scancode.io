@@ -79,15 +79,15 @@ Instructions
     Alternatively, you can copy files manually to the :guilabel:`input/`
     directory to include entire directories.
 
-- Add the docker pipeline to your project:
+- Add the ``analyze_docker_image`` pipeline to your project:
 
 .. code-block:: console
 
-    $ scanpipe add-pipeline --project staticbox docker
+    $ scanpipe add-pipeline --project staticbox analyze_docker_image
 
 .. code-block:: console
 
-    >> Pipeline docker added to the project
+    >> Pipeline analyze_docker_image added to the project
 
 - Check the status of the pipeline added to your project:
 
@@ -97,7 +97,7 @@ Instructions
 
 .. code-block:: console
 
-    >> [NOT_STARTED] docker
+    >> [NOT_STARTED] analyze_docker_image
 
 .. note::
     The ``scanpipe show-pipeline`` command lists all the pipelines added to the
@@ -106,8 +106,8 @@ Instructions
     already running, pipelines with **"SUCCESS"** or **"FAILURE"** status, and those
     will be running next, pipelines with **"NOT_STARTED"** status as shown below.
 
-- Run the docker pipeline on this project. In the output, you will be shown
-  the pipeline's execution progress:
+- Run the ``analyze_docker_image`` pipeline on this project. In the output, you will be
+  shown the pipeline's execution progress:
 
 .. code-block:: console
 
@@ -115,17 +115,17 @@ Instructions
 
 .. code-block:: console
 
-    >> Pipeline docker run in progress...
-       Pipeline [docker] starting
+    >> Pipeline analyze_docker_image run in progress...
+       Pipeline [analyze_docker_image] starting
        Step [extract_images] starting
        Step [extract_images] completed in 0.18 seconds
        Step [extract_layers] starting
        [...]
        Pipeline completed
-       docker successfully executed on project staticbox
+       analyze_docker_image successfully executed on project staticbox
 
 - Executing the ``show-pipeline`` command again will also confirm the success
-  of the pipeline execution - **"[SUCCESS] docker"** status:
+  of the pipeline execution - **"[SUCCESS] analyze_docker_image"** status:
 
 .. code-block:: console
 
@@ -133,7 +133,7 @@ Instructions
 
 .. code-block:: console
 
-    >> [SUCCESS] docker
+    >> [SUCCESS] analyze_docker_image
 
 - Get the results of the pipeline execution as a JSON file using the ``output`` command:
 
@@ -155,11 +155,12 @@ Instructions
     after the project creation.
     For example, the following command will create a project named ``staticbox2``,
     download the test Docker image to the project's :guilabel:`input/`
-    directory, add the docker pipeline, and execute the pipeline in one operation:
+    directory, add the ``analyze_docker_image`` pipeline, and execute the pipeline in
+    one operation:
 
     .. code-block:: bash
 
         $ scanpipe create-project staticbox2 \
             --input-url https://github.com/nexB/scancode.io-tutorial/releases/download/sample-images/30-alpine-nickolashkraus-staticbox-latest.tar \
-            --pipeline docker \
+            --pipeline analyze_docker_image \
             --execute

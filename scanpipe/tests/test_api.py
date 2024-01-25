@@ -96,11 +96,17 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertContains(response, self.project1_detail_url)
 
     def test_scanpipe_api_project_list(self):
-        response = self.csrf_client.get(self.project_list_url)
+        Project.objects.create(name="2")
+        Project.objects.create(name="3")
+
+        with self.assertNumQueries(8):
+            response = self.csrf_client.get(self.project_list_url)
 
         self.assertContains(response, self.project1_detail_url)
-        self.assertEqual(1, response.data["count"])
+        self.assertEqual(3, response.data["count"])
+        self.assertContains(response, "input_sources")
         self.assertNotContains(response, "input_root")
+        self.assertNotContains(response, "next_run")
         self.assertNotContains(response, "extra_data")
         self.assertNotContains(response, "message_count")
         self.assertNotContains(response, "resource_count")
@@ -201,19 +207,34 @@ class ScanPipeAPITest(TransactionTestCase):
         expected = {"java_to_class": 1}
         self.assertEqual(expected, response.data["codebase_relations_summary"])
 
-        self.project1.add_input_source(filename="file1", source="uploaded")
-        self.project1.add_input_source(filename="file2", source="https://download.url")
-        self.project1.save()
+        input1 = self.project1.add_input_source(filename="file1", is_uploaded=True)
+        input2 = self.project1.add_input_source(
+            filename="file2", download_url="https://download.url"
+        )
+
         response = self.csrf_client.get(self.project1_detail_url)
         expected = [
-            {"filename": "file1", "source": "uploaded"},
-            {"filename": "file2", "source": "https://download.url"},
+            {
+                "filename": "file1",
+                "download_url": "",
+                "is_uploaded": True,
+                "tag": "",
+                "exists": False,
+                "uuid": str(input1.uuid),
+            },
+            {
+                "filename": "file2",
+                "download_url": "https://download.url",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": str(input2.uuid),
+            },
         ]
         self.assertEqual(expected, response.data["input_sources"])
 
-    @mock.patch("requests.get")
     @mock.patch("scanpipe.models.Run.execute_task_async")
-    def test_scanpipe_api_project_create(self, mock_execute_pipeline_task, mock_get):
+    def test_scanpipe_api_project_create_base(self, mock_execute_pipeline_task):
         data = {}
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
@@ -247,25 +268,23 @@ class ScanPipeAPITest(TransactionTestCase):
 
         data = {
             "name": "Name",
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
         self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline_name"])
-        self.assertEqual(data["pipeline"], response.data["next_run"])
         mock_execute_pipeline_task.assert_not_called()
 
         data = {
             "name": "OtherName",
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
             "upload_file": io.BytesIO(b"Content"),
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
         self.assertEqual(data["pipeline"], response.data["runs"][0]["pipeline_name"])
-        self.assertEqual(data["pipeline"], response.data["next_run"])
         mock_execute_pipeline_task.assert_not_called()
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
@@ -273,7 +292,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
         data = {
             "name": "BetterName",
-            "pipeline": "docker",
+            "pipeline": "analyze_docker_image",
             "upload_file": io.BytesIO(b"Content"),
             "execute_now": True,
         }
@@ -285,9 +304,6 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.get(created_project_detail_url)
         self.assertEqual(["upload_file"], response.data["input_root"])
 
-        mock_get.return_value = mock.Mock(
-            content=b"\x00", headers={}, status_code=200, url="archive.zip"
-        )
         data = {
             "name": "Upload",
             "input_urls": ["https://example.com/archive.zip"],
@@ -296,19 +312,18 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
-        expected = {
-            "filename": "archive.zip",
-            "source": "https://example.com/archive.zip",
-        }
-        self.assertEqual([expected], response.data["input_sources"])
-        self.assertEqual(["archive.zip"], response.data["input_root"])
-
-        mock_get.side_effect = [
-            mock.Mock(content=b"\x00", headers={}, status_code=200, url="archive.zip"),
-            mock.Mock(
-                content=b"\x00", headers={}, status_code=200, url="second.tar.gz"
-            ),
+        expected = [
+            {
+                "filename": "",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": response.data["input_sources"][0]["uuid"],
+            }
         ]
+        self.assertEqual(expected, response.data["input_sources"])
+
         data = {
             "name": "Upload 2 archives",
             "input_urls": [
@@ -321,17 +336,82 @@ class ScanPipeAPITest(TransactionTestCase):
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
         expected = [
-            {"filename": "archive.zip", "source": "https://example.com/archive.zip"},
             {
-                "filename": "second.tar.gz",
-                "source": "https://example.com/second.tar.gz",
+                "filename": "",
+                "download_url": "https://example.com/archive.zip",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": response.data["input_sources"][0]["uuid"],
+            },
+            {
+                "filename": "",
+                "download_url": "https://example.com/second.tar.gz",
+                "is_uploaded": False,
+                "tag": "",
+                "exists": False,
+                "uuid": response.data["input_sources"][1]["uuid"],
             },
         ]
         self.assertEqual(expected, response.data["input_sources"])
-        expected = ["archive.zip", "second.tar.gz"]
-        self.assertEqual(expected, sorted(response.data["input_root"]))
 
     def test_scanpipe_api_project_create_multiple_pipelines(self):
+        data = {
+            "name": "Single string",
+            "pipeline": "analyze_docker_image",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
+
+        data = {
+            "name": "Single list",
+            "pipeline": ["analyze_docker_image"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, len(response.data["runs"]))
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
+
+        data = {
+            "name": "Multi list",
+            "pipeline": ["analyze_docker_image", "scan_single_package"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["runs"]))
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
+        self.assertEqual(
+            "scan_single_package", response.data["runs"][1]["pipeline_name"]
+        )
+
+        data = {
+            "name": "Multi string",
+            "pipeline": "analyze_docker_image,scan_single_package",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+        expected = {
+            "pipeline": [
+                ErrorDetail(
+                    string=(
+                        '"analyze_docker_image,scan_single_package" '
+                        "is not a valid choice."
+                    ),
+                    code="invalid_choice",
+                )
+            ]
+        }
+        self.assertEqual(expected, response.data)
+
+    def test_scanpipe_api_project_create_pipeline_old_name_compatibility(self):
         data = {
             "name": "Single string",
             "pipeline": "docker",
@@ -339,45 +419,23 @@ class ScanPipeAPITest(TransactionTestCase):
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, len(response.data["runs"]))
-        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
-        self.assertEqual("docker", response.data["next_run"])
-
-        data = {
-            "name": "Single list",
-            "pipeline": ["docker"],
-        }
-        response = self.csrf_client.post(self.project_list_url, data)
-        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        self.assertEqual(1, len(response.data["runs"]))
-        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
-        self.assertEqual("docker", response.data["next_run"])
+        self.assertEqual(
+            "analyze_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
 
         data = {
             "name": "Multi list",
-            "pipeline": ["docker", "scan_package"],
+            "pipeline": ["docker_windows", "scan_package"],
         }
         response = self.csrf_client.post(self.project_list_url, data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(2, len(response.data["runs"]))
-        self.assertEqual("docker", response.data["runs"][0]["pipeline_name"])
-        self.assertEqual("scan_package", response.data["runs"][1]["pipeline_name"])
-        self.assertEqual("docker", response.data["next_run"])
-
-        data = {
-            "name": "Multi string",
-            "pipeline": "docker,scan_package",
-        }
-        response = self.csrf_client.post(self.project_list_url, data)
-        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        expected = {
-            "pipeline": [
-                ErrorDetail(
-                    string='"docker,scan_package" is not a valid choice.',
-                    code="invalid_choice",
-                )
-            ]
-        }
-        self.assertEqual(expected, response.data)
+        self.assertEqual(
+            "analyze_windows_docker_image", response.data["runs"][0]["pipeline_name"]
+        )
+        self.assertEqual(
+            "scan_single_package", response.data["runs"][1]["pipeline_name"]
+        )
 
     def test_scanpipe_api_project_create_labels(self):
         data = {
@@ -561,7 +619,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(10, len(response.data.keys()))
 
     def test_scanpipe_api_project_action_delete(self):
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(task_id=uuid.uuid4())
         self.assertEqual(run.Status.RUNNING, run.status)
 
@@ -603,7 +661,7 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(1, len(Project.get_root_content(self.project1.codebase_path)))
 
     def test_scanpipe_api_project_action_reset(self):
-        self.project1.add_pipeline("docker")
+        self.project1.add_pipeline("analyze_docker_image")
         self.assertEqual(1, self.project1.runs.count())
         self.assertEqual(1, self.project1.codebaseresources.count())
         self.assertEqual(1, self.project1.discoveredpackages.count())
@@ -636,14 +694,14 @@ class ScanPipeAPITest(TransactionTestCase):
         url = reverse("project-add-pipeline", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
         self.assertEqual("Pipeline required.", response.data.get("status"))
-        self.assertIn("docker", response.data.get("pipelines"))
+        self.assertIn("analyze_docker_image", response.data.get("pipelines"))
 
         data = {"pipeline": "not_available"}
         response = self.csrf_client.post(url, data=data)
         expected = {"status": "not_available is not a valid pipeline."}
         self.assertEqual(expected, response.data)
 
-        data = {"pipeline": "docker"}
+        data = {"pipeline": "analyze_docker_image"}
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_not_called()
@@ -659,37 +717,38 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         mock_execute_pipeline_task.assert_called_once()
 
-    @mock.patch("requests.get")
-    def test_scanpipe_api_project_action_add_input(self, mock_get):
+    def test_scanpipe_api_project_action_add_pipeline_old_name_compatibility(self):
+        url = reverse("project-add-pipeline", args=[self.project1.uuid])
+        data = {
+            "pipeline": "docker",  # old name
+            "execute_now": False,
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Pipeline added."}, response.data)
+        self.assertEqual("analyze_docker_image", self.project1.runs.get().pipeline_name)
+
+    def test_scanpipe_api_project_action_add_input(self):
         url = reverse("project-add-input", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
         expected = "upload_file or input_urls required."
         self.assertEqual(expected, response.data.get("status"))
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
-        mock_get.side_effect = None
-        mock_get.return_value = mock.Mock(
-            content=b"\x00",
-            headers={},
-            status_code=200,
-            url="https://example.com/archive.zip",
-        )
         data = {
             "input_urls": "https://example.com/archive.zip",
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Input(s) added."}, response.data)
-        self.assertEqual(["archive.zip"], self.project1.input_root)
 
         data = {
             "upload_file": io.BytesIO(b"Content"),
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Input(s) added."}, response.data)
-        expected = sorted(["upload_file", "archive.zip"])
+        expected = sorted(["upload_file"])
         self.assertEqual(expected, sorted(self.project1.input_root))
 
-        run = self.project1.add_pipeline("docker")
+        run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(task_id=uuid.uuid4())
         response = self.csrf_client.get(url)
         expected = "Cannot add inputs once a pipeline has started to execute."
@@ -697,13 +756,13 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
     def test_scanpipe_api_run_detail(self):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-detail", args=[run1.uuid])
         response = self.csrf_client.get(url)
 
         self.assertEqual(str(run1.uuid), response.data["uuid"])
         self.assertIn(self.project1_detail_url, response.data["project"])
-        self.assertEqual("docker", response.data["pipeline_name"])
+        self.assertEqual("analyze_docker_image", response.data["pipeline_name"])
         self.assertEqual("Analyze Docker images.", response.data["description"])
         self.assertEqual("", response.data["scancodeio_version"])
         self.assertIsNone(response.data["task_id"])
@@ -715,10 +774,10 @@ class ScanPipeAPITest(TransactionTestCase):
 
     @mock.patch("scanpipe.models.Run.execute_task_async")
     def test_scanpipe_api_run_action_start_pipeline(self, mock_execute_task):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-start-pipeline", args=[run1.uuid])
         response = self.csrf_client.post(url)
-        expected = {"status": "Pipeline docker started."}
+        expected = {"status": "Pipeline analyze_docker_image started."}
         self.assertEqual(expected, response.data)
         mock_execute_task.assert_called_once()
 
@@ -745,7 +804,7 @@ class ScanPipeAPITest(TransactionTestCase):
 
     @override_settings(SCANCODEIO_ASYNC=False)
     def test_scanpipe_api_run_action_stop_pipeline(self):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-stop-pipeline", args=[run1.uuid])
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
@@ -755,7 +814,7 @@ class ScanPipeAPITest(TransactionTestCase):
         run1.set_task_started(run1.pk)
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {"status": "Pipeline docker stopped."}
+        expected = {"status": "Pipeline analyze_docker_image stopped."}
         self.assertEqual(expected, response.data)
 
         run1.refresh_from_db()
@@ -763,26 +822,26 @@ class ScanPipeAPITest(TransactionTestCase):
 
     @override_settings(SCANCODEIO_ASYNC=False)
     def test_scanpipe_api_run_action_delete_pipeline(self):
-        run1 = self.project1.add_pipeline("docker")
+        run1 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-delete-pipeline", args=[run1.uuid])
 
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {"status": "Pipeline docker deleted."}
+        expected = {"status": "Pipeline analyze_docker_image deleted."}
         self.assertEqual(expected, response.data)
         self.assertFalse(Run.objects.filter(pk=run1.pk).exists())
 
-        run2 = self.project1.add_pipeline("docker")
+        run2 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-delete-pipeline", args=[run2.uuid])
 
         run2.set_task_queued()
         response = self.csrf_client.post(url)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        expected = {"status": "Pipeline docker deleted."}
+        expected = {"status": "Pipeline analyze_docker_image deleted."}
         self.assertEqual(expected, response.data)
         self.assertFalse(Run.objects.filter(pk=run2.pk).exists())
 
-        run3 = self.project1.add_pipeline("docker")
+        run3 = self.project1.add_pipeline("analyze_docker_image")
         url = reverse("run-delete-pipeline", args=[run3.uuid])
 
         run3.set_task_started(run3.pk)

@@ -122,9 +122,9 @@ urlpatterns = [
         name="project_results",
     ),
     path(
-        "project/<slug:slug>/execute_pipeline/<uuid:run_uuid>/",
-        views.execute_pipeline_view,
-        name="project_execute_pipeline",
+        "project/<slug:slug>/execute_pipelines/",
+        views.execute_pipelines_view,
+        name="project_execute_pipelines",
     ),
     path(
         "project/<slug:slug>/stop_pipeline/<uuid:run_uuid>/",
@@ -137,7 +137,7 @@ urlpatterns = [
         name="project_delete_pipeline",
     ),
     path(
-        "project/<slug:slug>/delete_input/<str:input_name>/",
+        "project/<slug:slug>/delete_input/<uuid:input_uuid>/",
         views.delete_input_view,
         name="project_delete_input",
     ),

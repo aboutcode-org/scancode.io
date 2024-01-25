@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import csv
+import decimal
 import json
 import re
 from operator import attrgetter
@@ -34,9 +35,13 @@ from django.template import Template
 
 import saneyaml
 import xlsxwriter
-from cyclonedx import output as cyclonedx_output
-from cyclonedx.model import bom as cyclonedx_bom
-from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import bom as cdx_bom
+from cyclonedx.model import component as cdx_component
+from cyclonedx.model import vulnerability as cdx_vulnerability
+from cyclonedx.output import OutputFormat
+from cyclonedx.output import make_outputter
+from cyclonedx.schema import SchemaVersion
+from cyclonedx.validation.json import JsonStrictValidator
 from license_expression import Licensing
 from license_expression import ordered_unique
 from licensedcode.cache import build_spdx_license_expression
@@ -167,7 +172,7 @@ class JSONResultsGenerator:
     sent directly to a StreamingHttpResponse.
     The results would have to be streamed to a file first, then iterated by the
     StreamingHttpResponse, which do not work great in a HTTP request context as
-    the request can timeout while the file is generated.
+    the request can time out while the file is generated.
 
     This class re-use Serializers from the API to avoid code duplication.
     Those imports need to be kept internal to this class to prevent circular import
@@ -224,7 +229,7 @@ class JSONResultsGenerator:
             "created_date": project.created_date,
             "notes": project.notes,
             "settings": project.settings,
-            "input_sources": project.input_sources_list,
+            "input_sources": project.get_inputs_with_source(),
             "runs": runs.data,
             "extra_data": project.extra_data,
         }
@@ -579,48 +584,135 @@ def to_spdx(project, include_files=False):
     return output_file
 
 
+def vulnerability_as_cyclonedx(vulnerability_data, component_bom_ref):
+    affects = [cdx_vulnerability.BomTarget(ref=f"urn:cdx:{component_bom_ref}")]
+
+    source = cdx_vulnerability.VulnerabilitySource(
+        name="VulnerableCode",
+        url=vulnerability_data.get("url"),
+    )
+
+    references = []
+    ratings = []
+    for reference in vulnerability_data.get("references", []):
+        source = cdx_vulnerability.VulnerabilitySource(
+            url=reference.get("reference_url"),
+        )
+
+        references.append(
+            cdx_vulnerability.VulnerabilityReference(
+                id=reference.get("reference_id"),
+                source=source,
+            )
+        )
+
+        for score_entry in reference.get("scores", []):
+            # CycloneDX only support a float value for the score field,
+            # where on the VulnerableCode data it can be either a score float value
+            # or a severity string value.
+            score_value = score_entry.get("value")
+            try:
+                score = decimal.Decimal(score_value)
+                severity = None
+            except decimal.DecimalException:
+                score = None
+                severity = getattr(
+                    cdx_vulnerability.VulnerabilitySeverity,
+                    score_value.upper(),
+                    None,
+                )
+
+            ratings.append(
+                cdx_vulnerability.VulnerabilityRating(
+                    source=source,
+                    score=score,
+                    severity=severity,
+                    # Providing a value for method raise a AssertionError
+                    # method=score_entry.get("scoring_system"),
+                    vector=score_entry.get("scoring_elements"),
+                )
+            )
+
+    cwes = [
+        weakness.get("cwe_id") for weakness in vulnerability_data.get("weaknesses", [])
+    ]
+
+    return cdx_vulnerability.Vulnerability(
+        id=vulnerability_data.get("vulnerability_id"),
+        source=source,
+        description=vulnerability_data.get("summary"),
+        affects=affects,
+        references=references,
+        cwes=cwes,
+        ratings=ratings,
+    )
+
+
 def get_cyclonedx_bom(project):
     """
     Return a CycloneDX `Bom` object filled with provided `project` data.
     See https://cyclonedx.org/use-cases/#dependency-graph
     """
-    components = [
-        *get_queryset(project, "discoveredpackage"),
-    ]
-
-    cyclonedx_components = [component.as_cyclonedx() for component in components]
-
-    bom = cyclonedx_bom.Bom(components=cyclonedx_components)
-
-    project_as_cyclonedx = cyclonedx_component.Component(
+    project_as_root_component = cdx_component.Component(
         name=project.name,
         bom_ref=str(project.uuid),
     )
 
-    project_as_cyclonedx.dependencies.update(
-        [component.bom_ref for component in cyclonedx_components]
-    )
-
-    bom.metadata = cyclonedx_bom.BomMetaData(
-        component=project_as_cyclonedx,
+    bom = cdx_bom.Bom()
+    bom.metadata = cdx_bom.BomMetaData(
+        component=project_as_root_component,
         tools=[
-            cyclonedx_bom.Tool(
+            cdx_bom.Tool(
                 name="ScanCode.io",
                 version=scancodeio_version,
             )
         ],
         properties=[
-            cyclonedx_bom.Property(
+            cdx_bom.Property(
                 name="notice",
                 value=SCAN_NOTICE,
             )
         ],
     )
 
+    components = []
+    vulnerabilities = []
+    for package in get_queryset(project, "discoveredpackage"):
+        component = package.as_cyclonedx()
+        components.append(component)
+
+        for vulnerability_data in package.affected_by_vulnerabilities:
+            vulnerabilities.append(
+                vulnerability_as_cyclonedx(
+                    vulnerability_data=vulnerability_data,
+                    component_bom_ref=component.bom_ref,
+                )
+            )
+
+    for component in components:
+        bom.components.add(component)
+        bom.register_dependency(project_as_root_component, [component])
+
+    bom.vulnerabilities = vulnerabilities
+
     return bom
 
 
-def to_cyclonedx(project):
+def sort_bom_with_schema_ordering(bom_as_dict, schema_version):
+    """Sort the ``bom_as_dict`` using the ordering from the ``schema_version``."""
+    schema_file = JsonStrictValidator(schema_version)._schema_file
+    with open(schema_file) as sf:
+        schema_dict = json.loads(sf.read())
+
+    order_from_schema = list(schema_dict.get("properties", {}).keys())
+    ordered_dict = {
+        key: bom_as_dict.get(key) for key in order_from_schema if key in bom_as_dict
+    }
+
+    return json.dumps(ordered_dict, indent=2)
+
+
+def to_cyclonedx(project, schema_version=SchemaVersion.V1_5):
     """
     Generate output for the provided ``project`` in CycloneDX BOM format.
     The output file is created in the ``project`` "output/" directory.
@@ -628,16 +720,20 @@ def to_cyclonedx(project):
     """
     output_file = project.get_output_file_path("results", "cdx.json")
 
-    cyclonedx_bom = get_cyclonedx_bom(project)
+    bom = get_cyclonedx_bom(project)
+    json_outputter = make_outputter(bom, OutputFormat.JSON, schema_version)
 
-    outputter = cyclonedx_output.get_instance(
-        bom=cyclonedx_bom,
-        output_format=cyclonedx_output.OutputFormat.JSON,
-    )
+    # Using the internal API in place of the output_as_string() method to avoid
+    # a round of deserialization/serialization while fixing the field ordering.
+    json_outputter.generate()
+    bom_as_dict = json_outputter._bom_json
 
-    bom_json = outputter.output_as_string()
+    # The default order out of the outputter is not great, the following sorts the
+    # bom using the order from the schema.
+    sorted_json = sort_bom_with_schema_ordering(bom_as_dict, schema_version)
+
     with output_file.open("w") as file:
-        file.write(bom_json)
+        file.write(sorted_json)
 
     return output_file
 

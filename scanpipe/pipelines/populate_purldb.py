@@ -28,6 +28,9 @@ from scanpipe.pipes import scancode
 class PopulatePurlDB(Pipeline):
     """Populate PurlDB with discovered project packages and their dependencies."""
 
+    download_inputs = False
+    is_addon = True
+
     @classmethod
     def steps(cls):
         return (

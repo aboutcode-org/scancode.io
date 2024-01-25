@@ -11,7 +11,7 @@
       ],
       "runs": [
         {
-          "pipeline_name": "docker",
+          "pipeline_name": "analyze_docker_image",
           "status": "not_started",
           "description": "Analyze Docker images.",
           "scancodeio_version": "",

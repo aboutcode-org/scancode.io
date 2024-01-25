@@ -172,7 +172,7 @@ You can use more than one ``PIPELINE_NAME`` to add multiple pipelines at once.
 For example, assuming you have created beforehand a project named "foo", this will
 add the docker pipeline to your project::
 
-    $ scanpipe add-pipeline --project foo docker
+    $ scanpipe add-pipeline --project foo analyze_docker_image
 
 
 `$ scanpipe execute --project PROJECT`

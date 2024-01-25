@@ -5,9 +5,16 @@
     if (modal_id !== "run-detail-modal") return;
 
     let $modal = document.getElementById(modal_id);
-    let run_uuid = event.detail.$button.dataset.uuid;
-    let run_detail_url = `/run/${run_uuid}/`;
     $modal.innerHTML = "";
+
+    let run_uuid = event.detail.$button.dataset.uuid;
+    let run_detail_path = `/run/${run_uuid}/`;
+
+    // Construct the full URL by combining the current origin and the relative path.
+    // It's important to use the URL constructor, as directly providing the relative
+    // path to the `fetch` function may not work correctly, especially for URLs
+    // that include credentials such as "user:pass@domain.com".
+    let run_detail_url = new URL(run_detail_path, window.location.origin);
 
     fetch(run_detail_url).then(function (response) {
       if (response.ok) {

@@ -64,11 +64,10 @@ import redis
 import requests
 import saneyaml
 from commoncode.fileutils import parent_directory
-from commoncode.hash import multi_checksums
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import license as cyclonedx_license
 from extractcode import EXTRACT_SUFFIX
-from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
@@ -521,7 +520,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         editable=False,
         help_text=_("Project work directory location."),
     )
-    input_sources = models.JSONField(default=dict, blank=True, editable=False)
     is_archived = models.BooleanField(
         default=False,
         editable=False,
@@ -575,6 +573,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         self._raise_if_run_in_progress()
 
         if remove_input:
+            # Delete the file on disk but keep the InputSource entries for reference.
             shutil.rmtree(self.input_path, ignore_errors=True)
 
         if remove_codebase:
@@ -651,7 +650,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         if not keep_input:
             work_directories.append(self.input_path)
-            self.input_sources = {}
+            self.inputsources.all().delete()
 
         self.extra_data = {}
         self.save()
@@ -673,7 +672,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """Clone this project using the provided ``clone_name`` as new project name."""
         cloned_project = Project.objects.create(
             name=clone_name,
-            input_sources=self.input_sources if copy_inputs else {},
             settings=self.settings if copy_settings else {},
         )
 
@@ -681,6 +679,12 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             cloned_project.labels.add(*labels)
 
         if copy_inputs:
+            # Clone the InputSource instances
+            for input_source in self.inputsources.all():
+                input_source.pk = None
+                input_source.project = cloned_project
+                input_source.save()
+            # Copy the files from the input work directory
             for input_location in self.inputs():
                 cloned_project.copy_input_from(input_location)
 
@@ -797,13 +801,6 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         shutil.rmtree(self.tmp_path, ignore_errors=True)
         self.tmp_path.mkdir(parents=True, exist_ok=True)
 
-    @property
-    def input_sources_list(self):
-        return [
-            {"filename": filename, "source": source}
-            for filename, source in self.input_sources.items()
-        ]
-
     def inputs(self, pattern="**/*", extensions=None):
         """
         Return all files and directories path of the input/ directory matching
@@ -851,30 +848,49 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         return self.get_root_content(self.input_path)
 
     @property
-    def inputs_with_source(self):
-        """
-        Return a list of inputs including the source, type, sha256, and size data.
-        Return the `missing_inputs` defined in the `input_sources` field but not
-        available in the input/ directory.
-        Only first level children will be listed.
-        """
-        input_path = self.input_path
-        input_sources = dict(self.input_sources)
+    def input_sources(self):
+        return self.get_inputs_with_source()
 
-        inputs = []
-        for path in input_path.glob("*"):
-            inputs.append(
+    def get_inputs_with_source(self):
+        """Return an input list including the filename, download_url, and size data."""
+        input_sources = []
+        seen_filenames = set()
+
+        for input_source in self.inputsources.all():
+            input_sources.append(
                 {
-                    "name": path.name,
-                    "is_file": path.is_file(),
-                    "size": path.stat().st_size,
-                    **multi_checksums(path, ["sha256"]),
-                    "source": input_sources.pop(path.name, "not_found"),
+                    # Fields
+                    "uuid": str(input_source.uuid),
+                    "filename": input_source.filename,
+                    "download_url": input_source.download_url,
+                    "is_uploaded": input_source.is_uploaded,
+                    "tag": input_source.tag,
+                    # Properties
+                    "size": input_source.size,
+                    "is_file": True,
+                    # Methods
+                    "exists": input_source.exists(),
                 }
             )
+            seen_filenames.add(input_source.filename)
 
-        missing_inputs = input_sources
-        return inputs, missing_inputs
+        # Inputs located in `input_path` but without an input source.
+        # Those are usually manually copied there.
+        for path in self.input_path.glob("*"):
+            if path.name not in seen_filenames:
+                input_sources.append(
+                    {
+                        "filename": path.name,
+                        "is_uploaded": False,
+                        "is_file": path.is_file(),
+                        "size": path.stat().st_size,
+                        "exists": True,
+                    }
+                )
+
+        # Sort by filename for consistency across systems
+        sorted_input_sources = sorted(input_sources, key=itemgetter("filename"))
+        return sorted_input_sources
 
     @property
     def output_root(self):
@@ -928,18 +944,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     def can_change_inputs(self):
         """
         Return True until one pipeline run has started its execution on the project.
-        Always False when the project is archived.
+        Always return False when the project is archived.
         """
         return not self.is_archived and not self.runs.has_start_date().exists()
-
-    def add_input_source(self, filename, source, save=False):
-        """
-        Add given `filename` and `source` to the current project's `input_sources`
-        field.
-        """
-        self.input_sources[filename] = source
-        if save:
-            self.save(update_fields=["input_sources"])
 
     def write_input_file(self, file_object):
         """Write the provided `file_object` to the project's input/ directory."""
@@ -964,18 +971,24 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         Move the file at `input_location` to the current project's input/
         directory.
         """
-        from scanpipe.pipes.input import move_inputs
+        from scanpipe.pipes.input import move_input
 
-        move_inputs([input_location], self.input_path)
+        return move_input(input_location, self.input_path)
 
-    def delete_input(self, name):
-        """Delete the provided ``name`` input from disk and from ``input_sources``."""
-        file_path = self.input_path / name
-        file_path.unlink(missing_ok=True)
+    def add_input_source(self, download_url="", filename="", is_uploaded=False):
+        """
+        Create a InputFile entry for the current project, given a `download_url` or
+        a `filename`.
+        """
+        if not download_url and not filename:
+            raise Exception("Provide at least a value for download_url or filename.")
 
-        if self.input_sources.pop(name, None):
-            self.save(update_fields=["input_sources"])
-            return True
+        return InputSource.objects.create(
+            project=self,
+            download_url=download_url,
+            filename=filename,
+            is_uploaded=is_uploaded,
+        )
 
     def add_downloads(self, downloads):
         """
@@ -984,8 +997,10 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         for downloaded in downloads:
             self.move_input_from(downloaded.path)
-            self.add_input_source(downloaded.filename, downloaded.uri)
-        self.save(update_fields=["input_sources"])
+            self.add_input_source(
+                download_url=downloaded.uri,
+                filename=downloaded.filename,
+            )
 
     def add_uploads(self, uploads):
         """
@@ -994,8 +1009,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         """
         for uploaded in uploads:
             self.write_input_file(uploaded)
-            self.add_input_source(filename=uploaded.name, source="uploaded")
-        self.save(update_fields=["input_sources"])
+            self.add_input_source(filename=uploaded.name, is_uploaded=True)
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
@@ -1030,6 +1044,33 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         the current project.
         """
         return WebhookSubscription.objects.create(project=self, target_url=target_url)
+
+    @cached_property
+    def can_start_pipelines(self):
+        """
+        Return True if at least one "not started" pipeline is assigned to this project
+        and if no pipeline runs is currently "queued or running".
+        "not started".
+        Always return False when the project is archived.
+        """
+        runs = self.runs.all()
+        # Using Run QuerySet only once to avoid extra DB queries.
+        not_started_runs = [run for run in runs if run.status == run.Status.NOT_STARTED]
+        queued_or_running_runs = [
+            run for run in runs if run.status in (run.Status.QUEUED, run.Status.RUNNING)
+        ]
+
+        conditions = [
+            not self.is_archived,
+            not_started_runs,  # At least one run is "not started"
+            not queued_or_running_runs,  # No runs are currently running or queued
+        ]
+        return all(conditions)
+
+    def start_pipelines(self):
+        """Start the next "not started" pipeline execution."""
+        if next_not_started_run := self.get_next_run():
+            return next_not_started_run.start()
 
     def get_next_run(self):
         """Return the next non-executed Run instance assigned to current project."""
@@ -1393,6 +1434,95 @@ class UpdateFromDataMixin:
             self.save(update_fields=updated_fields)
 
         return updated_fields
+
+
+class InputSource(UUIDPKModel, ProjectRelatedModel):
+    """
+    A model that represents an input file associated to a project.
+    The file can either be "uploaded", or "fetched" from a provided `download_url`.
+    """
+
+    download_url = models.CharField(
+        max_length=1024,
+        blank=True,
+        help_text=_("Download URL of the input file."),
+    )
+    filename = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=_("Name of the file as uploaded or downloaded from a source."),
+    )
+    is_uploaded = models.BooleanField(default=False)
+    tag = models.CharField(blank=True, max_length=50)
+
+    def __str__(self):
+        if self.is_uploaded:
+            return f"filename={self.filename} [uploaded]"
+        elif self.filename:
+            return f"filename={self.filename} [download_url={self.download_url}]"
+        else:
+            return self.download_url
+
+    def save(self, *args, **kwargs):
+        """Raise an error if download_url is not provided, except for uploaded files."""
+        if not self.is_uploaded and not self.download_url:
+            raise ValidationError("A `download_url` value is required.")
+
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Delete the file on disk along the database entry."""
+        self.delete_file()
+        return super().delete(*args, **kwargs)
+
+    @property
+    def path(self):
+        """
+        Return the `Path` of the input source instance on disk when a
+        `filename` is available.
+        """
+        if self.filename:
+            return self.project.input_path / self.filename
+
+    def exists(self):
+        """Return True if the file is available on disk at the expected path."""
+        path = self.path
+        if path:
+            return self.path.exists()
+        return False
+
+    def delete_file(self):
+        """Delete the file on disk."""
+        if path := self.path:
+            path.unlink(missing_ok=True)
+
+    @property
+    def size(self):
+        """Return file size in byte."""
+        if self.exists():
+            return self.path.stat().st_size
+
+    def fetch(self):
+        """Fetch the file from this instance ``download_url`` field."""
+        from scanpipe.pipes.fetch import fetch_url
+
+        if self.exists():
+            logger.info("The input source file already exists.")
+            return
+
+        if not self.download_url:
+            raise Exception("No `download_url` value to be fetched.")
+
+        downloaded = fetch_url(url=self.download_url)
+        destination = self.project.move_input_from(downloaded.path)
+
+        # Force a commit to the database to ensure the file on disk is not rendered
+        # as "manually uploaded" in the UI.
+        with transaction.atomic():
+            self.filename = downloaded.filename
+            self.save()
+
+        return destination
 
 
 class RunQuerySet(ProjectRelatedQuerySet):
@@ -2292,6 +2422,17 @@ class CodebaseResource(
         for optimal compatibility.
         """
         from textcode.analysis import numbered_text_lines
+        from typecode import get_type
+
+        # When reading a map file, Textcode only provides the content inside
+        # `sourcesContent`, which can be misleading during any kind of review.
+        # This workaround ensures that the entire content of map files is displayed.
+        file_type = get_type(self.location)
+        if file_type.is_js_map:
+            with open(self.location, "r") as file:
+                content = json.load(file)
+
+            return json.dumps(content, indent=2)
 
         numbered_lines = numbered_text_lines(self.location)
         numbered_lines = self._regroup_numbered_lines(numbered_lines)
@@ -2921,9 +3062,9 @@ class DiscoveredPackage(
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
         if expression_spdx := self.get_declared_license_expression_spdx():
-            licenses = [
-                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
-            ]
+            # Using the LicenseExpression directly as the make_with_expression method
+            # does not support the "LicenseRef-" keys.
+            licenses = [cyclonedx_license.LicenseExpression(value=expression_spdx)]
 
         hash_fields = {
             "md5": cyclonedx_model.HashAlgorithm.MD5,
@@ -2932,7 +3073,7 @@ class DiscoveredPackage(
             "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
         }
         hashes = [
-            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            cyclonedx_model.HashType(alg=algorithm, content=hash_value)
             for field_name, algorithm in hash_fields.items()
             if (hash_value := getattr(self, field_name))
         ]
@@ -2956,25 +3097,53 @@ class DiscoveredPackage(
             if (value := getattr(self, field_name)) not in EMPTY_VALUES
         ]
 
-        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        reference_type = cyclonedx_model.ExternalReferenceType
+        url_field_to_cdx_type = {
+            "api_data_url": reference_type.BOM,
+            "bug_tracking_url": reference_type.ISSUE_TRACKER,
+            "code_view_url": reference_type.OTHER,
+            "download_url": reference_type.DISTRIBUTION,
+            "homepage_url": reference_type.WEBSITE,
+            "repository_download_url": reference_type.DISTRIBUTION,
+            "repository_homepage_url": reference_type.WEBSITE,
+            "vcs_url": reference_type.VCS,
+        }
         external_references = [
-            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
-            for field_name, reference_type in cyclonedx_url_to_type.items()
+            cyclonedx_model.ExternalReference(type=reference_type, url=url)
+            for field_name, reference_type in url_field_to_cdx_type.items()
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        purl = self.package_url
+        # Always use the package_uid when available to ensure having unique
+        # package_url in the BOM when several instances of the same DiscoveredPackage
+        # (i.e. same purl) are present in the project.
+        try:
+            package_url = PackageURL.from_string(self.package_uid)
+        except ValueError:
+            package_url = self.get_package_url()
+
+        evidence = None
+        if self.other_license_expression_spdx:
+            evidence = cyclonedx_component.ComponentEvidence(
+                licenses=[
+                    cyclonedx_license.LicenseExpression(
+                        value=self.other_license_expression_spdx
+                    )
+                ],
+            )
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=self.package_uid or str(self.uuid),
-            purl=purl,
+            bom_ref=str(package_url),
+            purl=package_url,
             licenses=licenses,
-            copyright_=self.copyright,
+            copyright=self.copyright,
             description=self.description,
             hashes=hashes,
             properties=properties,
             external_references=external_references,
+            evidence=evidence,
         )
 
 
@@ -3224,7 +3393,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
             "project": {
                 "uuid": self.project.uuid,
                 "name": self.project.name,
-                "input_sources": self.project.input_sources,
+                "input_sources": self.project.get_inputs_with_source(),
             },
             "run": {
                 "uuid": pipeline_run.uuid,
@@ -3235,10 +3404,7 @@ class WebhookSubscription(UUIDPKModel, ProjectRelatedModel):
         }
 
     def deliver(self, pipeline_run):
-        """
-        Delivers this WebhookSubscription by POSTing a HTTP request on the
-        `target_url`.
-        """
+        """Deliver this Webhook by sending a POST request to the `target_url`."""
         payload = self.get_payload(pipeline_run)
 
         logger.info(f"Sending Webhook uuid={self.uuid}.")

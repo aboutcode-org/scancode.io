@@ -6,12 +6,16 @@
       "input_sources": [
         {
           "filename": "debian.tar.gz",
-          "source": "https://download.url"
+          "download_url": "https://download.url",
+          "is_uploaded": false,
+          "tag": "",
+          "is_file": true,
+          "exists": true
         }
       ],
       "runs": [
         {
-          "pipeline_name": "docker",
+          "pipeline_name": "analyze_docker_image",
           "status": "not_started",
           "scancodeio_version": "",
           "task_id": null,

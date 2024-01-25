@@ -28,7 +28,7 @@ from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
-from scanpipe.pipes.fetch import fetch_urls
+from scanpipe.pipes.fetch import check_urls_availability
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -56,7 +56,10 @@ class InputsBaseForm(forms.Form):
     input_urls = forms.CharField(
         label="Download URLs",
         required=False,
-        help_text="Provide one or more URLs to download, one per line.",
+        help_text=(
+            "Provide one or more URLs to download, one per line. "
+            "Files are fetched at the beginning of the pipeline run execution."
+        ),
         widget=forms.Textarea(
             attrs={
                 "class": "textarea is-dynamic",
@@ -75,25 +78,25 @@ class InputsBaseForm(forms.Form):
     def clean_input_urls(self):
         """
         Fetch the `input_urls` and sets the `downloads` objects in the cleaned_data.
-        A validation error is raised, if at least one URL can't be fetched.
+        A validation error is raised if at least one URL can't be fetched.
         """
-        input_urls = self.cleaned_data.get("input_urls", [])
+        input_urls_str = self.cleaned_data.get("input_urls", "")
+        input_urls = input_urls_str.split()
 
-        self.cleaned_data["downloads"], errors = fetch_urls(input_urls)
+        errors = check_urls_availability(input_urls)
         if errors:
-            raise ValidationError("Could not fetch: " + "\n".join(errors))
+            raise ValidationError("Could not fetch:\n" + "\n".join(errors))
 
         return input_urls
 
     def handle_inputs(self, project):
         input_files = self.files.getlist("input_files")
-        downloads = self.cleaned_data.get("downloads")
-
         if input_files:
             project.add_uploads(input_files)
 
-        if downloads:
-            project.add_downloads(downloads)
+        input_urls = self.cleaned_data.get("input_urls", [])
+        for url in input_urls:
+            project.add_input_source(download_url=url)
 
 
 class PipelineBaseForm(forms.Form):
@@ -131,6 +134,10 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
         name_field.widget.attrs["class"] = "input"
         name_field.widget.attrs["autofocus"] = True
         name_field.help_text = "The unique name of your project."
+
+        # Do not include "add-on" pipelines in the context of the create Project form
+        pipeline_choices = scanpipe_app.get_pipeline_choices(include_addon=False)
+        self.fields["pipeline"].choices = pipeline_choices
 
     def clean_name(self):
         return " ".join(self.cleaned_data["name"].split())
