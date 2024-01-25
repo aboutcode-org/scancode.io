@@ -27,6 +27,7 @@ from pathlib import Path
 
 from django.core.validators import EMPTY_VALUES
 
+from cyclonedx.model import license as cdx_license_model
 from cyclonedx.schema import SchemaVersion
 from cyclonedx.validation import ValidationError
 from cyclonedx.validation.json import JsonStrictValidator
@@ -54,7 +55,7 @@ def bom_attributes_to_dict(cyclonedx_attributes):
         return []
 
     return [
-        json.loads(attribute.as_json(view_=SchemaVersion1Dot5))
+        json.loads(attribute.as_json(view_=SchemaVersion1Dot5))  # TODO
         for attribute in cyclonedx_attributes
     ]
 
@@ -76,12 +77,10 @@ def recursive_component_collector(root_component_list, collected):
 
 def resolve_license(license):
     """Return license expression/id/name from license item."""
-    if "expression" in license:
-        return license["expression"]
-    elif "id" in license["license"]:
-        return license["license"]["id"]
-    else:
-        return license["license"]["name"]
+    if isinstance(license, cdx_license_model.LicenseExpression):
+        return license.value
+    elif isinstance(license, cdx_license_model.License):
+        return license.id or license.name
 
 
 def get_declared_licenses(licenses):
@@ -89,10 +88,7 @@ def get_declared_licenses(licenses):
     if not licenses:
         return ""
 
-    resolved_licenses = [
-        # TODO:
-        # resolve_license(license) for license in bom_attributes_to_dict(licenses)
-    ]
+    resolved_licenses = [resolve_license(license) for license in licenses]
     return "\n".join(resolved_licenses)
 
 

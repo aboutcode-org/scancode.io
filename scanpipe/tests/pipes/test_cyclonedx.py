@@ -159,11 +159,16 @@ class ScanPipeCycloneDXPipesTest(TestCase):
     #     self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_get_declared_licenses(self):
+        # This component is using license id and name
         component = self.bom.components[0]
-
         result = cyclonedx.get_declared_licenses(component.licenses)
         expected = "OFL-1.1\nApache-2.0"
+        self.assertEqual(result, expected)
 
+        # This component is using license_expression
+        component = component.components[0]
+        result = cyclonedx.get_declared_licenses(component.licenses)
+        expected = "BSD-3-Clause"
         self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_get_checksums(self):
