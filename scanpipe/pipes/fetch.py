@@ -219,7 +219,7 @@ def fetch_docker_image(docker_reference, to=None):
     Docker references are documented here:
     https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
     """
-    whitelist = r"^docker://[a-zA-Z0-9_.:/@-]+$"
+    whitelist = r"^docker://[a-z0-9_.:/@-]+$"
     if not re.match(whitelist, docker_reference):
         raise ValueError("Invalid Docker reference.")
 

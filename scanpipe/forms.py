@@ -80,7 +80,7 @@ class InputsBaseForm(forms.Form):
         Fetch the `input_urls` and sets the `downloads` objects in the cleaned_data.
         A validation error is raised if at least one URL can't be fetched.
         """
-        input_urls_str = self.cleaned_data.get("input_urls", "")
+        input_urls_str = self.cleaned_data.get("input_urls", "").lower()
         input_urls = input_urls_str.split()
 
         errors = check_urls_availability(input_urls)
