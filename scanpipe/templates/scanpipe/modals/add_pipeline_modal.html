@@ -3,8 +3,15 @@
   {# Keep the <form> outside the .modal-card head/body/footer sections #}
   <form method="post">{% csrf_token %}
     <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">Add pipeline</p>
+      <header class="modal-card-head is-flex is-justify-content-space-between">
+        <div class="field is-flex" style="align-items: baseline; flex-direction: column; margin-bottom: 0;">
+          <p class="modal-card-title">Add pipeline</p>
+          <label class="checkbox" for="{{ add_pipeline_form.execute_now.id_for_label }}" style="margin-top: 10px;">
+            {{ add_pipeline_form.execute_now }}
+            {{ add_pipeline_form.execute_now.label }}
+          </label>
+        </div>
+
         <button class="delete" type="button" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
@@ -20,13 +27,6 @@
               </div>
             {% endfor %}
           </div>
-        </div>
-        <hr class="my-4">
-        <div class="field">
-          <label class="checkbox" for="{{ add_pipeline_form.execute_now.id_for_label }}">
-            {{ add_pipeline_form.execute_now }}
-            {{ add_pipeline_form.execute_now.label }}
-          </label>
         </div>
       </section>
       <footer class="modal-card-foot">
