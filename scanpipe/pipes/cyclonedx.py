@@ -43,7 +43,7 @@ def get_bom(cyclonedx_document):
 
 def get_components(bom):
     """Return list of components from CycloneDX BOM."""
-    # TODO: Test list(bom._get_all_components())
+    # return list(bom._get_all_components())
     return recursive_component_collector(bom.components, [])
 
 
@@ -66,11 +66,13 @@ def recursive_component_collector(root_component_list, collected):
         return []
 
     for component in root_component_list:
-        extra_data = {}
+        nested_components = {}
         if component.components is not None:
-            extra_data = bom_attributes_to_dict(component.components)
+            nested_components = bom_attributes_to_dict(component.components)
 
-        collected.append({"cdx_package": component, "nested_components": extra_data})
+        collected.append(
+            {"cdx_package": component, "nested_components": nested_components}
+        )
         recursive_component_collector(component.components, collected)
     return collected
 

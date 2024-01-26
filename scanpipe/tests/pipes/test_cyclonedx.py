@@ -25,6 +25,7 @@ from pathlib import Path
 
 from django.test import TestCase
 
+from cyclonedx.model import license as cdx_license_model
 from cyclonedx.model.bom import Bom
 from cyclonedx.validation import ValidationError
 
@@ -77,12 +78,12 @@ class ScanPipeCycloneDXPipesTest(TestCase):
                         "value": "package.zip",
                     },
                     {
-                        "name": "aboutcode:primary_language",
-                        "value": "Python",
-                    },
-                    {
                         "name": "aboutcode:homepage_url",
                         "value": "https://home.page",
+                    },
+                    {
+                        "name": "aboutcode:primary_language",
+                        "value": "Python",
                     },
                 ],
                 "licenses": [
@@ -147,16 +148,21 @@ class ScanPipeCycloneDXPipesTest(TestCase):
 
         self.assertEqual(result, expected)
 
-    # def test_scanpipe_cyclonedx_resolve_license(self):
-    #     hopper_cdx_licensechoice_id = LicenseChoice(license=License(id="OFL-1.1"))
-    #     license_choice_dict = json.loads(
-    #         hopper_cdx_licensechoice_id.json(exclude_unset=True, by_alias=True)
-    #     )
-    #
-    #     result = cyclonedx.resolve_license(license_choice_dict)
-    #     expected = "OFL-1.1"
-    #
-    #     self.assertEqual(result, expected)
+    def test_scanpipe_cyclonedx_resolve_license(self):
+        license = cdx_license_model.LicenseExpression("OFL-1.1 AND Apache-2.0")
+        result = cyclonedx.resolve_license(license)
+        expected = "OFL-1.1 AND Apache-2.0"
+        self.assertEqual(result, expected)
+
+        license = cdx_license_model.DisjunctiveLicense(id="OFL-1.1")
+        result = cyclonedx.resolve_license(license)
+        expected = "OFL-1.1"
+        self.assertEqual(result, expected)
+
+        license = cdx_license_model.DisjunctiveLicense(name="Apache-2.0")
+        result = cyclonedx.resolve_license(license)
+        expected = "Apache-2.0"
+        self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_get_declared_licenses(self):
         # This component is using license id and name
