@@ -1,24 +1,10 @@
-# SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
-# The ScanCode.io software is licensed under the Apache License version 2.0.
-# Data generated with ScanCode.io is provided as-is without warranties.
+# Copyright (c) nexB Inc. and others. All rights reserved.
 # ScanCode is a trademark of nexB Inc.
+# SPDX-License-Identifier: Apache-2.0
+# See https://github.com/nexB/scancode.io for support or download.
+# See https://aboutcode.org for more information about AboutCode FOSS projects.
 #
-# You may not use this software except in compliance with the License.
-# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software distributed
-# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-# CONDITIONS OF ANY KIND, either express or implied. See the License for the
-# specific language governing permissions and limitations under the License.
-#
-# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
-# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
-# ScanCode.io should be considered or used as legal advice. Consult an Attorney
-# for any legal advice.
-#
-# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
 
 import json
 import os
@@ -128,15 +114,15 @@ class ScanPipeScancodePipesTest(TestCase):
 
     def test_scanpipe_pipes_scancode_get_resource_info(self):
         input_location = str(self.data_location / "notice.NOTICE")
-        sha256 = "b323607418a36b5bd700fcf52ae9ca49f82ec6359bc4b89b1b2d73cf75321757"
+        sha256 = "e78215edfafd4ffb03c98263b2ff6d616bfaed5a4cac3ebd1afe31f5c32a6c1b"
         expected = {
             "type": CodebaseResource.Type.FILE,
             "name": "notice.NOTICE",
             "extension": ".NOTICE",
             "is_text": True,
-            "size": 1178,
-            "sha1": "4bd631df28995c332bf69d9d4f0f74d7ee089598",
-            "md5": "90cd416fd24df31f608249b77bae80f1",
+            "size": 287,
+            "sha1": "6fe93ceed7b9bc632d753218fc2c53c7422cdb2e",
+            "md5": "9d1010e1f37b6bb11b14a5aa84c92b2f",
             "sha256": sha256,
             "mime_type": "text/plain",
             "file_type": "ASCII text",
@@ -192,7 +178,7 @@ class ScanPipeScancodePipesTest(TestCase):
         scan_results, _ = scancode.scan_file(input_location)
         license_detections = scan_results.get("license_detections")
         self.assertEqual(1, len(license_detections))
-        self.assertEqual(3, len(license_detections[0].get("matches")))
+        self.assertEqual(1, len(license_detections[0].get("matches")))
 
         scan_results, _ = scancode.scan_file(input_location, min_license_score=99)
         license_detections = scan_results.get("license_detections")
@@ -221,7 +207,7 @@ class ScanPipeScancodePipesTest(TestCase):
         scancode.save_scan_file_results(codebase_resource2, scan_results, scan_errors)
         codebase_resource2.refresh_from_db()
         self.assertEqual("scanned", codebase_resource2.status)
-        expected = "apache-2.0 AND warranty-disclaimer"
+        expected = "apache-2.0"
         self.assertEqual(expected, codebase_resource2.detected_license_expression)
 
     def test_scanpipe_pipes_scancode_scan_file_and_save_results_timeout_error(self):

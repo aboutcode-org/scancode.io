@@ -1,24 +1,10 @@
-# SPDX-License-Identifier: Apache-2.0
 #
-# http://nexb.com and https://github.com/nexB/scancode.io
-# The ScanCode.io software is licensed under the Apache License version 2.0.
-# Data generated with ScanCode.io is provided as-is without warranties.
+# Copyright (c) nexB Inc. and others. All rights reserved.
 # ScanCode is a trademark of nexB Inc.
+# SPDX-License-Identifier: Apache-2.0
+# See https://github.com/nexB/scancode.io for support or download.
+# See https://aboutcode.org for more information about AboutCode FOSS projects.
 #
-# You may not use this software except in compliance with the License.
-# You may obtain a copy of the License at: http://apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software distributed
-# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-# CONDITIONS OF ANY KIND, either express or implied. See the License for the
-# specific language governing permissions and limitations under the License.
-#
-# Data Generated with ScanCode.io is provided on an "AS IS" BASIS, WITHOUT WARRANTIES
-# OR CONDITIONS OF ANY KIND, either express or implied. No content created from
-# ScanCode.io should be considered or used as legal advice. Consult an Attorney
-# for any legal advice.
-#
-# ScanCode.io is a free software code scanning tool from nexB Inc. and others.
-# Visit https://github.com/nexB/scancode.io for support and download.
 
 import datetime
 import io
@@ -246,9 +232,9 @@ class ScanPipePipesTransactionTest(TransactionTestCase):
         pipes.make_codebase_resource(p1, resource_location)
 
         resource = p1.codebaseresources.get()
-        self.assertEqual(1178, resource.size)
-        self.assertEqual("4bd631df28995c332bf69d9d4f0f74d7ee089598", resource.sha1)
-        self.assertEqual("90cd416fd24df31f608249b77bae80f1", resource.md5)
+        self.assertEqual(287, resource.size)
+        self.assertEqual("6fe93ceed7b9bc632d753218fc2c53c7422cdb2e", resource.sha1)
+        self.assertEqual("9d1010e1f37b6bb11b14a5aa84c92b2f", resource.md5)
         self.assertEqual("text/plain", resource.mime_type)
         self.assertEqual("ASCII text", resource.file_type)
         self.assertEqual("", resource.status)
