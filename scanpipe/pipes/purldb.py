@@ -345,11 +345,11 @@ def send_project_json_to_matchcode(
     scan_output_location = to_json(project)
     with open(scan_output_location, "rb") as f:
         files = {"upload_file": f}
-    response = request_post(
-        url=f"{api_url}matching/",
-        timeout=timeout,
-        files=files,
-    )
+        response = request_post(
+            url=f"{api_url}matching/",
+            timeout=timeout,
+            files=files,
+        )
     run_url = response["runs"][0]["url"]
     return run_url
 
@@ -358,6 +358,9 @@ def poll_until_success(run_url, sleep=10):
     """
     Given a URL to a scancode.io run instance, `run_url`, return True when the
     run instance has completed successfully.
+
+    Raise a PurlDBException when the run instance has faield, stopped, or gone
+    stale.
     """
     run_status = AbstractTaskFieldsModel.Status
     while True:
@@ -393,7 +396,11 @@ def get_match_results(run_url):
     """
     response = request_get(run_url)
     project_url = response["project"]
-    results_url = project_url + "results/"
+    # `project_url` can have params, such as "?format=json"
+    if "?" in project_url:
+        project_url, _ = project_url.split("?")
+    project_url = project_url.rstrip("/")
+    results_url = project_url + "/results/"
     return request_get(results_url)
 
 
