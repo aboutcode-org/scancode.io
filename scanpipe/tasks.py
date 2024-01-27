@@ -24,6 +24,8 @@ import logging
 
 from django.apps import apps
 
+from django_rq import job
+
 logger = logging.getLogger(__name__)
 
 
@@ -76,3 +78,19 @@ def execute_pipeline_task(run_pk):
         project.clear_tmp_directory()
         if next_run := project.get_next_run():
             next_run.start()
+
+
+@job
+def background_delete_task(project):
+    # Check if the project is still marked for deletion
+    if not project.is_marked_for_deletion:
+        return
+
+    # Perform the deletion process
+    try:
+        project.delete()
+    except Exception as e:
+        # Handle errors and update project errors or display a banner
+        project.is_marked_for_deletion = False
+        project.save()
+        project.add_error(description=f"Deletion failed: {str(e)}")

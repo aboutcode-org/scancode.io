@@ -76,6 +76,7 @@ from packageurl import normalize_qualifiers
 from packageurl.contrib.django.models import PackageURLMixin
 from packageurl.contrib.django.models import PackageURLQuerySetMixin
 from rest_framework.authtoken.models import Token
+from rq import Queue
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
@@ -534,6 +535,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
     labels = TaggableManager(through=UUIDTaggedItem)
 
     objects = ProjectQuerySet.as_manager()
+    is_marked_for_deletion = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-created_date"]
@@ -632,6 +634,16 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         self.delete_related_objects()
 
         return super().delete(*args, **kwargs)
+
+    def mark_for_deletion(self):
+        self.is_marked_for_deletion = True
+        self.save()
+
+    def delete_in_background(self):
+        # Mark the project for deletion and enqueue background deletion task
+        self.mark_for_deletion()
+        q = Queue("default", connection=redis.Redis())
+        job = q.enqueue(tasks.background_delete_task, self)
 
     def reset(self, keep_input=True):
         """

@@ -1076,7 +1076,10 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
 
         try:
             project = Project.objects.get(pk=project_uuid)
-            getattr(project, action)(**action_kwargs)
+            if action == "delete":
+                project.delete_in_background()
+            else:
+                getattr(project, action)(**action_kwargs)
             return True
         except Project.DoesNotExist:
             messages.error(self.request, f"Project {project_uuid} does not exist.")
@@ -1086,6 +1089,8 @@ class ProjectActionView(ConditionalLoginRequired, generic.ListView):
             raise Http404
 
     def get_success_message(self, action, count):
+        if action == "delete":
+            return f"{count} project{'s' if count != 1 else ''} {'is' if count == 1 else 'are'} being deleted in the background."
         return f"{count} projects have been {action}."
 
 
