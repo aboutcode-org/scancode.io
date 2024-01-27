@@ -464,6 +464,10 @@ class ScanPipeModelsTest(TestCase):
         input_sources = self.project1.inputsources.all()
         self.assertEqual(2, len(input_sources))
 
+        url_with_fragment = "https://download.url#tag_value"
+        input_source = self.project1.add_input_source(download_url=url_with_fragment)
+        self.assertEqual("tag_value", input_source.tag)
+
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data_location / "notice.NOTICE"
         copy_input(file_location, self.project1.tmp_path)

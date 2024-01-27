@@ -37,6 +37,9 @@ class DeployToDevelop(Pipeline):
     prefixes as inputs:
     - "from-[FILENAME]" archive containing the development source code
     - "to-[FILENAME]" archive containing the deployment compiled code
+
+    Alternatively, when using download URLs as inputs, the from and to tag can be
+    provided adding a "#from" / "#to" fragment at the end of the download URLs.
     """
 
     @classmethod

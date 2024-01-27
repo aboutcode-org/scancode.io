@@ -97,7 +97,7 @@ class StrListField(serializers.ListField):
 
     def to_internal_value(self, data):
         if isinstance(data, str):
-            data = [data]
+            data = data.split()
         return super().to_internal_value(data)
 
 
@@ -249,6 +249,10 @@ class ProjectSerializer(
     def get_codebase_relations_summary(self, project):
         queryset = project.codebaserelations.all()
         return count_group_by(queryset, "map_type")
+
+    def validate_input_urls(self, value):
+        """Add support for providing multiple URLs in a single string."""
+        return [url for entry in value for url in entry.split()]
 
     def create(self, validated_data):
         """

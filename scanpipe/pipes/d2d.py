@@ -58,9 +58,16 @@ TO = "to/"
 
 
 def get_inputs(project):
-    """Locate the ``from`` and ``to`` input files in project inputs/ directory."""
+    """
+    Locate the ``from`` and ``to`` input files in project inputs/ directory.
+    The input source can be flagged using a "from-" / "to-" prefix in the filename or
+    by adding a "#from" / "#to" fragment at the end of the download URL.
+    """
     from_files = list(project.inputs("from*"))
+    from_files.extend([input.path for input in project.inputsources.filter(tag="from")])
+
     to_files = list(project.inputs("to*"))
+    to_files.extend([input.path for input in project.inputsources.filter(tag="to")])
 
     if len(from_files) < 1:
         raise FileNotFoundError("from* input files not found.")

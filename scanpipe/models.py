@@ -32,6 +32,7 @@ from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
 from traceback import format_tb
+from urllib.parse import urlparse
 
 from django.apps import apps
 from django.conf import settings
@@ -983,11 +984,18 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
+        # Add tag can be provided using the "#<fragment>" part of the URL
+        tag = ""
+        if download_url:
+            parsed_url = urlparse(download_url)
+            tag = parsed_url.fragment
+
         return InputSource.objects.create(
             project=self,
             download_url=download_url,
             filename=filename,
             is_uploaded=is_uploaded,
+            tag=tag,
         )
 
     def add_downloads(self, downloads):

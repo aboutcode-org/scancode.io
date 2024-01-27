@@ -355,6 +355,41 @@ class ScanPipeAPITest(TransactionTestCase):
         ]
         self.assertEqual(expected, response.data["input_sources"])
 
+    def test_scanpipe_api_project_create_input_urls(self):
+        url1 = "https://example.com/1.zip#from"
+        url2 = "https://example.com/2.zip#to"
+        data = {
+            "name": "Inputs as list",
+            "input_urls": [url1, url2],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["input_sources"]))
+
+        data = {
+            "name": "Inputs as string",
+            "input_urls": f"{url1} {url2}",
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["input_sources"]))
+
+        data = {
+            "name": "Inputs as list of string",
+            "input_urls": [f"{url1} {url2}"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, len(response.data["input_sources"]))
+
+        data = {
+            "name": "Inputs as mixed content",
+            "input_urls": [f"{url1} {url2}", "https://example.com/3.zip"],
+        }
+        response = self.csrf_client.post(self.project_list_url, data)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(3, len(response.data["input_sources"]))
+
     def test_scanpipe_api_project_create_multiple_pipelines(self):
         data = {
             "name": "Single string",

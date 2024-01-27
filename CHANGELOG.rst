@@ -24,6 +24,13 @@ Unreleased
 - Improve the inspect_manifest pipeline to accept archives as inputs.
   https://github.com/nexB/scancode.io/issues/1034
 
+- Add support for "tagging" download URL inputs using the "#<fragment>" section of the
+  URL.
+  This feature is particularly useful in the map_develop_to_deploy pipeline when
+  download URLs are utilized as inputs. Tags such as "from" and "to" can be specified
+  by adding "#from" or "#to" fragments at the end of the download URLs.
+  https://github.com/nexB/scancode.io/issues/708
+
 v33.0.0 (2024-01-16)
 --------------------
 
