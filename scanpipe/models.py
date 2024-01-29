@@ -976,7 +976,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return move_input(input_location, self.input_path)
 
-    def add_input_source(self, download_url="", filename="", is_uploaded=False):
+    def add_input_source(self, download_url="", filename="", is_uploaded=False, tag=""):
         """
         Create a InputFile entry for the current project, given a `download_url` or
         a `filename`.
@@ -985,10 +985,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             raise Exception("Provide at least a value for download_url or filename.")
 
         # Add tag can be provided using the "#<fragment>" part of the URL
-        tag = ""
         if download_url:
             parsed_url = urlparse(download_url)
-            tag = parsed_url.fragment
+            tag = parsed_url.fragment or tag
 
         return InputSource.objects.create(
             project=self,
