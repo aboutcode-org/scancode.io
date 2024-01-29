@@ -68,6 +68,9 @@ v33.0.0 (2024-01-16)
   include credentials such as "user:pass@domain".
   https://github.com/nexB/scancode.io/issues/998
 
+- Add a new pipeline, ``match_to_purldb``, that check CodebaseResources of a
+  Project against PurlDB for Package matches.
+
 v32.7.0 (2023-10-25)
 --------------------
 
