@@ -138,4 +138,8 @@ Please refer to our :ref:`output_files` section for more details on the output f
 How can I trigger a pipeline scan from a CI/CD, such as Jenkins, TeamCity or Azure Devops?
 ------------------------------------------------------------------------------------------
 
-You can use the :ref:`rest_api` to automate your project or pipeline management.
+You can refer to the :ref:`automation` to automate your projects management.
+
+Also, A new GitHub action is available at
+`scancode-action repository <https://github.com/nexB/scancode-action>`_
+to run ScanCode.io pipelines from your GitHub Workflows.
