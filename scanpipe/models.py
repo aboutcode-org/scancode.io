@@ -1800,12 +1800,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
-def posix_regex_to_django_regex_lookup(regex_pattern):
+def convert_glob_to_django_regex(glob_pattern):
     """
-    Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
-    Django regex lookup.
+    Convert a glob pattern to an equivalent django regex pattern
+    compatible with the Django regex lookup.
     """
-    escaped_pattern = re.escape(regex_pattern)
+    escaped_pattern = re.escape(glob_pattern)
     escaped_pattern = escaped_pattern.replace(r"\*", ".*")  # Replace \* with .*
     escaped_pattern = escaped_pattern.replace(r"\?", ".")  # Replace \? with .
     escaped_pattern = f"^{escaped_pattern}$"  # Add start and end anchors
@@ -1913,8 +1913,8 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
     def path_pattern(self, pattern):
-        """Resources with a path that match the provided ``pattern``."""
-        return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
+        """Resources with a path that match the provided glob ``pattern``."""
+        return self.filter(path__regex=convert_glob_to_django_regex(pattern))
 
     def has_directory_content_fingerprint(self):
         """

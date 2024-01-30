@@ -64,6 +64,10 @@ v33.0.0 (2024-01-16)
   project pipeline.
   https://github.com/nexB/scancode.io/issues/997
 
+- In "map_deploy_to_develop" pipeline, add support for path patterns
+  in About file attributes documenting resource paths.
+  https://github.com/nexB/scancode.io/issues/1004
+
 - Fix an issue where the pipeline details cannot be fetched when using URLs that
   include credentials such as "user:pass@domain".
   https://github.com/nexB/scancode.io/issues/998
