@@ -31,7 +31,7 @@ class InspectPackages(ScanCodebase):
 
     Supports resolved packages for:
     - Python: using nexB/python-inspector, supports requirements.txt and
-      setup.py manifests as input
+    setup.py manifests as input
 
     Supports:
     - BOM: SPDX document, CycloneDX BOM, AboutCode ABOUT file
