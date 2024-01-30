@@ -19,13 +19,11 @@ please ask them in `Discussions <https://github.com/nexB/scancode.io/discussions
 If you want to contribute to ScanCode.io, start with our
 `Contributing <https://scancodeio.readthedocs.io/en/latest/contributing.html>`_ page.
 
-.. tip::
-
-   A new GitHub action is now available at
-   `scancode-action <https://github.com/nexB/scancode-action>`_
-   to run ScanCode.io pipelines from your GitHub Workflows.
-   Visit https://scancodeio.readthedocs.io/en/latest/automation.html to learn more
-   about automation.
+A new GitHub action is now available at
+`scancode-action <https://github.com/nexB/scancode-action>`_
+to run ScanCode.io pipelines from your GitHub Workflows.
+Visit https://scancodeio.readthedocs.io/en/latest/automation.html to learn more
+about automation.
 
 Build and tests status
 ----------------------
