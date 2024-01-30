@@ -99,18 +99,15 @@ def resolve_about_package(input_location):
             if value:
                 package_data[field_name] = value
 
+    package_data["extra_data"] = {}
+
     if about_resource := about_data.get("about_resource"):
         package_data["filename"] = list(about_resource.keys())[0]
 
     if ignored_resources := about_data.get("ignored_resources"):
-        extra_data = {"ignored_resources": list(ignored_resources.keys())}
-        package_data["extra_data"] = extra_data
+        package_data["extra_data"]["ignored_resources"] = list(ignored_resources.keys())
 
-    if license_expression := about_data.get("license_expression"):
-        package_data["declared_license_expression"] = license_expression
-
-    if notice_dict := about_data.get("notice_file"):
-        package_data["notice_text"] = list(notice_dict.values())[0]
+    populate_license_notice_fields_about(package_data, about_data)
 
     for field_name, value in about_data.items():
         if field_name.startswith("checksum_"):
@@ -118,6 +115,23 @@ def resolve_about_package(input_location):
 
     package_data = DiscoveredPackage.clean_data(package_data)
     return package_data
+
+
+def populate_license_notice_fields_about(package_data, about_data):
+    """
+    Populate ``package_data`` with license and notice attributes
+    from ``about_data``.
+    """
+    if license_expression := about_data.get("license_expression"):
+        package_data["declared_license_expression"] = license_expression
+
+    if notice_dict := about_data.get("notice_file"):
+        package_data["notice_text"] = list(notice_dict.values())[0]
+        package_data["extra_data"]["notice_file"] = list(notice_dict.keys())[0]
+
+    if license_dict := about_data.get("license_file"):
+        package_data["extra_data"]["license_file"] = list(license_dict.keys())[0]
+        package_data["extracted_license_statement"] = list(license_dict.values())[0]
 
 
 def resolve_about_packages(input_location):

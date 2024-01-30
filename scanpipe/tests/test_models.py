@@ -63,8 +63,8 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
+from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
-from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
@@ -690,7 +690,7 @@ class ScanPipeModelsTest(TestCase):
         package.refresh_from_db()
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.package_url)
 
-    def test_scanpipe_model_posix_regex_to_django_regex_lookup(self):
+    def test_scanpipe_model_convert_glob_to_django_regex(self):
         test_data = [
             ("", r"^$"),
             # Single segment
@@ -722,7 +722,7 @@ class ScanPipeModelsTest(TestCase):
         ]
 
         for pattern, expected in test_data:
-            self.assertEqual(expected, posix_regex_to_django_regex_lookup(pattern))
+            self.assertEqual(expected, convert_glob_to_django_regex(pattern))
 
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
@@ -1572,6 +1572,7 @@ class ScanPipeModelsTest(TestCase):
         make_resource_file(self.project1, path="dir/.example")
         make_resource_file(self.project1, path="dir/subdir/readme.html")
         make_resource_file(self.project1, path="foo$.class")
+        make_resource_file(self.project1, path="example-1.0.jar")
 
         patterns = [
             "example",
@@ -1588,6 +1589,7 @@ class ScanPipeModelsTest(TestCase):
             "dir/*/readme.*",
             r"*$.class",
             "*readme.htm?",
+            "example-*.jar",
         ]
 
         for pattern in patterns:
