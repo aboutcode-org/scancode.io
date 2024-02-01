@@ -22,6 +22,7 @@
 
 from django import forms
 from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 
 from taggit.forms import TagField
@@ -181,6 +182,26 @@ class AddLabelsForm(forms.Form):
     def save(self, project):
         project.labels.add(*self.cleaned_data["labels"])
         return project
+
+
+class EditInputSourceTagForm(forms.Form):
+    input_source_uuid = forms.CharField(
+        widget=forms.widgets.HiddenInput,
+        required=True,
+    )
+    tag = forms.CharField(
+        widget=forms.TextInput(attrs={"class": "input"}),
+    )
+
+    def save(self, project):
+        input_source_uuid = self.cleaned_data["input_source_uuid"]
+        try:
+            input_source = project.inputsources.get(uuid=input_source_uuid)
+        except (ValidationError, ObjectDoesNotExist):
+            return
+
+        input_source.update(tag=self.cleaned_data["tag"])
+        return input_source
 
 
 class ArchiveProjectForm(forms.Form):
