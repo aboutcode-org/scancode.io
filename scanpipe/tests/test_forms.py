@@ -20,12 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
 from unittest import mock
 
 from django.test import TestCase
 
 import requests
 
+from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import InputsBaseForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
@@ -137,3 +139,32 @@ class ScanPipeFormsTest(TestCase):
             "scancode_license_score": 10,
         }
         self.assertEqual(expected, project.get_env())
+
+    def test_scanpipe_forms_edit_input_source_tag_form(self):
+        data = {}
+        form = EditInputSourceTagForm(data=data)
+        self.assertFalse(form.is_valid())
+
+        data = {
+            "input_source_uuid": uuid.uuid4(),
+            "tag": "value",
+        }
+        form = EditInputSourceTagForm(data=data)
+        self.assertTrue(form.is_valid())
+        obj = form.save(project=self.project1)
+        self.assertIsNone(obj)
+
+        input_source = self.project1.add_input_source(
+            filename="filename.zip",
+            is_uploaded=True,
+            tag="base value",
+        )
+        data = {
+            "input_source_uuid": input_source.uuid,
+            "tag": "new value",
+        }
+        form = EditInputSourceTagForm(data=data)
+        self.assertTrue(form.is_valid())
+        obj = form.save(project=self.project1)
+        self.assertEqual(obj, input_source)
+        self.assertEqual(data["tag"], obj.tag)

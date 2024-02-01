@@ -186,6 +186,7 @@ class AddLabelsForm(forms.Form):
 
 class EditInputSourceTagForm(forms.Form):
     input_source_uuid = forms.CharField(
+        max_length=50,
         widget=forms.widgets.HiddenInput,
         required=True,
     )
@@ -194,13 +195,13 @@ class EditInputSourceTagForm(forms.Form):
     )
 
     def save(self, project):
-        input_source_uuid = self.cleaned_data["input_source_uuid"]
+        input_source_uuid = self.cleaned_data.get("input_source_uuid")
         try:
             input_source = project.inputsources.get(uuid=input_source_uuid)
         except (ValidationError, ObjectDoesNotExist):
             return
 
-        input_source.update(tag=self.cleaned_data["tag"])
+        input_source.update(tag=self.cleaned_data.get("tag", ""))
         return input_source
 
 

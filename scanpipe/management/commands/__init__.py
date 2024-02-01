@@ -152,7 +152,7 @@ class AddInputCommandMixin:
             action="append",
             dest="input_files",
             default=list(),
-            help=("Input file locations to copy in the input/ work directory."),
+            help="Input file locations to copy in the input/ work directory.",
         )
         parser.add_argument(
             "--input-url",
