@@ -31,6 +31,8 @@ Unreleased
   Using the CLI, the uploaded files can be tagged using the "filename:tag" syntax
   while using the `--input-file` arguments.
   In the UI, tags can be edited from the Project details view "Inputs" panel.
+  On the REST API, a new `upload_file_tag` field is available to use along the
+  `upload_file`.
   https://github.com/nexB/scancode.io/issues/708
 
 v33.0.0 (2024-01-16)

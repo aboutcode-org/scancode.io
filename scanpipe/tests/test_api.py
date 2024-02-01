@@ -294,6 +294,7 @@ class ScanPipeAPITest(TransactionTestCase):
             "name": "BetterName",
             "pipeline": "analyze_docker_image",
             "upload_file": io.BytesIO(b"Content"),
+            "upload_file_tag": "tag value",
             "execute_now": True,
         }
         response = self.csrf_client.post(self.project_list_url, data)
@@ -303,6 +304,7 @@ class ScanPipeAPITest(TransactionTestCase):
         created_project_detail_url = response.data["url"]
         response = self.csrf_client.get(created_project_detail_url)
         self.assertEqual(["upload_file"], response.data["input_root"])
+        self.assertEqual("tag value", response.data["input_sources"][0]["tag"])
 
         data = {
             "name": "Upload",
@@ -770,18 +772,26 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
 
         data = {
-            "input_urls": "https://example.com/archive.zip",
+            "input_urls": "https://example.com/archive.zip#tag",
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Input(s) added."}, response.data)
+        input_source = self.project1.inputsources.get(is_uploaded=False)
+        self.assertEqual("", input_source.filename)
+        self.assertEqual(data["input_urls"], input_source.download_url)
+        self.assertEqual("tag", input_source.tag)
 
         data = {
             "upload_file": io.BytesIO(b"Content"),
+            "upload_file_tag": "tag value",
         }
         response = self.csrf_client.post(url, data=data)
         self.assertEqual({"status": "Input(s) added."}, response.data)
         expected = sorted(["upload_file"])
         self.assertEqual(expected, sorted(self.project1.input_root))
+        input_source = self.project1.inputsources.get(is_uploaded=True)
+        self.assertEqual("upload_file", input_source.filename)
+        self.assertEqual("tag value", input_source.tag)
 
         run = self.project1.add_pipeline("analyze_docker_image")
         run.set_task_started(task_id=uuid.uuid4())

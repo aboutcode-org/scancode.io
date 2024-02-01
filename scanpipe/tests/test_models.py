@@ -371,7 +371,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], self.project1.get_inputs_with_source())
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
-        self.project1.add_uploads([uploaded_file])
+        self.project1.add_upload(uploaded_file)
         self.project1.copy_input_from(self.data_location / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 

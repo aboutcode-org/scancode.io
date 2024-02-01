@@ -273,6 +273,7 @@ class ProjectViewSet(
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
         upload_file = request.data.get("upload_file")
+        upload_file_tag = request.data.get("upload_file_tag", "")
         input_urls = request.data.get("input_urls", [])
 
         if not (upload_file or input_urls):
@@ -280,7 +281,12 @@ class ProjectViewSet(
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
         if upload_file:
-            project.add_uploads([upload_file])
+            project.add_upload(upload_file, tag=upload_file_tag)
+
+        # Add support for providing multiple URLs in a single string.
+        if isinstance(input_urls, str):
+            input_urls = input_urls.split()
+        input_urls = [url for entry in input_urls for url in entry.split()]
 
         for url in input_urls:
             project.add_input_source(download_url=url)

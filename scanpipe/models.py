@@ -1009,14 +1009,21 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 filename=downloaded.filename,
             )
 
+    def add_upload(self, uploaded_file, tag=""):
+        """
+        Write the given `upload` to the current project's input/ directory and
+        adds the `input_source`.
+        """
+        self.write_input_file(uploaded_file)
+        self.add_input_source(filename=uploaded_file.name, is_uploaded=True, tag=tag)
+
     def add_uploads(self, uploads):
         """
         Write the given `uploads` to the current project's input/ directory and
         adds the `input_source` for each entry.
         """
-        for uploaded in uploads:
-            self.write_input_file(uploaded)
-            self.add_input_source(filename=uploaded.name, is_uploaded=True)
+        for uploaded_file in uploads:
+            self.add_upload(uploaded_file)
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
