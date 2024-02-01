@@ -2110,6 +2110,45 @@ class ScanPipeModelsTest(TestCase):
         results = self.project1.codebaseresources.has_directory_content_fingerprint()
         self.assertQuerySetEqual(expected, results, ordered=False)
 
+    def test_scanpipe_codebase_resource_elfs(self):
+        project = Project.objects.create(name="Test")
+        CodebaseResource.objects.create(
+            file_type="""ELF 32-bit LSB executable, ARM, version 1 (ARM), statically
+             linked, with debug_info, not stripped""",
+            project=project,
+            path="a",
+            type=CodebaseResource.Type.FILE,
+        )
+        CodebaseResource.objects.create(
+            file_type="""32-bit LSB executable, ARM, version 1 (ARM), statically
+              linked, with debug_info, not stripped""",
+            project=project,
+            path="b",
+            type=CodebaseResource.Type.FILE,
+        )
+        CodebaseResource.objects.create(
+            file_type="""ELF 32-bit LSB resourcable, ARM, version 1 (ARM), statically
+             linked, with debug_info, not stripped""",
+            project=project,
+            path="c",
+            type=CodebaseResource.Type.FILE,
+        )
+        CodebaseResource.objects.create(
+            file_type="""32-bit LSB relocatable, ARM, version 1 (ARM), statically
+              linked, with debug_info, not stripped""",
+            project=project,
+            path="d",
+            type=CodebaseResource.Type.FILE,
+        )
+        CodebaseResource.objects.create(
+            file_type="""ELF 32-bit LSB relocatable, ARM, version 1 (ARM), statically
+              linked, with debug_info, not stripped""",
+            project=project,
+            path="e",
+            type=CodebaseResource.Type.FILE,
+        )
+        self.assertEqual(2, project.codebaseresources.elfs().count())
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """

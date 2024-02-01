@@ -1948,8 +1948,8 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def elfs(self):
         """
-        Resources that are ``files`` and their filetype startswith `elf` and contains any of thes
-        `executable`, `relocatable`, `shared object`.
+        Resources that are ``files`` and their filetype startswith `elf` and
+        contains any of these `executable`, `relocatable`, `shared object`.
         """
         return (
             self.files()
