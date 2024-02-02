@@ -15,6 +15,19 @@
           {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
         </div>
       </div>
+      {% if run.selected_tags %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Selected tags</span>
+            <span class="tag is-warning">
+              {% for tag in run.selected_tags %}
+                {% if not forloop.first %},{% endif %}
+                {{ tag }}
+              {% endfor %}
+            </span>
+          </div>
+        </div>
+      {% endif %}
       {% if run.status == run.Status.NOT_STARTED or run.status == run.Status.QUEUED %}
         <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-3">
           <i class="fa-solid fa-trash-alt"></i>
@@ -35,19 +48,6 @@
             <span class="tag is-dark">Execution time</span>
             <span class="tag is-info">
               {{ run.execution_time_for_display }}
-            </span>
-          </div>
-        </div>
-      {% endif %}
-      {% if run.selected_tags %}
-        <div class="control">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Selected tags</span>
-            <span class="tag is-warning">
-              {% for tag in run.selected_tags %}
-                {% if not forloop.first %},{% endif %}
-                {{ tag }}
-              {% endfor %}
             </span>
           </div>
         </div>

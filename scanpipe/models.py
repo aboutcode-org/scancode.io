@@ -691,7 +691,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         if copy_pipelines:
             for run in self.runs.all():
-                cloned_project.add_pipeline(run.pipeline_name, execute_now)
+                cloned_project.add_pipeline(
+                    run.pipeline_name, execute_now, selected_tags=run.selected_tags
+                )
 
         if copy_subscriptions:
             for subscription in self.webhooksubscriptions.all():
