@@ -33,13 +33,22 @@ class DeployToDevelop(Pipeline):
     """
     Establish relationships between two code trees: deployment and development.
 
-    This pipeline is expecting 2 archive files with "from-" and "to-" filename
-    prefixes as inputs:
-    - "from-[FILENAME]" archive containing the development source code
-    - "to-[FILENAME]" archive containing the deployment compiled code
+    This pipeline requires a minimum of two archive files, each properly tagged with:
 
-    Alternatively, when using download URLs as inputs, the from and to tag can be
-    provided adding a "#from" / "#to" fragment at the end of the download URLs.
+    - "from" for archives containing the development source code.
+    - "to" for archives containing the deployment compiled code.
+
+    When using download URLs as inputs, the "from" and "to" tags can be
+    provided by adding a "#from" or "#to" fragment at the end of the download URLs.
+
+    When uploading local files:
+
+    - **User Interface:** Use the "Edit flag" link in the "Inputs" panel of the Project
+      details view.
+    - **REST API:** Utilize the "upload_file_tag" field in addition to the
+      "upload_file".
+    - **Command Line Interface:** Tag uploaded files using the "filename:tag" syntax,
+      for example, ``--input-file path/filename:tag``.
     """
 
     @classmethod
