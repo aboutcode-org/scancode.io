@@ -976,7 +976,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return move_input(input_location, self.input_path)
 
-    def add_input_source(self, download_url="", filename="", is_uploaded=False):
+    def add_input_source(self, download_url="", filename="", is_uploaded=False, tag=""):
         """
         Create a InputFile entry for the current project, given a `download_url` or
         a `filename`.
@@ -985,10 +985,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             raise Exception("Provide at least a value for download_url or filename.")
 
         # Add tag can be provided using the "#<fragment>" part of the URL
-        tag = ""
         if download_url:
             parsed_url = urlparse(download_url)
-            tag = parsed_url.fragment
+            tag = parsed_url.fragment or tag
 
         return InputSource.objects.create(
             project=self,
@@ -1010,14 +1009,21 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 filename=downloaded.filename,
             )
 
+    def add_upload(self, uploaded_file, tag=""):
+        """
+        Write the given `upload` to the current project's input/ directory and
+        adds the `input_source`.
+        """
+        self.write_input_file(uploaded_file)
+        self.add_input_source(filename=uploaded_file.name, is_uploaded=True, tag=tag)
+
     def add_uploads(self, uploads):
         """
         Write the given `uploads` to the current project's input/ directory and
         adds the `input_source` for each entry.
         """
-        for uploaded in uploads:
-            self.write_input_file(uploaded)
-            self.add_input_source(filename=uploaded.name, is_uploaded=True)
+        for uploaded_file in uploads:
+            self.add_upload(uploaded_file)
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """

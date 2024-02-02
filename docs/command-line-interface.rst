@@ -87,8 +87,16 @@ Optional arguments:
 - ``--input-file INPUTS_FILES`` Input file locations to copy in the :guilabel:`input/`
   work directory.
 
+  .. tip::
+    Use the "filename:tag" syntax to **tag** input files:
+    ``--input-file path/filename:tag``
+
 - ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
   directory.
+
+  .. tip::
+    Use the "url#tag" syntax to tag downloaded files:
+    ``--input-url https://url.com/filename#tag``
 
 - ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
   into the :guilabel:`codebase/` work directory.
@@ -128,8 +136,16 @@ Adds input files in the project's work directory.
 - ``--input-file INPUTS_FILES`` Input file locations to copy in the :guilabel:`input/`
   work directory.
 
+  .. tip::
+    Use the "filename:tag" syntax to **tag** input files:
+    ``--input-file path/filename:tag``
+
 - ``--input-url INPUT_URLS`` Input URLs to download in the :guilabel:`input/` work
   directory.
+
+  .. tip::
+    Use the "url#tag" syntax to tag downloaded files:
+    ``--input-url https://url.com/filename#tag``
 
 - ``--copy-codebase SOURCE_DIRECTORY`` Copy the content of the provided source directory
   into the :guilabel:`codebase/` work directory.

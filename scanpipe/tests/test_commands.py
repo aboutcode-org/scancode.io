@@ -127,13 +127,15 @@ class ScanPipeManagementCommandTest(TestCase):
             "--input-file",
             str(parent_path / "test_commands.py"),
             "--input-file",
-            str(parent_path / "test_models.py"),
+            str(parent_path / "test_models.py:tag"),
         ]
         call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
+        tagged_source = project.inputsources.get(filename="test_models.py")
+        self.assertEqual("tag", tagged_source.tag)
 
     def test_scanpipe_management_command_create_project_execute(self):
         options = ["--execute"]
@@ -175,7 +177,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "--input-file",
             str(parent_path / "test_commands.py"),
             "--input-file",
-            str(parent_path / "test_models.py"),
+            str(parent_path / "test_models.py:tag"),
         ]
 
         expected = "the following arguments are required: --project"
@@ -187,6 +189,8 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Files copied to the project inputs directory", out.getvalue())
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
+        tagged_source = project.inputsources.get(filename="test_models.py")
+        self.assertEqual("tag", tagged_source.tag)
 
         options = ["--project", project.name, "--input-file", "non-existing.py"]
         expected = "non-existing.py not found or not a file"

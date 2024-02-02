@@ -371,7 +371,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], self.project1.get_inputs_with_source())
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
-        self.project1.add_uploads([uploaded_file])
+        self.project1.add_upload(uploaded_file)
         self.project1.copy_input_from(self.data_location / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
@@ -458,8 +458,17 @@ class ScanPipeModelsTest(TestCase):
         expected = "Provide at least a value for download_url or filename."
         self.assertEqual(expected, str(cm.exception))
 
-        self.project1.add_input_source(download_url="https://download.url")
-        self.project1.add_input_source(filename="file.tar", is_uploaded=True)
+        source = self.project1.add_input_source(
+            download_url="https://download.url", tag="tag"
+        )
+        self.assertFalse(source.is_uploaded)
+        self.assertEqual("", source.filename)
+        self.assertEqual("tag", source.tag)
+
+        source = self.project1.add_input_source(filename="file.tar", is_uploaded=True)
+        self.assertTrue(source.is_uploaded)
+        self.assertEqual("", source.download_url)
+        self.assertEqual("", source.tag)
 
         input_sources = self.project1.inputsources.all()
         self.assertEqual(2, len(input_sources))

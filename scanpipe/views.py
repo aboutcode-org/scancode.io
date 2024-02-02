@@ -73,6 +73,7 @@ from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
+from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
@@ -695,6 +696,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "add_pipeline_form": AddPipelineForm(),
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),
+                "edit_input_tag_from": EditInputSourceTagForm(),
                 "project_clone_form": ProjectCloneForm(project),
                 "project_resources_url": project_resources_url,
                 "license_clarity": license_clarity,
@@ -725,13 +727,16 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             form_class = AddLabelsForm
             success_message = "Label(s) added."
             error_message = "Label addition error."
+        elif "edit-input-tag-submit" in request.POST:
+            form_class = EditInputSourceTagForm
+            success_message = "Tag updated."
+            error_message = "Tag update error."
         else:
             raise Http404
 
         form_kwargs = {"data": request.POST, "files": request.FILES}
         form = form_class(**form_kwargs)
-        if form.is_valid():
-            form.save(project)
+        if form.is_valid() and form.save(project):
             messages.success(request, success_message)
         else:
             messages.error(request, error_message)
