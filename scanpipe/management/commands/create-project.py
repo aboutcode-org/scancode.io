@@ -27,7 +27,6 @@ from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import validate_copy_from
-from scanpipe.management.commands import validate_input_files
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
 
@@ -70,7 +69,7 @@ class Command(AddInputCommandMixin, BaseCommand):
     def handle(self, *args, **options):
         name = options["name"]
         pipeline_names = options["pipelines"]
-        inputs_files = options["inputs_files"]
+        input_files = options["input_files"]
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
         execute = options["execute"]
@@ -86,7 +85,8 @@ class Command(AddInputCommandMixin, BaseCommand):
 
         # Run validation before creating the project in the database
         pipeline_names = validate_pipelines(pipeline_names)
-        validate_input_files(inputs_files)
+        input_files_data = self.extract_tag_from_input_files(input_files)
+        self.validate_input_files(input_files=input_files_data.keys())
         validate_copy_from(copy_from)
 
         if execute and not pipeline_names:
@@ -100,9 +100,8 @@ class Command(AddInputCommandMixin, BaseCommand):
             project.add_pipeline(pipeline_name)
 
         self.project = project
-        if inputs_files:
-            self.validate_input_files(inputs_files)
-            self.handle_input_files(inputs_files)
+        if input_files:
+            self.handle_input_files(input_files_data)
 
         if input_urls:
             self.handle_input_urls(input_urls)

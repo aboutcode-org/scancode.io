@@ -138,4 +138,43 @@ Please refer to our :ref:`output_files` section for more details on the output f
 How can I trigger a pipeline scan from a CI/CD, such as Jenkins, TeamCity or Azure Devops?
 ------------------------------------------------------------------------------------------
 
-You can use the :ref:`rest_api` to automate your project or pipeline management.
+You can refer to the :ref:`automation` to automate your projects management.
+
+Also, A new GitHub action is available at
+`scancode-action repository <https://github.com/nexB/scancode-action>`_
+to run ScanCode.io pipelines from your GitHub Workflows.
+
+.. _faq_tag_input_files:
+
+How to tag input files?
+-----------------------
+
+Certain pipelines, including the :ref:`pipeline_map_deploy_to_develop`, require input
+files to be tagged. This section outlines various methods to tag input files based on
+your project management context.
+
+Using download URLs as inputs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can provide tags using the "#<fragment>" section of URLs. This tagging method is
+universally applicable in the User Interface, REST API, and Command Line Interface.
+
+Example:
+
+.. code-block::
+
+    https://url.com/sources.zip#from
+    https://url.com/binaries.zip#to
+
+Uploading local files
+^^^^^^^^^^^^^^^^^^^^^
+
+There are multiple ways to tag input files when uploading local files:
+
+- **User Interface:** Utilize the "Edit flag" link in the "Inputs" panel of the Project
+  details view.
+
+- **REST API:** Use the "upload_file_tag" field in addition to the "upload_file" field.
+
+- **Command Line Interface:** Tag uploaded files using the "filename:tag" syntax.
+  Example: ``--input-file path/filename:tag``.

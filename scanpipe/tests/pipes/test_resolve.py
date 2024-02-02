@@ -92,6 +92,8 @@ class ScanPipeResolvePipesTest(TestCase):
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
             "declared_license_expression": "bsd-new",
+            "extra_data": {"license_file": "bsd-new.LICENSE"},
+            "extracted_license_statement": None,
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",
@@ -114,6 +116,8 @@ class ScanPipeResolvePipesTest(TestCase):
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
             "declared_license_expression": "bsd-new",
+            "extra_data": {"license_file": "bsd-new.LICENSE"},
+            "extracted_license_statement": None,
             "md5": "386349753c386e574dceca5067e2788a",
             "name": "django",
             "sha1": "4cc6f7abda928a0b12cd1f1cd8ad3677519ca04e",
@@ -124,7 +128,7 @@ class ScanPipeResolvePipesTest(TestCase):
 
         input_location = self.manifest_location / "poor_values.ABOUT"
         package = resolve.resolve_about_packages(str(input_location))
-        expected = {"name": "project"}
+        expected = {"extra_data": {}, "name": "project"}
         self.assertEqual([expected], package)
 
     def test_scanpipe_pipes_resolve_spdx_package_to_discovered_package_data(self):

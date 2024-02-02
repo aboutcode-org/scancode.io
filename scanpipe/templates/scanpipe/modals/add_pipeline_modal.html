@@ -21,17 +21,16 @@
             {% endfor %}
           </div>
         </div>
-        <hr class="my-4">
-        <div class="field">
-          <label class="checkbox" for="{{ add_pipeline_form.execute_now.id_for_label }}">
-            {{ add_pipeline_form.execute_now }}
-            {{ add_pipeline_form.execute_now.label }}
-          </label>
-        </div>
       </section>
-      <footer class="modal-card-foot">
-        <button id="add-pipeline-button" name="add-pipeline-submit" class="button is-link is-no-close" type="submit">Add pipeline</button>
-        <button class="button" type="button">Close</button>
+      <footer class="modal-card-foot is-justify-content-space-between">
+        <label class="checkbox" for="{{ add_pipeline_form.execute_now.id_for_label }}">
+          {{ add_pipeline_form.execute_now }}
+          {{ add_pipeline_form.execute_now.label }}
+        </label>
+        <div>
+          <button id="add-pipeline-button" name="add-pipeline-submit" class="button is-link is-no-close" type="submit">Add pipeline</button>
+          <button class="button" type="button">Close</button>
+        </div>
       </footer>
     </div>
   </form>

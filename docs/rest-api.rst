@@ -121,6 +121,11 @@ Using cURL:
     To upload more than one file, you can use the :ref:`rest_api_add_input` endpoint of
     the project.
 
+.. tip::
+
+    To tag the ``upload_file``, you can provide the tag value using the
+    ``upload_file_tag`` field.
+
 Using Python and the **"requests"** library:
 
 .. code-block:: python
@@ -222,6 +227,7 @@ This action adds provided ``input_urls`` or ``upload_file`` to the ``project``.
 Data:
     - ``input_urls``: A list of URLs to download
     - ``upload_file``: A file to upload
+    - ``upload_file_tag``: An optional tag to add on the uploaded file
 
 Using cURL to provide download URLs:
 

@@ -117,10 +117,11 @@ def get_checksums(component):
         "SHA-256": "sha256",
         "SHA-512": "sha512",
     }
+
     return {
-        algorithm_map_cdx_scio[algo_hash.alg.value]: algo_hash.content.__root__
+        algorithm_map_cdx_scio[algo_hash.alg]: algo_hash.content
         for algo_hash in component.hashes
-        if algo_hash.alg.value in algorithm_map_cdx_scio
+        if algo_hash.alg in algorithm_map_cdx_scio
     }
 
 
@@ -132,7 +133,7 @@ def get_external_references(component):
 
     references = defaultdict(list)
     for reference in external_references:
-        references[reference.type.value].append(reference.url)
+        references[reference.type].append(reference.url)
 
     return dict(references)
 

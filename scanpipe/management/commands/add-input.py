@@ -32,7 +32,7 @@ class Command(AddInputCommandMixin, ProjectCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        inputs_files = options["inputs_files"]
+        input_files = options["input_files"]
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
 
@@ -41,14 +41,15 @@ class Command(AddInputCommandMixin, ProjectCommand):
                 "Cannot add inputs once a pipeline has started to execute on a project."
             )
 
-        if not (inputs_files or input_urls or copy_from):
+        if not (input_files or input_urls or copy_from):
             raise CommandError(
                 "Provide inputs with the --input-file, --input-url, or --copy-codebase"
             )
 
-        if inputs_files:
-            self.validate_input_files(inputs_files)
-            self.handle_input_files(inputs_files)
+        if input_files:
+            input_files_data = self.extract_tag_from_input_files(input_files)
+            self.validate_input_files(input_files=input_files_data.keys())
+            self.handle_input_files(input_files_data)
 
         if input_urls:
             self.handle_input_urls(input_urls)

@@ -133,7 +133,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url, data=data)
 
         expected = (
-            '<input class="input " type="text" placeholder="Search projects" '
+            '<input class="input " type="search" placeholder="Search projects" '
             'name="search" value="query">'
         )
         self.assertContains(response, expected, html=True)
@@ -348,6 +348,23 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual({}, response.json())
         self.assertEqual([], list(self.project1.labels.names()))
+
+    def test_scanpipe_views_project_details_edit_input_source_tag(self):
+        url = self.project1.get_absolute_url()
+        input_source = self.project1.add_input_source(
+            filename="filename.zip",
+            is_uploaded=True,
+            tag="base value",
+        )
+        data = {
+            "input_source_uuid": input_source.uuid,
+            "tag": "new value",
+            "edit-input-tag-submit": "",
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertContains(response, "Tag updated.")
+        input_source.refresh_from_db()
+        self.assertEqual(data["tag"], input_source.tag)
 
     def test_scanpipe_views_project_details_charts_view(self):
         url = reverse("project_charts", args=[self.project1.slug])

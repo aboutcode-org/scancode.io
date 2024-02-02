@@ -20,14 +20,18 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines import Pipeline
+from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
 from scanpipe.pipes import update_or_create_package
 
 
-class InspectPackages(Pipeline):
+class InspectPackages(ScanCodebase):
     """
-    Inspect one or more manifest files and resolve their associated packages.
+    Inspect a codebase manifest files and resolve their associated packages.
+
+    Supports resolved packages for:
+    - Python: using nexB/python-inspector, supports requirements.txt and
+    setup.py manifests as input
 
     Supports:
     - BOM: SPDX document, CycloneDX BOM, AboutCode ABOUT file
@@ -48,6 +52,10 @@ class InspectPackages(Pipeline):
     @classmethod
     def steps(cls):
         return (
+            cls.copy_inputs_to_codebase_directory,
+            cls.extract_archives,
+            cls.collect_and_create_codebase_resources,
+            cls.flag_ignored_resources,
             cls.get_manifest_inputs,
             cls.get_packages_from_manifest,
             cls.create_resolved_packages,
@@ -55,19 +63,28 @@ class InspectPackages(Pipeline):
 
     def get_manifest_inputs(self):
         """Locate all the manifest files from the project's input/ directory."""
-        self.input_locations = [
-            str(input.absolute()) for input in self.project.inputs()
-        ]
+        self.manifest_resources = resolve.get_manifest_resources(self.project)
 
     def get_packages_from_manifest(self):
         """Get packages data from manifest files."""
         self.resolved_packages = []
 
-        for input_location in self.input_locations:
-            packages = resolve.resolve_packages(input_location)
-            if not packages:
-                raise Exception(f"No packages could be resolved for {input_location}")
-            self.resolved_packages.extend(packages)
+        if not self.manifest_resources.exists():
+            self.project.add_warning(
+                description="No manifests found for resolving packages",
+                model="get_packages_from_manifest",
+            )
+            return
+
+        for resource in self.manifest_resources:
+            if packages := resolve.resolve_packages(resource.location):
+                self.resolved_packages.extend(packages)
+            else:
+                self.project.add_error(
+                    description="No packages could be resolved for",
+                    model="get_packages_from_manifest",
+                    details={"path": resource.path},
+                )
 
     def create_resolved_packages(self):
         """Create the resolved packages and their dependencies in the database."""

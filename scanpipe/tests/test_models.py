@@ -21,6 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import io
+import json
 import shutil
 import sys
 import tempfile
@@ -47,6 +48,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from packagedcode.models import PackageData
+from packageurl import PackageURL
 from requests.exceptions import RequestException
 from rq.job import JobStatus
 
@@ -61,8 +63,8 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
+from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
-from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
@@ -369,7 +371,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], self.project1.get_inputs_with_source())
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
-        self.project1.add_uploads([uploaded_file])
+        self.project1.add_upload(uploaded_file)
         self.project1.copy_input_from(self.data_location / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
@@ -456,11 +458,24 @@ class ScanPipeModelsTest(TestCase):
         expected = "Provide at least a value for download_url or filename."
         self.assertEqual(expected, str(cm.exception))
 
-        self.project1.add_input_source(download_url="https://download.url")
-        self.project1.add_input_source(filename="file.tar", is_uploaded=True)
+        source = self.project1.add_input_source(
+            download_url="https://download.url", tag="tag"
+        )
+        self.assertFalse(source.is_uploaded)
+        self.assertEqual("", source.filename)
+        self.assertEqual("tag", source.tag)
+
+        source = self.project1.add_input_source(filename="file.tar", is_uploaded=True)
+        self.assertTrue(source.is_uploaded)
+        self.assertEqual("", source.download_url)
+        self.assertEqual("", source.tag)
 
         input_sources = self.project1.inputsources.all()
         self.assertEqual(2, len(input_sources))
+
+        url_with_fragment = "https://download.url#tag_value"
+        input_source = self.project1.add_input_source(download_url=url_with_fragment)
+        self.assertEqual("tag_value", input_source.tag)
 
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data_location / "notice.NOTICE"
@@ -684,7 +699,7 @@ class ScanPipeModelsTest(TestCase):
         package.refresh_from_db()
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.package_url)
 
-    def test_scanpipe_model_posix_regex_to_django_regex_lookup(self):
+    def test_scanpipe_model_convert_glob_to_django_regex(self):
         test_data = [
             ("", r"^$"),
             # Single segment
@@ -716,7 +731,7 @@ class ScanPipeModelsTest(TestCase):
         ]
 
         for pattern, expected in test_data:
-            self.assertEqual(expected, posix_regex_to_django_regex_lookup(pattern))
+            self.assertEqual(expected, convert_glob_to_django_regex(pattern))
 
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
@@ -1229,6 +1244,18 @@ class ScanPipeModelsTest(TestCase):
         line_count = len(resource.file_content.split("\n"))
         self.assertEqual(101, line_count)
 
+    def test_scanpipe_codebase_resource_model_file_content_for_map(self):
+        map_file_path = self.data_location / "d2d-javascript/to/main.js.map"
+        copy_input(map_file_path, self.project1.codebase_path)
+        resource = self.project1.codebaseresources.create(path="main.js.map")
+
+        with open(map_file_path, "r") as file:
+            expected = json.load(file)
+
+        result = json.loads(resource.file_content)
+
+        self.assertEqual(expected, result)
+
     def test_scanpipe_codebase_resource_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index
         resource = CodebaseResource.objects.create(project=self.project1, path="file")
@@ -1554,6 +1581,7 @@ class ScanPipeModelsTest(TestCase):
         make_resource_file(self.project1, path="dir/.example")
         make_resource_file(self.project1, path="dir/subdir/readme.html")
         make_resource_file(self.project1, path="foo$.class")
+        make_resource_file(self.project1, path="example-1.0.jar")
 
         patterns = [
             "example",
@@ -1570,6 +1598,7 @@ class ScanPipeModelsTest(TestCase):
             "dir/*/readme.*",
             r"*$.class",
             "*readme.htm?",
+            "example-*.jar",
         ]
 
         for pattern in patterns:
@@ -1893,13 +1922,19 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual("library", cyclonedx_component.type)
         self.assertEqual(package_data1["name"], cyclonedx_component.name)
         self.assertEqual(package_data1["version"], cyclonedx_component.version)
-        purl = "pkg:deb/debian/adduser@3.118?arch=all"
         bom_ref = package.package_uid
         self.assertEqual(bom_ref, str(cyclonedx_component.bom_ref))
-        self.assertEqual(purl, cyclonedx_component.purl)
+        package_url = PackageURL.from_string(package_data1["package_uid"])
+        self.assertEqual(package_url, cyclonedx_component.purl)
         self.assertEqual(1, len(cyclonedx_component.licenses))
-        expected = "GPL-2.0-only AND GPL-2.0-or-later"
-        self.assertEqual(expected, cyclonedx_component.licenses[0].expression)
+        self.assertEqual(
+            package_data1["declared_license_expression_spdx"],
+            cyclonedx_component.licenses[0].value,
+        )
+        self.assertEqual(
+            package_data1["other_license_expression_spdx"],
+            cyclonedx_component.evidence.licenses[0].value,
+        )
         self.assertEqual(package_data1["copyright"], cyclonedx_component.copyright)
         self.assertEqual(package_data1["description"], cyclonedx_component.description)
         self.assertEqual(1, len(cyclonedx_component.hashes))
@@ -1917,8 +1952,24 @@ class ScanPipeModelsTest(TestCase):
 
         external_references = cyclonedx_component.external_references
         self.assertEqual(1, len(external_references))
+        self.assertEqual(
+            "<ExternalReference SCM, https://packages.vcs.url>",
+            str(external_references[0]),
+        )
         self.assertEqual("vcs", external_references[0].type)
         self.assertEqual("https://packages.vcs.url", external_references[0].url)
+
+        # LicenseRef are not supported by the license_factory.make_with_expression
+        license_ref_expression = "LicenseRef-scancode-bash-exception-gpl-2.0"
+        package.declared_license_expression_spdx = license_ref_expression
+        package.other_license_expression_spdx = license_ref_expression
+        package.save()
+        cyclonedx_component = package.as_cyclonedx()
+        self.assertEqual(license_ref_expression, cyclonedx_component.licenses[0].value)
+        self.assertEqual(
+            license_ref_expression,
+            cyclonedx_component.evidence.licenses[0].value,
+        )
 
     def test_scanpipe_discovered_package_model_compliance_alert(self):
         scanpipe_app.license_policies_index = license_policies_index

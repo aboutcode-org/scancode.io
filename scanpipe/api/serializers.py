@@ -97,7 +97,7 @@ class StrListField(serializers.ListField):
 
     def to_internal_value(self, data):
         if isinstance(data, str):
-            data = [data]
+            data = data.split()
         return super().to_internal_value(data)
 
 
@@ -156,6 +156,7 @@ class ProjectSerializer(
         help_text="Execute pipeline now",
     )
     upload_file = serializers.FileField(write_only=True, required=False)
+    upload_file_tag = serializers.CharField(write_only=True, required=False)
     input_urls = StrListField(
         write_only=True,
         required=False,
@@ -182,6 +183,7 @@ class ProjectSerializer(
             "url",
             "uuid",
             "upload_file",
+            "upload_file_tag",
             "input_urls",
             "webhook_url",
             "created_date",
@@ -250,6 +252,10 @@ class ProjectSerializer(
         queryset = project.codebaserelations.all()
         return count_group_by(queryset, "map_type")
 
+    def validate_input_urls(self, value):
+        """Add support for providing multiple URLs in a single string."""
+        return [url for entry in value for url in entry.split()]
+
     def create(self, validated_data):
         """
         Create a new `project` with `upload_file` and `pipeline` as optional.
@@ -261,6 +267,7 @@ class ProjectSerializer(
         This ensures the Project data integrity before running any pipelines.
         """
         upload_file = validated_data.pop("upload_file", None)
+        upload_file_tag = validated_data.pop("upload_file_tag", "")
         input_urls = validated_data.pop("input_urls", [])
         pipeline = validated_data.pop("pipeline", [])
         execute_now = validated_data.pop("execute_now", False)
@@ -269,7 +276,7 @@ class ProjectSerializer(
         project = super().create(validated_data)
 
         if upload_file:
-            project.add_uploads([upload_file])
+            project.add_upload(upload_file, tag=upload_file_tag)
 
         for url in input_urls:
             project.add_input_source(download_url=url)

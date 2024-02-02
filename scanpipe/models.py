@@ -32,6 +32,7 @@ from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
 from traceback import format_tb
+from urllib.parse import urlparse
 
 from django.apps import apps
 from django.conf import settings
@@ -66,8 +67,8 @@ import saneyaml
 from commoncode.fileutils import parent_directory
 from cyclonedx import model as cyclonedx_model
 from cyclonedx.model import component as cyclonedx_component
+from cyclonedx.model import license as cyclonedx_license
 from extractcode import EXTRACT_SUFFIX
-from formattedcode.output_cyclonedx import CycloneDxExternalRef
 from licensedcode.cache import build_spdx_license_expression
 from licensedcode.cache import get_licensing
 from matchcode_toolkit.fingerprinting import IGNORED_DIRECTORY_FINGERPRINTS
@@ -975,7 +976,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return move_input(input_location, self.input_path)
 
-    def add_input_source(self, download_url="", filename="", is_uploaded=False):
+    def add_input_source(self, download_url="", filename="", is_uploaded=False, tag=""):
         """
         Create a InputFile entry for the current project, given a `download_url` or
         a `filename`.
@@ -983,11 +984,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
+        # Add tag can be provided using the "#<fragment>" part of the URL
+        if download_url:
+            parsed_url = urlparse(download_url)
+            tag = parsed_url.fragment or tag
+
         return InputSource.objects.create(
             project=self,
             download_url=download_url,
             filename=filename,
             is_uploaded=is_uploaded,
+            tag=tag,
         )
 
     def add_downloads(self, downloads):
@@ -1002,14 +1009,21 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 filename=downloaded.filename,
             )
 
+    def add_upload(self, uploaded_file, tag=""):
+        """
+        Write the given `upload` to the current project's input/ directory and
+        adds the `input_source`.
+        """
+        self.write_input_file(uploaded_file)
+        self.add_input_source(filename=uploaded_file.name, is_uploaded=True, tag=tag)
+
     def add_uploads(self, uploads):
         """
         Write the given `uploads` to the current project's input/ directory and
         adds the `input_source` for each entry.
         """
-        for uploaded in uploads:
-            self.write_input_file(uploaded)
-            self.add_input_source(filename=uploaded.name, is_uploaded=True)
+        for uploaded_file in uploads:
+            self.add_upload(uploaded_file)
 
     def add_pipeline(self, pipeline_name, execute_now=False):
         """
@@ -1793,12 +1807,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
-def posix_regex_to_django_regex_lookup(regex_pattern):
+def convert_glob_to_django_regex(glob_pattern):
     """
-    Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
-    Django regex lookup.
+    Convert a glob pattern to an equivalent django regex pattern
+    compatible with the Django regex lookup.
     """
-    escaped_pattern = re.escape(regex_pattern)
+    escaped_pattern = re.escape(glob_pattern)
     escaped_pattern = escaped_pattern.replace(r"\*", ".*")  # Replace \* with .*
     escaped_pattern = escaped_pattern.replace(r"\?", ".")  # Replace \? with .
     escaped_pattern = f"^{escaped_pattern}$"  # Add start and end anchors
@@ -1906,8 +1920,8 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
     def path_pattern(self, pattern):
-        """Resources with a path that match the provided ``pattern``."""
-        return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
+        """Resources with a path that match the provided glob ``pattern``."""
+        return self.filter(path__regex=convert_glob_to_django_regex(pattern))
 
     def has_directory_content_fingerprint(self):
         """
@@ -2422,6 +2436,17 @@ class CodebaseResource(
         for optimal compatibility.
         """
         from textcode.analysis import numbered_text_lines
+        from typecode import get_type
+
+        # When reading a map file, Textcode only provides the content inside
+        # `sourcesContent`, which can be misleading during any kind of review.
+        # This workaround ensures that the entire content of map files is displayed.
+        file_type = get_type(self.location)
+        if file_type.is_js_map:
+            with open(self.location, "r") as file:
+                content = json.load(file)
+
+            return json.dumps(content, indent=2)
 
         numbered_lines = numbered_text_lines(self.location)
         numbered_lines = self._regroup_numbered_lines(numbered_lines)
@@ -3051,9 +3076,9 @@ class DiscoveredPackage(
         """Return this DiscoveredPackage as an CycloneDX Component entry."""
         licenses = []
         if expression_spdx := self.get_declared_license_expression_spdx():
-            licenses = [
-                cyclonedx_model.LicenseChoice(license_expression=expression_spdx),
-            ]
+            # Using the LicenseExpression directly as the make_with_expression method
+            # does not support the "LicenseRef-" keys.
+            licenses = [cyclonedx_license.LicenseExpression(value=expression_spdx)]
 
         hash_fields = {
             "md5": cyclonedx_model.HashAlgorithm.MD5,
@@ -3062,7 +3087,7 @@ class DiscoveredPackage(
             "sha512": cyclonedx_model.HashAlgorithm.SHA_512,
         }
         hashes = [
-            cyclonedx_model.HashType(algorithm=algorithm, hash_value=hash_value)
+            cyclonedx_model.HashType(alg=algorithm, content=hash_value)
             for field_name, algorithm in hash_fields.items()
             if (hash_value := getattr(self, field_name))
         ]
@@ -3086,25 +3111,53 @@ class DiscoveredPackage(
             if (value := getattr(self, field_name)) not in EMPTY_VALUES
         ]
 
-        cyclonedx_url_to_type = CycloneDxExternalRef.cdx_url_type_by_scancode_field
+        reference_type = cyclonedx_model.ExternalReferenceType
+        url_field_to_cdx_type = {
+            "api_data_url": reference_type.BOM,
+            "bug_tracking_url": reference_type.ISSUE_TRACKER,
+            "code_view_url": reference_type.OTHER,
+            "download_url": reference_type.DISTRIBUTION,
+            "homepage_url": reference_type.WEBSITE,
+            "repository_download_url": reference_type.DISTRIBUTION,
+            "repository_homepage_url": reference_type.WEBSITE,
+            "vcs_url": reference_type.VCS,
+        }
         external_references = [
-            cyclonedx_model.ExternalReference(reference_type=reference_type, url=url)
-            for field_name, reference_type in cyclonedx_url_to_type.items()
+            cyclonedx_model.ExternalReference(type=reference_type, url=url)
+            for field_name, reference_type in url_field_to_cdx_type.items()
             if (url := getattr(self, field_name)) and field_name not in property_fields
         ]
 
-        purl = self.package_url
+        # Always use the package_uid when available to ensure having unique
+        # package_url in the BOM when several instances of the same DiscoveredPackage
+        # (i.e. same purl) are present in the project.
+        try:
+            package_url = PackageURL.from_string(self.package_uid)
+        except ValueError:
+            package_url = self.get_package_url()
+
+        evidence = None
+        if self.other_license_expression_spdx:
+            evidence = cyclonedx_component.ComponentEvidence(
+                licenses=[
+                    cyclonedx_license.LicenseExpression(
+                        value=self.other_license_expression_spdx
+                    )
+                ],
+            )
+
         return cyclonedx_component.Component(
             name=self.name,
             version=self.version,
-            bom_ref=self.package_uid or str(self.uuid),
-            purl=purl,
+            bom_ref=str(package_url),
+            purl=package_url,
             licenses=licenses,
-            copyright_=self.copyright,
+            copyright=self.copyright,
             description=self.description,
             hashes=hashes,
             properties=properties,
             external_references=external_references,
+            evidence=evidence,
         )
 
 

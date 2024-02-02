@@ -137,6 +137,8 @@ package_data1 = {
     ),
     "declared_license_expression": "gpl-2.0 AND gpl-2.0-plus",
     "declared_license_expression_spdx": "GPL-2.0-only AND GPL-2.0-or-later",
+    "other_license_expression": "apache-2.0 AND (mpl-1.1 OR gpl-2.0)",
+    "other_license_expression_spdx": "Apache-2.0 AND (MPL-1.1 OR GPL-2.0)",
     "extracted_license_statement": "",
     "notice_text": "Notice\nText",
     "root_path": None,
