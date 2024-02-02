@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Unreleased
-----------
+v33.1.0 (2024-02-02)
+--------------------
 
 - Rename multiple pipelines for consistency and precision:
    * docker: analyze_docker_image
