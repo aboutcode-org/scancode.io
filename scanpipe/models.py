@@ -1025,7 +1025,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         for uploaded_file in uploads:
             self.add_upload(uploaded_file)
 
-    def add_pipeline(self, pipeline_name, execute_now=False):
+    def add_pipeline(self, pipeline_name, execute_now=False, selected_tags=None):
         """
         Create a new Run instance with the provided `pipeline` on the current project.
 
@@ -1043,6 +1043,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
             project=self,
             pipeline_name=pipeline_name,
             description=pipeline_class.get_summary(),
+            selected_tags=selected_tags,
         )
 
         # Do not start the pipeline execution, even if explicitly requested,
@@ -1585,6 +1586,11 @@ class RunQuerySet(ProjectRelatedQuerySet):
         return self.filter(task_id__isnull=False, task_end_date__isnull=True)
 
 
+def validate_none_or_list(value):
+    if value is not None and not isinstance(value, list):
+        raise ValidationError("Value must be a list.")
+
+
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     """The Database representation of a pipeline execution."""
 
@@ -1596,6 +1602,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
+    selected_tags = models.JSONField(
+        null=True, blank=True, validators=[validate_none_or_list]
+    )
 
     objects = RunQuerySet.as_manager()
 

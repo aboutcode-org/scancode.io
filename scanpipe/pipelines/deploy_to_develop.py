@@ -113,8 +113,6 @@ class DeployToDevelop(Pipeline):
         ".odt",
         ".odp",
     ]
-    # Used to present values in the UI, should be aligned with the @tag_method values
-    available_tags = ["java", "javascript"]
 
     def get_inputs(self):
         """Locate the ``from`` and ``to`` input files."""

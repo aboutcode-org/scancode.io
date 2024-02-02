@@ -53,7 +53,15 @@
             </div>
 
             <div class="field">
-              <label class="label" for="{{ form.pipeline.id_for_label }}">Pipeline</label>
+              <div class="is-flex is-justify-content-space-between">
+                <label class="label" for="{{ form.pipeline.id_for_label }}">
+                  {{ form.pipeline.label }}
+                </label>
+                <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
+                  {{ form.execute_now }}
+                  {{ form.execute_now.label }}
+                </label>
+              </div>
               <div class="control">
                 <span class="select">
                   {{ form.pipeline }}
@@ -62,11 +70,13 @@
             </div>
 
             <div class="field">
-              <label class="checkbox" for="{{ form.execute_now.id_for_label }}">
-                {{ form.execute_now }}
-                {{ form.execute_now.label }}
-              </label>
+              <div id="id_selected_tags">
+              </div>
             </div>
+
+<!--            <div class="field">-->
+<!--              {{ form.selected_tags }}-->
+<!--            </div>-->
 
             <div class="columns mt-3 is-variable is-1">
               <div class="column is-one-third">
@@ -98,15 +108,27 @@
                       </p>
                       <button class="delete" aria-label="close"></button>
                     </header>
-                    <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0">
+                    <div class="notification has-background-info-light has-text-weight-semibold is-radiusless mb-0"
+                         style="max-height: 300px; overflow-y: scroll;"
+                    >
                       <p>{{ pipeline_info.summary }}</p>
                       {% if pipeline_info.description %}
-                        <p class="mt-3">{{ pipeline_info.description|linebreaks }}</p>
+                        <p class="mt-3">
+                          {{ pipeline_info.description|linebreaks }}
+                        </p>
                       {% endif %}
                     </div>
                     <section class="modal-card-body has-text-centered border-bottom-radius">
                       {% for step in pipeline_info.steps %}
                         <span class="tag is-info">{{ step.name }}</span>
+                        {% if step.tags %}
+                          <div class="has-text-weight-semibold">
+                            Tags:
+                            {% for tag in step.tags %}
+                              <span class="tag is-warning">{{ tag }}</span>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
                         <div>{{ step.doc }}</div>
                         {% if not forloop.last %}<div>&darr;</div>{% endif %}
                       {% endfor %}
@@ -125,28 +147,76 @@
 
 {% block scripts %}
   <script>
-    let form = document.querySelector('form');
+    document.addEventListener("DOMContentLoaded", function() {
+      let form = document.querySelector('form');
 
-    form.addEventListener('submit', function(event) {
-      let background = displayOverlay();
+      form.addEventListener('submit', function(event) {
+        let background = displayOverlay();
 
-      // The upload progress is only added when input files are provided.
-      if (!form["input_files"].files.length) return false;
+        // The upload progress is only added when input files are provided.
+        if (!form["input_files"].files.length) return false;
 
-      event.preventDefault();
+        event.preventDefault();
 
-      let progress_bar = document.createElement('progress');
-      progress_bar.className = 'progress is-success is-medium file-upload';
-      progress_bar.setAttribute('value', '0');
-      progress_bar.setAttribute('max', '100');
+        let progress_bar = document.createElement('progress');
+        progress_bar.className = 'progress is-success is-medium file-upload';
+        progress_bar.setAttribute('value', '0');
+        progress_bar.setAttribute('max', '100');
 
-      let progress_container = document.createElement('div');
-      progress_container.className = 'container is-max-desktop mt-6 px-6';
-      progress_container.appendChild(progress_bar)
-      background.appendChild(progress_container);
+        let progress_container = document.createElement('div');
+        progress_container.className = 'container is-max-desktop mt-6 px-6';
+        progress_container.appendChild(progress_bar)
+        background.appendChild(progress_container);
 
-      let form_errors = document.getElementById('form-errors');
-      displayFormUploadProgress(form, progress_bar, form_errors, true);
+        let form_errors = document.getElementById('form-errors');
+        displayFormUploadProgress(form, progress_bar, form_errors, true);
+      });
+    });
+  </script>
+
+  {{ pipelines_available_tags|json_script:"pipelines_available_tags" }}
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const availableTagsDataSource = document.getElementById("pipelines_available_tags");
+      const availableTagsMapping = JSON.parse(availableTagsDataSource.textContent);
+
+      const pipelineSelect = document.getElementById("id_pipeline");
+      const idSelectedTags = document.getElementById("id_selected_tags");
+
+      function clearSelectedTags() {
+        idSelectedTags.innerHTML = "";
+      }
+
+      function buildCheckbox(tag) {
+        const id = `id_${tag}`;
+        return `
+          <label class="checkbox ml-2" for="${id}">
+            <input type="checkbox" name="selected_tags" value="${tag}" id="${id}">
+            <span>${tag}</span>
+          </label>`;
+      }
+
+      function handlePipelineChange() {
+        clearSelectedTags();
+
+        const selectedPipelineName = pipelineSelect.value;
+        if (!selectedPipelineName) return;
+
+        const availableTags = availableTagsMapping[selectedPipelineName];
+        if (availableTags && availableTags.length > 0) {
+          const strongElement = document.createElement('strong');
+          strongElement.innerHTML = '<i class="fa-solid fa-circle-arrow-right"></i> Include:';
+          idSelectedTags.appendChild(strongElement);
+
+          availableTags.forEach((tag) => {
+            const checkboxHtml = buildCheckbox(tag);
+            idSelectedTags.insertAdjacentHTML('beforeend', checkboxHtml);
+          });
+        }
+      }
+
+      handlePipelineChange();
+      pipelineSelect.addEventListener("change", handlePipelineChange);
     });
   </script>
 {% endblock %}

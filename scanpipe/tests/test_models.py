@@ -36,6 +36,7 @@ from unittest import skipIf
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DataError
@@ -769,6 +770,24 @@ class ScanPipeModelsTest(TestCase):
         run1.set_current_step("")
         run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual("", run1.current_step)
+
+    def test_scanpipe_run_model_selected_tags(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual(None, run1.selected_tags)
+
+        # Empty list has not the same behavior as None
+        run1.update(selected_tags=[])
+        self.assertEqual([], run1.selected_tags)
+
+        run1.update(selected_tags=["foo"])
+        self.assertEqual(["foo"], run1.selected_tags)
+
+        run1.update(selected_tags=["foo", "bar"])
+        self.assertEqual(["foo", "bar"], run1.selected_tags)
+
+        with self.assertRaises(ValidationError):
+            # TODO: run1.full_clean() not triggerd
+            run1.update(selected_tags={})
 
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")

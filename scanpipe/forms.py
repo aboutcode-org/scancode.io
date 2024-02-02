@@ -114,11 +114,19 @@ class PipelineBaseForm(forms.Form):
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]
+        selected_tags = self.cleaned_data.get("selected_tags", [])
         if pipeline:
-            project.add_pipeline(pipeline, execute_now)
+            project.add_pipeline(pipeline, execute_now, selected_tags)
 
 
 class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
+    selected_tags = forms.MultipleChoiceField(
+        # TODO: Dynamic list, or remove any validation
+        choices=[("java", "java"), ("javascript", "javascript")],
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+    )
+
     class Meta:
         model = Project
         fields = [

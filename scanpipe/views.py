@@ -578,11 +578,16 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["pipelines"] = {
+        pipelines = {
             key: pipeline_class.get_info()
             for key, pipeline_class in scanpipe_app.pipelines.items()
             if not pipeline_class.is_addon
         }
+        pipelines_available_tags = {
+            name: info["available_tags"] for name, info in pipelines.items()
+        }
+        context["pipelines"] = pipelines
+        context["pipelines_available_tags"] = pipelines_available_tags
         return context
 
 

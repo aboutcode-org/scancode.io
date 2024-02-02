@@ -104,7 +104,12 @@ class BasePipeline:
     def get_graph(cls):
         """Return a graph of steps."""
         return [
-            {"name": step.__name__, "doc": getdoc(step)} for step in cls.get_steps()
+            {
+                "name": step.__name__,
+                "doc": getdoc(step),
+                "tags": getattr(step, "tags", []),
+            }
+            for step in cls.get_steps()
         ]
 
     @classmethod
@@ -115,12 +120,19 @@ class BasePipeline:
             "summary": summary,
             "description": description,
             "steps": cls.get_graph(),
+            "available_tags": cls.get_available_tags(),
         }
 
     @classmethod
     def get_summary(cls):
         """Get the doc string summary."""
         return cls.get_info()["summary"]
+
+    @classmethod
+    def get_available_tags(cls):
+        return list(
+            set(tag for step in cls.get_steps() for tag in getattr(step, "tags", []))
+        )
 
     def log(self, message):
         """Log the given `message` to the current module logger and Run instance."""
@@ -133,7 +145,8 @@ class BasePipeline:
     def execute(self):
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
-        steps = self.get_steps()
+
+        steps = self.get_steps(tags=self.run.selected_tags)
 
         if self.download_inputs:
             steps = (self.__class__.download_missing_inputs,) + steps

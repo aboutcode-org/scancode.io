@@ -39,6 +39,19 @@
           </div>
         </div>
       {% endif %}
+      {% if run.selected_tags %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Selected tags</span>
+            <span class="tag is-warning">
+              {% for tag in run.selected_tags %}
+                {% if not forloop.first %},{% endif %}
+                {{ tag }}
+              {% endfor %}
+            </span>
+          </div>
+        </div>
+      {% endif %}
       {% if run.status == run.Status.RUNNING %}
         <a href="{% url 'project_stop_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger">
           <i class="fa-solid fa-ban"></i>
