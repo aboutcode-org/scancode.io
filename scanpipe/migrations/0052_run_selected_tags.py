@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="run",
-            name="selected_tags",
+            name="selected_groups",
             field=models.JSONField(
                 blank=True,
                 null=True,

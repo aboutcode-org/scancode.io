@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import tag_method
+from scanpipe.pipelines import group
 
 
 class WithTags(Pipeline):
@@ -36,17 +36,17 @@ class WithTags(Pipeline):
             cls.no_tags,
         )
 
-    @tag_method("foo", "bar")
+    @group("foo", "bar")
     def tagged_with_foo_and_bar(self):
         """Step1 doc."""
         pass
 
-    @tag_method("bar")
+    @group("bar")
     def tagged_with_bar(self):
         """Step2 doc."""
         pass
 
-    @tag_method("excluded")
+    @group("excluded")
     def tagged_with_excluded(self):
         """Step2 doc."""
         pass

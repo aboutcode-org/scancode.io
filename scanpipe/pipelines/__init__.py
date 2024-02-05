@@ -42,11 +42,11 @@ class InputFileError(Exception):
     """InputFile is missing or cannot be downloaded."""
 
 
-def tag_method(*tags):
-    """Tag methods with specified values."""
+def group(*groups):
+    """Mark a function as part of a particular group."""
 
     def decorator(func):
-        setattr(func, "tags", tags)
+        setattr(func, "groups", groups)
         return func
 
     return decorator
@@ -72,25 +72,25 @@ class BasePipeline:
         raise NotImplementedError
 
     @classmethod
-    def get_steps(cls, tags=None):
+    def get_steps(cls, groups=None):
         """
         Return the list of steps defined in the ``steps`` class method.
 
-        If the optional ``tags`` parameter is provided, only include steps labeled
-        with tags that intersect with the provided list. If a step has no tags or
-        if ``tags`` is not specified, include the step in the result.
+        If the optional ``groups`` parameter is provided, only include steps labeled
+        with groups that intersect with the provided list. If a step has no groups or
+        if ``groups`` is not specified, include the step in the result.
         """
         if not callable(cls.steps):
             raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
 
         steps = cls.steps()
 
-        if tags is not None:
+        if groups is not None:
             steps = tuple(
                 step
                 for step in steps
-                if not getattr(step, "tags", [])
-                or set(getattr(step, "tags")).intersection(tags)
+                if not getattr(step, "groups", [])
+                or set(getattr(step, "groups")).intersection(groups)
             )
 
         return steps
@@ -107,7 +107,7 @@ class BasePipeline:
             {
                 "name": step.__name__,
                 "doc": getdoc(step),
-                "tags": getattr(step, "tags", []),
+                "groups": getattr(step, "groups", []),
             }
             for step in cls.get_steps()
         ]
@@ -120,7 +120,7 @@ class BasePipeline:
             "summary": summary,
             "description": description,
             "steps": cls.get_graph(),
-            "available_tags": cls.get_available_tags(),
+            "selected_groups": cls.get_selected_groups(),
         }
 
     @classmethod
@@ -129,9 +129,13 @@ class BasePipeline:
         return cls.get_info()["summary"]
 
     @classmethod
-    def get_available_tags(cls):
+    def get_selected_groups(cls):
         return list(
-            set(tag for step in cls.get_steps() for tag in getattr(step, "tags", []))
+            set(
+                group
+                for step in cls.get_steps()
+                for groups in getattr(step, "groups", [])
+            )
         )
 
     def log(self, message):
@@ -146,7 +150,7 @@ class BasePipeline:
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
 
-        steps = self.get_steps(tags=self.run.selected_tags)
+        steps = self.get_steps(groups=self.run.selected_groups)
 
         if self.download_inputs:
             steps = (self.__class__.download_missing_inputs,) + steps

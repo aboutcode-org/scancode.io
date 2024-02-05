@@ -30,13 +30,13 @@
                   {{ pipeline_name }}
                 </label>
                 <p class="help ml-4">{{ pipeline_info.summary }}</p>
-                {% if pipeline_info.available_tags %}
+                {% if pipeline_info.available_groups %}
                   <div class="ml-2 mt-1">
-                    {% for tag in pipeline_info.available_tags %}
-                      <label class="checkbox ml-1" for="id_{{ tag }}">
+                    {% for group in pipeline_info.available_groups %}
+                      <label class="checkbox ml-1" for="id_{{ group }}">
                         <span class="tag is-warning has-text-weight-bold">
-                          <input type="checkbox" name="selected_tags" value="{{ tag }}" id="id_{{ tag }}" class="mr-1">
-                          {{ tag }}
+                          <input type="checkbox" name="selected_groups" value="{{ group }}" id="id_{{ group }}" class="mr-1">
+                          {{ group }}
                         </span>
                       </label>
                     {% endfor %}

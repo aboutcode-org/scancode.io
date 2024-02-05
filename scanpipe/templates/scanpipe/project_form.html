@@ -70,7 +70,7 @@
             </div>
 
             <div class="field">
-              {{ form.selected_tags }}
+              {{ form.selected_groups }}
             </div>
 
             <div class="columns mt-3 is-variable is-1">
@@ -116,11 +116,10 @@
                     <section class="modal-card-body has-text-centered border-bottom-radius">
                       {% for step in pipeline_info.steps %}
                         <span class="tag is-info">{{ step.name }}</span>
-                        {% if step.tags %}
+                        {% if step.groups %}
                           <div class="has-text-weight-semibold">
-                            Tags:
-                            {% for tag in step.tags %}
-                              <span class="tag is-warning">{{ tag }}</span>
+                            {% for group in step.groups %}
+                              <span class="tag is-warning">{{ group }}</span>
                             {% endfor %}
                           </div>
                         {% endif %}
@@ -169,45 +168,45 @@
     });
   </script>
 
-  {{ pipelines_available_tags|json_script:"pipelines_available_tags" }}
+  {{ pipelines_available_groups|json_script:"pipelines_available_groups" }}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      const availableTagsDataSource = document.getElementById("pipelines_available_tags");
-      const availableTagsMapping = JSON.parse(availableTagsDataSource.textContent);
+      const idSelectedGroupsDataSource = document.getElementById("pipelines_available_groups");
+      const idSelectedGroupsMapping = JSON.parse(idSelectedGroupsDataSource.textContent);
 
       const pipelineSelect = document.getElementById("id_pipeline");
-      const idSelectedTags = document.getElementById("id_selected_tags");
+      const idSelectedGroups = document.getElementById("id_selected_groups");
 
-      function clearSelectedTags() {
-        idSelectedTags.innerHTML = "";
+      function clearSelectedGroups() {
+        idSelectedGroups.innerHTML = "";
       }
 
-      function buildCheckbox(tag) {
-        const id = `id_${tag}`;
+      function buildCheckbox(group) {
+        const id = `id_${group}`;
         return `
           <label class="checkbox ml-2" for="${id}">
             <span class="tag is-warning has-text-weight-bold">
-              <input type="checkbox" name="selected_tags" value="${tag}" id="${id}" class="mr-1">
-              ${tag}
+              <input type="checkbox" name="selected_groups" value="${group}" id="${id}" class="mr-1">
+              ${group}
             </span>
           </label>`;
       }
 
       function handlePipelineChange() {
-        clearSelectedTags();
+        clearSelectedGroups();
 
         const selectedPipelineName = pipelineSelect.value;
         if (!selectedPipelineName) return;
 
-        const availableTags = availableTagsMapping[selectedPipelineName];
-        if (availableTags && availableTags.length > 0) {
+        const idSelectedGroups = idSelectedGroupsMapping[selectedPipelineName];
+        if (idSelectedGroups && idSelectedGroups.length > 0) {
           const strongElement = document.createElement('strong');
           strongElement.innerHTML = '<i class="fa-solid fa-circle-arrow-right"></i> Include:';
-          idSelectedTags.appendChild(strongElement);
+          idSelectedGroups.appendChild(strongElement);
 
-          availableTags.forEach((tag) => {
-            const checkboxHtml = buildCheckbox(tag);
-            idSelectedTags.insertAdjacentHTML('beforeend', checkboxHtml);
+          idSelectedGroups.forEach((group) => {
+            const checkboxHtml = buildCheckbox(group);
+            idSelectedGroups.insertAdjacentHTML('beforeend', checkboxHtml);
           });
         }
       }

@@ -22,7 +22,7 @@
 
 from scanpipe import pipes
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipelines import tag_method
+from scanpipe.pipelines import group
 from scanpipe.pipes import d2d
 from scanpipe.pipes import flag
 from scanpipe.pipes import matchcode
@@ -176,22 +176,22 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
-    @tag_method("Java")
+    @group("Java")
     def find_java_packages(self):
         """Find the java package of the .java source files."""
         d2d.find_java_packages(self.project, logger=self.log)
 
-    @tag_method("Java")
+    @group("Java")
     def map_java_to_class(self):
         """Map a .class compiled file to its .java source."""
         d2d.map_java_to_class(project=self.project, logger=self.log)
 
-    @tag_method("Java")
+    @group("Java")
     def map_jar_to_source(self):
         """Map .jar files to their related source directory."""
         d2d.map_jar_to_source(project=self.project, logger=self.log)
 
-    @tag_method("JavaScript")
+    @group("JavaScript")
     def map_javascript(self):
         """
         Map a packed or minified JavaScript, TypeScript, CSS and SCSS
@@ -223,22 +223,22 @@ class DeployToDevelop(Pipeline):
             logger=self.log,
         )
 
-    @tag_method("JavaScript")
+    @group("JavaScript")
     def map_javascript_post_purldb_match(self):
         """Map minified javascript file based on existing PurlDB match."""
         d2d.map_javascript_post_purldb_match(project=self.project, logger=self.log)
 
-    @tag_method("JavaScript")
+    @group("JavaScript")
     def map_javascript_path(self):
         """Map javascript file based on path."""
         d2d.map_javascript_path(project=self.project, logger=self.log)
 
-    @tag_method("JavaScript")
+    @group("JavaScript")
     def map_javascript_colocation(self):
         """Map JavaScript files based on neighborhood file mapping."""
         d2d.map_javascript_colocation(project=self.project, logger=self.log)
 
-    @tag_method("JavaScript")
+    @group("JavaScript")
     def map_thirdparty_npm_packages(self):
         """Map thirdparty package using package.json metadata."""
         d2d.map_thirdparty_npm_packages(project=self.project, logger=self.log)

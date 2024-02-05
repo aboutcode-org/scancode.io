@@ -100,7 +100,7 @@ class InputsBaseForm(forms.Form):
             project.add_input_source(download_url=url)
 
 
-class TagsChoiceField(forms.MultipleChoiceField):
+class GroupChoiceField(forms.MultipleChoiceField):
     widget = forms.CheckboxSelectMultiple
 
     def valid_value(self, value):
@@ -118,14 +118,14 @@ class PipelineBaseForm(forms.Form):
         initial=True,
         required=False,
     )
-    selected_tags = TagsChoiceField(required=False)
+    selected_groups = GroupChoiceField(required=False)
 
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]
-        selected_tags = self.cleaned_data.get("selected_tags", [])
+        selected_groups = self.cleaned_data.get("selected_groups", [])
         if pipeline:
-            project.add_pipeline(pipeline, execute_now, selected_tags)
+            project.add_pipeline(pipeline, execute_now, selected_groups)
 
 
 class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
@@ -137,7 +137,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_urls",
             "pipeline",
             "execute_now",
-            "selected_tags",
+            "selected_groups",
         ]
 
     def __init__(self, *args, **kwargs):

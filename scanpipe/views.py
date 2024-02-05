@@ -583,11 +583,11 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
             for key, pipeline_class in scanpipe_app.pipelines.items()
             if not pipeline_class.is_addon
         }
-        pipelines_available_tags = {
-            name: info["available_tags"] for name, info in pipelines.items()
+        pipelines_available_groups = {
+            name: info["available_groups"] for name, info in pipelines.items()
         }
         context["pipelines"] = pipelines
-        context["pipelines_available_tags"] = pipelines_available_tags
+        context["pipelines_available_groups"] = pipelines_available_groups
         return context
 
 

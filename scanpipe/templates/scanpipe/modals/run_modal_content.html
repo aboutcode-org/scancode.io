@@ -15,12 +15,12 @@
           {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
         </div>
       </div>
-      {% if run.selected_tags %}
+      {% if run.selected_groups %}
         <div class="control">
           <div class="tags has-addons">
-            <span class="tag is-dark">Selected tags</span>
+            <span class="tag is-dark">Selected groups</span>
             <span class="tag is-warning">
-              {% for tag in run.selected_tags %}
+              {% for tag in run.selected_groups %}
                 {% if not forloop.first %},{% endif %}
                 {{ tag }}
               {% endfor %}
