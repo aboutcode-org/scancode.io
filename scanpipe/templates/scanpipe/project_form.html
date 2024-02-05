@@ -191,8 +191,10 @@
         const id = `id_${tag}`;
         return `
           <label class="checkbox ml-2" for="${id}">
-            <input type="checkbox" name="selected_tags" value="${tag}" id="${id}">
-            <span>${tag}</span>
+            <span class="tag is-warning has-text-weight-bold">
+              <input type="checkbox" name="selected_tags" value="${tag}" id="${id}" class="mr-1">
+              ${tag}
+            </span>
           </label>`;
       }
 
