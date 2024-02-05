@@ -204,8 +204,8 @@
           strongElement.innerHTML = '<i class="fa-solid fa-circle-arrow-right"></i> Include:';
           idSelectedGroups.appendChild(strongElement);
 
-          availableGroups.forEach((tag) => {
-            const checkboxHtml = buildCheckbox(tag);
+          availableGroups.forEach((group) => {
+            const checkboxHtml = buildCheckbox(group);
             idSelectedGroups.insertAdjacentHTML('beforeend', checkboxHtml);
           });
         }

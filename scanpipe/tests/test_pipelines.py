@@ -249,28 +249,28 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipelines_class_get_steps_with_groups(self):
         expected = (
-            WithGroups.tagged_with_foo_and_bar,
-            WithGroups.tagged_with_bar,
-            WithGroups.tagged_with_excluded,
-            WithGroups.no_tags,
+            WithGroups.grouped_with_foo_and_bar,
+            WithGroups.grouped_with_bar,
+            WithGroups.grouped_with_excluded,
+            WithGroups.no_groups,
         )
         self.assertEqual(expected, WithGroups.get_steps())
 
-        expected = (WithGroups.no_tags,)
+        expected = (WithGroups.no_grous,)
         self.assertEqual(expected, WithGroups.get_steps(groups=[]))
         self.assertEqual(expected, WithGroups.get_steps(groups=["not"]))
 
         expected = (
-            WithGroups.tagged_with_foo_and_bar,
-            WithGroups.tagged_with_bar,
-            WithGroups.no_tags,
+            WithGroups.grouped_with_foo_and_bar,
+            WithGroups.grouped_with_bar,
+            WithGroups.no_groups,
         )
         self.assertEqual(expected, WithGroups.get_steps(groups=["bar"]))
         self.assertEqual(expected, WithGroups.get_steps(groups=["foo", "bar"]))
 
         expected = (
-            WithGroups.tagged_with_foo_and_bar,
-            WithGroups.no_tags,
+            WithGroups.grouped_with_foo_and_bar,
+            WithGroups.no_groups,
         )
         self.assertEqual(expected, WithGroups.get_steps(groups=["foo"]))
 

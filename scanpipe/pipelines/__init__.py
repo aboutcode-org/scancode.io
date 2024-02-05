@@ -45,9 +45,12 @@ class InputFileError(Exception):
 def group(*groups):
     """Mark a function as part of a particular group."""
 
-    def decorator(func):
-        setattr(func, "groups", groups)
-        return func
+    def decorator(obj):
+        if hasattr(obj, "groups"):
+            obj.tags = obj.groups.union(groups)
+        else:
+            setattr(obj, "groups", set(groups))
+        return obj
 
     return decorator
 

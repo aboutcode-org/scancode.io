@@ -25,32 +25,32 @@ from scanpipe.pipelines import group
 
 
 class WithGroups(Pipeline):
-    """Include "tagged" steps."""
+    """Include "grouped" steps."""
 
     @classmethod
     def steps(cls):
         return (
-            cls.tagged_with_foo_and_bar,
-            cls.tagged_with_bar,
-            cls.tagged_with_excluded,
-            cls.no_tags,
+            cls.grouped_with_foo_and_bar,
+            cls.grouped_with_bar,
+            cls.grouped_with_excluded,
+            cls.no_groups,
         )
 
     @group("foo", "bar")
-    def tagged_with_foo_and_bar(self):
+    def grouped_with_foo_and_bar(self):
         """Step1 doc."""
         pass
 
     @group("bar")
-    def tagged_with_bar(self):
+    def grouped_with_bar(self):
         """Step2 doc."""
         pass
 
     @group("excluded")
-    def tagged_with_excluded(self):
+    def grouped_with_excluded(self):
         """Step2 doc."""
         pass
 
-    def no_tags(self):
+    def no_groups(self):
         """Step2 doc."""
         pass
