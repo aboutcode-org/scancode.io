@@ -698,7 +698,8 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             {
                 "input_sources": project.get_inputs_with_source(),
                 "labels": list(project.labels.all()),
-                "add_pipeline_form": AddPipelineForm(project_runs=pipeline_runs),
+                "add_pipeline_form": AddPipelineForm(),
+                "pipeline_choices": self.get_pipeline_choices(pipeline_runs),
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),
                 "edit_input_tag_from": EditInputSourceTagForm(),
@@ -747,6 +748,29 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             messages.error(request, error_message)
 
         return redirect(project)
+
+    @staticmethod
+    def get_pipeline_choices(pipeline_runs):
+        """
+        Determine pipeline choices based on the project context:
+        1. If no pipelines are assigned to the project:
+           Include all base (non-addon) pipelines.
+        2. If at least one pipeline already exists on the project:
+           Include all addon pipelines and the existing pipeline (useful for
+           potential re-runs in debug mode).
+        """
+        project_run_names = {run.pipeline_name for run in pipeline_runs or []}
+        pipeline_choices = [
+            (name, pipeline_class.get_info())
+            for name, pipeline_class in scanpipe_app.pipelines.items()
+            # no pipelines are assigned to the project
+            if (not pipeline_runs and not pipeline_class.is_addon)
+            # at least one pipeline already exists on the project
+            or (
+                pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
+            )
+        ]
+        return pipeline_choices
 
 
 class ProjectSettingsView(ConditionalLoginRequired, UpdateView):

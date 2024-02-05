@@ -23,13 +23,25 @@
         {% endif %}
         <div class="field">
           <div class="control">
-            {% for label, summary in add_pipeline_form.pipeline.field.choices %}
+            {% for pipeline_name, pipeline_info in pipeline_choices %}
               <div class="mb-3">
                 <label class="radio label mb-0">
-                  <input type="radio" name="pipeline" value="{{ label }}">
-                  {{ label }}
+                  <input type="radio" name="pipeline" value="{{ pipeline_name }}">
+                  {{ pipeline_name }}
                 </label>
-                <p class="help ml-4">{{ summary }}</p>
+                <p class="help ml-4">{{ pipeline_info.summary }}</p>
+                {% if pipeline_info.available_tags %}
+                  <div class="ml-2 mt-1">
+                    {% for tag in pipeline_info.available_tags %}
+                      <label class="checkbox ml-1" for="id_{{ tag }}">
+                        <span class="tag is-warning has-text-weight-bold">
+                          <input type="checkbox" name="selected_tags" value="{{ tag }}" id="id_{{ tag }}" class="mr-1">
+                          {{ tag }}
+                        </span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                {% endif %}
               </div>
             {% endfor %}
           </div>
