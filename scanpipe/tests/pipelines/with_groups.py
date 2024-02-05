@@ -24,7 +24,7 @@ from scanpipe.pipelines import Pipeline
 from scanpipe.pipelines import group
 
 
-class WithTags(Pipeline):
+class WithGroups(Pipeline):
     """Include "tagged" steps."""
 
     @classmethod

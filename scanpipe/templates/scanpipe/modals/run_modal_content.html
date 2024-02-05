@@ -20,9 +20,9 @@
           <div class="tags has-addons">
             <span class="tag is-dark">Selected groups</span>
             <span class="tag is-warning">
-              {% for tag in run.selected_groups %}
+              {% for group in run.selected_groups %}
                 {% if not forloop.first %},{% endif %}
-                {{ tag }}
+                {{ group }}
               {% endfor %}
             </span>
           </div>

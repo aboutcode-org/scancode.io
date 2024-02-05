@@ -120,7 +120,7 @@ class BasePipeline:
             "summary": summary,
             "description": description,
             "steps": cls.get_graph(),
-            "selected_groups": cls.get_selected_groups(),
+            "available_groups": cls.get_available_groups(),
         }
 
     @classmethod
@@ -129,12 +129,12 @@ class BasePipeline:
         return cls.get_info()["summary"]
 
     @classmethod
-    def get_selected_groups(cls):
+    def get_available_groups(cls):
         return list(
             set(
                 group
                 for step in cls.get_steps()
-                for groups in getattr(step, "groups", [])
+                for group in getattr(step, "groups", [])
             )
         )
 

@@ -171,8 +171,8 @@
   {{ pipelines_available_groups|json_script:"pipelines_available_groups" }}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      const idSelectedGroupsDataSource = document.getElementById("pipelines_available_groups");
-      const idSelectedGroupsMapping = JSON.parse(idSelectedGroupsDataSource.textContent);
+      const availableGroupsDataSource = document.getElementById("pipelines_available_groups");
+      const availableGroupsMapping = JSON.parse(availableGroupsDataSource.textContent);
 
       const pipelineSelect = document.getElementById("id_pipeline");
       const idSelectedGroups = document.getElementById("id_selected_groups");
@@ -198,14 +198,14 @@
         const selectedPipelineName = pipelineSelect.value;
         if (!selectedPipelineName) return;
 
-        const idSelectedGroups = idSelectedGroupsMapping[selectedPipelineName];
-        if (idSelectedGroups && idSelectedGroups.length > 0) {
+        const availableGroups = availableGroupsMapping[selectedPipelineName];
+        if (availableGroups && availableGroups.length > 0) {
           const strongElement = document.createElement('strong');
           strongElement.innerHTML = '<i class="fa-solid fa-circle-arrow-right"></i> Include:';
           idSelectedGroups.appendChild(strongElement);
 
-          idSelectedGroups.forEach((group) => {
-            const checkboxHtml = buildCheckbox(group);
+          availableGroups.forEach((tag) => {
+            const checkboxHtml = buildCheckbox(tag);
             idSelectedGroups.insertAdjacentHTML('beforeend', checkboxHtml);
           });
         }

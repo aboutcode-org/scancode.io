@@ -50,7 +50,7 @@ from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
-from scanpipe.tests.pipelines.with_tags import WithTags
+from scanpipe.tests.pipelines.with_groups import WithGroups
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
@@ -247,32 +247,32 @@ class ScanPipePipelinesTest(TestCase):
         expected = "Use a ``steps(cls)`` classmethod to declare the steps."
         self.assertEqual(expected, str(cm.exception))
 
-    def test_scanpipe_pipelines_class_get_steps_with_tags(self):
+    def test_scanpipe_pipelines_class_get_steps_with_groups(self):
         expected = (
-            WithTags.tagged_with_foo_and_bar,
-            WithTags.tagged_with_bar,
-            WithTags.tagged_with_excluded,
-            WithTags.no_tags,
+            WithGroups.tagged_with_foo_and_bar,
+            WithGroups.tagged_with_bar,
+            WithGroups.tagged_with_excluded,
+            WithGroups.no_tags,
         )
-        self.assertEqual(expected, WithTags.get_steps())
+        self.assertEqual(expected, WithGroups.get_steps())
 
-        expected = (WithTags.no_tags,)
-        self.assertEqual(expected, WithTags.get_steps(tags=[]))
-        self.assertEqual(expected, WithTags.get_steps(tags=["not"]))
-
-        expected = (
-            WithTags.tagged_with_foo_and_bar,
-            WithTags.tagged_with_bar,
-            WithTags.no_tags,
-        )
-        self.assertEqual(expected, WithTags.get_steps(tags=["bar"]))
-        self.assertEqual(expected, WithTags.get_steps(tags=["foo", "bar"]))
+        expected = (WithGroups.no_tags,)
+        self.assertEqual(expected, WithGroups.get_steps(groups=[]))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["not"]))
 
         expected = (
-            WithTags.tagged_with_foo_and_bar,
-            WithTags.no_tags,
+            WithGroups.tagged_with_foo_and_bar,
+            WithGroups.tagged_with_bar,
+            WithGroups.no_tags,
         )
-        self.assertEqual(expected, WithTags.get_steps(tags=["foo"]))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["bar"]))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["foo", "bar"]))
+
+        expected = (
+            WithGroups.tagged_with_foo_and_bar,
+            WithGroups.no_tags,
+        )
+        self.assertEqual(expected, WithGroups.get_steps(groups=["foo"]))
 
     def test_scanpipe_pipelines_class_env_loaded_from_config_file(self):
         project1 = Project.objects.create(name="Analysis")
