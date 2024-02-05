@@ -8,6 +8,19 @@
         <button class="delete" type="button" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
+        {% if pipeline_runs %}
+          <div class="message is-info">
+            <div class="message-body">
+              <span class="icon width-1 height-1 mr-1">
+                <i class="fa-solid fa-info-circle"></i>
+              </span>
+              <span>
+                Pipeline selection is <strong>limited to add-ons</strong> as pipelines
+                have already been assigned to this project.
+              </span>
+            </div>
+          </div>
+        {% endif %}
         <div class="field">
           <div class="control">
             {% for label, summary in add_pipeline_form.pipeline.field.choices %}
