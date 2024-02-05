@@ -47,7 +47,7 @@ def group(*groups):
 
     def decorator(obj):
         if hasattr(obj, "groups"):
-            obj.tags = obj.groups.union(groups)
+            obj.groups = obj.groups.union(groups)
         else:
             setattr(obj, "groups", set(groups))
         return obj
