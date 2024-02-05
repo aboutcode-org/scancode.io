@@ -119,13 +119,16 @@ class PipelineBaseForm(forms.Form):
             project.add_pipeline(pipeline, execute_now, selected_tags)
 
 
+class TagsChoiceField(forms.MultipleChoiceField):
+    widget = forms.CheckboxSelectMultiple
+
+    def valid_value(self, value):
+        """Accept all values."""
+        return True
+
+
 class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
-    selected_tags = forms.MultipleChoiceField(
-        # TODO: Dynamic list, or remove any validation
-        choices=[("java", "java"), ("javascript", "javascript")],
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-    )
+    selected_tags = TagsChoiceField(required=False)
 
     class Meta:
         model = Project
