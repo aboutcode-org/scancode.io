@@ -1,6 +1,17 @@
 Changelog
 =========
 
+v33.2.0 (unreleased)
+--------------------
+
+- Refine pipeline choices in the "Add pipeline" modal based on the project context.
+   * When there is at least one existing pipeline in the project, the modal now includes
+     all addon pipelines along with the existing pipeline for selection.
+   * In cases where no pipelines are assigned to the project, the modal displays all
+     base (non-addon) pipelines for user selection.
+
+   https://github.com/nexB/scancode.io/issues/
+
 v33.1.0 (2024-02-02)
 --------------------
 

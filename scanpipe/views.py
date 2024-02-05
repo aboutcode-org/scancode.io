@@ -693,7 +693,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             {
                 "input_sources": project.get_inputs_with_source(),
                 "labels": list(project.labels.all()),
-                "add_pipeline_form": AddPipelineForm(),
+                "add_pipeline_form": AddPipelineForm(project_runs=pipeline_runs),
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),
                 "edit_input_tag_from": EditInputSourceTagForm(),
