@@ -67,9 +67,10 @@ class ScanPipePipelinesTest(TestCase):
             "description": "Description section of the doc string.",
             "summary": "Do nothing, in 2 steps.",
             "steps": [
-                {"name": "step1", "doc": "Step1 doc."},
-                {"name": "step2", "doc": "Step2 doc."},
+                {"name": "step1", "doc": "Step1 doc.", "groups": []},
+                {"name": "step2", "doc": "Step2 doc.", "groups": []},
             ],
+            "available_groups": [],
         }
         self.assertEqual(expected, DoNothing.get_info())
 
@@ -77,8 +78,9 @@ class ScanPipePipelinesTest(TestCase):
             "summary": "Profile a step using the @profile decorator.",
             "description": "",
             "steps": [
-                {"name": "step", "doc": ""},
+                {"name": "step", "doc": "", "groups": []},
             ],
+            "available_groups": [],
         }
         self.assertEqual(expected, ProfileStep.get_info())
 
