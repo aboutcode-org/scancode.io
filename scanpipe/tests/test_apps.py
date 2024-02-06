@@ -150,3 +150,26 @@ class ScanPipeAppsTest(TestCase):
         self.assertEqual(
             "analyze_docker_image", scanpipe_app.get_new_pipeline_name("docker")
         )
+
+    def test_scanpipe_apps_extract_group_from_pipeline(self):
+        pipeline = "map_deploy_to_develop"
+
+        pipeline_str = pipeline
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual(None, groups)
+
+        pipeline_str = "map_deploy_to_develop:"
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual([], groups)
+
+        pipeline_str = "map_deploy_to_develop:group1"
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual(["group1"], groups)
+
+        pipeline_str = "map_deploy_to_develop:group1,group2"
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline_str)
+        self.assertEqual(pipeline, pipeline_name)
+        self.assertEqual(["group1", "group2"], groups)

@@ -26,6 +26,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
+from scanpipe.management.commands import extract_group_from_pipelines
 from scanpipe.management.commands import validate_copy_from
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
@@ -43,8 +44,9 @@ class Command(AddInputCommandMixin, BaseCommand):
             dest="pipelines",
             default=list(),
             help=(
-                "Pipelines names to add to the project."
-                "The pipelines are added and executed based on their given order."
+                "Pipelines names to add to the project. "
+                "The pipelines are added and executed based on their given order. "
+                'Groups can be provided using the "pipeline_name:group1,group2" syntax.'
             ),
         )
         parser.add_argument(
@@ -68,7 +70,7 @@ class Command(AddInputCommandMixin, BaseCommand):
 
     def handle(self, *args, **options):
         name = options["name"]
-        pipeline_names = options["pipelines"]
+        pipelines = options["pipelines"]
         input_files = options["input_files"]
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
@@ -84,22 +86,24 @@ class Command(AddInputCommandMixin, BaseCommand):
             raise CommandError("\n".join(e.messages))
 
         # Run validation before creating the project in the database
-        pipeline_names = validate_pipelines(pipeline_names)
+        pipelines_data = extract_group_from_pipelines(pipelines)
+        pipelines_data = validate_pipelines(pipelines_data)
+
         input_files_data = self.extract_tag_from_input_files(input_files)
         self.validate_input_files(input_files=input_files_data.keys())
         validate_copy_from(copy_from)
 
-        if execute and not pipeline_names:
+        if execute and not pipelines:
             raise CommandError("The --execute option requires one or more pipelines.")
 
         project.save()
+        self.project = project
         msg = f"Project {name} created with work directory {project.work_directory}"
         self.stdout.write(msg, self.style.SUCCESS)
 
-        for pipeline_name in pipeline_names:
-            project.add_pipeline(pipeline_name)
+        for pipeline_name, selected_groups in pipelines_data.items():
+            self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
 
-        self.project = project
         if input_files:
             self.handle_input_files(input_files_data)
 

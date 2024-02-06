@@ -4,13 +4,18 @@ Changelog
 v33.2.0 (unreleased)
 --------------------
 
+- Add ability to "group" pipeline steps to control their inclusion in a pipeline run.
+  The groups can be selected in the UI, or provided using the
+  "pipeline_name:group1,group2" syntax in CLI and REST API.
+  https://github.com/nexB/scancode.io/issues/1045
+
 - Refine pipeline choices in the "Add pipeline" modal based on the project context.
    * When there is at least one existing pipeline in the project, the modal now includes
      all addon pipelines along with the existing pipeline for selection.
    * In cases where no pipelines are assigned to the project, the modal displays all
      base (non-addon) pipelines for user selection.
 
-   https://github.com/nexB/scancode.io/issues/
+   https://github.com/nexB/scancode.io/issues/1071
 
 v33.1.0 (2024-02-02)
 --------------------

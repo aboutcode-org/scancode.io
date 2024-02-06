@@ -32,4 +32,7 @@ class Command(ProjectCommand, RunStatusCommandMixin):
 
         for run in self.project.runs.all():
             status_code = self.get_run_status_code(run)
-            self.stdout.write(f" [{status_code}] {run.pipeline_name}")
+            output = f" [{status_code}] {run.pipeline_name}"
+            if run.selected_groups:
+                output += f" ({','.join(run.selected_groups)})"
+            self.stdout.write(output)

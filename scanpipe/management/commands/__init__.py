@@ -152,14 +152,22 @@ class AddInputCommandMixin:
             action="append",
             dest="input_files",
             default=list(),
-            help="Input file locations to copy in the input/ work directory.",
+            help=(
+                "Input file locations to copy in the input/ work directory. "
+                'Use the "filename:tag" syntax to tag input files such as '
+                '"path/filename:tag"'
+            ),
         )
         parser.add_argument(
             "--input-url",
             action="append",
             dest="input_urls",
             default=list(),
-            help="Input URLs to download in the input/ work directory.",
+            help=(
+                "Input URLs to download in the input/ work directory. "
+                'Use the "url#tag" syntax to tag downloaded files such as '
+                '"https://url.com/filename#tag"'
+            ),
         )
         parser.add_argument(
             "--copy-codebase",
@@ -251,19 +259,32 @@ def validate_copy_from(copy_from):
             raise CommandError(f"{copy_from} is not a directory")
 
 
-def validate_pipelines(pipeline_names):
+def extract_group_from_pipelines(pipelines):
+    """
+    Add support for the ":group1,group2" suffix in pipeline data.
+
+    For example: "map_deploy_to_develop:Java,JavaScript"
+    """
+    pipelines_data = {}
+    for pipeline in pipelines:
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
+        pipelines_data[pipeline_name] = groups
+    return pipelines_data
+
+
+def validate_pipelines(pipelines_data):
     """Raise an error if one of the `pipeline_names` is not available."""
     # Backward compatibility with old pipeline names.
-    pipeline_names = [
-        scanpipe_app.get_new_pipeline_name(pipeline_name)
-        for pipeline_name in pipeline_names
-    ]
+    pipelines_data = {
+        scanpipe_app.get_new_pipeline_name(pipeline_name): groups
+        for pipeline_name, groups in pipelines_data.items()
+    }
 
-    for pipeline_name in pipeline_names:
+    for pipeline_name in pipelines_data.keys():
         if pipeline_name not in scanpipe_app.pipelines:
             raise CommandError(
                 f"{pipeline_name} is not a valid pipeline. \n"
                 f"Available: {', '.join(scanpipe_app.pipelines.keys())}"
             )
 
-    return pipeline_names
+    return pipelines_data

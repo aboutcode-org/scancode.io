@@ -278,6 +278,11 @@ Data:
     - ``pipeline``: The pipeline name
     - ``execute_now``: ``true`` or ``false``
 
+.. tip::
+    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+
+    ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
+
 Using cURL:
 
 .. code-block:: console

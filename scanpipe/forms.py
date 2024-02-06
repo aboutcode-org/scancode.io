@@ -100,6 +100,14 @@ class InputsBaseForm(forms.Form):
             project.add_input_source(download_url=url)
 
 
+class GroupChoiceField(forms.MultipleChoiceField):
+    widget = forms.CheckboxSelectMultiple
+
+    def valid_value(self, value):
+        """Accept all values."""
+        return True
+
+
 class PipelineBaseForm(forms.Form):
     pipeline = forms.ChoiceField(
         choices=scanpipe_app.get_pipeline_choices(),
@@ -110,12 +118,14 @@ class PipelineBaseForm(forms.Form):
         initial=True,
         required=False,
     )
+    selected_groups = GroupChoiceField(required=False)
 
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]
+        selected_groups = self.cleaned_data.get("selected_groups", [])
         if pipeline:
-            project.add_pipeline(pipeline, execute_now)
+            project.add_pipeline(pipeline, execute_now, selected_groups)
 
 
 class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
@@ -127,6 +137,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_urls",
             "pipeline",
             "execute_now",
+            "selected_groups",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -158,31 +169,10 @@ class AddInputsForm(InputsBaseForm, forms.Form):
 
 class AddPipelineForm(PipelineBaseForm):
     pipeline = forms.ChoiceField(
+        choices=scanpipe_app.get_pipeline_choices(),
         widget=forms.RadioSelect(),
         required=True,
     )
-
-    def __init__(self, project_runs=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # The pipeline choices are determined based on the project context:
-        # 1. If no pipelines are assigned to the project:
-        #    Include all base (non-addon) pipelines.
-        # 2. If at least one pipeline already exists on the project:
-        #    Include all addon pipelines and the existing pipeline (useful for
-        #    potential re-runs in debug mode).
-        project_run_names = {run.pipeline_name for run in project_runs or []}
-
-        pipeline_choices = [
-            (name, pipeline_class.get_summary())
-            for name, pipeline_class in scanpipe_app.pipelines.items()
-            # no pipelines are assigned to the project
-            if (not project_runs and not pipeline_class.is_addon)
-            # at least one pipeline already exists on the project
-            or (project_runs and (name in project_run_names or pipeline_class.is_addon))
-        ]
-
-        self.fields["pipeline"].choices = pipeline_choices
 
     def save(self, project):
         self.handle_pipeline(project)

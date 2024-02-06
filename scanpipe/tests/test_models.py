@@ -36,6 +36,7 @@ from unittest import skipIf
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DataError
@@ -228,7 +229,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.update(settings={"extract_recursively": True})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
-        run1 = self.project1.add_pipeline("analyze_docker_image")
+        run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
         run2 = self.project1.add_pipeline("find_vulnerabilities")
         subscription1 = self.project1.add_webhook_subscription("http://domain.url")
 
@@ -264,6 +265,7 @@ class ScanPipeModelsTest(TestCase):
             [run.pipeline_name for run in runs],
         )
         self.assertNotEqual(run1.pk, runs[0].pk)
+        self.assertEqual(run1.selected_groups, runs[0].selected_groups)
         self.assertNotEqual(run2.pk, runs[1].pk)
         self.assertEqual(1, len(cloned_project2.webhooksubscriptions.all()))
         cloned_subscription = cloned_project2.webhooksubscriptions.get()
@@ -769,6 +771,20 @@ class ScanPipeModelsTest(TestCase):
         run1.set_current_step("")
         run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual("", run1.current_step)
+
+    def test_scanpipe_run_model_selected_groups(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual(None, run1.selected_groups)
+
+        # Empty list has not the same behavior as None
+        run1.update(selected_groups=[])
+        self.assertEqual([], run1.selected_groups)
+
+        run1.update(selected_groups=["foo"])
+        self.assertEqual(["foo"], run1.selected_groups)
+
+        run1.update(selected_groups=["foo", "bar"])
+        self.assertEqual(["foo", "bar"], run1.selected_groups)
 
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
@@ -2156,6 +2172,22 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertTrue(run1.can_start)
         run1.start()
         mock_execute_task.assert_called_once()
+
+    def test_scanpipe_project_model_add_pipeline_selected_groups(self):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "scan_codebase"
+
+        run1 = project1.add_pipeline(pipeline_name, selected_groups=[])
+        self.assertEqual([], run1.selected_groups)
+
+        run2 = project1.add_pipeline(pipeline_name, selected_groups=["foo"])
+        self.assertEqual(["foo"], run2.selected_groups)
+
+        run3 = project1.add_pipeline(pipeline_name, selected_groups=["foo", "bar"])
+        self.assertEqual(["foo", "bar"], run3.selected_groups)
+
+        with self.assertRaises(ValidationError):
+            project1.add_pipeline(pipeline_name, selected_groups={})
 
     def test_scanpipe_project_model_add_info(self):
         project1 = Project.objects.create(name="Analysis")

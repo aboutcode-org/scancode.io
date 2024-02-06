@@ -84,6 +84,11 @@ Optional arguments:
 
 - ``--pipeline PIPELINES`` Pipelines names to add on the project.
 
+.. tip::
+    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+
+    ``--pipeline map_deploy_to_develop:Java,JavaScript``
+
 - ``--input-file INPUTS_FILES`` Input file locations to copy in the :guilabel:`input/`
   work directory.
 
@@ -190,6 +195,11 @@ add the docker pipeline to your project::
 
     $ scanpipe add-pipeline --project foo analyze_docker_image
 
+.. tip::
+    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+
+    ``--pipeline map_deploy_to_develop:Java,JavaScript``
+
 
 `$ scanpipe execute --project PROJECT`
 --------------------------------------
@@ -200,6 +210,7 @@ Optional arguments:
 
 - ``--async`` Add the pipeline run to the tasks queue for execution by a worker instead
   of running in the current thread.
+
 
 `$ scanpipe show-pipeline --project PROJECT`
 --------------------------------------------

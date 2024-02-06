@@ -24,7 +24,6 @@ import json
 import os
 import sys
 import tempfile
-import warnings
 from pathlib import Path
 from unittest import mock
 from unittest import skipIf
@@ -51,6 +50,7 @@ from scanpipe.tests import package_data1
 from scanpipe.tests.pipelines.do_nothing import DoNothing
 from scanpipe.tests.pipelines.profile_step import ProfileStep
 from scanpipe.tests.pipelines.steps_as_attribute import StepsAsAttribute
+from scanpipe.tests.pipelines.with_groups import WithGroups
 
 from_docker_image = os.environ.get("FROM_DOCKER_IMAGE")
 
@@ -67,9 +67,10 @@ class ScanPipePipelinesTest(TestCase):
             "description": "Description section of the doc string.",
             "summary": "Do nothing, in 2 steps.",
             "steps": [
-                {"name": "step1", "doc": "Step1 doc."},
-                {"name": "step2", "doc": "Step2 doc."},
+                {"name": "step1", "doc": "Step1 doc.", "groups": []},
+                {"name": "step2", "doc": "Step2 doc.", "groups": []},
             ],
+            "available_groups": [],
         }
         self.assertEqual(expected, DoNothing.get_info())
 
@@ -77,8 +78,9 @@ class ScanPipePipelinesTest(TestCase):
             "summary": "Profile a step using the @profile decorator.",
             "description": "",
             "steps": [
-                {"name": "step", "doc": ""},
+                {"name": "step", "doc": "", "groups": []},
             ],
+            "available_groups": [],
         }
         self.assertEqual(expected, ProfileStep.get_info())
 
@@ -213,8 +215,8 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipelines_class_get_graph(self):
         expected = [
-            {"doc": "Step1 doc.", "name": "step1"},
-            {"doc": "Step2 doc.", "name": "step2"},
+            {"name": "step1", "doc": "Step1 doc.", "groups": []},
+            {"name": "step2", "doc": "Step2 doc.", "groups": []},
         ]
         self.assertEqual(expected, DoNothing.get_graph())
 
@@ -242,17 +244,41 @@ class ScanPipePipelinesTest(TestCase):
         )
         self.assertEqual(expected, DoNothing.get_steps())
 
-        expected = (StepsAsAttribute.step1,)
-        with warnings.catch_warnings(record=True) as caught_warnings:
-            self.assertEqual(expected, StepsAsAttribute.get_steps())
-            self.assertEqual(len(caught_warnings), 1)
-            caught_warning = caught_warnings[0]
+        with self.assertRaises(TypeError) as cm:
+            StepsAsAttribute.get_steps()
+        expected = "Use a ``steps(cls)`` classmethod to declare the steps."
+        self.assertEqual(expected, str(cm.exception))
+
+    def test_scanpipe_pipelines_class_get_steps_with_groups(self):
+        expected = (
+            WithGroups.grouped_with_foo_and_bar,
+            WithGroups.grouped_with_bar,
+            WithGroups.grouped_with_excluded,
+            WithGroups.no_groups,
+        )
+        self.assertEqual(expected, WithGroups.get_steps())
+
+        expected = (WithGroups.no_groups,)
+        self.assertEqual(expected, WithGroups.get_steps(groups=[]))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["not"]))
 
         expected = (
-            f"Defining ``steps`` as a tuple is deprecated in {StepsAsAttribute} "
-            f"Use a ``steps(cls)`` classmethod instead."
+            WithGroups.grouped_with_foo_and_bar,
+            WithGroups.grouped_with_bar,
+            WithGroups.no_groups,
         )
-        self.assertEqual(expected, str(caught_warning.message))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["bar"]))
+        self.assertEqual(expected, WithGroups.get_steps(groups=["foo", "bar"]))
+
+        expected = (
+            WithGroups.grouped_with_foo_and_bar,
+            WithGroups.no_groups,
+        )
+        self.assertEqual(expected, WithGroups.get_steps(groups=["foo"]))
+
+    def test_scanpipe_pipelines_class_get_available_groups(self):
+        self.assertEqual(["bar", "excluded", "foo"], WithGroups.get_available_groups())
+        self.assertEqual([], DoNothing.get_available_groups())
 
     def test_scanpipe_pipelines_class_env_loaded_from_config_file(self):
         project1 = Project.objects.create(name="Analysis")
