@@ -189,6 +189,17 @@ class ScanPipeConfig(AppConfig):
             return new_name
         return pipeline_name
 
+    @staticmethod
+    def extract_group_from_pipeline(pipeline):
+        pipeline_name = pipeline
+        groups = None
+
+        if ":" in pipeline:
+            pipeline_name, value = pipeline.split(":", maxsplit=1)
+            groups = value.split(",") if value else []
+
+        return pipeline_name, groups
+
     def get_scancode_licenses(self):
         """
         Load licenses-related information from the ScanCode-toolkit ``licensedcode``

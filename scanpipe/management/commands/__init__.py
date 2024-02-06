@@ -267,12 +267,8 @@ def extract_group_from_pipelines(pipelines):
     """
     pipelines_data = {}
     for pipeline in pipelines:
-        if ":" in pipeline:
-            key, value = pipeline.split(":", maxsplit=1)
-            groups = value.split(",")
-            pipelines_data.update({key: groups})
-        else:
-            pipelines_data.update({pipeline: []})
+        pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
+        pipelines_data[pipeline_name] = groups
     return pipelines_data
 
 

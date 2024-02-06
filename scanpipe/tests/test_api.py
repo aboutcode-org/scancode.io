@@ -764,6 +764,16 @@ class ScanPipeAPITest(TransactionTestCase):
         self.assertEqual({"status": "Pipeline added."}, response.data)
         self.assertEqual("analyze_docker_image", self.project1.runs.get().pipeline_name)
 
+    def test_scanpipe_api_project_action_add_pipeline_groups(self):
+        url = reverse("project-add-pipeline", args=[self.project1.uuid])
+        data = {
+            "pipeline": "analyze_docker_image:group1,group2",
+            "execute_now": False,
+        }
+        response = self.csrf_client.post(url, data=data)
+        self.assertEqual({"status": "Pipeline added."}, response.data)
+        self.assertEqual("analyze_docker_image", self.project1.runs.get().pipeline_name)
+
     def test_scanpipe_api_project_action_add_input(self):
         url = reverse("project-add-input", args=[self.project1.uuid])
         response = self.csrf_client.get(url)
