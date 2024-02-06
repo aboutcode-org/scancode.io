@@ -325,6 +325,26 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("analyze_docker_image", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
+    def test_scanpipe_views_project_details_get_pipeline_choices(self):
+        main_pipeline1 = "scan_codebase"
+        main_pipeline2 = "scan_single_package"
+        addon_pipeline = "find_vulnerabilities"
+
+        choices = ProjectDetailView.get_pipeline_choices(pipeline_runs=[])
+        pipeline_choices = [choice[0] for choice in choices]
+        self.assertIn(main_pipeline1, pipeline_choices)
+        self.assertIn(main_pipeline2, pipeline_choices)
+        self.assertNotIn(addon_pipeline, pipeline_choices)
+
+        self.project1.add_pipeline(pipeline_name=main_pipeline1)
+        choices = ProjectDetailView.get_pipeline_choices(
+            pipeline_runs=self.project1.runs.all()
+        )
+        pipeline_choices = [choice[0] for choice in choices]
+        self.assertIn(main_pipeline1, pipeline_choices)
+        self.assertNotIn(main_pipeline2, pipeline_choices)
+        self.assertIn(addon_pipeline, pipeline_choices)
+
     def test_scanpipe_views_project_details_add_labels(self):
         url = self.project1.get_absolute_url()
         data = {

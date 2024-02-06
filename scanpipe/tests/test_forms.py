@@ -27,7 +27,6 @@ from django.test import TestCase
 
 import requests
 
-from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import InputsBaseForm
 from scanpipe.forms import ProjectForm
@@ -91,26 +90,6 @@ class ScanPipeFormsTest(TestCase):
         self.assertIn(blank_entry, choices)
         self.assertIn(main_pipeline, choices)
         self.assertNotIn(addon_pipeline, choices)
-
-    def test_scanpipe_forms_add_pipeline_form_pipeline_choices(self):
-        main_pipeline1 = "scan_codebase"
-        main_pipeline2 = "scan_single_package"
-        addon_pipeline = "find_vulnerabilities"
-
-        form = AddPipelineForm()
-        choices = form.fields["pipeline"].choices
-        pipeline_choices = [choice[0] for choice in choices]
-        self.assertIn(main_pipeline1, pipeline_choices)
-        self.assertIn(main_pipeline2, pipeline_choices)
-        self.assertNotIn(addon_pipeline, pipeline_choices)
-
-        self.project1.add_pipeline(pipeline_name=main_pipeline1)
-        form = AddPipelineForm(project_runs=self.project1.runs.all())
-        choices = form.fields["pipeline"].choices
-        pipeline_choices = [choice[0] for choice in choices]
-        self.assertIn(main_pipeline1, pipeline_choices)
-        self.assertNotIn(main_pipeline2, pipeline_choices)
-        self.assertIn(addon_pipeline, pipeline_choices)
 
     def test_scanpipe_forms_project_settings_form_update_name_and_notes(self):
         data = {

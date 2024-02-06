@@ -133,11 +133,11 @@ class BasePipeline:
 
     @classmethod
     def get_available_groups(cls):
-        return list(
+        return sorted(
             set(
-                group
+                group_name
                 for step in cls.get_steps()
-                for group in getattr(step, "groups", [])
+                for group_name in getattr(step, "groups", [])
             )
         )
 

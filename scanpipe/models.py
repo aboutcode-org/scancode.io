@@ -1041,6 +1041,8 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not pipeline_class:
             raise ValueError(f"Unknown pipeline: {pipeline_name}")
 
+        validate_none_or_list(selected_groups)
+
         run = Run.objects.create(
             project=self,
             pipeline_name=pipeline_name,

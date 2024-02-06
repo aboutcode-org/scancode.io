@@ -215,8 +215,8 @@ class ScanPipePipelinesTest(TestCase):
 
     def test_scanpipe_pipelines_class_get_graph(self):
         expected = [
-            {"doc": "Step1 doc.", "name": "step1"},
-            {"doc": "Step2 doc.", "name": "step2"},
+            {"name": "step1", "doc": "Step1 doc.", "groups": []},
+            {"name": "step2", "doc": "Step2 doc.", "groups": []},
         ]
         self.assertEqual(expected, DoNothing.get_graph())
 
@@ -258,7 +258,7 @@ class ScanPipePipelinesTest(TestCase):
         )
         self.assertEqual(expected, WithGroups.get_steps())
 
-        expected = (WithGroups.no_grous,)
+        expected = (WithGroups.no_groups,)
         self.assertEqual(expected, WithGroups.get_steps(groups=[]))
         self.assertEqual(expected, WithGroups.get_steps(groups=["not"]))
 
@@ -275,6 +275,10 @@ class ScanPipePipelinesTest(TestCase):
             WithGroups.no_groups,
         )
         self.assertEqual(expected, WithGroups.get_steps(groups=["foo"]))
+
+    def test_scanpipe_pipelines_class_get_available_groups(self):
+        self.assertEqual(["bar", "excluded", "foo"], WithGroups.get_available_groups())
+        self.assertEqual([], DoNothing.get_available_groups())
 
     def test_scanpipe_pipelines_class_env_loaded_from_config_file(self):
         project1 = Project.objects.create(name="Analysis")

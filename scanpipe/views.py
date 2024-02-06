@@ -766,9 +766,7 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             # no pipelines are assigned to the project
             if (not pipeline_runs and not pipeline_class.is_addon)
             # at least one pipeline already exists on the project
-            or (
-                pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
-            )
+            or pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
         ]
         return pipeline_choices
 
