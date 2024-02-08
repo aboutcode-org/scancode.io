@@ -344,3 +344,125 @@ def find_packages(payload):
     response = request_get(package_api_url, payload=payload)
     if response and response.get("count") > 0:
         return response.get("results")
+
+
+def poll_until_success(run_url, sleep=10):
+    """
+    Given a URL to a scancode.io run instance, `run_url`, return True when the
+    run instance has completed successfully.
+
+    Raise a PurlDBException when the run instance has failed, stopped, or gone
+    stale.
+    """
+    run_status = AbstractTaskFieldsModel.Status
+    while True:
+        response = request_get(run_url)
+        if response:
+            status = response["status"]
+            if status == run_status.SUCCESS:
+                return True
+
+            if status in [
+                run_status.NOT_STARTED,
+                run_status.QUEUED,
+                run_status.RUNNING,
+            ]:
+                continue
+
+            if status in [
+                run_status.FAILURE,
+                run_status.STOPPED,
+                run_status.STALE,
+            ]:
+                log = response["log"]
+                msg = f"Matching run has stopped:\n\n{log}"
+                raise PurlDBException(msg)
+
+        time.sleep(sleep)
+
+
+def get_match_results(run_url):
+    """
+    Given the `run_url` for a pipeline running the matchcode matching pipeline,
+    return the match results for that run.
+    """
+    response = request_get(run_url)
+    project_url = response["project"]
+    # `project_url` can have params, such as "?format=json"
+    if "?" in project_url:
+        project_url, _ = project_url.split("?")
+    project_url = project_url.rstrip("/")
+    results_url = project_url + "/results/"
+    return request_get(results_url)
+
+
+def map_match_results(match_results):
+    """
+    Given `match_results`, which is a mapping of ScanCode.io codebase results,
+    return a defaultdict(list) where the keys are the package_uid of matched
+    packages and the value is a list containing the paths of Resources
+    associated with the package_uid.
+    """
+    resource_results = match_results.get("files", [])
+    resource_paths_by_package_uids = defaultdict(list)
+    for resource in resource_results:
+        for_packages = resource.get("for_packages", [])
+        for package_uid in for_packages:
+            resource_paths_by_package_uids[package_uid].append(resource["path"])
+    return resource_paths_by_package_uids
+
+
+def create_packages_from_match_results(project, match_results):
+    """
+    Given `match_results`, which is a mapping of ScanCode.io codebase results,
+    use the Package data from it to create DiscoveredPackages for `project` and
+    associate the proper Resources of `project` to the DiscoveredPackages.
+    """
+    from scanpipe.pipes.d2d import create_package_from_purldb_data
+
+    resource_paths_by_package_uids = map_match_results(match_results)
+    matched_packages = match_results.get("packages", [])
+    for matched_package in matched_packages:
+        package_uid = matched_package["package_uid"]
+        resource_paths = resource_paths_by_package_uids[package_uid]
+        resources = project.codebaseresources.filter(path__in=resource_paths)
+        create_package_from_purldb_data(
+            project,
+            resources=resources,
+            package_data=matched_package,
+            status=flag.MATCHED_TO_PURLDB_PACKAGE,
+        )
+
+
+def get_next_job(
+    timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
+):
+    """
+    Return the download URL and Package UUID of the next Package to be scanned from PurlDB
+
+    Return None if no job is available
+    """
+    response = request_get(
+        url=f"{api_url}scan_queue/get_next_download_url",
+        timeout=timeout,
+    )
+    if response:
+        download_url = response['download_url']
+        package_uuid = response['package_uuid']
+        return download_url, package_uuid
+
+
+def send_results_to_purldb(
+    package_uuid, scan_output_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL,
+):
+    with open(scan_output_location, "rb") as f:
+        data={
+            "package_uuid": package_uuid,
+            "scan_file": f,
+        }
+        response = request_post(
+            url=f"{api_url}scan_queue/submit_scan_results",
+            timeout=timeout,
+            data=data,
+        )
+    return response
