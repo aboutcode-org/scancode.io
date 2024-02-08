@@ -22,6 +22,7 @@
 
 from django import forms
 from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
 
 from taggit.forms import TagField
@@ -99,6 +100,14 @@ class InputsBaseForm(forms.Form):
             project.add_input_source(download_url=url)
 
 
+class GroupChoiceField(forms.MultipleChoiceField):
+    widget = forms.CheckboxSelectMultiple
+
+    def valid_value(self, value):
+        """Accept all values."""
+        return True
+
+
 class PipelineBaseForm(forms.Form):
     pipeline = forms.ChoiceField(
         choices=scanpipe_app.get_pipeline_choices(),
@@ -109,12 +118,14 @@ class PipelineBaseForm(forms.Form):
         initial=True,
         required=False,
     )
+    selected_groups = GroupChoiceField(required=False)
 
     def handle_pipeline(self, project):
         pipeline = self.cleaned_data["pipeline"]
         execute_now = self.cleaned_data["execute_now"]
+        selected_groups = self.cleaned_data.get("selected_groups", [])
         if pipeline:
-            project.add_pipeline(pipeline, execute_now)
+            project.add_pipeline(pipeline, execute_now, selected_groups)
 
 
 class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
@@ -126,6 +137,7 @@ class ProjectForm(InputsBaseForm, PipelineBaseForm, forms.ModelForm):
             "input_urls",
             "pipeline",
             "execute_now",
+            "selected_groups",
         ]
 
     def __init__(self, *args, **kwargs):
@@ -157,10 +169,7 @@ class AddInputsForm(InputsBaseForm, forms.Form):
 
 class AddPipelineForm(PipelineBaseForm):
     pipeline = forms.ChoiceField(
-        choices=[
-            (name, pipeline_class.get_summary())
-            for name, pipeline_class in scanpipe_app.pipelines.items()
-        ],
+        choices=scanpipe_app.get_pipeline_choices(),
         widget=forms.RadioSelect(),
         required=True,
     )
@@ -181,6 +190,27 @@ class AddLabelsForm(forms.Form):
     def save(self, project):
         project.labels.add(*self.cleaned_data["labels"])
         return project
+
+
+class EditInputSourceTagForm(forms.Form):
+    input_source_uuid = forms.CharField(
+        max_length=50,
+        widget=forms.widgets.HiddenInput,
+        required=True,
+    )
+    tag = forms.CharField(
+        widget=forms.TextInput(attrs={"class": "input"}),
+    )
+
+    def save(self, project):
+        input_source_uuid = self.cleaned_data.get("input_source_uuid")
+        try:
+            input_source = project.inputsources.get(uuid=input_source_uuid)
+        except (ValidationError, ObjectDoesNotExist):
+            return
+
+        input_source.update(tag=self.cleaned_data.get("tag", ""))
+        return input_source
 
 
 class ArchiveProjectForm(forms.Form):

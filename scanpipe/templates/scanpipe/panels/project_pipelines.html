@@ -15,7 +15,6 @@
       <button class="button is-link is-outlined is-fullwidth modal-button" data-target="add-pipeline-modal" aria-haspopup="true">
         Add pipeline
       </button>
-      {% include "scanpipe/modals/add_pipeline_modal.html" %}
       {% if project.can_start_pipelines %}
         <a class="button is-success is-fullwidth ml-2 execute-pipeline-link" href="{% url 'project_execute_pipelines' project.slug %}">
           <span class="icon width-1">
@@ -26,4 +25,5 @@
       {% endif %}
     {% endif %}
   </div>
+  {% include "scanpipe/modals/add_pipeline_modal.html" %}
 </article>

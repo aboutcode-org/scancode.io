@@ -32,6 +32,7 @@ from itertools import groupby
 from operator import itemgetter
 from pathlib import Path
 from traceback import format_tb
+from urllib.parse import urlparse
 
 from django.apps import apps
 from django.conf import settings
@@ -690,7 +691,9 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         if copy_pipelines:
             for run in self.runs.all():
-                cloned_project.add_pipeline(run.pipeline_name, execute_now)
+                cloned_project.add_pipeline(
+                    run.pipeline_name, execute_now, selected_groups=run.selected_groups
+                )
 
         if copy_subscriptions:
             for subscription in self.webhooksubscriptions.all():
@@ -975,7 +978,7 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
 
         return move_input(input_location, self.input_path)
 
-    def add_input_source(self, download_url="", filename="", is_uploaded=False):
+    def add_input_source(self, download_url="", filename="", is_uploaded=False, tag=""):
         """
         Create a InputFile entry for the current project, given a `download_url` or
         a `filename`.
@@ -983,11 +986,17 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not download_url and not filename:
             raise Exception("Provide at least a value for download_url or filename.")
 
+        # Add tag can be provided using the "#<fragment>" part of the URL
+        if download_url:
+            parsed_url = urlparse(download_url)
+            tag = parsed_url.fragment or tag
+
         return InputSource.objects.create(
             project=self,
             download_url=download_url,
             filename=filename,
             is_uploaded=is_uploaded,
+            tag=tag,
         )
 
     def add_downloads(self, downloads):
@@ -1002,16 +1011,23 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
                 filename=downloaded.filename,
             )
 
+    def add_upload(self, uploaded_file, tag=""):
+        """
+        Write the given `upload` to the current project's input/ directory and
+        adds the `input_source`.
+        """
+        self.write_input_file(uploaded_file)
+        self.add_input_source(filename=uploaded_file.name, is_uploaded=True, tag=tag)
+
     def add_uploads(self, uploads):
         """
         Write the given `uploads` to the current project's input/ directory and
         adds the `input_source` for each entry.
         """
-        for uploaded in uploads:
-            self.write_input_file(uploaded)
-            self.add_input_source(filename=uploaded.name, is_uploaded=True)
+        for uploaded_file in uploads:
+            self.add_upload(uploaded_file)
 
-    def add_pipeline(self, pipeline_name, execute_now=False):
+    def add_pipeline(self, pipeline_name, execute_now=False, selected_groups=None):
         """
         Create a new Run instance with the provided `pipeline` on the current project.
 
@@ -1025,10 +1041,13 @@ class Project(UUIDPKModel, ExtraDataFieldMixin, UpdateMixin, models.Model):
         if not pipeline_class:
             raise ValueError(f"Unknown pipeline: {pipeline_name}")
 
+        validate_none_or_list(selected_groups)
+
         run = Run.objects.create(
             project=self,
             pipeline_name=pipeline_name,
             description=pipeline_class.get_summary(),
+            selected_groups=selected_groups,
         )
 
         # Do not start the pipeline execution, even if explicitly requested,
@@ -1571,6 +1590,11 @@ class RunQuerySet(ProjectRelatedQuerySet):
         return self.filter(task_id__isnull=False, task_end_date__isnull=True)
 
 
+def validate_none_or_list(value):
+    if value is not None and not isinstance(value, list):
+        raise ValidationError("Value must be a list.")
+
+
 class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     """The Database representation of a pipeline execution."""
 
@@ -1582,6 +1606,9 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
     scancodeio_version = models.CharField(max_length=30, blank=True)
     description = models.TextField(blank=True)
     current_step = models.CharField(max_length=256, blank=True)
+    selected_groups = models.JSONField(
+        null=True, blank=True, validators=[validate_none_or_list]
+    )
 
     objects = RunQuerySet.as_manager()
 
@@ -1793,12 +1820,12 @@ class Run(UUIDPKModel, ProjectRelatedModel, AbstractTaskFieldsModel):
                 print(output_str)
 
 
-def posix_regex_to_django_regex_lookup(regex_pattern):
+def convert_glob_to_django_regex(glob_pattern):
     """
-    Convert a POSIX-style regex pattern to an equivalent pattern compatible with the
-    Django regex lookup.
+    Convert a glob pattern to an equivalent django regex pattern
+    compatible with the Django regex lookup.
     """
-    escaped_pattern = re.escape(regex_pattern)
+    escaped_pattern = re.escape(glob_pattern)
     escaped_pattern = escaped_pattern.replace(r"\*", ".*")  # Replace \* with .*
     escaped_pattern = escaped_pattern.replace(r"\?", ".")  # Replace \? with .
     escaped_pattern = f"^{escaped_pattern}$"  # Add start and end anchors
@@ -1906,8 +1933,8 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return self.filter(~Q((f"{field_name}__in", EMPTY_VALUES)))
 
     def path_pattern(self, pattern):
-        """Resources with a path that match the provided ``pattern``."""
-        return self.filter(path__regex=posix_regex_to_django_regex_lookup(pattern))
+        """Resources with a path that match the provided glob ``pattern``."""
+        return self.filter(path__regex=convert_glob_to_django_regex(pattern))
 
     def has_directory_content_fingerprint(self):
         """

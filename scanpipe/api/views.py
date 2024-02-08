@@ -247,10 +247,11 @@ class ProjectViewSet(
 
         pipeline = request.data.get("pipeline")
         if pipeline:
-            pipeline = scanpipe_app.get_new_pipeline_name(pipeline)
-            if pipeline in scanpipe_app.pipelines:
+            pipeline_name, groups = scanpipe_app.extract_group_from_pipeline(pipeline)
+            pipeline_name = scanpipe_app.get_new_pipeline_name(pipeline_name)
+            if pipeline_name in scanpipe_app.pipelines:
                 execute_now = request.data.get("execute_now")
-                project.add_pipeline(pipeline, execute_now)
+                project.add_pipeline(pipeline_name, execute_now, selected_groups=groups)
                 return Response({"status": "Pipeline added."})
 
             message = {"status": f"{pipeline} is not a valid pipeline."}
@@ -273,6 +274,7 @@ class ProjectViewSet(
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
         upload_file = request.data.get("upload_file")
+        upload_file_tag = request.data.get("upload_file_tag", "")
         input_urls = request.data.get("input_urls", [])
 
         if not (upload_file or input_urls):
@@ -280,7 +282,12 @@ class ProjectViewSet(
             return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
         if upload_file:
-            project.add_uploads([upload_file])
+            project.add_upload(upload_file, tag=upload_file_tag)
+
+        # Add support for providing multiple URLs in a single string.
+        if isinstance(input_urls, str):
+            input_urls = input_urls.split()
+        input_urls = [url for entry in input_urls for url in entry.split()]
 
         for url in input_urls:
             project.add_input_source(download_url=url)

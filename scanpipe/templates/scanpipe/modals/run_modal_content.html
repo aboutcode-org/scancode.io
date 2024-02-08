@@ -15,6 +15,19 @@
           {% include "scanpipe/includes/run_status_tag.html" with run=run only %}
         </div>
       </div>
+      {% if run.selected_groups %}
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Selected groups</span>
+            <span class="tag is-warning">
+              {% for group in run.selected_groups %}
+                {% if not forloop.first %},{% endif %}
+                {{ group }}
+              {% endfor %}
+            </span>
+          </div>
+        </div>
+      {% endif %}
       {% if run.status == run.Status.NOT_STARTED or run.status == run.Status.QUEUED %}
         <a href="{% url 'project_delete_pipeline' project.slug run.uuid %}" class="execute-pipeline-link has-text-danger ml-3">
           <i class="fa-solid fa-trash-alt"></i>

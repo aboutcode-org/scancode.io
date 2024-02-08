@@ -36,6 +36,7 @@ from unittest import skipIf
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.db import DataError
@@ -63,8 +64,8 @@ from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
 from scanpipe.models import RunNotAllowedToStart
 from scanpipe.models import UUIDTaggedItem
+from scanpipe.models import convert_glob_to_django_regex
 from scanpipe.models import get_project_work_directory
-from scanpipe.models import posix_regex_to_django_regex_lookup
 from scanpipe.pipes.fetch import Download
 from scanpipe.pipes.input import copy_input
 from scanpipe.tests import dependency_data1
@@ -228,7 +229,7 @@ class ScanPipeModelsTest(TestCase):
         self.project1.update(settings={"extract_recursively": True})
         new_file_path1 = self.project1.input_path / "file.zip"
         new_file_path1.touch()
-        run1 = self.project1.add_pipeline("analyze_docker_image")
+        run1 = self.project1.add_pipeline("analyze_docker_image", selected_groups=["g"])
         run2 = self.project1.add_pipeline("find_vulnerabilities")
         subscription1 = self.project1.add_webhook_subscription("http://domain.url")
 
@@ -264,6 +265,7 @@ class ScanPipeModelsTest(TestCase):
             [run.pipeline_name for run in runs],
         )
         self.assertNotEqual(run1.pk, runs[0].pk)
+        self.assertEqual(run1.selected_groups, runs[0].selected_groups)
         self.assertNotEqual(run2.pk, runs[1].pk)
         self.assertEqual(1, len(cloned_project2.webhooksubscriptions.all()))
         cloned_subscription = cloned_project2.webhooksubscriptions.get()
@@ -371,7 +373,7 @@ class ScanPipeModelsTest(TestCase):
         self.assertEqual([], self.project1.get_inputs_with_source())
 
         uploaded_file = SimpleUploadedFile("file.ext", content=b"content")
-        self.project1.add_uploads([uploaded_file])
+        self.project1.add_upload(uploaded_file)
         self.project1.copy_input_from(self.data_location / "notice.NOTICE")
         self.project1.add_input_source(filename="missing.zip", is_uploaded=True)
 
@@ -458,11 +460,24 @@ class ScanPipeModelsTest(TestCase):
         expected = "Provide at least a value for download_url or filename."
         self.assertEqual(expected, str(cm.exception))
 
-        self.project1.add_input_source(download_url="https://download.url")
-        self.project1.add_input_source(filename="file.tar", is_uploaded=True)
+        source = self.project1.add_input_source(
+            download_url="https://download.url", tag="tag"
+        )
+        self.assertFalse(source.is_uploaded)
+        self.assertEqual("", source.filename)
+        self.assertEqual("tag", source.tag)
+
+        source = self.project1.add_input_source(filename="file.tar", is_uploaded=True)
+        self.assertTrue(source.is_uploaded)
+        self.assertEqual("", source.download_url)
+        self.assertEqual("", source.tag)
 
         input_sources = self.project1.inputsources.all()
         self.assertEqual(2, len(input_sources))
+
+        url_with_fragment = "https://download.url#tag_value"
+        input_source = self.project1.add_input_source(download_url=url_with_fragment)
+        self.assertEqual("tag_value", input_source.tag)
 
     def test_scanpipe_project_model_add_downloads(self):
         file_location = self.data_location / "notice.NOTICE"
@@ -686,7 +701,7 @@ class ScanPipeModelsTest(TestCase):
         package.refresh_from_db()
         self.assertEqual("pkg:deb/debian/adduser@3.118?arch=all", package.package_url)
 
-    def test_scanpipe_model_posix_regex_to_django_regex_lookup(self):
+    def test_scanpipe_model_convert_glob_to_django_regex(self):
         test_data = [
             ("", r"^$"),
             # Single segment
@@ -718,7 +733,7 @@ class ScanPipeModelsTest(TestCase):
         ]
 
         for pattern, expected in test_data:
-            self.assertEqual(expected, posix_regex_to_django_regex_lookup(pattern))
+            self.assertEqual(expected, convert_glob_to_django_regex(pattern))
 
     def test_scanpipe_run_model_set_scancodeio_version(self):
         run1 = Run.objects.create(project=self.project1)
@@ -756,6 +771,20 @@ class ScanPipeModelsTest(TestCase):
         run1.set_current_step("")
         run1 = Run.objects.get(pk=run1.pk)
         self.assertEqual("", run1.current_step)
+
+    def test_scanpipe_run_model_selected_groups(self):
+        run1 = Run.objects.create(project=self.project1)
+        self.assertEqual(None, run1.selected_groups)
+
+        # Empty list has not the same behavior as None
+        run1.update(selected_groups=[])
+        self.assertEqual([], run1.selected_groups)
+
+        run1.update(selected_groups=["foo"])
+        self.assertEqual(["foo"], run1.selected_groups)
+
+        run1.update(selected_groups=["foo", "bar"])
+        self.assertEqual(["foo", "bar"], run1.selected_groups)
 
     def test_scanpipe_run_model_pipeline_class_property(self):
         run1 = Run.objects.create(project=self.project1, pipeline_name="do_nothing")
@@ -1568,6 +1597,7 @@ class ScanPipeModelsTest(TestCase):
         make_resource_file(self.project1, path="dir/.example")
         make_resource_file(self.project1, path="dir/subdir/readme.html")
         make_resource_file(self.project1, path="foo$.class")
+        make_resource_file(self.project1, path="example-1.0.jar")
 
         patterns = [
             "example",
@@ -1584,6 +1614,7 @@ class ScanPipeModelsTest(TestCase):
             "dir/*/readme.*",
             r"*$.class",
             "*readme.htm?",
+            "example-*.jar",
         ]
 
         for pattern in patterns:
@@ -2141,6 +2172,22 @@ class ScanPipeModelsTransactionTest(TransactionTestCase):
         self.assertTrue(run1.can_start)
         run1.start()
         mock_execute_task.assert_called_once()
+
+    def test_scanpipe_project_model_add_pipeline_selected_groups(self):
+        project1 = Project.objects.create(name="Analysis")
+        pipeline_name = "scan_codebase"
+
+        run1 = project1.add_pipeline(pipeline_name, selected_groups=[])
+        self.assertEqual([], run1.selected_groups)
+
+        run2 = project1.add_pipeline(pipeline_name, selected_groups=["foo"])
+        self.assertEqual(["foo"], run2.selected_groups)
+
+        run3 = project1.add_pipeline(pipeline_name, selected_groups=["foo", "bar"])
+        self.assertEqual(["foo", "bar"], run3.selected_groups)
+
+        with self.assertRaises(ValidationError):
+            project1.add_pipeline(pipeline_name, selected_groups={})
 
     def test_scanpipe_project_model_add_info(self):
         project1 = Project.objects.create(name="Analysis")

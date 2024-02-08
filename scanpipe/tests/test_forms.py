@@ -20,12 +20,14 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
+import uuid
 from unittest import mock
 
 from django.test import TestCase
 
 import requests
 
+from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import InputsBaseForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
@@ -81,13 +83,13 @@ class ScanPipeFormsTest(TestCase):
 
     def test_scanpipe_forms_project_form_pipeline_choices(self):
         blank_entry = ("", "---------")
-        main_pipline = ("scan_codebase", "scan_codebase")
-        addon_pipline = ("find_vulnerabilities", "find_vulnerabilities")
+        main_pipeline = ("scan_codebase", "scan_codebase")
+        addon_pipeline = ("find_vulnerabilities", "find_vulnerabilities")
 
         choices = ProjectForm().fields["pipeline"].choices
         self.assertIn(blank_entry, choices)
-        self.assertIn(main_pipline, choices)
-        self.assertNotIn(addon_pipline, choices)
+        self.assertIn(main_pipeline, choices)
+        self.assertNotIn(addon_pipeline, choices)
 
     def test_scanpipe_forms_project_settings_form_update_name_and_notes(self):
         data = {
@@ -137,3 +139,32 @@ class ScanPipeFormsTest(TestCase):
             "scancode_license_score": 10,
         }
         self.assertEqual(expected, project.get_env())
+
+    def test_scanpipe_forms_edit_input_source_tag_form(self):
+        data = {}
+        form = EditInputSourceTagForm(data=data)
+        self.assertFalse(form.is_valid())
+
+        data = {
+            "input_source_uuid": uuid.uuid4(),
+            "tag": "value",
+        }
+        form = EditInputSourceTagForm(data=data)
+        self.assertTrue(form.is_valid())
+        obj = form.save(project=self.project1)
+        self.assertIsNone(obj)
+
+        input_source = self.project1.add_input_source(
+            filename="filename.zip",
+            is_uploaded=True,
+            tag="base value",
+        )
+        data = {
+            "input_source_uuid": input_source.uuid,
+            "tag": "new value",
+        }
+        form = EditInputSourceTagForm(data=data)
+        self.assertTrue(form.is_valid())
+        obj = form.save(project=self.project1)
+        self.assertEqual(obj, input_source)
+        self.assertEqual(data["tag"], obj.tag)

@@ -70,6 +70,16 @@ Load Inventory
 
 Map Deploy To Develop
 ---------------------
+
+.. warning::
+    This pipeline requires input files to be tagged with the following:
+
+    - "from": For files related to the source code (also known as "develop").
+    - "to": For files related to the build/binaries (also known as "deploy").
+
+    Tagging your input files varies based on whether you are using the REST API,
+    UI, or CLI. Refer to the :ref:`faq_tag_input_files` section for guidance.
+
 .. autoclass:: scanpipe.pipelines.deploy_to_develop.DeployToDevelop()
     :members:
     :member-order: bysource

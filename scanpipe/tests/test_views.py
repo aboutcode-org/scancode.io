@@ -325,6 +325,26 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual("analyze_docker_image", run.pipeline_name)
         self.assertIsNone(run.task_start_date)
 
+    def test_scanpipe_views_project_details_get_pipeline_choices(self):
+        main_pipeline1 = "scan_codebase"
+        main_pipeline2 = "scan_single_package"
+        addon_pipeline = "find_vulnerabilities"
+
+        choices = ProjectDetailView.get_pipeline_choices(pipeline_runs=[])
+        pipeline_choices = [choice[0] for choice in choices]
+        self.assertIn(main_pipeline1, pipeline_choices)
+        self.assertIn(main_pipeline2, pipeline_choices)
+        self.assertNotIn(addon_pipeline, pipeline_choices)
+
+        self.project1.add_pipeline(pipeline_name=main_pipeline1)
+        choices = ProjectDetailView.get_pipeline_choices(
+            pipeline_runs=self.project1.runs.all()
+        )
+        pipeline_choices = [choice[0] for choice in choices]
+        self.assertIn(main_pipeline1, pipeline_choices)
+        self.assertNotIn(main_pipeline2, pipeline_choices)
+        self.assertIn(addon_pipeline, pipeline_choices)
+
     def test_scanpipe_views_project_details_add_labels(self):
         url = self.project1.get_absolute_url()
         data = {
@@ -348,6 +368,23 @@ class ScanPipeViewsTest(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual({}, response.json())
         self.assertEqual([], list(self.project1.labels.names()))
+
+    def test_scanpipe_views_project_details_edit_input_source_tag(self):
+        url = self.project1.get_absolute_url()
+        input_source = self.project1.add_input_source(
+            filename="filename.zip",
+            is_uploaded=True,
+            tag="base value",
+        )
+        data = {
+            "input_source_uuid": input_source.uuid,
+            "tag": "new value",
+            "edit-input-tag-submit": "",
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertContains(response, "Tag updated.")
+        input_source.refresh_from_db()
+        self.assertEqual(data["tag"], input_source.tag)
 
     def test_scanpipe_views_project_details_charts_view(self):
         url = reverse("project_charts", args=[self.project1.slug])
