@@ -178,6 +178,7 @@ class ScanPipeConfig(AppConfig):
             "inspect_manifest": "inspect_packages",
             "deploy_to_develop": "map_deploy_to_develop",
             "scan_package": "scan_single_package",
+            "scan_codebase_packages": "inspect_packages",
         }
         if new_name := pipeline_old_names_mapping.get(pipeline_name):
             warnings.warn(

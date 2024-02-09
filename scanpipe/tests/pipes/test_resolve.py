@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import json
 from pathlib import Path
 
 from django.test import TestCase
@@ -87,7 +86,10 @@ class ScanPipeResolvePipesTest(TestCase):
     def test_scanpipe_pipes_resolve_resolve_packages(self):
         # ScanCode.io resolvers
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
-        packages = resolve.resolve_packages(str(input_location))
+        packages = resolve.resolve_packages(
+            input_location=str(input_location),
+            package_registry=resolve.sbom_registry,
+        )
         expected = {
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
@@ -101,13 +103,6 @@ class ScanPipeResolvePipesTest(TestCase):
             "version": "4.0.8",
         }
         self.assertEqual([expected], packages)
-
-        # ScanCode-toolkit resolvers
-        input_location = self.manifest_location / "package.json"
-        packages = resolve.resolve_packages(str(input_location))
-        expected_location = self.manifest_location / "package.expected.json"
-        expected = json.loads(expected_location.read_text())
-        self.assertEqual(expected, packages)
 
     def test_scanpipe_pipes_resolve_resolve_about_packages(self):
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"

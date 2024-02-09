@@ -31,7 +31,6 @@ from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
 from python_inspector.api import resolve_dependencies
-from scancode.api import get_package_data
 
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import cyclonedx
@@ -43,7 +42,7 @@ Resolve packages from manifest, lockfile, and SBOM.
 """
 
 
-def resolve_packages(input_location):
+def resolve_packages(input_location, package_registry=None):
     """Resolve the packages from manifest file."""
     default_package_type = get_default_package_type(input_location)
     # we only try to resolve packages if file at input_location is
@@ -51,15 +50,11 @@ def resolve_packages(input_location):
     if not default_package_type:
         return
 
-    # The ScanCode.io resolvers take precedence over the ScanCode-toolkit ones.
-    resolver = resolver_registry.get(default_package_type)
+    # Get resolvers for available packages/SBOMs in the registry
+    resolver = package_registry.get(default_package_type)
     if resolver:
         resolved_packages = resolver(input_location=input_location)
-    else:
-        package_data = get_package_data(location=input_location)
-        resolved_packages = package_data.get("package_data", [])
-
-    return resolved_packages
+        return resolved_packages
 
 
 def get_manifest_resources(project):
@@ -280,10 +275,17 @@ def get_default_package_type(input_location):
                 return "spdx"
 
 
-# Mapping between the `default_package_type` its related resolver function
+# Mapping between `default_package_type` its related resolver functions
+# for package dependency resolvers
 resolver_registry = {
-    "about": resolve_about_packages,
     "pypi": resolve_pypi_packages,
+}
+
+
+# Mapping between `default_package_type` its related resolver functions
+# for SBOMs and About files
+sbom_registry = {
+    "about": resolve_about_packages,
     "spdx": resolve_spdx_packages,
     "cyclonedx": resolve_cyclonedx_packages,
 }
