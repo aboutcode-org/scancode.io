@@ -44,8 +44,14 @@ Analyse Docker Windows Image
 
 .. _pipeline_find_vulnerabilities:
 
-Find Vulnerabilities
---------------------
+Find Vulnerabilities (addon)
+----------------------------
+
+.. warning::
+    This pipeline requires access to a VulnerableCode database.
+    Refer to :ref:`scancodeio_settings_vulnerablecode` to configure access to
+    VulnerableCode in your ScanCode.io instance.
+
 .. autoclass:: scanpipe.pipelines.find_vulnerabilities.FindVulnerabilities()
     :members:
     :member-order: bysource
@@ -84,10 +90,30 @@ Map Deploy To Develop
     :members:
     :member-order: bysource
 
+.. _pipeline_match_to_purldb:
+
+Match to PurlDB (addon)
+-----------------------
+
+.. warning::
+    This pipeline requires access to a PurlDB service.
+    Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
+    ScanCode.io instance.
+
+.. autoclass:: scanpipe.pipelines.match_to_purldb.MatchToPurlDB()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_populate_purldb:
 
-Populate PurlDB
----------------
+Populate PurlDB (addon)
+-----------------------
+
+.. warning::
+    This pipeline requires access to a PurlDB service.
+    Refer to :ref:`scancodeio_settings_purldb` to configure access to PurlDB in your
+    ScanCode.io instance.
+
 .. autoclass:: scanpipe.pipelines.populate_purldb.PopulatePurlDB()
     :members:
     :member-order: bysource

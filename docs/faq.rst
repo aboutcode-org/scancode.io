@@ -43,18 +43,26 @@ Here are some general guidelines based on different input scenarios:
 These pipelines will automatically execute the necessary steps to scan and create the
 packages, dependencies, and resources for your project based on the input data provided.
 
-After running one of the above pipelines, you may further **enhance your project data**
-by running some of the following additional pipelines:
+After executing one of the pipelines mentioned above, you have the option to
+**augment your project's data** by executing additional pipelines, often referred to
+as **addon** pipelines.
+These additional pipelines offer further enhancements and modifications to your
+existing data, allowing for more comprehensive analysis and insights.
 
 - If you wish to **find vulnerabilities** for packages and dependencies, you can use the
   :ref:`find_vulnerabilities <pipeline_find_vulnerabilities>` pipeline.
   Note that setting up :ref:`VulnerableCode <scancodeio_settings_vulnerablecode>` is
   required for this pipeline to function properly.
 
-- To **populate the PurlDB** with your project discovered packages, use the
-  :ref:`populate_purldb <pipeline_populate_purldb>` pipeline.
-  Please ensure that you have set up
-  :ref:`PurlDB <scancodeio_settings_purldb>` before running this pipeline.
+- To **populate PurlDB with the packages discovered in your project**,
+  use the :ref:`populate_purldb <pipeline_populate_purldb>` pipeline.
+  Before executing this pipeline, make sure to set up
+  :ref:`PurlDB <scancodeio_settings_purldb>`.
+
+- To **match your project codebase resources to PurlDB for Package matches**,
+  utilize the :ref:`match_to_purldb <pipeline_match_to_purldb>` pipeline.
+  It's essential to set up :ref:`PurlDB <scancodeio_settings_purldb>` before executing
+  this pipeline.
 
 What is the difference between scan_codebase and scan_single_package pipelines?
 -------------------------------------------------------------------------------
