@@ -24,8 +24,11 @@ file.
 
     docker compose restart web worker
 
+Instance settings
+-----------------
+
 DATABASE
---------
+^^^^^^^^
 
 The database can be configured using the following settings::
 
@@ -38,7 +41,7 @@ The database can be configured using the following settings::
 .. _scancodeio_settings_require_authentication:
 
 SCANCODEIO_REQUIRE_AUTHENTICATION
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, the ScanCode.io Web UI and REST API are available without any
 authentication.
@@ -59,7 +62,7 @@ authentication system in the REST API.
 .. _scancodeio_settings_workspace_location:
 
 SCANCODEIO_WORKSPACE_LOCATION
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This setting defines the workspace location of a given project.
 The **workspace** is the directory where **all of the project's files are stored**
@@ -74,7 +77,7 @@ See :ref:`project_workspace` for more details.
 .. _scancodeio_settings_config_dir:
 
 SCANCODEIO_CONFIG_DIR
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 The location of the :guilabel:`.scancode/` configuration directory within the project
 codebase.
@@ -91,7 +94,7 @@ it to ScanCode.io. The expected location of the attribution template is::
   .scancode/templates/attribution.html
 
 SCANCODEIO_PROCESSES
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 By default, multiprocessing is enabled and configured to use an optimal number of CPUs
 available on the machine. You can control the number of parallel processes available
@@ -114,7 +117,7 @@ To disable both multiprocessing and threading, use "-1"::
 .. _scancodeio_settings_async:
 
 SCANCODEIO_ASYNC
-----------------
+^^^^^^^^^^^^^^^^
 
 When enabled, pipeline runs are **executed asynchronously**, meaning that users can
 continue using the app while the pipeline are run in the background.
@@ -139,7 +142,7 @@ synchronously in the web server process.
         export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 SCANCODEIO_TASK_TIMEOUT
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Maximum time allowed for a pipeline to complete.
 The pipeline run will be stopped and marked as failed if that limit is reached.
@@ -152,7 +155,7 @@ The value is a string with specify unit including hour, minute, second
 Default: ``24h``
 
 SCANCODEIO_SCAN_FILE_TIMEOUT
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Maximum time allowed for a file to be analyzed when scanning a codebase.
 
@@ -165,7 +168,7 @@ Default: ``120`` (2 minutes)
 .. _scancodeio_settings_pipelines_dirs:
 
 SCANCODEIO_PIPELINES_DIRS
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This setting defines any additional locations that ScanCode.io will search in
 for pipelines.
@@ -177,7 +180,7 @@ of additional pipelines directories::
 .. _scancodeio_settings_policies_file:
 
 SCANCODEIO_POLICIES_FILE
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 This setting defines the location of the policies file, or ``policies.yml``.
 A valid policies file is required to enable compliance-related features.
@@ -208,7 +211,7 @@ A valid policies file is required to enable compliance-related features.
     this feature.
 
 SCANCODEIO_PAGINATE_BY
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 The number of objects display per page for each object type can be customized with the
 following setting::
@@ -216,7 +219,7 @@ following setting::
     SCANCODEIO_PAGINATE_BY=project=30,error=50,resource=100,package=100,dependency=100
 
 SCANCODEIO_REST_API_PAGE_SIZE
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A numeric value indicating the number of objects returned per page in the REST API::
 
@@ -228,7 +231,7 @@ Default: ``50``
     Using a large page size may have an impact on performances.
 
 SCANCODEIO_LOG_LEVEL
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 By default, only a minimum of logging messages is displayed in the console, mostly
 to provide some progress about pipeline run execution.
@@ -254,7 +257,7 @@ The web server can be started in DEBUG mode with:
     $ SCANCODEIO_LOG_LEVEL=DEBUG make run
 
 TIME_ZONE
----------
+^^^^^^^^^
 
 A string representing the time zone for the current ScanCode.io installation. By
 default the ``UTC`` time zone is used::
@@ -265,10 +268,15 @@ default the ``UTC`` time zone is used::
     You can view a detailed list of time zones `here.
     <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_
 
+.. _scancodeio_settings_external_services:
+
+Configure external services
+---------------------------
+
 .. _scancodeio_settings_purldb:
 
 PURLDB
-------
+^^^^^^
 
 Provide the URL and API key of your `PurlDB <https://github.com/nexB/purldb/>`_
 instance.
@@ -281,11 +289,22 @@ instance.
 .. _scancodeio_settings_vulnerablecode:
 
 VULNERABLECODE
---------------
+^^^^^^^^^^^^^^
 
 You can either run your own instance of
 `VulnerableCode <https://github.com/nexB/vulnerablecode/>`_
-or connect to the public one.
+or connect to the `public one <https://public.vulnerablecode.io/>`_.
+
+Set the ``VULNERABLECODE_URL`` in your local ``.env`` file:
+
+For example::
+
+    VULNERABLECODE_URL=https://public.vulnerablecode.io/
+
+.. note::
+    Optionally contact nexB support at support@nexb.com with your API user email if
+    you are doing a larger scale evaluation and need to ease API throttling limitations.
+
 
 Authentication is provided using an API key that you can obtain by registering at
 https://public.vulnerablecode.io/account/request_api_key/ ::

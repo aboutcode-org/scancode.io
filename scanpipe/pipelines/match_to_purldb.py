@@ -31,7 +31,7 @@ class MatchToPurlDB(Pipeline):
     This involves creating a JSON scan of the Project codebase, sending it to
     MatchCode on PurlDB, waiting for match results, creating DiscoveredPackages
     from the match results Package data and associating the proper
-    CodebaseResources to those DiscoveredPackges.
+    CodebaseResources to those DiscoveredPackages.
     """
 
     download_inputs = False
