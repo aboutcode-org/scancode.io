@@ -270,44 +270,46 @@ default the ``UTC`` time zone is used::
 
 .. _scancodeio_settings_external_services:
 
-Configure external services
----------------------------
+External services (integrations)
+--------------------------------
 
 .. _scancodeio_settings_purldb:
 
 PURLDB
 ^^^^^^
 
-Provide the URL and API key of your `PurlDB <https://github.com/nexB/purldb/>`_
-instance.
+A public instance of **PurlDB** is accessible at https://public.purldb.io/.
 
- ::
+Alternatively, you can deploy your own instance of PurlDB by
+following the instructions provided in the documentation at
+https://purldb.readthedocs.io/.
 
-    PURLDB_URL=https://your-purldb-domain/
-    PURLDB_API_KEY=apikeyexample
+To configure your local environment, set the ``PURLDB_URL`` in your ``.env`` file::
+
+    PURLDB_URL=https://public.purldb.io/
+
+While using the public PurlDB instance, providing an API key is optional.
+However, if authentication is enabled on your PurlDB instance, you can provide the
+API key using ``PURLDB_API_KEY``::
+
+    PURLDB_API_KEY=insert_your_api_key_here
 
 .. _scancodeio_settings_vulnerablecode:
 
 VULNERABLECODE
 ^^^^^^^^^^^^^^
 
-You can either run your own instance of
+You have the option to either deploy your instance of
 `VulnerableCode <https://github.com/nexB/vulnerablecode/>`_
-or connect to the `public one <https://public.vulnerablecode.io/>`_.
+or connect to the `public instance <https://public.vulnerablecode.io/>`_.
 
-Set the ``VULNERABLECODE_URL`` in your local ``.env`` file:
-
-For example::
-
-    VULNERABLECODE_URL=https://public.vulnerablecode.io/
-
-.. note::
-    Optionally contact nexB support at support@nexb.com with your API user email if
-    you are doing a larger scale evaluation and need to ease API throttling limitations.
-
-
-Authentication is provided using an API key that you can obtain by registering at
-https://public.vulnerablecode.io/account/request_api_key/ ::
+To configure your local environment, set the ``VULNERABLECODE_URL`` in your ``.env``
+file::
 
     VULNERABLECODE_URL=https://public.vulnerablecode.io/
-    VULNERABLECODE_API_KEY=apikeyexample
+
+When using the public VulnerableCode instance, providing an API key is optional.
+However, if authentication is enabled on your VulnerableCode instance,
+you can provide the API key using ``VULNERABLECODE_API_KEY``::
+
+    VULNERABLECODE_API_KEY=insert_your_api_key_here

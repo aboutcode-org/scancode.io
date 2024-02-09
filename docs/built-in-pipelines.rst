@@ -44,8 +44,8 @@ Analyse Docker Windows Image
 
 .. _pipeline_find_vulnerabilities:
 
-Find Vulnerabilities
---------------------
+Find Vulnerabilities (addon)
+----------------------------
 
 .. warning::
     This pipeline requires access to a VulnerableCode database.
@@ -92,8 +92,8 @@ Map Deploy To Develop
 
 .. _pipeline_match_to_purldb:
 
-Match to PurlDB
----------------
+Match to PurlDB (addon)
+-----------------------
 
 .. warning::
     This pipeline requires access to a PurlDB service.
@@ -106,8 +106,8 @@ Match to PurlDB
 
 .. _pipeline_populate_purldb:
 
-Populate PurlDB
----------------
+Populate PurlDB (addon)
+-----------------------
 
 .. warning::
     This pipeline requires access to a PurlDB service.
