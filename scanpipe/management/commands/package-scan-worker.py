@@ -43,6 +43,7 @@ class Command(AddInputCommandMixin, BaseCommand):
         super().add_arguments(parser)
         parser.add_argument(
             "--sleep",
+            type=int,
             help="Number in seconds how long the loop should sleep for before polling.",
         )
 
@@ -55,6 +56,12 @@ class Command(AddInputCommandMixin, BaseCommand):
             if response:
                 download_url, package_uuid = response
             else:
+                self.stdout.write("bad response")
+                time.sleep(sleep)
+                continue
+
+            if not download_url or not package_uuid:
+                self.stdout.write("no new job")
                 time.sleep(sleep)
                 continue
 
@@ -87,7 +94,6 @@ class Command(AddInputCommandMixin, BaseCommand):
                 project=project,
                 stderr=self.stderr,
                 stdout=self.stdout,
-                **{"async": True},
             )
 
             # 3. poll project results
@@ -116,6 +122,5 @@ class Command(AddInputCommandMixin, BaseCommand):
                     continue
 
             # 4. get project results and send to purldb
-            scan_output_location = to_json(project)
+            scan_output_location = output.to_json(project)
             purldb.send_results_to_purldb(package_uuid, scan_output_location)
-

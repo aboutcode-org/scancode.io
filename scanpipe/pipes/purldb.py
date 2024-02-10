@@ -443,7 +443,7 @@ def get_next_job(
     Return None if no job is available
     """
     response = request_get(
-        url=f"{api_url}scan_queue/get_next_download_url",
+        url=f"{api_url}scan_queue/get_next_download_url/",
         timeout=timeout,
     )
     if response:
@@ -458,11 +458,14 @@ def send_results_to_purldb(
     with open(scan_output_location, "rb") as f:
         data={
             "package_uuid": package_uuid,
+        }
+        files={
             "scan_file": f,
         }
         response = request_post(
-            url=f"{api_url}scan_queue/submit_scan_results",
+            url=f"{api_url}scan_queue/submit_scan_results/",
             timeout=timeout,
             data=data,
+            files=files,
         )
     return response
