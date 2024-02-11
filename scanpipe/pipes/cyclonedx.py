@@ -43,7 +43,7 @@ def get_bom(cyclonedx_document):
 
 def get_components(bom):
     """Return list of components from CycloneDX BOM."""
-    # return list(bom._get_all_components())
+    # TODO: Check if we could use `return list(bom._get_all_components())`
     return recursive_component_collector(bom.components, [])
 
 
@@ -126,7 +126,6 @@ def get_external_references(component):
     return dict(references)
 
 
-# TODO: Add unit test
 def get_properties_data(component):
     """Return the properties as dict, extracted from  `component.properties`."""
     prefix = "aboutcode:"
@@ -166,7 +165,7 @@ def is_cyclonedx_bom(input_location):
     """Return True if the file at `input_location` is a CycloneDX BOM."""
     with suppress(Exception):
         data = json.loads(Path(input_location).read_text())
-        if data.get("bomFormat") == "CycloneDX" and data.get("$schema"):
+        if data.get("bomFormat") == "CycloneDX":
             return True
     return False
 

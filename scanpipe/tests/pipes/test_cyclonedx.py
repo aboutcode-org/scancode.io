@@ -35,9 +35,14 @@ from scanpipe.pipes import cyclonedx
 class ScanPipeCycloneDXPipesTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
     bom_file = data_location / "cyclonedx" / "nested.cdx.json"
-    bom_json = bom_file.read_text()
-    bom_parsed = json.loads(bom_json)
-    bom = cyclonedx.get_bom(bom_parsed)
+
+    def setUp(self):
+        self.bom_json = self.bom_file.read_text()
+        self.bom_parsed = json.loads(self.bom_json)
+        self.bom = cyclonedx.get_bom(self.bom_parsed)
+        self.component1 = self.bom.components[0]
+        self.component2 = self.component1.components[0]
+        self.component3 = self.component2.components[0]
 
     def test_scanpipe_cyclonedx_get_bom(self):
         bom = cyclonedx.get_bom(self.bom_parsed)
@@ -46,12 +51,12 @@ class ScanPipeCycloneDXPipesTest(TestCase):
     def test_scanpipe_cyclonedx_is_cyclonedx_bom(self):
         self.assertTrue(cyclonedx.is_cyclonedx_bom(self.bom_file))
         input_location = self.data_location / "cyclonedx" / "missing_schema.json"
+        self.assertTrue(cyclonedx.is_cyclonedx_bom(input_location))
+        input_location = self.data_location / "cyclonedx" / "missing_bom_format.json"
         self.assertFalse(cyclonedx.is_cyclonedx_bom(input_location))
 
     def test_scanpipe_cyclonedx_bom_attributes_to_dict(self):
-        component_level1 = self.bom.components[0]
-        component_level2 = component_level1.components[0]
-        components = component_level2.components
+        components = self.component2.components
 
         expected = [
             {
@@ -125,24 +130,20 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertEqual(3, len(components))
 
     def test_scanpipe_cyclonedx_recursive_component_collector(self):
-        component_level1 = self.bom.components[0]
-        component_level2 = component_level1.components[0]
-        component_level3 = component_level2.components[0]
-
         expected = [
             {
-                "cdx_package": component_level1,
+                "cdx_package": self.component1,
                 "nested_components": cyclonedx.bom_attributes_to_dict(
-                    component_level1.components
+                    self.component1.components
                 ),
             },
             {
-                "cdx_package": component_level2,
+                "cdx_package": self.component2,
                 "nested_components": cyclonedx.bom_attributes_to_dict(
-                    component_level2.components
+                    self.component2.components
                 ),
             },
-            {"cdx_package": component_level3, "nested_components": {}},
+            {"cdx_package": self.component3, "nested_components": {}},
         ]
         result = cyclonedx.recursive_component_collector(self.bom.components, [])
 
@@ -166,21 +167,17 @@ class ScanPipeCycloneDXPipesTest(TestCase):
 
     def test_scanpipe_cyclonedx_get_declared_licenses(self):
         # This component is using license id and name
-        component = self.bom.components[0]
-        result = cyclonedx.get_declared_licenses(component.licenses)
+        result = cyclonedx.get_declared_licenses(self.component1.licenses)
         expected = "OFL-1.1\nApache-2.0"
         self.assertEqual(result, expected)
 
         # This component is using license_expression
-        component = component.components[0]
-        result = cyclonedx.get_declared_licenses(component.licenses)
+        result = cyclonedx.get_declared_licenses(self.component2.licenses)
         expected = "BSD-3-Clause"
         self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_get_checksums(self):
-        component = self.bom.components[0]
-
-        result = cyclonedx.get_checksums(component)
+        result = cyclonedx.get_checksums(self.component1)
         expected = {
             "sha256": "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
         }
@@ -188,8 +185,7 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         self.assertEqual(result, expected)
 
     def test_scanpipe_cyclonedx_get_external_references(self):
-        component = self.bom.components[0]
-        result = cyclonedx.get_external_references(component)
+        result = cyclonedx.get_external_references(self.component1)
         expected = {
             "vcs": ["https://cyclonedx.org/vcs"],
             "issue-tracker": ["https://cyclonedx.org/issue-tracker"],
@@ -200,6 +196,16 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         }
 
         self.assertEqual(result, expected)
+
+    def test_scanpipe_cyclonedx_get_properties_data(self):
+        properties_data = cyclonedx.get_properties_data(self.component3)
+        expected = {
+            "download_url": "https://download.url/package.zip",
+            "filename": "package.zip",
+            "homepage_url": "https://home.page",
+            "primary_language": "Python",
+        }
+        self.assertEqual(expected, properties_data)
 
     def test_scanpipe_cyclonedx_validate_document(self):
         error = cyclonedx.validate_document(document="{}")
