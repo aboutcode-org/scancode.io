@@ -48,6 +48,8 @@ Here are some general guidelines based on different input scenarios:
   :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using
   the :ref:`map_deploy_to_develop <pipeline_map_deploy_to_develop>` pipeline.
+- For getting the DWARF debug symbol compilation unit paths when available from an elf binary.
+  use the :ref:`inspect_elf_binaries <pipeline_inspect_elf>` pipeline.
 
 These pipelines will automatically execute the necessary steps to scan and create the
 packages, dependencies, and resources for your project based on the input data provided.
