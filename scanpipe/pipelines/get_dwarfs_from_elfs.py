@@ -27,21 +27,21 @@ from elf_inspector.dwarf import get_dwarf_paths
 from scanpipe.pipelines import Pipeline
 
 
-class GetDwarfsFromElfs(Pipeline):
-    """Get dwarfs from elfs."""
+class InspectElfBinaries(Pipeline):
+    """Inspect ELF binaries and collect DWARF paths."""
 
     download_inputs = False
     is_addon = True
 
     @classmethod
     def steps(cls):
-        return (cls.get_dwarfs_from_elfs,)
+        return (cls.collect_dwarf_source_path_references,)
 
-    def get_dwarfs_from_elfs(self):
+    def collect_dwarf_source_path_references(self):
         """
         Update ``extra_data`` of project with
         dwarf data extracted from elf files.
         """
         for elf in self.project.codebaseresources.elfs():
-            data = get_dwarf_paths(Path(self.project.codebase_path / elf.path))
-            self.project.update_extra_data({elf.path: data})
+            dwarf_paths = get_dwarf_paths(Path(self.project.codebase_path / elf.path))
+            elf.update_extra_data(dwarf_paths)

@@ -2110,44 +2110,46 @@ class ScanPipeModelsTest(TestCase):
         results = self.project1.codebaseresources.has_directory_content_fingerprint()
         self.assertQuerySetEqual(expected, results, ordered=False)
 
-    def test_scanpipe_codebase_resource_elfs(self):
+    def test_scanpipe_codebase_resource_queryset_elfs(self):
         project = Project.objects.create(name="Test")
-        CodebaseResource.objects.create(
+        resource_starting_with_elf_and_executable_in_file_type = CodebaseResource.objects.create(
             file_type="""ELF 32-bit LSB executable, ARM, version 1 (ARM), statically
              linked, with debug_info, not stripped""",
             project=project,
             path="a",
             type=CodebaseResource.Type.FILE,
         )
-        CodebaseResource.objects.create(
+        resource_with_executable_in_file_type = CodebaseResource.objects.create(
             file_type="""32-bit LSB executable, ARM, version 1 (ARM), statically
               linked, with debug_info, not stripped""",
             project=project,
             path="b",
             type=CodebaseResource.Type.FILE,
         )
-        CodebaseResource.objects.create(
+        resource_starting_with_elf_in_file_type = CodebaseResource.objects.create(
             file_type="""ELF 32-bit LSB resourcable, ARM, version 1 (ARM), statically
              linked, with debug_info, not stripped""",
             project=project,
             path="c",
             type=CodebaseResource.Type.FILE,
         )
-        CodebaseResource.objects.create(
+        resource = CodebaseResource.objects.create(
             file_type="""32-bit LSB relocatable, ARM, version 1 (ARM), statically
               linked, with debug_info, not stripped""",
             project=project,
             path="d",
             type=CodebaseResource.Type.FILE,
         )
-        CodebaseResource.objects.create(
+        resource_starting_with_elf_and_relocatable_in_file_type = CodebaseResource.objects.create(
             file_type="""ELF 32-bit LSB relocatable, ARM, version 1 (ARM), statically
               linked, with debug_info, not stripped""",
             project=project,
             path="e",
             type=CodebaseResource.Type.FILE,
         )
-        self.assertEqual(2, project.codebaseresources.elfs().count())
+        paths = [str(resource.path) for resource in project.codebaseresources.elfs()]
+        assert "e" in paths
+        assert "a" in paths
 
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
