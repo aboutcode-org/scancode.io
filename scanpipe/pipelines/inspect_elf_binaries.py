@@ -39,7 +39,7 @@ class InspectElfBinaries(Pipeline):
 
     def collect_dwarf_source_path_references(self):
         """
-        Update ``extra_data`` of project with
+        Update ``extra_data`` of elf files with
         dwarf data extracted from elf files.
         """
         for elf in self.project.codebaseresources.elfs():

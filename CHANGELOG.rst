@@ -68,6 +68,9 @@ v33.1.0 (2024-02-02)
   `upload_file`.
   https://github.com/nexB/scancode.io/issues/708
 
+- Add an add-on pipeline for collecting DWARF debug symbol compilation 
+  unit paths when available from elfs https://github.com/nexB/purldb/issues/260.
+
 v33.0.0 (2024-01-16)
 --------------------
 
