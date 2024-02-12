@@ -27,6 +27,8 @@ from django.test import TestCase
 from scanpipe import pipes
 from scanpipe.models import Project
 from scanpipe.pipes import resolve
+from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.scancode import extract_archives
 from scanpipe.tests import package_data1
 
 
@@ -154,3 +156,58 @@ class ScanPipeResolvePipesTest(TestCase):
             "md5": "76cf50f29e47676962645632737365a7",
         }
         self.assertEqual(expected, package_data)
+
+    def test_scanpipe_resolve_get_manifest_resources(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = (
+            self.data_location / "manifests" / "python-inspector-0.10.0.zip"
+        )
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+
+        extract_archives(project1.codebase_path, recurse=True)
+        pipes.collect_and_create_codebase_resources(project1)
+
+        resources = resolve.get_manifest_resources(project1)
+        self.assertTrue(resources.exists())
+        requirements_resource = project1.codebaseresources.get(
+            path=(
+                "python-inspector-0.10.0.zip-extract/"
+                "python-inspector-0.10.0/requirements.txt"
+            )
+        )
+        self.assertIn(requirements_resource, resources)
+
+    def test_scanpipe_resolve_get_packages_from_sbom(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "manifests" / "toml.spdx.json"
+
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+        pipes.collect_and_create_codebase_resources(project1)
+        resources = resolve.get_manifest_resources(project1)
+
+        packages = resolve.get_packages(
+            project1,
+            resolve.sbom_registry,
+            resources,
+        )
+        self.assertEqual(1, len(packages))
+        self.assertEqual("toml", packages[0]["name"])
+
+    def test_scanpipe_resolve_create_packages_and_dependencies(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "manifests" / "toml.spdx.json"
+
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+        pipes.collect_and_create_codebase_resources(project1)
+        resources = resolve.get_manifest_resources(project1)
+        packages = resolve.get_packages(
+            project1,
+            resolve.sbom_registry,
+            resources,
+        )
+        resolve.create_packages_and_dependencies(project1, packages)
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencies.count())

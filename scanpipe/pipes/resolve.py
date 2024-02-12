@@ -44,7 +44,7 @@ Resolve packages from manifest, lockfile, and SBOM.
 """
 
 
-def get_packages(project, package_registry, manifest_resources, model):
+def get_packages(project, package_registry, manifest_resources, model=None):
     """
     Get package data from package manifests/lockfiles/SBOMs or
     get package data for resolved packages from package requirements.
