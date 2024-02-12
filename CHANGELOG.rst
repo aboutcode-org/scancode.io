@@ -17,6 +17,20 @@ v33.2.0 (unreleased)
 
    https://github.com/nexB/scancode.io/issues/1071
 
+- Rename pipeline for consistency and precision:
+  * scan_codebase_packages: inspect_packages
+
+  Restructure the inspect_manifest pipeline into:
+  * load_sbom: for loading SPDX/CycloneDX SBOMs and ABOUT files
+  * resolve_dependencies: for resolving package dependencies
+  * inspect_packages: gets package data from package manifests/lockfiles 
+
+  A data migration is included to facilitate the migration of existing data.
+  Only the new names are available in the web UI but the REST API and CLI are backward
+  compatible with the old names.
+  https://github.com/nexB/scancode.io/issues/1034
+  https://github.com/nexB/scancode.io/discussions/1035
+
 v33.1.0 (2024-02-02)
 --------------------
 
