@@ -26,21 +26,18 @@ from scanpipe.pipes import scancode
 
 class InspectPackages(ScanCodebase):
     """
-    Inspect a codebase for manifest files and gets all associated packages.
+    Inspect a codebase for package and pre-resolved dependencies.
 
-    Supports:
-    - Python: requirements.txt, setup.py, setup.cfg, Pipfile.lock
-    - JavaScript: yarn.lock lockfile, npm package-lock.json lockfile
-    - Java: Java JAR MANIFEST.MF, Gradle build script
-    - Ruby: RubyGems gemspec manifest, RubyGems Bundler Gemfile.lock
-    - Rust: Rust Cargo.lock dependencies lockfile, Rust Cargo.toml package manifest
-    - PHP: PHP composer lockfile, PHP composer manifest
-    - NuGet: nuspec package manifest
-    - Dart: pubspec manifest, pubspec lockfile
-    - OS: FreeBSD compact package manifest, Debian installed packages database
+    This pipeline inspects a codebase for application packages
+    and their dependencies using package manifests and dependency
+    lockfiles. It does not resolve dependencies, it does instead
+    collect already pre-resolved dependencies from lockfiles, and
+    direct dependencies (possibly not resolved) as found in
+    package manifests' dependency sections.
 
-    Full list available at https://scancode-toolkit.readthedocs.io/en/stable/
-    reference/available_package_parsers.html
+    See documentation for the list of supported package manifests and
+    dependency lockfiles:
+    https://scancode-toolkit.readthedocs.io/en/stable/reference/available_package_parsers.html
     """
 
     @classmethod
@@ -60,7 +57,8 @@ class InspectPackages(ScanCodebase):
         and DiscoveredDependency objects from detected package data.
         """
         # `assemble` is set to False because here in this pipeline we
-        # only detect package_data in resources without creating
-        # Package/Dependency instances, to get all the purls from a codebase.
+        # only detect package_data in resources and create
+        # Package/Dependency instances directly instead of assembling
+        # the packages and assigning files to them
         scancode.scan_for_application_packages(self.project, assemble=False)
         scancode.process_package_data(self.project)

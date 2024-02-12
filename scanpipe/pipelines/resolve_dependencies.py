@@ -22,12 +22,15 @@
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
-from scanpipe.pipes import update_or_create_package
 
 
 class ResolveDependencies(ScanCodebase):
     """
-    Inspect a codebase manifest files and resolve their associated packages.
+    Resolve dependencies from package manifests/lockfiles.
+
+    This pipeline inspects codebase lockfiles/manifest files
+    which contain package requirements and resolve their
+    associated packages.
 
     Supports resolved packages for:
     - Python: using nexB/python-inspector, supports requirements.txt and
@@ -47,42 +50,28 @@ class ResolveDependencies(ScanCodebase):
         )
 
     def get_manifest_inputs(self):
-        """Locate all the manifest files from the project's input/ directory."""
+        """
+        Locate all the package manifest files for which package resolvers are
+        supported, in the codebase resources.
+        """
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
     def get_packages_from_manifest(self):
-        """Get packages data from manifest files."""
-        self.resolved_packages = []
-
-        if not self.manifest_resources.exists():
-            self.project.add_warning(
-                description="No manifests found for resolving packages",
-                model="get_packages_from_manifest",
-            )
-            return
-
-        for resource in self.manifest_resources:
-            if packages := resolve.resolve_packages(
-                input_location=resource.location,
-                package_registry=resolve.resolver_registry,
-            ):
-                self.resolved_packages.extend(packages)
-            else:
-                self.project.add_error(
-                    description="No packages could be resolved for",
-                    model="get_packages_from_manifest",
-                    details={"path": resource.path},
-                )
+        """
+        Resolve package data from lockfiles/requirement files with package
+        requirements/dependenices.
+        """
+        self.resolved_packages = resolve.get_packages(
+            project=self.project,
+            package_registry=resolve.resolver_registry,
+            manifest_resources=self.manifest_resources,
+            model="get_packages_from_manifest",
+        )
 
     def create_resolved_packages(self):
         """Create the resolved packages and their dependencies in the database."""
-        for package_data in self.resolved_packages:
-            package_data = resolve.set_license_expression(package_data)
-            dependencies = package_data.pop("dependencies", [])
-            update_or_create_package(self.project, package_data)
-
-            for dependency_data in dependencies:
-                resolved_package = dependency_data.get("resolved_package")
-                if resolved_package:
-                    resolved_package.pop("dependencies", [])
-                    update_or_create_package(self.project, resolved_package)
+        resolve.create_packages_and_dependencies(
+            project=self.project,
+            packages=self.resolved_packages,
+            resolved=True,
+        )

@@ -22,12 +22,11 @@
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
 from scanpipe.pipes import resolve
-from scanpipe.pipes import update_or_create_package
 
 
 class LoadSBOM(ScanCodebase):
     """
-    Inspect a codebase for SBOMs and gets all associated packages.
+    Detects and loads all associated packages from SBOMs.
 
     Supported BOMs:
     - SPDX document
@@ -45,34 +44,25 @@ class LoadSBOM(ScanCodebase):
             cls.flag_ignored_resources,
             cls.get_sbom_inputs,
             cls.get_packages_from_sboms,
+            cls.create_packages_from_sboms,
         )
 
     def get_sbom_inputs(self):
-        """Locate all the SBOMs from the project's input/ directory."""
+        """Locate all the SBOMs among the codebase resources."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
     def get_packages_from_sboms(self):
-        """Get packages data from manifest files."""
-        self.resolved_packages = []
+        """Get packages data from SBOMs."""
+        self.packages = resolve.get_packages(
+            project=self.project,
+            package_registry=resolve.sbom_registry,
+            manifest_resources=self.manifest_resources,
+            model="get_packages_from_sboms",
+        )
 
-        if not self.manifest_resources.exists():
-            self.project.add_warning(
-                description="No SBOMs found for resolving packages",
-                model="get_packages_from_sboms",
-            )
-            return
-
-        for resource in self.manifest_resources:
-            if packages := resolve.resolve_packages(
-                input_location=resource.location,
-                package_registry=resolve.sbom_registry,
-            ):
-                for package_data in packages:
-                    package_data = resolve.set_license_expression(package_data)
-                    update_or_create_package(self.project, package_data)
-            else:
-                self.project.add_error(
-                    description="No packages could be resolved for SBOM",
-                    model="get_packages_from_sboms",
-                    details={"path": resource.path},
-                )
+    def create_packages_from_sboms(self):
+        """Create the packages and dependencies from the SBOM, in the database."""
+        resolve.create_packages_and_dependencies(
+            project=self.project,
+            packages=self.packages,
+        )

@@ -83,10 +83,10 @@ class ScanPipeResolvePipesTest(TestCase):
         scancode_expression = "mit OR gpl-2.0 WITH generic-exception"
         self.assertEqual(scancode_expression, resolve.convert_spdx_expression(spdx))
 
-    def test_scanpipe_pipes_resolve_resolve_packages(self):
+    def test_scanpipe_pipes_resolve_get_packages_from_manifest(self):
         # ScanCode.io resolvers
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
-        packages = resolve.resolve_packages(
+        packages = resolve.get_packages_from_manifest(
             input_location=str(input_location),
             package_registry=resolve.sbom_registry,
         )
