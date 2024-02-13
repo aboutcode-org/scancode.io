@@ -21,19 +21,19 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import purldb
+from scanpipe.pipes import matchcode
 
 
-class MatchToPurlDB(Pipeline):
+class MatchToMatchCode(Pipeline):
     """
-    Match the codebase resources of a project against PurlDB to identify packages.
+    Match the codebase resources of a project against MatchCode to identify packages.
 
     This process involves:
 
-    1. generating a JSON scan of the project codebase
-    2. transmitting it to MatchCode on PurlDB and awaiting match results
-    3. creating discovered packages from the package data obtained
-    4. associating the codebase resources with those discovered packages
+    1. Generating a JSON scan of the project codebase
+    2. Transmitting it to MatchCode and awaiting match results
+    3. Creating discovered packages from the package data obtained
+    4. Associating the codebase resources with those discovered packages
     """
 
     download_inputs = False
@@ -42,29 +42,34 @@ class MatchToPurlDB(Pipeline):
     @classmethod
     def steps(cls):
         return (
-            cls.check_purldb_service_availability,
+            cls.check_matchcode_service_availability,
             cls.send_project_json_to_matchcode,
             cls.poll_matching_results,
             cls.create_packages_from_match_results,
         )
 
-    def check_purldb_service_availability(self):
-        """Check if the PurlDB service if configured and available."""
-        if not purldb.is_configured():
-            raise Exception("PurlDB is not configured.")
+    def check_matchcode_service_availability(self):
+        """Check if the MatchCode.io service if configured and available."""
+        if not matchcode.is_configured():
+            msg = (
+                "MatchCode.io is not configured. Set the MatchCode.io "
+                "related settings to a MatchCode.io instance or reach out "
+                "to the maintainers for other arrangements."
+            )
+            raise Exception(msg)
 
-        if not purldb.is_available():
-            raise Exception("PurlDB is not available.")
+        if not matchcode.is_available():
+            raise Exception("MatchCode.io is not available.")
 
     def send_project_json_to_matchcode(self):
         """Create a JSON scan of the project Codebase and send it to MatchCode."""
-        self.run_url = purldb.send_project_json_to_matchcode(self.project)
+        self.run_url = matchcode.send_project_json_to_matchcode(self.project)
 
     def poll_matching_results(self):
         """Wait until the match results are ready by polling the match run status."""
-        purldb.poll_until_success(self.run_url)
+        matchcode.poll_until_success(self.run_url)
 
     def create_packages_from_match_results(self):
         """Create DiscoveredPackages from match results."""
-        match_results = purldb.get_match_results(self.run_url)
-        purldb.create_packages_from_match_results(self.project, match_results)
+        match_results = matchcode.get_match_results(self.run_url)
+        matchcode.create_packages_from_match_results(self.project, match_results)

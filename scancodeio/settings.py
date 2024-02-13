@@ -403,3 +403,10 @@ PURLDB_URL = env.str("PURLDB_URL", default="")
 PURLDB_USER = env.str("PURLDB_USER", default="")
 PURLDB_PASSWORD = env.str("PURLDB_PASSWORD", default="")
 PURLDB_API_KEY = env.str("PURLDB_API_KEY", default="")
+
+# MatchCode.io integration
+
+MATCHCODEIO_URL = env.str("MATCHCODEIO_URL", default="")
+MATCHCODEIO_USER = env.str("MATCHCODEIO_USER", default="")
+MATCHCODEIO_PASSWORD = env.str("MATCHCODEIO_PASSWORD", default="")
+MATCHCODEIO_API_KEY = env.str("MATCHCODEIO_API_KEY", default="")
