@@ -26,7 +26,7 @@ from scanpipe.pipes import scancode
 
 class InspectPackages(ScanCodebase):
     """
-    Inspect a codebase for package and pre-resolved dependencies.
+    Inspect a codebase for packages and pre-resolved dependencies.
 
     This pipeline inspects a codebase for application packages
     and their dependencies using package manifests and dependency

@@ -26,12 +26,13 @@ from scanpipe.pipes import resolve
 
 class LoadSBOM(ScanCodebase):
     """
-    Detects and loads all associated packages from SBOMs.
+    Load package data from one or more SBOMs.
 
-    Supported BOMs:
+    Supported SBOMs:
     - SPDX document
     - CycloneDX BOM
-    - AboutCode ABOUT file
+    Other formats:
+    - AboutCode .ABOUT files for package curations.
     """
 
     @classmethod

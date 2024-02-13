@@ -32,7 +32,7 @@ class ScanCodebase(Pipeline):
 
     This pipeline does not further scan the files contained in a package
     for license and copyrights and only considers the declared license
-    of a package.
+    of a package. It does not scan for system (Linux distro) packages.
     """
 
     @classmethod

@@ -26,15 +26,15 @@ from scanpipe.pipes import resolve
 
 class ResolveDependencies(ScanCodebase):
     """
-    Resolve dependencies from package manifests/lockfiles.
+    Resolve dependencies from package manifests and lockfiles.
 
-    This pipeline inspects codebase lockfiles/manifest files
-    which contain package requirements and resolve their
-    associated packages.
+    This pipeline collects lockfiles and manifest files
+    that contain dependency requirements, and resolves these
+    to a concrete set of package versions.
 
-    Supports resolved packages for:
-    - Python: using nexB/python-inspector, supports requirements.txt and
-    setup.py manifests as input
+    Supports resolving packages for:
+    - Python: using python-inspector, using requirements.txt and
+    setup.py manifests as inputs
     """
 
     @classmethod
@@ -50,10 +50,7 @@ class ResolveDependencies(ScanCodebase):
         )
 
     def get_manifest_inputs(self):
-        """
-        Locate all the package manifest files for which package resolvers are
-        supported, in the codebase resources.
-        """
+        """Locate package manifest files with a supported package resolver."""
         self.manifest_resources = resolve.get_manifest_resources(self.project)
 
     def get_packages_from_manifest(self):
