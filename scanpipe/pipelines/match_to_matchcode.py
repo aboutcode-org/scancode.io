@@ -34,6 +34,13 @@ class MatchToMatchCode(Pipeline):
     2. Transmitting it to MatchCode and awaiting match results
     3. Creating discovered packages from the package data obtained
     4. Associating the codebase resources with those discovered packages
+
+    Currently, MatchCode can only match for archives, directories, and files
+    from Maven and npm Packages.
+
+    This pipeline requires a MatchCode instance to be configured and available.
+    There is currently no public instance of MatchCode. Reach out to nexB, Inc.
+    for other arrangements.
     """
 
     download_inputs = False
