@@ -37,6 +37,9 @@ from scanpipe.tests import make_resource_file
 class MatchCodePipesTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
 
+    def setUp(self):
+        self.project1 = Project.objects.create(name="Analysis")
+
     def test_scanpipe_pipes_matchcode_fingerprint_codebase_directories(self):
         fixtures = self.data_location / "asgiref-3.3.0_fixtures.json"
         call_command("loaddata", fixtures, **{"verbosity": 0})
