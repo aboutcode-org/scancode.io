@@ -390,9 +390,11 @@ class PipelinesIntegrationTest(TestCase):
 
         if isinstance(data, dict):
             return {
-                key: self._without_keys(value, exclude_keys)
-                if type(value) in [list, dict]
-                else value
+                key: (
+                    self._without_keys(value, exclude_keys)
+                    if type(value) in [list, dict]
+                    else value
+                )
                 for key, value in data.items()
                 if key not in exclude_keys
             }
