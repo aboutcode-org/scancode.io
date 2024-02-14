@@ -188,7 +188,7 @@ class MatchCodePipesTest(TestCase):
         request_post_response_loc = (
             self.data_location
             / "matchcode"
-            / "match_to_purldb"
+            / "match_to_matchcode"
             / "request_get_results_response.json"
         )
         with open(request_post_response_loc, "r") as f:
@@ -220,7 +220,7 @@ class MatchCodePipesTest(TestCase):
         request_get_results_response_loc = (
             self.data_location
             / "matchcode"
-            / "match_to_purldb"
+            / "match_to_matchcode"
             / "request_get_results_response.json"
         )
         with open(request_get_results_response_loc, "r") as f:
@@ -240,7 +240,7 @@ class MatchCodePipesTest(TestCase):
 
     @mock.patch("scanpipe.pipes.matchcode.request_get")
     @mock.patch("scanpipe.pipes.matchcode.is_available")
-    def test_scanpipe_pipes_purldb_get_match_results(
+    def test_scanpipe_pipes_matchcode_get_match_results(
         self, mock_is_available, mock_request_get
     ):
         mock_is_available.return_value = True
@@ -248,7 +248,7 @@ class MatchCodePipesTest(TestCase):
         request_get_check_response_loc = (
             self.data_location
             / "matchcode"
-            / "match_to_purldb"
+            / "match_to_matchcode"
             / "request_get_check_response.json"
         )
         with open(request_get_check_response_loc, "r") as f:
@@ -257,7 +257,7 @@ class MatchCodePipesTest(TestCase):
         request_get_results_response_loc = (
             self.data_location
             / "matchcode"
-            / "match_to_purldb"
+            / "match_to_matchcode"
             / "request_get_results_response.json"
         )
         with open(request_get_results_response_loc, "r") as f:
