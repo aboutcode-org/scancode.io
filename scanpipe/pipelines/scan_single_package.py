@@ -36,7 +36,10 @@ from scanpipe.pipes.scancode import extract_archive
 
 class ScanSinglePackage(Pipeline):
     """
-    Scan a single package file or package archive with ScanCode-toolkit.
+    Scan a single package archive (or package manifest file).
+
+    This pipeline scans a single package for package metadata,
+    declared dependencies, licenses, license clarity score and copyrights.
 
     The output is a summary of the scan results in JSON format.
     """

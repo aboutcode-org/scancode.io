@@ -25,18 +25,27 @@ Here are some general guidelines based on different input scenarios:
 
 - If you have a **Docker image** as input, use the
   :ref:`analyze_docker_image <pipeline_analyze_docker_image>` pipeline.
-- For a full **codebase compressed as an archive**, choose the
+- For a full **codebase compressed as an archive**, optionally also with
+  it's **pre-resolved dependenices**, and want to detect all the packages
+  present linked with their respective files, use the
   :ref:`scan_codebase <pipeline_scan_codebase>` pipeline.
-- If you have a **single package archive**, opt for the
+- If you have a **single package archive**, and you want to get information
+  on licenses, copyrights and package metadata for it, opt for the
   :ref:`scan_single_package <pipeline_scan_single_package>` pipeline.
 - When dealing with a **Linux root filesystem** (rootfs), the
   :ref:`analyze_root_filesystem_or_vm_image <pipeline_analyze_root_filesystem>` pipeline
   is the appropriate choice.
 - For processing the results of a **ScanCode-toolkit scan** or **ScanCode.io scan**,
   use the :ref:`load_inventory <pipeline_load_inventory>` pipeline.
-- When you have **manifest files**, such as a
-  **CycloneDX BOM, SPDX document, lockfile**, etc.,
-  use the :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
+- When you want to import **SPDX/CycloneDX SBOMs or ABOUT files** into a project,
+  use the :ref:`load_sbom <pipeline_load_sbom>` pipeline.
+- When you have **lockfiles or other package manifests** in a codebase and you want to
+  resolve packages from their package requirements, use the
+  :ref:`resolve_dependencies <pipeline_resolve_dependencies>` pipeline.
+- When you have application **package archives/codebases** and optionally also
+  their **pre-resolved dependenices** and you want to **inspect packages**
+  present in the package manifests and dependency, use the
+  :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using
   the :ref:`map_deploy_to_develop <pipeline_map_deploy_to_develop>` pipeline.
 

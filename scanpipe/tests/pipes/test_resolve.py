@@ -20,7 +20,6 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-import json
 from pathlib import Path
 
 from django.test import TestCase
@@ -28,6 +27,8 @@ from django.test import TestCase
 from scanpipe import pipes
 from scanpipe.models import Project
 from scanpipe.pipes import resolve
+from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipes.scancode import extract_archives
 from scanpipe.tests import package_data1
 
 
@@ -84,10 +85,13 @@ class ScanPipeResolvePipesTest(TestCase):
         scancode_expression = "mit OR gpl-2.0 WITH generic-exception"
         self.assertEqual(scancode_expression, resolve.convert_spdx_expression(spdx))
 
-    def test_scanpipe_pipes_resolve_resolve_packages(self):
+    def test_scanpipe_pipes_resolve_get_packages_from_manifest(self):
         # ScanCode.io resolvers
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
-        packages = resolve.resolve_packages(str(input_location))
+        packages = resolve.get_packages_from_manifest(
+            input_location=str(input_location),
+            package_registry=resolve.sbom_registry,
+        )
         expected = {
             "filename": "Django-4.0.8-py3-none-any.whl",
             "download_url": "https://python.org/Django-4.0.8-py3-none-any.whl",
@@ -101,13 +105,6 @@ class ScanPipeResolvePipesTest(TestCase):
             "version": "4.0.8",
         }
         self.assertEqual([expected], packages)
-
-        # ScanCode-toolkit resolvers
-        input_location = self.manifest_location / "package.json"
-        packages = resolve.resolve_packages(str(input_location))
-        expected_location = self.manifest_location / "package.expected.json"
-        expected = json.loads(expected_location.read_text())
-        self.assertEqual(expected, packages)
 
     def test_scanpipe_pipes_resolve_resolve_about_packages(self):
         input_location = self.manifest_location / "Django-4.0.8-py3-none-any.whl.ABOUT"
@@ -159,3 +156,58 @@ class ScanPipeResolvePipesTest(TestCase):
             "md5": "76cf50f29e47676962645632737365a7",
         }
         self.assertEqual(expected, package_data)
+
+    def test_scanpipe_resolve_get_manifest_resources(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = (
+            self.data_location / "manifests" / "python-inspector-0.10.0.zip"
+        )
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+
+        extract_archives(project1.codebase_path, recurse=True)
+        pipes.collect_and_create_codebase_resources(project1)
+
+        resources = resolve.get_manifest_resources(project1)
+        self.assertTrue(resources.exists())
+        requirements_resource = project1.codebaseresources.get(
+            path=(
+                "python-inspector-0.10.0.zip-extract/"
+                "python-inspector-0.10.0/requirements.txt"
+            )
+        )
+        self.assertIn(requirements_resource, resources)
+
+    def test_scanpipe_resolve_get_packages_from_sbom(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "manifests" / "toml.spdx.json"
+
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+        pipes.collect_and_create_codebase_resources(project1)
+        resources = resolve.get_manifest_resources(project1)
+
+        packages = resolve.get_packages(
+            project1,
+            resolve.sbom_registry,
+            resources,
+        )
+        self.assertEqual(1, len(packages))
+        self.assertEqual("toml", packages[0]["name"])
+
+    def test_scanpipe_resolve_create_packages_and_dependencies(self):
+        project1 = Project.objects.create(name="Analysis")
+        input_location = self.data_location / "manifests" / "toml.spdx.json"
+
+        project1.copy_input_from(input_location)
+        copy_inputs(project1.inputs(), project1.codebase_path)
+        pipes.collect_and_create_codebase_resources(project1)
+        resources = resolve.get_manifest_resources(project1)
+        packages = resolve.get_packages(
+            project1,
+            resolve.sbom_registry,
+            resources,
+        )
+        resolve.create_packages_and_dependencies(project1, packages)
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(0, project1.discovereddependencies.count())

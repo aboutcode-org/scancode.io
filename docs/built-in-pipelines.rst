@@ -72,6 +72,22 @@ Load Inventory
     :members:
     :member-order: bysource
 
+.. _pipeline_load_sbom:
+
+Load SBOM
+---------
+.. autoclass:: scanpipe.pipelines.load_sbom.LoadSBOM()
+    :members:
+    :member-order: bysource
+
+.. _pipeline_resolve_dependencies:
+
+Resolve Dependencies
+--------------------
+.. autoclass:: scanpipe.pipelines.resolve_dependencies.ResolveDependencies()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_map_deploy_to_develop:
 
 Map Deploy To Develop
@@ -123,14 +139,6 @@ Populate PurlDB (addon)
 Scan Codebase
 -------------
 .. autoclass:: scanpipe.pipelines.scan_codebase.ScanCodebase()
-    :members:
-    :member-order: bysource
-
-.. _pipeline_scan_codebase_package:
-
-Scan Codebase Package
----------------------
-.. autoclass:: scanpipe.pipelines.scan_codebase_packages.ScanCodebasePackages()
     :members:
     :member-order: bysource
 

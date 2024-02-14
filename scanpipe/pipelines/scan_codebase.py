@@ -28,15 +28,11 @@ from scanpipe.pipes.input import copy_inputs
 
 class ScanCodebase(Pipeline):
     """
-    Scan a codebase with ScanCode-toolkit.
+    Scan a codebase for application packages, licenses, and copyrights.
 
-    If the codebase consists of several packages and dependencies, it will try to
-    resolve and scan those too.
-
-    Input files are copied to the project's codebase/ directory and are extracted
-    in place before running the scan.
-    Alternatively, the code can be manually copied to the project codebase/
-    directory.
+    This pipeline does not further scan the files contained in a package
+    for license and copyrights and only considers the declared license
+    of a package. It does not scan for system (Linux distro) packages.
     """
 
     @classmethod

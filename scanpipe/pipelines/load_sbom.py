@@ -21,15 +21,18 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
-from scanpipe.pipes import scancode
+from scanpipe.pipes import resolve
 
 
-class ScanCodebasePackages(ScanCodebase):
+class LoadSBOM(ScanCodebase):
     """
-    Scan a codebase for PURLs without assembling full packages/dependencies.
+    Load package data from one or more SBOMs.
 
-    This Pipeline is intended for gathering PURL information from a
-    codebase without the overhead of full package assembly.
+    Supported SBOMs:
+    - SPDX document
+    - CycloneDX BOM
+    Other formats:
+    - AboutCode .ABOUT files for package curations.
     """
 
     @classmethod
@@ -40,12 +43,27 @@ class ScanCodebasePackages(ScanCodebase):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
-            cls.scan_for_application_packages,
+            cls.get_sbom_inputs,
+            cls.get_packages_from_sboms,
+            cls.create_packages_from_sboms,
         )
 
-    def scan_for_application_packages(self):
-        """Scan unknown resources for packages information."""
-        # `assemble` is set to False because here in this pipeline we
-        # only detect package_data in resources without creating
-        # Package/Dependency instances, to get all the purls from a codebase.
-        scancode.scan_for_application_packages(self.project, assemble=False)
+    def get_sbom_inputs(self):
+        """Locate all the SBOMs among the codebase resources."""
+        self.manifest_resources = resolve.get_manifest_resources(self.project)
+
+    def get_packages_from_sboms(self):
+        """Get packages data from SBOMs."""
+        self.packages = resolve.get_packages(
+            project=self.project,
+            package_registry=resolve.sbom_registry,
+            manifest_resources=self.manifest_resources,
+            model="get_packages_from_sboms",
+        )
+
+    def create_packages_from_sboms(self):
+        """Create the packages and dependencies from the SBOM, in the database."""
+        resolve.create_packages_and_dependencies(
+            project=self.project,
+            packages=self.packages,
+        )
