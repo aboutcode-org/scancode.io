@@ -31,6 +31,9 @@ v33.2.0 (unreleased)
   https://github.com/nexB/scancode.io/issues/1034
   https://github.com/nexB/scancode.io/discussions/1035
 
+- Remove "packageFileName" entry from SPDX output.
+  https://github.com/nexB/scancode.io/issues/1076
+
 v33.1.0 (2024-02-02)
 --------------------
 
