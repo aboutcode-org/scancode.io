@@ -115,9 +115,11 @@ class Command(AddInputCommandMixin, BaseCommand):
                 ]:
                     if run_status == status.RUNNING and not scan_started:
                         scan_started = True
+                        scan_project_url = project.get_absolute_url()
                         purldb.update_status(
                             scannable_uri_uuid,
                             status="in progress",
+                            scan_project_url=scan_project_url,
                         )
                     time.sleep(sleep)
                     continue
