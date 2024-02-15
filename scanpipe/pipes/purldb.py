@@ -434,38 +434,65 @@ def create_packages_from_match_results(project, match_results):
         )
 
 
-def get_next_job(
-    timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL
-):
+def get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     """
-    Return the download URL and Package UUID of the next Package to be scanned from PurlDB
+    Return the download URL and Package UUID of the next Package to be scanned
+    from PurlDB
 
-    Return None if no job is available
+    Return None if the request was not successful
     """
     response = request_get(
         url=f"{api_url}scan_queue/get_next_download_url/",
         timeout=timeout,
     )
     if response:
-        download_url = response['download_url']
-        package_uuid = response['package_uuid']
+        download_url = response["download_url"]
+        package_uuid = response["package_uuid"]
         return download_url, package_uuid
 
 
 def send_results_to_purldb(
-    package_uuid, scan_output_location, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL,
+    scannable_uri_uuid,
+    scan_output_location,
+    timeout=DEFAULT_TIMEOUT,
+    api_url=PURLDB_API_URL,
 ):
+    """
+    Send project results to purldb for the package handeled by the ScannableURI
+    with uuid of `scannable_uri_uuid`
+    """
     with open(scan_output_location, "rb") as f:
-        data={
-            "package_uuid": package_uuid,
+        data = {
+            "scannable_uri_uuid": scannable_uri_uuid,
+            "scan_status": "scanned",
         }
-        files={
+        files = {
             "scan_file": f,
         }
         response = request_post(
-            url=f"{api_url}scan_queue/submit_scan_results/",
+            url=f"{api_url}scan_queue/update_status/",
             timeout=timeout,
             data=data,
             files=files,
         )
+    return response
+
+
+def update_status(
+    scannable_uri_uuid,
+    status,
+    scan_log="",
+    timeout=DEFAULT_TIMEOUT,
+    api_url=PURLDB_API_URL,
+):
+    data = {
+        "scannable_uri_uuid": scannable_uri_uuid,
+        "scan_status": status,
+        "scan_log": scan_log,
+    }
+    response = request_post(
+        url=f"{api_url}scan_queue/update_status/",
+        timeout=timeout,
+        data=data,
+    )
     return response

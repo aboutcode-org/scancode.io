@@ -21,7 +21,7 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import time
-from scanpipe.pipes import purldb
+
 from django.core.exceptions import ValidationError
 from django.core.management import CommandError
 from django.core.management import call_command
@@ -29,11 +29,10 @@ from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import extract_group_from_pipelines
-from scanpipe.management.commands import validate_copy_from
 from scanpipe.management.commands import validate_pipelines
 from scanpipe.models import Project
 from scanpipe.pipes import output
-
+from scanpipe.pipes import purldb
 
 
 class Command(AddInputCommandMixin, BaseCommand):
@@ -54,20 +53,20 @@ class Command(AddInputCommandMixin, BaseCommand):
             # 1. get download url from purldb
             response = purldb.get_next_job()
             if response:
-                download_url, package_uuid = response
+                download_url, scannable_uri_uuid = response
             else:
                 self.stdout.write("bad response")
                 time.sleep(sleep)
                 continue
 
-            if not download_url or not package_uuid:
+            if not download_url or not scannable_uri_uuid:
                 self.stdout.write("no new job")
                 time.sleep(sleep)
                 continue
 
             # 2. create and run project
             # TODO: create name based off of purl + uuid
-            name = package_uuid
+            name = scannable_uri_uuid
             project = Project(name=name)
             try:
                 project.full_clean(exclude=["slug"])
@@ -75,7 +74,7 @@ class Command(AddInputCommandMixin, BaseCommand):
                 raise CommandError("\n".join(e.messages))
 
             # Run validation before creating the project in the database
-            pipelines = ['scan_and_fingerprint_package']
+            pipelines = ["scan_and_fingerprint_package"]
             pipelines_data = extract_group_from_pipelines(pipelines)
             pipelines_data = validate_pipelines(pipelines_data)
             project.save()
@@ -84,7 +83,9 @@ class Command(AddInputCommandMixin, BaseCommand):
             self.stdout.write(msg, self.style.SUCCESS)
 
             for pipeline_name, selected_groups in pipelines_data.items():
-                self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+                self.project.add_pipeline(
+                    pipeline_name, selected_groups=selected_groups
+                )
 
             input_urls = [download_url]
             self.handle_input_urls(input_urls)
@@ -100,6 +101,8 @@ class Command(AddInputCommandMixin, BaseCommand):
             # TODO: consider refactoring `purldb.poll_until_success` to work here
             run = project.runs.first()
             status = run.Status
+            error_log = ""
+            scan_started = False
             while True:
                 run_status = run.status
                 if run_status == status.SUCCESS:
@@ -110,6 +113,12 @@ class Command(AddInputCommandMixin, BaseCommand):
                     status.QUEUED,
                     status.RUNNING,
                 ]:
+                    if run_status == status.RUNNING and not scan_started:
+                        scan_started = True
+                        purldb.update_status(
+                            scannable_uri_uuid,
+                            status="in progress",
+                        )
                     time.sleep(sleep)
                     continue
 
@@ -118,9 +127,18 @@ class Command(AddInputCommandMixin, BaseCommand):
                     status.STOPPED,
                     status.STALE,
                 ]:
+                    error_log = run.log
                     self.stderr.write(run.log)
-                    continue
+                    break
 
-            # 4. get project results and send to purldb
-            scan_output_location = output.to_json(project)
-            purldb.send_results_to_purldb(package_uuid, scan_output_location)
+            if error_log:
+                # send error response to purldb
+                purldb.update_status(
+                    scannable_uri_uuid,
+                    status="failed",
+                    scan_log=error_log,
+                )
+            else:
+                # 4. get project results and send to purldb
+                scan_output_location = output.to_json(project)
+                purldb.send_results_to_purldb(scannable_uri_uuid, scan_output_location)
