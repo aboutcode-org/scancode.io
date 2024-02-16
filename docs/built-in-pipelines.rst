@@ -56,7 +56,7 @@ Find Vulnerabilities (addon)
     :members:
     :member-order: bysource
 
-.. _pipeline_inspect_packages:
+.. _pipeline_inspect_elf:
 
 Inspect Elf Binaries
 ---------------------
@@ -64,7 +64,7 @@ Inspect Elf Binaries
     :members:
     :member-order: bysource
 
-.. _pipeline_inspect_elf:
+.. _pipeline_inspect_packages:
 
 Inspect Packages
 ----------------
