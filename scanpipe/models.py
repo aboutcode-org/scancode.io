@@ -1948,10 +1948,9 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
 
     def elfs(self):
         """
-        Resources that are ``files`` and their filetype startswith `elf` and
-        contains any of these `executable`, `relocatable`, `shared object`.
-        Keep sync with contenttype implementation:
-        https://github.com/nexB/typecode/blob/92feb7be3a87c1b541e7034c3f9797c96bc52305/src/typecode/contenttype.py#L733
+        Resources that are ``files`` and their filetype starts with "elf" and
+        contains any of these "executable", "relocatable", "shared object".
+        Keep sync with the content type implementation at ``typecode.contenttype``.
         """
         return (
             self.files()
