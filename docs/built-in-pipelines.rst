@@ -59,7 +59,7 @@ Find Vulnerabilities (addon)
 .. _pipeline_inspect_elf:
 
 Inspect Elf Binaries
----------------------
+--------------------
 .. autoclass:: scanpipe.pipelines.inspect_elf_binaries.InspectElfBinaries()
     :members:
     :member-order: bysource
