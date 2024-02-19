@@ -27,7 +27,7 @@ from elf_inspector.dwarf import get_dwarf_paths
 from scanpipe.pipelines import Pipeline
 
 
-class InspectElfBinaries(Pipeline):
+class InspectELFBinaries(Pipeline):
     """Inspect ELF binaries and collect DWARF paths."""
 
     download_inputs = False
