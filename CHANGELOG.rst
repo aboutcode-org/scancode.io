@@ -34,6 +34,10 @@ v33.2.0 (unreleased)
 - Remove "packageFileName" entry from SPDX output.
   https://github.com/nexB/scancode.io/issues/1076
 
+- Add an add-on pipeline for collecting DWARF debug symbol compilation 
+  unit paths when available from elfs.
+  https://github.com/nexB/purldb/issues/260
+
 v33.1.0 (2024-02-02)
 --------------------
 
@@ -67,9 +71,6 @@ v33.1.0 (2024-02-02)
   On the REST API, a new `upload_file_tag` field is available to use along the
   `upload_file`.
   https://github.com/nexB/scancode.io/issues/708
-
-- Add an add-on pipeline for collecting DWARF debug symbol compilation 
-  unit paths when available from elfs https://github.com/nexB/purldb/issues/260.
 
 v33.0.0 (2024-01-16)
 --------------------
