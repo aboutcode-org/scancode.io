@@ -56,6 +56,14 @@ Find Vulnerabilities (addon)
     :members:
     :member-order: bysource
 
+.. _pipeline_inspect_elf:
+
+Inspect ELF Binaries
+--------------------
+.. autoclass:: scanpipe.pipelines.inspect_elf_binaries.InspectELFBinaries()
+    :members:
+    :member-order: bysource
+
 .. _pipeline_inspect_packages:
 
 Inspect Packages

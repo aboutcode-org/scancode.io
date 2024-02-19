@@ -1946,6 +1946,24 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
             and ~Q(extra_data__directory_content__in=IGNORED_DIRECTORY_FINGERPRINTS)
         )
 
+    def elfs(self):
+        """
+        Resources that are ``files`` and their filetype starts with "ELF" and
+        contains any of these "executable", "relocatable", "shared object".
+        Keep sync with the content type implementation at ``typecode.contenttype``.
+        """
+        return (
+            self.files()
+            .filter(
+                file_type__istartswith="ELF",
+            )
+            .filter(
+                Q(file_type__icontains="executable")
+                | Q(file_type__icontains="relocatable")
+                | Q(file_type__icontains="shared object")
+            )
+        )
+
 
 class ScanFieldsModelMixin(models.Model):
     """Fields returned by the ScanCode-toolkit scans."""
