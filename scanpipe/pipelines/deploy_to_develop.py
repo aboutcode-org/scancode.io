@@ -57,7 +57,7 @@ class DeployToDevelop(Pipeline):
         return (
             cls.get_inputs,
             cls.extract_inputs_to_codebase_directory,
-            cls.extract_archives_in_place,
+            cls.extract_archives,
             cls.collect_and_create_codebase_resources,
             cls.fingerprint_codebase_directories,
             cls.flag_empty_files,
@@ -132,16 +132,6 @@ class DeployToDevelop(Pipeline):
 
         if errors:
             self.add_error("\n".join(errors))
-
-    def extract_archives_in_place(self):
-        """Extract recursively from* and to* archives in place with extractcode."""
-        extract_errors = scancode.extract_archives(
-            self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
-        )
-
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
 
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""

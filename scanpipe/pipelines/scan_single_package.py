@@ -31,7 +31,6 @@ from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.input import is_archive
-from scanpipe.pipes.scancode import extract_archive
 
 
 class ScanSinglePackage(Pipeline):
@@ -50,6 +49,7 @@ class ScanSinglePackage(Pipeline):
             cls.get_package_input,
             cls.collect_input_information,
             cls.extract_input_to_codebase_directory,
+            cls.extract_archives,
             cls.run_scan,
             cls.load_inventory_from_toolkit_scan,
             cls.make_summary_from_scan_results,
@@ -93,7 +93,11 @@ class ScanSinglePackage(Pipeline):
             copy_input(self.input_path, self.project.codebase_path)
             return
 
-        extract_errors = extract_archive(self.input_path, self.project.codebase_path)
+        extract_errors = scancode.extract_archive(
+            location=self.input_path,
+            target=self.project.codebase_path,
+        )
+
         if extract_errors:
             self.add_error("\n".join(extract_errors))
 
