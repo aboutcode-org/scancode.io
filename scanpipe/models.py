@@ -1955,7 +1955,7 @@ class CodebaseResourceQuerySet(ProjectRelatedQuerySet):
         return (
             self.files()
             .filter(
-                file_type__istartswith="elf",
+                file_type__istartswith="ELF",
             )
             .filter(
                 Q(file_type__icontains="executable")
