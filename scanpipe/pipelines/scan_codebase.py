@@ -54,16 +54,6 @@ class ScanCodebase(Pipeline):
         """
         copy_inputs(self.project.inputs(), self.project.codebase_path)
 
-    def extract_archives(self):
-        """Extract archives with extractcode."""
-        extract_errors = scancode.extract_archives(
-            location=self.project.codebase_path,
-            recurse=self.env.get("extract_recursively", True),
-        )
-
-        if extract_errors:
-            self.add_error("\n".join(extract_errors))
-
     def collect_and_create_codebase_resources(self):
         """Collect and create codebase resources."""
         pipes.collect_and_create_codebase_resources(self.project)
