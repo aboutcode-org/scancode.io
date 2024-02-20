@@ -249,7 +249,7 @@ class Pipeline(BasePipeline):
             flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
     def extract_archives(self):
-        """Extract archives with extractcode."""
+        """Extract archives located in the codebase/ directory with extractcode."""
         from scanpipe.pipes import scancode
 
         extract_errors = scancode.extract_archives(
