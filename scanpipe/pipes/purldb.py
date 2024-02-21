@@ -196,7 +196,7 @@ def submit_purls(packages, timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     data = json.dumps(payload)
 
     response = request_post(
-        url=f"{api_url}packages/index_packages/",
+        url=f"{api_url}collect/index_packages/",
         data=data,
         timeout=timeout,
         headers=headers,
