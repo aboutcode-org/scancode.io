@@ -31,6 +31,31 @@ from scanpipe.pipes import fetch
 class ScanPipeFetchPipesTest(TestCase):
     data_location = Path(__file__).parent.parent / "data"
 
+    def test_scanpipe_pipes_fetch_get_fetcher(self):
+        self.assertEqual(fetch.fetch_http, fetch.get_fetcher("http://a.b/f.z"))
+        self.assertEqual(fetch.fetch_http, fetch.get_fetcher("https://a.b/f.z"))
+        self.assertEqual(fetch.fetch_docker_image, fetch.get_fetcher("docker://image"))
+
+        with self.assertRaises(ValueError) as cm:
+            fetch.get_fetcher("")
+        expected = "URL scheme '' is not supported."
+        self.assertEqual(expected, str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            fetch.get_fetcher("abcd://a.b/f.z")
+        expected = "URL scheme 'abcd' is not supported."
+        self.assertEqual(expected, str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            fetch.get_fetcher("Docker://image")
+        expected = "URL scheme 'Docker' is not supported. Did you mean: 'docker'?"
+        self.assertEqual(expected, str(cm.exception))
+
+        with self.assertRaises(ValueError) as cm:
+            fetch.get_fetcher("DOCKER://image")
+        expected = "URL scheme 'DOCKER' is not supported. Did you mean: 'docker'?"
+        self.assertEqual(expected, str(cm.exception))
+
     @mock.patch("requests.get")
     def test_scanpipe_pipes_fetch_http(self, mock_get):
         url = "https://example.com/filename.zip"
