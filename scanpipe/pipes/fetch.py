@@ -215,7 +215,7 @@ def fetch_docker_image(download_url, to=None):
     """
     Fetch a docker image from the provided Docker image `download_url`,
     using the "docker://reference" URL syntax.
-    Return a `download` object.
+    Return a `Download` object.
 
     Docker references are documented here:
     https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
@@ -224,8 +224,8 @@ def fetch_docker_image(download_url, to=None):
     if not re.match(whitelist, download_url):
         raise ValueError("Invalid Docker reference.")
 
-    name = python_safe_name(download_url.replace("docker://", ""))
-    filename = f"{name}.tar"
+    reference = download_url.replace("docker://", "")
+    filename = f"{python_safe_name(reference)}.tar"
     download_directory = to or tempfile.mkdtemp()
     output_file = Path(download_directory, filename)
     target = f"docker-archive:{output_file}"

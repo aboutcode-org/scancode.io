@@ -88,8 +88,12 @@ class ScanPipeFetchPipesTest(TestCase):
     def test_scanpipe_pipes_fetch_docker_image(
         self, mock_run_command_safely, mock_skopeo, mock_platform
     ):
-        url = "docker://debian:10.9"
+        with self.assertRaises(ValueError) as cm:
+            fetch.fetch_docker_image("Docker://debian")
+        expected = "Invalid Docker reference."
+        self.assertEqual(expected, str(cm.exception))
 
+        url = "docker://debian:10.9"
         mock_platform.return_value = "linux", "amd64", ""
         mock_skopeo.return_value = "skopeo"
         mock_run_command_safely.side_effect = Exception

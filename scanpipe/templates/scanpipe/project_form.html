@@ -85,7 +85,7 @@
           {{ form.media }}
         </div>
 
-        <div class="column has-background-light has-border-radius">
+        <div class="column has-background-light has-border-radius mb-3">
           <h3 class="subtitle mb-3">Pipelines:</h3>
           {% for pipeline_name, pipeline_info in pipelines.items %}
             <div {% if not forloop.last %}class="mb-3"{% endif %}>
