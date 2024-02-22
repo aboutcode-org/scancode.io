@@ -41,9 +41,16 @@ class ScanPipeFormsTest(TestCase):
     @mock.patch("requests.head")
     def test_scanpipe_forms_inputs_base_form_input_urls(self, mock_head):
         data = {
+            "input_urls": "Docker://debian",
+        }
+        form = InputsBaseForm(data=data)
+        self.assertFalse(form.is_valid())
+        error_msg = "URL scheme 'Docker' is not supported. Did you mean: 'docker'?"
+        self.assertEqual({"input_urls": [error_msg]}, form.errors)
+
+        data = {
             "input_urls": "https://example.com/archive.zip",
         }
-
         mock_head.side_effect = requests.exceptions.RequestException
         form = InputsBaseForm(data=data)
         self.assertFalse(form.is_valid())

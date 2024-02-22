@@ -29,7 +29,7 @@ from taggit.forms import TagField
 from taggit.forms import TagWidget
 
 from scanpipe.models import Project
-from scanpipe.pipes.fetch import check_urls_availability
+from scanpipe.pipes import fetch
 
 scanpipe_app = apps.get_app_config("scanpipe")
 
@@ -76,6 +76,23 @@ class InputsBaseForm(forms.Form):
     class Media:
         js = ("add-inputs.js",)
 
+    @staticmethod
+    def validate_scheme(input_urls):
+        """
+        Raise a validation error if some of the `input_urls` have a scheme that is not
+        supported.
+        """
+        errors = []
+
+        for url in input_urls:
+            try:
+                fetch.get_fetcher(url)
+            except ValueError as e:
+                errors.append(str(e))
+
+        if errors:
+            raise ValidationError("\n".join(errors))
+
     def clean_input_urls(self):
         """
         Fetch the `input_urls` and sets the `downloads` objects in the cleaned_data.
@@ -84,8 +101,9 @@ class InputsBaseForm(forms.Form):
         input_urls_str = self.cleaned_data.get("input_urls", "")
         input_urls = input_urls_str.split()
 
-        errors = check_urls_availability(input_urls)
-        if errors:
+        self.validate_scheme(input_urls)
+
+        if errors := fetch.check_urls_availability(input_urls):
             raise ValidationError("Could not fetch:\n" + "\n".join(errors))
 
         return input_urls

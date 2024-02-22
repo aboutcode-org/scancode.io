@@ -41,6 +41,9 @@ v33.2.0 (unreleased)
 - Extract all archives recursively in the `scan_single_package` pipeline.
   https://github.com/nexB/scancode.io/issues/1081
 
+- Add URL scheme validation with explicit error messages for input URLs.
+  https://github.com/nexB/scancode.io/issues/1047
+
 v33.1.0 (2024-02-02)
 --------------------
 
