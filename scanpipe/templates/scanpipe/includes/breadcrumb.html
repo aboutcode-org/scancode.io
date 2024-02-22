@@ -8,7 +8,7 @@
         <li><a href="{{ project.get_absolute_url }}" class="has-text-grey">{{ project.name }}</a></li>
       {% endif %}
       {% if current %}
-        <li class="is-active"><a href="#" aria-current="page">{{ current }}</a></li>
+        <li><a href="{{ request.path }}" class="has-text-dark has-text-weight-semibold" aria-current="page">{{ current }}</a></li>
       {% else %}
         <li class="is-active"><a href="#" aria-current="page">{{ project.name }}</a></li>
       {% endif %}
