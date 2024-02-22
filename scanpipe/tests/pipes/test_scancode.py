@@ -40,6 +40,7 @@ from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredDependency
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
+from scanpipe.pipes import collect_and_create_codebase_resources
 from scanpipe.pipes import input
 from scanpipe.pipes import scancode
 from scanpipe.pipes.input import copy_input
@@ -542,3 +543,14 @@ class ScanPipeScancodePipesTest(TestCase):
 
         results = scancode.get_detection_data(detection_entry)
         self.assertEqual(expected, results)
+
+    def test_scanpipe_scancode_process_package_data(self):
+        project1 = Project.objects.create(name="Utility: PurlDB")
+        package_json_location = self.data_location / "manifests" / "package.json"
+        copy_input(package_json_location, project1.codebase_path)
+        collect_and_create_codebase_resources(project1)
+        scancode.scan_for_application_packages(project1, assemble=False)
+        scancode.process_package_data(project1)
+
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(6, project1.discovereddependencies.count())

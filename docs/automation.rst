@@ -27,7 +27,7 @@ automation methods such as a cron job or a git hook::
         "https://github.com/nexB/scancode.io/archive/refs/tags/v32.4.0.zip",
     ]
     PIPELINES = [
-        "scan_codebase_package",
+        "inspect_packages",
         "find_vulnerabilities",
     ]
     EXECUTE_NOW = True

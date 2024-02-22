@@ -390,9 +390,11 @@ class PipelinesIntegrationTest(TestCase):
 
         if isinstance(data, dict):
             return {
-                key: self._without_keys(value, exclude_keys)
-                if type(value) in [list, dict]
-                else value
+                key: (
+                    self._without_keys(value, exclude_keys)
+                    if type(value) in [list, dict]
+                    else value
+                )
                 for key, value in data.items()
                 if key not in exclude_keys
             }
@@ -586,8 +588,8 @@ class PipelinesIntegrationTest(TestCase):
         expected_file = self.data_location / "is-npm-1.0.0_scan_codebase.json"
         self.assertPipelineResultEqual(expected_file, result_file)
 
-    def test_scanpipe_scan_codebase_packages_does_not_create_packages(self):
-        pipeline_name = "scan_codebase_packages"
+    def test_scanpipe_inspect_packages_creates_packages_npm(self):
+        pipeline_name = "inspect_packages"
         project1 = Project.objects.create(name="Analysis")
 
         filename = "is-npm-1.0.0.tgz"
@@ -601,8 +603,26 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(0, exitcode, msg=out)
 
         self.assertEqual(6, project1.codebaseresources.count())
+        self.assertEqual(1, project1.discoveredpackages.count())
+        self.assertEqual(1, project1.discovereddependencies.count())
+
+    def test_scanpipe_inspect_packages_creates_packages_pypi(self):
+        pipeline_name = "inspect_packages"
+        project1 = Project.objects.create(name="Analysis")
+
+        input_location = (
+            self.data_location / "manifests" / "python-inspector-0.10.0.zip"
+        )
+        project1.copy_input_from(input_location)
+
+        run = project1.add_pipeline(pipeline_name)
+        pipeline = run.make_pipeline_instance()
+
+        exitcode, out = pipeline.execute()
+        self.assertEqual(0, exitcode, msg=out)
+        self.assertEqual(6, project1.codebaseresources.count())
         self.assertEqual(0, project1.discoveredpackages.count())
-        self.assertEqual(0, project1.discovereddependencies.count())
+        self.assertEqual(26, project1.discovereddependencies.count())
 
     def test_scanpipe_scan_codebase_can_process_wheel(self):
         pipeline_name = "scan_codebase"
@@ -861,8 +881,8 @@ class PipelinesIntegrationTest(TestCase):
         expected = vulnerability_data[0]["affected_by_vulnerabilities"]
         self.assertEqual(expected, package1.affected_by_vulnerabilities)
 
-    def test_scanpipe_inspect_manifest_pipeline_integration(self):
-        pipeline_name = "inspect_packages"
+    def test_scanpipe_resolve_dependencies_pipeline_integration(self):
+        pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
 
         run = project1.add_pipeline(pipeline_name)
@@ -873,11 +893,11 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(1, project1.projectmessages.count())
         message = project1.projectmessages.get()
         self.assertEqual("get_packages_from_manifest", message.model)
-        expected = "No manifests found for resolving packages"
+        expected = "No resources found with package data"
         self.assertIn(expected, message.description)
 
-    def test_scanpipe_inspect_manifest_pipeline_integration_empty_manifest(self):
-        pipeline_name = "inspect_packages"
+    def test_scanpipe_resolve_dependencies_pipeline_integration_empty_manifest(self):
+        pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
 
         run = project1.add_pipeline(pipeline_name)
@@ -891,8 +911,8 @@ class PipelinesIntegrationTest(TestCase):
         expected = "No packages could be resolved for"
         self.assertIn(expected, message.description)
 
-    def test_scanpipe_inspect_manifest_pipeline_integration_misc(self):
-        pipeline_name = "inspect_packages"
+    def test_scanpipe_resolve_dependencies_pipeline_integration_misc(self):
+        pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = (
@@ -908,10 +928,10 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual(26, project1.discoveredpackages.count())
 
     @mock.patch("scanpipe.pipes.resolve.resolve_dependencies")
-    def test_scanpipe_inspect_manifest_pipeline_pypi_integration(
+    def test_scanpipe_resolve_dependencies_pipeline_pypi_integration(
         self, resolve_dependencies
     ):
-        pipeline_name = "inspect_packages"
+        pipeline_name = "resolve_dependencies"
         project1 = Project.objects.create(name="Analysis")
 
         run = project1.add_pipeline(pipeline_name)
@@ -929,8 +949,8 @@ class PipelinesIntegrationTest(TestCase):
             if value and field_name not in exclude_fields:
                 self.assertEqual(value, getattr(discoveredpackage, field_name))
 
-    def test_scanpipe_inspect_manifest_pipeline_aboutfile_integration(self):
-        pipeline_name = "inspect_packages"
+    def test_scanpipe_load_sbom_pipeline_aboutfile_integration(self):
+        pipeline_name = "load_sbom"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = (
@@ -951,8 +971,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("4.0.8", discoveredpackage.version)
         self.assertEqual("bsd-new", discoveredpackage.declared_license_expression)
 
-    def test_scanpipe_inspect_manifest_pipeline_spdx_integration(self):
-        pipeline_name = "inspect_packages"
+    def test_scanpipe_load_sbom_pipeline_spdx_integration(self):
+        pipeline_name = "load_sbom"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "manifests" / "toml.spdx.json"
@@ -973,8 +993,8 @@ class PipelinesIntegrationTest(TestCase):
         self.assertEqual("MIT", discoveredpackage.extracted_license_statement)
         self.assertEqual("mit", discoveredpackage.declared_license_expression)
 
-    def test_scanpipe_inspect_manifest_pipeline_cyclonedx_integration(self):
-        pipeline_name = "inspect_packages"
+    def test_scanpipe_load_sbom_pipeline_cyclonedx_integration(self):
+        pipeline_name = "load_sbom"
         project1 = Project.objects.create(name="Analysis")
 
         input_location = self.data_location / "cyclonedx/nested.cdx.json"
@@ -1176,6 +1196,7 @@ class PipelinesIntegrationTest(TestCase):
         pipes.collect_and_create_codebase_resources(project1)
 
         scancode.scan_for_application_packages(project1, assemble=False)
+        scancode.process_package_data(project1)
 
         run = project1.add_pipeline(pipeline_name)
         pipeline = run.make_pipeline_instance()
@@ -1183,7 +1204,10 @@ class PipelinesIntegrationTest(TestCase):
         exitcode, out = pipeline.execute()
         self.assertEqual(0, exitcode, msg=out)
 
-        self.assertIn("Populating PurlDB with 7 detected PURLs", run.log)
-        self.assertIn("Successfully queued 7 PURLs for indexing in PurlDB", run.log)
+        self.assertIn("Populating PurlDB with 1 PURLs from DiscoveredPackage", run.log)
+        self.assertIn(
+            "Populating PurlDB with 6 unresolved PURLs from DiscoveredDependency",
+            run.log,
+        )
         self.assertIn("1 PURLs were already present in PurlDB index queue", run.log)
         self.assertIn("Couldn't index 1 unsupported PURLs", run.log)

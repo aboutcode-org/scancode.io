@@ -17,6 +17,33 @@ v33.2.0 (unreleased)
 
    https://github.com/nexB/scancode.io/issues/1071
 
+- Rename pipeline for consistency and precision:
+  * scan_codebase_packages: inspect_packages
+
+  Restructure the inspect_manifest pipeline into:
+  * load_sbom: for loading SPDX/CycloneDX SBOMs and ABOUT files
+  * resolve_dependencies: for resolving package dependencies
+  * inspect_packages: gets package data from package manifests/lockfiles 
+
+  A data migration is included to facilitate the migration of existing data.
+  Only the new names are available in the web UI but the REST API and CLI are backward
+  compatible with the old names.
+  https://github.com/nexB/scancode.io/issues/1034
+  https://github.com/nexB/scancode.io/discussions/1035
+
+- Remove "packageFileName" entry from SPDX output.
+  https://github.com/nexB/scancode.io/issues/1076
+
+- Add an add-on pipeline for collecting DWARF debug symbol compilation 
+  unit paths when available from elfs.
+  https://github.com/nexB/purldb/issues/260
+
+- Extract all archives recursively in the `scan_single_package` pipeline.
+  https://github.com/nexB/scancode.io/issues/1081
+
+- Add URL scheme validation with explicit error messages for input URLs.
+  https://github.com/nexB/scancode.io/issues/1047
+
 v33.1.0 (2024-02-02)
 --------------------
 

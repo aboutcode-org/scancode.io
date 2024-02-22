@@ -25,36 +25,55 @@ Here are some general guidelines based on different input scenarios:
 
 - If you have a **Docker image** as input, use the
   :ref:`analyze_docker_image <pipeline_analyze_docker_image>` pipeline.
-- For a full **codebase compressed as an archive**, choose the
+- For a full **codebase compressed as an archive**, optionally also with
+  it's **pre-resolved dependenices**, and want to detect all the packages
+  present linked with their respective files, use the
   :ref:`scan_codebase <pipeline_scan_codebase>` pipeline.
-- If you have a **single package archive**, opt for the
+- If you have a **single package archive**, and you want to get information
+  on licenses, copyrights and package metadata for it, opt for the
   :ref:`scan_single_package <pipeline_scan_single_package>` pipeline.
 - When dealing with a **Linux root filesystem** (rootfs), the
   :ref:`analyze_root_filesystem_or_vm_image <pipeline_analyze_root_filesystem>` pipeline
   is the appropriate choice.
 - For processing the results of a **ScanCode-toolkit scan** or **ScanCode.io scan**,
   use the :ref:`load_inventory <pipeline_load_inventory>` pipeline.
-- When you have **manifest files**, such as a
-  **CycloneDX BOM, SPDX document, lockfile**, etc.,
-  use the :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
+- When you want to import **SPDX/CycloneDX SBOMs or ABOUT files** into a project,
+  use the :ref:`load_sbom <pipeline_load_sbom>` pipeline.
+- When you have **lockfiles or other package manifests** in a codebase and you want to
+  resolve packages from their package requirements, use the
+  :ref:`resolve_dependencies <pipeline_resolve_dependencies>` pipeline.
+- When you have application **package archives/codebases** and optionally also
+  their **pre-resolved dependenices** and you want to **inspect packages**
+  present in the package manifests and dependency, use the
+  :ref:`inspect_packages <pipeline_inspect_packages>` pipeline.
 - For scenarios involving both a **development and deployment codebase**, consider using
   the :ref:`map_deploy_to_develop <pipeline_map_deploy_to_develop>` pipeline.
+- For getting the DWARF debug symbol compilation unit paths when available from an elf binary.
+  use the :ref:`inspect_elf_binaries <pipeline_inspect_elf>` pipeline.
 
 These pipelines will automatically execute the necessary steps to scan and create the
 packages, dependencies, and resources for your project based on the input data provided.
 
-After running one of the above pipelines, you may further **enhance your project data**
-by running some of the following additional pipelines:
+After executing one of the pipelines mentioned above, you have the option to
+**augment your project's data** by executing additional pipelines, often referred to
+as **addon** pipelines.
+These additional pipelines offer further enhancements and modifications to your
+existing data, allowing for more comprehensive analysis and insights.
 
 - If you wish to **find vulnerabilities** for packages and dependencies, you can use the
   :ref:`find_vulnerabilities <pipeline_find_vulnerabilities>` pipeline.
   Note that setting up :ref:`VulnerableCode <scancodeio_settings_vulnerablecode>` is
   required for this pipeline to function properly.
 
-- To **populate the PurlDB** with your project discovered packages, use the
-  :ref:`populate_purldb <pipeline_populate_purldb>` pipeline.
-  Please ensure that you have set up
-  :ref:`PurlDB <scancodeio_settings_purldb>` before running this pipeline.
+- To **populate PurlDB with the packages discovered in your project**,
+  use the :ref:`populate_purldb <pipeline_populate_purldb>` pipeline.
+  Before executing this pipeline, make sure to set up
+  :ref:`PurlDB <scancodeio_settings_purldb>`.
+
+- To **match your project codebase resources to PurlDB for Package matches**,
+  utilize the :ref:`match_to_purldb <pipeline_match_to_purldb>` pipeline.
+  It's essential to set up :ref:`PurlDB <scancodeio_settings_purldb>` before executing
+  this pipeline.
 
 What is the difference between scan_codebase and scan_single_package pipelines?
 -------------------------------------------------------------------------------

@@ -248,6 +248,18 @@ class Pipeline(BasePipeline):
         if ignored_patterns := self.env.get("ignored_patterns"):
             flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
 
+    def extract_archives(self):
+        """Extract archives located in the codebase/ directory with extractcode."""
+        from scanpipe.pipes import scancode
+
+        extract_errors = scancode.extract_archives(
+            location=self.project.codebase_path,
+            recurse=self.env.get("extract_recursively", True),
+        )
+
+        if extract_errors:
+            self.add_error("\n".join(extract_errors))
+
 
 def is_pipeline(obj):
     """

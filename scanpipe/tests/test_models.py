@@ -2110,6 +2110,52 @@ class ScanPipeModelsTest(TestCase):
         results = self.project1.codebaseresources.has_directory_content_fingerprint()
         self.assertQuerySetEqual(expected, results, ordered=False)
 
+    def test_scanpipe_codebase_resource_queryset_elfs(self):
+        project = Project.objects.create(name="Test")
+        resource_starting_with_elf_and_executable_in_file_type = CodebaseResource(
+            file_type="""ELF 32-bit LSB executable, ARM, version 1 (ARM), statically
+             linked, with debug_info, not stripped""",
+            project=project,
+            path="a",
+            type=CodebaseResource.Type.FILE,
+        )
+        resource_starting_with_elf_and_executable_in_file_type.save()
+        resource_with_executable_in_file_type = CodebaseResource(
+            file_type="""32-bit LSB executable, ARM, version 1 (ARM), statically
+              linked, with debug_info, not stripped""",
+            project=project,
+            path="b",
+            type=CodebaseResource.Type.FILE,
+        )
+        resource_with_executable_in_file_type.save()
+        resource_starting_with_elf_in_file_type = CodebaseResource(
+            file_type="""ELF 32-bit LSB resourcable, ARM, version 1 (ARM), statically
+             linked, with debug_info, not stripped""",
+            project=project,
+            path="c",
+            type=CodebaseResource.Type.FILE,
+        )
+        resource_starting_with_elf_in_file_type.save()
+        resource = CodebaseResource(
+            file_type="""32-bit LSB relocatable, ARM, version 1 (ARM), statically
+              linked, with debug_info, not stripped""",
+            project=project,
+            path="d",
+            type=CodebaseResource.Type.FILE,
+        )
+        resource.save()
+        resource_starting_with_elf_and_relocatable_in_file_type = CodebaseResource(
+            file_type="""ELF 32-bit LSB relocatable, ARM, version 1 (ARM), statically
+              linked, with debug_info, not stripped""",
+            project=project,
+            path="e",
+            type=CodebaseResource.Type.FILE,
+        )
+        resource_starting_with_elf_and_relocatable_in_file_type.save()
+        paths = [str(resource.path) for resource in project.codebaseresources.elfs()]
+        self.assertTrue("e" in paths)
+        self.assertTrue("a" in paths)
+
 
 class ScanPipeModelsTransactionTest(TransactionTestCase):
     """

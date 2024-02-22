@@ -29,35 +29,87 @@ from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
 from packageurl import PackageURL
 from python_inspector.api import resolve_dependencies
-from scancode.api import get_package_data
 
 from scanpipe.models import DiscoveredPackage
 from scanpipe.pipes import cyclonedx
 from scanpipe.pipes import flag
 from scanpipe.pipes import spdx
+from scanpipe.pipes import update_or_create_dependency
+from scanpipe.pipes import update_or_create_package
 
 """
 Resolve packages from manifest, lockfile, and SBOM.
 """
 
 
-def resolve_packages(input_location):
-    """Resolve the packages from manifest file."""
+def get_packages(project, package_registry, manifest_resources, model=None):
+    """
+    Get package data from package manifests/lockfiles/SBOMs or
+    get package data for resolved packages from package requirements.
+    """
+    resolved_packages = []
+
+    if not manifest_resources.exists():
+        project.add_warning(
+            description="No resources found with package data",
+            model=model,
+        )
+        return
+
+    for resource in manifest_resources:
+        if packages := get_packages_from_manifest(
+            input_location=resource.location,
+            package_registry=package_registry,
+        ):
+            resolved_packages.extend(packages)
+        else:
+            project.add_error(
+                description="No packages could be resolved for",
+                model=model,
+                details={"path": resource.path},
+            )
+
+    return resolved_packages
+
+
+def create_packages_and_dependencies(project, packages, resolved=False):
+    """
+    Create DiscoveredPackage and DiscoveredDependency objects for
+    packages detected in a package manifest, lockfile or SBOM.
+
+    If resolved, create packages out of resolved dependencies,
+    otherwise create dependencies.
+    """
+    for package_data in packages:
+        package_data = set_license_expression(package_data)
+        dependencies = package_data.pop("dependencies", [])
+        update_or_create_package(project, package_data)
+
+        for dependency_data in dependencies:
+            if resolved:
+                if resolved_package := dependency_data.get("resolved_package"):
+                    resolved_package.pop("dependencies", [])
+                    update_or_create_package(project, resolved_package)
+            else:
+                update_or_create_dependency(project, dependency_data)
+
+
+def get_packages_from_manifest(input_location, package_registry=None):
+    """
+    Resolve packages or get packages data from a package manifest file/
+    lockfile/SBOM at `input_location`.
+    """
     default_package_type = get_default_package_type(input_location)
     # we only try to resolve packages if file at input_location is
     # a package manifest, and ignore for other files
     if not default_package_type:
         return
 
-    # The ScanCode.io resolvers take precedence over the ScanCode-toolkit ones.
-    resolver = resolver_registry.get(default_package_type)
+    # Get resolvers for available packages/SBOMs in the registry
+    resolver = package_registry.get(default_package_type)
     if resolver:
         resolved_packages = resolver(input_location=input_location)
-    else:
-        package_data = get_package_data(location=input_location)
-        resolved_packages = package_data.get("package_data", [])
-
-    return resolved_packages
+        return resolved_packages
 
 
 def get_manifest_resources(project):
@@ -228,10 +280,17 @@ def get_default_package_type(input_location):
                 return "spdx"
 
 
-# Mapping between the `default_package_type` its related resolver function
+# Mapping between `default_package_type` its related resolver functions
+# for package dependency resolvers
 resolver_registry = {
-    "about": resolve_about_packages,
     "pypi": resolve_pypi_packages,
+}
+
+
+# Mapping between `default_package_type` its related resolver functions
+# for SBOMs and About files
+sbom_registry = {
+    "about": resolve_about_packages,
     "spdx": resolve_spdx_packages,
     "cyclonedx": cyclonedx.resolve_cyclonedx_packages,
 }

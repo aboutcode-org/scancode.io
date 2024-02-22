@@ -20,32 +20,28 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe.pipelines.scan_codebase import ScanCodebase
-from scanpipe.pipes import scancode
+from pathlib import Path
+
+from elf_inspector.dwarf import get_dwarf_paths
+
+from scanpipe.pipelines import Pipeline
 
 
-class ScanCodebasePackages(ScanCodebase):
-    """
-    Scan a codebase for PURLs without assembling full packages/dependencies.
+class InspectELFBinaries(Pipeline):
+    """Inspect ELF binaries and collect DWARF paths."""
 
-    This Pipeline is intended for gathering PURL information from a
-    codebase without the overhead of full package assembly.
-    """
+    download_inputs = False
+    is_addon = True
 
     @classmethod
     def steps(cls):
-        return (
-            cls.copy_inputs_to_codebase_directory,
-            cls.extract_archives,
-            cls.collect_and_create_codebase_resources,
-            cls.flag_empty_files,
-            cls.flag_ignored_resources,
-            cls.scan_for_application_packages,
-        )
+        return (cls.collect_dwarf_source_path_references,)
 
-    def scan_for_application_packages(self):
-        """Scan unknown resources for packages information."""
-        # `assemble` is set to False because here in this pipeline we
-        # only detect package_data in resources without creating
-        # Package/Dependency instances, to get all the purls from a codebase.
-        scancode.scan_for_application_packages(self.project, assemble=False)
+    def collect_dwarf_source_path_references(self):
+        """
+        Update ``extra_data`` of ELF files with
+        dwarf data extracted from ELF files.
+        """
+        for elf in self.project.codebaseresources.elfs():
+            dwarf_paths = get_dwarf_paths(Path(self.project.codebase_path / elf.path))
+            elf.update_extra_data(dwarf_paths)

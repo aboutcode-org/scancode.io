@@ -404,7 +404,8 @@ def add_resource_to_package(package_uid, resource, project):
 def assemble_packages(project):
     """
     Create instances of DiscoveredPackage and DiscoveredDependency for `project`
-    from the parsed package data present in the CodebaseResources of `project`.
+    from the parsed package data present in the CodebaseResources of `project`,
+    using the respective package handlers for each package manifest type.
     """
     logger.info(f"Project {project} assemble_packages:")
     seen_resource_paths = set()
@@ -440,6 +441,34 @@ def assemble_packages(project):
                     seen_resource_paths.add(item.path)
                 else:
                     logger.info(f"Unknown Package assembly item type: {item!r}")
+
+
+def process_package_data(project):
+    """
+    Create instances of DiscoveredPackage and DiscoveredDependency for `project`
+    from the parsed package data present in the CodebaseResources of `project`.
+
+    Here package assembly though package handlers are not performed, instead
+    package/dependency objects are created directly from package data.
+    """
+    logger.info(f"Project {project} process_package_data:")
+    seen_resource_paths = set()
+
+    for resource in project.codebaseresources.has_package_data():
+        if resource.path in seen_resource_paths:
+            continue
+
+        logger.info(f"  Processing: {resource.path}")
+        for package_mapping in resource.package_data:
+            pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+            logger.info(f"  Package data: {pd.purl}")
+
+            package_data = pd.to_dict()
+            dependencies = package_data.pop("dependencies")
+            pipes.update_or_create_package(project, package_data)
+
+            for dep in dependencies:
+                pipes.update_or_create_dependency(project, dep)
 
 
 def get_packages_with_purl_from_resources(project):
