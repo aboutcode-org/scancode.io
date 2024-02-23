@@ -447,8 +447,8 @@ def get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
     )
     if response:
         download_url = response["download_url"]
-        package_uuid = response["package_uuid"]
-        return download_url, package_uuid
+        scannable_uri_uuid = response["scannable_uri_uuid"]
+        return download_url, scannable_uri_uuid
 
 
 def send_results_to_purldb(

@@ -133,6 +133,8 @@ class Command(AddInputCommandMixin, BaseCommand):
                     self.stderr.write(run.log)
                     break
 
+                time.sleep(sleep)
+
             if error_log:
                 # send error response to purldb
                 purldb.update_status(
