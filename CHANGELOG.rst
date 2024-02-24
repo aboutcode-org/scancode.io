@@ -23,7 +23,7 @@ v33.2.0 (unreleased)
   Restructure the inspect_manifest pipeline into:
   * load_sbom: for loading SPDX/CycloneDX SBOMs and ABOUT files
   * resolve_dependencies: for resolving package dependencies
-  * inspect_packages: gets package data from package manifests/lockfiles 
+  * inspect_packages: gets package data from package manifests/lockfiles
 
   A data migration is included to facilitate the migration of existing data.
   Only the new names are available in the web UI but the REST API and CLI are backward
@@ -34,7 +34,7 @@ v33.2.0 (unreleased)
 - Remove "packageFileName" entry from SPDX output.
   https://github.com/nexB/scancode.io/issues/1076
 
-- Add an add-on pipeline for collecting DWARF debug symbol compilation 
+- Add an add-on pipeline for collecting DWARF debug symbol compilation
   unit paths when available from elfs.
   https://github.com/nexB/purldb/issues/260
 
@@ -43,6 +43,8 @@ v33.2.0 (unreleased)
 
 - Add URL scheme validation with explicit error messages for input URLs.
   https://github.com/nexB/scancode.io/issues/1047
+
+- Update matchcode-toolkit to v3.0.0
 
 v33.1.0 (2024-02-02)
 --------------------
