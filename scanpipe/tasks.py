@@ -86,11 +86,9 @@ def background_delete_task(project):
     if not project.is_marked_for_deletion:
         return
 
-    # Perform the deletion process
     try:
         project.delete()
     except Exception as e:
-        # Handle errors and update project errors or display a banner
-        project.is_marked_for_deletion = False
-        project.save()
+        info(f"Deletion failed: {str(e)}", project.pk)
+        project.update(is_marked_for_deletion=True)
         project.add_error(description=f"Deletion failed: {str(e)}")

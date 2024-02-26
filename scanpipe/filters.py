@@ -349,9 +349,7 @@ class ProjectFilterSet(FilterSetUtilsMixin, django_filters.FilterSet):
 
         # Default filtering by "Active" projects.
         if not data or data.get("is_archived", "") == "":
-            self.queryset = self.queryset.filter(
-                is_archived=False, is_marked_for_deletion=False
-            )
+            self.queryset = self.queryset.active()
 
         active_count = Project.objects.filter(
             is_archived=False, is_marked_for_deletion=False

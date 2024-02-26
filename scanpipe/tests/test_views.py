@@ -183,9 +183,9 @@ class ScanPipeViewsTest(TestCase):
         }
         response = self.client.post(url, data=data, follow=True)
         self.assertRedirects(response, reverse("project_list"))
-        expected = '<div class="message-body">1 project is being deleted in the background.</div>'
+        expected = '<div class="message-body">1 projects have been delete.</div>'
         self.assertContains(response, expected, html=True)
-        expected = f"1 project is being deleted in the background."
+        expected = f"1 projects have been delete."
         self.assertContains(response, expected, html=True)
 
     def test_scanpipe_views_project_details_is_archived(self):
