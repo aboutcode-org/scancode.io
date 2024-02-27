@@ -25,6 +25,7 @@ from traceback import format_tb
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.utils.text import slugify
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import create_project
@@ -59,8 +60,7 @@ class Command(AddInputCommandMixin, BaseCommand):
             else:
                 try:
                     # 2. create and run project
-                    # TODO: create name based off of purl + uuid
-                    name = scannable_uri_uuid
+                    name = create_project_name(download_url, scannable_uri_uuid)
                     pipelines = ["scan_and_fingerprint_package"]
                     input_urls = [download_url]
                     project = create_project(
@@ -110,6 +110,13 @@ class Command(AddInputCommandMixin, BaseCommand):
                     )
 
             time.sleep(sleep)
+
+
+def create_project_name(download_url, scannable_uri_uuid):
+    """Create a project name from `download_url` and `scannable_uri_uuid`"""
+    if len(download_url) > 50:
+        download_url = download_url[0:50]
+    return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
 
 
 def poll_run_status(command, project, scannable_uri_uuid, sleep):
