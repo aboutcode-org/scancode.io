@@ -427,12 +427,19 @@ Displays the results as JSON content compatible with ScanCode data format.
         ]
     }
 
-Results (download)
+Results (Download)
 ^^^^^^^^^^^^^^^^^^
 
-Finally, this action downloads the JSON results as an attachment.
+Finally, use this action to download the project results in the provided
+``output_format`` as an attachment file.
 
-``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results_download/``
+Data:
+    - ``output_format``: ``json``, ``xlsx``, ``spdx``, ``cyclonedx``, ``attribution``
+
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results_download/?output_format=cyclonedx``
+
+.. tip::
+  Refer to :ref:`output_files` to learn more about the available output formats.
 
 Run details
 -----------
