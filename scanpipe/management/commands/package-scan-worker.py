@@ -21,16 +21,13 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 import time
+from traceback import format_tb
 
-from django.core.exceptions import ValidationError
-from django.core.management import CommandError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
-from scanpipe.management.commands import extract_group_from_pipelines
-from scanpipe.management.commands import validate_pipelines
-from scanpipe.models import Project
+from scanpipe.management.commands import create_project
 from scanpipe.pipes import output
 from scanpipe.pipes import purldb
 
@@ -56,93 +53,106 @@ class Command(AddInputCommandMixin, BaseCommand):
                 download_url, scannable_uri_uuid = response
             else:
                 self.stdout.write("bad response")
-                time.sleep(sleep)
-                continue
 
             if not download_url or not scannable_uri_uuid:
                 self.stdout.write("no new job")
-                time.sleep(sleep)
-                continue
+            else:
+                try:
+                    # 2. create and run project
+                    # TODO: create name based off of purl + uuid
+                    name = scannable_uri_uuid
+                    pipelines = ["scan_and_fingerprint_package"]
+                    input_urls = [download_url]
+                    project = create_project(
+                        self,
+                        name=name,
+                        pipelines=pipelines,
+                        input_urls=input_urls,
+                    )
 
-            # 2. create and run project
-            # TODO: create name based off of purl + uuid
-            name = scannable_uri_uuid
-            project = Project(name=name)
-            try:
-                project.full_clean(exclude=["slug"])
-            except ValidationError as e:
-                raise CommandError("\n".join(e.messages))
+                    call_command(
+                        "execute",
+                        project=project,
+                        stderr=self.stderr,
+                        stdout=self.stdout,
+                    )
 
-            # Run validation before creating the project in the database
-            pipelines = ["scan_and_fingerprint_package"]
-            pipelines_data = extract_group_from_pipelines(pipelines)
-            pipelines_data = validate_pipelines(pipelines_data)
-            project.save()
-            self.project = project
-            msg = f"Project {name} created with work directory {project.work_directory}"
-            self.stdout.write(msg, self.style.SUCCESS)
+                    # 3. poll project results
+                    error_log = poll_run_status(
+                        command=self,
+                        project=project,
+                        scannable_uri_uuid=scannable_uri_uuid,
+                        sleep=sleep,
+                    )
 
-            for pipeline_name, selected_groups in pipelines_data.items():
-                self.project.add_pipeline(
-                    pipeline_name, selected_groups=selected_groups
-                )
-
-            input_urls = [download_url]
-            self.handle_input_urls(input_urls)
-
-            call_command(
-                "execute",
-                project=project,
-                stderr=self.stderr,
-                stdout=self.stdout,
-            )
-
-            # 3. poll project results
-            # TODO: consider refactoring `purldb.poll_until_success` to work here
-            run = project.runs.first()
-            status = run.Status
-            error_log = ""
-            scan_started = False
-            while True:
-                run_status = run.status
-                if run_status == status.SUCCESS:
-                    break
-
-                if run_status in [
-                    status.NOT_STARTED,
-                    status.QUEUED,
-                    status.RUNNING,
-                ]:
-                    if run_status == status.RUNNING and not scan_started:
-                        scan_started = True
-                        scan_project_url = project.get_absolute_url()
+                    if error_log:
+                        # send error response to purldb
                         purldb.update_status(
                             scannable_uri_uuid,
-                            status="in progress",
-                            scan_project_url=scan_project_url,
+                            status="failed",
+                            scan_log=error_log,
                         )
-                    time.sleep(sleep)
-                    continue
+                    else:
+                        # 4. get project results and send to purldb
+                        scan_output_location = output.to_json(project)
+                        purldb.send_results_to_purldb(
+                            scannable_uri_uuid, scan_output_location
+                        )
 
-                if run_status in [
-                    status.FAILURE,
-                    status.STOPPED,
-                    status.STALE,
-                ]:
-                    error_log = run.log
-                    self.stderr.write(run.log)
-                    break
+                except Exception as e:
+                    traceback = ""
+                    if hasattr(e, "__traceback__"):
+                        traceback = "".join(format_tb(e.__traceback__))
+                    purldb.update_status(
+                        scannable_uri_uuid,
+                        status="failed",
+                        scan_log=traceback,
+                    )
 
-                time.sleep(sleep)
+            time.sleep(sleep)
 
-            if error_log:
-                # send error response to purldb
+
+def poll_run_status(command, project, scannable_uri_uuid, sleep):
+    """
+    Poll the status of the first run of `project`. Return the log of the run if
+    the run has stopped, failed, or gone stale, otherwise return an empty
+    string.
+    """
+    # TODO: consider refactoring `purldb.poll_until_success` to work here
+    run = project.runs.first()
+    status = run.Status
+    error_log = ""
+    scan_started = False
+    while True:
+        run_status = run.status
+
+        if run_status in [
+            status.SUCCESS,
+            status.FAILURE,
+            status.STOPPED,
+            status.STALE,
+        ]:
+            if run_status in [
+                status.FAILURE,
+                status.STOPPED,
+                status.STALE,
+            ]:
+                error_log = run.log
+                command.stderr.write(error_log)
+            return error_log
+
+        if run_status in [
+            status.NOT_STARTED,
+            status.QUEUED,
+            status.RUNNING,
+        ]:
+            if run_status == status.RUNNING and not scan_started:
+                scan_started = True
+                scan_project_url = project.get_absolute_url()
                 purldb.update_status(
                     scannable_uri_uuid,
-                    status="failed",
-                    scan_log=error_log,
+                    status="in progress",
+                    scan_project_url=scan_project_url,
                 )
-            else:
-                # 4. get project results and send to purldb
-                scan_output_location = output.to_json(project)
-                purldb.send_results_to_purldb(scannable_uri_uuid, scan_output_location)
+
+        time.sleep(sleep)

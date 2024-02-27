@@ -20,16 +20,12 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from django.core.exceptions import ValidationError
 from django.core.management import CommandError
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from scanpipe.management.commands import AddInputCommandMixin
-from scanpipe.management.commands import extract_group_from_pipelines
-from scanpipe.management.commands import validate_copy_from
-from scanpipe.management.commands import validate_pipelines
-from scanpipe.models import Project
+from scanpipe.management.commands import create_project
 
 
 class Command(AddInputCommandMixin, BaseCommand):
@@ -75,43 +71,20 @@ class Command(AddInputCommandMixin, BaseCommand):
         input_urls = options["input_urls"]
         copy_from = options["copy_codebase"]
         execute = options["execute"]
-
-        project = Project(name=name)
-        if notes := options["notes"]:
-            project.notes = notes
-
-        try:
-            project.full_clean(exclude=["slug"])
-        except ValidationError as e:
-            raise CommandError("\n".join(e.messages))
-
-        # Run validation before creating the project in the database
-        pipelines_data = extract_group_from_pipelines(pipelines)
-        pipelines_data = validate_pipelines(pipelines_data)
-
-        input_files_data = self.extract_tag_from_input_files(input_files)
-        self.validate_input_files(input_files=input_files_data.keys())
-        validate_copy_from(copy_from)
+        notes = options["notes"]
 
         if execute and not pipelines:
             raise CommandError("The --execute option requires one or more pipelines.")
 
-        project.save()
-        self.project = project
-        msg = f"Project {name} created with work directory {project.work_directory}"
-        self.stdout.write(msg, self.style.SUCCESS)
-
-        for pipeline_name, selected_groups in pipelines_data.items():
-            self.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
-
-        if input_files:
-            self.handle_input_files(input_files_data)
-
-        if input_urls:
-            self.handle_input_urls(input_urls)
-
-        if copy_from:
-            self.handle_copy_codebase(copy_from)
+        project = create_project(
+            command=self,
+            name=name,
+            pipelines=pipelines,
+            input_files=input_files,
+            input_urls=input_urls,
+            copy_from=copy_from,
+            notes=notes,
+        )
 
         if execute:
             call_command(

@@ -25,6 +25,7 @@ from pathlib import Path
 
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.template.defaultfilters import pluralize
@@ -288,3 +289,43 @@ def validate_pipelines(pipelines_data):
             )
 
     return pipelines_data
+
+
+def create_project(
+    command, name, pipelines=[], input_files=[], input_urls=[], copy_from="", notes=""
+):
+    project = Project(name=name)
+    if notes:
+        project.notes = notes
+
+    try:
+        project.full_clean(exclude=["slug"])
+    except ValidationError as e:
+        raise CommandError("\n".join(e.messages))
+
+    # Run validation before creating the project in the database
+    pipelines_data = extract_group_from_pipelines(pipelines)
+    pipelines_data = validate_pipelines(pipelines_data)
+
+    input_files_data = command.extract_tag_from_input_files(input_files)
+    command.validate_input_files(input_files=input_files_data.keys())
+    validate_copy_from(copy_from)
+
+    project.save()
+    command.project = project
+    msg = f"Project {name} created with work directory {project.work_directory}"
+    command.stdout.write(msg, command.style.SUCCESS)
+
+    for pipeline_name, selected_groups in pipelines_data.items():
+        command.project.add_pipeline(pipeline_name, selected_groups=selected_groups)
+
+    if input_files:
+        command.handle_input_files(input_files_data)
+
+    if input_urls:
+        command.handle_input_urls(input_urls)
+
+    if copy_from:
+        command.handle_copy_codebase(copy_from)
+
+    return project
