@@ -346,7 +346,7 @@ def find_packages(payload):
         return response.get("results")
 
 
-def poll_until_success(run_url, sleep=10):
+def poll_run_url_until_success(run_url, sleep=10):
     """
     Given a URL to a scancode.io run instance, `run_url`, return True when the
     run instance has completed successfully.
@@ -354,31 +354,58 @@ def poll_until_success(run_url, sleep=10):
     Raise a PurlDBException when the run instance has failed, stopped, or gone
     stale.
     """
-    run_status = AbstractTaskFieldsModel.Status
-    while True:
+    if poll_until_success(
+        check=get_run_status,
+        sleep=sleep,
+        run_url=run_url
+    ):
+        return True
+    else:
         response = request_get(run_url)
         if response:
-            status = response["status"]
-            if status == run_status.SUCCESS:
-                return True
+            log = response["log"]
+            msg = f"Matching run has stopped:\n\n{log}"
+            raise PurlDBException(msg)
 
-            if status in [
-                run_status.NOT_STARTED,
-                run_status.QUEUED,
-                run_status.RUNNING,
-            ]:
-                continue
 
-            if status in [
-                run_status.FAILURE,
-                run_status.STOPPED,
-                run_status.STALE,
-            ]:
-                log = response["log"]
-                msg = f"Matching run has stopped:\n\n{log}"
-                raise PurlDBException(msg)
+def poll_until_success(check, sleep=10, **kwargs):
+    """
+    Given a function `check`, which returns the status of a run, return True
+    when the run instance has completed successfully.
+
+    Return False when the run instance has failed, stopped, or gone stale.
+
+    The arguments for `check` need to be provided as keyword argument into this
+    function.
+    """
+    run_status = AbstractTaskFieldsModel.Status
+    while True:
+        status = check(**kwargs)
+        if status == run_status.SUCCESS:
+            return True
+
+        if status in [
+            run_status.NOT_STARTED,
+            run_status.QUEUED,
+            run_status.RUNNING,
+        ]:
+            continue
+
+        if status in [
+            run_status.FAILURE,
+            run_status.STOPPED,
+            run_status.STALE,
+        ]:
+            return False
 
         time.sleep(sleep)
+
+
+def get_run_status(run_url, **kwargs):
+    response = request_get(run_url)
+    if response:
+        status = response["status"]
+        return status
 
 
 def get_match_results(run_url):

@@ -125,41 +125,18 @@ def poll_run_status(command, project, scannable_uri_uuid, sleep):
     the run has stopped, failed, or gone stale, otherwise return an empty
     string.
     """
-    # TODO: consider refactoring `purldb.poll_until_success` to work here
     run = project.runs.first()
-    status = run.Status
-    error_log = ""
-    scan_started = False
-    while True:
-        run_status = run.status
+    if purldb.poll_until_success(
+        check=get_run_status,
+        run=run
+    ):
+        return ""
+    else:
+        error_log = run.log
+        command.stderr.write(error_log)
+        return error_log
 
-        if run_status in [
-            status.SUCCESS,
-            status.FAILURE,
-            status.STOPPED,
-            status.STALE,
-        ]:
-            if run_status in [
-                status.FAILURE,
-                status.STOPPED,
-                status.STALE,
-            ]:
-                error_log = run.log
-                command.stderr.write(error_log)
-            return error_log
 
-        if run_status in [
-            status.NOT_STARTED,
-            status.QUEUED,
-            status.RUNNING,
-        ]:
-            if run_status == status.RUNNING and not scan_started:
-                scan_started = True
-                scan_project_url = project.get_absolute_url()
-                purldb.update_status(
-                    scannable_uri_uuid,
-                    status="in progress",
-                    scan_project_url=scan_project_url,
-                )
-
-        time.sleep(sleep)
+def get_run_status(run, **kwargs):
+    run.refresh_from_db()
+    return run.status
