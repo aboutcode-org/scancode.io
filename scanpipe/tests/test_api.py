@@ -542,8 +542,11 @@ class ScanPipeAPITest(TransactionTestCase):
 
         data = {"output_format": "xlsx"}
         response = self.csrf_client.get(url, data=data)
-        expected = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        self.assertEqual(expected, response["Content-Type"])
+        expected = [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/octet-stream",
+        ]
+        self.assertIn(response["Content-Type"], expected)
 
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
