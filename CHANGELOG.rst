@@ -44,6 +44,10 @@ v33.2.0 (unreleased)
 - Add URL scheme validation with explicit error messages for input URLs.
   https://github.com/nexB/scancode.io/issues/1047
 
+- All supported `output_format` can now be downloaded using the results_download API
+  action providing a value for the new `output_format` parameter.
+  https://github.com/nexB/scancode.io/issues/1091
+
 - Update matchcode-toolkit to v3.0.0
 
 v33.1.0 (2024-02-02)

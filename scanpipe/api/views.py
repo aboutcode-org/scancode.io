@@ -47,16 +47,10 @@ from scanpipe.api.serializers import RunSerializer
 from scanpipe.models import Project
 from scanpipe.models import Run
 from scanpipe.models import RunInProgressError
+from scanpipe.pipes import output
 from scanpipe.views import project_results_json_response
 
 scanpipe_app = apps.get_app_config("scanpipe")
-
-
-class PassThroughRenderer(renderers.BaseRenderer):
-    media_type = ""
-
-    def render(self, data, **kwargs):
-        return data
 
 
 class ProjectFilterSet(django_filters.rest_framework.FilterSet):
@@ -140,12 +134,32 @@ class ProjectViewSet(
         """
         return project_results_json_response(self.get_object())
 
-    @action(
-        detail=True, name="Results (download)", renderer_classes=[PassThroughRenderer]
-    )
+    @action(detail=True, name="Results (download)")
     def results_download(self, request, *args, **kwargs):
-        """Return the results as an attachment."""
-        return project_results_json_response(self.get_object(), as_attachment=True)
+        """Return the results in the provided `output_format` as an attachment."""
+        project = self.get_object()
+        format = request.query_params.get("output_format", "json")
+
+        if format == "json":
+            return project_results_json_response(project, as_attachment=True)
+        elif format == "xlsx":
+            output_file = output.to_xlsx(project)
+        elif format == "spdx":
+            output_file = output.to_spdx(project)
+        elif format == "cyclonedx":
+            output_file = output.to_cyclonedx(project)
+        elif format == "attribution":
+            output_file = output.to_attribution(project)
+        else:
+            message = {"status": f"Format {format} not supported."}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        filename = output.safe_filename(f"scancodeio_{project.name}_{output_file.name}")
+        return FileResponse(
+            output_file.open("rb"),
+            filename=filename,
+            as_attachment=True,
+        )
 
     @action(detail=True)
     def summary(self, request, *args, **kwargs):

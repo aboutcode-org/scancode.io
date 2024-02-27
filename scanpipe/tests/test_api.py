@@ -53,6 +53,7 @@ from scanpipe.models import Run
 from scanpipe.pipes.input import copy_input
 from scanpipe.pipes.output import JSONResultsGenerator
 from scanpipe.tests import dependency_data1
+from scanpipe.tests import mocked_now
 from scanpipe.tests import package_data1
 
 
@@ -523,6 +524,26 @@ class ScanPipeAPITest(TransactionTestCase):
         results = json.loads(response_value)
         expected = ["dependencies", "files", "headers", "packages", "relations"]
         self.assertEqual(expected, sorted(results.keys()))
+
+    @mock.patch("scanpipe.pipes.datetime", mocked_now)
+    def test_scanpipe_api_project_action_results_download_output_formats(self):
+        url = reverse("project-results-download", args=[self.project1.uuid])
+        data = {"output_format": "cyclonedx"}
+        response = self.csrf_client.get(url, data=data)
+
+        expected_filename = "scancodeio_analysis_results-2010-10-10-10-10-10.cdx.json"
+        expected = f'attachment; filename="{expected_filename}"'
+        self.assertEqual(expected, response["Content-Disposition"])
+        self.assertEqual("application/json", response["Content-Type"])
+
+        response_value = response.getvalue()
+        results = json.loads(response_value)
+        self.assertIn("$schema", sorted(results.keys()))
+
+        data = {"output_format": "xlsx"}
+        response = self.csrf_client.get(url, data=data)
+        expected = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        self.assertEqual(expected, response["Content-Type"])
 
     def test_scanpipe_api_project_action_pipelines(self):
         url = reverse("project-pipelines")
