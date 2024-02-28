@@ -102,3 +102,278 @@ class ScanPipePurlDBTest(TestCase):
         self.assertIn(
             "1 PURLs were already present in PurlDB index queue", expected_log
         )
+
+    @mock.patch("scanpipe.pipes.purldb.request_post")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_send_project_json_to_matchcode(
+        self, mock_is_available, mock_request_post
+    ):
+        mock_is_available.return_value = True
+
+        def mock_request_post_return(url, files, timeout):
+            request_post_response_loc = (
+                self.data_location
+                / "purldb"
+                / "match_to_purldb"
+                / "request_post_response.json"
+            )
+            with open(request_post_response_loc, "r") as f:
+                return json.load(f)
+
+        mock_request_post.side_effect = mock_request_post_return
+
+        run_url = purldb.send_project_json_to_matchcode(self.project1)
+        expected_run_url = (
+            "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
+        )
+        self.assertEqual(expected_run_url, run_url)
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_poll_run_url_until_success(
+        self, mock_is_available, mock_request_get
+    ):
+        run_status = AbstractTaskFieldsModel.Status
+
+        mock_is_available.return_value = True
+
+        # Success
+        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.SUCCESS,
+            },
+        ]
+        return_value = purldb.poll_run_url_until_success(run_url)
+        self.assertEqual(True, return_value)
+
+        # Failure
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.FAILURE,
+                "log": "failure message",
+            },
+            {
+                "url": run_url,
+                "status": run_status.FAILURE,
+                "log": "failure message",
+            },
+        ]
+        with self.assertRaises(Exception) as context:
+            purldb.poll_run_url_until_success(run_url)
+        self.assertTrue("failure message" in str(context.exception))
+
+        # Stopped
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.STOPPED,
+                "log": "stop message",
+            },
+            {
+                "url": run_url,
+                "status": run_status.STOPPED,
+                "log": "stop message",
+            },
+        ]
+        with self.assertRaises(Exception) as context:
+            purldb.poll_run_url_until_success(run_url)
+        self.assertTrue("stop message" in str(context.exception))
+
+        # Stale
+        mock_request_get.side_effect = [
+            {
+                "url": run_url,
+                "status": run_status.NOT_STARTED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.QUEUED,
+            },
+            {
+                "url": run_url,
+                "status": run_status.RUNNING,
+            },
+            {
+                "url": run_url,
+                "status": run_status.STALE,
+                "log": "stale message",
+            },
+            {
+                "url": run_url,
+                "status": run_status.STALE,
+                "log": "stale message",
+            },
+        ]
+        with self.assertRaises(Exception) as context:
+            purldb.poll_run_url_until_success(run_url)
+        self.assertTrue("stale message" in str(context.exception))
+
+    def test_scanpipe_pipes_purldb_map_match_results(self):
+        request_post_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_results_response.json"
+        )
+        with open(request_post_response_loc, "r") as f:
+            match_results = json.load(f)
+
+        resource_paths_by_package_uids = purldb.map_match_results(match_results)
+        expected = defaultdict(list)
+        expected_package_uid = (
+            "pkg:maven/org.elasticsearch/elasticsearch-x-content@7.17.9"
+            "?classifier=sources&uuid=a8814800-8120-4f50-ba4f-08c443ccda8e"
+        )
+        expected[expected_package_uid].append(
+            "elasticsearch-x-content-7.17.9-sources.jar"
+        )
+        self.assertEqual(expected, resource_paths_by_package_uids)
+
+    def test_scanpipe_pipes_purldb_create_packages_from_match_results(self):
+        r1 = make_resource_file(
+            self.project1,
+            path="elasticsearch-x-content-7.17.9-sources.jar",
+            sha1="30d21add57abe04beece3f28a079671dbc9043e4",
+        )
+        r2 = make_resource_file(
+            self.project1,
+            path="something-else.json",
+            sha1="deadbeef",
+        )
+
+        request_get_results_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_results_response.json"
+        )
+        with open(request_get_results_response_loc, "r") as f:
+            match_results = json.load(f)
+
+        self.assertEqual(0, self.project1.discoveredpackages.all().count())
+        self.assertFalse(0, len(r1.for_packages))
+        self.assertFalse(0, len(r2.for_packages))
+
+        purldb.create_packages_from_match_results(self.project1, match_results)
+
+        self.assertEqual(1, self.project1.discoveredpackages.all().count())
+        package = self.project1.discoveredpackages.first()
+        self.assertEqual([package.package_uid], r1.for_packages)
+        # This resource should not have a Package match
+        self.assertFalse(0, len(r2.for_packages))
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_get_match_results(
+        self, mock_is_available, mock_request_get
+    ):
+        mock_is_available.return_value = True
+
+        request_get_check_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_check_response.json"
+        )
+        with open(request_get_check_response_loc, "r") as f:
+            mock_request_get_check_return = json.load(f)
+
+        request_get_results_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_results_response.json"
+        )
+        with open(request_get_results_response_loc, "r") as f:
+            mock_request_get_results_return = json.load(f)
+        mock_request_get.side_effect = [
+            mock_request_get_check_return,
+            mock_request_get_results_return,
+        ]
+
+        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
+        match_results = purldb.get_match_results(run_url)
+
+        self.assertEqual(mock_request_get_results_return, match_results)
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_get_run_url_status(
+        self, mock_is_available, mock_request_get
+    ):
+        mock_is_available.return_value = True
+
+        request_get_check_response_loc = (
+            self.data_location
+            / "purldb"
+            / "match_to_purldb"
+            / "request_get_check_response.json"
+        )
+        with open(request_get_check_response_loc, "r") as f:
+            mock_request_get_check_return = json.load(f)
+
+        mock_request_get.side_effect = [
+            mock_request_get_check_return,
+        ]
+
+        run_url = "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/"
+        status = purldb.get_run_url_status(run_url)
+
+        self.assertEqual("success", status)
+
+    @mock.patch("scanpipe.pipes.purldb.request_get")
+    @mock.patch("scanpipe.pipes.purldb.is_available")
+    def test_scanpipe_pipes_purldb_get_next_job(
+        self, mock_is_available, mock_request_get
+    ):
+        mock_is_available.return_value = True
+        expected_download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
+        expected_scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        mock_request_get.side_effect = [
+            {
+                "download_url": expected_download_url,
+                "scannable_uri_uuid": expected_scannable_uri_uuid,
+            },
+        ]
+        download_url, scannable_uri_uuid = purldb.get_next_job()
+        self.assertEqual(expected_download_url, download_url)
+        self.assertEqual(expected_scannable_uri_uuid, scannable_uri_uuid)

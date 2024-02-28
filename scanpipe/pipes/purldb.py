@@ -30,7 +30,16 @@ from packageurl import PackageURL
 from univers.version_range import RANGE_CLASS_BY_SCHEMES
 from univers.version_range import InvalidVersionRange
 
+from django.utils.text import slugify
+from scanpipe.models import AbstractTaskFieldsModel
 from scanpipe.pipes import LoopProgress
+from scanpipe.pipes import flag
+from scanpipe.pipes.output import to_json
+
+
+class PurlDBException(Exception):
+    pass
+
 
 label = "PurlDB"
 logger = logging.getLogger(__name__)
@@ -355,7 +364,7 @@ def poll_run_url_until_success(run_url, sleep=10):
     stale.
     """
     if poll_until_success(
-        check=get_run_status,
+        check=get_run_url_status,
         sleep=sleep,
         run_url=run_url
     ):
@@ -401,7 +410,7 @@ def poll_until_success(check, sleep=10, **kwargs):
         time.sleep(sleep)
 
 
-def get_run_status(run_url, **kwargs):
+def get_run_url_status(run_url, **kwargs):
     response = request_get(run_url)
     if response:
         status = response["status"]
@@ -525,3 +534,35 @@ def update_status(
         data=data,
     )
     return response
+
+
+def create_project_name(download_url, scannable_uri_uuid):
+    """Create a project name from `download_url` and `scannable_uri_uuid`"""
+    if len(download_url) > 50:
+        download_url = download_url[0:50]
+    return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
+
+
+def poll_run_status(command, project, sleep=10):
+    """
+    Poll the status of the first run of `project`. Return the log of the run if
+    the run has stopped, failed, or gone stale, otherwise return an empty
+    string.
+    """
+    run = project.runs.first()
+    if poll_until_success(
+        check=get_run_status,
+        sleep=sleep,
+        run=run
+    ):
+        return ""
+    else:
+        error_log = run.log
+        command.stderr.write(error_log)
+        return error_log
+
+
+def get_run_status(run, **kwargs):
+    """Refresh the values of `run` and return its status"""
+    run.refresh_from_db()
+    return run.status

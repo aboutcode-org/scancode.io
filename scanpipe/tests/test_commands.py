@@ -34,6 +34,7 @@ from django.test import TestCase
 from django.test import override_settings
 from django.utils import timezone
 
+from scanpipe.pipes import purldb
 from scanpipe.models import CodebaseResource
 from scanpipe.models import DiscoveredPackage
 from scanpipe.models import Project
@@ -595,3 +596,10 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         with self.assertRaisesMessage(CommandError, expected):
             call_command("create-user", "--no-input", username)
+
+class PackageScanWorkerManagementCommandTest(TestCase):
+    def test_package_scan_worker_management_command_create_project_name(self):
+        download_url = "https://registry.npmjs.org/asdf/-/asdf-1.0.1.tgz"
+        scannable_uri_uuid = "52b2930d-6e85-4b3e-ba3e-17dd9a618650"
+        project_name = purldb.create_project_name(download_url, scannable_uri_uuid)
+        self.assertEqual("httpsregistrynpmjsorgasdf-asdf-101tgz-52b2930d", project_name)

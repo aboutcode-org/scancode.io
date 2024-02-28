@@ -119,7 +119,7 @@ def create_project_name(download_url, scannable_uri_uuid):
     return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
 
 
-def poll_run_status(command, project, scannable_uri_uuid, sleep):
+def poll_run_status(command, project, sleep=10):
     """
     Poll the status of the first run of `project`. Return the log of the run if
     the run has stopped, failed, or gone stale, otherwise return an empty
@@ -128,6 +128,7 @@ def poll_run_status(command, project, scannable_uri_uuid, sleep):
     run = project.runs.first()
     if purldb.poll_until_success(
         check=get_run_status,
+        sleep=sleep,
         run=run
     ):
         return ""
@@ -138,5 +139,6 @@ def poll_run_status(command, project, scannable_uri_uuid, sleep):
 
 
 def get_run_status(run, **kwargs):
+    """Refresh the values of `run` and return its status"""
     run.refresh_from_db()
     return run.status
