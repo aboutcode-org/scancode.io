@@ -115,6 +115,21 @@ SCANCODEIO_PAGINATE_BY = env.dict(
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 
+# Fetch authentication credentials
+
+# SCANCODEIO_FETCH_BASIC_AUTH="hostname=user,password;"
+SCANCODEIO_FETCH_BASIC_AUTH = env.dict(
+    "SCANCODEIO_FETCH_BASIC_AUTH",
+    cast={"value": tuple},
+    default={},
+)
+# SCANCODEIO_FETCH_DIGEST_AUTH="hostname=user,password;"
+SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
+    "SCANCODEIO_FETCH_DIGEST_AUTH",
+    cast={"value": tuple},
+    default={},
+)
+
 # Application definition
 
 INSTALLED_APPS = [

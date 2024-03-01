@@ -103,8 +103,8 @@ class InputsBaseForm(forms.Form):
 
         self.validate_scheme(input_urls)
 
-        if errors := fetch.check_urls_availability(input_urls):
-            raise ValidationError("Could not fetch:\n" + "\n".join(errors))
+        # if errors := fetch.check_urls_availability(input_urls):
+        #     raise ValidationError("Could not fetch:\n" + "\n".join(errors))
 
         return input_urls
 
