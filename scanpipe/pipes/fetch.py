@@ -74,7 +74,7 @@ def run_command_safely(command_args):
 
 
 def get_request_session(uri):
-    """Return a Requests session setup with authentication."""
+    """Return a Requests session setup with authentication and headers."""
     session = requests.Session()
     netloc = urlparse(uri).netloc
 
@@ -83,6 +83,9 @@ def get_request_session(uri):
 
     elif credentials := settings.SCANCODEIO_FETCH_DIGEST_AUTH.get(netloc):
         session.auth = request_auth.HTTPDigestAuth(*credentials)
+
+    if headers := settings.SCANCODEIO_FETCH_HEADERS.get(netloc):
+        session.headers.update(headers)
 
     return session
 
