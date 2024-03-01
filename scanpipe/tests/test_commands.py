@@ -199,7 +199,7 @@ class ScanPipeManagementCommandTest(TestCase):
         with self.assertRaisesMessage(CommandError, expected):
             call_command("add-input", *options, stdout=out)
 
-    @mock.patch("requests.get")
+    @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_management_command_add_input_url(self, mock_get):
         mock_get.side_effect = None
         mock_get.return_value = mock.Mock(
