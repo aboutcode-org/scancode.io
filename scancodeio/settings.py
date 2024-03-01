@@ -129,6 +129,11 @@ SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
     cast={"value": tuple},
     default={},
 )
+# SCANCODEIO_NETRC_LOCATION="~/.netrc"
+SCANCODEIO_NETRC_LOCATION = env.str("SCANCODEIO_NETRC_LOCATION", default="")
+if SCANCODEIO_NETRC_LOCATION:
+    # Propagate the location to the environ for `requests.utils.get_netrc_auth`
+    env.ENVIRON["NETRC"] = SCANCODEIO_NETRC_LOCATION
 
 # Application definition
 
