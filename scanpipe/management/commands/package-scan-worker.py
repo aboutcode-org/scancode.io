@@ -25,7 +25,6 @@ from traceback import format_tb
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
-from django.utils.text import slugify
 
 from scanpipe.management.commands import AddInputCommandMixin
 from scanpipe.management.commands import create_project
@@ -48,19 +47,23 @@ class Command(AddInputCommandMixin, BaseCommand):
         sleep = options["sleep"]
 
         while True:
-            # 1. get download url from purldb
-            response = purldb.get_next_job()
-            if response:
-                download_url, scannable_uri_uuid = response
-            else:
-                self.stdout.write("bad response")
+            try:
+                # 1. get download url from purldb
+                response = purldb.get_next_job()
+                if response:
+                    download_url, scannable_uri_uuid = response
+                else:
+                    self.stderr.write("bad response")
+            except Exception as e:
+                traceback = get_traceback_from_exception(e)
+                self.stderr.write(f"exception occured when calling `purldb.get_next_job()`:\n\n{traceback}")
 
             if not download_url or not scannable_uri_uuid:
                 self.stdout.write("no new job")
             else:
                 try:
                     # 2. create and run project
-                    name = create_project_name(download_url, scannable_uri_uuid)
+                    name = purldb.create_project_name(download_url, scannable_uri_uuid)
                     pipelines = ["scan_and_fingerprint_package"]
                     input_urls = [download_url]
                     project = create_project(
@@ -78,7 +81,7 @@ class Command(AddInputCommandMixin, BaseCommand):
                     )
 
                     # 3. poll project results
-                    error_log = poll_run_status(
+                    error_log = purldb.poll_run_status(
                         command=self,
                         project=project,
                         scannable_uri_uuid=scannable_uri_uuid,
@@ -100,45 +103,19 @@ class Command(AddInputCommandMixin, BaseCommand):
                         )
 
                 except Exception as e:
-                    traceback = ""
-                    if hasattr(e, "__traceback__"):
-                        traceback = "".join(format_tb(e.__traceback__))
+                    traceback = get_traceback_from_exception(e)
                     purldb.update_status(
                         scannable_uri_uuid,
                         status="failed",
                         scan_log=traceback,
                     )
+                    self.stderr.write(f"exception occured during scan project:\n\n{traceback}")
 
             time.sleep(sleep)
 
 
-def create_project_name(download_url, scannable_uri_uuid):
-    """Create a project name from `download_url` and `scannable_uri_uuid`"""
-    if len(download_url) > 50:
-        download_url = download_url[0:50]
-    return f"{slugify(download_url)}-{scannable_uri_uuid[0:8]}"
-
-
-def poll_run_status(command, project, sleep=10):
-    """
-    Poll the status of the first run of `project`. Return the log of the run if
-    the run has stopped, failed, or gone stale, otherwise return an empty
-    string.
-    """
-    run = project.runs.first()
-    if purldb.poll_until_success(
-        check=get_run_status,
-        sleep=sleep,
-        run=run
-    ):
-        return ""
-    else:
-        error_log = run.log
-        command.stderr.write(error_log)
-        return error_log
-
-
-def get_run_status(run, **kwargs):
-    """Refresh the values of `run` and return its status"""
-    run.refresh_from_db()
-    return run.status
+def get_traceback_from_exception(exception):
+    traceback = ""
+    if hasattr(exception, "__traceback__"):
+        traceback = "".join(format_tb(exception.__traceback__))
+    return traceback
