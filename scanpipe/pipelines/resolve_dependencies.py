@@ -21,23 +21,20 @@
 # Visit https://github.com/nexB/scancode.io for support and download.
 
 from scanpipe.pipelines.scan_codebase import ScanCodebase
-from scanpipe.pipes import scancode
+from scanpipe.pipes import resolve
 
 
-class InspectPackages(ScanCodebase):
+class ResolveDependencies(ScanCodebase):
     """
-    Inspect a codebase for packages and pre-resolved dependencies.
+    Resolve dependencies from package manifests and lockfiles.
 
-    This pipeline inspects a codebase for application packages
-    and their dependencies using package manifests and dependency
-    lockfiles. It does not resolve dependencies, it does instead
-    collect already pre-resolved dependencies from lockfiles, and
-    direct dependencies (possibly not resolved) as found in
-    package manifests' dependency sections.
+    This pipeline collects lockfiles and manifest files
+    that contain dependency requirements, and resolves these
+    to a concrete set of package versions.
 
-    See documentation for the list of supported package manifests and
-    dependency lockfiles:
-    https://scancode-toolkit.readthedocs.io/en/stable/reference/available_package_parsers.html
+    Supports resolving packages for:
+    - Python: using python-inspector, using requirements.txt and
+    setup.py manifests as inputs
     """
 
     @classmethod
@@ -46,19 +43,32 @@ class InspectPackages(ScanCodebase):
             cls.copy_inputs_to_codebase_directory,
             cls.extract_archives,
             cls.collect_and_create_codebase_resources,
-            cls.flag_empty_files,
             cls.flag_ignored_resources,
-            cls.scan_for_application_packages,
+            cls.get_manifest_inputs,
+            cls.get_packages_from_manifest,
+            cls.create_resolved_packages,
         )
 
-    def scan_for_application_packages(self):
+    def get_manifest_inputs(self):
+        """Locate package manifest files with a supported package resolver."""
+        self.manifest_resources = resolve.get_manifest_resources(self.project)
+
+    def get_packages_from_manifest(self):
         """
-        Scan resources for package information to add DiscoveredPackage
-        and DiscoveredDependency objects from detected package data.
+        Resolve package data from lockfiles/requirement files with package
+        requirements/dependenices.
         """
-        # `assemble` is set to False because here in this pipeline we
-        # only detect package_data in resources and create
-        # Package/Dependency instances directly instead of assembling
-        # the packages and assigning files to them
-        scancode.scan_for_application_packages(self.project, assemble=False)
-        scancode.process_package_data(self.project)
+        self.resolved_packages = resolve.get_packages(
+            project=self.project,
+            package_registry=resolve.resolver_registry,
+            manifest_resources=self.manifest_resources,
+            model="get_packages_from_manifest",
+        )
+
+    def create_resolved_packages(self):
+        """Create the resolved packages and their dependencies in the database."""
+        resolve.create_packages_and_dependencies(
+            project=self.project,
+            packages=self.resolved_packages,
+            resolved=True,
+        )

@@ -121,6 +121,11 @@ Using cURL:
     To upload more than one file, you can use the :ref:`rest_api_add_input` endpoint of
     the project.
 
+.. tip::
+
+    To tag the ``upload_file``, you can provide the tag value using the
+    ``upload_file_tag`` field.
+
 Using Python and the **"requests"** library:
 
 .. code-block:: python
@@ -222,6 +227,7 @@ This action adds provided ``input_urls`` or ``upload_file`` to the ``project``.
 Data:
     - ``input_urls``: A list of URLs to download
     - ``upload_file``: A file to upload
+    - ``upload_file_tag``: An optional tag to add on the uploaded file
 
 Using cURL to provide download URLs:
 
@@ -271,6 +277,11 @@ during the pipeline addition.
 Data:
     - ``pipeline``: The pipeline name
     - ``execute_now``: ``true`` or ``false``
+
+.. tip::
+    Use the "pipeline_name:group1,group2" syntax to select steps groups:
+
+    ``"pipeline": "map_deploy_to_develop:Java,JavaScript"``
 
 Using cURL:
 
@@ -416,12 +427,19 @@ Displays the results as JSON content compatible with ScanCode data format.
         ]
     }
 
-Results (download)
+Results (Download)
 ^^^^^^^^^^^^^^^^^^
 
-Finally, this action downloads the JSON results as an attachment.
+Finally, use this action to download the project results in the provided
+``output_format`` as an attachment file.
 
-``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results_download/``
+Data:
+    - ``output_format``: ``json``, ``xlsx``, ``spdx``, ``cyclonedx``, ``attribution``
+
+``GET /api/projects/d4ed9405-5568-45ad-99f6-782a9b82d1d2/results_download/?output_format=cyclonedx``
+
+.. tip::
+  Refer to :ref:`output_files` to learn more about the available output formats.
 
 Run details
 -----------

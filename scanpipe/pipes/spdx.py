@@ -356,7 +356,6 @@ class Package:
             "supplier": self.supplier,
             "originator": self.originator,
             "homepage": self.homepage,
-            "packageFileName": self.filename,
             "description": self.description,
             "summary": self.summary,
             "sourceInfo": self.source_info,

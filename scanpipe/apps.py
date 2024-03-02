@@ -178,6 +178,7 @@ class ScanPipeConfig(AppConfig):
             "inspect_manifest": "inspect_packages",
             "deploy_to_develop": "map_deploy_to_develop",
             "scan_package": "scan_single_package",
+            "scan_codebase_packages": "inspect_packages",
         }
         if new_name := pipeline_old_names_mapping.get(pipeline_name):
             warnings.warn(
@@ -188,6 +189,17 @@ class ScanPipeConfig(AppConfig):
             )
             return new_name
         return pipeline_name
+
+    @staticmethod
+    def extract_group_from_pipeline(pipeline):
+        pipeline_name = pipeline
+        groups = None
+
+        if ":" in pipeline:
+            pipeline_name, value = pipeline.split(":", maxsplit=1)
+            groups = value.split(",") if value else []
+
+        return pipeline_name, groups
 
     def get_scancode_licenses(self):
         """

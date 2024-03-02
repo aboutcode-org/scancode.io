@@ -73,6 +73,7 @@ from scanpipe.forms import AddInputsForm
 from scanpipe.forms import AddLabelsForm
 from scanpipe.forms import AddPipelineForm
 from scanpipe.forms import ArchiveProjectForm
+from scanpipe.forms import EditInputSourceTagForm
 from scanpipe.forms import ProjectCloneForm
 from scanpipe.forms import ProjectForm
 from scanpipe.forms import ProjectSettingsForm
@@ -577,11 +578,16 @@ class ProjectCreateView(ConditionalLoginRequired, FormAjaxMixin, generic.CreateV
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["pipelines"] = {
+        pipelines = {
             key: pipeline_class.get_info()
             for key, pipeline_class in scanpipe_app.pipelines.items()
             if not pipeline_class.is_addon
         }
+        pipelines_available_groups = {
+            name: info["available_groups"] for name, info in pipelines.items()
+        }
+        context["pipelines"] = pipelines
+        context["pipelines_available_groups"] = pipelines_available_groups
         return context
 
 
@@ -693,8 +699,10 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
                 "input_sources": project.get_inputs_with_source(),
                 "labels": list(project.labels.all()),
                 "add_pipeline_form": AddPipelineForm(),
+                "pipeline_choices": self.get_pipeline_choices(pipeline_runs),
                 "add_inputs_form": AddInputsForm(),
                 "add_labels_form": AddLabelsForm(),
+                "edit_input_tag_from": EditInputSourceTagForm(),
                 "project_clone_form": ProjectCloneForm(project),
                 "project_resources_url": project_resources_url,
                 "license_clarity": license_clarity,
@@ -725,18 +733,42 @@ class ProjectDetailView(ConditionalLoginRequired, generic.DetailView):
             form_class = AddLabelsForm
             success_message = "Label(s) added."
             error_message = "Label addition error."
+        elif "edit-input-tag-submit" in request.POST:
+            form_class = EditInputSourceTagForm
+            success_message = "Tag updated."
+            error_message = "Tag update error."
         else:
             raise Http404
 
         form_kwargs = {"data": request.POST, "files": request.FILES}
         form = form_class(**form_kwargs)
-        if form.is_valid():
-            form.save(project)
+        if form.is_valid() and form.save(project):
             messages.success(request, success_message)
         else:
             messages.error(request, error_message)
 
         return redirect(project)
+
+    @staticmethod
+    def get_pipeline_choices(pipeline_runs):
+        """
+        Determine pipeline choices based on the project context:
+        1. If no pipelines are assigned to the project:
+           Include all base (non-addon) pipelines.
+        2. If at least one pipeline already exists on the project:
+           Include all addon pipelines and the existing pipeline (useful for
+           potential re-runs in debug mode).
+        """
+        project_run_names = {run.pipeline_name for run in pipeline_runs or []}
+        pipeline_choices = [
+            (name, pipeline_class.get_info())
+            for name, pipeline_class in scanpipe_app.pipelines.items()
+            # no pipelines are assigned to the project
+            if (not pipeline_runs and not pipeline_class.is_addon)
+            # at least one pipeline already exists on the project
+            or pipeline_runs and (name in project_run_names or pipeline_class.is_addon)
+        ]
+        return pipeline_choices
 
 
 class ProjectSettingsView(ConditionalLoginRequired, UpdateView):

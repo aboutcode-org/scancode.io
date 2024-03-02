@@ -211,27 +211,28 @@ def get_docker_image_platform(docker_reference):
             )
 
 
-def fetch_docker_image(docker_reference, to=None):
+def fetch_docker_image(download_url, to=None):
     """
-    Fetch a docker image from the provided Docker image `docker_reference`
-    docker:// reference URL. Return a `download` object.
+    Fetch a docker image from the provided Docker image `download_url`,
+    using the "docker://reference" URL syntax.
+    Return a `Download` object.
 
     Docker references are documented here:
     https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
     """
     whitelist = r"^docker://[a-zA-Z0-9_.:/@-]+$"
-    if not re.match(whitelist, docker_reference):
+    if not re.match(whitelist, download_url):
         raise ValueError("Invalid Docker reference.")
 
-    name = python_safe_name(docker_reference.replace("docker://", ""))
-    filename = f"{name}.tar"
+    reference = download_url.replace("docker://", "")
+    filename = f"{python_safe_name(reference)}.tar"
     download_directory = to or tempfile.mkdtemp()
     output_file = Path(download_directory, filename)
     target = f"docker-archive:{output_file}"
     skopeo_executable = _get_skopeo_location()
 
     platform_args = []
-    if platform := get_docker_image_platform(docker_reference):
+    if platform := get_docker_image_platform(download_url):
         os, arch, variant = platform
         if os:
             platform_args.append(f"--override-os={os}")
@@ -245,7 +246,7 @@ def fetch_docker_image(docker_reference, to=None):
         "copy",
         "--insecure-policy",
         *platform_args,
-        docker_reference,
+        download_url,
         target,
     )
     logger.info(f"Fetching image with: {cmd_args}")
@@ -255,7 +256,7 @@ def fetch_docker_image(docker_reference, to=None):
     checksums = multi_checksums(output_file, ("md5", "sha1"))
 
     return Download(
-        uri=docker_reference,
+        uri=download_url,
         directory=download_directory,
         filename=filename,
         path=output_file,
@@ -265,16 +266,30 @@ def fetch_docker_image(docker_reference, to=None):
     )
 
 
-def _get_fetcher(url):
-    """Return the fetcher function based on the provided `url`."""
-    if url.startswith("docker://"):
-        return fetch_docker_image
-    return fetch_http
+SCHEME_TO_FETCHER_MAPPING = {
+    "http": fetch_http,
+    "https": fetch_http,
+    "docker": fetch_docker_image,
+}
+
+
+def get_fetcher(url):
+    """Return the fetcher function based on the provided `url` scheme."""
+    # Not using `urlparse(url).scheme` for the scheme as it converts to lower case.
+    scheme = url.split("://")[0]
+
+    if fetcher := SCHEME_TO_FETCHER_MAPPING.get(scheme):
+        return fetcher
+
+    error_msg = f"URL scheme '{scheme}' is not supported."
+    if scheme.lower() in SCHEME_TO_FETCHER_MAPPING:
+        error_msg += f" Did you mean: '{scheme.lower()}'?"
+    raise ValueError(error_msg)
 
 
 def fetch_url(url):
     """Fetch provided `url` and returns the result as a `Download` object."""
-    fetcher = _get_fetcher(url)
+    fetcher = get_fetcher(url)
     logger.info(f'Fetching "{url}" using {fetcher.__name__}')
     downloaded = fetcher(url)
     return downloaded

@@ -23,7 +23,6 @@
 import inspect
 import logging
 import traceback
-import warnings
 from contextlib import contextmanager
 from functools import wraps
 from pydoc import getdoc
@@ -41,6 +40,19 @@ logger = logging.getLogger(__name__)
 
 class InputFileError(Exception):
     """InputFile is missing or cannot be downloaded."""
+
+
+def group(*groups):
+    """Mark a function as part of a particular group."""
+
+    def decorator(obj):
+        if hasattr(obj, "groups"):
+            obj.groups = obj.groups.union(groups)
+        else:
+            setattr(obj, "groups", set(groups))
+        return obj
+
+    return decorator
 
 
 class BasePipeline:
@@ -63,19 +75,28 @@ class BasePipeline:
         raise NotImplementedError
 
     @classmethod
-    def get_steps(cls):
+    def get_steps(cls, groups=None):
         """
-        Raise a deprecation warning when the steps are defined as a tuple instead of
-        a classmethod.
-        """
-        if callable(cls.steps):
-            return cls.steps()
+        Return the list of steps defined in the ``steps`` class method.
 
-        warnings.warn(
-            f"Defining ``steps`` as a tuple is deprecated in {cls} "
-            f"Use a ``steps(cls)`` classmethod instead."
-        )
-        return cls.steps
+        If the optional ``groups`` parameter is provided, only include steps labeled
+        with groups that intersect with the provided list. If a step has no groups or
+        if ``groups`` is not specified, include the step in the result.
+        """
+        if not callable(cls.steps):
+            raise TypeError("Use a ``steps(cls)`` classmethod to declare the steps.")
+
+        steps = cls.steps()
+
+        if groups is not None:
+            steps = tuple(
+                step
+                for step in steps
+                if not getattr(step, "groups", [])
+                or set(getattr(step, "groups")).intersection(groups)
+            )
+
+        return steps
 
     @classmethod
     def get_doc(cls):
@@ -86,7 +107,12 @@ class BasePipeline:
     def get_graph(cls):
         """Return a graph of steps."""
         return [
-            {"name": step.__name__, "doc": getdoc(step)} for step in cls.get_steps()
+            {
+                "name": step.__name__,
+                "doc": getdoc(step),
+                "groups": getattr(step, "groups", []),
+            }
+            for step in cls.get_steps()
         ]
 
     @classmethod
@@ -97,12 +123,23 @@ class BasePipeline:
             "summary": summary,
             "description": description,
             "steps": cls.get_graph(),
+            "available_groups": cls.get_available_groups(),
         }
 
     @classmethod
     def get_summary(cls):
         """Get the doc string summary."""
         return cls.get_info()["summary"]
+
+    @classmethod
+    def get_available_groups(cls):
+        return sorted(
+            set(
+                group_name
+                for step in cls.get_steps()
+                for group_name in getattr(step, "groups", [])
+            )
+        )
 
     def log(self, message):
         """Log the given `message` to the current module logger and Run instance."""
@@ -115,7 +152,8 @@ class BasePipeline:
     def execute(self):
         """Execute each steps in the order defined on this pipeline class."""
         self.log(f"Pipeline [{self.pipeline_name}] starting")
-        steps = self.get_steps()
+
+        steps = self.get_steps(groups=self.run.selected_groups)
 
         if self.download_inputs:
             steps = (self.__class__.download_missing_inputs,) + steps
@@ -209,6 +247,18 @@ class Pipeline(BasePipeline):
 
         if ignored_patterns := self.env.get("ignored_patterns"):
             flag.flag_ignored_patterns(self.project, patterns=ignored_patterns)
+
+    def extract_archives(self):
+        """Extract archives located in the codebase/ directory with extractcode."""
+        from scanpipe.pipes import scancode
+
+        extract_errors = scancode.extract_archives(
+            location=self.project.codebase_path,
+            recurse=self.env.get("extract_recursively", True),
+        )
+
+        if extract_errors:
+            self.add_error("\n".join(extract_errors))
 
 
 def is_pipeline(obj):

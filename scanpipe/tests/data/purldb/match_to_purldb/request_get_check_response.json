@@ -1,0 +1,17 @@
+{
+    "url": "http://192.168.1.12/api/runs/52b2930d-6e85-4b3e-ba3e-17dd9a618650/",
+    "pipeline_name": "matching",
+    "status": "success",
+    "description": "",
+    "project": "http://192.168.1.12/api/matching/65bf1e6d-6bff-4841-9c9b-db5cf25edfa7/",
+    "uuid": "52b2930d-6e85-4b3e-ba3e-17dd9a618650",
+    "created_date": "2024-01-08T23:24:50.063864Z",
+    "scancodeio_version": "v3.0.0-241-g45d653b",
+    "task_id": "52b2930d-6e85-4b3e-ba3e-17dd9a618650",
+    "task_start_date": "2024-01-08T23:24:50.107013Z",
+    "task_end_date": "2024-01-08T23:24:53.095046Z",
+    "task_exitcode": 0,
+    "task_output": "",
+    "log": "2024-01-08 23:24:50.10 Pipeline [matching] starting\n2024-01-08 23:24:50.11 Step [get_inputs] starting\n2024-01-08 23:24:50.11 Step [get_inputs] completed in 0 seconds\n2024-01-08 23:24:50.11 Step [build_inventory_from_scans] starting\n2024-01-08 23:24:50.28 Step [build_inventory_from_scans] completed in 0 seconds\n2024-01-08 23:24:50.29 Step [flag_empty_files] starting\n2024-01-08 23:24:50.29 Step [flag_empty_files] completed in 0 seconds\n2024-01-08 23:24:50.29 Step [match_archives_to_purldb_packages] starting\n2024-01-08 23:24:50.29 Matching 1 resources in PurlDB, using SHA1\n2024-01-08 23:24:52.98 58 resources matched in PurlDB using 1 SHA1s\n2024-01-08 23:24:52.98 Step [match_archives_to_purldb_packages] completed in 3 seconds\n2024-01-08 23:24:52.99 Step [match_archives_to_purldb_resources] starting\n2024-01-08 23:24:52.99 Skipping resource matching as there are 0\n2024-01-08 23:24:52.99 0 resources matched in PurlDB using 0 SHA1s\n2024-01-08 23:24:53.00 Step [match_archives_to_purldb_resources] completed in 0 seconds\n2024-01-08 23:24:53.00 Step [fingerprint_codebase_directories] starting\n2024-01-08 23:24:53.04 Step [fingerprint_codebase_directories] completed in 0 seconds\n2024-01-08 23:24:53.04 Step [match_directories_exact_to_purldb] starting\n2024-01-08 23:24:53.04 Matching 0 directories against PurlDB\n2024-01-08 23:24:53.05 0 directories matched in PurlDB\n2024-01-08 23:24:53.05 Step [match_directories_exact_to_purldb] completed in 0 seconds\n2024-01-08 23:24:53.05 Step [match_resources_to_purldb] starting\n2024-01-08 23:24:53.05 Skipping resource matching as there are 0\n2024-01-08 23:24:53.06 0 resources matched in PurlDB using 0 SHA1s\n2024-01-08 23:24:53.06 Step [match_resources_to_purldb] completed in 0 seconds\n2024-01-08 23:24:53.06 Step [match_directories_to_purldb] starting\n2024-01-08 23:24:53.06 Matching 0 directories against PurlDB\n2024-01-08 23:24:53.07 0 directories matched in PurlDB\n2024-01-08 23:24:53.07 Step [match_directories_to_purldb] completed in 0 seconds\n2024-01-08 23:24:53.07 Step [match_purldb_resources_post_process] starting\n2024-01-08 23:24:53.07 Refining matching for 1 matched-to-purldb-resource archives.\n2024-01-08 23:24:53.08 0 resource processed\n2024-01-08 23:24:53.08 Step [match_purldb_resources_post_process] completed in 0 seconds\n2024-01-08 23:24:53.08 Step [remove_packages_without_resources] starting\n2024-01-08 23:24:53.09 Step [remove_packages_without_resources] completed in 0 seconds\n2024-01-08 23:24:53.09 Pipeline completed in 3 seconds\n",
+    "execution_time": 2
+}

@@ -1,8 +1,57 @@
 Changelog
 =========
 
-Unreleased
-----------
+v33.2.0 (unreleased)
+--------------------
+
+- Add ability to "group" pipeline steps to control their inclusion in a pipeline run.
+  The groups can be selected in the UI, or provided using the
+  "pipeline_name:group1,group2" syntax in CLI and REST API.
+  https://github.com/nexB/scancode.io/issues/1045
+
+- Refine pipeline choices in the "Add pipeline" modal based on the project context.
+   * When there is at least one existing pipeline in the project, the modal now includes
+     all addon pipelines along with the existing pipeline for selection.
+   * In cases where no pipelines are assigned to the project, the modal displays all
+     base (non-addon) pipelines for user selection.
+
+   https://github.com/nexB/scancode.io/issues/1071
+
+- Rename pipeline for consistency and precision:
+  * scan_codebase_packages: inspect_packages
+
+  Restructure the inspect_manifest pipeline into:
+  * load_sbom: for loading SPDX/CycloneDX SBOMs and ABOUT files
+  * resolve_dependencies: for resolving package dependencies
+  * inspect_packages: gets package data from package manifests/lockfiles
+
+  A data migration is included to facilitate the migration of existing data.
+  Only the new names are available in the web UI but the REST API and CLI are backward
+  compatible with the old names.
+  https://github.com/nexB/scancode.io/issues/1034
+  https://github.com/nexB/scancode.io/discussions/1035
+
+- Remove "packageFileName" entry from SPDX output.
+  https://github.com/nexB/scancode.io/issues/1076
+
+- Add an add-on pipeline for collecting DWARF debug symbol compilation
+  unit paths when available from elfs.
+  https://github.com/nexB/purldb/issues/260
+
+- Extract all archives recursively in the `scan_single_package` pipeline.
+  https://github.com/nexB/scancode.io/issues/1081
+
+- Add URL scheme validation with explicit error messages for input URLs.
+  https://github.com/nexB/scancode.io/issues/1047
+
+- All supported `output_format` can now be downloaded using the results_download API
+  action providing a value for the new `output_format` parameter.
+  https://github.com/nexB/scancode.io/issues/1091
+
+- Update matchcode-toolkit to v3.0.0
+
+v33.1.0 (2024-02-02)
+--------------------
 
 - Rename multiple pipelines for consistency and precision:
    * docker: analyze_docker_image
@@ -23,6 +72,17 @@ Unreleased
 
 - Improve the inspect_manifest pipeline to accept archives as inputs.
   https://github.com/nexB/scancode.io/issues/1034
+
+- Add support for "tagging" download URL inputs using the "#<fragment>" section of URLs.
+  This feature is particularly useful in the map_develop_to_deploy pipeline when
+  download URLs are utilized as inputs. Tags such as "from" and "to" can be specified
+  by adding "#from" or "#to" fragments at the end of the download URLs.
+  Using the CLI, the uploaded files can be tagged using the "filename:tag" syntax
+  while using the `--input-file` arguments.
+  In the UI, tags can be edited from the Project details view "Inputs" panel.
+  On the REST API, a new `upload_file_tag` field is available to use along the
+  `upload_file`.
+  https://github.com/nexB/scancode.io/issues/708
 
 v33.0.0 (2024-01-16)
 --------------------
@@ -57,9 +117,16 @@ v33.0.0 (2024-01-16)
   project pipeline.
   https://github.com/nexB/scancode.io/issues/997
 
+- In "map_deploy_to_develop" pipeline, add support for path patterns
+  in About file attributes documenting resource paths.
+  https://github.com/nexB/scancode.io/issues/1004
+
 - Fix an issue where the pipeline details cannot be fetched when using URLs that
   include credentials such as "user:pass@domain".
   https://github.com/nexB/scancode.io/issues/998
+
+- Add a new pipeline, ``match_to_purldb``, that check CodebaseResources of a
+  Project against PurlDB for Package matches.
 
 v32.7.0 (2023-10-25)
 --------------------

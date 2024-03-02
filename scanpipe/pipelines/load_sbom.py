@@ -20,19 +20,19 @@
 # ScanCode.io is a free software code scanning tool from nexB Inc. and others.
 # Visit https://github.com/nexB/scancode.io for support and download.
 
-from scanpipe import pipes
-from scanpipe.pipelines import Pipeline
-from scanpipe.pipes import scancode
-from scanpipe.pipes.input import copy_inputs
+from scanpipe.pipelines.scan_codebase import ScanCodebase
+from scanpipe.pipes import resolve
 
 
-class ScanCodebase(Pipeline):
+class LoadSBOM(ScanCodebase):
     """
-    Scan a codebase for application packages, licenses, and copyrights.
+    Load package data from one or more SBOMs.
 
-    This pipeline does not further scan the files contained in a package
-    for license and copyrights and only considers the declared license
-    of a package. It does not scan for system (Linux distro) packages.
+    Supported SBOMs:
+    - SPDX document
+    - CycloneDX BOM
+    Other formats:
+    - AboutCode .ABOUT files for package curations.
     """
 
     @classmethod
@@ -43,25 +43,27 @@ class ScanCodebase(Pipeline):
             cls.collect_and_create_codebase_resources,
             cls.flag_empty_files,
             cls.flag_ignored_resources,
-            cls.scan_for_application_packages,
-            cls.scan_for_files,
+            cls.get_sbom_inputs,
+            cls.get_packages_from_sboms,
+            cls.create_packages_from_sboms,
         )
 
-    def copy_inputs_to_codebase_directory(self):
-        """
-        Copy input files to the project's codebase/ directory.
-        The code can also be copied there prior to running the Pipeline.
-        """
-        copy_inputs(self.project.inputs(), self.project.codebase_path)
+    def get_sbom_inputs(self):
+        """Locate all the SBOMs among the codebase resources."""
+        self.manifest_resources = resolve.get_manifest_resources(self.project)
 
-    def collect_and_create_codebase_resources(self):
-        """Collect and create codebase resources."""
-        pipes.collect_and_create_codebase_resources(self.project)
+    def get_packages_from_sboms(self):
+        """Get packages data from SBOMs."""
+        self.packages = resolve.get_packages(
+            project=self.project,
+            package_registry=resolve.sbom_registry,
+            manifest_resources=self.manifest_resources,
+            model="get_packages_from_sboms",
+        )
 
-    def scan_for_application_packages(self):
-        """Scan unknown resources for packages information."""
-        scancode.scan_for_application_packages(self.project, progress_logger=self.log)
-
-    def scan_for_files(self):
-        """Scan unknown resources for copyrights, licenses, emails, and urls."""
-        scancode.scan_for_files(self.project, progress_logger=self.log)
+    def create_packages_from_sboms(self):
+        """Create the packages and dependencies from the SBOM, in the database."""
+        resolve.create_packages_and_dependencies(
+            project=self.project,
+            packages=self.packages,
+        )

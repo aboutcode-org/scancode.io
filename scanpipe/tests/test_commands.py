@@ -100,7 +100,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "--pipeline",
             self.pipeline_name,
             "--pipeline",
-            "analyze_root_filesystem_or_vm_image",
+            "analyze_root_filesystem_or_vm_image:group1,group2",
             "--pipeline",
             "scan_package",  # old name backward compatibility
         ]
@@ -113,6 +113,8 @@ class ScanPipeManagementCommandTest(TestCase):
             "scan_single_package",
         ]
         self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
+        self.assertEqual(["group1", "group2"], run.selected_groups)
 
     def test_scanpipe_management_command_create_project_inputs(self):
         out = StringIO()
@@ -127,13 +129,15 @@ class ScanPipeManagementCommandTest(TestCase):
             "--input-file",
             str(parent_path / "test_commands.py"),
             "--input-file",
-            str(parent_path / "test_models.py"),
+            str(parent_path / "test_models.py:tag"),
         ]
         call_command("create-project", "my_project", *options, stdout=out)
         self.assertIn("Project my_project created", out.getvalue())
         project = Project.objects.get(name="my_project")
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
+        tagged_source = project.inputsources.get(filename="test_models.py")
+        self.assertEqual("tag", tagged_source.tag)
 
     def test_scanpipe_management_command_create_project_execute(self):
         options = ["--execute"]
@@ -175,7 +179,7 @@ class ScanPipeManagementCommandTest(TestCase):
             "--input-file",
             str(parent_path / "test_commands.py"),
             "--input-file",
-            str(parent_path / "test_models.py"),
+            str(parent_path / "test_models.py:tag"),
         ]
 
         expected = "the following arguments are required: --project"
@@ -187,6 +191,8 @@ class ScanPipeManagementCommandTest(TestCase):
         self.assertIn("Files copied to the project inputs directory", out.getvalue())
         expected = sorted(["test_commands.py", "test_models.py"])
         self.assertEqual(expected, sorted(project.input_files))
+        tagged_source = project.inputsources.get(filename="test_models.py")
+        self.assertEqual("tag", tagged_source.tag)
 
         options = ["--project", project.name, "--input-file", "non-existing.py"]
         expected = "non-existing.py not found or not a file"
@@ -250,7 +256,7 @@ class ScanPipeManagementCommandTest(TestCase):
 
         pipelines = [
             self.pipeline_name,
-            "analyze_root_filesystem_or_vm_image",
+            "analyze_root_filesystem_or_vm_image:group1,group2",
             "scan_package",  # old name backward compatibility
         ]
 
@@ -272,6 +278,8 @@ class ScanPipeManagementCommandTest(TestCase):
             "scan_single_package",
         ]
         self.assertEqual(expected, [run.pipeline_name for run in project.runs.all()])
+        run = project.runs.get(pipeline_name="analyze_root_filesystem_or_vm_image")
+        self.assertEqual(["group1", "group2"], run.selected_groups)
 
         options = ["--project", project.name, "non-existing"]
         expected = "non-existing is not a valid pipeline"
@@ -297,13 +305,15 @@ class ScanPipeManagementCommandTest(TestCase):
         )
         self.assertEqual(expected, out.getvalue())
 
-        project.runs.filter(pipeline_name=pipeline_names[0]).update(task_exitcode=0)
+        project.runs.filter(pipeline_name=pipeline_names[0]).update(
+            task_exitcode=0, selected_groups=["group1", "group2"]
+        )
         project.runs.filter(pipeline_name=pipeline_names[1]).update(task_exitcode=1)
 
         out = StringIO()
         call_command("show-pipeline", *options, stdout=out)
         expected = (
-            " [SUCCESS] analyze_docker_image\n"
+            " [SUCCESS] analyze_docker_image (group1,group2)\n"
             " [FAILURE] analyze_root_filesystem_or_vm_image\n"
         )
         self.assertEqual(expected, out.getvalue())

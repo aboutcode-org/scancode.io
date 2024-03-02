@@ -44,7 +44,7 @@ SECRET_KEY = env.str("SECRET_KEY")
 
 ALLOWED_HOSTS = env.list(
     "ALLOWED_HOSTS",
-    default=[".localhost", "127.0.0.1", "[::1]", "host.docker.internal"],
+    default=[".localhost", "127.0.0.1", "[::1]", "host.docker.internal", "172.17.0.1"],
 )
 
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
