@@ -313,3 +313,63 @@ However, if authentication is enabled on your VulnerableCode instance,
 you can provide the API key using ``VULNERABLECODE_API_KEY``::
 
     VULNERABLECODE_API_KEY=insert_your_api_key_here
+
+.. _scancodeio_settings_fetch_authentication:
+
+Fetch Authentication
+--------------------
+
+Several settings are available to define the credentials required to access your
+private files, depending on the authentication type: Basic, Digest, Token header, etc.
+
+.. note::
+    The provided credentials are enabled for all projects on the ScanCode.io instance.
+
+.. warning::
+    Ensure that the provided ``host`` values are fully qualified, including the domain
+    and subdomain.
+
+.. _scancodeio_settings_fetch_basic_auth:
+
+SCANCODEIO_FETCH_BASIC_AUTH
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can provide credentials for input URLs protected by Basic Authentication using
+the ``host=user,password`` syntax::
+
+    SCANCODEIO_FETCH_BASIC_AUTH="www.host1.com=user,password;www.host2.com=user,password;"
+
+.. _scancodeio_settings_fetch_digest_auth:
+
+SCANCODEIO_FETCH_DIGEST_AUTH
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can provide credentials for input URLs protected by Digest Authentication using
+the ``host=user,password`` syntax::
+
+    SCANCODEIO_FETCH_DIGEST_AUTH="www.host1.com=user,password;www.host2.com=user,password;"
+
+.. _scancodeio_settings_fetch_headers:
+
+SCANCODEIO_FETCH_HEADERS
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+When authentication credentials can be provided through HTTP request headers, you can
+use the following syntax::
+
+    SCANCODEIO_FETCH_HEADERS="www.host1.com=Header1=value,Header2=value;"
+
+Example for a GitHub private repository::
+
+    SCANCODEIO_FETCH_HEADERS="raw.github.com=Authorization=token <YOUR_TOKEN>"
+
+.. _scancodeio_settings_netrc_location:
+
+SCANCODEIO_NETRC_LOCATION
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your credentials are stored in a
+`.netrc <https://everything.curl.dev/usingcurl/netrc>`_ file, you can provide its
+location on disk using::
+
+    SCANCODEIO_NETRC_LOCATION="~/.netrc"

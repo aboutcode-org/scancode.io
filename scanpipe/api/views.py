@@ -343,7 +343,7 @@ class ProjectViewSet(
         project = self.get_object()
 
         if self.request.method == "GET":
-            message = "POST on this URL to reset the project. " ""
+            message = "POST on this URL to reset the project."
             return Response({"status": message})
 
         try:

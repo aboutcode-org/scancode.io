@@ -32,11 +32,14 @@ from pathlib import Path
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
+from django.conf import settings
+
 import requests
 from commoncode import command
 from commoncode.hash import multi_checksums
 from commoncode.text import python_safe_name
 from plugincode.location_provider import get_location
+from requests import auth as request_auth
 
 logger = logging.getLogger("scanpipe.pipes")
 
@@ -70,12 +73,30 @@ def run_command_safely(command_args):
     return result.stdout
 
 
+def get_request_session(uri):
+    """Return a Requests session setup with authentication and headers."""
+    session = requests.Session()
+    netloc = urlparse(uri).netloc
+
+    if credentials := settings.SCANCODEIO_FETCH_BASIC_AUTH.get(netloc):
+        session.auth = request_auth.HTTPBasicAuth(*credentials)
+
+    elif credentials := settings.SCANCODEIO_FETCH_DIGEST_AUTH.get(netloc):
+        session.auth = request_auth.HTTPDigestAuth(*credentials)
+
+    if headers := settings.SCANCODEIO_FETCH_HEADERS.get(netloc):
+        session.headers.update(headers)
+
+    return session
+
+
 def fetch_http(uri, to=None):
     """
     Download a given `uri` in a temporary directory and return the directory's
     path.
     """
-    response = requests.get(uri, timeout=5)
+    request_session = get_request_session(uri)
+    response = request_session.get(uri, timeout=5)
 
     if response.status_code != 200:
         raise requests.RequestException
@@ -329,8 +350,9 @@ def check_urls_availability(urls):
         if not url.startswith("http"):
             continue
 
+        request_session = get_request_session(url)
         try:
-            response = requests.head(url, timeout=3)
+            response = request_session.head(url, timeout=5)
             response.raise_for_status()
         except requests.exceptions.RequestException:
             errors.append(url)

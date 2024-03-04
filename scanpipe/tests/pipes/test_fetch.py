@@ -24,6 +24,9 @@ from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
+from django.test import override_settings
+
+from requests import auth as request_auth
 
 from scanpipe.pipes import fetch
 
@@ -56,7 +59,7 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = "URL scheme 'DOCKER' is not supported. Did you mean: 'docker'?"
         self.assertEqual(expected, str(cm.exception))
 
-    @mock.patch("requests.get")
+    @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipes_fetch_http(self, mock_get):
         url = "https://example.com/filename.zip"
 
@@ -120,7 +123,7 @@ class ScanPipeFetchPipesTest(TestCase):
             fetch.fetch_docker_image(url)
         self.assertEqual("Invalid Docker reference.", str(cm.exception))
 
-    @mock.patch("requests.get")
+    @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
         urls = [
             "https://example.com/filename.zip",
@@ -141,3 +144,26 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(0, len(downloads))
         self.assertEqual(2, len(errors))
         self.assertEqual(urls, errors)
+
+    def test_scanpipe_pipes_fetch_get_request_session(self):
+        url = "https://example.com/filename.zip"
+        host = "example.com"
+        credentials = ("user", "pass")
+
+        session = fetch.get_request_session(url)
+        self.assertIsNone(session.auth)
+
+        with override_settings(SCANCODEIO_FETCH_BASIC_AUTH={host: credentials}):
+            session = fetch.get_request_session(url)
+            self.assertEqual(request_auth.HTTPBasicAuth(*credentials), session.auth)
+
+        with override_settings(SCANCODEIO_FETCH_DIGEST_AUTH={host: credentials}):
+            session = fetch.get_request_session(url)
+            self.assertEqual(request_auth.HTTPDigestAuth(*credentials), session.auth)
+
+        headers = {
+            host: {"Authorization": "token TOKEN"},
+        }
+        with override_settings(SCANCODEIO_FETCH_HEADERS=headers):
+            session = fetch.get_request_session(url)
+            self.assertEqual("token TOKEN", session.headers.get("Authorization"))
