@@ -142,7 +142,7 @@
         "homepage_url": "https://github.com/django/asgiref/",
         "release_date": null,
         "code_view_url": null,
-        "datasource_id": "pypi_wheel",
+        "datasource_ids": "pypi_wheel",
         "file_references": [
           {
             "md5": null,
@@ -1145,7 +1145,7 @@
         "homepage_url": "https://github.com/django/asgiref/",
         "release_date": null,
         "code_view_url": null,
-        "datasource_id": "pypi_wheel_metadata",
+        "datasource_ids": "pypi_wheel_metadata",
         "file_references": [
           {
             "md5": null,
@@ -1413,7 +1413,7 @@
     "other_license_detections": [],
     "extracted_license_statement": "license: BSD\nclassifiers:\n  - 'License :: OSI Approved :: BSD License'\n",
     "notice_text": "",
-    "datasource_id": "",
+    "datasource_ids": "",
     "file_references": [],
     "parties": [
       {
@@ -1533,7 +1533,7 @@
     "other_license_detections": [],
     "extracted_license_statement": "license: BSD\nclassifiers:\n  - 'License :: OSI Approved :: BSD License'\n",
     "notice_text": "",
-    "datasource_id": "",
+    "datasource_ids": "",
     "file_references": [],
     "parties": [
       {

@@ -121,7 +121,12 @@
         "Documentation": "https://mharrisb1.github.io/daglib/"
       },
       "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "pypi_wheel"
+      ],
+      "datafile_paths": [
+        "daglib-0.6.0-py3-none-any.whl"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -218,7 +223,12 @@
         "Documentation": "https://mharrisb1.github.io/daglib/"
       },
       "package_uid": "pkg:pypi/daglib@0.6.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "pypi_wheel_metadata"
+      ],
+      "datafile_paths": [
+        "daglib-0.6.0-py3-none-any.whl-extract/daglib-0.6.0.dist-info/METADATA"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],

@@ -130,7 +130,12 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "pypi_wheel"
+      ],
+      "datafile_paths": [
+        "codebase/asgiref-3.3.0-py3-none-any.whl"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -238,7 +243,12 @@
         "Further Documentation": "https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions"
       },
       "package_uid": "pkg:pypi/asgiref@3.3.0?uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "pypi_wheel_metadata"
+      ],
+      "datafile_paths": [
+        "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],

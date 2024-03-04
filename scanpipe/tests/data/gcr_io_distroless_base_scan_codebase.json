@@ -169,7 +169,12 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/distroless/base-files@11.1%2Bdeb11u3?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_distroless_installed_db"
+      ],
+      "datafile_paths": [
+        "d92879194ba1c23b840306b007bce6568f71f0e954d63625d48504d533749e30/var/lib/dpkg/status.d/base"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -227,7 +232,12 @@
         "multi_arch": "same"
       },
       "package_uid": "pkg:deb/distroless/libc6@2.31-13%2Bdeb11u3?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_distroless_installed_db"
+      ],
+      "datafile_paths": [
+        "cb3279093e638ddfd56bff4d3d89c5a3ed6dd59dbcfbc2f3107045635996b822/var/lib/dpkg/status.d/libc6"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -285,7 +295,12 @@
         "multi_arch": "same"
       },
       "package_uid": "pkg:deb/distroless/libssl1.1@1.1.1n-0%2Bdeb11u2?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_distroless_installed_db"
+      ],
+      "datafile_paths": [
+        "cb3279093e638ddfd56bff4d3d89c5a3ed6dd59dbcfbc2f3107045635996b822/var/lib/dpkg/status.d/libssl1"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -341,7 +356,12 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/distroless/netbase@6.3?architecture=all&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_distroless_installed_db"
+      ],
+      "datafile_paths": [
+        "d92879194ba1c23b840306b007bce6568f71f0e954d63625d48504d533749e30/var/lib/dpkg/status.d/netbase"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -397,7 +417,12 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/distroless/openssl@1.1.1n-0%2Bdeb11u2?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_distroless_installed_db"
+      ],
+      "datafile_paths": [
+        "cb3279093e638ddfd56bff4d3d89c5a3ed6dd59dbcfbc2f3107045635996b822/var/lib/dpkg/status.d/openssl"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -453,7 +478,12 @@
         "multi_arch": "foreign"
       },
       "package_uid": "pkg:deb/distroless/tzdata@2021a-1%2Bdeb11u4?architecture=all&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_distroless_installed_db"
+      ],
+      "datafile_paths": [
+        "d92879194ba1c23b840306b007bce6568f71f0e954d63625d48504d533749e30/var/lib/dpkg/status.d/tzdata"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],

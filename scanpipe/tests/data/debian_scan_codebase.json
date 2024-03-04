@@ -264,7 +264,16 @@
         ]
       },
       "package_uid": "pkg:deb/libncurses5@6.1-1ubuntu1.18.04?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_installed_status_db",
+        "debian_copyright_in_package",
+        "debian_installed_md5sums"
+      ],
+      "datafile_paths": [
+        "8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/status",
+        "8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share/doc/libncurses5/copyright",
+        "8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libncurses5:amd64.md5sums"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
@@ -386,7 +395,16 @@
         ]
       },
       "package_uid": "pkg:deb/libndp0@1.4-2ubuntu0.16.04.1?architecture=amd64&uuid=fixed-uid-done-for-testing-5642512d1758",
-      "datasource_id": "",
+      "datasource_ids": [
+        "debian_installed_status_db",
+        "debian_copyright_in_package",
+        "debian_installed_md5sums"
+      ],
+      "datafile_paths": [
+        "8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/status",
+        "8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/usr/share/doc/libndp0/copyright",
+        "8a63761caf6d45e65b8e6cdc2e0c03c55625fd142ec3356b80a9ea4a34b11b66/var/lib/dpkg/info/libndp0:amd64.md5sums"
+      ],
       "file_references": [],
       "missing_resources": [],
       "modified_resources": [],
