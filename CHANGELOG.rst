@@ -1,7 +1,7 @@
 Changelog
 =========
 
-v33.2.0 (unreleased)
+v34.0.0 (2024-03-04)
 --------------------
 
 - Add ability to "group" pipeline steps to control their inclusion in a pipeline run.
