@@ -38,7 +38,7 @@ class ScanPipeFormsTest(TestCase):
     def setUp(self):
         self.project1 = Project.objects.create(name="Analysis")
 
-    @mock.patch("requests.head")
+    @mock.patch("requests.sessions.Session.head")
     def test_scanpipe_forms_inputs_base_form_input_urls(self, mock_head):
         data = {
             "input_urls": "Docker://debian",

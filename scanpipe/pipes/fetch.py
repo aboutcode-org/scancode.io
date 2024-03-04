@@ -350,8 +350,9 @@ def check_urls_availability(urls):
         if not url.startswith("http"):
             continue
 
+        request_session = get_request_session(url)
         try:
-            response = requests.head(url, timeout=3)
+            response = request_session.head(url, timeout=5)
             response.raise_for_status()
         except requests.exceptions.RequestException:
             errors.append(url)
