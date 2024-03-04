@@ -145,6 +145,14 @@ if SCANCODEIO_NETRC_LOCATION:
     # Propagate the location to the environ for `requests.utils.get_netrc_auth`
     env.ENVIRON["NETRC"] = SCANCODEIO_NETRC_LOCATION
 
+# SCANCODEIO_SKOPEO_CREDENTIALS="host1=user:password,host2=user:password"
+SCANCODEIO_SKOPEO_CREDENTIALS = env.dict("SCANCODEIO_SKOPEO_CREDENTIALS", default={})
+
+# SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"
+SCANCODEIO_SKOPEO_AUTHFILE_LOCATION = env.str(
+    "SCANCODEIO_SKOPEO_AUTHFILE_LOCATION", default=""
+)
+
 # Application definition
 
 INSTALLED_APPS = [

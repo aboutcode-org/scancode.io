@@ -179,20 +179,35 @@ def _get_skopeo_location(_cache=[]):
     return cmd_loc
 
 
-def get_docker_image_platform(docker_reference):
+def get_docker_image_platform(docker_url):
     """
     Return a platform mapping of a docker reference.
     If there are more than one, return the first one by default.
     """
     skopeo_executable = _get_skopeo_location()
+
+    authentication_args = []
+    authfile = settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION
+    if authfile:
+        authentication_args.append(f"--authfile {authfile}")
+
+    netloc = urlparse(docker_url).netloc
+    if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
+        # Username and password for accessing the registry.
+        authentication_args.append(f"--creds {credential}")
+    elif not authfile:
+        # Access the registry anonymously.
+        authentication_args.append("--no-creds")
+
     cmd_args = (
         str(skopeo_executable),
         "inspect",
         "--insecure-policy",
         "--raw",
-        "--no-creds",
-        docker_reference,
+        *authentication_args,
+        docker_url,
     )
+
     logger.info(f"Fetching image os/arch data: {cmd_args}")
     output = run_command_safely(cmd_args)
     logger.info(output)
@@ -232,9 +247,9 @@ def get_docker_image_platform(docker_reference):
             )
 
 
-def fetch_docker_image(download_url, to=None):
+def fetch_docker_image(docker_url, to=None):
     """
-    Fetch a docker image from the provided Docker image `download_url`,
+    Fetch a docker image from the provided Docker image `docker_url`,
     using the "docker://reference" URL syntax.
     Return a `Download` object.
 
@@ -242,10 +257,10 @@ def fetch_docker_image(download_url, to=None):
     https://github.com/containers/skopeo/blob/0faf16017/docs/skopeo.1.md#image-names
     """
     whitelist = r"^docker://[a-zA-Z0-9_.:/@-]+$"
-    if not re.match(whitelist, download_url):
+    if not re.match(whitelist, docker_url):
         raise ValueError("Invalid Docker reference.")
 
-    reference = download_url.replace("docker://", "")
+    reference = docker_url.replace("docker://", "")
     filename = f"{python_safe_name(reference)}.tar"
     download_directory = to or tempfile.mkdtemp()
     output_file = Path(download_directory, filename)
@@ -253,7 +268,7 @@ def fetch_docker_image(download_url, to=None):
     skopeo_executable = _get_skopeo_location()
 
     platform_args = []
-    if platform := get_docker_image_platform(download_url):
+    if platform := get_docker_image_platform(docker_url):
         os, arch, variant = platform
         if os:
             platform_args.append(f"--override-os={os}")
@@ -262,12 +277,22 @@ def fetch_docker_image(download_url, to=None):
         if variant:
             platform_args.append(f"--override-variant={variant}")
 
+    authentication_args = []
+    if authfile := settings.SCANCODEIO_SKOPEO_AUTHFILE_LOCATION:
+        authentication_args.append(f"--authfile {authfile}")
+
+    netloc = urlparse(docker_url).netloc
+    if credential := settings.SCANCODEIO_SKOPEO_CREDENTIALS.get(netloc):
+        # Credentials for accessing the source registry.
+        authentication_args.append(f"--src-creds {credential}")
+
     cmd_args = (
         str(skopeo_executable),
         "copy",
         "--insecure-policy",
         *platform_args,
-        download_url,
+        *authentication_args,
+        docker_url,
         target,
     )
     logger.info(f"Fetching image with: {cmd_args}")
@@ -277,7 +302,7 @@ def fetch_docker_image(download_url, to=None):
     checksums = multi_checksums(output_file, ("md5", "sha1"))
 
     return Download(
-        uri=download_url,
+        uri=docker_url,
         directory=download_directory,
         filename=filename,
         path=output_file,

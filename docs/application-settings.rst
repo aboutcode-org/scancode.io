@@ -373,3 +373,22 @@ If your credentials are stored in a
 location on disk using::
 
     SCANCODEIO_NETRC_LOCATION="~/.netrc"
+
+.. _scancodeio_settings_skopeo_credentials:
+
+SCANCODEIO_SKOPEO_CREDENTIALS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can define the username and password for Skopeo to access containers private
+registries using the ``host=user:password`` syntax::
+
+  SCANCODEIO_SKOPEO_CREDENTIALS="host1=user:password,host2=user:password"
+
+.. _scancodeio_settings_skopeo_authfile_location:
+
+SCANCODEIO_SKOPEO_AUTHFILE_LOCATION
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Specify the path of the Skopeo authentication file using the following setting::
+
+    SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"

@@ -209,7 +209,12 @@ authentication type:
 - :ref:`Digest authentication <scancodeio_settings_fetch_digest_auth>`
 - :ref:`HTTP request headers <scancodeio_settings_fetch_headers>`
 - :ref:`.netrc file <scancodeio_settings_netrc_location>`
+- :ref:`Docker private repository <scancodeio_settings_skopeo_credentials>`
 
 Example for GitHub private repository files::
 
     SCANCODEIO_FETCH_HEADERS="github.com=Authorization=token <YOUR_TOKEN>"
+
+Example for Docker private repository::
+
+    SCANCODEIO_SKOPEO_CREDENTIALS="registry.com=user:password"

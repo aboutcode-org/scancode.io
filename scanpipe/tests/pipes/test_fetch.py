@@ -96,7 +96,7 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = "Invalid Docker reference."
         self.assertEqual(expected, str(cm.exception))
 
-        url = "docker://debian:10.9"
+        url = "docker://registry.com/debian:10.9"
         mock_platform.return_value = "linux", "amd64", ""
         mock_skopeo.return_value = "skopeo"
         mock_run_command_safely.side_effect = Exception
@@ -112,10 +112,60 @@ class ScanPipeFetchPipesTest(TestCase):
             "--insecure-policy",
             "--override-os=linux",
             "--override-arch=amd64",
-            "docker://debian:10.9",
+            url,
         )
         self.assertEqual(expected, cmd_args[0:6])
         self.assertTrue(cmd_args[-1].endswith("debian_10_9.tar"))
+
+        with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
+            with self.assertRaises(Exception):
+                fetch.fetch_docker_image(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--authfile auth.json", cmd_args)
+
+        credentials = {"registry.com": "user:password"}
+        with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
+            with self.assertRaises(Exception):
+                fetch.fetch_docker_image(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--src-creds user:password", cmd_args)
+
+    @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
+    @mock.patch("scanpipe.pipes.fetch.run_command_safely")
+    def test_scanpipe_pipes_fetch_get_docker_image_platform(
+        self,
+        mock_run_command_safely,
+        mock_skopeo,
+    ):
+        url = "docker://registry.com/busybox"
+        mock_skopeo.return_value = "skopeo"
+        mock_run_command_safely.return_value = "{}"
+
+        fetch.get_docker_image_platform(url)
+        mock_run_command_safely.assert_called_once()
+        cmd_args = mock_run_command_safely.call_args[0][0]
+        expected = (
+            "skopeo",
+            "inspect",
+            "--insecure-policy",
+            "--raw",
+            "--no-creds",
+            url,
+        )
+        self.assertEqual(expected, cmd_args)
+
+        with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
+            fetch.get_docker_image_platform(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--authfile auth.json", cmd_args)
+            self.assertNotIn("--no-creds", cmd_args)
+
+        credentials = {"registry.com": "user:password"}
+        with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
+            fetch.get_docker_image_platform(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--creds user:password", cmd_args)
+            self.assertNotIn("--no-creds", cmd_args)
 
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
         url = 'docker://;echo${IFS}"PoC"${IFS}"'
