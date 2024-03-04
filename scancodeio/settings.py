@@ -123,6 +123,7 @@ SCANCODEIO_FETCH_BASIC_AUTH = env.dict(
     cast={"value": tuple},
     default={},
 )
+
 # SCANCODEIO_FETCH_DIGEST_AUTH="host=user,password;"
 SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
     "SCANCODEIO_FETCH_DIGEST_AUTH",
@@ -130,11 +131,14 @@ SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
     default={},
 )
 
+# SCANCODEIO_FETCH_HEADERS="host=Header1=value,Header2=value;"
 SCANCODEIO_FETCH_HEADERS = {}
 FETCH_HEADERS_STR = env.str("SCANCODEIO_FETCH_HEADERS", default="")
+print("DEBUG:", repr(FETCH_HEADERS_STR))
 for entry in FETCH_HEADERS_STR.split(";"):
-    host, headers = entry.split("=", 1)
-    SCANCODEIO_FETCH_HEADERS[host] = env.parse_value(headers, cast=dict)
+    if entry:
+        host, headers = entry.split("=", 1)
+        SCANCODEIO_FETCH_HEADERS[host] = env.parse_value(headers, cast=dict)
 
 # SCANCODEIO_NETRC_LOCATION="~/.netrc"
 SCANCODEIO_NETRC_LOCATION = env.str("SCANCODEIO_NETRC_LOCATION", default="")
