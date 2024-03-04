@@ -48,6 +48,10 @@ v33.2.0 (unreleased)
   action providing a value for the new `output_format` parameter.
   https://github.com/nexB/scancode.io/issues/1091
 
+- Add multiple settings related to fetching private files. Those settings allow to
+  define credentials for various authentication types.
+  https://github.com/nexB/scancode.io/issues/620
+
 - Update matchcode-toolkit to v3.0.0
 
 v33.1.0 (2024-02-02)

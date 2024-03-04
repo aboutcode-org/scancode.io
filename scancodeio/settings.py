@@ -134,9 +134,8 @@ SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
 # SCANCODEIO_FETCH_HEADERS="host=Header1=value,Header2=value;"
 SCANCODEIO_FETCH_HEADERS = {}
 FETCH_HEADERS_STR = env.str("SCANCODEIO_FETCH_HEADERS", default="")
-print("DEBUG:", repr(FETCH_HEADERS_STR))
 for entry in FETCH_HEADERS_STR.split(";"):
-    if entry:
+    if entry.strip():
         host, headers = entry.split("=", 1)
         SCANCODEIO_FETCH_HEADERS[host] = env.parse_value(headers, cast=dict)
 
