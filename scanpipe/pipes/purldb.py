@@ -482,9 +482,10 @@ def get_next_job(timeout=DEFAULT_TIMEOUT, api_url=PURLDB_API_URL):
         timeout=timeout,
     )
     if response:
-        download_url = response["download_url"]
         scannable_uri_uuid = response["scannable_uri_uuid"]
-        return download_url, scannable_uri_uuid
+        download_url = response["download_url"]
+        pipelines = response["pipelines"]
+        return scannable_uri_uuid, download_url, pipelines
 
 
 def send_results_to_purldb(
@@ -545,21 +546,21 @@ def create_project_name(download_url, scannable_uri_uuid):
 
 def poll_run_status(command, project, sleep=10):
     """
-    Poll the status of the first run of `project`. Return the log of the run if
+    Poll the status of all runs of `project`. Return the log of the run if
     the run has stopped, failed, or gone stale, otherwise return an empty
     string.
     """
-    run = project.runs.first()
-    if poll_until_success(
-        check=get_run_status,
-        sleep=sleep,
-        run=run
-    ):
-        return ""
-    else:
-        error_log = run.log
-        command.stderr.write(error_log)
-        return error_log
+    runs = project.runs.all()
+    for run in runs:
+        if not poll_until_success(
+            check=get_run_status,
+            sleep=sleep,
+            run=run
+        ):
+            error_log = run.log
+            command.stderr.write(error_log)
+            return error_log
+    return ""
 
 
 def get_run_status(run, **kwargs):

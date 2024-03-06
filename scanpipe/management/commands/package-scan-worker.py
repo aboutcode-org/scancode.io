@@ -51,7 +51,7 @@ class Command(AddInputCommandMixin, BaseCommand):
                 # 1. get download url from purldb
                 response = purldb.get_next_job()
                 if response:
-                    download_url, scannable_uri_uuid = response
+                    scannable_uri_uuid, download_url, pipelines = response
                 else:
                     self.stderr.write("bad response")
             except Exception as e:
@@ -64,7 +64,6 @@ class Command(AddInputCommandMixin, BaseCommand):
                 try:
                     # 2. create and run project
                     name = purldb.create_project_name(download_url, scannable_uri_uuid)
-                    pipelines = ["scan_and_fingerprint_package"]
                     input_urls = [download_url]
                     project = create_project(
                         self,
@@ -84,7 +83,6 @@ class Command(AddInputCommandMixin, BaseCommand):
                     error_log = purldb.poll_run_status(
                         command=self,
                         project=project,
-                        scannable_uri_uuid=scannable_uri_uuid,
                         sleep=sleep,
                     )
 
@@ -103,13 +101,13 @@ class Command(AddInputCommandMixin, BaseCommand):
                         )
 
                 except Exception as e:
-                    traceback = get_traceback_from_exception(e)
+                    error_log = f"exception occured during scan project:\n\n{str(e)}"
                     purldb.update_status(
                         scannable_uri_uuid,
                         status="failed",
-                        scan_log=traceback,
+                        scan_log=error_log,
                     )
-                    self.stderr.write(f"exception occured during scan project:\n\n{traceback}")
+                    self.stderr.write(error_log)
 
             time.sleep(sleep)
 
