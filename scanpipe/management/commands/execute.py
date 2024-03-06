@@ -60,24 +60,23 @@ class Command(ProjectCommand):
             run.start()
             msg = f"{run.pipeline_name} added to the tasks queue for execution."
             self.stdout.write(msg, self.style.SUCCESS)
-            sys.exit(0)
-
-        self.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
-
-        try:
-            tasks.execute_pipeline_task(run.pk)
-        except KeyboardInterrupt:
-            run.set_task_stopped()
-            raise CommandError("Pipeline execution stopped.")
-        except Exception as e:
-            run.set_task_ended(exitcode=1, output=str(e))
-            raise CommandError(e)
-
-        run.refresh_from_db()
-
-        if run.task_succeeded:
-            msg = f"{run.pipeline_name} successfully executed on project {self.project}"
-            self.stdout.write(msg, self.style.SUCCESS)
         else:
-            msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
-            raise CommandError(msg)
+            self.stdout.write(f"Start the {run.pipeline_name} pipeline execution...")
+
+            try:
+                tasks.execute_pipeline_task(run.pk)
+            except KeyboardInterrupt:
+                run.set_task_stopped()
+                raise CommandError("Pipeline execution stopped.")
+            except Exception as e:
+                run.set_task_ended(exitcode=1, output=str(e))
+                raise CommandError(e)
+
+            run.refresh_from_db()
+
+            if run.task_succeeded:
+                msg = f"{run.pipeline_name} successfully executed on project {self.project}"
+                self.stdout.write(msg, self.style.SUCCESS)
+            else:
+                msg = f"Error during {run.pipeline_name} execution:\n{run.task_output}"
+                raise CommandError(msg)
