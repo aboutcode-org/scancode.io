@@ -31,6 +31,7 @@ from timeit import default_timer as timer
 
 from django.utils import timezone
 
+from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
 from scanpipe import humanize_time
@@ -116,13 +117,22 @@ class BasePipeline:
         ]
 
     @classmethod
-    def get_info(cls):
+    def get_info(cls, as_html=False):
         """Get a dictionary of combined information data about this pipeline."""
         summary, description = splitdoc(cls.get_doc())
+        steps = cls.get_graph()
+
+        if as_html:
+            md = MarkdownIt()
+            summary = md.renderInline(summary)
+            description = md.renderInline(description)
+            for step in steps:
+                step["doc"] = md.renderInline(step["doc"])
+
         return {
             "summary": summary,
             "description": description,
-            "steps": cls.get_graph(),
+            "steps": steps,
             "available_groups": cls.get_available_groups(),
         }
 

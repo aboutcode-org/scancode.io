@@ -3,10 +3,15 @@
     Pipelines
   </p>
   {% for run in pipeline_runs %}
-    <a class="panel-block modal-button is-justify-content-space-between" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
-      <span class="mr-1">{{ run.pipeline_name }}</span>
-      {% include "scanpipe/includes/run_status_tag.html" with run=run display_current_step=True only %}
-    </a>
+    <div class="panel-block is-justify-content-space-between">
+      <a class="modal-button is-black-link" data-target="pipeline-help-modal" data-pipeline-name="{{ run.pipeline_name }}" aria-haspopup="true">
+        {{ run.pipeline_name }}
+        <i class="fa-regular fa-circle-question"></i>
+      </a>
+      <a class="modal-button" data-target="run-detail-modal" data-uuid="{{ run.uuid }}" aria-haspopup="true">
+        {% include "scanpipe/includes/run_status_tag.html" with run=run display_current_step=True only %}
+      </a>
+    </div>
   {% endfor %}
   <div class="panel-block">
     {% if project.is_archived %}
@@ -25,5 +30,6 @@
       {% endif %}
     {% endif %}
   </div>
+  {% include "scanpipe/modals/pipeline_help_modal.html" %}
   {% include "scanpipe/modals/add_pipeline_modal.html" %}
 </article>

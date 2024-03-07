@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v34.1.0 (unreleased)
+--------------------
+
+- The pipeline help modal is now available from all project views: form, list, details.
+  The docstring are converted from markdown to html for proper rendering.
+
 v34.0.0 (2024-03-04)
 --------------------
 
