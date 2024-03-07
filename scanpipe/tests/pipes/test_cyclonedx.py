@@ -153,7 +153,11 @@ class ScanPipeCycloneDXPipesTest(TestCase):
                     "mailing-list": ["https://cyclonedx.org/mailing-list"],
                     "vcs": ["https://cyclonedx.org/vcs"],
                     "website": ["https://cyclonedx.org/website"],
-                }
+                },
+                "nestedComponents": [
+                    "pkg:pypi/billiard@3.6.3.0",
+                    "pkg:pypi/fictional@9.10.2",
+                ],
             },
             "type": "pypi",
             "qualifiers": "extension=tar.gz",

@@ -143,9 +143,9 @@ def cyclonedx_component_to_package_data(cdx_component):
     if external_references := get_external_references(cdx_component):
         extra_data["externalReferences"] = external_references
 
-    # TODO: Replace with cdx_component.get_all_nested_components()
-    # if nested_components := component_data.get("nested_components"):
-    #     extra_data["nestedComponents"] = nested_components
+    if nested_components := cdx_component.get_all_nested_components(include_self=False):
+        nested_purls = [component.bom_ref.value for component in nested_components]
+        extra_data["nestedComponents"] = sorted(nested_purls)
 
     package_data = {
         "name": cdx_component.name,
