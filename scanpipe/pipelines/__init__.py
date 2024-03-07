@@ -31,6 +31,7 @@ from timeit import default_timer as timer
 
 from django.utils import timezone
 
+import bleach
 from markdown_it import MarkdownIt
 from pyinstrument import Profiler
 
@@ -54,6 +55,15 @@ def group(*groups):
         return obj
 
     return decorator
+
+
+def convert_markdown_to_html(markdown_text):
+    """Convert Markdown text to sanitized HTML."""
+    # Using the "js-default" for safety.
+    html_content = MarkdownIt("js-default").renderInline(markdown_text)
+    # Sanitize HTML using bleach.
+    sanitized_html = bleach.clean(html_content)
+    return sanitized_html
 
 
 class BasePipeline:
@@ -123,11 +133,10 @@ class BasePipeline:
         steps = cls.get_graph()
 
         if as_html:
-            md = MarkdownIt()
-            summary = md.renderInline(summary)
-            description = md.renderInline(description)
+            summary = convert_markdown_to_html(summary)
+            description = convert_markdown_to_html(description)
             for step in steps:
-                step["doc"] = md.renderInline(step["doc"])
+                step["doc"] = convert_markdown_to_html(step["doc"])
 
         return {
             "summary": summary,
