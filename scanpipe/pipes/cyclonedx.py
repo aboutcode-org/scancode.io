@@ -29,6 +29,7 @@ from django.core.validators import EMPTY_VALUES
 
 from cyclonedx.model import license as cdx_license_model
 from cyclonedx.schema import SchemaVersion
+from cyclonedx.schema.schema import SCHEMA_VERSIONS
 from cyclonedx.validation import ValidationError
 from cyclonedx.validation.json import JsonStrictValidator
 from packageurl import PackageURL
@@ -41,26 +42,23 @@ def get_bom(cyclonedx_document):
     return Bom.from_json(data=cyclonedx_document)
 
 
-def get_components(bom):
+def get_components(bom, view):
     """Return list of components from CycloneDX BOM."""
     # TODO: Check if we could use `return list(bom._get_all_components())`
-    return recursive_component_collector(bom.components, [])
+    return recursive_component_collector(bom.components, [], view)
 
 
-def bom_attributes_to_dict(cyclonedx_attributes):
+def bom_attributes_to_dict(cyclonedx_attributes, view):
     """Return list of dict from a list of CycloneDX attributes."""
-    from cyclonedx.schema.schema import SchemaVersion1Dot5
-
     if not cyclonedx_attributes:
         return []
 
     return [
-        json.loads(attribute.as_json(view_=SchemaVersion1Dot5))  # TODO
-        for attribute in cyclonedx_attributes
+        json.loads(attribute.as_json(view_=view)) for attribute in cyclonedx_attributes
     ]
 
 
-def recursive_component_collector(root_component_list, collected):
+def recursive_component_collector(root_component_list, collected, view):
     """Return list of components including the nested components."""
     if not root_component_list:
         return []
@@ -68,12 +66,12 @@ def recursive_component_collector(root_component_list, collected):
     for component in root_component_list:
         nested_components = {}
         if component.components is not None:
-            nested_components = bom_attributes_to_dict(component.components)
+            nested_components = bom_attributes_to_dict(component.components, view)
 
         collected.append(
             {"cdx_package": component, "nested_components": nested_components}
         )
-        recursive_component_collector(component.components, collected)
+        recursive_component_collector(component.components, collected, view)
     return collected
 
 
@@ -218,6 +216,11 @@ def resolve_cyclonedx_packages(input_location):
         )
 
     cyclonedx_bom = get_bom(cyclonedx_document)
-    components = get_components(cyclonedx_bom)
+
+    # Could we get this similar to Bom.from_json(data=cyclonedx_document)?
+    spec_version = cyclonedx_document.get("specVersion")
+    schema_version = SchemaVersion.from_version(spec_version)
+    view = SCHEMA_VERSIONS.get(schema_version)
+    components = get_components(cyclonedx_bom, view)
 
     return [cyclonedx_component_to_package_data(component) for component in components]
