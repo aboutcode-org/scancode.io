@@ -43,6 +43,16 @@ class Command(AddInputCommandMixin, BaseCommand):
             help="Number in seconds how long the loop should sleep for before polling.",
         )
 
+        parser.add_argument(
+            "--async",
+            action="store_true",
+            dest="async",
+            help=(
+                "Add the pipeline runs to the tasks queue for execution by a worker "
+                "instead of running in the current thread."
+            ),
+        )
+
     def handle(self, *args, **options):
         sleep = options["sleep"]
 
@@ -72,14 +82,18 @@ class Command(AddInputCommandMixin, BaseCommand):
                         input_urls=input_urls,
                     )
 
+                    # TODO: test this from the docker context
+                    # TODO: refactor execute to run project without having to call the execute command through cli
                     call_command(
                         "execute",
                         project=project,
                         stderr=self.stderr,
                         stdout=self.stdout,
+                        **{"async": options["async"]},
                     )
 
                     # 3. poll project results
+                    # TODO: see if we can block waiting for a signal when the project is done running
                     error_log = purldb.poll_run_status(
                         command=self,
                         project=project,
