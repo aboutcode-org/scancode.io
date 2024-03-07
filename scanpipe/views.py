@@ -1992,6 +1992,22 @@ def run_status_view(request, uuid):
     return render(request, template, context)
 
 
+@conditional_login_required
+def pipeline_help_view(request, pipeline_name):
+    template = "scanpipe/modals/pipeline_help_modal_content.html"
+
+    pipeline_class = scanpipe_app.pipelines.get(pipeline_name)
+    if not pipeline_class:
+        raise Http404
+
+    context = {
+        "pipeline_name": pipeline_name,
+        "pipeline_info": pipeline_class.get_info(as_html=True),
+    }
+
+    return render(request, template, context)
+
+
 class CodebaseResourceRawView(
     ConditionalLoginRequired,
     ProjectRelatedViewMixin,
