@@ -1,0 +1,34 @@
+<div id="pipeline-help-modal" class="modal is-desktop-size"></div>
+<script>
+  document.addEventListener("openModal", function(event) {
+    let modal_id = event.detail.modal;
+    if (modal_id !== "pipeline-help-modal") return;
+
+    let $modal = document.getElementById(modal_id);
+    $modal.innerHTML = "";
+
+    let pipeline_name = event.detail.$button.dataset.pipelineName;
+    let pipeline_help_path = `pipeline/${pipeline_name}/help/`;
+
+    // Construct the full URL by combining the current origin and the relative path.
+    // It's important to use the URL constructor, as directly providing the relative
+    // path to the `fetch` function may not work correctly, especially for URLs
+    // that include credentials such as "user:pass@domain.com".
+    let pipeline_help_url = new URL(pipeline_help_path, window.location.origin);
+
+    fetch(pipeline_help_url).then(function (response) {
+      if (response.ok) {
+        return response.text();
+      } else {
+        closeModals();
+        throw Error(response.statusText);
+      }
+    }).then(function (html) {
+      $modal.innerHTML = html;
+      setupCloseModalButtons();
+    }).catch(function (error) {
+      console.warn('Error:', error);
+    });
+
+  });
+</script>
