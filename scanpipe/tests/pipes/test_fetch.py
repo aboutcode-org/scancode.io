@@ -24,6 +24,9 @@ from pathlib import Path
 from unittest import mock
 
 from django.test import TestCase
+from django.test import override_settings
+
+from requests import auth as request_auth
 
 from scanpipe.pipes import fetch
 
@@ -56,7 +59,7 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = "URL scheme 'DOCKER' is not supported. Did you mean: 'docker'?"
         self.assertEqual(expected, str(cm.exception))
 
-    @mock.patch("requests.get")
+    @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipes_fetch_http(self, mock_get):
         url = "https://example.com/filename.zip"
 
@@ -93,7 +96,7 @@ class ScanPipeFetchPipesTest(TestCase):
         expected = "Invalid Docker reference."
         self.assertEqual(expected, str(cm.exception))
 
-        url = "docker://debian:10.9"
+        url = "docker://registry.com/debian:10.9"
         mock_platform.return_value = "linux", "amd64", ""
         mock_skopeo.return_value = "skopeo"
         mock_run_command_safely.side_effect = Exception
@@ -109,10 +112,60 @@ class ScanPipeFetchPipesTest(TestCase):
             "--insecure-policy",
             "--override-os=linux",
             "--override-arch=amd64",
-            "docker://debian:10.9",
+            url,
         )
         self.assertEqual(expected, cmd_args[0:6])
         self.assertTrue(cmd_args[-1].endswith("debian_10_9.tar"))
+
+        with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
+            with self.assertRaises(Exception):
+                fetch.fetch_docker_image(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--authfile auth.json", cmd_args)
+
+        credentials = {"registry.com": "user:password"}
+        with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
+            with self.assertRaises(Exception):
+                fetch.fetch_docker_image(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--src-creds user:password", cmd_args)
+
+    @mock.patch("scanpipe.pipes.fetch._get_skopeo_location")
+    @mock.patch("scanpipe.pipes.fetch.run_command_safely")
+    def test_scanpipe_pipes_fetch_get_docker_image_platform(
+        self,
+        mock_run_command_safely,
+        mock_skopeo,
+    ):
+        url = "docker://registry.com/busybox"
+        mock_skopeo.return_value = "skopeo"
+        mock_run_command_safely.return_value = "{}"
+
+        fetch.get_docker_image_platform(url)
+        mock_run_command_safely.assert_called_once()
+        cmd_args = mock_run_command_safely.call_args[0][0]
+        expected = (
+            "skopeo",
+            "inspect",
+            "--insecure-policy",
+            "--raw",
+            "--no-creds",
+            url,
+        )
+        self.assertEqual(expected, cmd_args)
+
+        with override_settings(SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="auth.json"):
+            fetch.get_docker_image_platform(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--authfile auth.json", cmd_args)
+            self.assertNotIn("--no-creds", cmd_args)
+
+        credentials = {"registry.com": "user:password"}
+        with override_settings(SCANCODEIO_SKOPEO_CREDENTIALS=credentials):
+            fetch.get_docker_image_platform(url)
+            cmd_args = mock_run_command_safely.call_args[0][0]
+            self.assertIn("--creds user:password", cmd_args)
+            self.assertNotIn("--no-creds", cmd_args)
 
     def test_scanpipe_pipes_fetch_docker_image_string_injection_protection(self):
         url = 'docker://;echo${IFS}"PoC"${IFS}"'
@@ -120,7 +173,7 @@ class ScanPipeFetchPipesTest(TestCase):
             fetch.fetch_docker_image(url)
         self.assertEqual("Invalid Docker reference.", str(cm.exception))
 
-    @mock.patch("requests.get")
+    @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipes_fetch_fetch_urls(self, mock_get):
         urls = [
             "https://example.com/filename.zip",
@@ -141,3 +194,26 @@ class ScanPipeFetchPipesTest(TestCase):
         self.assertEqual(0, len(downloads))
         self.assertEqual(2, len(errors))
         self.assertEqual(urls, errors)
+
+    def test_scanpipe_pipes_fetch_get_request_session(self):
+        url = "https://example.com/filename.zip"
+        host = "example.com"
+        credentials = ("user", "pass")
+
+        session = fetch.get_request_session(url)
+        self.assertIsNone(session.auth)
+
+        with override_settings(SCANCODEIO_FETCH_BASIC_AUTH={host: credentials}):
+            session = fetch.get_request_session(url)
+            self.assertEqual(request_auth.HTTPBasicAuth(*credentials), session.auth)
+
+        with override_settings(SCANCODEIO_FETCH_DIGEST_AUTH={host: credentials}):
+            session = fetch.get_request_session(url)
+            self.assertEqual(request_auth.HTTPDigestAuth(*credentials), session.auth)
+
+        headers = {
+            host: {"Authorization": "token TOKEN"},
+        }
+        with override_settings(SCANCODEIO_FETCH_HEADERS=headers):
+            session = fetch.get_request_session(url)
+            self.assertEqual("token TOKEN", session.headers.get("Authorization"))

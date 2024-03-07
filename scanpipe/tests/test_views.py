@@ -201,7 +201,7 @@ class ScanPipeViewsTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, expected1)
 
-    @mock.patch("requests.head")
+    @mock.patch("requests.sessions.Session.head")
     def test_scanpipe_views_project_details_add_inputs(self, mock_head):
         url = self.project1.get_absolute_url()
 

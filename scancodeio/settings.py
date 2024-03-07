@@ -115,6 +115,44 @@ SCANCODEIO_PAGINATE_BY = env.dict(
 # Default limit for "most common" entries in QuerySets.
 SCANCODEIO_MOST_COMMON_LIMIT = env.int("SCANCODEIO_MOST_COMMON_LIMIT", default=7)
 
+# Fetch authentication credentials
+
+# SCANCODEIO_FETCH_BASIC_AUTH="host=user,password;"
+SCANCODEIO_FETCH_BASIC_AUTH = env.dict(
+    "SCANCODEIO_FETCH_BASIC_AUTH",
+    cast={"value": tuple},
+    default={},
+)
+
+# SCANCODEIO_FETCH_DIGEST_AUTH="host=user,password;"
+SCANCODEIO_FETCH_DIGEST_AUTH = env.dict(
+    "SCANCODEIO_FETCH_DIGEST_AUTH",
+    cast={"value": tuple},
+    default={},
+)
+
+# SCANCODEIO_FETCH_HEADERS="host=Header1=value,Header2=value;"
+SCANCODEIO_FETCH_HEADERS = {}
+FETCH_HEADERS_STR = env.str("SCANCODEIO_FETCH_HEADERS", default="")
+for entry in FETCH_HEADERS_STR.split(";"):
+    if entry.strip():
+        host, headers = entry.split("=", 1)
+        SCANCODEIO_FETCH_HEADERS[host] = env.parse_value(headers, cast=dict)
+
+# SCANCODEIO_NETRC_LOCATION="~/.netrc"
+SCANCODEIO_NETRC_LOCATION = env.str("SCANCODEIO_NETRC_LOCATION", default="")
+if SCANCODEIO_NETRC_LOCATION:
+    # Propagate the location to the environ for `requests.utils.get_netrc_auth`
+    env.ENVIRON["NETRC"] = SCANCODEIO_NETRC_LOCATION
+
+# SCANCODEIO_SKOPEO_CREDENTIALS="host1=user:password,host2=user:password"
+SCANCODEIO_SKOPEO_CREDENTIALS = env.dict("SCANCODEIO_SKOPEO_CREDENTIALS", default={})
+
+# SCANCODEIO_SKOPEO_AUTHFILE_LOCATION="/path/to/auth.json"
+SCANCODEIO_SKOPEO_AUTHFILE_LOCATION = env.str(
+    "SCANCODEIO_SKOPEO_AUTHFILE_LOCATION", default=""
+)
+
 # Application definition
 
 INSTALLED_APPS = [

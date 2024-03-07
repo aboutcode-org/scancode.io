@@ -152,7 +152,7 @@ class ScanPipePipelinesTest(TestCase):
         pipeline.execute()
         self.assertNotIn("Step [download_missing_inputs]", run.log)
 
-    @mock.patch("requests.get")
+    @mock.patch("requests.sessions.Session.get")
     def test_scanpipe_pipeline_class_download_missing_inputs(self, mock_get):
         project1 = Project.objects.create(name="Analysis")
         run = project1.add_pipeline("do_nothing")

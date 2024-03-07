@@ -197,3 +197,24 @@ There are multiple ways to tag input files when uploading local files:
 
 - **Command Line Interface:** Tag uploaded files using the "filename:tag" syntax.
   Example: ``--input-file path/filename:tag``.
+
+How to fetch files from private sources and protected by credentials?
+---------------------------------------------------------------------
+
+Several :ref:`scancodeio_settings_fetch_authentication` settings are available to
+define the credentials required to access your private files, depending on the
+authentication type:
+
+- :ref:`Basic authentication <scancodeio_settings_fetch_basic_auth>`
+- :ref:`Digest authentication <scancodeio_settings_fetch_digest_auth>`
+- :ref:`HTTP request headers <scancodeio_settings_fetch_headers>`
+- :ref:`.netrc file <scancodeio_settings_netrc_location>`
+- :ref:`Docker private repository <scancodeio_settings_skopeo_credentials>`
+
+Example for GitHub private repository files::
+
+    SCANCODEIO_FETCH_HEADERS="github.com=Authorization=token <YOUR_TOKEN>"
+
+Example for Docker private repository::
+
+    SCANCODEIO_SKOPEO_CREDENTIALS="registry.com=user:password"
