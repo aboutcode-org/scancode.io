@@ -24,8 +24,6 @@ import json
 import sys
 from pathlib import Path
 
-from django.core.validators import EMPTY_VALUES
-
 from attributecode.model import About
 from packagedcode import APPLICATION_PACKAGE_DATAFILE_HANDLERS
 from packagedcode.licensing import get_license_detections_and_expression
@@ -258,56 +256,6 @@ def resolve_spdx_packages(input_location):
     ]
 
 
-def cyclonedx_component_to_package_data(component_data):
-    """Return package_data from CycloneDX component."""
-    extra_data = {}
-    component = component_data["cdx_package"]
-
-    package_url_dict = {}
-    if component.purl:
-        package_url_dict = PackageURL.from_string(component.purl).to_dict(encode=True)
-
-    declared_license = cyclonedx.get_declared_licenses(licenses=component.licenses)
-
-    if external_references := cyclonedx.get_external_references(component):
-        extra_data["externalReferences"] = external_references
-
-    if nested_components := component_data.get("nested_components"):
-        extra_data["nestedComponents"] = nested_components
-
-    package_data = {
-        "name": component.name,
-        "extracted_license_statement": declared_license,
-        "copyright": component.copyright,
-        "version": component.version,
-        "description": component.description,
-        "extra_data": extra_data,
-        **package_url_dict,
-        **cyclonedx.get_checksums(component),
-        **cyclonedx.get_properties_data(component),
-    }
-
-    return {
-        key: value for key, value in package_data.items() if value not in EMPTY_VALUES
-    }
-
-
-def resolve_cyclonedx_packages(input_location):
-    """Resolve the packages from the `input_location` CycloneDX document file."""
-    input_path = Path(input_location)
-    cyclonedx_document = json.loads(input_path.read_text())
-
-    try:
-        cyclonedx.validate_document(cyclonedx_document)
-    except Exception as e:
-        raise Exception(f'CycloneDX document "{input_path.name}" is not valid: {e}')
-
-    cyclonedx_bom = cyclonedx.get_bom(cyclonedx_document)
-    components = cyclonedx.get_components(cyclonedx_bom)
-
-    return [cyclonedx_component_to_package_data(component) for component in components]
-
-
 def get_default_package_type(input_location):
     """
     Return the package type associated with the provided `input_location`.
@@ -344,7 +292,7 @@ resolver_registry = {
 sbom_registry = {
     "about": resolve_about_packages,
     "spdx": resolve_spdx_packages,
-    "cyclonedx": resolve_cyclonedx_packages,
+    "cyclonedx": cyclonedx.resolve_cyclonedx_packages,
 }
 
 

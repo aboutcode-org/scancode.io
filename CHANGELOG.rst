@@ -4,6 +4,9 @@ Changelog
 v34.1.0 (unreleased)
 --------------------
 
+- Add support for importing CycloneDX SBOM 1.2, 1.3, 1.4 and 1.5 spec formats.
+  https://github.com/nexB/scancode.io/issues/1045
+
 - The pipeline help modal is now available from all project views: form, list, details.
   The docstring are converted from markdown to html for proper rendering.
   https://github.com/nexB/scancode.io/pull/1105
