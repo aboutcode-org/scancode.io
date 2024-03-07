@@ -28,51 +28,11 @@ from pathlib import Path
 from django.core.validators import EMPTY_VALUES
 
 from cyclonedx.model import license as cdx_license_model
+from cyclonedx.model.bom import Bom
 from cyclonedx.schema import SchemaVersion
-from cyclonedx.schema.schema import SCHEMA_VERSIONS
 from cyclonedx.validation import ValidationError
 from cyclonedx.validation.json import JsonStrictValidator
 from packageurl import PackageURL
-
-
-def get_bom(cyclonedx_document):
-    """Return CycloneDX BOM object."""
-    from cyclonedx.model.bom import Bom
-
-    return Bom.from_json(data=cyclonedx_document)
-
-
-def get_components(bom, view):
-    """Return list of components from CycloneDX BOM."""
-    # TODO: Check if we could use `return list(bom._get_all_components())`
-    return recursive_component_collector(bom.components, [], view)
-
-
-def bom_attributes_to_dict(cyclonedx_attributes, view):
-    """Return list of dict from a list of CycloneDX attributes."""
-    if not cyclonedx_attributes:
-        return []
-
-    return [
-        json.loads(attribute.as_json(view_=view)) for attribute in cyclonedx_attributes
-    ]
-
-
-def recursive_component_collector(root_component_list, collected, view):
-    """Return list of components including the nested components."""
-    if not root_component_list:
-        return []
-
-    for component in root_component_list:
-        nested_components = {}
-        if component.components is not None:
-            nested_components = bom_attributes_to_dict(component.components, view)
-
-        collected.append(
-            {"cdx_package": component, "nested_components": nested_components}
-        )
-        recursive_component_collector(component.components, collected, view)
-    return collected
 
 
 def resolve_license(license):
@@ -168,41 +128,50 @@ def is_cyclonedx_bom(input_location):
     return False
 
 
-# TODO: Add unit test
-def cyclonedx_component_to_package_data(component_data):
+def cyclonedx_component_to_package_data(cdx_component):
     """Return package_data from CycloneDX component."""
     extra_data = {}
-    component = component_data["cdx_package"]
 
     package_url_dict = {}
-    if component.purl:
-        package_url_dict = PackageURL.from_string(str(component.purl)).to_dict(
+    if cdx_component.purl:
+        package_url_dict = PackageURL.from_string(str(cdx_component.purl)).to_dict(
             encode=True
         )
 
-    declared_license = get_declared_licenses(licenses=component.licenses)
+    declared_license = get_declared_licenses(licenses=cdx_component.licenses)
 
-    if external_references := get_external_references(component):
+    if external_references := get_external_references(cdx_component):
         extra_data["externalReferences"] = external_references
 
-    if nested_components := component_data.get("nested_components"):
-        extra_data["nestedComponents"] = nested_components
+    # TODO: Replace with cdx_component.get_all_nested_components()
+    # if nested_components := component_data.get("nested_components"):
+    #     extra_data["nestedComponents"] = nested_components
 
     package_data = {
-        "name": component.name,
+        "name": cdx_component.name,
         "extracted_license_statement": declared_license,
-        "copyright": component.copyright,
-        "version": component.version,
-        "description": component.description,
+        "copyright": cdx_component.copyright,
+        "version": cdx_component.version,
+        "description": cdx_component.description,
         "extra_data": extra_data,
         **package_url_dict,
-        **get_checksums(component),
-        **get_properties_data(component),
+        **get_checksums(cdx_component),
+        **get_properties_data(cdx_component),
     }
 
     return {
         key: value for key, value in package_data.items() if value not in EMPTY_VALUES
     }
+
+
+def get_bom(cyclonedx_document):
+    """Return CycloneDX BOM object."""
+    return Bom.from_json(data=cyclonedx_document)
+
+
+def get_components(bom):
+    """Return list of components from CycloneDX BOM."""
+    return list(bom._get_all_components())
 
 
 def resolve_cyclonedx_packages(input_location):
@@ -211,16 +180,10 @@ def resolve_cyclonedx_packages(input_location):
     cyclonedx_document = json.loads(input_path.read_text())
 
     if errors := validate_document(cyclonedx_document):
-        raise ValueError(
-            f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
-        )
+        error_msg = f'CycloneDX document "{input_path.name}" is not valid:\n{errors}'
+        raise ValueError(error_msg)
 
     cyclonedx_bom = get_bom(cyclonedx_document)
-
-    # Could we get this similar to Bom.from_json(data=cyclonedx_document)?
-    spec_version = cyclonedx_document.get("specVersion")
-    schema_version = SchemaVersion.from_version(spec_version)
-    view = SCHEMA_VERSIONS.get(schema_version)
-    components = get_components(cyclonedx_bom, view)
+    components = get_components(cyclonedx_bom)
 
     return [cyclonedx_component_to_package_data(component) for component in components]

@@ -55,73 +55,6 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         input_location = self.data_location / "cyclonedx" / "missing_bom_format.json"
         self.assertFalse(cyclonedx.is_cyclonedx_bom(input_location))
 
-    def test_scanpipe_cyclonedx_bom_attributes_to_dict(self):
-        components = self.component2.components
-
-        expected = [
-            {
-                "type": "library",
-                "bom-ref": "pkg:pypi/fictional@9.10.2",
-                "name": "fictional",
-                "version": "0.10.2",
-                "hashes": [
-                    {
-                        "alg": "SHA-256",
-                        "content": (
-                            "960343ae5bfb6a3c6e736a764057db0e"
-                            "6a0e05e338b5630894a5f779cabb4f9b"
-                        ),
-                    }
-                ],
-                "properties": [
-                    {
-                        "name": "aboutcode:download_url",
-                        "value": "https://download.url/package.zip",
-                    },
-                    {
-                        "name": "aboutcode:filename",
-                        "value": "package.zip",
-                    },
-                    {
-                        "name": "aboutcode:homepage_url",
-                        "value": "https://home.page",
-                    },
-                    {
-                        "name": "aboutcode:primary_language",
-                        "value": "Python",
-                    },
-                ],
-                "licenses": [
-                    {
-                        "expression": (
-                            "LGPL-3.0-or-later AND "
-                            "LicenseRef-scancode-openssl-exception-lgpl3.0plus"
-                        )
-                    }
-                ],
-                "purl": "pkg:pypi/fictional@9.10.2",
-                "externalReferences": [
-                    {
-                        "url": "https://cyclonedx.org",
-                        "comment": "No comment",
-                        "type": "distribution",
-                        "hashes": [
-                            {
-                                "alg": "SHA-256",
-                                "content": (
-                                    "960343ae5bfb6a3c6e736a764057d"
-                                    "b0e6a0e05e338b5630894a5f779cabb4f9b"
-                                ),
-                            }
-                        ],
-                    }
-                ],
-            }
-        ]
-
-        result = cyclonedx.bom_attributes_to_dict(components)
-        self.assertEqual(result, expected)
-
     def test_scanpipe_cyclonedx_get_components(self):
         empty_bom = Bom()
         self.assertEqual([], cyclonedx.get_components(empty_bom))
@@ -129,25 +62,13 @@ class ScanPipeCycloneDXPipesTest(TestCase):
         components = cyclonedx.get_components(self.bom)
         self.assertEqual(3, len(components))
 
-    def test_scanpipe_cyclonedx_recursive_component_collector(self):
+        purls = [component.bom_ref.value for component in components]
         expected = [
-            {
-                "cdx_package": self.component1,
-                "nested_components": cyclonedx.bom_attributes_to_dict(
-                    self.component1.components
-                ),
-            },
-            {
-                "cdx_package": self.component2,
-                "nested_components": cyclonedx.bom_attributes_to_dict(
-                    self.component2.components
-                ),
-            },
-            {"cdx_package": self.component3, "nested_components": {}},
+            "pkg:pypi/toml@0.10.2?extension=tar.gz",
+            "pkg:pypi/fictional@9.10.2",
+            "pkg:pypi/billiard@3.6.3.0",
         ]
-        result = cyclonedx.recursive_component_collector(self.bom.components, [])
-
-        self.assertEqual(result, expected)
+        self.assertEqual(sorted(expected), (sorted(purls)))
 
     def test_scanpipe_cyclonedx_resolve_license(self):
         license = cdx_license_model.LicenseExpression("OFL-1.1 AND Apache-2.0")
@@ -218,6 +139,31 @@ class ScanPipeCycloneDXPipesTest(TestCase):
 
         error = cyclonedx.validate_document(self.bom_json)
         self.assertIsNone(error)
+
+    def test_scanpipe_cyclonedx_component_to_package_data(self):
+        expected = {
+            "name": "toml",
+            "extracted_license_statement": "OFL-1.1\nApache-2.0",
+            "version": "0.10.2",
+            "extra_data": {
+                "externalReferences": {
+                    "advisories": ["https://cyclonedx.org/advisories"],
+                    "bom": ["https://cyclonedx.org/bom"],
+                    "issue-tracker": ["https://cyclonedx.org/issue-tracker"],
+                    "mailing-list": ["https://cyclonedx.org/mailing-list"],
+                    "vcs": ["https://cyclonedx.org/vcs"],
+                    "website": ["https://cyclonedx.org/website"],
+                }
+            },
+            "type": "pypi",
+            "qualifiers": "extension=tar.gz",
+            "sha256": (
+                "806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"
+            ),
+            "homepage_url": "https://cyclonedx.org/website",
+        }
+        package_data = cyclonedx.cyclonedx_component_to_package_data(self.component1)
+        self.assertEqual(expected, package_data)
 
     def test_scanpipe_cyclonedx_resolve_cyclonedx_packages(self):
         input_location = self.data_location / "cyclonedx" / "missing_schema.json"
