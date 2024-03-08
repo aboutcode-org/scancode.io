@@ -61,7 +61,11 @@ class InspectPackages(ScanCodebase):
         # only detect package_data in resources and create
         # Package/Dependency instances directly instead of assembling
         # the packages and assigning files to them
-        scancode.scan_for_application_packages(project=self.project, assemble=False)
+        scancode.scan_for_application_packages(
+            project=self.project,
+            assemble=False,
+            package_only=True,
+        )
 
     def create_packages_and_dependencies(self):
         scancode.process_package_data(self.project)

@@ -39,7 +39,6 @@ from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
 from packagedcode import get_package_handler
 from packagedcode import models as packagedcode_models
-from packagedcode import HANDLER_BY_DATASOURCE_ID
 from scancode import Scanner
 from scancode import api as scancode_api
 from scancode import cli as scancode_cli
@@ -220,14 +219,18 @@ def scan_file(location, with_threading=True, min_license_score=0, **kwargs):
     return _scan_resource(location, scanners, with_threading=with_threading)
 
 
-def scan_for_package_data(location, with_threading=True, **kwargs):
+def scan_for_package_data(location, with_threading=True, package_only=False, **kwargs):
     """
     Run a package scan on provided `location` using the scancode-toolkit direct API.
 
     Return a dict of scan `results` and a list of `errors`.
     """
+    scancode_get_packages = partial(
+        scancode_api.get_package_data,
+        package_only=package_only,
+    )
     scanners = [
-        Scanner("package_data", scancode_api.get_package_data),
+        Scanner("package_data", scancode_get_packages),
     ]
     return _scan_resource(location, scanners, with_threading=with_threading)
 
@@ -344,7 +347,9 @@ def scan_for_files(project, resource_qs=None, progress_logger=None):
     )
 
 
-def scan_for_application_packages(project, assemble=True, progress_logger=None):
+def scan_for_application_packages(
+    project, assemble=True, package_only=False, progress_logger=None
+):
     """
     Run a package scan on resources without a status for a `project`,
     and add them in their respective `package_data` attribute.
@@ -360,6 +365,10 @@ def scan_for_application_packages(project, assemble=True, progress_logger=None):
     """
     resource_qs = project.codebaseresources.no_status()
 
+    scan_func_kwargs = {
+        "package_only": package_only,
+    }
+
     # Collect detected Package data and save it to the CodebaseResource it was
     # detected from.
     scan_resources(
@@ -367,6 +376,7 @@ def scan_for_application_packages(project, assemble=True, progress_logger=None):
         scan_func=scan_for_package_data,
         save_func=save_scan_package_results,
         progress_logger=progress_logger,
+        scan_func_kwargs=scan_func_kwargs,
     )
 
     # Iterate through CodebaseResources with Package data and handle them using
@@ -468,10 +478,11 @@ def process_package_data(project):
 
             package_data = pd.to_dict()
             dependencies = package_data.pop("dependencies")
-            pipes.update_or_create_package(project, package_data)
-
             for dep in dependencies:
                 pipes.update_or_create_dependency(project, dep)
+
+            if pd.purl:
+                pipes.update_or_create_package(project, package_data)
 
 
 def get_packages_with_purl_from_resources(project):
