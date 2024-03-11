@@ -134,7 +134,7 @@
         "pypi_wheel"
       ],
       "datafile_paths": [
-        "codebase/asgiref-3.3.0-py3-none-any.whl"
+        "asgiref-3.3.0-py3-none-any.whl"
       ],
       "file_references": [],
       "missing_resources": [],
@@ -247,7 +247,7 @@
         "pypi_wheel_metadata"
       ],
       "datafile_paths": [
-        "codebase/asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA"
+        "asgiref-3.3.0-py3-none-any.whl-extract/asgiref-3.3.0.dist-info/METADATA"
       ],
       "file_references": [],
       "missing_resources": [],

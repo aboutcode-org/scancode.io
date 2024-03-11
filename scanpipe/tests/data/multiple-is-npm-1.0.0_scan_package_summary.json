@@ -243,7 +243,7 @@
         "npm_package_json"
       ],
       "datafile_paths": [
-        "codebase/is-npm/package.json"
+        "is-npm/package.json"
       ],
       "file_references": [],
       "missing_resources": [],
