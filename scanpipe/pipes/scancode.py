@@ -39,6 +39,7 @@ from commoncode.resource import VirtualCodebase
 from extractcode import api as extractcode_api
 from packagedcode import get_package_handler
 from packagedcode import models as packagedcode_models
+from packagedcode import HANDLER_BY_DATASOURCE_ID
 from scancode import Scanner
 from scancode import api as scancode_api
 from scancode import cli as scancode_cli
@@ -460,6 +461,9 @@ def process_package_data(project):
         logger.info(f"  Processing: {resource.path}")
         for package_mapping in resource.package_data:
             pd = packagedcode_models.PackageData.from_dict(mapping=package_mapping)
+            if not pd.can_assemble:
+                continue
+
             logger.info(f"  Package data: {pd.purl}")
 
             package_data = pd.to_dict()
